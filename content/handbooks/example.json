@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "example-handbook",
+  "slug": "example",
+  "title": "Example Handbook",
+  "shortTitle": "Example",
+  "edition": "V1",
+  "audience": "Who this is for",
+  "description": "A one-line description shown on the library page.",
+  "updatedAt": "2026-08-17",
+  "stats": { "questions": 1, "mustKnow": 1, "realInterviews": 0, "sources": 0 },
+  "sections": [
+    {
+      "id": "foundations",
+      "title": "01 · Foundations",
+      "description": "The first module",
+      "questions": [
+        {
+          "id": "example-question",
+          "level": "S",
+          "sectionId": "foundations",
+          "title": "What should I know?",
+          "quick": "The concise interview answer.",
+          "tags": ["Example"],
+          "isRealInterview": false,
+          "searchText": "A few extra searchable terms",
+          "answerHtml": "<div class=\"full-answer\"><div class=\"mini-title\">完整答案</div><p>The complete explanation.</p></div>"
+        }
+      ]
+    }
+  ]
+}
