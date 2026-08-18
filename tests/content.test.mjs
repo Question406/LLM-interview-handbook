@@ -5,11 +5,11 @@ import handbook from "../content/handbooks/llm-interview-v2.json" with { type: "
 
 test("the imported handbook has stable, complete metadata", () => {
   const questions = handbook.sections.flatMap((section) => section.questions);
-  assert.equal(handbook.sections.length, 9);
-  assert.equal(questions.length, 140);
-  assert.equal(new Set(questions.map((question) => question.id)).size, 140);
-  assert.equal(questions.filter((question) => question.level === "S").length, 85);
-  assert.equal(questions.filter((question) => question.isRealInterview).length, 13);
+  assert.equal(handbook.sections.length, 10);
+  assert.equal(questions.length, 191);
+  assert.equal(new Set(questions.map((question) => question.id)).size, 191);
+  assert.equal(questions.filter((question) => question.level === "S").length, 116);
+  assert.equal(questions.filter((question) => question.isRealInterview).length, 49);
 });
 
 test("large answers are split into lazy-loaded module chunks", async () => {
