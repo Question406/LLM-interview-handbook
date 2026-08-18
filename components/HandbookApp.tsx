@@ -19,7 +19,7 @@ function QuestionCard({
   isOpen,
   isMastered,
   copied,
-  answerHtml,
+  answer,
   onToggleOpen,
   onToggleMastered,
   onCopy,
@@ -29,7 +29,7 @@ function QuestionCard({
   isOpen: boolean;
   isMastered: boolean;
   copied: boolean;
-  answerHtml?: string;
+  answer?: string;
   onToggleOpen: () => void;
   onToggleMastered: () => void;
   onCopy: () => void;
@@ -54,8 +54,8 @@ function QuestionCard({
           <p>{question.quick}</p>
         </div>
       )}
-      {isOpen && answerHtml && <div className="answer-content" dangerouslySetInnerHTML={{ __html: answerHtml }} />}
-      {isOpen && !answerHtml && <div className="answer-loading"><span />正在加载完整答案…</div>}
+      {isOpen && answer && <div className="answer-content" dangerouslySetInnerHTML={{ __html: answer }} />}
+      {isOpen && !answer && <div className="answer-loading"><span />正在加载完整答案…</div>}
       <footer className="question-footer">
         <label>
           <input type="checkbox" checked={isMastered} onChange={onToggleMastered} />
@@ -130,14 +130,12 @@ export default function HandbookApp() {
     const questionId = decodeURIComponent(location.hash.slice(1));
     const question = handbook.sections.flatMap((section) => section.questions).find((candidate) => candidate.id === questionId);
     if (!questionId || !question) return;
-    if (question.answerPath && !question.answerHtml) {
-      let request = chunkPromises.current.get(question.answerPath);
-      if (!request) {
-        request = fetch(question.answerPath).then((response) => response.json() as Promise<Record<string, string>>);
-        chunkPromises.current.set(question.answerPath, request);
-      }
-      void request.then((chunk) => setAnswerChunks((current) => ({ ...current, [question.answerPath!]: chunk })));
+    let request = chunkPromises.current.get(question.answerPath);
+    if (!request) {
+      request = fetch(question.answerPath).then((response) => response.json() as Promise<Record<string, string>>);
+      chunkPromises.current.set(question.answerPath, request);
     }
+    void request.then((chunk) => setAnswerChunks((current) => ({ ...current, [question.answerPath]: chunk })));
     const timer = window.setTimeout(() => {
       setOpenQuestions((current) => new Set(current).add(questionId));
       document.getElementById(questionId)?.scrollIntoView({ block: "start" });
@@ -176,7 +174,7 @@ export default function HandbookApp() {
   };
 
   const loadAnswer = async (question: HandbookQuestion) => {
-    if (question.answerHtml || !question.answerPath || answerChunks[question.answerPath]) return;
+    if (answerChunks[question.answerPath]) return;
     let request = chunkPromises.current.get(question.answerPath);
     if (!request) {
       request = fetch(question.answerPath).then((response) => {
@@ -187,7 +185,7 @@ export default function HandbookApp() {
     }
     try {
       const chunk = await request;
-      setAnswerChunks((current) => current[question.answerPath!] ? current : { ...current, [question.answerPath!]: chunk });
+      setAnswerChunks((current) => current[question.answerPath] ? current : { ...current, [question.answerPath]: chunk });
     } catch {
       chunkPromises.current.delete(question.answerPath);
     }
@@ -353,7 +351,7 @@ export default function HandbookApp() {
                       isOpen={openQuestions.has(question.id)}
                       isMastered={mastered.has(qualifiedId(handbook.id, question.id))}
                       copied={copiedId === question.id}
-                      answerHtml={question.answerHtml ?? (question.answerPath ? answerChunks[question.answerPath]?.[question.id] : undefined)}
+                      answer={answerChunks[question.answerPath]?.[question.id]}
                       onToggleOpen={() => toggleOpen(question)}
                       onToggleMastered={() => toggleMastered(question.id)}
                       onCopy={() => copyQuestionLink(question.id)}
@@ -368,7 +366,7 @@ export default function HandbookApp() {
           <section className="content-guide" id="content-guide">
             <div className="guide-number">+N</div>
             <div><div className="eyebrow"><span /> CONTENT FIRST</div><h2>新资料只需要进内容层。</h2></div>
-            <p>页面、搜索、筛选、复习进度都由通用组件负责。以后每增加一份资料，只需要新增一个结构化内容文件并登记到资料库，不需要重写页面。</p>
+            <p>页面、搜索、筛选、复习进度都由通用组件负责。以后每新增一题，只需要放入一个独立 Markdown 文件；构建器会自动汇总、校验并生成资料库。</p>
             <a href="#top">回到顶部 ↑</a>
           </section>
         </div>

@@ -1,4 +1,4 @@
-import llmInterviewV2 from "./handbooks/llm-interview-v2.json";
+import generatedHandbooks from "./generated/registry.json";
 import type { Handbook } from "./types";
 
 function validateHandbook(candidate: Handbook): Handbook {
@@ -11,4 +11,4 @@ function validateHandbook(candidate: Handbook): Handbook {
   return candidate;
 }
 
-export const handbooks: Handbook[] = [validateHandbook(llmInterviewV2 as Handbook)];
+export const handbooks: Handbook[] = (generatedHandbooks as Handbook[]).map(validateHandbook);

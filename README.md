@@ -1,6 +1,6 @@
 # Interview Atlas
 
-一个内容驱动的面试资料库。当前已将原来的单文件 LLM handbook 迁移为 140 道题、9 个模块的结构化站点。
+一个内容驱动的面试资料库。当前 LLM handbook 的 191 道题、10 个模块都以“一题一个 Markdown 文件”的方式维护。
 
 ## 已有功能
 
@@ -14,27 +14,22 @@
 
 ```text
 content/
-├── handbooks/          # 每本手册的元数据、章节和题目索引
-├── registry.ts        # 资料库注册表
-└── types.ts           # 统一内容 schema
-public/content/       # 按模块分片的完整答案
-components/           # 通用的学习工作台 UI
-scripts/              # 老 HTML 导入器
+├── handbooks/<slug>/  # _handbook.md、questions/ 与 drafts/
+├── templates/         # 新题模板
+├── generated/         # 构建产物（不提交）
+└── registry.ts        # 读取自动生成的资料库
+public/content/        # 按模块分片的答案包（构建产物，不提交）
+components/            # 通用的学习工作台 UI
+scripts/               # 内容校验、编译与静态资源准备
 ```
 
-新增资料时，复制 `content/handbooks/example.json`，填入内容，再在 `content/registry.ts` 登记即可。小手册可直接内联 `answerHtml`；大手册可通过 `answerPath` 按模块分片。详细说明见 `content/README.md`。
+新增题目时，只需复制 `content/templates/question.md`，写入自己的 `drafts/<agent-id>/`，通过审核后移至 `questions/<section>/`。索引、统计、搜索文本和懒加载答案包会自动生成，不需要登记或改前端。详细规则见 `content/README.md`。
 
 ## 本地使用
 
 ```bash
 npm install
 npm run dev
-```
-
-重新从旧版单文件 HTML 生成内容：
-
-```bash
-npm run import:legacy -- ../llm_interview_handbook_v2.html
 ```
 
 验证成品：

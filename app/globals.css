@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
 :root {
   --ink: #171717;
@@ -158,6 +159,8 @@ kbd { border: 1px solid var(--line); background: var(--card); border-radius: 5px
 .answer-content .math.inline { display: inline-block; width: auto; max-width: none; margin: 0 3px; padding: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; vertical-align: baseline; }
 .answer-content .math.inline > mjx-container { display: inline-block !important; width: auto !important; margin: 0 !important; line-height: 1 !important; }
 .answer-content .math.inline > mjx-container > svg { display: inline-block; width: auto !important; height: 1.1em !important; max-width: none; vertical-align: -0.18em; }
+.answer-content .math > .katex-display { width: max-content; margin: 0 auto; }
+.answer-content .math.inline > .katex { line-height: 1; }
 .answer-content pre { overflow-x: auto; margin: 14px 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--paper) 80%, #000 20%); font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .answer-content code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .answer-content .table-wrap { overflow-x: auto; margin: 14px 0; }

@@ -36,6 +36,9 @@ yarn-error.log*
 
 /dist/
 /.wrangler/
+/content/generated/
+/public/content/
+/public/_next/
 /outputs/
 /work/
 *.tsbuildinfo

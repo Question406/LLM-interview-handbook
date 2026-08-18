@@ -9,8 +9,7 @@ export interface HandbookQuestion {
   tags: string[];
   isRealInterview: boolean;
   searchText: string;
-  answerHtml?: string;
-  answerPath?: string;
+  answerPath: string;
 }
 
 export interface HandbookSection {
