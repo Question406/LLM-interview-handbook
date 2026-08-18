@@ -15,8 +15,8 @@ content/
 ## 新增题目
 
 1. 复制 `content/templates/question.md` 到自己的 `drafts/<agent-id>/` 子目录。
-2. 填好 front matter、正文和至少一个可访问的来源。新内容使用普通 Markdown；行内公式使用 `$...$`，块公式使用 `$$...$$`。
-3. 执行 `npm run content:check`。它会校验题目 ID、模块、日期、来源与重复项，但不会写生成文件。
+2. 填好 front matter、正文和至少一个可访问的来源。新内容使用普通 Markdown；行内公式使用 `$...$` 或 `\(...\)`，块公式使用 `$$...$$` 或 `\[...\]`。反引号和代码块中的公式定界符会保留为普通代码。
+3. 执行 `npm run content:check`。它会校验题目 ID、模块、日期、来源、重复项和 KaTeX 公式；非法公式会直接报错，但不会写生成文件。
 4. 审核通过后，将文件移动到 `questions/<section>/`，把 `status` 改为 `published`，再执行 `npm run content:build`。
 
 `quick` 是卡片上始终可见的 30 秒回答；Markdown 正文是展开后显示的完整答案。每题的 ID 一经发布就不要改动，因为深链和复习进度都以它为键。

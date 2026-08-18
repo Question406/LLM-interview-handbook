@@ -1,6 +1,6 @@
 # Interview Atlas
 
-一个内容驱动的面试资料库。当前 LLM handbook 的 191 道题、10 个模块都以“一题一个 Markdown 文件”的方式维护。
+一个内容驱动的面试资料库。当前 LLM handbook 的 231 道题、14 个模块都以“一题一个 Markdown 文件”的方式维护。
 
 ## 已有功能
 

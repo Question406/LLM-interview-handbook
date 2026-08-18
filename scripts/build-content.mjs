@@ -38,7 +38,7 @@ function asString(value, filePath, field) {
 }
 
 function asDate(value, filePath, field) {
-  const date = asString(value, filePath, field);
+  const date = value instanceof Date ? value.toISOString().slice(0, 10) : asString(value, filePath, field);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) fail(filePath, `${field} must use YYYY-MM-DD`);
   return date;
 }
@@ -61,7 +61,25 @@ function escapeRegExp(value) {
 }
 
 function renderMath(tex, displayMode) {
-  return `<span class="math${displayMode ? " display" : " inline"}">${katex.renderToString(tex.trim(), { displayMode, throwOnError: false, output: "htmlAndMathml" })}</span>`;
+  return `<span class="math${displayMode ? " display" : " inline"}">${katex.renderToString(tex.trim(), { displayMode, throwOnError: true, output: "htmlAndMathml" })}</span>`;
+}
+
+function shieldCodeDelimiters(markdown) {
+  const delimiters = [];
+  const shield = (code) => code.replace(/[\\$]/g, (character) => {
+    const token = `CONTENT_CODE_DELIMITER_${delimiters.length}_TOKEN`;
+    delimiters.push({ token, character });
+    return token;
+  });
+  const fenced = markdown.replace(/(^|\n)( {0,3})(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2\3(?=\n|$)/g, shield);
+  const source = fenced.replace(/(`+)([^`\n]*?)\1/g, shield);
+  return {
+    source,
+    restore(html) {
+      for (const { token, character } of delimiters) html = html.replaceAll(token, character);
+      return html;
+    },
+  };
 }
 
 export function renderMarkdown(markdown) {
@@ -70,14 +88,15 @@ export function renderMarkdown(markdown) {
   }
 
   const replacements = [];
-  let source = markdown.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) => {
+  const code = shieldCodeDelimiters(markdown);
+  let source = code.source.replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g, (_match, dollarTex, bracketTex) => {
     const token = `CONTENT_MATH_BLOCK_${replacements.length}_TOKEN`;
-    replacements.push({ token, html: renderMath(tex, true), block: true });
+    replacements.push({ token, html: renderMath(dollarTex ?? bracketTex, true), block: true });
     return `\n\n${token}\n\n`;
   });
-  source = source.replace(/(^|[^\\$])\$([^$\n]+?)\$/g, (_match, prefix, tex) => {
+  source = source.replace(/(^|[^\\$])\$([^$\n]+?)\$|\\\((.+?)\\\)/g, (_match, prefix = "", dollarTex, parenTex) => {
     const token = `CONTENT_MATH_INLINE_${replacements.length}_TOKEN`;
-    replacements.push({ token, html: renderMath(tex, false), block: false });
+    replacements.push({ token, html: renderMath(dollarTex ?? parenTex, false), block: false });
     return `${prefix}${token}`;
   });
 
@@ -88,10 +107,10 @@ export function renderMarkdown(markdown) {
     html = html.replace(new RegExp(token, "g"), replacement.html);
   }
 
-  return html
+  return code.restore(html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/\s(?:on[a-z]+|style)=("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/href="([^"]*)"/gi, (_match, href) => (safeUrl(href) ? `href="${href}"` : 'href="#"'));
+    .replace(/href="([^"]*)"/gi, (_match, href) => (safeUrl(href) ? `href="${href}"` : 'href="#"')));
 }
 
 function sourceHtml(sources) {

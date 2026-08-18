@@ -36,13 +36,24 @@ sections:
   - id: coding
     title: 08 · Coding / Whiteboard
     description: Attention、RoPE、GAE、DPO、GRPO、Agent parser、Retry 与参数显存计算
+  - id: computer-use
+    title: 09 · Computer-use / Agent Eval
+    description: 可执行 Oracle、可复现 benchmark、GUI 失败归因与安全评测
+  - id: multimodal
+    title: 10 · Multimodal / VLM Agent
+    description: GUI grounding、截图坐标、视觉 Web 评测与文档理解
+  - id: mcp-security
+    title: 11 · MCP / Agent Security
+    description: OAuth 授权、工具信任、递归采样与安全 Elicitation
+  - id: swe-agent
+    title: 12 · SWE Agent / Reliable Delivery
+    description: Issue-to-patch 评测、Sandbox、Trace、Patch 验证与生产质量
   - id: alibaba
-    title: 10 · 阿里 LLM 人才计划真题
+    title: 13 · 阿里 LLM 人才计划真题
     description: >-
       面向通义 / 淘天 / 国际 / Agent
       的公开校招与实习面经：Post-Training（DPO/GRPO/GSPO）、Agent（Skill/Memory/RAG/MCP）、生产护栏与系统高频。
   - id: companies
-    title: 11 · 公司与原始材料索引
+    title: 14 · 公司与原始材料索引
     description: 阿里/Qwen、字节 Seed、腾讯混元、百度 AIDU、智谱、Moonshot、MiniMax
 ---
-
