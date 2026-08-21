@@ -1,0 +1,67 @@
+---
+id: company-xiaohongshu
+section: companies
+order: 14
+level: A
+title: 小红书：后训练 / Agent / 全栈应重点准备什么？
+quick: >-
+  后训练岗追 MCP vs Skill、GRPO 去 KL、Agentic RL 差异、两阶段后训练与 DAPO；全栈岗追超时熔断是硬规则还是动态降级。
+  社区生态方向还要能讲审核、价值观对齐和业务评估。
+tags:
+  - Xiaohongshu
+  - 真题导航
+  - "2026"
+realInterview: false
+status: published
+format: markdown
+updatedAt: 2026-08-18
+sources:
+  - title: 小红书 大模型后训练一面
+    url: https://www.nowcoder.com/discuss/872533899736334336
+    type: candidate-first-hand
+  - title: 小红书大模型实习一面
+    url: https://www.nowcoder.com/feed/main/detail/3f96f6fe7ed44c3b8c49cea3455d38a4
+    type: candidate-first-hand
+  - title: 小红书Hi lab 日常实习 一面
+    url: https://www.nowcoder.com/feed/main/detail/8f02e3837274408d9c94c312e8ee578d
+    type: candidate-first-hand
+  - title: 小红书-Ai全栈开发二面面经
+    url: https://www.nowcoder.com/feed/main/detail/b0aba5ebac994002a27bf0892b8991f9
+    type: candidate-first-hand
+---
+
+小红书公开面经同时覆盖社区 Agent、后训练算法和全栈稳定性。准备时把「Skill 省 token」和「GRPO 为何能弱化 KL」都讲到失败模式，不要只报定义。
+
+## 准备主线
+
+1. **Agent 协议**：MCP 是连接协议，Skill 是可按需展开的程序知识；省 token 来自渐进披露。
+2. **Reasoning RL**：GRPO 原理、去 KL 的条件与风险；DAPO 相对 GRPO 改了什么。
+3. **Agentic vs 普通 RL**：动作含工具副作用、观测噪声、稀疏奖励与不可逆操作。
+4. **系统护栏**：复杂任务链超时熔断应硬预算 + 预算内动态降级。
+5. **后训练链路**：两阶段目标、多轮数据拆分、训推一致。
+
+## 本手册真题卡
+
+点击下面每条即可跳到对应题。
+
+- 小红书：MCP、Skill 有何区别，Skill 为什么能省 Token
+- 小红书：复杂 Agent 任务链的超时熔断，应硬规则还是动态模型降级
+- 小红书：GRPO 为何可以去掉 KL，Reward 怎么设
+- 小红书：Agentic RL 与普通 RL 最大的不同是什么
+- 小红书 Hi lab：两阶段后训练各自学什么
+- 小红书：如何面向业务设计并评估 Agent
+- 小红书：Credit assignment 怎么做
+- 小红书 Hi lab：DAPO 相对 GRPO 优化了什么
+- 小红书：MMKG-RAG 如何分块，实体和关系怎样抽取合并
+- 小红书：Deep Research 多轮检索何时停止
+- 小红书：了解 ReAct 结构吗
+- 小红书 Hi lab：多轮训练数据怎么切，训推如何一致
+- 小红书 Hi lab：如何保证问题能对应某个事实类答案
+- 小红书秋招：RAG 有哪些短板，如何保证输出一致性
+- 小红书：如何判断问题简单还是复杂，要不要换模型
+- 小红书秋招一面：生成内容怎么评，具体如何操作？
+- 小红书秋招：幻觉怎么抑制，提示工程能做什么、不能做什么？
+- 小红书秋招：如何保证多智能体协同的效果？
+- 小红书 Hi lab：如何评估训练后的收益？搜索 top-k 该固定还是由模型选？
+- 小红书后训练一面：审核标准如何自适应，还要跟谁对齐价值观？
+- 小红书 Agent 一面：多员工同时用如何限流降级？多租户怎么理解？

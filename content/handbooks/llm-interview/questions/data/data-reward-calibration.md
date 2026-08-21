@@ -13,15 +13,52 @@ tags:
   - Eval
 realInterview: false
 status: published
-format: legacy-html
-provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+format: markdown
+updatedAt: 2026-08-19
 sources:
   - title: RewardBench
-    url: 'https://arxiv.org/abs/2403.13787'
-    type: legacy-reference
-  - title: Calibration paper
-    url: 'https://arxiv.org/abs/1706.04599'
-    type: legacy-reference
+    url: https://arxiv.org/abs/2403.13787
+    type: primary
+  - title: On Calibration of Modern Neural Networks
+    url: https://arxiv.org/abs/1706.04599
+    type: primary
 ---
-<div class="full-answer"><div class="mini-title">完整答案</div><p>如果 judge 只用于每对二选一，排序正确率很重要；但工程里它常被用于筛选阈值、best-of-N、数据权重或作为 RL reward。此时分数尺度错误会造成过度过滤、过度优化或风险判断失真。</p><ul><li><b>看 reliability：</b>按预测置信度分桶，比较预测概率与真实偏好频率；同时报告 Brier / log loss，而非只报 accuracy。</li><li><b>看 OOD：</b>按长度、语言、领域、格式、对抗样本和 policy 版本切片；高分回答要抽样人工审计。</li><li><b>再决定用途：</b>可用 temperature / isotonic 等做后校准，但校准集必须独立；若 reward 只在训练分布可靠，就不应把它当无边界的 RL oracle。</li></ul><div class="sources"><div class="mini-title">延伸阅读</div><a href="https://arxiv.org/abs/2403.13787" target="_blank" rel="noreferrer">RewardBench</a><a href="https://arxiv.org/abs/1706.04599" target="_blank" rel="noreferrer">Calibration paper</a></div></div>
+
+如果 judge 只用于每对二选一，排序正确率确实是主指标。工程里它却常被用于筛选阈值、best-of-N、数据权重或作为 RL reward。此时 **谁更高** 对了，**高多少、绝对分意味什么** 仍可能完全错。把 0.9 当「十次里约九次对」去拒答或当 PPO 奖励，尺度一歪，决策就歪。面试别停在「再报个 ECE」：要说清 accuracy 看不见的那一类错误会怎样进训练环。Rank accuracy 只问谁更高；calibration 还问高分是否对应真实胜率。一旦分数用于阈值、拒答、best-of-N 或 RL，错误尺度会直接改变过滤和优化。静态榜单上的排序强，不能代替策略分布上的可靠性图和人评。
+
+## 排序对只保证序，不保证尺度
+
+Rank accuracy / pairwise acc 问的是 $s(y_w)\gt s(y_l)$ 的频率。对 BT 模型，这只约束分数差的符号，不约束绝对位置，也不约束「0.8 与 0.2 的差是否等于 80% vs 20% 的胜率」。常见错位：
+
+- 所有分数被挤在高段，best-of-N 几乎在噪声里挑；
+- 分数对长度、列表体、礼貌词过度敏感，序对了但边际被风格占满；
+- 不同域的分数不可比，却被拼进同一个 RL 奖励。
+
+Calibration 问的是：把预测置信度分桶后，桶内预测概率是否接近真实偏好频率。Brier / log loss 会惩罚「很自信但常错」。Accuracy 可以很高而 log loss 很差——那正是「序对、尺度不可用」。RewardBench 一类榜单主打 pairwise 能力，并不自动保证你拿来当阈值的绝对分可靠。
+
+若 reward 只当 pairwise filter，校准可以稍后做。一旦出现「分数 $\gt\tau$ 才入库」「$r$ 直接进 PPO」，校准就变成正确性问题，不是锦上添花。BT 模型把胜率写成 $\sigma(s_w-s_l)$，这对差的校准要求的是「差对应真实胜率」，不是每个绝对分单独有物理含义。但阈值和 RL 用的是绝对分或对 batch 标准化后的分：过自信会把 $\sigma$ 推到 0/1，梯度消失或过滤过头。Reliability diagram 比单报 ECE 更好讲：横轴预测置信度、纵轴经验频率，点落在对角线上才说明 0.9 真有约九成把握。RewardBench 很高只能说明静态 pair 上排序强，不能代替这张图，更不能代替当前策略样本上的图。
+
+## 分数进决策环之后，错的是动作而不是报表
+
+三种用法把尺度误差变成真实损失：
+
+- **阈值 / 拒答：** 过自信会过度过滤好回答，欠自信会放过坏回答。$\tau$ 是在校准后的概率上选，还是在 raw logit 上选，结果可以完全不同。
+- **Best-of-N / 数据权重：** 未校准的高分会把采样和重加权锁到同一风格峰上，放大 length hacking。
+- **RL reward：** PPO / GRPO 优化的是分数本身。单调变换会改优势的相对大小；仿射变换会改与 KL 项的相对权重。未校准且 OOD 的 RM，等于给策略一张会漂移的地图。
+
+所以「RM acc 高所以可以上 RL」是不完整的。至少要看：可靠性图、分桶 ECE 或 Brier、以及 **策略分布上的** 而不仅是静态评测集上的校准。策略一变，RM 看到的是自己没校准过的区域，acc 数字会骗人。Best-of-N 对校准尤其敏感：N 一大，过自信的风格峰会被系统性地抽到最前面，看起来「RM 很准」其实是在放大偏差。RL 则把该偏差写进策略。一个实用检查是：把分数映射成预测胜率后，在 held-out 人标 pair 上看 log loss；再在当前策略采样的 pair 上重测一遍。两遍差很多，说明 RM 对训练分布过拟合，不能当无边界 oracle。
+
+## 先切片，再决定能不能当 oracle
+
+校准必须按长度、语言、领域、格式、对抗样本和 policy 版本切片。全局 ECE 好看，长回答桶或新策略桶可能已经崩。高分回答要抽样人工审计：这是唯一能发现「高分套话」的办法。
+
+后校准（temperature scaling、isotonic）可以修验证集上的尺度，但校准集必须独立，且与部署分布相近。切到新域就应重做，不能把旧温度当常数。若 reward 只在训练分布可靠，就不应把它当无边界的 RL oracle：要设 KL 护栏、周期性人评、以及「proxy 涨、人评不动则停」的硬规则。Calibration 解决的是「分意味什么」；OOD 失效要另修数据与模型，见 `pt-reward-ood-failure`。切片清单建议至少包括长度、语言、是否含列表、是否拒答、以及 policy 版本。高分桶人工审计要看的不是「排序像不像」，而是「高分回答是不是真想要」——套话、谄媚、注水经常排序正确但绝对分虚高。把校准只交给一个全局温度，等于假设所有切片的过自信程度相同，这在 LLM judge 上几乎从不成立。
+
+面试一句话：rank accuracy 保证序，calibration 保证「分意味什么」；用途一旦离开纯二选一，后者就变成正确性。把 RewardBench 分数直接当成可以上 RL 的通行证，是这题最常见的跳步。排序正确只说明谁更高，不说明 0.9 的分数对应约九成把握，更不说明换了策略分布后仍然如此。阈值、best-of-N、数据权重和 PPO 奖励都在用绝对尺度做决策，尺度错了动作就错。所以 rank accuracy 高仍要看分桶校准、切片和当前策略样本上的人评相关，否则 RM 只是一个会排序的噪声源。排序对不等于分可信，离开二选一就要看校准。
+
+## 追问
+
+- **只做 pairwise RL（DPO）还要校准吗？** 对间隔本身弱一些，但用 RM 筛 pair、设置信度阈值时仍然要。低校准的 RM 会系统丢掉某一侧样本，造成覆盖偏差。绝对分一旦进门控，校准就不能省。
+- **Accuracy 很高、ECE 很差说明什么？** 序对、概率不可用。适合排序展示，不适合阈值和 RL。优先报 Brier / log loss 和可靠性图，并在当前策略样本上重测。
+- **Temperature scaling 够不够？** 只修验证分布上的全局过自信，修不了切片失效，也修不了与长度共线的偏差。它是后处理，不是 RM 训好了。校准集必须独立。
+- **如何验收一个可用于 RL 的 RM？** 静态 pairwise acc + 分桶校准 + 当前策略样本上的人评相关 + 对抗/长度切片。缺后两项，不要把 RM 当奖励函数。proxy 涨、人评不动就要停。排序高不能代替校准，这是这题的陷阱。分数进决策环就要看尺度。

@@ -5,23 +5,68 @@ order: 19
 level: S
 title: DAPO 四个关键修改分别解决什么？
 quick: >-
-  Clip-Higher 增强正向 exploration；Dynamic Sampling 过滤全对/全错无效 groups；Token-level PG
-  改变长短 response 的权重；Overlong Reward Shaping 缓解硬截断带来的不连续噪声。
+  Clip-Higher 用不对称 $\varepsilon_{\mathrm{high}}\gt\varepsilon_{\mathrm{low}}$ 给稀有正 token 上升空间；Dynamic Sampling
+  丢掉全对/全错组；Token-level PG 让每个 token 等权，而不是每条回复等权；Overlong shaping 用软惩罚代替截断瞬间把奖励打零。
 tags:
   - DAPO
   - GRPO
+  - Clip-Higher
 realInterview: false
 status: published
-format: legacy-html
+format: markdown
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+updatedAt: 2026-08-20
 sources:
-  - title: ↗ DAPO
-    url: 'https://arxiv.org/abs/2503.14476'
-    type: legacy-reference
+  - title: DAPO — Decoupled Clip and Dynamic sAmpling Policy Optimization
+    url: https://arxiv.org/abs/2503.14476
+    type: primary
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>Clip-Higher 增强正向 exploration；Dynamic Sampling 过滤全对/全错无效 groups；Token-level PG 改变长短 response 的权重；Overlong Reward Shaping 缓解硬截断带来的不连续噪声。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><p><b>1. Clip-Higher：</b>使用 asymmetric clip，让极低概率但高 advantage 的 token 有更大的上升空间，避免 rare good exploration 刚出现就被上界限制。</p><p><b>2. Dynamic Sampling：</b>生成后过滤 accuracy=0 或 1 的 group，减少 zero-variance batch 对 compute 的浪费。注意这是 current-policy dependent 的动态过滤，不是永久删除 prompt。</p><p><b>3. Token-level Policy Gradient：</b>把 loss reduction 更靠近“每 token 等权”，避免每条 response 固定总权重导致长序列单 token 权重变小。</p><p><b>4. Overlong Reward Shaping：</b>如果长度稍超 max 就把 reward 从 1 突然置 0，会制造巨大不连续。用更平滑的 overlong handling 可以减少 truncation noise。</p><p>DAPO 的启示是：long-CoT RL 的性能不仅取决于“主算法名字”，还由 clipping、data filtering、loss reduction、length handling 这些训练细节共同决定。</p></div>
-          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>Dynamic Sampling 会不会导致 curriculum 偏差？</summary><div class="follow-answer"><p>会有风险。如果长期只保留当前可解题，可能忽略新 domain 或超难题。因此要配合 coverage quota，并周期性重新探测 0% bucket。</p></div></details><details class="followup"><summary>Clip-Higher 为什么和 entropy collapse 有关？</summary><div class="follow-answer"><p>如果 rare token 的正向概率提升很快被裁掉，policy 更容易锁定已有高概率模式；放宽正向上界能延长对新行为的放大空间。</p></div></details><details class="followup"><summary>Token-level loss 一定比 response-level 好吗？</summary><div class="follow-answer"><p>不一定，取决于目标。如果你关心每个 sequence 等权，response-level 也有合理性；关键是明确 length weighting。</p></div></details></div>
-          
-          <div class="sources"><div class="mini-title">原始材料</div><a href="https://arxiv.org/abs/2503.14476" target="_blank" rel="noopener noreferrer">↗ DAPO</a></div>
+
+不要把 DAPO 答成「又一个优势公式」或「把 KL 删掉的 GRPO」。它仍用组相对优势，改的是 **clip、有效样本、loss 归约、超长惩罚** 这四件工程失败。小红书真题卡 `xiaohongshu-dapo-vs-grpo` 问的是同一件事；本题把四个旋钮拆开，能白板写公式。
+
+## Clip-Higher：正向上界单独放宽
+
+PPO / GRPO 对称 clip 是 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$。$A\gt 0$ 且 $\rho\gt 1+\varepsilon$ 时该项梯度为 0：刚冒出来的低概率好 token 立刻被卡死，熵更容易塌，见 `data-entropy-collapse`。DAPO 把上下界拆开：
+
+$$
+\mathrm{clip}\big(\rho_t,\;1-\varepsilon_{\mathrm{low}},\;1+\varepsilon_{\mathrm{high}}\big),\qquad \varepsilon_{\mathrm{high}}\gt\varepsilon_{\mathrm{low}}.
+$$
+
+论文默认 $\varepsilon_{\mathrm{low}}=0.2$、$\varepsilon_{\mathrm{high}}=0.28$。负侧仍紧，防止坏 token 被大幅压低时步子失控；正侧松一点，让稀有正确推理还能涨。这和 CISPO 不同：CISPO clip 的是 detach 后的 IS 权重，越界 token 仍有 $\nabla\log\pi$，见 `pt-cispo`。DAPO 仍是 PPO 风格的 surrogate clip，只是区间不对称。
+
+$\varepsilon_{\mathrm{high}}$ 过大 $\approx$ 没 clip，格式会被高 $A$ 样本冲掉。盯 clip fraction、熵和 holdout 格式，不要只看训练 reward。
+
+## Dynamic Sampling：丢掉零方差组
+
+约束写成
+
+$$
+0 \lt \bigl|\{o_i:\ \mathrm{is\_equivalent}(a,o_i)\}\bigr| \lt G.
+$$
+
+全对或全错时组内 $\hat A=0$，这步白算，见 `byte-grpo-all-same-zero-adv`。过滤发生在 **当前策略** 上：同一道题以后可能又变得可分，所以不是永久删题。实现上不够有效组就继续采，凑满 mini-batch 再更新。
+
+副作用是隐性 curriculum：长期只留当前能解的题，超难桶再也进不了梯度。要配覆盖配额，周期性把全错桶再探回来。过滤后有效 batch 过小，更新频率会崩——先加 $G$ 或降温难度，而不是加学习率。
+
+## Token-level PG：每 token 等权
+
+Vanilla GRPO 常先对每条回复做 $(1/|o_i|)\sum_t$，再对组平均：每条序列总权重相同，长回复里单个 token 被摊薄。长而差的胡话惩罚不够，长度和熵会「不健康地」涨。DAPO 改成全局 token 平均：
+
+$$
+\mathcal{J}_{\mathrm{DAPO}}=\mathbb{E}\Bigg[\frac{1}{\sum_i|o_i|}\sum_{i,t}\min\big(\rho_{i,t}\hat A_{i,t},\;\mathrm{clip}(\rho_{i,t})\hat A_{i,t}\big)\Bigg].
+$$
+
+长序列对梯度的贡献按 token 数涨。这和 Dr.GRPO 讨论的 length weighting 是同一轴，见 `pt-drgrpo`：没有脱离目标的「绝对正确」，只是你要序列等权还是 token 等权。slime / veRL 的 `loss_agg_mode`、`--calculate-per-token-loss` 就是这个开关。
+
+## Overlong shaping：别让截断制造假标签
+
+硬规则「超 `max_tokens` 就把 $r$ 从 1 打成 0 / $-1$」会惩罚一条推理正确、只是写长了的轨迹，模型分不清「答错」和「写超了」。DAPO 先试过对截断样本 mask 掉 loss（Overlong Filtering），再用软缓存：期望长度 $L_{\mathrm{max}}$（论文 16k）外再留 $L_{\mathrm{cache}}$（4k），在 $[L_{\mathrm{max}},L_{\mathrm{max}}+L_{\mathrm{cache}}]$ 上线性加惩罚，超过缓存再给满罚。奖励连续，长度 hack 和「好推理被截断」可以分开看。
+
+这和 `data-length-hacking`、`pt-reasoning-token-cost-frontier` 同一纪律：长度必须进评测，不能只看 raw reward。
+
+## 追问
+
+- **和「去掉 KL」是一回事吗？** 不是。高德 / 小红书去 KL 是另一条取舍，见 `gaode-dapo-no-kl`。DAPO 论文可以弱化显式 $\beta\mathrm{KL}$，靠 clip-higher 和动态采样管步长，但四个修改本身不定义「无 KL」。
+- **Clip-Higher 和熵崩？** 稀有好 token 的 $\rho$ 很快顶到 $1+\varepsilon$，正向梯度没了，策略锁进已有高概率模式。放宽上界是延长探索窗口，不是保证熵不掉。
+- **动态采样会不会变慢？** 会多采一些全错组，但同步 RL 的墙钟常被最长样本主导；论文观察到收敛步数下降，总时间不一定更差。监控有效组比例，不要只报采样条数。
+- **Token-level 一定更好？** 不一定。你要每道题等权就用序列平均；要惩罚长胡话、让关键长链里的 token 够响，用 token 平均。先说目标再选归约。

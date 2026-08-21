@@ -1,0 +1,57 @@
+---
+id: company-deepseek
+section: companies
+order: 17
+level: A
+title: DeepSeek：25/26 算法岗应重点准备什么？
+quick: >-
+  深挖 MLA/MoE/MTP 与 DeepSeekMath→R1 的 RLVR 主线：GRPO、规则奖励、长链推理；手撕
+  MHA/DPO 推导与推理系统（PagedAttention、投机解码）。以论文与可复现实验为准，慎用二手“笔试完整答案”帖。
+tags:
+  - DeepSeek
+  - 真题导航
+  - 2025-2026
+realInterview: false
+status: published
+format: markdown
+updatedAt: 2026-08-19
+sources:
+  - title: DeepSeek-R1
+    url: https://arxiv.org/abs/2501.12948
+    type: primary
+  - title: DeepSeekMath (GRPO)
+    url: https://arxiv.org/abs/2402.03300
+    type: primary
+  - title: DeepSeek-V3
+    url: https://arxiv.org/abs/2412.19437
+    type: primary
+---
+
+DeepSeek 向面试很少只问框架名。陷阱是背「MLA / MoE / R1」口号，却对不上 V3 原文里 KV 怎么压、无辅助均衡靠什么、R1 为何先规则奖励再谈 RM。公开「含完整答案」类帖按练习准备，不标真题；数字与机制以 R1 / V3 / DeepSeekMath 原文为准。
+
+## 准备主线
+
+1. **架构**：MLA 如何把 KV 压到 latent（`arch-mla`）；MoE 无辅助均衡与 expert bias（`arch-moe-noaux`）；EP / all-to-all（`sys-expert-parallel`）；MTP 多 token 预测（`arch-mtp`）；与 Dense 的训练差异（`arch-moe`）。
+2. **后训练**：为何 GRPO 而不是 PPO critic（`pt-grpo`、`fund-pg-ppo-grpo-index`）；规则奖励 vs RM、reward hacking；R1 阶段目标。手撕 DPO 推导见 `code-dpo` / `pt-dpo-derive`。
+3. **系统与手撕**：推理显存与 PagedAttention（`sys-pagedattention`）、连续 batch、投机解码（`sys-specdecode`）。手写完整 MHA（形状与 mask）见 `deepseek-mha-handwrite`。
+
+把 Post-Training / Architecture / Systems 三章按这三条串起来，不要按论文发布时间背摘要。
+
+## 本手册练习卡
+
+点击下面每条即可跳到对应题。
+
+- `deepseek-mha-handwrite`：手写完整 Multi-Head Attention（含形状与 Mask）
+- `arch-mla`：MLA 如何压 KV
+- `arch-moe-noaux`：MoE 无辅助负载均衡 / expert bias
+- `arch-mtp`：MTP
+- `sys-expert-parallel`：Expert Parallel 与 all-to-all
+- `pt-grpo`：GRPO 目标与组内优势
+- `sys-pagedattention` / `sys-specdecode`：推理显存与投机解码
+- `code-dpo`：DPO 手撕
+
+## 追问
+
+- **MLA 和 GQA 差在哪？** GQA 少 KV 头；MLA 把 KV 压到低维 latent，cache 按 latent 存。不要说成「就是 GQA」。
+- **为什么可以弱化辅助均衡损失？** 用 expert bias 等可学习偏置调路由，见 `arch-moe-noaux`，对照 V3。
+- **R1 为什么先规则奖励？** 可验证域上 RM 噪声和 hacking 成本更高；规则可复现。RM 只补规则盖不住的偏好。以论文为准，不背二手完整答案帖。

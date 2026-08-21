@@ -13,10 +13,48 @@ tags:
   - Inference
 realInterview: false
 status: published
-format: legacy-html
+format: markdown
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
-sources: []
+updatedAt: 2026-08-19
+sources:
+  - title: GPTQ
+    url: https://arxiv.org/abs/2210.17323
+    type: primary
+  - title: AWQ
+    url: https://arxiv.org/abs/2306.00978
+    type: primary
+  - title: SmoothQuant
+    url: https://arxiv.org/abs/2211.10438
+    type: primary
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>GPTQ 是典型 post-training weight-only 二阶近似量化；AWQ activation-aware 地保护/缩放重要权重通道；SmoothQuant 把 activation outlier difficulty 平滑转移到 weights，常用于 W8A8；QAT 在训练中显式模拟量化误差。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><div class="table-wrap"><table><thead><tr><th>方法</th><th>典型类别</th><th>核心</th></tr></thead><tbody><tr><td>GPTQ</td><td>PTQ weight-only</td><td>基于近似 Hessian/逐层重构最小化量化误差</td></tr><tr><td>AWQ</td><td>PTQ weight-only</td><td>用 activation 统计识别重要权重/通道并缩放</td></tr><tr><td>SmoothQuant</td><td>PTQ W8A8</td><td>把 activation outliers 平滑迁移到 weight scale</td></tr><tr><td>QAT</td><td>训练中量化</td><td>forward 模拟 quantization，让权重适应误差</td></tr></tbody></table></div><p>量化不一定提升吞吐：如果硬件 kernel 不支持、dequant overhead 大、模型原本不是 memory-bound、batch/shape 不友好，bit-width 降了也可能不快。</p></div>
+
+陷阱是背四个缩写却分不清「只量化权」还是「权+激活」，以及以为 bit 降了一定更快。量化先问：PTQ 还是 QAT、W-only 还是 W8A8、误差补在权上还是迁到激活上。吞吐还取决于 kernel、dequant 开销和模型是否 memory-bound。硬件不吃这个 shape，INT4 也可能更慢。
+
+## 四条方法
+
+| 方法 | 典型类别 | 核心 |
+| --- | --- | --- |
+| GPTQ | PTQ weight-only | 近似 Hessian，逐层重构，最小化量化误差 |
+| AWQ | PTQ weight-only | 用 activation 统计找重要通道并缩放保护 |
+| SmoothQuant | PTQ W8A8 | 把 activation outlier 平滑迁到 weight scale |
+| QAT | 训练中量化 | forward 模拟 quant，让权适应误差 |
+
+GPTQ / AWQ 常用于 INT4 权、激活仍 16 位，省的是权带宽。SmoothQuant 针对 W8A8：激活 outlier 让 INT8 难编，把难度乘到权上，两边都变得可量化。QAT 贵，但要上低 bit 或敏感模型时，PTQ 不够再上。
+
+## 何时更快、何时只是更小
+
+权重量化在 decode（memory-bound、反复读权）上收益大；prefill 大 GEMM 已 compute-bound，降 bit 不一定涨速。没有对应 Tensor Core / INT kernel，就要 dequant 回 BF16 再算，等于多一次读写。batch / 头数不友好时同样。面试说「先看是不是读权瓶颈，再看有没有 kernel」。模型本来就小、batch 已经很大时，量化常常只缩小磁盘，不缩短 TPOT。
+
+KV 量化是另一条线（存 cache 不是存权），不要和 GPTQ 混，见 `sys-precision`、`sys-pagedattention`。
+
+## 和训练精度的边界
+
+训练用 BF16/FP8 是为了稳定收敛；推理量化是在已收敛权上压部署成本。QAT 是中间地带：训练时看见量化噪声。RL rollout 若对采样用 FP8 / INT4，训练图仍 BF16，必须重算 logp，见 `slime-sglang-native`。
+
+## 追问
+
+- **AWQ 和 GPTQ 谁更准？** 取决于模型和校准数据。AWQ 强调保护激活敏感通道；GPTQ 强调逐层二阶重构。不要背「谁绝对更好」。
+- **SmoothQuant 为什么能做 W8A8？** 激活 outlier 被 scale 挪到权上，两边动态范围都收敛到 INT8 可表示区间。
+- **QAT 一定优于 PTQ？** 不一定。数据少、训练不稳时 QAT 更差；先 PTQ，精度不够再 QAT。
+- **量化后 perplexity 差不多就一定能上线吗？** 不够。还要看长尾任务、安全拒绝和 decode 吞吐。PPL 对部署误差不敏感。
+- **W4A16 和 W8A8 怎么选？** 只缺权带宽、激活还好：W4A16（GPTQ/AWQ）。激活也有 outlier、硬件吃 INT8 GEMM：W8A8 + SmoothQuant。先看瓶颈再选配方。

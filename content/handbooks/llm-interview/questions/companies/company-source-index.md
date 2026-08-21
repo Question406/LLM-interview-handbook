@@ -1,7 +1,7 @@
 ---
 id: company-source-index
 section: companies
-order: 8
+order: 20
 level: A
 title: 真实面经与核心原论文：建议怎么用这些链接复习？
 quick: 先用真实面经确认“会怎么问”，再用原论文补机制和公式，最后自己做 3–5 层追问树。不要从二手总结反向背整篇论文。

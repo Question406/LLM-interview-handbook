@@ -10,9 +10,9 @@ tags:
   - Memory
 realInterview: true
 status: published
-format: legacy-html
+format: markdown
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+updatedAt: 2026-08-19
 sources:
   - title: ↗ 淘天 Agent 社招一面
     url: 'https://www.nowcoder.com/feed/main/detail/90afe4cd751f4bd38b1e48bcec35263f'
@@ -21,13 +21,26 @@ sources:
     url: 'https://www.nowcoder.com/discuss/879393838081597440'
     type: legacy-reference
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>分短/长期：短期窗口+摘要；长期结构化写入要带时间戳/来源/置信度。冲突时按时间、权威来源、用户显式更正优先，并支持遗忘与审计。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><p>可落地策略：</p>
-<ul>
-<li>写入前做冲突检测（同实体不同值）；</li>
-<li>保留 provenance：谁说的、何时、哪次工具结果；</li>
-<li>用户更正 &gt; 工具权威数据 &gt; 模型推断；</li>
-<li>定期衰减低置信记忆，防记忆污染。</li>
-</ul>
-<p>闪购等面经还会问长周期对话的分层压缩：近详远略 + 关键事件入库检索。</p></div>
-          <div class="sources"><div class="mini-title">原始材料</div><a href="https://www.nowcoder.com/feed/main/detail/90afe4cd751f4bd38b1e48bcec35263f" target="_blank" rel="noopener noreferrer">↗ 淘天 Agent 社招一面</a><a href="https://www.nowcoder.com/discuss/879393838081597440" target="_blank" rel="noopener noreferrer">↗ 淘宝闪购 Agent 算法一面</a></div>
+
+陷阱是无脑 append：两句矛盾的话一起写进向量库，让模型现场猜。记忆要分短 / 长期。短期是窗口加摘要；长期结构化写入必须带时间戳、来源、置信度。新旧冲突按时间、权威来源、用户显式更正取舍，并支持遗忘与审计。Skill / Memory / RAG 的边界见 `ali-skill-memory-rag`，证据检索不要和偏好记忆混库，见 `ali-rag-eval`。
+
+## 短长期必须分开，写入要带 provenance
+
+短期记忆服务本轮：最近对话、未填槽、当前订单 id。窗口满了做分层压缩——近详远略，关键事件入库检索，而不是全文拼接。长期记忆只收**跨会话仍成立**的结构化事实：默认地址、忌口、履约偏好。写入前必须能做同实体检测；没有实体键就不要进长期库。每条留下 provenance：谁说的、何时、哪次工具结果、置信度。闪购面经常问长周期对话：冷启动靠检索关键事件，不是把三个月聊天塞进 context。
+
+## 冲突取舍：用户更正优先
+
+检出「同实体、不同值」再写，不要静默并存。优先级建议：用户显式更正 $\gt$ 工具权威数据 $\gt$ 模型推断。上周记忆「送公司，地址 A」，今天用户说「以后都送回家，地址 B」：覆盖 A，留下 supersede 链（用户口述、时间、会话 id）。会员地址与口述冲突，仍以用户更正为准，但回复里复述一遍防听错。模型推断「可能喜欢辣」只能低置信，不能写成高置信长期偏好。
+
+两条地址一起检索回来、模型随机用旧的，是最常见事故。解决办法是实体键 + 单一当前值 + 历史版本，而不是让生成器做仲裁。时间新不自动赢：系统政策变更可以否掉过期的用户口述（「以前能七天无理由，现在类目不行」），但要在回复里说清依据。
+
+## 什么时候必须忘记
+
+过期事实、被 supersede 的旧值、低置信推断、以及 retention 不允许留的敏感信息（证件号、精确定位）都要忘。定期衰减低置信记忆，防记忆污染。忘记是产品能力：用户说「别再记我家地址」必须可执行、可审计，而不能只从 prompt 里删一句。
+
+## 追问
+
+- **向量检索能不能当冲突检测？** 不能单独靠。相似文本不等于同一实体，要用显式键（user_id + slot）。
+- **工具数据和用户口述谁大？** 履约事实可看工具；偏好与地址以用户更正为准，并复述确认。
+- **摘要会不会丢掉槽位？** 订单号、地址等不可压缩字段结构化留下，见 `ali-prompt-optimize`。
+- **如何验收记忆？** 测「更正后下一会话是否用新值」「旧值是否不再被检索到」，不要只看写入条数。

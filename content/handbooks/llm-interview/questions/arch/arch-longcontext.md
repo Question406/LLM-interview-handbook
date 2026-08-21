@@ -12,10 +12,44 @@ tags:
   - RoPE
 realInterview: false
 status: published
-format: legacy-html
-provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
-sources: []
+format: markdown
+updatedAt: 2026-08-19
+sources:
+  - title: Extending Context Window of Large Language Models via Positional Interpolation
+    url: https://arxiv.org/abs/2306.15595
+    type: primary
+  - title: YaRN
+    url: https://arxiv.org/abs/2309.00071
+    type: primary
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>它们都在调整 RoPE 长位置的 position/frequency 映射：PI 压缩位置到训练区间，NTK-aware 方法更细地缩放频率，YaRN 对不同频率与温度做更平滑的扩展。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><p>Position Interpolation 最直接：把长 context 的 position index 按比例缩回训练时范围，减少完全 OOD 的相位，但会压缩近距离分辨率。</p><p>NTK-aware scaling 不是所有频率统一缩放，而是希望更合理保留不同尺度的相对位置行为；YaRN 进一步在频率区间上做分段/插值，并考虑 attention temperature。</p><p>面试重点通常不是背具体公式，而是能解释：<b>为什么简单改 max_position_embeddings 不够，以及这些方法都在重新定义长位置下的旋转频率。</b></p></div>
+
+简单把 `max_position_embeddings` 改大不够：RoPE 在训练时只见过 $[0,L)$ 的位置，直接把 index 接到 $t\gt L$，旋转角进入从未见过的相位，注意力分数会崩。Position Interpolation、NTK-aware scaling、YaRN 都在 **重新定义长位置下的频率**，让外推时的旋转仍落在模型见过的动态范围附近。面试重点通常不是背公式，而是能解释：为什么改配置项无效，以及三种方法分别牺牲了什么。PI 把长位置压缩进训练区间，近处分辨率下降；NTK-aware 按频率区别缩放，尽量保住高频局部信息；YaRN 分段更平滑并调节注意力温度。它们都在改 RoPE 的 $t\theta_i$ 映射，不是把窗口数字改大就完事。长依赖任务和 KV 成本仍要单独评。
+
+## 为什么直接外推 RoPE 会坏
+
+RoPE 把位置 $t$ 编码成一对对频率 $\theta_i$ 上的旋转。低频分量管远距离相对位置，高频管近邻 token 的精细相位。训练长度 $L$ 内，$t\theta_i$ 有界；推理时 $t'=8L$ 会让高频转很多圈，相对位置编码跑出训练分布。于是长距离依赖先坏，严重时短距离注意力也不稳。这是位置编码的 OOD，不是「窗口数字写小了」。
+
+因此所有正经的长度扩展，都是在改 $t\mapsto t\cdot\theta_i$ 这条映射，而不是只改 config。是否还要少量长文本微调，决定能扩多狠；纯测试时外推更脆。RoPE 的频率是几何级数：越靠后的维度 $\theta_i$ 越小、波长越长。长上下文外推时，短波长维度先转出训练见过的圈数，这就是「高频更怕直接外推」。低频维度则还没转到训练范围之外，却会在 PI 的统一压缩里被不必要地压扁。后面两种方法都在利用这张频谱图，而不是把位置当成一个标量 index 来处理。把 `max_position_embeddings` 改大只增加可写的下标，频谱仍按旧 $\theta_i$ 转，所以不够。
+
+## PI：把长 index 压回训练区间
+
+Position Interpolation 最直接：推理位置 $t$ 映射为 $t\cdot L/L'$，把 $[0,L')$ 压进 $[0,L)$。相位不再 OOD，原训练过的旋转角还能对上。代价是 **近距离分辨率被压缩**：本来差 1 个 token 的相位差，现在只有 $L/L'$。短程模式（局部语法、括号匹配）可能变钝，需要一点微调来适应新的「每步更小的旋转」。
+
+PI 的直觉好讲：所有频率统一按长度比缩放。它不管「高频其实更怕外推、低频更怕被压」这一层，所以在很大扩展倍数上往往不够用，这才有后续的按频率区别对待。微调可以部分找回近邻分辨率，因为网络能学会「现在每一步旋转更小」。纯零样本 PI 在中等倍数上常能续得动 perplexity，但长依赖任务（找远距离论据、全书问答）仍可能掉。面试不要只说「PI 就是压缩位置」：要补上牺牲了局部分辨率、以及它是所有 $\theta_i$ 同一比例这一点，才能自然接到 NTK-aware。
+
+## NTK-aware 与 YaRN：不要所有频率一视同仁
+
+NTK-aware scaling 的观察是：网络对高频更敏感于外推失真，对低频更敏感于被插值压缩。于是不按统一比例缩放所有 $\theta_i$，而是让高频少改（保住邻域分辨率）、低频多改（把超长距离仍然编进可表示的相位）。它比 PI 更细，但仍是一条全局规则，极端倍数上会在某些频段留下突变。
+
+YaRN 进一步按频率分段：一部分维度接近 PI，一部分接近 NTK-aware，中间插值，并引入 attention temperature，缓解扩展后注意力过尖或过平。目标是在「近处仍然分得清、远处仍然有相对位置」之间做更平滑的折中，并用比全量长上下文预训练少得多的 token 做适配。细节公式以论文为准，现场能画出「低频 / 高频不同策略 + 可能的温度」就够。
+
+三者都不是免费的无限窗口：KV cache、延迟、以及「中间位置利用率差」仍然在。长度扩展解决的是位置编码 OOD，不自动解决 Lost-in-the-Middle。评测应看真实长依赖任务，而不是只看 perplexity 能否接着往下算。YaRN 论文把 PI 和 NTK-aware 放在同一框架里比较，现场可以记成「PI 一刀切、NTK 按频、YaRN 分段再加温度」。不要背具体超参表。若已经用了 ALiBi 等非 RoPE 方案，这三套招不适用，那是另一条位置编码线。RoPE 模型上，面试官要听的是频率映射被怎么改，以及近处 / 远处各自牺牲了什么。
+
+收束：直接改窗口配置不够，因为相位会 OOD。PI 统一压缩、牺牲近处分辨率；NTK-aware 按频率区别对待；YaRN 分段更平滑并考虑温度。它们解决位置编码，不解决 KV 成本和中间位置利用率。评测看长依赖任务，不要只看能否继续算 perplexity。RoPE 在训练长度外会让旋转角进入未见过的相位，只改窗口配置不够。PI 把长 index 按比例压回训练区间，近处分辨率下降；NTK-aware 让高频少改、低频多改，以保住局部分辨率；YaRN 按频段分段插值并调节 attention 温度，常用少量长数据适配。它们改的是频率映射，不解决 KV 成本和中间位置利用率。评测应看真实长依赖，而不是只看续写困惑度。三种方法都在改 RoPE 频率映射，不是改窗口数字。
+
+## 追问
+
+- **只改 `max_position_embeddings` 为什么不行？** 那只放大可索引范围，不改变 RoPE 频率，长位置的相位仍是训练时没见过的。必须改 $t\theta_i$ 映射。改配置不等于做了长度扩展。
+- **PI 牺牲了什么？** 把长 index 压回去，近距离相位差变小，局部分辨率下降。所有频率同一比例，大倍数上通常不够。
+- **NTK-aware 相对 PI 改了什么？** 按频率区别缩放，尽量保住高频局部信息，把扩展主要交给低频。它仍是一条全局规则，极端倍数上可能有频段突变。
+- **YaRN 还多了什么？** 分段 / 插值更平滑，并考虑 attention 温度；常用少量长数据适配。它仍是改 RoPE 映射，不是换一套注意力算法。ALiBi 等非 RoPE 方案不走这三招。先讲为什么改配置不够，再比较三种频率策略。位置编码 OOD 和窗口数字是两件事。

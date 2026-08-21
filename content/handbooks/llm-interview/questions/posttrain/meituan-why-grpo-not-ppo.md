@@ -1,0 +1,56 @@
+---
+id: meituan-why-grpo-not-ppo
+section: posttrain
+order: 142
+level: A
+title: 美团北斗：项目里为什么选 GRPO 而不是 PPO 或 DPO？
+quick: >-
+  有可验证奖励、希望省 critic 并做同题多采样时选 GRPO；需要价值估计或复杂在线权衡才上 PPO；只有静态偏好对、不想 rollout 时用
+  DPO。要能说清它解决的是显存 / 基线问题，不是「更新所以更好」。
+tags:
+  - Meituan
+  - Beidou
+  - GRPO
+realInterview: true
+status: published
+format: markdown
+updatedAt: 2026-08-19
+sources:
+  - title: 美团北斗大模型面试
+    url: https://www.nowcoder.com/discuss/914814345970782208
+    type: candidate-first-hand
+---
+
+## 真题记录
+
+- 公司：美团
+- 团队 / 岗位：北斗；大模型
+- 届别 / 流程：原帖未披露
+- 面试时间：原帖未披露
+- 来源类型与可信度：牛客候选人原帖，B
+- 原始措辞：**“为什么在项目中选择 GRPO 而不是 PPO 或 DPO?它解决了什么问题?”**
+
+这题要先对齐项目约束，再谈算法名。面试官听的是「你省了什么、补了什么、会在哪死」，不是「GRPO 更新所以更好」。北斗类项目常见约束是：奖励来自字段校验、代码测试或规则引擎，同一 prompt 能采出对错混合组，显存不够再挂一张和 actor 同规模的 critic。把这三条说清，选型就落在 GRPO 上。它解决的是显存和 baseline，不是提高理论最优。必须主动讲失败：空组零梯度、reward hacking、比 PPO 更依赖 verifier。秋招二面还会追「一开始 Reward 大幅震荡」，要和震荡排查卡一起准备，不要先甩锅给算法名。
+
+## 相对 PPO：省 critic，用组均值当 baseline
+
+PPO 要训 value / critic，和 actor 同步、占显存，长序列时 GAE 还要处理逐步信用分配。若奖励是可验证的终点分（校验通过、单测绿、规则引擎打分），同题多采样就能构成对比：组均值 $\bar r$ 当 baseline，优势 $\hat A_i=(r_i-\bar r)/(\sigma_r+\varepsilon)$。这直接省掉 critic 的显存和不同步，是相对 PPO 的主因。没有 learned value，不代表没有信任域：clip 和 KL 仍要管一步更新幅度和相对参考的漂移。
+
+不是 PPO「过时」。需要逐步价值估计、奖励稀疏且不能成组、或已有稳定 RM+critic 基建时，PPO 仍更合适。开放域只有连续 RM、组内分数挤成一团时，组均值 baseline 噪声大，critic 可能更稳。把「我们项目有 checker、要省显存、能成组采样」讲完，再对比 PPO，比背论文贡献列表更像做过项目。
+
+## 相对 DPO：在线探索，不困在静态对
+
+DPO 吃离线偏好对 $(y_w,y_l)$，不 rollout，实现轻、迭代快。字段抽取或推理若示范覆盖不全，DPO 只能在已有 chosen/rejected 里拉差距，解决不了「模型自己采到更高奖励路径」。GRPO 用 online 采样补这块：verifier 给分，组内相对优势推动探索，示范里没写过的正确写法也可以被强化。
+
+没有成对标注、也不想维护 rollout 与 verifier 时，DPO 仍是正确选项。把 DPO 说成「弱于 GRPO」会失分——两者监督对象不同：一个吃比较，一个吃可验证标量。静态偏好对若已经覆盖产品要的权衡（语气、安全、长度），上 DPO 比硬造 checker 更诚实。
+
+## 必须主动讲失败
+
+组内全对或全错时方差为零，优势全是 $0$，这步没有方向。难题上策略几乎采不到对的，会长期空转——要冷启动、降难度或动态采样，不是再降学习率。reward hacking（套格式骗校验、刷长度）比带 critic 的 PPO 更依赖 verifier 质量，因为没有价值函数帮你平滑噪声。秋招二面还会追「一开始 Reward 大幅震荡」：奖励尺度跳变、有效组比例低、KL 突然关掉，都会表现为震荡。排查顺序：有效组、reward 直方图、KL / 熵，再谈换算法。结论落到「它解决显存和 baseline，但把稳定性押在 verifier 和组的多样性上」。
+
+## 追问
+
+- **它到底解决了什么？** 显存和 baseline：用同题多样本代替 learned value，不是提高理论最优。省的是 critic 卡和同步，不是数据。
+- **组大小怎么选？** 太小全同组多、方差大；太大生成贵、样本相关。按有效组比例和难度 sweep，不要背一个魔法数。有效组太低时先改采样，再改 $G$。
+- **有 RM 还能用 GRPO 吗？** 能，但 RM 漂移会被组标准化放大。可验证 oracle 优先；连续分必须先校准和看长度偏置。
+- **一开始 reward 震荡？** 先查尺度、空组、KL，不要先换 PPO。能复现的震荡才是算法问题，更多是奖励和组统计问题。

@@ -12,15 +12,29 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-17
+updatedAt: 2026-08-19
 sources:
   - title: MCP Authorization Specification
     url: https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization
     type: primary
 ---
 
-Resource Indicator 将 access token 绑定到目标 resource server；canonical server URI 让 client、authorization server 和 MCP server 对“这个 token 是给谁的”有同一标识。MCP server 必须验证 issuer、签名、expiry、audience/resource 和 scope。
+没有 Resource Indicator，access token 就变成「谁拿到都能用」的万能钥匙。MCP client、authorization server、MCP server 必须对「这个 token 是签给哪一个 resource」有同一 canonical URI。面试官要听 audience 绑定，以及为什么 passthrough 会变成 confused deputy，而不是只背 PKCE。PKCE、HTTPS、refresh rotation 是基础，不替代 audience 校验。MCP Authorization 规范把 resource 当成一等公民，正是为了挡住跨服务滥用。
 
-token passthrough 会把一个本应只给 server A 的 bearer token 交给 server B，B 便可冒充用户访问 A 或扩展权限，形成 confused deputy。服务端不应把拿到的 token 当作通用凭据。
+## 为什么要 resource 与 canonical URI
 
-需要访问下游时，使用受控 token exchange / delegation：明确下游 audience、最小 scope、短有效期、审计链与用户同意。PKCE、HTTPS、refresh rotation 是基础，不替代 audience validation。
+授权和换 token 时 client 声明 `resource`（目标 MCP server 的规范 URI）。MCP server 校验 issuer、签名、expiry、audience / resource、scope；audience 不匹配必须拒绝。Canonical URI 避免 `localhost`、IP、带尾斜杠的别名让同一服务发出或接受错 token。Token 不是登录态饼干，不能在任意内部 HTTP 头里转发。resource 回答「能对谁做」，scope 回答「能做什么」；缺 audience 时 scope 再小也会被拿去打别的服务。日志记录 audience 校验结果，拒绝时不要把 token 原文打进日志。
+
+## Passthrough 与 confused deputy
+
+把用户给 server A 的 bearer 原样转给 server B，B 就能拿这张票去访问 A 或其它接受同一 token 的 API，deputy 被骗着扩大了权限。MCP server 更危险：它既像 API 网关又常被模型驱动。正确做法：server 只消费签给自己的 token；需要下游时，由可信 broker 做 token exchange / delegation，明确下游 audience、最小 scope、短有效期、审计链和用户同意。下游失败不得把上游 token 当 fallback。用户同意一次不能永久转发；下游 audience 变化等于新授权。发布检查应拒绝任何「把入站 token 写出进程」的代码路径。
+
+## 评测要记什么
+
+对抗用例：audience 为 A 的 token 打 B；server 把 Authorization 头转发给第三方；exchange 后 scope 被放大。记录：校验失败码、是否发生转发、下游 token 的 audience 与 TTL。可被刷的点：demo 用一个全局 PAT；微服务互相透传 `Authorization`；只测「能登录 MCP」。面试口径：token 面向具体 server；下游另换短票；passthrough 就是 confused deputy。代码门禁可以搜入站 `Authorization` 是否被写入出站请求。评测最小集：错 audience 拒绝、透传拦截、exchange 后 audience 与 TTL 符合预期。现场把 resource 和 scope 一句话说清，比讲 OAuth 流程细节更像安全设计。
+
+## 追问
+
+- **resource 和 scope 谁更关键？** 都要。scope 是能做什么，resource 是能对谁做；缺 audience 时 scope 再小也会被拿去打别的服务。
+- **用户同意一次能否永久转发？** 不能。下游 audience 变化等于新授权。
+- **和 elicitation 的关系？** 浏览器里拿到的凭证也必须是给该 server 的；否则钓鱼页会要一张过宽的 token。

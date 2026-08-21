@@ -13,16 +13,37 @@ tags:
   - Agent RL
 realInterview: false
 status: published
-format: legacy-html
+format: markdown
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+updatedAt: 2026-08-19
 sources:
   - title: ↗ MiniMax M2
     url: 'https://arxiv.org/abs/2605.26494'
     type: legacy-reference
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>重点理解 LLM policy 与 environment boundary、interleaved agent SFT trajectory、executable environment / artifact-aligned reward、long-horizon Agent RL 与训练-推理-Agent 解耦系统。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><p>MiniMax M2 系列适合用来回答“Agent RL 为什么不是 model.generate()+reward”这类题：rollout 需要 sandbox/browser/tools，trajectory 很长，policy/environment token ownership、state reset、reward 和 weight sync 都更复杂。</p><p>面试时可以把它和 reasoning GRPO 对照：单 response outcome RL 省 critic 的经验，不能机械迁移到 100-step Agent；长 horizon 下 action-level value/credit 可能重新重要。</p></div>
-          
-          
-          <div class="sources"><div class="mini-title">原始材料</div><a href="https://arxiv.org/abs/2605.26494" target="_blank" rel="noopener noreferrer">↗ MiniMax M2</a></div>
+
+MiniMax 方向的陷阱是把 Agent RL 讲成 `model.generate()` 加一个标量 reward。M2 一类材料强调：rollout 要进 sandbox / browser / tools，轨迹很长，**policy 与 environment 的 token 归属**、state reset、reward 与权重同步都比单 response GRPO 复杂。单轮 outcome RL 省 critic 的经验，不能机械迁到 100-step Agent；长 horizon 下 action-level credit 可能重新重要。公开真题还会问数据质量和参数量拆分，不要只用 Agent 名词填满时间。
+
+## 准备主线
+
+1. **边界**：哪些 token 属于 policy（思考、工具调用），哪些属于环境（observation、页面、编译器输出）。SFT 要对环境 token 做 loss mask，见 `pt-tool-mask`。
+2. **可执行奖励**：奖励对齐 artifact（测试通过、文件 diff、页面断言），而不是「看起来像完成」。评测拆 planning 与幻觉率，见 `minimax-agent-eval-planning-hallucination`。
+3. **数据与规模**：如何提高数据集质量、怎样用 GPT 辅助但不泄漏标准，见 `minimax-data-quality-gpt`；参数量在 embedding / attn / FFN / 头上怎么拆，见 `minimax-param-breakdown`、`code-sizing`。
+4. **系统解耦**：训练、推理、Agent runtime 的权重与工具版本如何对齐；长轨迹 reset 与部分回放。对照 `byte-agent-posttrain-data-stage` 的 SFT→RL 门禁。
+
+## 本手册真题卡
+
+点击下面每条即可跳到对应题。
+
+- `minimax-data-quality-gpt`：如何提高数据集质量、怎样用 GPT 辅助
+- `minimax-param-breakdown`：大模型参数量在各部分大概怎么拆
+- `minimax-agent-eval-planning-hallucination`：Planning 与幻觉率怎么评
+- `pt-tool-mask`：tool-response 为何要 mask loss
+- `byte-agent-posttrain-data-stage`：SFT / RL 数据与切换门禁
+- `code-sizing`：参数量与 KV 估算
+
+## 追问
+
+- **为什么单 response GRPO 迁不过去？** 组内一条轨迹 100 步，outcome 稀疏，全对/全错组更多；需要过程分或分阶段 reset。
+- **环境 token 进 loss 会怎样？** 模型学着复读观察，而不是决策；必须 mask。
+- **GPT 辅助数据的实验怎么做？** 先 verifier，再人抽检，报告 teacher 风格偏差。见质量卡，不要说「用 GPT 生成就行」。

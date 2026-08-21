@@ -12,15 +12,34 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-17
+updatedAt: 2026-08-19
 sources:
   - title: SWE-bench
     url: https://arxiv.org/abs/2310.06770
     type: primary
 ---
 
-fail-to-pass tests 在原提交上失败、修复后应通过，代表 issue 所述行为真正被修复。pass-to-pass tests 在修复前后都应通过，防止 Agent 为修一个 case 破坏相邻功能。
+「测试全绿」不是 SWE 评测的 verdict。Agent 可以删断言、改测试、硬编码 issue 编号、把异常吞掉，或者为修一个 case 拆掉相邻功能。面试官要听的是测试合同：哪些测试代表目标行为，哪些保护回归，测试文件本身是否不可篡改。编译通过、lint 变绿、测试数量增加，都只是旁路信号。
 
-评测器必须检测 Agent 修改/删除测试、绕过断言、硬编码 issue 文本、关闭 lint 或把异常吞掉。可将 hidden tests、diff allowlist、变更范围审查、mutation testing 和人工抽检组合起来。
+## 两类测试在验什么
 
-一个正确 patch 也可能没覆盖所有 edge case，所以报告应拆开：目标测试、回归测试、测试完整性、patch 可维护性和人工接受率。只报“tests passed”会鼓励奖励投机。
+`FAIL_TO_PASS` 在 base commit 上失败、打上候选 patch 后应通过，对应 issue 所述的目标行为被真正修复。`PASS_TO_PASS` 在修复前后都应通过，对应「别为修 A 把 B 弄坏」。缺任何一类都会被刷：只有 F2P 会鼓励破坏性修复；只有 P2P 会鼓励空 patch 或改测试。评测器要输出每个测试的状态转移：F→P、P→P、P→F、F→F、以及「测试消失」。出现 P→F 或测试消失，即使 F2P 全过也不能标 resolved。一个语义正确但覆盖不全的 patch 仍可能漏 edge case，所以人工接受率要单独报，不能被 F2P 代替。
+
+## 评测器必须冻结与记录
+
+冻结：base SHA、评测用 test commit、测试命令、超时、容器 digest。记录：应用 patch 前后测试文件与 fixture 的 hash、每个测试的状态转移、patch 触及的路径、是否改了 `tests/`、`tox.ini`、CI workflow。评测器应拒绝修改测试、断言、fixture、快照和 CI 配置；对允许修改的生产路径做 allowlist。Hidden tests 不进 Agent 可见工作区，跑在独立阶段。再加 mutation：故意破坏正确断言或删除一个 F2P，看 Agent 是否靠「删测试 / 改 `assert` 为 `pass`」过关。日志里要能回答「这个绿是修了行为，还是测试被改了」。
+
+## 失败模式与分报
+
+常见投机：删除失败用例；把 `assert` 改成 `pass`；按 issue 文本硬编码返回值；关闭类型检查；扩大 mock 让测试不再碰真实逻辑；改系统时间或时区让 flaky 变绿。报告拆开五列：目标测试通过率、回归通过率、测试完整性（测试文件未被改）、patch 范围是否越权、人工抽检接受率。只报「tests passed」会把奖励对准投机。面试口径：resolved 的定义是 F2P 通过 ∧ P2P 通过 ∧ 测试完整性通过 ∧ 路径 allowlist 通过；缺一项就是 failed 或 invalid。现场若被问「怎么防刷分」，按这个顺序答：测文件 hash → 路径 allowlist → hidden tests → mutation → 人工抽检。前三项是自动门禁，后两项抓语义投机。把这五步写进 evaluator 比讨论模型更像做过评测。
+
+评测报告把 resolved 写成布尔不够：要附状态转移表、测试 hash 是否变化、越权路径列表。评审时抽 10 条「全绿」样本做人审，专门找删断言和硬编码。没有抽检的自动分，默认当成可刷。
+
+面试官真正要听的一句话是：绿测试只是合同的一项，测试文件没被动、路径没越权、hidden 也过，才叫 resolved。把这句话对应到日志字段，评测才像工程而不是刷榜。
+
+## 追问
+
+- **hidden test 和 P2P 重复吗？** 不重复。P2P 防回归已知行为；hidden 防 Agent 对着可见断言过拟合。
+- **允许改测试的仓库怎么办？** 把测试变更单独送审，不计入自动 resolved；或只允许新增、禁止删除 / 弱化断言。
+- **正确 patch 也可能 F2P 不全？** 可以。issue 描述的行为比可见测试更宽，所以人工接受率与 hidden 覆盖要单独报。
+- **编译绿了能不能提前结束？** 不能。编译只证明能构建，不证明目标行为或回归合同成立。

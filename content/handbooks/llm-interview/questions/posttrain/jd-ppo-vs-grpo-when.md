@@ -1,0 +1,64 @@
+---
+id: jd-ppo-vs-grpo-when
+section: posttrain
+order: 128
+level: A
+title: 京东：什么时候用 PPO，什么时候用 GRPO？
+quick: >-
+  有可靠组采样 verifier、任务短、想省 critic 时优先 GRPO；需要价值估计、奖励稀疏 / 不可执行、或要对复杂 trade-off
+  做稳定在线控制时用 PPO。二者都依赖奖励质量，选型看信号形态和基建，不看谁更新。
+tags:
+  - JD
+  - PPO
+  - GRPO
+realInterview: true
+status: published
+format: markdown
+updatedAt: 2026-08-19
+sources:
+  - title: 京东大模型算法 实习面经
+    url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46
+    type: candidate-first-hand
+---
+
+## 真题记录
+
+- 公司：京东
+- 团队 / 岗位：大模型算法实习
+- 届别 / 流程：实习；轮次未披露
+- 面试时间：原帖未披露
+- 来源类型与可信度：牛客候选人原帖，B
+- 原始措辞：**“什么时候用PPO，什么时候用GRPO”**
+
+陷阱是用「GRPO 更新所以永远更好」作答。二者都是 clipped 重要性采样策略梯度，差在 **advantage 从哪来**，以及奖励能不能对同一输入自动打出一组可比较的分数。选型看信号形态和基建，不看论文年份。奖励质量差时换算法救不了 hacking。京东业务里既有可解析订单字段，也有客服话术权衡，正好适合用这套清单，而不是站队。
+
+## 1. GRPO：组均值代替 critic，适合可组比的短轨迹
+
+同一 prompt 采 $G$ 条 completion，
+
+$$
+\hat{A}_i=\frac{r_i-\mu}{\sigma+\epsilon}.
+$$
+
+组均值当 baseline，省一张与 actor 同规模的 critic，也省 critic 同步。适合数学、代码、可解析字段、带明确成功 oracle 的短轨迹：组内对错混合时信号干净。电商里「下单参数合法、库存查询成功、优惠券字段齐」这类可执行检查，天然能打出一组可比较的 $r$。
+
+失败条件必须主动讲：组内全对 / 全错则 $\hat{A}=0$，必须靠课程、加大 $G$ 或换任务池维持方差；轨迹很长、中间状态价值重要时，序列末一个标量无法做逐步信用分配；奖励不可自动组比（只能靠人看哪句更得体）时，组统计没有意义。$G$ 的显存和延迟是隐藏成本：省了 critic 卡，可能把预算花在 rollout 上。
+
+## 2. PPO：保留 $V_\psi$ / GAE，适合要逐步价值的在线控制
+
+PPO 用 critic 估计 $V^\pi(s)$，GAE 混合不同 horizon 的 TD residual 得到逐步 $\hat{A}_t$。适合奖励稠密但不可简单组比、轨迹很长、或要把成本、安全、偏好揉进同一个可学习价值的场景。它对「不能为每个 state 采一组 completion」的环境更自然，也更容易接经典 RLHF：RM 打分加 KL 锚。电商里同时权衡转化、客诉、合规话术、回复成本时，往往没有一个能对同句打出干净 0/1 组分数的 oracle。
+
+代价是 critic 几乎和 actor 一样大，会过拟合、会落后，长 CoT 上 $V(s)$ 难估。失败时：critic 落后 actor、奖励尺度漂、GAE 的 $\lambda$ 与稀疏 outcome 不匹配，震荡比 GRPO 更难调。没有可靠 RM 时硬上 PPO，只是把 hacking 从规则 checker 换到神经网络。稀疏到只在 EOS 才有分时，PPO 的逐步 bootstrap 也没有信息，这时 GRPO 的序列级 $A$ 反而更诚实。
+
+## 3. 选型清单和混合策略
+
+问三句话：奖励能否对同一输入自动打出可比较的一组分数？轨迹短不短、中间要不要估价值？有没有预算训 critic？是 / 短 / 无 → GRPO；否 / 长 / 有复杂权衡 → PPO。工具可验证可先 GRPO 冷启动正确率，再对开放话术接 PPO 或 DPO。不要在同一任务上同时吹「省 critic」和「逐步 GAE」——那是两套 advantage。
+
+两者都失败于 $r$ 可 hack。先把奖励和门禁做硬，再谈算法。DPO 放在「只有静态偏好对、不想 rollout」的格子里，替代不了需要探索的可验证轨迹。
+
+## 追问
+
+- **GRPO 是不是不要 KL？** 不是。它可以减弱显式 drift KL，但 clip 相对 $\pi_{\mathrm{old}}$ 仍在。
+- **没有组采样预算怎么办？** 倾向 PPO 或 DPO；不要假装 $G=2$ 的全同组在做 GRPO。
+- **电商 Agent 能不能全程 GRPO？** 工具层可以；话术和安全层通常还要偏好或 PPO。分层比「全公司统一一个算法」更像真实系统。
+- **critic 能不能做小？** 可以，但长文本价值估计偏差会更大，要在显存和偏差之间明说 trade-off，不要暗示一定稳。

@@ -5,7 +5,9 @@ export interface HandbookQuestion {
   level: QuestionLevel;
   sectionId: string;
   title: string;
+  titleHtml: string;
   quick: string;
+  quickHtml: string;
   tags: string[];
   isRealInterview: boolean;
   searchText: string;

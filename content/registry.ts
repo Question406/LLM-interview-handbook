@@ -1,14 +1,7 @@
 import generatedHandbooks from "./generated/registry.json";
 import type { Handbook } from "./types";
+import { sortHandbooks, validateHandbook } from "./validate";
 
-function validateHandbook(candidate: Handbook): Handbook {
-  const questionCount = candidate.sections.reduce((total, section) => total + section.questions.length, 0);
-
-  if (candidate.schemaVersion !== 1 || questionCount !== candidate.stats.questions) {
-    throw new Error(`Invalid handbook content: ${candidate.id}`);
-  }
-
-  return candidate;
-}
-
-export const handbooks: Handbook[] = (generatedHandbooks as Handbook[]).map(validateHandbook);
+export const handbooks: Handbook[] = sortHandbooks(
+  (generatedHandbooks as Handbook[]).map(validateHandbook),
+);

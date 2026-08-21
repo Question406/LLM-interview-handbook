@@ -13,9 +13,9 @@ tags:
   - Agent
 realInterview: false
 status: published
-format: legacy-html
+format: markdown
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+updatedAt: 2026-08-19
 sources:
   - title: ↗ Kimi K2
     url: 'https://arxiv.org/abs/2507.20534'
@@ -24,8 +24,30 @@ sources:
     url: 'https://arxiv.org/abs/2602.02276'
     type: legacy-reference
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>重点看 agentic data、long-context、tool use、orchestration、Agent Swarm / PARL 和 multi-agent credit assignment；不要只停在模型 benchmark。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><p>Kimi K2/K2.5 的 Agent 方向提供了很好的研究面试素材：什么时候并行 sub-agents 真有收益？orchestrator 与 workers 如何分 credit？冻结 workers 训练 orchestrator 会带来什么环境非平稳/能力上限？</p><p>同时 Moonshot 的长上下文背景使 Context Engineering 与“全塞 context vs retrieval/memory/skill”之间的 tradeoff 也很自然。</p></div>
-          
-          
-          <div class="sources"><div class="mini-title">原始材料</div><a href="https://arxiv.org/abs/2507.20534" target="_blank" rel="noopener noreferrer">↗ Kimi K2</a><a href="https://arxiv.org/abs/2602.02276" target="_blank" rel="noopener noreferrer">↗ Kimi K2.5</a></div>
+
+Kimi / Moonshot 方向的陷阱是只背榜单分数。K2 / K2.5 提供的面试素材是：**何时并行 sub-agent 真有收益**、orchestrator 与 workers 如何分 credit、冻结 workers 只训 orchestrator 会带来什么非平稳与能力上限。长上下文背景还会把「全塞 context vs retrieval / memory / skill」问成工程题，而不是「窗口越大越好」。桌面 Agent 面经另有权限、多窗状态、结果护栏，不要用 chatbot 故事套过去。
+
+## 准备主线
+
+1. **Agentic data**：轨迹要含工具失败、澄清和长 horizon，而不是只堆成功 demo。对照 `minimax-data-quality-gpt`、`byte-agent-posttrain-data-stage` 的阶段划分，讲清 SFT 覆盖格式、RL 覆盖可验证探索。
+2. **Long-context vs 检索**：全塞会贵且脏；检索 / memory / skill 各解决什么。相关工程见 `pdd-long-context-cheap`、`agent-mcp`。
+3. **编排与 credit**：并行 sub-agent 何时缩短墙钟、何时因汇总损失失败；冻结 worker 训 orchestrator 时环境非平稳。
+4. **桌面 / 本地 Agent**：本地文件权限、多窗状态、任务中心、多模态上下文、结果护栏。见下列 moonshot 卡。
+
+## 本手册真题卡
+
+点击下面每条即可跳到对应题。
+
+- `moonshot-desktop-local-file-permission`：本地文件权限怎么收
+- `moonshot-desktop-multiwindow-state`：多窗状态如何一致
+- `moonshot-desktop-task-center`：任务中心如何编排
+- `moonshot-desktop-multimodal-context`：多模态上下文怎么截
+- `moonshot-desktop-result-guardrails`：结果护栏
+- `agent-mcp`：MCP / 工具协议边界
+- `pdd-long-context-cheap`：长上下文如何做便宜
+
+## 追问
+
+- **并行 sub-agent 何时有收益？** 子任务可独立、汇总可验证时有；共享可变状态或信用难分时，串行更稳。
+- **冻结 worker 训 orchestrator 的风险？** worker 能力成上限，orchestrator 学到的是过时环境，上线一换 worker 就 OOD。
+- **为什么不能只看 benchmark？** 榜单不暴露权限、状态和护栏失败。按 id 准备对照实验，不背 Kimi 营销句。

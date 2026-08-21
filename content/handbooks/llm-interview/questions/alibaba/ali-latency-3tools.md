@@ -11,22 +11,34 @@ tags:
   - 性能
 realInterview: true
 status: published
-format: legacy-html
+format: markdown
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+updatedAt: 2026-08-19
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
     type: legacy-reference
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>并行可并行的工具、缓存高频路径、意图分流到轻量模板、缩小 prompt/工具集、投机/小模型草稿、超时降级与限流。先量测再改。</p></div>
-          <div class="full-answer"><div class="mini-title">完整答案</div><p>建议按依赖图优化：</p>
-<ol>
-<li>画清 3 个工具的串并行依赖，能并行就并行；</li>
-<li>高频 query 走缓存或固定 workflow，绕开多轮 LLM；</li>
-<li>首包分类用小模型，复杂再上大模型；</li>
-<li>压缩上下文与 tool schema，减少 prefill；</li>
-<li>设 SLA：超时跳过非关键工具或降级 FAQ；</li>
-<li>看 p95/p99、工具 RT、LLM RT、排队，避免盲目换更大模型。</li>
-</ol></div>
-          <div class="sources"><div class="mini-title">原始材料</div><a href="https://www.nowcoder.com/discuss/911218249889480704" target="_blank" rel="noopener noreferrer">↗ 淘天大模型 Agent 校招面经</a></div>
+
+陷阱是一上来换更大模型，或把三条工具一律串进 ReAct、每步再「思考一下」。三条工具加高频请求，先画依赖图再改：能并行的并行，高频路径缓存或走固定 workflow，缩小 prompt 与工具集，投机或小模型打草稿，超时降级与限流。先量测 p95/p99、工具 RT、LLM RT、排队，再动架构。规划与调度见 `ali-modular-agent-plan`，prompt 裁剪见 `ali-prompt-optimize`。
+
+## 先画依赖图，再谈并行
+
+把三个工具画成 DAG：无数据依赖的只读查询并行；必须用上一步结果的（查单 → 算价 → 支付）保持串行。并行只适用于读路径；强一致写路径串行，并用请求 id 对齐一次快照，避免读到脏数据。客服常见组合是查订单、查物流、查售后政策：前两个互不依赖可并行，政策可按类目缓存。SLA 要写清：非关键工具超时可跳过，关键工具只能降级，不能静默丢。
+
+并行省的是墙钟时间，不是 token。三轮串行 ReAct 会叠三次 prefill；若工具结果还回灌成长上下文，后续轮次更慢。能一次规划出工具集合就不要逐步猜。投机解码、小模型草稿只加速 LLM 段，工具 RT 占主导时收益接近零。见 `sys-specdecode`、`sys-serving-metrics`。
+
+## 高频路径绕开多轮 LLM
+
+高频意图（「快递到哪了」）用小模型分类 + 缓存或固定 workflow，不必每单让大模型重选工具。首包分类走轻量模型，复杂再升级。压缩上下文与 tool schema，只暴露当前意图相关工具，减少 prefill。工具说明膨胀是隐性延迟：五十个 schema 全塞进去，TTFT 先坏。限流与隔离要按意图：高峰时保查物流，把闲聊和推荐降级，避免排队传染。
+
+## 量测切到对的瓶颈
+
+拆 p95/p99 到 LLM prefill/decode、各工具 RT、网关排队。若 p99 高在物流 RT 而不是 LLM，给物流设超时并降级「以承运商页面为准」，而不是换 70B。缓存要带失效：订单状态短 TTL，政策可长缓存。没有依赖图和分层延迟，优化顺序一定反。
+
+## 追问
+
+- **并行会不会读到脏数据？** 只读查询可并行并对齐快照；写路径、支付、改地址保持串行。见 `ali-hitl-risk`。
+- **三条必须串行怎么办？** 砍 LLM 轮次和 prefill：一次规划、固定 workflow、压缩 schema，而不是再加并行。
+- **小模型分流会不会分错？** 设置信阈值，低置信回大模型；用错误路由率而不是只看平均 RT。
+- **投机解码何时值得？** 瓶颈在 decode、草稿与终稿分布接近时。工具 RT 主导就先做超时与缓存。

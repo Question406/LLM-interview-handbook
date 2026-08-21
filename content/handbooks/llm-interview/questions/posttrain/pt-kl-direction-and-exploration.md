@@ -12,15 +12,66 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-17
+updatedAt: 2026-08-19
 sources:
   - title: Unlocking Reasoning via RL Exploration
     url: https://arxiv.org/abs/2510.03865
     type: primary
+  - title: Direct Preference Optimization
+    url: https://arxiv.org/abs/2305.18290
+    type: primary
 ---
 
-reference regularization 的目的不是数学装饰，而是在优化 reward 时限制语言退化和分布漂移。常见形式对新策略偏离 reference 的位置敏感，往往偏向 mode-seeking：安全、稳定，却会降低采样到稀有优质路径的机会。
+别把 KL 当成「再调一个系数」。方向决定惩罚落在哪一类 token 上：常见的 reverse KL 护栏会让策略不敢离开 $\pi_{\mathrm{ref}}$ 的高概率区域，于是 **稀有但可验证的正确路径采不到**。这和「KL 太大所以学不动」不是同一件事。面试里把 $\beta$ 调小、看到训练 reward 上涨就宣布探索成功，最容易被追问 Pass@K 和熵：reward 可以来自更频繁地重复 reference 里已经会的题型，而不是 support 变宽。RLVR 依赖长尾成功被采到；mode-seeking 正则和这个需求是对着干的，只有在奖励极干净、已经不缺覆盖时才该把反向 KL 当稳定器。
 
-决定是否放宽前，先测 reward 的 false positive、base policy 高 K coverage 和 OOD 回归。可尝试不同 KL 方向、动态系数、reference reweighting 或专门的 exploration phase，但每种改动都必须配合更强 verifier 和更密的 safety eval。
+## reverse KL 为什么是 mode-seeking
 
-不能只看 Pass@1。要同时看 K 曲线、熵、模式多样性、长度、KL、reward 与真实成功率的偏离，否则容易把分布漂移误读成探索。
+RLHF / RLVR 里最常见的惩罚是
+
+$$
+D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})=\mathbb{E}_{y\sim\pi_\theta}\big[\log\pi_\theta(y)-\log\pi_{\mathrm{ref}}(y)\big].
+$$
+
+期望在 **当前策略** 上取。$\pi_\theta$ 把质量放到 $\pi_{\mathrm{ref}}\approx 0$ 处，$\log$ 比会炸，所以策略不敢发明 reference 几乎不会说的续写。反过来，$\pi_{\mathrm{ref}}$ 有、$\pi_\theta$ 不去的那些峰 **根本不进期望**，策略可以丢掉它们。这就是 mode-seeking：锁住参考分布里已经比较亮的模式。白板推导见 `fund-kl-directions`，对齐为什么特意选这个方向见 `pt-rlhf-why-reverse-kl`。
+
+对聊天对齐，这是优点：不想覆盖 SFT 里残留的有害峰。对 **RLVR 探索** 则可能是缺点：正确解若落在 base 的长尾，reverse KL 会把采样压回常见但解不出的套路。可以把它想成「参考分布是一张地图，反向 KL 不许离开已点亮的格子」。难题的正确链往往在未点亮的格子里，Pass@1 优化会更亮已经亮的格子，K 曲线才会告诉你外面还有没有宝藏。对齐场景我们故意要这张地图收窄；推理 RL 有时必须允许把地图画大，前提是格子里的奖励可信。
+
+## 何时会困在 base support
+
+RLVR 靠「偶尔采到可验证成功 → 提高该轨迹概率」。若成功轨迹相对 $\pi_{\mathrm{ref}}$ 的概率极低，两项会同时发生：
+
+- Pass@1 几乎不动，但 Pass@K 在很大的 $K$ 上才翘头，说明 **覆盖率在长尾**，不是不会算。
+- 加大 $\beta$ 或始终挂着强 reverse KL 后，熵下降、模式变少、长度和套话上升，K 曲线也被压扁。
+
+这时「稳定」来自 support 收缩，不是来自学到了新策略。不要把 KL 变小、reward 变高自动读成探索成功：分布可能只是在 reference 的几个峰上刷分。一个有用的对照实验是：冻结 KL 系数，只把采样温度或 $n$ 增大，看高 K coverage 是否出现。若更大采样也挖不出正确轨迹，瓶颈在 seed 或题目，改 KL 方向无效；若能挖出而训练时采不到，才轮到正则过紧。
+
+## 放宽之前先测什么
+
+决定换方向、降 $\beta$、做 reference reweighting 或单独开 exploration phase 之前，先回答三个问题：
+
+1. **Reward 的 false positive 有多高？** 规则 checker 的盲区、RM 的风格偏置。噪声大时，扩张 support 等于给 hacking 开更大搜索空间，见 `pt-reward-ood-failure`。
+2. **高 K coverage 是否真的存在？** 若 $K$ 已经很大仍几乎没有正确候选，瓶颈是 seed / 题目难度 / verifier，不是 KL 方向。
+3. **OOD 与安全是否在回归？** 放宽正则必须配更密的 held-out 与 safety eval，不能只看训练 reward。
+
+可尝试的手段包括：更小或自适应的 $\beta$（`pt-adaptive-kl-controller`）、正向或对称散度、对稀有高回报轨迹升权、先无 KL 探索再收紧。每一种都要把 verifier 收严，而不是只改公式。探索阶段建议设短预算和硬停止条件：gold 指标或安全评测一掉就收紧，而不是「先放飞再看」。和无 KL 的 DAPO 类配方衔接时，要承认你是在用数据与奖励质量换正则，不是发现了反向 KL 的数学错误。
+
+不要把 PPO 的 KL 改成交叉熵来「换方向」：那会连采样分布一起反掉，见 `ant-kl-vs-ce`。现场若被要求手写惩罚项，先写期望在 $\pi_\theta$ 上，再写 $\log\pi_\theta-\log\pi_{\mathrm{ref}}$，最后才乘 $\beta$。左右写反是这题最常见的白板事故，比记不住公式更致命。
+
+## 监控上怎么区分「探索」和「漂移」
+
+不能只看 Pass@1。同时看：
+
+- $K$ 曲线：Pass@1 不动而大 $K$ 在涨，是覆盖在长尾，KL 可能正在把这条尾巴掐掉。
+- 熵、唯一轨迹数、n-gram 多样性：掉下去却伴着训练 reward 上升，多半是 mode-seeking 刷已知套路。
+- 长度：变长不一定是更深搜索，也可能是在 reference 风格里注水，见 `pt-reasoning-token-cost-frontier`。
+- KL 数值本身：很小说明贴着 $\pi_{\mathrm{ref}}$；很大且 gold 指标掉，是漂移而不是探索。
+- Reward 与真实成功率的偏离：proxy 还在涨、可执行准确率不动，就是 hacking，再放宽 KL 会加速。把这五项画在同一张训练曲线上，比单独汇报 $\beta$ 更有说服力。探索阶段允许熵上升，但 gold 与安全必须同时在图上，否则无法区分「在搜」和「在漂」。熵上升而 gold 不动，优先当 hacking 而不是当突破。K 曲线、熵、gold 三者缺一，探索叙事就不成立。安全切片也要进同一张图，否则探索阶段会把有害峰一起点亮。
+
+Reference reweighting 的直觉：KL 项里 $\log\pi_{\mathrm{ref}}$ 对常见无回报 token 权太重时，把这些位置的参考概率下调，或对「最终可验证成功」的前缀上调，让护栏少误伤长尾正确路径。它改变的是 **锚定的形状**，不是把反向 KL 偷偷换成正向。重加权要用独立于训练 reward 的信号——例如 held-out 成功标签——否则会把 hacking 前缀越加越亮。做完之后仍要看 K 曲线：若只是 Pass@1 涨、大 $K$ 不动，说明还在刷已知峰，重加权没有把 support 撑开。
+
+## 追问
+
+- **只看 Pass@1 为什么不够？** Pass@1 被 mode-seeking 优化得很漂亮时，K 曲线、熵、唯一轨迹数可能已经塌了。要把覆盖率和选择能力分开看，方法与 `pt-best-of-n-decomposition` 相同。Pass@1 涨、Pass@K 跌，常常是 support 收缩而不是变强。
+- **Forward KL 就一定更好探索吗？** 不一定。正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi_\theta)$ 会逼策略继续覆盖 reference 的所有峰，包括有害或无用模式，而且要从 $\pi_{\mathrm{ref}}$ 采样，和 on-policy rollout 管道不一致。探索应用「更松的反向」或阶段性无 KL，而不是直接把方向写反。换方向等于换目标，要重做安全评测。
+- **Reference reweighting 做什么？** 降低 reference 对「常见但无回报」token 的锚定，或提高稀有成功前缀的权重，让 KL 不再把长尾正确路径当离群点掐掉。要和更严的 verifier 一起上，否则升权的是 hacking 前缀。它改的是锚的形状，不是把反向 KL 改成正向。
+- **Reward 不可靠时呢？** 先修 verifier，再谈扩张。宽松 KL 加噪声奖励，是最快的 hacking 配方。OOD 失效见 `pt-reward-ood-failure`。规则奖励也有盲区：格式对、语义错时，放宽探索只会更快找到 checker 漏洞。

@@ -7,7 +7,7 @@ title: 手写 DPO Loss：如何从 token logits 得到 sequence log-prob？
 quick: >-
   先对 response token gather log-softmax，按 response mask 求 sequence logp；分别算
   policy chosen/rejected 与 reference chosen/rejected
-  margin，logit=β[(πc−πr)−(refc−refr)]，loss=−logsigmoid(logit)。
+  margin，$\mathrm{logit}=\beta[(\pi_c-\pi_r)-(\mathrm{ref}_c-\mathrm{ref}_r)]$，$\mathrm{loss}=-\mathrm{logsigmoid}(\mathrm{logit})$。
 tags:
   - DPO
   - PyTorch
@@ -18,7 +18,7 @@ provenance: legacy-handbook-v2
 updatedAt: '2026-08-17'
 sources: []
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>先对 response token gather log-softmax，按 response mask 求 sequence logp；分别算 policy chosen/rejected 与 reference chosen/rejected margin，logit=β[(πc−πr)−(refc−refr)]，loss=−logsigmoid(logit)。</p></div>
+<div class="quick"><div class="mini-title">30 秒回答</div><p>先对 response token gather log-softmax，按 response mask 求 sequence logp；分别算 policy chosen/rejected 与 reference chosen/rejected margin，$\mathrm{logit}=\beta[(\pi_c-\pi_r)-(\mathrm{ref}_c-\mathrm{ref}_r)]$，$\mathrm{loss}=-\mathrm{logsigmoid}(\mathrm{logit})$。</p></div>
           <div class="full-answer"><div class="mini-title">完整答案</div><pre><code data-lang="python">import torch.nn.functional as F
 
 def sequence_logp(logits, labels, response_mask):

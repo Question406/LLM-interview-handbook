@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { handbooks } from "@/content/registry";
-import type { HandbookQuestion } from "@/content/types";
+import type { Handbook, HandbookQuestion } from "@/content/types";
+import { sortHandbooks, validateHandbook } from "@/content/validate";
 
 type Filter = "all" | "S" | "A" | "mastered" | "unmastered" | "real";
 
@@ -13,74 +13,163 @@ function qualifiedId(handbookId: string, questionId: string) {
   return `${handbookId}/${questionId}`;
 }
 
+function isTextEntryTarget(target: EventTarget | null) {
+  return target instanceof HTMLInputElement
+    || target instanceof HTMLTextAreaElement
+    || (target instanceof HTMLElement && target.isContentEditable);
+}
+
+type CopiedKind = "link" | "prompt";
+
+function questionPrompt(question: HandbookQuestion, sectionTitle: string) {
+  const context = [
+    sectionTitle.replace(/^\d+\s*·\s*/, ""),
+    `${question.level} 级`,
+    question.isRealInterview ? "真实面经" : "",
+    ...question.tags,
+  ].filter(Boolean).join(" · ");
+  return [
+    "请作为资深面试官，把下面这道题讲透：先给定义和核心结论，再讲适用条件、一个具体例子、常见追问与易错点。公式用 LaTeX。",
+    "",
+    context,
+    `题目：${question.title}`,
+  ].join("\n");
+}
+
+async function writeClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+  }
+}
+
 function QuestionCard({
   question,
   index,
   isOpen,
   isMastered,
-  copied,
+  copiedKind,
+  isKeyboardActive,
   answer,
   onToggleOpen,
   onToggleMastered,
-  onCopy,
+  onCopyPrompt,
+  onCopyLink,
+  onOpenQuestion,
+  onFocus,
 }: {
   question: HandbookQuestion;
   index: number;
   isOpen: boolean;
   isMastered: boolean;
-  copied: boolean;
+  copiedKind: CopiedKind | null;
+  isKeyboardActive: boolean;
   answer?: string;
   onToggleOpen: () => void;
   onToggleMastered: () => void;
-  onCopy: () => void;
+  onCopyPrompt: () => void;
+  onCopyLink: () => void;
+  onOpenQuestion: (questionId: string) => void;
+  onFocus: () => void;
 }) {
   return (
-    <article className={`question-card${isOpen ? " open" : ""}`} id={question.id}>
+    <article className={`question-card${isOpen ? " open" : ""}${isKeyboardActive ? " keyboard-active" : ""}`} id={question.id}>
       <div className="question-meta">
         <span className={`level-badge level-${question.level}`}>{question.level} · {question.level === "S" ? "MUST KNOW" : "CORE"}</span>
         {question.isRealInterview && <span className="real-badge">真实面经</span>}
         {question.tags.map((tag) => <span className="topic-badge" key={tag}>{tag}</span>)}
       </div>
-      <button className="question-heading" type="button" onClick={onToggleOpen} aria-expanded={isOpen}>
-        <span className="question-title-wrap">
-          <span className="question-number">{String(index + 1).padStart(2, "0")}</span>
-          <span className="question-title">{question.title}</span>
-        </span>
-        <span className="expand-icon" aria-hidden="true">{isOpen ? "↑" : "↘"}</span>
-      </button>
+      <div className="question-head-row">
+        <button className="question-heading" data-question-id={question.id} type="button" onClick={onToggleOpen} onFocus={onFocus} aria-expanded={isOpen}>
+          <span className="question-title-wrap">
+            <span className="question-number">{String(index + 1).padStart(2, "0")}</span>
+            <span className="question-title" dangerouslySetInnerHTML={{ __html: question.titleHtml }} />
+          </span>
+        </button>
+        <div className="question-head-actions">
+          <button
+            type="button"
+            className={`copy-question-btn${copiedKind === "prompt" ? " copied" : ""}`}
+            onClick={onCopyPrompt}
+            aria-label="复制题目，去问其他模型"
+            title="复制题目，去问其他模型"
+          >
+            {copiedKind === "prompt" ? "已复制 ✓" : "复制题目"}
+          </button>
+          <button type="button" className="expand-icon" onClick={onToggleOpen} aria-hidden="true" tabIndex={-1}>
+            {isOpen ? "↑" : "↘"}
+          </button>
+        </div>
+      </div>
       {!isOpen && question.quick && (
         <div className="quick-answer compact">
           <span>30 秒回答</span>
-          <p>{question.quick}</p>
+          <p dangerouslySetInnerHTML={{ __html: question.quickHtml }} />
         </div>
       )}
-      {isOpen && answer && <div className="answer-content" dangerouslySetInnerHTML={{ __html: answer }} />}
+      {isOpen && answer && (
+        <div
+          className="answer-content"
+          dangerouslySetInnerHTML={{ __html: answer }}
+          onClick={(event) => {
+            const node = event.target;
+            const el = node instanceof Element ? node : node instanceof Node ? node.parentElement : null;
+            const link = el?.closest("a.question-link");
+            if (!(link instanceof HTMLAnchorElement)) return;
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+            const nextId = link.dataset.questionId;
+            if (!nextId) return;
+            event.preventDefault();
+            onOpenQuestion(nextId);
+          }}
+        />
+      )}
       {isOpen && !answer && <div className="answer-loading"><span />正在加载完整答案…</div>}
       <footer className="question-footer">
         <label>
           <input type="checkbox" checked={isMastered} onChange={onToggleMastered} />
           <span>{isMastered ? "已掌握" : "标记为已掌握"}</span>
         </label>
-        <button type="button" onClick={onCopy}>{copied ? "已复制 ✓" : "复制链接 #"}</button>
+        <button type="button" onClick={onCopyLink}>{copiedKind === "link" ? "链接已复制 ✓" : "复制链接 #"}</button>
       </footer>
     </article>
   );
 }
 
-export default function HandbookApp() {
+function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
   const [handbookId, setHandbookId] = useState(handbooks[0].id);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [mastered, setMastered] = useState<Set<string>>(new Set());
   const [openQuestions, setOpenQuestions] = useState<Set<string>>(new Set());
-  const [activeSection, setActiveSection] = useState(handbooks[0].sections[0].id);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [focusedQuestionId, setFocusedQuestionId] = useState<string | null>(null);
+  const [copied, setCopied] = useState<{ id: string; kind: CopiedKind } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [answerChunks, setAnswerChunks] = useState<Record<string, Record<string, string>>>({});
   const searchRef = useRef<HTMLInputElement>(null);
   const chunkPromises = useRef(new Map<string, Promise<Record<string, string>>>());
+  const pendingScrollRef = useRef<string | null>(null);
+  const keyboardStateRef = useRef<{
+    shortcutsOpen: boolean;
+    focusedQuestion?: HandbookQuestion;
+    focusQuestion: (direction: 1 | -1) => void;
+    goToAdjacentSection: (direction: 1 | -1) => void;
+    toggleOpen: (question: HandbookQuestion) => void;
+  } | null>(null);
 
   const handbook = handbooks.find((candidate) => candidate.id === handbookId) ?? handbooks[0];
 
@@ -101,50 +190,47 @@ export default function HandbookApp() {
   }, []);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "/" && document.activeElement !== searchRef.current) {
-        event.preventDefault();
-        searchRef.current?.focus();
+    const applyLocation = () => {
+      const params = new URLSearchParams(location.search);
+      const questionId = params.get("question");
+      const question = handbook.sections.flatMap((section) => section.questions).find((candidate) => candidate.id === questionId);
+      const sectionId = question
+        ? handbook.sections.find((section) => section.questions.some((candidate) => candidate.id === question.id))?.id
+        : params.get("section");
+
+      if (sectionId && handbook.sections.some((section) => section.id === sectionId)) {
+        setActiveSection(sectionId);
+        setGuideOpen(false);
+      } else {
+        setActiveSection(null);
+        setGuideOpen(params.get("view") === "guide");
       }
-      if (event.key === "Escape") {
-        setMobileNavOpen(false);
-        setLibraryOpen(false);
-        searchRef.current?.blur();
+
+      if (!question) return;
+      setQuery("");
+      setFilter("all");
+      setFocusedQuestionId(question.id);
+      setOpenQuestions((current) => new Set(current).add(question.id));
+      pendingScrollRef.current = question.id;
+      let request = chunkPromises.current.get(question.answerPath);
+      if (!request) {
+        request = fetch(question.answerPath).then((response) => response.json() as Promise<Record<string, string>>);
+        chunkPromises.current.set(question.answerPath, request);
       }
+      void request.then((chunk) => setAnswerChunks((current) => ({ ...current, [question.answerPath]: chunk })));
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
 
-  useEffect(() => {
-    const nodes = [...document.querySelectorAll<HTMLElement>("[data-handbook-section]")];
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries.find((entry) => entry.isIntersecting);
-      if (visible) setActiveSection((visible.target as HTMLElement).dataset.handbookSection ?? handbook.sections[0].id);
-    }, { rootMargin: "-18% 0px -70% 0px" });
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, [handbook, query, filter]);
-
-  useEffect(() => {
-    const questionId = decodeURIComponent(location.hash.slice(1));
-    const question = handbook.sections.flatMap((section) => section.questions).find((candidate) => candidate.id === questionId);
-    if (!questionId || !question) return;
-    let request = chunkPromises.current.get(question.answerPath);
-    if (!request) {
-      request = fetch(question.answerPath).then((response) => response.json() as Promise<Record<string, string>>);
-      chunkPromises.current.set(question.answerPath, request);
-    }
-    void request.then((chunk) => setAnswerChunks((current) => ({ ...current, [question.answerPath]: chunk })));
-    const timer = window.setTimeout(() => {
-      setOpenQuestions((current) => new Set(current).add(questionId));
-      document.getElementById(questionId)?.scrollIntoView({ block: "start" });
-    }, 100);
-    return () => window.clearTimeout(timer);
+    applyLocation();
+    window.addEventListener("popstate", applyLocation);
+    return () => window.removeEventListener("popstate", applyLocation);
   }, [handbook]);
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const visibleSections = useMemo(() => handbook.sections.map((section) => ({
+  const isSearching = Boolean(normalizedQuery);
+  const sectionsInView = isSearching
+    ? handbook.sections
+    : handbook.sections.filter((section) => section.id === activeSection);
+  const visibleSections = useMemo(() => sectionsInView.map((section) => ({
     ...section,
     questions: section.questions.filter((question) => {
       const questionKey = qualifiedId(handbook.id, question.id);
@@ -156,9 +242,19 @@ export default function HandbookApp() {
         || (filter === "real" && question.isRealInterview);
       return matchesSearch && matchesFilter;
     }),
-  })).filter((section) => section.questions.length > 0), [filter, handbook, mastered, normalizedQuery]);
+  })).filter((section) => section.questions.length > 0), [filter, handbook, mastered, normalizedQuery, sectionsInView]);
 
   const visibleQuestions = visibleSections.flatMap((section) => section.questions);
+  const isContentView = Boolean(activeSection) || isSearching;
+
+  useEffect(() => {
+    const questionId = pendingScrollRef.current;
+    if (!questionId || !visibleQuestions.some((question) => question.id === questionId)) return;
+    const node = document.getElementById(questionId);
+    if (!node) return;
+    pendingScrollRef.current = null;
+    node.scrollIntoView({ behavior: "auto", block: "start" });
+  }, [focusedQuestionId, openQuestions, visibleQuestions]);
   const masteredCount = handbook.sections.flatMap((section) => section.questions)
     .filter((question) => mastered.has(qualifiedId(handbook.id, question.id))).length;
   const progress = handbook.stats.questions ? (masteredCount / handbook.stats.questions) * 100 : 0;
@@ -200,26 +296,102 @@ export default function HandbookApp() {
     });
   };
 
+  const setRoute = (params: URLSearchParams, mode: "push" | "replace" = "push") => {
+    const nextUrl = `${location.pathname}${params.size ? `?${params.toString()}` : ""}`;
+    history[`${mode}State`](null, "", nextUrl);
+  };
+
+  const openOverview = () => {
+    setActiveSection(null);
+    setGuideOpen(false);
+    setFocusedQuestionId(null);
+    setQuery("");
+    setMobileNavOpen(false);
+    setRoute(new URLSearchParams());
+    window.scrollTo(0, 0);
+  };
+
+  const openGuide = () => {
+    setActiveSection(null);
+    setGuideOpen(true);
+    setFocusedQuestionId(null);
+    setQuery("");
+    setMobileNavOpen(false);
+    setRoute(new URLSearchParams({ view: "guide" }));
+    window.scrollTo(0, 0);
+  };
+
+  const openSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    setGuideOpen(false);
+    setFocusedQuestionId(null);
+    setQuery("");
+    setMobileNavOpen(false);
+    setRoute(new URLSearchParams({ section: sectionId }));
+    window.scrollTo(0, 0);
+  };
+
   const goToQuestion = (questionId: string) => {
     const question = handbook.sections.flatMap((section) => section.questions).find((candidate) => candidate.id === questionId);
-    if (question) void loadAnswer(question);
+    const section = handbook.sections.find((candidate) => candidate.questions.some((item) => item.id === questionId));
+    if (!question || !section) return;
+    void loadAnswer(question);
+    setActiveSection(section.id);
+    setGuideOpen(false);
+    setFocusedQuestionId(question.id);
+    setQuery("");
+    setFilter("all");
     setOpenQuestions((current) => new Set(current).add(questionId));
-    history.replaceState(null, "", `#${questionId}`);
-    window.setTimeout(() => document.getElementById(questionId)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+    setRoute(new URLSearchParams({ section: section.id, question: question.id }));
+    pendingScrollRef.current = questionId;
   };
 
   const copyQuestionLink = async (questionId: string) => {
-    const url = `${location.href.split("#")[0]}#${questionId}`;
-    history.replaceState(null, "", `#${questionId}`);
-    try { await navigator.clipboard.writeText(url); } catch { /* Hash still provides a usable fallback. */ }
-    setCopiedId(questionId);
-    window.setTimeout(() => setCopiedId(null), 1100);
+    const section = handbook.sections.find((candidate) => candidate.questions.some((question) => question.id === questionId));
+    if (!section) return;
+    const params = new URLSearchParams({ section: section.id, question: questionId });
+    const url = `${location.origin}${location.pathname}?${params.toString()}`;
+    setRoute(params, "replace");
+    await writeClipboard(url);
+    setCopied({ id: questionId, kind: "link" });
+    window.setTimeout(() => setCopied((current) => current?.id === questionId && current.kind === "link" ? null : current), 1100);
+  };
+
+  const copyQuestionPrompt = async (question: HandbookQuestion) => {
+    const section = handbook.sections.find((candidate) => candidate.questions.some((item) => item.id === question.id));
+    if (!section) return;
+    await writeClipboard(questionPrompt(question, section.title));
+    setCopied({ id: question.id, kind: "prompt" });
+    window.setTimeout(() => setCopied((current) => current?.id === question.id && current.kind === "prompt" ? null : current), 1100);
   };
 
   const randomQuestion = () => {
     const pool = visibleQuestions.length ? visibleQuestions : handbook.sections.flatMap((section) => section.questions);
     const randomValue = window.crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
     goToQuestion(pool[Math.floor(randomValue * pool.length)].id);
+  };
+
+  const focusQuestion = (direction: 1 | -1) => {
+    if (!visibleQuestions.length) return;
+    const currentIndex = focusedQuestionId ? visibleQuestions.findIndex((question) => question.id === focusedQuestionId) : -1;
+    const startIndex = currentIndex === -1 ? (direction === 1 ? -1 : 0) : currentIndex;
+    const nextIndex = (startIndex + direction + visibleQuestions.length) % visibleQuestions.length;
+    const nextQuestion = visibleQuestions[nextIndex];
+    void loadAnswer(nextQuestion);
+    setFocusedQuestionId(nextQuestion.id);
+    setOpenQuestions((current) => new Set(current).add(nextQuestion.id));
+    window.requestAnimationFrame(() => {
+      const heading = document.querySelector<HTMLButtonElement>(`button[data-question-id="${nextQuestion.id}"]`);
+      heading?.focus({ preventScroll: true });
+      heading?.scrollIntoView({ behavior: "auto", block: "center" });
+    });
+  };
+
+  const goToAdjacentSection = (direction: 1 | -1) => {
+    const currentIndex = activeSection ? handbook.sections.findIndex((section) => section.id === activeSection) : -1;
+    const startIndex = currentIndex === -1 ? (direction === 1 ? -1 : 0) : currentIndex;
+    const nextIndex = (startIndex + direction + handbook.sections.length) % handbook.sections.length;
+    openSection(handbook.sections[nextIndex].id);
   };
 
   const switchHandbook = (nextId: string) => {
@@ -229,10 +401,12 @@ export default function HandbookApp() {
     setQuery("");
     setFilter("all");
     setOpenQuestions(new Set());
-    setActiveSection(next.sections[0].id);
+    setActiveSection(null);
+    setGuideOpen(false);
+    setFocusedQuestionId(null);
     setLibraryOpen(false);
     history.replaceState(null, "", location.pathname);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   };
 
   const toggleTheme = () => {
@@ -244,13 +418,64 @@ export default function HandbookApp() {
     });
   };
 
+  useEffect(() => {
+    keyboardStateRef.current = {
+      shortcutsOpen,
+      focusedQuestion: focusedQuestionId ? visibleQuestions.find((question) => question.id === focusedQuestionId) : undefined,
+      focusQuestion,
+      goToAdjacentSection,
+      toggleOpen,
+    };
+  });
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileNavOpen(false);
+        setLibraryOpen(false);
+        setShortcutsOpen(false);
+        searchRef.current?.blur();
+        return;
+      }
+      const keyboardState = keyboardStateRef.current;
+      if (!keyboardState || isTextEntryTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || keyboardState.shortcutsOpen) return;
+
+      const { focusedQuestion } = keyboardState;
+      switch (event.code) {
+        case "ArrowUp":
+          event.preventDefault();
+          keyboardState.focusQuestion(-1);
+          break;
+        case "ArrowDown":
+          event.preventDefault();
+          keyboardState.focusQuestion(1);
+          break;
+        case "ArrowLeft":
+          event.preventDefault();
+          keyboardState.goToAdjacentSection(-1);
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          keyboardState.goToAdjacentSection(1);
+          break;
+        case "Enter":
+          if (!focusedQuestion) break;
+          event.preventDefault();
+          keyboardState.toggleOpen(focusedQuestion);
+          break;
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
     <main className="app-shell">
       <aside className={`rail${mobileNavOpen ? " mobile-open" : ""}`}>
         <div className="rail-head">
-          <a className="wordmark" href="#top" onClick={() => setMobileNavOpen(false)}>
+          <button className="wordmark" type="button" onClick={openOverview}>
             <span className="wordmark-mark">IA</span><span>Interview Atlas</span>
-          </a>
+          </button>
           <button className="mobile-close" type="button" onClick={() => setMobileNavOpen(false)} aria-label="关闭导航">×</button>
         </div>
 
@@ -270,14 +495,14 @@ export default function HandbookApp() {
         <div className="rail-label">手册目录</div>
         <nav className="module-nav" aria-label="手册目录">
           {handbook.sections.map((section, index) => (
-            <a className={activeSection === section.id ? "module-link active" : "module-link"} href={`#section-${section.id}`} key={section.id} onClick={() => { setActiveSection(section.id); setMobileNavOpen(false); }}>
+            <button className={activeSection === section.id && !isSearching ? "module-link active" : "module-link"} type="button" key={section.id} onClick={() => openSection(section.id)}>
               <span className="module-index">{String(index + 1).padStart(2, "0")}</span>
               <span className="module-name">{section.title.replace(/^\d+\s*·\s*/, "")}</span>
               <span className="module-count">{section.questions.length}</span>
-            </a>
+            </button>
           ))}
         </nav>
-        <a className="add-content" href="#content-guide" onClick={() => setMobileNavOpen(false)}><span>+</span> 以后怎么加资料</a>
+        <button className="add-content" type="button" onClick={openGuide}><span>+</span> 以后怎么加资料</button>
         <div className="rail-progress">
           <div><span>复习进度</span><b>{masteredCount} / {handbook.stats.questions}</b></div>
           <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
@@ -285,6 +510,18 @@ export default function HandbookApp() {
         </div>
       </aside>
       {mobileNavOpen && <button className="nav-backdrop" type="button" onClick={() => setMobileNavOpen(false)} aria-label="关闭导航" />}
+      {shortcutsOpen && <div className="shortcut-layer" role="presentation">
+        <button className="shortcut-backdrop" type="button" onClick={() => setShortcutsOpen(false)} aria-label="关闭快捷键说明" />
+        <section className="shortcut-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcut-title">
+          <header><div><div className="eyebrow"><span /> KEYBOARD</div><h2 id="shortcut-title">键盘快捷键</h2></div><button type="button" onClick={() => setShortcutsOpen(false)} aria-label="关闭快捷键说明">×</button></header>
+          <dl>
+            <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>上一题 / 下一题</dd></div>
+            <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>上一个 / 下一个模块</dd></div>
+            <div><dt><kbd>Enter</kbd></dt><dd>展开或折叠当前题</dd></div>
+            <div><dt><kbd>Esc</kbd></dt><dd>关闭面板</dd></div>
+          </dl>
+        </section>
+      </div>}
 
       <section className="workspace" id="top">
         <header className="topbar">
@@ -292,21 +529,22 @@ export default function HandbookApp() {
           <label className="search-field">
             <span aria-hidden="true">⌕</span>
             <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="搜索 DPO、Skill、ZeRO 或某家公司…" aria-label="搜索手册" />
-            {query ? <button type="button" onClick={() => setQuery("")} aria-label="清除搜索">×</button> : <kbd>/</kbd>}
+            {query && <button type="button" onClick={() => setQuery("")} aria-label="清除搜索">×</button>}
           </label>
-          <span className="result-count">{visibleQuestions.length} / {handbook.stats.questions} 题</span>
+          <span className="result-count">{isContentView ? `${visibleQuestions.length} / ${handbook.stats.questions}` : handbook.stats.questions} 题</span>
+          <button className="icon-button shortcut-button" type="button" onClick={() => setShortcutsOpen(true)} aria-label="查看键盘快捷键">?</button>
           <button className="icon-button" type="button" onClick={toggleTheme} aria-label="切换主题">{darkMode ? "☀" : "◐"}</button>
         </header>
 
         <div className="page-wrap">
-          <section className="hero">
+          {!isContentView && !guideOpen && <section className="hero">
             <div className="hero-copy">
               <div className="eyebrow"><span /> {handbook.edition} · INTERVIEW HANDBOOK</div>
               <h1>把知识点，<br />变成你的<span>面试反射</span>。</h1>
               <p>{handbook.description}</p>
               <div className="audience-line">{handbook.audience}</div>
               <div className="hero-actions">
-                <a href={`#section-${handbook.sections[0].id}`} className="primary-action">继续复习 <span>→</span></a>
+                <button type="button" className="primary-action" onClick={() => openSection(handbook.sections[0].id)}>继续复习 <span>→</span></button>
                 <button type="button" className="secondary-action" onClick={randomQuestion}>随机抽一题</button>
               </div>
             </div>
@@ -317,9 +555,9 @@ export default function HandbookApp() {
               <div className="metric metric-b"><b>{handbook.sections.length}</b><span>知识模块</span></div>
               <div className="metric metric-c"><b>{handbook.stats.sources}</b><span>原始来源</span></div>
             </div>
-          </section>
+          </section>}
 
-          <section className="study-controls" aria-label="复习筛选">
+          {isContentView && <section className="study-controls" aria-label="复习筛选">
             <div className="filter-row">
               {([
                 ["all", "全部"], ["S", "S 级"], ["A", "A 级"], ["real", "真实面经"], ["mastered", "已掌握"], ["unmastered", "未掌握"],
@@ -329,11 +567,12 @@ export default function HandbookApp() {
               <button type="button" onClick={() => { visibleQuestions.forEach((question) => void loadAnswer(question)); setOpenQuestions(new Set(visibleQuestions.map((question) => question.id))); }}>全部展开</button>
               <button type="button" onClick={() => setOpenQuestions(new Set())}>全部折叠</button>
             </div>
-          </section>
+          </section>}
 
-          <div className="question-sections">
+          {isContentView && <div className="question-sections">
+            {isSearching && <header className="search-results-intro"><div><div className="eyebrow"><span /> SEARCH RESULTS</div><h2>“{query.trim()}” 的检索结果</h2></div><div className="section-count">{visibleQuestions.length} 题</div></header>}
             {visibleSections.map((section) => (
-              <section className="question-section" id={`section-${section.id}`} data-handbook-section={section.id} key={section.id}>
+              <section className="question-section" key={section.id}>
                 <header className="section-intro">
                   <div>
                     <div className="eyebrow"><span /> MODULE {String(handbook.sections.findIndex((candidate) => candidate.id === section.id) + 1).padStart(2, "0")}</div>
@@ -350,27 +589,84 @@ export default function HandbookApp() {
                       index={questionIndex}
                       isOpen={openQuestions.has(question.id)}
                       isMastered={mastered.has(qualifiedId(handbook.id, question.id))}
-                      copied={copiedId === question.id}
+                      copiedKind={copied?.id === question.id ? copied.kind : null}
+                      isKeyboardActive={focusedQuestionId === question.id}
                       answer={answerChunks[question.answerPath]?.[question.id]}
                       onToggleOpen={() => toggleOpen(question)}
                       onToggleMastered={() => toggleMastered(question.id)}
-                      onCopy={() => copyQuestionLink(question.id)}
+                      onCopyPrompt={() => copyQuestionPrompt(question)}
+                      onCopyLink={() => copyQuestionLink(question.id)}
+                      onOpenQuestion={goToQuestion}
+                      onFocus={() => setFocusedQuestionId(question.id)}
                     />
                   ))}
                 </div>
               </section>
             ))}
             {visibleSections.length === 0 && <div className="empty-state"><b>没有找到匹配的题目</b><p>试试换一个关键词，或清除当前筛选。</p><button type="button" onClick={() => { setQuery(""); setFilter("all"); }}>清除条件</button></div>}
-          </div>
+          </div>}
 
-          <section className="content-guide" id="content-guide">
+          {!isContentView && guideOpen && <section className="content-guide">
             <div className="guide-number">+N</div>
             <div><div className="eyebrow"><span /> CONTENT FIRST</div><h2>新资料只需要进内容层。</h2></div>
             <p>页面、搜索、筛选、复习进度都由通用组件负责。以后每新增一题，只需要放入一个独立 Markdown 文件；构建器会自动汇总、校验并生成资料库。</p>
-            <a href="#top">回到顶部 ↑</a>
-          </section>
+            <button type="button" onClick={openOverview}>回到首页 ↑</button>
+          </section>}
         </div>
       </section>
     </main>
   );
+}
+
+export default function HandbookApp() {
+  const [handbooks, setHandbooks] = useState<Handbook[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/content/registry.json")
+      .then((response) => {
+        if (!response.ok) throw new Error(`手册索引加载失败（${response.status}）`);
+        return response.json() as Promise<Handbook[]>;
+      })
+      .then((data) => {
+        const next = sortHandbooks(data.map(validateHandbook));
+        if (!cancelled) setHandbooks(next);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "手册索引加载失败");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loadError) {
+    return (
+      <main className="app-shell">
+        <section className="workspace">
+          <div className="page-wrap">
+            <div className="empty-state">
+              <b>手册暂时打不开</b>
+              <p>{loadError}</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!handbooks) {
+    return (
+      <main className="app-shell">
+        <section className="workspace">
+          <div className="page-wrap">
+            <div className="answer-loading"><span />正在加载题库…</div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  return <HandbookWorkspace handbooks={handbooks} />;
 }
