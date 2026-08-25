@@ -5,7 +5,7 @@ order: 145
 level: A
 title: RL 方差、无偏 / 有偏估计面试要准备哪些题？
 quick: >-
-  先钉死「无偏」是对哪个目标：策略梯度、回报、还是 KL 标量。再按操作分类——减 state baseline / reward-to-go
+  先钉死「无偏」是对哪个目标：策略梯度、回报、还是 KL 标量。再按操作分类，减 state baseline / reward-to-go
   仍无偏；bootstrap、clip、除组标准差、自归一化 IS 用偏差换方差。下面按这条链排。
 tags:
   - RL
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning
     url: https://link.springer.com/article/10.1007/BF00992696
@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-网上对得上的高频问法已经拆成独立卡。总览在「Bias–Variance Tradeoff 在 RL 中有哪些具体例子？」，本页只给「无偏还是有偏」这条链。点击下面每条即可跳到对应题。
+网上对得上的高频问法已经拆成独立卡。总览在「Bias–Variance Tradeoff 在 RL 中有哪些具体例子？」，本页只给「无偏还是有偏」这条链。点下面每条就能跳到对应题。
 
 ## 先分清无偏的对象
 
@@ -38,7 +38,7 @@ sources:
 - 为什么 $V^\pi(s)$ 是最优 baseline？$V$ 估错了梯度还无偏吗？
 - Schulman 的 $k_1/k_2/k_3$ 各估什么？数值无偏和梯度正确是一回事吗？
 
-口诀：无偏要先说 **相对哪条期望**。减只依赖 state 的 baseline，梯度期望不变；$V$ 估错了，只要不当 bootstrap 去替换未来回报，MC 优势仍然无偏。$k_3$ 标量无偏不等于对 $\theta$ 反传就是 KL 梯度，见 `fund-kl-k1-k2-k3`。
+无偏要先说 **相对哪条期望**。减只依赖 state 的 baseline，梯度期望不变；$V$ 估错了，只要不当 bootstrap 去替换未来回报，MC 优势仍然无偏。$k_3$ 标量无偏不等于对 $\theta$ 反传就是 KL 梯度，见 `fund-kl-k1-k2-k3`。
 
 ## Return / Advantage：MC 无偏，TD 有偏
 
@@ -84,4 +84,4 @@ Token 采样走不了低方差 reparam。三种 clip 截的不是同一个量：
 
 普通 IS 无偏但尾部爆炸；PD-IS 同样无偏、少乘未来的 $\rho$；WIS / clip / V-trace 用偏差换可训练梯度。PPO 的逐步 $\rho_t A_t$ 是局部 surrogate，不是 PD-IS 定理。
 
-口诀：先会无偏梯度，再谈降方差，再谈复用旧数据；每用一个 trick 都要能说出牺牲了哪一块无偏性。
+我会按这个顺序准备：先会无偏梯度，再谈降方差，再谈复用旧数据；每用一个 trick 都要能说出牺牲了哪一块无偏性。

@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 商汤 多模态大模型算法实习一面
     url: https://www.nowcoder.com/feed/main/detail/bc02d116feb54a46a8b85a46f620f9e6

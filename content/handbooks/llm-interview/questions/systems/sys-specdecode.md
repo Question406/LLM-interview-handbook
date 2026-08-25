@@ -5,8 +5,8 @@ order: 11
 level: S
 title: Speculative Decoding 为什么能保持 Target Distribution？
 quick: >-
-  Draft model 便宜提出多个 tokens，target model 并行验证，并通过 acceptance/rejection
-  correction 使最终采样分布等价于 target policy；速度来自一次 target forward 接受多个 token。
+  Draft model 便宜提出多个 tokens，target model 并行验证，再用 acceptance/rejection
+  correction，让最终采样分布等价于 target policy。速度来自一次 target forward 接受多个 token。
 tags:
   - Speculative Decoding
   - Inference
@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Fast Inference from Transformers via Speculative Decoding
     url: https://arxiv.org/abs/2211.17192
     type: primary
 ---
 
-陷阱是把投机解码讲成「小模型先写、大模型同意就收下」。Greedy 可以对齐前缀，**带温度的采样不能这样**：若只在 $q$ 与 $p$ 相等时接受，输出分布既不是 $p$ 也不是 $q$。正确做法是对 draft 提议做一次带残差的拒绝采样，使接受后的 token **精确服从 target** $p$。
+这块容易把投机解码讲成「小模型先写、大模型同意就收下」。Greedy 可以对齐前缀，**带温度的采样不能这样**：若只在 $q$ 与 $p$ 相等时接受，输出分布既不是 $p$ 也不是 $q$。正确做法是对 draft 提议做一次带残差的拒绝采样，使接受后的 token **精确服从 target** $p$。
 
 ## 1. Greedy：先建立直觉
 
@@ -41,7 +41,7 @@ $$
 p_{\mathrm{res}}(x)\;\propto\;\max\big(0,\ p(x)-q(x)\big).
 $$
 
-这是标准 rejection sampling 校正：当 $q$ 在 $\tilde{x}$ 上高于 $p$ 时，只按比例收下，多出来的质量丢给残差，补 $p$ 有而 $q$ 不够的 token。对任意 $q$，只要能点算 $p,q$，输出边缘就是 $p$。与 $q$ 是否「像」$p$ 无关——不像只降低 $\mathbb{E}[\alpha]$，不破坏正确性。
+这是标准 rejection sampling 校正：当 $q$ 在 $\tilde{x}$ 上高于 $p$ 时，只按比例收下，多出来的质量丢给残差，补 $p$ 有而 $q$ 不够的 token。对任意 $q$，只要能点算 $p,q$，输出边缘就是 $p$。与 $q$ 是否「像」$p$ 无关。不像只降低 $\mathbb{E}[\alpha]$，不破坏正确性。
 
 多步时对 draft 前缀逐个验证：连续接受直到第一次拒绝，再在该位置用 $p_{\mathrm{res}}$（或直接用 target 采样，视实现）写出一个保证服从 $p$ 的 token，然后结束本轮 speculative。下轮以新前缀重新 draft。
 

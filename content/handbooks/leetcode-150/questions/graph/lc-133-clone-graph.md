@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 133. 克隆图
     url: https://leetcode.cn/problems/clone-graph/
@@ -32,7 +32,7 @@ sources:
 
 图里有环，不能只按树递归。维护哈希：旧节点 $\to$ 已克隆的新节点。DFS：若当前旧节点已在表里，直接返回对应新节点；否则先 `new Node(val)` 登记，再递归克隆邻居填进 `neighbors`。先登记再递归，避免环上死循环。
 
-BFS 同样：队列扩邻接，哈希保证每个旧节点只建一次。面试强调「先放入哈希再走邻居」。
+BFS 同样：队列扩邻接，哈希保证每个旧节点只建一次。白板我会强调：先放入哈希再走邻居。
 
 ## 参考代码
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **浅拷贝错在哪？** `copy.neighbors = cur.neighbors` 只复制了列表引用，邻居仍是旧图对象。改新图某个邻居的 `val` 或邻接，旧图一起变；有环时甚至分不清「新图」边界。深拷贝要求：**每个旧节点对应唯一新节点**，边只接在新节点之间。链表带随机指针是同一套路，见 LC 138，独立卡 `lc-138-copy-list-with-random-pointer`。
+- **浅拷贝错在哪？** `copy.neighbors = cur.neighbors` 只复制了列表引用，邻居仍是旧图对象。改新图某个邻居的 `val` 或邻接，旧图一起变；有环时甚至分不清「新图」边界。深拷贝要求每个旧节点对应唯一新节点，边只接在新节点之间。链表带随机指针是同一套路，见 LC 138，独立卡 `lc-138-copy-list-with-random-pointer`。
 
 ```python
 from collections import deque

@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 61. 旋转链表
     url: https://leetcode.cn/problems/rotate-list/
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **改成左旋 $k$？** 左旋 $k$ 等价于右旋 $n-k$。先 $k \bmod n$，再调用本题 `rotateRight(head, n - k)`；若取模后为 $0$ 仍直接返回。也可以成环后走到新尾（第 $k$ 个）断开，新头是它的后继。时间仍 $O(n)$。不要对 $k$ 再取一次反，容易把方向转错。面试先画 `1,2,3,4,5` 左旋 $2$ 得到 `3,4,5,1,2`。
+- **改成左旋 $k$？** 左旋 $k$ 等价于右旋 $n-k$。先 $k \bmod n$，再调用这题 `rotateRight(head, n - k)`；若取模后为 $0$ 仍直接返回。也可以成环后走到新尾（第 $k$ 个）断开，新头是它的后继。时间仍 $O(n)$。别对 $k$ 再取一次反，容易把方向转错。白板我会先画 `1,2,3,4,5` 左旋 $2$ 得到 `3,4,5,1,2`。
 
 ```python
 def rotateLeft(head, k):

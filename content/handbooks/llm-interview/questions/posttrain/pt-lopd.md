@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Latent On-Policy Self-Distillation
     url: https://arxiv.org/abs/2608.13040
@@ -26,7 +26,7 @@ sources:
     type: secondary
 ---
 
-OPSD / u-OPSD / π-Distill 都还在换 **手写特权**：GT、多数票、动作轨迹，见 `pt-self-opd-family`。LOPD 的论点是：再发明一种文本特权，仍然被设计师选的格式卡住。把特权改成从经验里学出来的连续上下文，自教师自己决定留下什么。
+OPSD / u-OPSD / π-Distill 都还在换手写特权：GT、多数票、动作轨迹，见 `pt-self-opd-family`。LOPD 的论点是：再发明一种文本特权，仍然被设计师选的格式卡住。把特权改成从经验里学出来的连续上下文，自教师自己决定留下什么。
 
 ## 学生照旧采样，教师多看 latent
 
@@ -48,9 +48,9 @@ $$
 \delta_{t,n}=\log\pi^{T}(a_{t,n}\mid\bm{s},\bm{c}_{\phi})-\operatorname{sg}[\log\pi^{S}(a_{t,n}\mid\bm{s})],
 $$
 
-再用轨迹验证 $A(\bm{\tau})=2r(\bm{\tau})-1$ 加权，要求平均特权 $\Delta(\phi)\ge m$（论文 $m=0.05$）。对成功轨迹，教师应比学生更偏好实际采取的 token；失败轨迹则反向压。对偶 $\beta$ 在 $\Delta\lt m$ 时抬罚。再加一项把 $\bm{c}_{\phi}$ 锚在 cold-start $\phi_0$，防止 latent 漂飞。
+再用轨迹验证 $A(\bm{\tau})=2 r(\bm{\tau})-1$ 加权，要求平均特权 $\Delta(\phi)\ge m$（论文 $m=0.05$）。对成功轨迹，教师应比学生更偏好实际采取的 token；失败轨迹则反向压。对偶 $\beta$ 在 $\Delta\lt m$ 时抬罚。再加一项把 $\bm{c}_{\phi}$ 锚在 cold-start $\phi_0$，防止 latent 漂飞。
 
-这和 SR-OPSD 用 $\pi_{\mathrm{ref}}$ 插值是同一类「别让自教师塌成学生」，只是 LOPD 的塌缩发生在 **可学习上下文** 上，而不是 EMA 权重上。
+这和 SR-OPSD 用 $\pi_{\mathrm{ref}}$ 插值是同一类「别让自教师塌成学生」，只是 LOPD 的塌缩发生在可学习上下文上，而不是 EMA 权重上。
 
 ## 和谁比、别背成新公式
 
@@ -59,7 +59,7 @@ $$
 - 相对 π-Distill：不必联合训一个会用文本 PI 的教师；教师骨干冻住，学的是 composer。
 - 相对 GRPO：仍要环境 $r$ 来算 margin，但密集监督在蒸馏 KL 上，rollout 预算可以更小。论文报过低于 GRPO / Skill-SD 约 $30\%$ 的 rollout。
 
-检索本身不够：把同样轨迹当文本塞进教师，是又一种手写特权。消融要回答的是 **可学习压缩** 有没有比「检索 + 原文拼接」多出来。
+检索本身不够：把同样轨迹当文本塞进教师，是又一种手写特权。消融要回答的是可学习压缩有没有比「检索 + 原文拼接」多出来。
 
 ## 追问
 

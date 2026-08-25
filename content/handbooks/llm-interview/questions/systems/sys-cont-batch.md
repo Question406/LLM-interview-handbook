@@ -5,8 +5,8 @@ order: 9
 level: A
 title: Continuous Batching 为什么提升吞吐？
 quick: >-
-  不同请求生成长度不同。Static batch 中短请求完成后 slot 空等最长请求；continuous batching 在
-  token/request 完成时动态加入新请求，提高 GPU 利用率。
+  不同请求生成长度差很多。Static batch 里短的已经 EOS，槽位还在空等最长那条。Continuous batching 在
+  token 或请求完成时立刻补进新请求，GPU 空等少了，吞吐才上去。调大静态 batch 消不掉这笔税。
 tags:
   - Serving
   - Scheduling
@@ -14,7 +14,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 'Orca: A Distributed Serving System for Transformer-Based Generative Models'
     url: https://www.usenix.org/conference/osdi22/presentation/yu
@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-陷阱是说「把 batch size 调大」。Static 大 batch 仍然按 **整条请求** 对齐：短的已经 EOS，槽位空等最长那条，GPU 在算 padding。Continuous batching（Orca 的 iteration-level scheduling）把调度粒度改成 **每个 decode step**：完成的序列立刻移出，waiting 队列里的新请求补入。吞吐来自 **减少空等**，不是来自更大的静态矩阵。把 `max_num_seqs` 开大只是给连续调度更多候选，本身不会消除静态对齐的税；没有 iteration-level 调度，大 batch 只是更贵的空等。LLM 生成长度方差远大于分类模型，RL 组内 $n$ 条更甚，所以这题和「为什么 rollout 要用 vLLM」是同一套调度故事。
+这块容易直接答成「把 batch size 调大」。Static 大 batch 仍然按 **整条请求** 对齐：短的已经 EOS，槽位空等最长那条，GPU 在算 padding。Continuous batching（Orca 的 iteration-level scheduling）把调度粒度改成 **每个 decode step**：完成的序列立刻移出，waiting 队列里的新请求补入。吞吐来自 **减少空等**，不是来自更大的静态矩阵。把 `max_num_seqs` 开大只是给连续调度更多候选，本身不会消除静态对齐的税；没有 iteration-level 调度，大 batch 只是更贵的空等。LLM 生成长度方差远大于分类模型，RL 组内 $n$ 条更甚，所以这题和「为什么 rollout 要用 vLLM」是同一套调度故事。
 
 ## Static batch 空在哪
 
@@ -48,9 +48,7 @@ Serving scheduler 每个 decode iteration：
 
 ## 和 paging、PD、异步的边界
 
-Continuous batching 管的是 **时间粒度**：每个 decode step 换人。PagedAttention 管的是 **内存形状**：结束的 KV 按页还给后来者。没有 paging，连续调度很快在预留上 OOM；没有连续调度，paging 只是少碎片，短请求仍空等。Chunked prefill 和 PD 分离管的是 **prefill 打断 decode**：前者单池切块，后者拆成两个池。异步 RL 管的是 trainer 与引擎之间的流水线，带 stale，完全另一层。面试把这四层画清楚，就不会把 `max_num_seqs`、`--colocate`、PD、async 说成同一个开关。RL 组采样长度方差大，最吃连续调度；短而齐的 SFT 式生成看不太出差距，所以有人误以为训练 `generate` 也够用。过调度会伤 goodput：有效 $B$ 太大，TPOT 打穿 SLO。目标是 SLO 内的有效吞吐，不是瞬时峰值。
-
-调度粒度从请求级改成 iteration 级，才是吞吐来源；调大静态 batch 只是更贵的空等。Paging 解决内存形状，连续 batch 解决时间空等，chunked prefill / PD 解决 prefill 打断 decode，异步 RL 是另一层流水线。四层不要说成一个开关。过调度伤 goodput：有效 $B$ 太大，TPOT 打穿 SLO。RL 组内长度方差大，最吃这套；短齐的 SFT 生成看不出差距。目标是 SLO 内有效吞吐，不是瞬时峰值 tokens/s。
+Continuous batching 管的是 **时间粒度**：每个 decode step 换人。PagedAttention 管的是 **内存形状**：结束的 KV 按页还给后来者。没有 paging，连续调度很快在预留上 OOM；没有连续调度，paging 只是少碎片，短请求仍空等。Chunked prefill 和 PD 分离管的是 **prefill 打断 decode**：前者单池切块，后者拆成两个池。异步 RL 管的是 trainer 与引擎之间的流水线，带 stale，完全另一层。我会把这四层画清楚，就不会把 `max_num_seqs`、`--colocate`、PD、async 说成同一个开关。RL 组采样长度方差大，最吃连续调度；短而齐的 SFT 式生成看不太出差距，所以有人误以为训练 `generate` 也够用。过调度会伤 goodput：有效 $B$ 太大，TPOT 打穿 SLO。目标是 SLO 内的有效吞吐，不是瞬时峰值。
 
 ## 追问
 

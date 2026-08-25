@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰大模型算法实习面经
     url: https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3
@@ -28,14 +28,14 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“BF16和FP16的区别？”**
 
-陷阱是把「16 位」说成 16 字节，或以为 BF16 更「准」。两者都是 2 字节，不是 16 字节。FP16 尾数更多、更准，但指数窄、易 Inf；BF16 范围接近 FP32，尾数更少。大模型训练选 BF16 是因为**不容易溢出**，不是因为更精确。原帖还问 bit 与 byte：8 bit = 1 byte，核算显存时 $N$ 个 BF16 参数约占 $2N$ 字节。
+这块容易把「16 位」说成 16 字节，或以为 BF16 更「准」。两者都是 2 字节，不是 16 字节。FP16 尾数更多、更准，但指数窄、易 Inf；BF16 范围接近 FP32，尾数更少。大模型训练选 BF16 是因为**不容易溢出**，不是因为更精确。原帖还问 bit 与 byte：8 bit = 1 byte，核算显存时 $N$ 个 BF16 参数约占 $2N$ 字节。
 
 ## 位宽怎么记
 
 - **FP16**：1-5-10，表示范围大约到 $6\times 10^4$。softmax、梯度累加容易 Inf，混合精度要动态 loss scale。
 - **BF16**：1-8-7，指数与 FP32 同宽，范围大约到 $10^{38}$，几乎可当「短 FP32」。乘法稳，但尾数 7 bit，敏感归约仍建议 FP32 累加。
 
-面试先画 exponent / mantissa，再讲 overflow vs rounding。只说「BF16 更新」没有信息量。和 `sys-precision` 同一套表，这题再补 bit/byte，避免显存账算错一个数量级。同面若再问 GPU 死锁，精度问题不会导致死锁——溢出是 Inf，通信 hang 是集体契约，见 `stepfun-gpu-deadlock`。
+面试先画 exponent / mantissa，再讲 overflow vs rounding。只说「BF16 更新」没有信息量。和 `sys-precision` 同一套表，这题再补 bit/byte，避免显存账算错一个数量级。同面若再问 GPU 死锁，精度问题不会导致死锁。溢出是 Inf，通信 hang 是集体契约，见 `stepfun-gpu-deadlock`。
 
 ## 训练为什么偏 BF16
 

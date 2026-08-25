@@ -5,7 +5,7 @@ order: 25
 level: S
 title: 淘天 0515：01 串里出现至少 $k$ 次的不同子串有多少？
 quick: >-
-  本质是「出现次数 $\ge k$ 的不同子串个数」。用后缀自动机 / 后缀数组统计 `endpos` 大小，把满足阈值的状态或高度区间加起来。
+  说白了就是「出现次数 $\ge k$ 的不同子串个数」。用后缀自动机 / 后缀数组统计 `endpos` 大小，把满足阈值的状态或高度区间加起来。
 tags:
   - Alibaba
   - OA
@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 2026 校招高频题总览
     url: https://www.cnblogs.com/autodriver/p/19829365
@@ -35,7 +35,7 @@ sources:
 
 ## 思路
 
-观察：不同子串最多 $n(n+1)/2$ 个，枚举会爆。需要按「出现次数」批量统计。
+不同子串最多 $n(n+1)/2$ 个，枚举会爆。需要按「出现次数」批量统计。
 
 后缀自动机（SAM）里，每个状态代表一段结束位置集合 `endpos` 相同的子串，这些子串的长度是连续区间 $(\mathrm{len}(\mathrm{link}(v)),\,\mathrm{len}(v)]$。该状态对应子串的出现次数就是 $|\mathrm{endpos}(v)|$。
 
@@ -45,7 +45,7 @@ sources:
 2. 按 `len` 降序把 `cnt` 加到 `link` 上，得到每个状态的出现次数。
 3. 若 `cnt[v] >= k`，把该状态代表的 $\mathrm{len}[v]-\mathrm{len}[\mathrm{link}[v]]$ 个子串全部计入答案。
 
-为什么对：同一 `endpos` 的子串出现次数相同；长度区间互不重叠且覆盖全部本质不同子串。$k=1$ 时退化为不同子串总数，也可写成 $\binom{n+1}{2}-\sum \mathrm{height}$。
+这样写是对的：同一 `endpos` 的子串出现次数相同；长度区间互不重叠且覆盖全部本质不同子串。$k=1$ 时退化为不同子串总数，也可写成 $\binom{n+1}{2}-\sum \mathrm{height}$。
 
 后缀数组做法：对 `height` 分组，组内后缀数 $\ge k$ 的那段 LCP 贡献长度。和 SAM 同复杂度量级。
 

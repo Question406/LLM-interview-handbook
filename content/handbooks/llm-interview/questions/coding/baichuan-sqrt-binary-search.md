@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
@@ -30,11 +30,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“算法题:求根号下的数(二分)”**
 
-陷阱是 `mid * mid` 溢出、以及 $0\lt x\lt 1$ 时把上界设成 $x$（根号反而更大）。不变量：答案始终在 $[lo,hi]$ 内，每次丢掉不含根的一半。牛顿更快，面试先把二分讲清。同面可能还有 Attention，见 `baichuan-mha-handwrite`。
+这块容易 `mid * mid` 溢出，以及 $0\lt x\lt 1$ 时把上界设成 $x$（根号反而更大）。不变量：答案始终在 $[lo,hi]$ 内，每次丢掉不含根的一半。牛顿更快，面试先把二分讲清。同面可能还有 Attention，见 `baichuan-mha-handwrite`。
 
 ## 整数：floor($\sqrt{x}$)，用除法比大小
 
-LeetCode 69 风格。$x\in\{0,1\}$ 直接返回。否则在 $[1,x]$（或 $[1,x/2]$）上二分：若 `mid <= x // mid` 说明 `mid` 还能变大，记答案并右移，否则左移。**禁止** `mid * mid` 与 $x$ 比——32/64 位都会溢。
+LeetCode 69 风格。$x\in\{0,1\}$ 直接返回。否则在 $[1,x]$（或 $[1,x/2]$）上二分：若 `mid <= x // mid` 说明 `mid` 还能变大，记答案并右移，否则左移。禁止 `mid * mid` 与 $x$ 比，32/64 位都会溢。
 
 ```python
 def my_sqrt_int(x: int) -> int:

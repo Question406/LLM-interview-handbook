@@ -5,8 +5,8 @@ order: 10
 level: A
 title: 美团 / 北斗：大模型应用与算法应重点准备什么？
 quick: >-
-  业务闭环导向：SFT→RL 门禁、字段抽取多维 Reward、Workflow vs Agent、Memory vs
-  RAG、LoRA/QLoRA 稳定性，以及 Thinking 开关对 SFT 的影响。公开面经同时覆盖 Reasoning 数据与应用八股。
+  业务闭环导向：SFT 到 RL 的门禁、字段抽取多维 Reward、Workflow vs Agent、Memory vs
+  RAG、LoRA/QLoRA 稳定性，以及 Thinking 开关对 SFT 的影响。公开面经同时覆盖 Reasoning 数据和应用八股。
 tags:
   - Meituan
   - Beidou
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 美团大模型算法岗完整面经（一面+二面）
     url: https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981
@@ -31,14 +31,14 @@ sources:
     type: candidate-first-hand
 ---
 
-美团题更贴业务闭环：标注质量如何量化、简单 / 困难样本如何配比、Thinking 开关对 SFT 的影响、RL 初期 reward 先降后升怎么解释。准备时选一个字段抽取或到店助手项目，能从数据 → SFT → RL → 线上延迟完整讲通，比背更多论文名更有效。
+美团题更贴业务闭环：标注质量怎么量化、简单和困难样本怎么配比、Thinking 开关对 SFT 的影响、RL 初期 reward 先降后升怎么解释。准备时我会选一个字段抽取或到店助手项目，从数据到 SFT、RL、线上延迟完整讲通，比背更多论文名有用。
 
 ## 准备主线
 
-1. **SFT / RL 门禁**：已有 Reasoning SFT 为何还要 RL；格式合法率、verifier 稳定、组内对错混合后才切 RL。
-2. **业务 Reward**：字段抽取要拆精确匹配、类型合法、必填、冲突、schema 与编造惩罚；会追 Reward Hacking。
-3. **Agent 边界**：Workflow vs Agent、Memory vs RAG；下单 / 退款等强约束链路不要空喊 Agent。
-4. **训练稳定性**：LoRA 为何挂 Linear 而不是 LayerNorm 之后；组内采样全错、reward/loss 震荡、过程监督信号。
+1. **SFT / RL 门禁**：已有 Reasoning SFT 为什么还要 RL。格式合法率、verifier 稳定、组内对错混合之后才切 RL。
+2. **业务 Reward**：字段抽取要拆精确匹配、类型合法、必填、冲突、schema 和编造惩罚。会追 Reward Hacking。
+3. **Agent 边界**：Workflow vs Agent、Memory vs RAG。下单、退款这类强约束链路不要空喊 Agent。
+4. **训练稳定性**：LoRA 为什么挂 Linear 而不是 LayerNorm 之后。组内采样全错、reward/loss 震荡、过程监督信号。
 
 ## 本手册真题卡
 

@@ -5,7 +5,7 @@ order: 3
 level: A
 title: LC 373 · 查找和最小的 K 对数字
 quick: >-
-  两升序数组。堆里先放 `(nums1[i], nums2[0])`，弹出后把同一 $i$ 的下一个 $j$ 推进去。时间
+  两升序数组。堆里我先放 `(nums1[i], nums2[0])`，弹出后再把同一 $i$ 的下一个 $j$ 推进去。时间
   $O(k\log k)$。
 tags:
   - Heap
@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 373. 查找和最小的 K 对数字
     url: https://leetcode.cn/problems/find-k-pairs-with-smallest-sums/
@@ -25,13 +25,13 @@ sources:
 
 ## 题意
 
-两个升序数组 `nums1`、`nums2`，从中各取一个数组成数对，返回和最小的 $k$ 对（任意顺序，本题按弹出顺序即可）。
+两个升序数组 `nums1`、`nums2`，从中各取一个数组成数对，返回和最小的 $k$ 对。顺序随便，这题按弹出顺序即可。
 
 ## 思路
 
-最小和一定出自「某个 `nums1[i]` 配 `nums2` 的前缀」。先把至多 $k$ 个 `(nums1[i] + nums2[0], i, 0)` 入堆。弹出 `(i, j)` 后，若 $j+1$ 合法，压入 `(i, j+1)`。有序保证不会漏掉更小的、也不会把同一对加两遍。
+最小和一定出自「某个 `nums1[i]` 配 `nums2` 的前缀」。我先把至多 $k$ 个 `(nums1[i] + nums2[0], i, 0)` 入堆。弹出 `(i, j)` 后，若 $j+1$ 合法，压入 `(i, j+1)`。有序保证不会漏掉更小的，也不会把同一对加两遍。
 
-不要枚举全部 $mn$ 对再排序。用访问集合从 $(0,0)$ 向右向下扩也行，但要去重，代码更长。
+别枚举全部 $mn$ 对再排序。用访问集合从 $(0,0)$ 向右向下扩也行，但要去重，代码更长。
 
 ## 参考代码
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **只要第 $k$ 小的和、不要列出对？** 堆弹出 $k$ 次，最后一次的和就是，时间 $O(k\log k)$。$k$ 接近 $mn$ 时改成对「和」二分：`mid` 能否作为第 $k$ 小，等价于有多少对和 $\le mid$。`nums1` 从左扫、`nums2` 从右收，计数 $O(m+n)$，二分值域 $[\mathrm{min}+\mathrm{min}, \mathrm{max}+\mathrm{max}]$，总 $O((m+n)\log W)$。
+- **只要第 $k$ 小的和、不要列出对？** 堆弹出 $k$ 次，最后一次的和就是，时间 $O(k\log k)$。$k$ 接近 $mn$ 时我改成对「和」二分：`mid` 能否作为第 $k$ 小，等价于有多少对和 $\le mid$。`nums1` 从左扫、`nums2` 从右收，计数 $O(m+n)$，二分值域 $[\mathrm{min}+\mathrm{min}, \mathrm{max}+\mathrm{max}]$，总 $O((m+n)\log W)$。
 
 ```python
 def kthSmallestPairSum(nums1, nums2, k):
@@ -94,7 +94,7 @@ def kthSmallestPairSum(nums1, nums2, k):
     return lo
 ```
 
-- **有序矩阵第 $k$ 小（LC 378）？** $n\times n$ 每行每列升序，本质是 $n$ 路归并。堆：先把第一列入堆，弹出后把同行下一列推进去，弹 $k$ 次，时间 $O(k\log n)$。或对值二分：`mid` 时从左下（或右上）走阶梯数有多少个 $\le mid$，与 $k$ 比，时间 $O(n\log(\max-\min))$。独立卡见 `lc-378`。
+- **有序矩阵第 $k$ 小（LC 378）？** $n\times n$ 每行每列升序，说白了是 $n$ 路归并。堆：先把第一列入堆，弹出后把同行下一列推进去，弹 $k$ 次，时间 $O(k\log n)$。或者对值二分：`mid` 时从左下（或右上）走阶梯，数有多少个 $\le mid$，再跟 $k$ 比，时间 $O(n\log(\max-\min))$。独立卡见 `lc-378`。
 
 ```python
 def kthSmallestMatrix(matrix, k):
@@ -124,4 +124,3 @@ def kthSmallestByValue(matrix, k):
             hi = mid
     return lo
 ```
-

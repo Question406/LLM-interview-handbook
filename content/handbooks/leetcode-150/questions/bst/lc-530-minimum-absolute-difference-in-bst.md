@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 530. 二叉搜索树的最小绝对差
     url: https://leetcode.cn/problems/minimum-absolute-difference-in-bst/
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **普通二叉树、不是 BST？** 中序不再有序，最小差可能出现在不相邻的中序位置。收集全部值排序后扫相邻，时间 $O(n\log n)$；或值域不大时桶。不要只比父子边——最优对可以隔代。
+- **普通二叉树、不是 BST？** 中序不再有序，最小差可能出现在不相邻的中序位置。收集全部值排序后扫相邻，时间 $O(n\log n)$；或值域不大时桶。不要只比父子边，最优对可以隔代。
 
 ```python
 def getMinimumDifference(root):

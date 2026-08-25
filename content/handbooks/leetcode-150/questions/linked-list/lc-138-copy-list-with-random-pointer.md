@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 138. 随机链表的复制
     url: https://leetcode.cn/problems/copy-list-with-random-pointer/
@@ -32,7 +32,7 @@ sources:
 
 哈希表记「旧节点 $\to$ 新节点」。第一遍只按 `next` 建副本并入库；第二遍用哈希给每个新节点接上 `next` 和 `random`。`random` 为空时用 `dict.get` 得到 `None`。
 
-空间优化：在每个旧节点后面插入副本，再按「旧.random 的后继」改副本的 `random`，最后拆成两条链。面试先写哈希，再提交织三步。
+空间优化：在每个旧节点后面插入副本，再按「旧.random 的后继」改副本的 `random`，最后拆成两条链。白板我会先写哈希，再提交织三步。
 
 ## 参考代码
 
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **$O(1)$ 额外空间怎么拷？** 三步交织，不建哈希。第一步：在每个旧节点后面插入副本，变成 `A-A'-B-B'-C-C'`。第二步：若 `cur.random` 非空，则副本的 `random` 就是 `cur.random.next`（旧 random 的后继恰好是它的副本）。第三步：按奇偶拆链，把旧表 `next` 接回旧后继、新表 `next` 接新后继。拆时必须先保住 `copy.next`，再改 `cur.next`，否则旧表断掉。时间仍 $O(n)$，额外空间 $O(1)$（不含新表）。`random` 为空时不要解引用。面试先画三步再写。
+- **$O(1)$ 额外空间怎么拷？** 三步交织，不建哈希。第一步：在每个旧节点后面插入副本，变成 `A-A'-B-B'-C-C'`。第二步：若 `cur.random` 非空，则副本的 `random` 就是 `cur.random.next`（旧 random 的后继恰好是它的副本）。第三步：按奇偶拆链，把旧表 `next` 接回旧后继、新表 `next` 接新后继。拆时必须先保住 `copy.next`，再改 `cur.next`，否则旧表断掉。时间仍 $O(n)$，额外空间 $O(1)$（不含新表）。`random` 为空时不要解引用。白板我会先画三步再写。
 
 ```python
 def copyRandomListWeave(head):

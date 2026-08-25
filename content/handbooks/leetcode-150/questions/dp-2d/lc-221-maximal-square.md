@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 221. 最大正方形
     url: https://leetcode.cn/problems/maximal-square/
@@ -29,7 +29,7 @@ sources:
 
 ## 思路
 
-$dp[i][j]$ 定义为「以该格为右下角」能形成的最大边长。当前是 `0` 则 $0$。当前是 `1` 时，能扩出去的边长受上、左、左上三个方向的短板限制：三者取 $\min$ 再加一。直觉：三个方向都至少有边长 $k-1$，才能在这里收成 $k$。
+$dp[i][j]$ 定义为「以该格为右下角」能形成的最大边长。当前是 `0` 则 $0$。当前是 `1` 时，能扩出去的边长受上、左、左上三个方向的短板限制：三者取 $\min$ 再加一。说白了，三个方向都至少有边长 $k-1$，才能在这里收成 $k$。
 
 下标可以整体加一圈空边，省掉边界特判。最后返回 $\textit{side}^2$，不是边长。
 

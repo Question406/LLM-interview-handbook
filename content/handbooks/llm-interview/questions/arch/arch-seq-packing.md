@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Fewer Truncations Improve Language Modeling
     url: https://arxiv.org/abs/2404.10830
     type: primary
 ---
 
-陷阱是只说「拼在一起提高 GPU 利用率」，却不提 mask。例如 max length $4096$，四条 $800$-token 样本各自 pad 会浪费约八成位置；packing 后可以放进同一 sequence。若不做隔离，样本 A 的 token 会看见样本 B，因果 LM 变成串味的跨文档注意力，loss 数字好看、任务却脏。
+这块容易只说「拼在一起提高 GPU 利用率」，却不提 mask。例如 max length $4096$，四条 $800$-token 样本各自 pad 会浪费约八成位置；packing 后可以放进同一 sequence。若不做隔离，样本 A 的 token 会看见样本 B，因果 LM 变成串味的跨文档注意力，loss 数字好看、任务却脏。
 
 ## 必须对齐的三张 mask
 

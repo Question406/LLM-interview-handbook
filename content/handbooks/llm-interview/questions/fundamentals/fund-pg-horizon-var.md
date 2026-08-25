@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: High-Dimensional Continuous Control Using Generalized Advantage Estimation
     url: https://arxiv.org/abs/1506.02438
@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-陷阱是把「方差大」全部推给 off-policy 的 $\rho$。Fresh、on-policy 的 REINFORCE 照样可以训不动：一条长 CoT 只在句末给 $0/1$，前面几百个 $\nabla\log\pi$ 乘的是同一个伯努利噪声。IS 连乘见 `fund-token-is-var`；本题是 **回报估计自己的方差**。
+这块容易把「方差大」全部推给 off-policy 的 $\rho$。Fresh、on-policy 的 REINFORCE 照样可以训不动：一条长 CoT 只在句末给 $0/1$，前面几百个 $\nabla\log\pi$ 乘的是同一个伯努利噪声。IS 连乘见 `fund-token-is-var`；本题是 **回报估计自己的方差**。
 
 ## 稀疏终局：同一个 $r_T$ 被复制到每个 token
 
@@ -37,7 +37,7 @@ $$
 
 $r_T$ 是整条轨迹共享的一个随机变量。成功一次，整段思考都被加强；失败一次，整段都被打压。对错与「哪个 token 有功」无关，这是 credit assignment，也是方差：$\mathrm{Var}(r_T)=p(1-p)$ 在 $p=0.5$ 时最大，见 `fund-bernoulli-adv-var`。长度 $T$ 越大，同一噪声乘进的 score 项越多，和的方差涨（项与项高度相关，不是 $\sqrt{T}$ 那种独立平均）。
 
-$\gamma\lt 1$ 会把终局奖在早期 token 上打折，早期方差下来，但早期几乎分不到信号——那是改了目标，不是免费降噪，见 `fund-gamma-vs-lambda`。
+$\gamma\lt 1$ 会把终局奖在早期 token 上打折，早期方差下来，但早期几乎分不到信号。那是改了目标，不是免费降噪，见 `fund-gamma-vs-lambda`。
 
 ## 和 IS 方差、组方差不要拧成一根
 

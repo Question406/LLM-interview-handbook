@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 日常实习 腾讯混元大模型一面 好难
     url: https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496

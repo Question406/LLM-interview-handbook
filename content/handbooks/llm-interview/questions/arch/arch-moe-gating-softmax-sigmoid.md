@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Mixtral of Experts
     url: https://arxiv.org/abs/2401.04088
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-陷阱是把「softmax 路由」写成先对 $N$ 个专家 softmax、再取 Top-$k$ 当权重。那 $k$ 个门控之和小于 $1$，未选中专家仍分走了概率质量，combine 等于把一层 MoE 乘了一个小于 $1$ 的系数。实现上要分清：**用什么分数做离散选择，用什么分数做加权，这两步可以不是同一张表。**
+这块容易把「softmax 路由」写成先对 $N$ 个专家 softmax、再取 Top-$k$ 当权重。那 $k$ 个门控之和小于 $1$，未选中专家仍分走了概率质量，combine 等于把一层 MoE 乘了一个小于 $1$ 的系数。实现上要分清：用什么分数做离散选择，用什么分数做加权，这两步可以不是同一张表。
 
 ## Mixtral：先截断，再在 $k$ 个上 softmax
 
@@ -38,9 +38,9 @@ G(x)=\mathrm{softmax}\bigl(\mathrm{TopK}(z)\bigr),\qquad
 y=\sum_{i=1}^{N}G(x)_i\,E_i(x).
 $$
 
-$\mathrm{TopK}$ 把未选中位置打成 $-\infty$（或先取出 $k$ 维再 softmax）。于是 **只有选中专家有非零门控，且这 $k$ 个数和为 $1$**。$k=2$、$N=8$ 时就是 Mixtral-8x7B 的稀疏 FFN：每 token 激活 $2$ 个 SwiGLU 专家，没有 shared expert，论文也不靠 aux loss 做均衡。
+$\mathrm{TopK}$ 把未选中位置打成 $-\infty$（或先取出 $k$ 维再 softmax）。于是只有选中专家有非零门控，且这 $k$ 个数和为 $1$。$k=2$、$N=8$ 时就是 Mixtral-8x7B 的稀疏 FFN：每 token 激活 $2$ 个 SwiGLU 专家，没有 shared expert，论文也不靠 aux loss 做均衡。
 
-手写时常见两种等价实现：`topk(logits)` 得到 `[T,k]` 再 `softmax(val, dim=-1)`；或把未选位置填 `-inf` 后对整行 softmax。不要对已经 softmax 过的 $N$ 维再 top-$k$ 当权重——那是 Switch 的「选谁」步骤，不是 Mixtral 的「加权」步骤。
+手写时常见两种等价实现：`topk(logits)` 得到 `[T,k]` 再 `softmax(val, dim=-1)`；或把未选位置填 `-inf` 后对整行 softmax。不要对已经 softmax 过的 $N$ 维再 top-$k$ 当权重，那是 Switch 的「选谁」步骤，不是 Mixtral 的「加权」步骤。
 
 ## DeepSeek-V3：sigmoid 亲和，选择和加权拆开
 
@@ -50,13 +50,13 @@ $$
 s_{i,t}=\sigma(u_t^\top e_i).
 $$
 
-**选谁**：看 $s_{i,t}+b_i$ 的 Top-$k$（$b_i$ 是无辅助负载的 bias，不进反传）。**加权**：只在选中的 $k$ 个上用 **未加 $b_i$ 的** $s_{i,t}$ 归一。Bias 只改集合，不改「选中之后贡献多大」，见 `arch-moe-noaux`。
+选谁：看 $s_{i,t}+b_i$ 的 Top-$k$（$b_i$ 是无辅助负载的 bias，不进反传）。加权：只在选中的 $k$ 个上用未加 $b_i$ 的 $s_{i,t}$ 归一。Bias 只改集合，不改「选中之后贡献多大」，见 `arch-moe-noaux`。
 
-和 Mixtral 的差别不在「一个用 softmax、一个用 sigmoid」这句话本身，而在 **专家之间是否被当成互斥类别**。Softmax 强制 $N$ 个分数抢同一份质量；sigmoid 允许多个专家同时高分，细粒度 $N=256$、$k=8$ 时更自然。Shared expert 在这两套门控之外常开，不进 Top-$k$，见 `arch-shared-expert`。
+和 Mixtral 的差别不在「一个用 softmax、一个用 sigmoid」这句话本身，而在专家之间是否被当成互斥类别。Softmax 强制 $N$ 个分数抢同一份质量；sigmoid 允许多个专家同时高分，细粒度 $N=256$、$k=8$ 时更自然。Shared expert 在这两套门控之外常开，不进 Top-$k$，见 `arch-shared-expert`。
 
 ## Switch 那条「先 softmax 再 Top-$1$」
 
-Switch 的 $P=\mathrm{softmax}(z)$ 既做负载统计又做门控：$k=1$ 时权重就是 $P_{i^\star}$，**故意不把唯一专家的门控 renormalize 成 $1$**，路由器低置信时这一层 MoE 贡献变小。Aux 用的也是这张 $P$，见 `code-moe-router-aux-loss`。把它抄到 Mixtral 的 $k=2$ 上还不做截断后归一，combine 会系统性偏小。
+Switch 的 $P=\mathrm{softmax}(z)$ 既做负载统计又做门控：$k=1$ 时权重就是 $P_{i^\star}$，故意不把唯一专家的门控 renormalize 成 $1$，路由器低置信时这一层 MoE 贡献变小。Aux 用的也是这张 $P$，见 `code-moe-router-aux-loss`。把它抄到 Mixtral 的 $k=2$ 上还不做截断后归一，combine 会系统性偏小。
 
 ## 追问
 

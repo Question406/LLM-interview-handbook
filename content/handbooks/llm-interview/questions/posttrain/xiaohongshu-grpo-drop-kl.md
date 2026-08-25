@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书大模型实习一面
     url: https://www.nowcoder.com/feed/main/detail/3f96f6fe7ed44c3b8c49cea3455d38a4
@@ -37,7 +37,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“讲一下论文里的 GRPO 算法原理，为什么去掉 KL 散度，reward function 怎么设置”**
 
-小红书实习一面这题，最容易把「去 KL」讲成定理，或把 GRPO 原理、去 KL、reward 三问搅成一句「组内对比所以不需要约束」。面试要分三层：GRPO 用组相对优势替代 critic；KL 是把策略锚在 reference 上的护栏；去 KL 是强可验证奖励下的工程取舍，不是 DeepSeekMath 原文的必然结论。
+小红书实习一面这题，这块容易把「去 KL」讲成定理，或把 GRPO 原理、去 KL、reward 三问搅成一句「组内对比所以不需要约束」。我会分三层：GRPO 用组相对优势替代 critic；KL 是把策略锚在 reference 上的护栏；去 KL 是强可验证奖励下的工程取舍，不是 DeepSeekMath 原文的必然结论。
 
 ## GRPO 原理：组相对优势，不是「没有基线」
 

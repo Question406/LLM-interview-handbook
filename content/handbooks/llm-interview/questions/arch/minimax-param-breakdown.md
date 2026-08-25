@@ -6,7 +6,7 @@ level: B
 title: MiniMax：大模型参数量在各部分大概怎么拆？
 quick: >-
   按 Embedding、每层 Attention（QKV/O）、MLP（含 SwiGLU 三矩阵）、输出头估算；MoE
-  再乘专家数并说明路由不增加同量激活参数。面试给公式比背某一发布会数字更重要。
+  再乘专家数并说明路由不增加同量激活参数。我会给公式，不背某一发布会数字。
 tags:
   - MiniMax
   - Parameter Count
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯/百度/minimax 大模型算法面经总结帖
     url: https://www.nowcoder.com/feed/main/detail/8cab51ef9458459595cf81fda43da279
@@ -26,7 +26,7 @@ sources:
 - 公司：MiniMax（总结帖收录）
 - 原始措辞：**“大模型算法中模型参数量每个部分有多少？”**
 
-陷阱是背某一发布会的「70B / 456B」数字，或把 **总参数** 和 **每 token 激活参数** 混成一个数。面试要的是可复用的拆分：词表、注意力、MLP、输出头，再单独说 MoE。数字对不上公开技术报告就说「按公式估」，不要编造。
+这块容易背某一发布会的「70B / 456B」数字，或把总参数和每 token 激活参数混成一个数。我会给可复用的拆分：词表、注意力、MLP、输出头，再单独说 MoE。数字对不上公开技术报告就说「按公式估」，不要编造。
 
 ## 稠密 Transformer：四块加法
 
@@ -43,20 +43,20 @@ $$
 N \approx Vd + L\bigl(4d^2 + 3d\,d_{\mathrm{ff}}\bigr)
 $$
 
-（GQA / tied head 时改对应项）。口算：7B 级 $d=4096,L=32$，一层 MLP 就接近注意力的两倍以上。面试先报公式，再代入一档公开配置做数量级核对，比背 MiniMax 某代总参数更稳。
+（GQA / tied head 时改对应项）。口算：7B 级 $d=4096,L=32$，一层 MLP 就接近注意力的两倍以上。我会先报公式，再代入一档公开配置做数量级核对。
 
 ## MoE：总参数可以涨，激活参数按 top-$k$
 
-专家复制的是 **FFN**，不是整层。$E$ 个专家、每 token 激活 $k$ 个（可加共享专家），则
+专家复制的是 FFN，不是整层。$E$ 个专家、每 token 激活 $k$ 个（可加共享专家），则
 
 $$
 N_{\mathrm{total}}\approx Vd + L\bigl(4d^2 + E\cdot 3d\,d_{\mathrm{ff}}\bigr),\qquad
 N_{\mathrm{act}}\approx Vd + L\bigl(4d^2 + k\cdot 3d\,d_{\mathrm{ff}}\bigr).
 $$
 
-路由器是 $d\times E$ 量级，相对专家矩阵可忽略。回答必须拆两句话：容量跟 $E$ 走，算力跟 $k$ 走。不要说「MoE 参数少」——总参数往往更多，省的是 **激活** FLOPs。负载不均时有效 $k$ 还会漂，见 `tencent-moe-vs-dense`、`arch-moe-balance`。
+路由器是 $d\times E$ 量级，相对专家矩阵可忽略。回答必须拆两句话：容量跟 $E$ 走，算力跟 $k$ 走。不要说「MoE 参数少」，总参数往往更多，省的是激活 FLOPs。负载不均时有效 $k$ 还会漂，见 `tencent-moe-vs-dense`、`arch-moe-balance`。
 
-Embedding 在大词表、多语言模型里占比可到总参数的 10% 量级；只报「层内 $d^2$」会漏这块。若面试官要公司具体型号，回到公开技术报告的 $d,L,E,k$，用上面公式验算，对不上就承认未读到该版附录。
+Embedding 在大词表、多语言模型里占比可到总参数的 10% 量级；只报「层内 $d^2$」会漏这块。若追问公司具体型号，回到公开技术报告的 $d,L,E,k$，用上面公式验算，对不上就承认未读到该版附录。
 
 ## 追问
 

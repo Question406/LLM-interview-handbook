@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 139. 单词拆分
     url: https://leetcode.cn/problems/word-break/
@@ -31,7 +31,7 @@ sources:
 
 布尔 DP。$dp[0]=\mathrm{true}$（空前缀）。对每个右端 $i$，枚举左端 $j\lt i$：`dp[j] and s[j:i] in words` 则 `dp[i]=True`。答案是 $dp[n]$。
 
-词典放进 `set`，判断 $O(1)$。可用词典最长词长限制内层循环。BFS / 记忆化搜索同样是「前缀能否拆」。面试先写清 $dp[i]$ 含义。
+词典放进 `set`，判断 $O(1)$。可用词典最长词长限制内层循环。BFS / 记忆化搜索同样是「前缀能否拆」。白板我先写清 $dp[i]$ 含义。
 
 ## 参考代码
 

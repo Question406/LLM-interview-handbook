@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: LRU 缓存
     url: https://leetcode.cn/problems/lru-cache/
@@ -26,7 +26,7 @@ sources:
 
 - 对应：LeetCode 146；阿里 Java 面几乎必问
 
-`get`：命中则把节点移到最近端，返回值；未命中返回 $-1$。`put`：存在则更新并移到最近端；不存在则插入，超容量删最久未用。
+`get`：命中就把节点移到最近端，返回值；未命中返回 $-1$。`put`：存在则更新并移到最近端；不存在则插入，超容量删最久未用。
 
 哈希负责 $O(1)$ 定位，双向链表负责 $O(1)$ 调整顺序。只哈希没有访问顺序，只链表查找是 $O(n)$。节点里要存 key，淘汰时才能删哈希。
 

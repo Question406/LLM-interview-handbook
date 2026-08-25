@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 73. 矩阵置零
     url: https://leetcode.cn/problems/set-matrix-zeroes/
@@ -31,7 +31,7 @@ sources:
 
 第一行、第一列既是数据又当标记：内部出现 $0$ 就写 `matrix[i][0]=matrix[0][j]=0`。`(0,0)` 同时代表「第一行有零」和「第一列有零」，必须另用两个布尔量记下原第一行 / 第一列是否本就有零。先处理内部，再回头清第一行、第一列。
 
-开 $O(m+n)$ 数组记行列表最直观。面试要 $O(1)$ 时再上标记法。
+开 $O(m+n)$ 数组记行列表最直观。要求 $O(1)$ 时再上标记法。
 
 ## 参考代码
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **允许 $O(m+n)$？** `row[i]`、`col[j]` 记录该行/列是否出现过零，再扫一遍置零。思路直、不易写错，面试可先写这个再压到 $O(1)$。
+- **允许 $O(m+n)$？** `row[i]`、`col[j]` 记录该行/列是否出现过零，再扫一遍置零。思路直、不易写错，白板我会先写这个再压到 $O(1)$。
 
 ```python
 def setZeroesExtra(matrix):

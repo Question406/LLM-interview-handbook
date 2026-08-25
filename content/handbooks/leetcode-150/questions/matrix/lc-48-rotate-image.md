@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 48. 旋转图像
     url: https://leetcode.cn/problems/rotate-image/
@@ -31,7 +31,7 @@ $n\times n$ 矩阵表示图像，原地顺时针旋转 $90^\circ$。
 
 位置映射 $(i,j)\to(j,n-1-i)$。拆成两步更稳：先转置（$(i,j)\leftrightarrow(j,i)$），再把每一行反转，等价于列对称翻转。只交换上三角，避免转置做两次。
 
-按圈四元交换也可以，下标容易写错。面试先画 $2\times 2$ 再写转置 + 翻转。
+按圈四元交换也可以，下标容易写错。白板我会先画 $2\times 2$ 再写转置 + 翻转。
 
 ## 参考代码
 

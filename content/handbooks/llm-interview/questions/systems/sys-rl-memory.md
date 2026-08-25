@@ -5,9 +5,10 @@ order: 19
 level: S
 title: 7B 模型做 GRPO，显存主要花在哪里？怎么优化？
 quick: >-
-  GRPO 虽去掉 Critic，却不等于“显存只剩一个 7B”。训练侧仍有
+  GRPO 虽去掉 Critic，却不等于「显存只剩一个 7B」。训练侧仍有
   policy/reference/optimizer/activation，rollout 侧还有多条长序列与
-  KV；应先按训练、rollout、通信三类峰值拆账，再选 ZeRO、checkpoint、长度/G、colocation 或 disaggregation。
+  KV。我会先按训练、rollout、通信三类峰值拆账，再选 ZeRO、checkpoint、长度/$G$、colocation 或
+  disaggregation。
 tags:
   - GRPO
   - Memory
@@ -16,7 +17,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 2025 美团大模型面经
     url: 'https://www.nowcoder.com/feed/main/detail/b87b9794a2114f7c818b40a3be51c4f0'
@@ -26,7 +27,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是听到「GRPO 去掉 Critic」就报一个固定 GB 数，或把训练显存和 serving KV 混成一笔。峰值取决于精度、optimizer、ZeRO stage、序列长、group size $G$、并行，以及训练与 rollout 是否占用同一张卡。先拆三类峰值，再谈优化。
+这块容易听到「GRPO 去掉 Critic」就报一个固定 GB 数，或把训练显存和 serving KV 混成一笔。峰值取决于精度、optimizer、ZeRO stage、序列长、group size $G$、并行，以及训练与 rollout 是否占用同一张卡。先拆三类峰值，再谈优化。
 
 ## 1. 训练侧：policy 仍是一份 Adam 账
 

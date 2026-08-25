@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 美团大模型算法二面-秋招面经
     url: https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177
@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“RMSNorm相较于LayerNorm有什么优势？公式是什么？”**
 
-陷阱是把 RMSNorm 说成「数学上严格更优的 LayerNorm」。它少做中心化，算得更快、带宽更友好；大模型实践里通常够稳，不是定理保证处处更强。公式必须能手写。同场常接着问 SwiGLU，两套要一起写。
+这块容易把 RMSNorm 说成「数学上严格更优的 LayerNorm」。它少做中心化，算得更快、带宽更友好；大模型实践里通常够稳，不是定理保证处处更强。公式必须能手写。同场常接着问 SwiGLU，两套要一起写。
 
 ## 公式
 

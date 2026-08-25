@@ -13,18 +13,18 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
     type: legacy-reference
 ---
 
-陷阱是把 Modular Agent 答成「再套一层 ReAct，让模型自己想下一步」。工业界要落到控制面：规划器产出步骤 / 子目标，执行器按状态机调工具；每步有输入输出契约、超时重试、幂等与降级。fallback 是换工具、缩任务、澄清用户、转人工，而不是再让模型「灵活一下」。延迟侧的串并行见 `ali-latency-3tools`，何时推翻计划见 `agent-when-to-replan`。
+这块容易直接答成「再套一层 ReAct，让模型自己想下一步」。工业界要落到控制面：规划器产出步骤 / 子目标，执行器按状态机调工具；每步有输入输出契约、超时重试、幂等与降级。fallback 是换工具、缩任务、澄清用户、转人工，而不是再让模型「灵活一下」。延迟侧的串并行见 `ali-latency-3tools`，何时推翻计划见 `agent-when-to-replan`。
 
 ## 规划器与执行器拆开
 
-规划：Plan-and-Execute 先出子目标再执行；ReAct 逐步交错。关键业务（退款、改地址、支付）用确定性工作流包住 LLM 规划——模型负责理解与填槽，状态转移写在编排里。调度要有工具白名单、并行 / 串行依赖、参数 schema 校验。没有契约的「自由规划」在淘天客服里会变成重复下单或跳过确认。单次打分不是 Agent，差别在控制回路，见 `ali-score-vs-agent`。
+规划：Plan-and-Execute 先出子目标再执行；ReAct 逐步交错。关键业务（退款、改地址、支付）用确定性工作流包住 LLM 规划。模型负责理解与填槽，状态转移写在编排里。调度要有工具白名单、并行 / 串行依赖、参数 schema 校验。没有契约的「自由规划」在淘天客服里会变成重复下单或跳过确认。单次打分不是 Agent，差别在控制回路，见 `ali-score-vs-agent`。
 
 模块化的好处是可替换：换模型不必重写工具层，换物流供应商不必重训规划器。代价是接口要稳：每步声明预期观测，执行器只认合法输出，脏数据不得直接回灌成下一步指令。
 

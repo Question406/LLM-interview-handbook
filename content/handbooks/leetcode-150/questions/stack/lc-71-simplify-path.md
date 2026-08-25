@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 71. 简化路径
     url: https://leetcode.cn/problems/simplify-path/
@@ -32,7 +32,7 @@ sources:
 
 `path.split("/")` 后用栈。空串来自开头、结尾或连续斜杠，丢掉。`.` 丢掉。`..` 若栈非空则弹出。其它 token 是合法目录名，入栈。最后 `"/" + "/".join(stack)`；栈空则返回 `"/"`。
 
-不要自己逐字符解析斜杠，先 split 更不容易写错。`...` 是目录名，不是 `..`。
+别自己逐字符解析斜杠，先 split 更不容易写错。`...` 是目录名，不是 `..`。
 
 ## 参考代码
 
@@ -90,7 +90,7 @@ def simplifyRelative(path):
     return "/".join(st) if st else "."
 ```
 
-- **还原成段列表给文件系统？** 直接返回栈，不必 `"/" + join`。调用方自己用当前工作目录拼接。绝对路径化简后栈里从根往下的各级名字，空栈表示根。不要把 `""`、`"."` 留在列表里。若还要做权限检查或 inode 查找，按这段列表逐级 walk 即可，化简已经去掉了无用的 `..` 与重复斜杠。
+- **还原成段列表给文件系统？** 直接返回栈，不必 `"/" + join`。调用方自己用当前工作目录拼接。绝对路径化简后栈里从根往下的各级名字，空栈表示根。别把 `""`、`"."` 留在列表里。若还要做权限检查或 inode 查找，按这段列表逐级 walk 即可，化简已经去掉了无用的 `..` 与重复斜杠。
 
 ```python
 def simplifyPathParts(path):

@@ -5,7 +5,7 @@ order: 13
 level: S
 title: LC 238 · 除自身以外数组的乘积
 quick: >-
-  不能用除法。先从左往右把左侧前缀积写入答案，再从右往左乘上右侧积。时间 $O(n)$，额外空间 $O(1)$（不含答案数组）。
+  不能用除法。我先从左往右把左侧前缀积写入答案，再从右往左乘上右侧积。时间 $O(n)$，额外空间 $O(1)$（不含答案数组）。
 tags:
   - Array
   - Prefix
@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 238. 除自身以外数组的乘积
     url: https://leetcode.cn/problems/product-of-array-except-self/
@@ -31,7 +31,7 @@ sources:
 
 `answer[i] = 左侧积 × 右侧积`。第一遍从左扫，`answer[i]` 先写成 `nums[0]*...*nums[i-1]`（`i=0` 为 $1$）。第二遍从右扫，维护右侧积 `right`，乘进 `answer[i]` 后再 `right *= nums[i]`。
 
-有 $0$ 时除法会炸，前缀积照样正确：一个 $0$ 则只有该位置非零；两个及以上全零。面试先声明「不用除法」。
+有 $0$ 时除法会炸，前缀积照样正确：一个 $0$ 则只有该位置非零；两个及以上全零。白板我会先声明「不用除法」。
 
 ## 参考代码
 
@@ -87,5 +87,4 @@ def productExceptSelf_div(nums):
     return [prod // x for x in nums]
 ```
 
-- **中间积会溢出？** LeetCode 保证答案能放进 $32$ 位整数，Python 整数任意精度，直接乘即可。C++/Java 要用 `long` 存中间积，最后再转回 `int`；或者仍用左右前缀、每次乘都在题保证的范围内。不要为了防溢出改用 `log` 再 `exp`，精度会炸。面试先问清数据范围再选类型。
-
+- **中间积会溢出？** LeetCode 保证答案能放进 $32$ 位整数，Python 整数任意精度，直接乘即可。C++/Java 要用 `long` 存中间积，最后再转回 `int`；或者仍用左右前缀、每次乘都在题保证的范围内。不要为了防溢出改用 `log` 再 `exp`，精度会炸。白板我会先问清数据范围再选类型。

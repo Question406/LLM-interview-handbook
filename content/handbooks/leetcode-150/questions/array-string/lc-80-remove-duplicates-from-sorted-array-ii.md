@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 80. 删除有序数组中的重复项 II
     url: https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/
@@ -32,7 +32,7 @@ sources:
 
 LC 26 的推广：慢指针写保留段。当前值可以写入，当且仅当还没写满两个，或它与已写入的倒数第二个不同（`nums[slow-2] != nums[fast]`）。这样同一值最多连写两次。
 
-不要边扫边计数当前重复次数再特判，容易写错边界。面试一句：「看已经写下的倒数第 $2$ 个」。
+不要边扫边计数当前重复次数再特判，容易写错边界。白板我会说一句：看已经写下的倒数第 $2$ 个。
 
 ## 参考代码
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **最多允许 $k$ 次？** 把阈值 $2$ 换成 $k$：`slow < k` 或 `nums[slow-k] != x` 才写入。含义是：已写下的倒数第 $k$ 个若仍等于当前值，再写就会出现 $k+1$ 次。有序保证相同值连在一起，所以只看 `slow-k` 就够。时间 $O(n)$，额外空间 $O(1)$。$k=1$ 就是 LC 26，独立卡见 `lc-26-remove-duplicates-from-sorted-array`。易错点是写成 `slow-k+1` 或拿 `fast-k` 比较，以及 $k=0$ 要先定义（通常直接返回 $0$）。$k$ 大于数组长度时答案就是 $n$。
+- **最多允许 $k$ 次？** 把阈值 $2$ 换成 $k$：`slow < k` 或 `nums[slow-k] != x` 才写入。含义是：已写下的倒数第 $k$ 个若仍等于当前值，再写就会出现 $k+1$ 次。有序保证相同值连在一起，所以只看 `slow-k` 就够。时间 $O(n)$，额外空间 $O(1)$。$k=1$ 就是 LC 26，独立卡见 `lc-26-remove-duplicates-from-sorted-array`。这块容易栽：写成 `slow-k+1` 或拿 `fast-k` 比较，以及 $k=0$ 要先定义（通常直接返回 $0$）。$k$ 大于数组长度时答案就是 $n$。
 
 ```python
 def removeDuplicatesAtMostK(nums, k):
@@ -97,4 +97,3 @@ def removeDuplicatesUnsorted(nums, k=2):
             seen[x] = c + 1
     return slow
 ```
-

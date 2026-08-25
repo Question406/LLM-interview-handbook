@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 京东大模型算法 实习面经 55min
     url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46

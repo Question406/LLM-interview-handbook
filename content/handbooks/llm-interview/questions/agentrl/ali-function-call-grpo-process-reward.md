@@ -16,7 +16,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阿里26校招大模型算法二面45min（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/2c84e26c05664d52845959039cf99edd
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“在使用 GRPO 提升大模型的Function Calling能力时，除了结果奖励（outcome reward），还可以如何设计过程奖励（process reward）？”**
 
-陷阱是把「JSON 漂亮、多调几次工具、CoT 写得长」当成过程分。阿里这面要听的是：终局仍由可执行业务 oracle 判定，过程分只打**可自动验证的事件**，并且这些事件必须提高到达正确终局的概率。只靠 outcome 的长工具链，关键错参和正确前缀会被同一条 $0/1$ 糊在一起，见 `arl-credit`、`ali-agent-final-reward`。
+这块容易直接答成把「JSON 漂亮、多调几次工具、CoT 写得长」当成过程分。阿里这面要听的是：终局仍由可执行业务 oracle 判定，过程分只打可自动验证的事件，并且这些事件必须提高到达正确终局的概率。只靠 outcome 的长工具链，关键错参和正确前缀会被同一条 $0/1$ 糊在一起，见 `arl-credit`、`ali-agent-final-reward`。
 
 ## 过程分只打可验证事件
 
@@ -51,11 +51,11 @@ GRPO 吃的是同一 prompt 下多条 rollout 的相对优势。Verifier 要对�
 
 上线前三组反事实：注入错误 tool / 错误参数，过程分必须掉；把合法调用改成字段顺序不同的等价 JSON，过程分不能变；加无意义的重复查询，成本项应惩罚、outcome 不应涨。若过程分与终局成功相关掉了，先关 shaping 再查 oracle。Token 级怎么落到可训练 token，对照 `byte-agent-token-credit`。
 
-面试收口：outcome 锚定业务结果；过程分只覆盖选 tool、schema、权限、grounding 和成本；GRPO 要求 verifier 对等价轨迹稳定，并用注入测试确认没有在刷 formatter。
+最后我会补一句：outcome 锚定业务结果；过程分只覆盖选 tool、schema、权限、grounding 和成本；GRPO 要求 verifier 对等价轨迹稳定，并用注入测试确认没有在刷 formatter。
 
 ## 追问
 
-- **没有可执行 oracle 怎么办？** 先把任务改到能自动判定，或只用 schema / 权限硬门，不要用另一个模型空口打过程分。
+- **没有可执行 oracle 怎么办？** 先把任务改到能自动判定，或只用 schema / 权限硬门，不要用另一个模型空口打过程分。状态能哈希时可以用 GiGPO，见 `arl-process-vs-gigpo`。
 - **和纯 outcome GRPO 何时够用？** 两三步、对错一眼能看时可以先只用终局；长链、有不可逆写操作时必须加密可验证中间事件。
 - **过程分会不会 hacking？** 会。每个 dense 项都是新表面。用终局门槛、相关监控和「等价 JSON / 多余调用」反事实压刷分。
 - **组内有的轨迹环境超时？** 超时样本不要进相对优势，否则模型学的是基础设施抖动。先修环境，再谈算法。

@@ -15,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ DeepSeek-V3
     url: 'https://arxiv.org/abs/2412.19437'
     type: legacy-reference
 ---
 
-陷阱是把 MLA 说成「另一种 GQA」或「把 K/V 随便压成一个小向量」。两者都为 decode 的 KV 带宽服务，**压缩轴不同**：GQA 减少独立 KV 头的个数；MLA 把每 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
+这块容易把 MLA 说成「另一种 GQA」或「把 K/V 随便压成一个小向量」。两者都为 decode 的 KV 带宽服务，压缩轴不同：GQA 减少独立 KV 头的个数；MLA 把每 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
 
 ## 1. GQA：沿 head 数共享
 
@@ -38,7 +38,7 @@ $$
 c_t^{KV}=W^{DKV}h_t\in\mathbb{R}^{d_c},\qquad d_c\ll n_h d_h.
 $$
 
-训练时再上投影得到内容部分 $k^C,v^C$。若对整段 $k$ 做低秩又直接套 RoPE，旋转与低秩基不对齐，位置信息会被拧坏。MLA 因此 **把 RoPE 拆出去**：另存一小段解耦的 $k_t^R=\mathrm{RoPE}(W^{KR}h_t)$（维 $d_h^R$ 往往只有几十），query 侧同样有 $q^R$。Cache 里每 token 主要是 $c_t^{KV}$ 加这段短 $k^R$，而不是 $n_h$ 份全长 K/V。
+训练时再上投影得到内容部分 $k^C,v^C$。若对整段 $k$ 做低秩又直接套 RoPE，旋转与低秩基不对齐，位置信息会被拧坏。MLA 因此把 RoPE 拆出去：另存一小段解耦的 $k_t^R=\mathrm{RoPE}(W^{KR}h_t)$（维 $d_h^R$ 往往只有几十），query 侧同样有 $q^R$。Cache 里每 token 主要是 $c_t^{KV}$ 加这段短 $k^R$，而不是 $n_h$ 份全长 K/V。
 
 不能「随便压成一个小向量」：attention score 与 value 聚合仍要保留足够的 query-dependent 结构。$d_c$ 太小就是信息瓶颈；论文里的 $d_c$（如 $512$）是质量和流量的折中，不是越小越好。
 

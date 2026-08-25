@@ -5,8 +5,8 @@ order: 16
 level: A
 title: 阶跃星辰：大模型 / Agent 算法应重点准备什么？
 quick: >-
-  算法岗追 RLVR 策略、混合加训 vs continue SFT、Benchmark 分桶迭代、GRPO 组内优势；Agent 岗追工具奖励、
-  ReAct 各块 I/O、trl / VeRL 调参。手撕出现过 top-p 与 GRPO。
+  算法岗会追 RLVR 策略、混合加训 vs continue SFT、Benchmark 分桶迭代、GRPO 组内优势；Agent 岗会追工具奖励、
+  ReAct 各块 I/O、trl / VeRL 调参。手撕出现过 top-p 和 GRPO。
 tags:
   - StepFun
   - 真题导航
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰大模型算法实习一面
     url: https://www.nowcoder.com/feed/main/detail/5cb1ebe809fd402d844cce47380a926f
@@ -27,15 +27,15 @@ sources:
     type: candidate-first-hand
 ---
 
-阶跃面经偏「真的训过」：会问 SFT loss 起点、1T 与小模型差异、VeRL 类名与参数。准备一个可回放的 Agent 工具训练故事，比罗列框架名更有效。
+阶跃面经偏「真的训过」：会问 SFT loss 起点、1T 和小模型差异、VeRL 类名和参数。我会准备一个能回放的 Agent 工具训练故事，比罗列框架名有用。
 
 ## 准备主线
 
-1. **后训练策略**：RLVR 的 verifier 与 fresh rollout；混合加训和 continue SFT 的适用条件。
-2. **评测迭代**：Benchmark 按能力 / 难度 / 失败类型分桶，不把公开题直接当 reward。
-3. **Agent 工具 RL**：奖励拆安全门、结果、过程与成本；数据配比保留难例和失败轨迹。
-4. **ReAct 接口**：Plan / Action / Observation 各自输入输出长什么样，能否对齐日志 schema。
-5. **公式**：GRPO 组内优势与 baseline；RL 训 MoE 的路由漂移，可对照 GSPO。
+1. **后训练策略**：RLVR 的 verifier 和 fresh rollout；混合加训和 continue SFT 的适用条件。
+2. **评测迭代**：Benchmark 按能力、难度、失败类型分桶，不把公开题直接当 reward。
+3. **Agent 工具 RL**：奖励拆安全门、结果、过程和成本；数据配比保留难例和失败轨迹。
+4. **ReAct 接口**：Plan / Action / Observation 各自输入输出长什么样，能不能对齐日志 schema。
+5. **公式**：GRPO 组内优势和 baseline；RL 训 MoE 的路由漂移，可对照 GSPO。
 
 ## 本手册真题卡
 

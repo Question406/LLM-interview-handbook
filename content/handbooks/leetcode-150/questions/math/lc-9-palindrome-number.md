@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 9. 回文数
     url: https://leetcode.cn/problems/palindrome-number/
@@ -33,7 +33,7 @@ sources:
 
 不转字符串就反转**一半**。`rev` 从右往左拼数字，`x` 不断去掉末位，直到 `x <= rev`。偶数位两半相等；奇数位中间那位在 `rev` 里，整除 $10$ 丢掉再比。只反转一半，也避开整段反转的溢出。
 
-转字符串再对撞指针能过，面试先承认，再写一半反转。
+转字符串再对撞指针能过，白板我会先承认，再写一半反转。
 
 ## 参考代码
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **转字符串？** `s=str(x)`，左右指针对撞或 `s == s[::-1]`。能过，但不满足「不转字符串」进阶。负数 `str` 带 `-`，直接否。面试先承认这写法，再写一半反转。
+- **转字符串？** `s=str(x)`，左右指针对撞或 `s == s[::-1]`。能过，但不满足「不转字符串」进阶。负数 `str` 带 `-`，直接否。白板我会先承认这写法，再写一半反转。
 
 ```python
 def isPalindromeStr(x):

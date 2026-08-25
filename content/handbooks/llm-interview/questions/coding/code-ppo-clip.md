@@ -6,7 +6,7 @@ level: A
 title: 手写 PPO clipped surrogate，并解释 $A$ 的符号
 quick: >-
   $L=\min(\rho A,\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)A)$。Clip
-  Clip 不会把真实 $\rho$ 拉回区间，只是让越界且「有利」的一侧梯度为 0。$A\gt 0$ 时上限 $1+\varepsilon$ 生效；$A\lt 0$ 时下限 $1-\varepsilon$ 生效。
+  不会把真实 $\rho$ 拉回区间，只是让越界且「有利」的一侧梯度为 0。$A\gt 0$ 时上限 $1+\varepsilon$ 生效；$A\lt 0$ 时下限 $1-\varepsilon$ 生效。
 tags:
   - PPO
   - Clip
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Proximal Policy Optimization
     url: https://arxiv.org/abs/1707.06347
@@ -30,7 +30,7 @@ $$
 L(\theta)=\min\big(\rho A,\;\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)\,A\big).
 $$
 
-最大化 $L$（实现里常写 `-L.mean()`）。当 $A\gt 0$，希望增大 $\rho$，但超过 $1+\varepsilon$ 后 $\min$ 选中常数项，**该样本梯度为 0**。当 $A\lt 0$，希望减小 $\rho$，低于 $1-\varepsilon$ 后同样被掐掉。另一侧（$A\gt 0$ 且 $\rho$ 很小，或 $A\lt 0$ 且 $\rho$ 很大）不 clip，让策略从「走错的方向」拉回来。
+最大化 $L$（实现里常写 `-L.mean()`）。当 $A\gt 0$，希望增大 $\rho$，但超过 $1+\varepsilon$ 后 $\min$ 选中常数项，该样本梯度为 0。当 $A\lt 0$，希望减小 $\rho$，低于 $1-\varepsilon$ 后同样被掐掉。另一侧（$A\gt 0$ 且 $\rho$ 很小，或 $A\lt 0$ 且 $\rho$ 很大）不 clip，让策略从「走错的方向」拉回来。
 
 这不是 CISPO：CISPO clip 的是 IS 权重并 detach，梯度仍走 $\log\pi$。见 `pt-cispo`、`pt-ppo-clip`。
 

@@ -5,8 +5,8 @@ order: 269
 level: A
 title: 弹性扩缩容后如何 Resume，并对模型状态 Reshard？
 quick: >-
-  Checkpoint 按逻辑参数 ID 存，不要绑死「rank 3 的第 2 片」。恢复时按新 world size 重切
-  TP/EP/DP；扩缩前先排空 in-flight collective。DP 变大最常见，EP 变大要重排 expert。验证 loss 连续，允许种子差。
+  Checkpoint 按逻辑参数 ID 存，不要绑死「rank 3 的第 2 片」。恢复时按新 world size 重切 TP/EP/DP；扩缩前先排空
+  in-flight collective。DP 变大最常见，EP 变大要重排 expert。我会验 loss 连续，种子差可以接受。
 tags:
   - Elastic Training
   - Reshard
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: PyTorch Distributed Elastic
     url: https://pytorch.org/docs/stable/distributed.elastic.html
@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-陷阱是把弹性理解成「多加几张卡继续 all-reduce」。World size 一变，TP 切片、FSDP 分片、MoE expert 布局全部作废；飞行中的 collective 没有新成员。正确路径是：**排空 $\to$ 一致 ckpt $\to$ 按新并行计划 reshard $\to$ 重建通信组**。PyTorch Elastic 管进程生命周期（rendezvous、故障换人）；DCP 管状态按逻辑名读写。两件事一起才叫 resume，缺一就是「重启失败的作业」。落盘语义见 `sys-async-checkpoint`：齐套版本才能作为弹性切点。
+这块容易把弹性理解成「多加几张卡继续 all-reduce」。World size 一变，TP 切片、FSDP 分片、MoE expert 布局全部作废；飞行中的 collective 没有新成员。正确路径是：**排空 $\to$ 一致 ckpt $\to$ 按新并行计划 reshard $\to$ 重建通信组**。PyTorch Elastic 管进程生命周期（rendezvous、故障换人）；DCP 管状态按逻辑名读写。两件事一起才叫 resume，缺一就是「重启失败的作业」。落盘语义见 `sys-async-checkpoint`：齐套版本才能作为弹性切点。
 
 ## 按逻辑 ID 存，按新计划切
 
@@ -50,7 +50,7 @@ $R$ 变了，$r$ 号文件不能直接 memcpy 到新 rank。
 
 RL 集群还要重建 rollout worker 的路由：哪组 GPU 跑 generate、哪组跑 trainer、weight sync 的 collective 是谁。HybridEngine 同卡方案改的是卡数与布局，分卡方案改的是两池比例，见 `sys-verl-hybridengine`、`sys-rl-dataplane-controlplane`。Resume 后 rollout 必须加载 **同一 `policy_version`**，并 flush KV，否则 stale 轨迹会混进第一步。弹性不是只把 trainer 拉起来。
 
-验证清单：新并行下 forward 一张固定 batch 的 loss 与参考实现同量级；optimizer step 一次后范数正常；EP 变了则每 expert 的参数和旧 ckpt 对得上（允许排列）。不要只看「进程都 alive」。弹性失败的常见根因是：ckpt 绑死 rank、排水不彻底、只恢复 $\theta$ 没恢复 $m,v$。先修这三件，再谈自动扩缩策略。DP 变了还要重切数据：同一份全局 batch 按新 rank 划分，否则有的样本会重复、有的永远看不到。dataloader 位点若按旧 world 存的绝对 index，resume 后要对新切分做一次映射，不能原样 seek。这和权重 reshard 是同一类「逻辑坐标 vs 物理 rank」问题。
+验证清单：新并行下 forward 一张固定 batch 的 loss 与参考实现同量级；optimizer step 一次后范数正常；EP 变了则每 expert 的参数和旧 ckpt 对得上（允许排列）。不要只看「进程都 alive」。弹性失败常见是 ckpt 绑死 rank、排水不彻底、只恢复 $\theta$ 没恢复 $m,v$。先修这三件，再谈自动扩缩策略。DP 变了还要重切数据：同一份全局 batch 按新 rank 划分，否则有的样本会重复、有的永远看不到。dataloader 位点若按旧 world 存的绝对 index，resume 后要对新切分做一次映射，不能原样 seek。这和权重 reshard 是同一类「逻辑坐标 vs 物理 rank」问题。
 
 ## 追问
 

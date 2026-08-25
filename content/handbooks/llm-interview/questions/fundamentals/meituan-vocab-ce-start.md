@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 美团大模型算法二面-秋招面经
     url: https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“LLM的损失函数是什么？给你一个10w的词表，计算出事的损失值”**
 
-陷阱是把「出事 / 起步」答成某个 checkpoint 的真实 loss，或把 bit 和 nat 混报。面试要的是数量级：随机初始化时交叉熵应接近均匀熵 $\log V$，不是 0，也不是训练后期的 2.x。同面 SwiGLU / RMSNorm 是公式题，这题是数量级题。
+这块容易把「出事 / 起步」答成某个 checkpoint 的真实 loss，或把 bit 和 nat 混报。我会报数量级：随机初始化时交叉熵应接近均匀熵 $\log V$，不是 0，也不是训练后期的 2.x。同面 SwiGLU / RMSNorm 是公式题，这题是数量级题。
 
 ## 交叉熵如何退化成 $\log V$
 
@@ -64,13 +64,13 @@ $V=10^5$ 时 $\ln(10^5)=5\ln 10\approx 11.51$ nat；$\log_2(10^5)\approx 16.6$ b
 
 label smoothing 把目标从 one-hot 改成 $q=(1-\varepsilon)e_y+\varepsilon/V$，地板从 $0$ 抬到大约 $-(1-\varepsilon)\log(1-\varepsilon)-\varepsilon\log(\varepsilon/V)$ 那一截，观测值会略高于「理想 one-hot CE」。不要把平滑后的偏高当成没训练。
 
-白板再补平均方式。Causal LM 用 `logits[:, :-1]` 对 `labels[:, 1:]`，pad 位 `ignore_index=-100`。正确平均是有效 token 上的均值：分母是 $\sum_i\mathbf{1}[y_i\neq\mathrm{ignore}]$，不是 batch 里的格子数。若把 pad 的 NLL 算进去再除以 $N$，曲线会被「假高」或「假低」——取决于 pad 位置的 logits 乱不乱。面试被追「你怎么知道 11.5 算对了」时，先问：词表 $V$、单位 nat 还是 bit、要不要算 smoothing、分母是不是有效 token。四件事对齐，数量级才有意义。同面若已写过 CE 手写，主动说：实现必须 `logsumexp`，禁止先 softmax 再 $\log$，数值下溢会把起步 loss 打成 Inf，和「均匀熵」不是同一件事。
+白板再补平均方式。Causal LM 用 `logits[:, :-1]` 对 `labels[:, 1:]`，pad 位 `ignore_index=-100`。正确平均是有效 token 上的均值：分母是 $\sum_i\mathbf{1}[y_i\neq\mathrm{ignore}]$，不是 batch 里的格子数。若把 pad 的 NLL 算进去再除以 $N$，曲线会被「假高」或「假低」，取决于 pad 位置的 logits 乱不乱。被追「你怎么知道 11.5 算对了」时，先问：词表 $V$、单位 nat 还是 bit、要不要算 smoothing、分母是不是有效 token。四件事对齐，数量级才有意义。同面若已写过 CE 手写，主动说：实现必须 `logsumexp`，禁止先 softmax 再 $\log$，数值下溢会把起步 loss 打成 Inf，和「均匀熵」不是同一件事。
 
-训练曲线怎么读：前几个 step 从 $\approx\log V$ 往下掉，是 embedding 与输出头开始拉开类别；掉到 3–4 还很常见，因为自然语言本身有剩余熵，不是要逼近 0。长期贴着 11 才是事故。不要把某个开源 checkpoint 的 1.8 当成这道题的标准答案——那是训完的数，面试问的是随机起步。
+训练曲线怎么读：前几个 step 从 $\approx\log V$ 往下掉，是 embedding 与输出头开始拉开类别；掉到 3 到 4 还很常见，因为自然语言本身有剩余熵，不是要逼近 0。长期贴着 11 才是事故。不要把某个开源 checkpoint 的 1.8 当成这道题的标准答案，那是训完的数，这题问的是随机起步。
 
-## 面试收口：先单位，再数量级，再排障
+## 先单位，再数量级，再排障
 
-这题不是让你报某个开源模型的训练曲线。现场先问清词表大小和对数底，再写 $\ell=-\log q_y$，再代入均匀假设。$10$ 万词表报 $11.5$ nat 或 $16.6$ bit，并声明 PyTorch 默认 nat。然后主动排障：贴着这个数是没在学或平均错了；远低于 $1$ 的「起步」是 label / 泄漏问题。label smoothing、pad 平均、视觉 token 是否进分母，都会让观测值偏离纯 $\log V$，要能各用一句话说清偏移方向。同面若已写 CE 实现，把 `logsumexp` 和 ignore 平均接上，数量级和数值稳定就是同一套交叉熵，不是两道无关题。训练中期掉到 $3$ 左右仍然正常，因为自然语言有剩余熵，不要把「还没到 $0$」当成失败。被追「那目标是多少」时答：取决于数据和词表，没有统一终点；有统一意义的只有随机起步的均匀熵。把这句话说完，这题就从背数变成了推导。
+这题不是让你报某个开源模型的训练曲线。现场先问清词表大小和对数底，再写 $\ell=-\log q_y$，再代入均匀假设。$10$ 万词表报 $11.5$ nat 或 $16.6$ bit，并声明 PyTorch 默认 nat。然后主动排障：贴着这个数是没在学或平均错了；远低于 $1$ 的「起步」是 label / 泄漏问题。label smoothing、pad 平均、视觉 token 是否进分母，都会让观测值偏离纯 $\log V$，要能各用一句话说清偏移方向。同面若已写 CE 实现，把 `logsumexp` 和 ignore 平均接上，数量级和数值稳定就是同一套交叉熵，不是两道无关题。训练中期掉到 $3$ 左右仍然正常，因为自然语言有剩余熵，不要把「还没到 $0$」当成失败。被追「那目标是多少」时答：取决于数据和词表，没有统一终点；有统一意义的只有随机起步的均匀熵。
 
 ## 追问
 

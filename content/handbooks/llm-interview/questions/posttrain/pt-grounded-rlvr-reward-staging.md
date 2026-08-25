@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Lessons from Training Grounded LLMs with Verifiable Rewards
     url: https://arxiv.org/abs/2506.15522
     type: primary
 ---
 
-Grounded QA / RAG 的 RLVR 要同时满足：检索证据覆盖关键事实、引用真正蕴含声明、最终答案正确、证据不足时拒答或标不确定。这些目标互相冲突，不能当成一个标量随便加。面试陷阱是 $r = r_{\mathrm{ans}} + r_{\mathrm{cite}} + r_{\mathrm{refuse}}$ 一把梭：模型会堆假引用刷 citation 分、或遇难就拒答刷安全分，答案质量反而坏。`pt-reward-design` 讲奖励可验证；`pt-reward-ood-failure` 讲代理奖励出支撑就失效。本题把这两点落到 grounded 场景的分阶段训练。
+Grounded QA / RAG 的 RLVR 要同时满足：检索证据覆盖关键事实、引用真正蕴含声明、最终答案正确、证据不足时拒答或标不确定。这些目标互相冲突，不能当成一个标量随便加。这块容易写成 $r = r_{\mathrm{ans}} + r_{\mathrm{cite}} + r_{\mathrm{refuse}}$ 一把梭：模型会堆假引用刷 citation 分、或遇难就拒答刷安全分，答案质量反而坏。`pt-reward-design` 讲奖励可验证；`pt-reward-ood-failure` 讲代理奖励出支撑就失效。本题把这两点落到 grounded 场景的分阶段训练。
 
 ## 四层信号必须分开定义
 
@@ -50,7 +50,7 @@ Grounded QA / RAG 的 RLVR 要同时满足：检索证据覆盖关键事实、�
 
 必须同时报：answer correctness、citation precision / recall、unsupported-claim rate、false refusal、retrieval miss。任一安全失败被总分掩盖都不算过。切片看：证据充足的题、证据冲突的题、检索全空的题。全空集上仍「自信作答且引用幻觉」，是 grounded RLVR 的红灯。冲突集上应引用双方并拒绝对单一结论，而不是挑一句好引用硬答。
 
-还要防评测与训练共用同一检索器漏洞：训练时能检索到的金标句，线上换库就没了。换 retrieval 后端、换语料版本做一次破坏性测试。奖励出支撑后的表现，按 `pt-reward-ood-failure` 的 proxy–gold 相关来盯。Grounded 的 OOD 不只是新题，还包括新语料库、新引用格式和更长的多跳证据链。
+还要防评测与训练共用同一检索器漏洞：训练时能检索到的金标句，线上换库就没了。换 retrieval 后端、换语料版本做一次破坏性测试。奖励出支撑后的表现，按 `pt-reward-ood-failure` 的 proxy-gold 相关来盯。Grounded 的 OOD 不只是新题，还包括新语料库、新引用格式和更长的多跳证据链。
 
 阶段门可以写成：先过 citation / answerability 回归，再开答案奖励；答案阶段用「引用未过则答案项为零」的门槛，最后单独调拒答，四张切片表一起看。
 
@@ -59,4 +59,4 @@ Grounded QA / RAG 的 RLVR 要同时满足：检索证据覆盖关键事实、�
 - **为什么加权求和常失败？** 模型会找最容易涨的项（多引用或乱拒答），梯度不保证四层同时变好。冲突是结构性的，调 $\lambda$ 只是换一种劫持方式。
 - **拒答应放在第几阶段？** 先有可靠的 answerability 判断，再调阈值；一上来奖拒答，会学成「不会就拒」。false refusal 与 missed refusal 必须分集，不能合成一个「谨慎分」。
 - **citation 用计数可以吗？** 只能当辅助。必须有 entailment，否则伪引用是最优策略。计数还会激励堆无关链接，precision 先崩。
-- **和普通数学 RLVR 差在哪？** 数学常有单一可执行终局；grounded QA 有「对但无依据」和「有依据但拒答」两种不可接受的成功，必须分阶段和分指标。检索后端一换就 OOD，还要按 `pt-reward-ood-failure` 盯 proxy–gold。
+- **和普通数学 RLVR 差在哪？** 数学常有单一可执行终局；grounded QA 有「对但无依据」和「有依据但拒答」两种不可接受的成功，必须分阶段和分指标。检索后端一换就 OOD，还要按 `pt-reward-ood-failure` 盯 proxy-gold。

@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 129. 求根节点到叶节点数字之和
     url: https://leetcode.cn/problems/sum-root-to-leaf-numbers/
@@ -26,7 +26,7 @@ sources:
 
 ## 题意
 
-根到叶的每条路径表示一个十进制数（节点值是 $0$–$9$）。返回所有这些数的和。
+根到叶的每条路径表示一个十进制数（节点值是 $0$ 到 $9$）。返回所有这些数的和。
 
 ## 思路
 

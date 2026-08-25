@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 30. 串联所有单词的子串
     url: https://leetcode.cn/problems/substring-with-concatenation-of-all-words/
@@ -32,7 +32,7 @@ sources:
 
 设词长 $w$。合法子串长度固定为 $n\cdot w$，且按 $w$ 切词。对每个偏移 `offset` 在 $0\ldots w-1$，以 $w$ 为步长滑窗：维护窗口内词频。遇到不在 `need` 里的词就整窗清空；某词超过需求则从左边弹出。窗口词数等于 $n$ 时，左端就是一个答案。
 
-不要枚举排列。面试先讲「等长才能按词滑」。
+别枚举排列。白板我会先讲「等长才能按词滑」。
 
 ## 参考代码
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **词长不等怎么办？** 不能按固定步长 $w$ 切。从每个起点做 DFS：枚举还没用完的词，若 `s` 从当前位置 `startswith` 该词就扣一次计数往下搜，全部用完即命中。`need` 要回溯加回去。时间最坏 $O(|s|\cdot n\cdot n!)$，只在 $n$ 很小或词很稀疏时能过。也可用 Trie 把 `words` 插进去，按字符走，遇到词尾就进入下一层；本质仍是搜索。面试先讲清「等长才能词级滑窗」，不等长不要硬套本题代码。
+- **词长不等怎么办？** 不能按固定步长 $w$ 切。从每个起点做 DFS：枚举还没用完的词，若 `s` 从当前位置 `startswith` 该词就扣一次计数往下搜，全部用完即命中。`need` 要回溯加回去。时间最坏 $O(|s|\cdot n\cdot n!)$，只在 $n$ 很小或词很稀疏时能过。也可用 Trie 把 `words` 插进去，按字符走，遇到词尾就进入下一层；本质仍是搜索。白板我会先讲清「等长才能词级滑窗」，不等长别硬套这题代码。
 
 ```python
 from collections import Counter
@@ -117,4 +117,4 @@ def findSubstringUnequal(s, words):
     return ans
 ```
 
-- **只要判断是否存在一个起点？** 算法不变，`count == n` 时立刻 `return True`，不必收集全部下标。最坏仍可能扫完整串，复杂度还是 $O(|s|\cdot w)$，只是最好情况提前退出。空 `words` 或 `s` 不够长先剪枝。不要为了「存在性」改成枚举排列去 `s.find`，排列数是 $n!$，比滑窗差一个量级。
+- **只要判断是否存在一个起点？** 算法不变，`count == n` 时立刻 `return True`，不必收集全部下标。最坏仍可能扫完整串，复杂度还是 $O(|s|\cdot w)$，只是最好情况提前退出。空 `words` 或 `s` 不够长先剪枝。别为了「存在性」改成枚举排列去 `s.find`，排列数是 $n!$，比滑窗差一个量级。

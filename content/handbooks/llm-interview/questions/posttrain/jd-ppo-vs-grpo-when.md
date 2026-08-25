@@ -5,7 +5,7 @@ order: 128
 level: A
 title: 京东：什么时候用 PPO，什么时候用 GRPO？
 quick: >-
-  有可靠组采样 verifier、任务短、想省 critic 时优先 GRPO；需要价值估计、奖励稀疏 / 不可执行、或要对复杂 trade-off
+  有可靠组采样 verifier、任务短、想省 critic 时我优先 GRPO；需要价值估计、奖励稀疏 / 不可执行、或要对复杂 trade-off
   做稳定在线控制时用 PPO。二者都依赖奖励质量，选型看信号形态和基建，不看谁更新。
 tags:
   - JD
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 京东大模型算法 实习面经
     url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“什么时候用PPO，什么时候用GRPO”**
 
-陷阱是用「GRPO 更新所以永远更好」作答。二者都是 clipped 重要性采样策略梯度，差在 **advantage 从哪来**，以及奖励能不能对同一输入自动打出一组可比较的分数。选型看信号形态和基建，不看论文年份。奖励质量差时换算法救不了 hacking。京东业务里既有可解析订单字段，也有客服话术权衡，正好适合用这套清单，而不是站队。
+这块容易用「GRPO 更新所以永远更好」作答。二者都是 clipped 重要性采样策略梯度，差在 advantage 从哪来，以及奖励能不能对同一输入自动打出一组可比较的分数。选型看信号形态和基建，不看论文年份。奖励质量差时换算法救不了 hacking。京东业务里既有可解析订单字段，也有客服话术权衡，正好适合用这套清单，而不是站队。
 
 ## 1. GRPO：组均值代替 critic，适合可组比的短轨迹
 
@@ -52,7 +52,7 @@ PPO 用 critic 估计 $V^\pi(s)$，GAE 混合不同 horizon 的 TD residual 得�
 
 ## 3. 选型清单和混合策略
 
-问三句话：奖励能否对同一输入自动打出可比较的一组分数？轨迹短不短、中间要不要估价值？有没有预算训 critic？是 / 短 / 无 → GRPO；否 / 长 / 有复杂权衡 → PPO。工具可验证可先 GRPO 冷启动正确率，再对开放话术接 PPO 或 DPO。不要在同一任务上同时吹「省 critic」和「逐步 GAE」——那是两套 advantage。
+问三句话：奖励能否对同一输入自动打出可比较的一组分数？轨迹短不短、中间要不要估价值？有没有预算训 critic？是 / 短 / 无 → GRPO；否 / 长 / 有复杂权衡 → PPO。工具可验证可先 GRPO 冷启动正确率，再对开放话术接 PPO 或 DPO。不要在同一任务上同时吹「省 critic」和「逐步 GAE」，那是两套 advantage。
 
 两者都失败于 $r$ 可 hack。先把奖励和门禁做硬，再谈算法。DPO 放在「只有静态偏好对、不想 rollout」的格子里，替代不了需要探索的可验证轨迹。
 

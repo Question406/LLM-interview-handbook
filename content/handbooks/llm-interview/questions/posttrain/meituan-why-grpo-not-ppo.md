@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 美团北斗大模型面试
     url: https://www.nowcoder.com/discuss/914814345970782208
@@ -36,17 +36,17 @@ sources:
 
 PPO 要训 value / critic，和 actor 同步、占显存，长序列时 GAE 还要处理逐步信用分配。若奖励是可验证的终点分（校验通过、单测绿、规则引擎打分），同题多采样就能构成对比：组均值 $\bar r$ 当 baseline，优势 $\hat A_i=(r_i-\bar r)/(\sigma_r+\varepsilon)$。这直接省掉 critic 的显存和不同步，是相对 PPO 的主因。没有 learned value，不代表没有信任域：clip 和 KL 仍要管一步更新幅度和相对参考的漂移。
 
-不是 PPO「过时」。需要逐步价值估计、奖励稀疏且不能成组、或已有稳定 RM+critic 基建时，PPO 仍更合适。开放域只有连续 RM、组内分数挤成一团时，组均值 baseline 噪声大，critic 可能更稳。把「我们项目有 checker、要省显存、能成组采样」讲完，再对比 PPO，比背论文贡献列表更像做过项目。
+不是 PPO「过时」。需要逐步价值估计、奖励稀疏且不能成组、或已有稳定 RM+critic 基建时，PPO 仍更合适。开放域只有连续 RM、组内分数挤成一团时，组均值 baseline 噪声大，critic 可能更稳。我会先把「项目有 checker、要省显存、能成组采样」讲完，再对比 PPO。
 
 ## 相对 DPO：在线探索，不困在静态对
 
 DPO 吃离线偏好对 $(y_w,y_l)$，不 rollout，实现轻、迭代快。字段抽取或推理若示范覆盖不全，DPO 只能在已有 chosen/rejected 里拉差距，解决不了「模型自己采到更高奖励路径」。GRPO 用 online 采样补这块：verifier 给分，组内相对优势推动探索，示范里没写过的正确写法也可以被强化。
 
-没有成对标注、也不想维护 rollout 与 verifier 时，DPO 仍是正确选项。把 DPO 说成「弱于 GRPO」会失分——两者监督对象不同：一个吃比较，一个吃可验证标量。静态偏好对若已经覆盖产品要的权衡（语气、安全、长度），上 DPO 比硬造 checker 更诚实。
+没有成对标注、也不想维护 rollout 与 verifier 时，DPO 仍是正确选项。把 DPO 说成「弱于 GRPO」会失分，两者监督对象不同：一个吃比较，一个吃可验证标量。静态偏好对若已经覆盖产品要的权衡（语气、安全、长度），上 DPO 比硬造 checker 更诚实。
 
 ## 必须主动讲失败
 
-组内全对或全错时方差为零，优势全是 $0$，这步没有方向。难题上策略几乎采不到对的，会长期空转——要冷启动、降难度或动态采样，不是再降学习率。reward hacking（套格式骗校验、刷长度）比带 critic 的 PPO 更依赖 verifier 质量，因为没有价值函数帮你平滑噪声。秋招二面还会追「一开始 Reward 大幅震荡」：奖励尺度跳变、有效组比例低、KL 突然关掉，都会表现为震荡。排查顺序：有效组、reward 直方图、KL / 熵，再谈换算法。结论落到「它解决显存和 baseline，但把稳定性押在 verifier 和组的多样性上」。
+组内全对或全错时方差为零，优势全是 $0$，这步没有方向。难题上策略几乎采不到对的，会长期空转，要冷启动、降难度或动态采样，不是再降学习率。reward hacking（套格式骗校验、刷长度）比带 critic 的 PPO 更依赖 verifier 质量，因为没有价值函数帮你平滑噪声。秋招二面还会追「一开始 Reward 大幅震荡」：奖励尺度跳变、有效组比例低、KL 突然关掉，都会表现为震荡。排查顺序：有效组、reward 直方图、KL / 熵，再谈换算法。结论落到「它解决显存和 baseline，但把稳定性押在 verifier 和组的多样性上」。
 
 ## 追问
 

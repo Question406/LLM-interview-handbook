@@ -15,14 +15,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
     type: legacy-reference
 ---
 
-陷阱是把三者背成互不相关的名词，或宣称「DPO 已经替代 PPO」。差别在监督信号与是否 on-policy。DPO 用偏好对直接优化策略，无显式 RM / RL loop；PPO 先训 RM 再 on-policy 优化，表达力强但复杂；GRPO 用同题组内相对奖励做 on-policy 更新，省掉 critic。白板推导见 `pt-pg-to-ppo-to-grpo`，DPO 后再接 GRPO 见 `ali-multineg-then-grpo`。
+这块容易把三者背成互不相关的名词，或宣称「DPO 已经替代 PPO」。差别在监督信号与是否 on-policy。DPO 用偏好对直接优化策略，无显式 RM / RL loop；PPO 先训 RM 再 on-policy 优化，表达力强但复杂；GRPO 用同题组内相对奖励做 on-policy 更新，省掉 critic。白板推导见 `pt-pg-to-ppo-to-grpo`，DPO 后再接 GRPO 见 `ali-multineg-then-grpo`。
 
 ## 三条路差在监督信号
 
@@ -36,11 +36,11 @@ DPO 把 Bradley-Terry 偏好写成对 $\pi_\theta$ 与 $\pi_{\mathrm{ref}}$ 的�
 
 ## DPO 的注意点
 
-数据质量第一：标注者不一致、长度偏置、只靠「更礼貌」的假偏好，都会让策略学错。$\beta$ 太大把分布贴死在 chosen 上，太小则几乎不更新。要检查是否真提升 chosen 的**有用性**，而不只是压低 rejected 的概率。Length bias 很常见：更长的回答更容易赢人评，模型学会灌水。离线对与线上分布错位后，DPO 会在旧对比上拉新策略，收益衰减。
+数据质量第一：标注者不一致、长度偏置、只靠「更礼貌」的假偏好，都会让策略学错。$\beta$ 太大把分布贴死在 chosen 上，太小则几乎不更新。要检查是否真提升 chosen 的有用性，而不只是压低 rejected 的概率。Length bias 很常见：更长的回答更容易赢人评，模型学会灌水。离线对与线上分布错位后，DPO 会在旧对比上拉新策略，收益衰减。
 
 ## GRPO 补的是探索
 
-「用过 GRPO 吗」不要只复述公式。讲：同题采 $G$ 条，组内标准化 advantage，无 value model；空 group（全对 / 全错）梯度为 0；可验证任务比纯 RM 更合适。DPO 缺探索、PPO 重、GRPO 在中间——按信号选型，不是按论文新旧堆 buzzword。阶段仍建议 SFT → 偏好 → 可验证 RL，见 `ali-sft-then-posttrain`。
+「用过 GRPO 吗」不要只复述公式。讲：同题采 $G$ 条，组内标准化 advantage，无 value model；空 group（全对 / 全错）梯度为 0；可验证任务比纯 RM 更合适。DPO 缺探索、PPO 重、GRPO 在中间。按信号选型，不是按论文新旧堆 buzzword。阶段仍建议 SFT → 偏好 → 可验证 RL，见 `ali-sft-then-posttrain`。
 
 ## 追问
 

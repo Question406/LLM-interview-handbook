@@ -6,14 +6,14 @@ level: A
 title: 字节秋招一面：Agent Token 涨得太快，怎么定位和压？
 quick: >-
   按 turn 拆：system、工具 schema、检索回写、历史。先砍重复工具回传和未压缩日志，再缩候选工具，最后才换小模型。定位靠每步
-  token 账本，不要先改温度。
+  token 账本，别先改温度。
 tags:
   - ByteDance
   - Token Cost
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节AI Agent开发秋招一面面经
     url: https://www.nowcoder.com/feed/main/detail/7b1b40fda3244715a82bcb4a821ca887
@@ -27,7 +27,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“如果发现Agent运行过程中Token消耗增长过快，会如何定位问题并进行优化？”**
 
-字节秋招一面这题，最容易先改温度或换小模型。Token 涨得快，先按 turn 做账本：system、工具 schema、检索回写、历史、completion。常见元凶是整页 JSON、全量工具目录、压缩没开、循环重试。优化顺序是结构化抽取 → 渐进披露工具 → 三级压缩 → 缓存幂等读；「降本」和「丢约束」要分开验收。适用多轮、工具返回大、历史变长；单轮短问答更可能是定价或重试风暴。相关卡：`byte-three-level-compress`、`xiaohongshu-mcp-skill-token-efficiency`。定位没完成前不要同时开压缩和换模型。
+字节秋招一面这题，这块容易先改温度或换小模型。Token 涨得快，我先按 turn 做账本：system、工具 schema、检索回写、历史、completion。常见元凶是整页 JSON、全量工具目录、压缩没开、循环重试。优化顺序是结构化抽取 → 渐进披露工具 → 三级压缩 → 缓存幂等读；「降本」和「丢约束」要分开验收。适用多轮、工具返回大、历史变长；单轮短问答更可能是定价或重试风暴。相关卡：`byte-three-level-compress`、`xiaohongshu-mcp-skill-token-efficiency`。定位没完成前不要同时开压缩和换模型。
 
 ## 先做成分账本，再动刀
 
@@ -39,7 +39,7 @@ sources:
 
 ## 失败模式与回归
 
-只砍长度不看任务成功率：关键 Observation 被砍掉后模型更爱重试，token 反而升。用「压缩前后硬约束清单」回归，确认失败用例名、路径和断言还在。线上按成分告警：schema 占比、observation 占比、重试轮次。循环重试要设轮次预算和同类错误熔断，否则压缩省下的 token 会被死循环吃回去。面试收口：账本 → 砍回写 → 缩工具面 → 摘要历史 → 最后才动模型。
+只砍长度不看任务成功率：关键 Observation 被砍掉后模型更爱重试，token 反而升。用「压缩前后硬约束清单」回归，确认失败用例名、路径和断言还在。线上按成分告警：schema 占比、observation 占比、重试轮次。循环重试要设轮次预算和同类错误熔断，否则压缩省下的 token 会被死循环吃回去。最后我会补一句：账本 → 砍回写 → 缩工具面 → 摘要历史 → 最后才动模型。
 
 ## 追问
 

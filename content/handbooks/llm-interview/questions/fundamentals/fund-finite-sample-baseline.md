@@ -17,7 +17,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Back to Basics — REINFORCE Leave-One-Out (RLOO)
     url: https://arxiv.org/abs/2402.14740
@@ -30,7 +30,7 @@ sources:
     type: secondary
 ---
 
-陷阱是把「减均值所以无偏」从期望公式直接搬到 **大小为 $G$ 的同一组样本**。恒等式 $\mathbb{E}_a[\nabla\log\pi\,b(s)]=0$ 里的 $b(s)$ 不能是当前这条 $a$ 的函数。有限样本里，组均值、batch 均值、组标准差都看见了当前 $r_i$，无偏性要重新算。和 `pt-rloo-vs-grpo` 的差别：那题比算法选型；本题只钉 **有限样本偏差从哪来**。
+这块容易直接答成：减均值所以无偏，把期望公式直接搬到 **大小为 $G$ 的同一组样本**。恒等式 $\mathbb{E}_a[\nabla\log\pi\,b(s)]=0$ 里的 $b(s)$ 不能是当前这条 $a$ 的函数。有限样本里，组均值、batch 均值、组标准差都看见了当前 $r_i$，无偏性要重新算。和 `pt-rloo-vs-grpo` 的差别：那题比算法选型；本题只钉 **有限样本偏差从哪来**。
 
 ## 含自身的组均值：偏差是 $1/G$
 
@@ -50,7 +50,7 @@ $$
 
 $b_i$ 与当前动作独立（给定其余样本），是 REINFORCE control variate 的有限样本版：期望上不改梯度，只降方差。$G=2$ 时优势就是两条之差，没有 $(G-1)/G$。RLOO 通常 **不再除组 $\sigma$**，尺度仍是原始 reward；跨题幅度不可比，但不会因为「这题大家都差不多对」就把微小分差放大。
 
-白板用 $G=2$、$r=(1,0)$ 走一遍：GRPO 得 $A=(+0.5,-0.5)$（若再除 $\sigma$ 还会再缩放）；RLOO 得 $A=(+1,-1)$。面试听到「含不含自身」比背论文名字重要。
+白板用 $G=2$、$r=(1,0)$ 走一遍：GRPO 得 $A=(+0.5,-0.5)$（若再除 $\sigma$ 还会再缩放）；RLOO 得 $A=(+1,-1)$。听到「含不含自身」比背论文名字重要。
 
 ## Batch 标准化：偏差随 batch 消失，除 $\sigma$ 是另一回事
 

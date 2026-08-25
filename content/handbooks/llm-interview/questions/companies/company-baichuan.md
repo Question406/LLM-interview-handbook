@@ -5,8 +5,8 @@ order: 15
 level: A
 title: 百川智能：大模型实习 / Agent 应重点准备什么？
 quick: >-
-  同一轮会从例子库、Query 改写、三路召回、RAGAS、SQL 安全、表格 Agent 增强一路问到线上评估与使用量。准备时按「数据 →
-  检索 / Agent → 安全 → 线上指标」串起来，并能量化检测率与 adoption。
+  同一轮会从例子库、Query 改写、三路召回、RAGAS、SQL 安全、表格 Agent 增强一路问到线上评估和使用量。我准备时按「数据 →
+  检索 / Agent → 安全 → 线上指标」串起来，检测率和 adoption 要能量化。
 tags:
   - Baichuan
   - 真题导航
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
@@ -24,15 +24,15 @@ sources:
     type: candidate-first-hand
 ---
 
-百川这轮公开面经密度很高：几乎每个模块都要报「怎么做」和「数据量 / 检测率 / 使用量」。数字说不清时，应改口为覆盖率、learning curve 和分母定义，而不是编造。
+百川这轮公开面经很密：几乎每个模块都要报怎么做，以及数据量、检测率、使用量。数字说不清时，我会改口讲覆盖率、learning curve 和分母怎么定义，不会去编。
 
 ## 准备主线
 
-1. **检索与改写**：例子库分层采样；Query 改写为何常用小模型；三路召回如何融合。
-2. **微调体系**：多模型微调的目的（路由 / 蒸馏 / 领域）和有效数据规模。
-3. **表格 / SQL Agent**：可执行增广、AST 级安全检查、检测率与误拦率一起报。
-4. **评估**：RAGAS 指标与数据从哪来；上线后 task success 与使用量如何分 cohort 解读。
-5. **多 Agent**：协作协议、共享状态和失败移交，而不是多个 chatbot 并行。
+1. **检索与改写**：例子库怎么分层采样；Query 改写为什么常用小模型；三路召回怎么融合。
+2. **微调体系**：多模型微调是为了路由、蒸馏还是领域，有效数据规模有多大。
+3. **表格 / SQL Agent**：可执行增广、AST 级安全检查，检测率和误拦率一起报。
+4. **评估**：RAGAS 指标和数据从哪来；上线后 task success 和使用量怎么分 cohort 解读。
+5. **多 Agent**：协作协议、共享状态和失败移交。不是多个 chatbot 并行就算协作。
 
 ## 本手册真题卡
 

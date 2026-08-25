@@ -5,8 +5,8 @@ order: 5
 level: S
 title: LC 169 · 多数元素
 quick: >-
-  Boyer-Moore 投票：候选人与计数对消。出现次数 $\gt n/2$ 的那个最后一定留下。时间 $O(n)$，额外空间
-  $O(1)$。也可排序或哈希。
+  Boyer-Moore 投票：候选人和计数对消。出现次数 $\gt n/2$ 的那个最后一定留下。时间 $O(n)$，额外空间
+  $O(1)$。也可以排序或哈希。
 tags:
   - Array
   - Boyer-Moore
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 169. 多数元素
     url: https://leetcode.cn/problems/majority-element/
@@ -26,13 +26,13 @@ sources:
 
 ## 题意
 
-数组中必有一个元素出现次数 $\gt \lfloor n/2 \rfloor$。找出它。
+数组里必有一个元素出现次数 $\gt \lfloor n/2 \rfloor$。找出它。
 
 ## 思路
 
-Boyer-Moore：维护 `cand` 与 `cnt`。遇到相同票加一，不同减一；`cnt` 到 $0$ 就换候选人。多数元素的票数严格过半，对消后一定剩下它。
+Boyer-Moore：维护 `cand` 和 `cnt`。遇到相同票加一，不同减一；`cnt` 到 $0$ 就换候选人。多数元素的票数严格过半，对消后一定剩下它。
 
-哈希计数 $O(n)$ 空间；排序后中位数即答案，时间 $O(n\log n)$。面试先写投票，再补这两种。
+哈希计数 $O(n)$ 空间；排序后中位数就是答案，时间 $O(n\log n)$。白板我一般先写投票，再补这两种。
 
 ## 参考代码
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **不保证存在多数元素？** Boyer-Moore 只保证「若存在则留下它」，不存在时 `cand` 可能是任意幸存者。扫完后必须再扫一遍数 `cand` 的出现次数，确认 $\gt \lfloor n/2 \rfloor$，否则返回「不存在」。时间仍 $O(n)$，额外空间 $O(1)$。本题题面保证存在，第二遍可以省。易错点是把投票结果直接当答案。
+- **不保证存在多数元素？** Boyer-Moore 只保证「若存在则留下它」，不存在时 `cand` 可能是任意幸存者。扫完后必须再扫一遍数 `cand` 的出现次数，确认 $\gt \lfloor n/2 \rfloor$，否则返回「不存在」。时间仍 $O(n)$，额外空间 $O(1)$。本题题面保证存在，第二遍可以省。这块容易栽：把投票结果直接当答案。
 
 ```python
 def majorityElement_check(nums):
@@ -80,7 +80,7 @@ def majorityElement_check(nums):
     return cand if nums.count(cand) > len(nums) // 2 else None
 ```
 
-- **找出现次数 $\gt n/3$ 的元素（LC 229）？** 最多两个。摩尔投票扩成两个候选人 `cand1`、`cand2` 和两个计数：相同则加，都不同则一起减，计数到 $0$ 再换人。结束后必须再扫一遍验证，因为「$\gt n/3$」不像过半那样能保证幸存者一定合法。时间 $O(n)$，额外空间 $O(1)$。易错点：两个候选人要先判断是否等于再判断计数是否为 $0$，否则同一个值会占两个槽；以及不要忘了验证。不在 150 手册里。
+- **找出现次数 $\gt n/3$ 的元素（LC 229）？** 最多两个。摩尔投票扩成两个候选人 `cand1`、`cand2` 和两个计数：相同则加，都不同则一起减，计数到 $0$ 再换人。结束后必须再扫一遍验证，因为「$\gt n/3$」不像过半那样能保证幸存者一定合法。时间 $O(n)$，额外空间 $O(1)$。这块容易栽：两个候选人要先判断是否等于再判断计数是否为 $0$，否则同一个值会占两个槽；以及不要忘了验证。不在 150 手册里。
 
 ```python
 def majorityElement_n3(nums):
@@ -104,4 +104,3 @@ def majorityElement_n3(nums):
             ans.append(c)
     return ans
 ```
-

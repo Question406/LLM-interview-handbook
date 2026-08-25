@@ -4,7 +4,7 @@ section: posttrain
 order: 30
 level: S
 title: 如何把 Long-CoT Reasoner 蒸馏成短思考模型，同时尽量不掉能力？
-quick: 不是简单删 token。先筛出正确且有信息密度的长轨迹，训练学生保留关键决策或答案，再用质量–token 曲线验证；若任务需要中间证明，应蒸馏状态转移而非只蒸馏最终答案。
+quick: 不能上来就删 token。先筛出正确且有信息密度的长轨迹，训练学生保留关键决策或答案，再用质量-token 曲线验证；若任务需要中间证明，应蒸馏状态转移，不要只蒸最终答案。
 tags:
   - Distillation
   - Chain of Thought
@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Kimi k1.5
     url: https://arxiv.org/abs/2501.12599
@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-Long-to-short 是把已经会做长思考的 teacher 压成短思考学生，而不是把长 CoT 截断当监督。目标是在相近准确率下显著降低平均 / P95 reasoning token。面试陷阱是「把长轨迹删掉后半段再 SFT」：删掉的往往是真正的分支决策、验算和纠错，留下的是套话。Kimi k1.5 等配方强调先有强 long-CoT，再压长度；这和 `pt-adaptive-thinking-budget`（推理时决定想多久）、`pt-reasoning-token-cost-frontier`（训练时惩罚无效 thinking）互补，但改的是学生的监督信号。
+Long-to-short 是把已经会做长思考的 teacher 压成短思考学生，而不是把长 CoT 截断当监督。目标是在相近准确率下显著降低平均 / P95 reasoning token。这块容易直接答成「把长轨迹删掉后半段再 SFT」：删掉的往往是真正的分支决策、验算和纠错，留下的是套话。Kimi k1.5 等配方强调先有强 long-CoT，再压长度；这和 `pt-adaptive-thinking-budget`（推理时决定想多久）、`pt-reasoning-token-cost-frontier`（训练时惩罚无效 thinking）互补，但改的是学生的监督信号。
 
 ## 先过滤，再决定蒸馏什么
 
@@ -42,15 +42,13 @@ Teacher rollout 必须先过可验证答案或高质量 judge。错误但写得�
 
 也可以先让学生生成短草稿，teacher 只修补缺失的关键步，而不是重写全文。这样长度由学生控制，正确性由 teacher 托底，比「把长链截断到 200 token」更不容易砍掉决策。
 
-## 评估必须画质量–token 曲线
+## 评估必须画质量-token 曲线
 
 不要只报「平均更短」。同一题集上报告准确率、平均 / P95 token、延迟，以及按预算截断的退化曲线。简单题应明显变短且准确率持平；难题允许保留更长思考。还要测 OOD 和需要中间证明的子集：若短模型只在原分布上不掉点，多半是背了短答案模板。曲线应和 `pt-adaptive-thinking-budget` 的控制器一起看：短模型是新政策，控制器是同一政策上的开关。
 
 失败模式可以白板列举：删掉分支决策、只模仿表面措辞、长度条件被忽略、teacher 偏差被更高效地继承、过滤阈值过松把错长链放进来。出现后先查过滤，再查学生状态是否离线。抽检时不要只看最终答案，要问「这一短步是否还对应 teacher 的那个决策」。
 
-白板口令：过滤正确性，蒸馏状态转移，用质量–token 曲线验收；平均长度下降而难题切片塌掉，就是失败的压缩。
-
-交付清单可以压成三句话：只蒸馏过滤后的正确高密度轨迹；监督的是状态转移不是删节散文；验收看质量–token 曲线和难题切片，不看平均长度。
+我会这样收：过滤正确性，蒸馏状态转移，用质量-token 曲线验收。平均长度下降而难题切片塌掉，就是失败的压缩。只蒸馏过滤后的正确高密度轨迹；监督的是状态转移不是删节散文；验收看质量-token 曲线和难题切片，不看平均长度。
 
 ## 追问
 

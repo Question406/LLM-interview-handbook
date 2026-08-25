@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Training Compute-Optimal Large Language Models
     url: https://arxiv.org/abs/2203.15556
@@ -25,7 +25,7 @@ sources:
     type: secondary
 ---
 
-陷阱是「同样 FLOPs 下模型越大越好」。那是 Kaplan 口径的口头禅，被 Hoffmann / Chinchilla 用同算力对比推翻。本题先定义 **固定预算下的最优拆分**，再谈过训、欠训。训练 FLOPs 的 $6ND$ 口算见 `infra-rl-mfu-6nd`；这里问的是 $N$ 和 $D$ 怎么配，不是 GPU 利用率。
+这块容易直接答成「同样 FLOPs 下模型越大越好」。那是 Kaplan 口径的口头禅，被 Hoffmann / Chinchilla 用同算力对比推翻。本题先定义固定预算下的最优拆分，再谈过训、欠训。训练 FLOPs 的 $6ND$ 口算见 `infra-rl-mfu-6nd`；这里问的是 $N$ 和 $D$ 怎么配，不是 GPU 利用率。
 
 ## 固定 FLOP 下什么叫计算最优
 
@@ -37,11 +37,11 @@ $$
 
 $N$ 是参数量，$D$ 是 token 数。预算锁死时 $ND$ 近似常数：参数加一倍，token 就要减半。计算最优是：**在这条双曲线上挑一点，使验证损失最低**，不是把卡全堆进更大的 $N$。
 
-口试先写 $C=6ND$，再声明「最优是 $(N,D)$ 的分配」。漏掉 $D$，只报「70B 比 10B 强」，比较的就不是同一笔算力。Attention 的 $T^2$ 项、MoE 稀疏、重计算都会修正 $6N$，面试数量级仍用 $6ND$。显存能不能放下是另一本账，见 `sys-memory`。
+口试我先写 $C=6ND$，再声明「最优是 $(N,D)$ 的分配」。漏掉 $D$，只报「70B 比 10B 强」，比较的就不是同一笔算力。Attention 的 $T^2$ 项、MoE 稀疏、重计算都会修正 $6N$，面试数量级仍用 $6ND$。显存能不能放下是另一本账，见 `sys-memory`。
 
 ## Kaplan 和 Hoffmann 差在哪
 
-Kaplan 等拟合当时的损失曲面，得到最优配置大约 $N_{\mathrm{opt}}\propto C^{0.73}$、$D_{\mathrm{opt}}\propto C^{0.27}$：新增算力大部分去加参数，数据涨得慢。按这个处方，大模型会相对 **欠训**——参数很多，每个参数看到的 token 很少。GPT-3 级 175B 只吃约 300B token，$D/N\approx 1.7$，是这条路的典型点。
+Kaplan 等拟合当时的损失曲面，得到最优配置大约 $N_{\mathrm{opt}}\propto C^{0.73}$、$D_{\mathrm{opt}}\propto C^{0.27}$：新增算力大部分去加参数，数据涨得慢。按这个处方，大模型会相对 **欠训**，参数很多，每个参数看到的 token 很少。GPT-3 级 175B 只吃约 300B token，$D/N\approx 1.7$，是这条路的典型点。
 
 Hoffmann 等（Chinchilla）用三条独立路径（IsoFLOP 剖面、参数化损失拟合、以及把小模型训到收敛再外推）得到近似
 
@@ -62,7 +62,7 @@ $$
 
 判断不要只报一个比值。更干净的是 **IsoFLOP**：固定 $C$，扫几档 $N$，看哪一档损失最低。最低点左边是欠训（$N$ 太大），右边是过训（$N$ 太小、数据相对过多）。重复数据、低质量 web 会让「名义 $D$」虚高，真正有效 token 更少，看起来过训、其实仍欠有效信号。
 
-当代预训练普遍过训相对 Chinchilla，因为生命周期里 decode 的钱远大于再训一次。面试要主动补这半句，否则会被追「那为什么没人训计算最优的 8B」。计算最优是 **训练预算** 的最优，不是 **训练加推理总账** 的最优。
+当代预训练普遍过训相对 Chinchilla，因为生命周期里 decode 的钱远大于再训一次。我会主动补这半句，否则会被追「那为什么没人训计算最优的 8B」。计算最优是 **训练预算** 的最优，不是 **训练加推理总账** 的最优。
 
 ## 追问
 

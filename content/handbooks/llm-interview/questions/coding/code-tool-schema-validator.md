@@ -15,14 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: JSON Schema — object
     url: https://json-schema.org/understanding-json-schema/reference/object
     type: primary
 ---
 
-陷阱是「模型会按 schema 生成，不必再验」或只查顶层 type。Agent 工具调用必须服务端拒绝合法 JSON 但缺必填、多字段、类型错的参数，见 `agent-schema-contract`。本题子集：`type`、`properties`、`required`、`additionalProperties`（`true` / `false` / 嵌套 schema）。`$ref` 是加分，现场可以声明不支持。返回 `errors: [(path, msg)]`，path 用 `$.a[0].b`，方便模型改参。
+这块容易「模型会按 schema 生成，不必再验」或只查顶层 type。Agent 工具调用必须服务端拒绝合法 JSON 但缺必填、多字段、类型错的参数，见 `agent-schema-contract`。本题子集：`type`、`properties`、`required`、`additionalProperties`（`true` / `false` / 嵌套 schema）。`$ref` 是加分，现场可以声明不支持。返回 `errors: [(path, msg)]`，path 用 `$.a[0].b`，方便模型改参。
 
 ## 实现要点
 
@@ -65,7 +65,7 @@ def validate(inst, schema, path="$"):
     return errors
 ```
 
-测三例：缺 `required`；多一个未声明键且 `additionalProperties` 为 false；`"count": true` 不得当成 integer。Nested object 递归即可。不要在校验器里做单位换算或权限——那是业务契约，schema 只挡结构。
+测三例：缺 `required`；多一个未声明键且 `additionalProperties` 为 false；`"count": true` 不得当成 integer。Nested object 递归即可。不要在校验器里做单位换算或权限，那是业务契约，schema 只挡结构。
 
 ## 失败怎么回给模型
 

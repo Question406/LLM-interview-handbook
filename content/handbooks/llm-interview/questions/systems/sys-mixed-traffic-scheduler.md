@@ -4,7 +4,10 @@ section: systems
 order: 22
 level: S
 title: 长 prompt 把聊天请求 TTFT 打爆时，continuous batching 与 chunked prefill 怎么设计 / 调参？
-quick: Prefill 和 decode 争同一 GPU token budget。用 chunked prefill 把长输入切块并与 decode 交错，设置 max batched tokens、partial-prefill 上限、抢占与防饥饿；按流量切片验收 P50/P95 TTFT、TPOT 与 goodput。
+quick: >-
+  Prefill 和 decode 抢同一块 GPU token budget。我会用 chunked prefill 把长输入切块，跟 decode
+  交错，再设 max batched tokens、partial-prefill 上限、抢占和防饥饿。验收按流量切片看 P50/P95
+  TTFT、TPOT 和 goodput。
 tags:
   - Scheduling
   - Continuous Batching
@@ -12,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: vLLM Scheduler Configuration
     url: https://docs.vllm.ai/en/stable/api/vllm/config/scheduler/
@@ -54,9 +57,9 @@ Chunked prefill（Sarathi-Serve 一类）把长输入切成固定 token 块，�
 - 排队时延、preemption 次数、partial prefill 队列
 - goodput：在 SLO 内完成的请求比例，而不是 token/s
 
-一个典型失败是：总 token/s 上升，但短聊天 P99 TTFT 崩了——长 prefill 吃满了预算。另一个失败是 chunk 过小、调度过碎，decode TPOT 变差，对话「一个字一个字顿」。调参必须同时看这两条尾巴。报警也要按流量类拆：只有全局 token/s 告警时，聊天已经被打挂也不会响。把短请求 P95 TTFT 和长请求排队时延做成独立 SLO，混跑才能被运营看见。合成流量要用线上比例，而不是一半一半：真实世界往往是大量短请求被少量长请求卡住，实验比例设错会调出一套上线即失效的参数。回放要用生产 trace，至少按小时切分高峰，而不是均匀随机抽请求。回放要用真实 trace 的长度直方图，而不是均匀随机长度。
+一个典型失败是：总 token/s 上升，但短聊天 P99 TTFT 崩了，长 prefill 吃满了预算。另一个失败是 chunk 过小、调度过碎，decode TPOT 变差，对话「一个字一个字顿」。调参必须同时看这两条尾巴。报警也要按流量类拆：只有全局 token/s 告警时，聊天已经被打挂也不会响。把短请求 P95 TTFT 和长请求排队时延做成独立 SLO，混跑才能被运营看见。合成流量要用线上比例，而不是一半一半：真实世界往往是大量短请求被少量长请求卡住，实验比例设错会调出一套上线即失效的参数。回放要用生产 trace，至少按小时切分高峰，而不是均匀随机抽请求。回放要用真实 trace 的长度直方图，而不是均匀随机长度。
 
-Prefill/decode 分离（PD disaggregation）是更重的解：长 prefill 到专用池，decode 到另一池，用 KV 传输换隔离。面试先讲清 chunked prefill 是 **同池交错**，PD 是 **分池**，不要混成一个开关。slime 的 PD 路径见 `slime-pd-disagg`，那是推理集群内部的拆分，和训练 RL 的 HybridEngine 不是一层。
+Prefill/decode 分离（PD disaggregation）是更重的解：长 prefill 到专用池，decode 到另一池，用 KV 传输换隔离。我会先讲清 chunked prefill 是 **同池交错**，PD 是 **分池**，不要混成一个开关。slime 的 PD 路径见 `slime-pd-disagg`，那是推理集群内部的拆分，和训练 RL 的 HybridEngine 不是一层。
 
 ## 一步里预算怎么切
 

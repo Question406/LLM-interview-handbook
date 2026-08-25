@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Google SRE Book — Service Level Objectives
     url: https://sre.google/sre-book/service-level-objectives/
@@ -43,7 +43,7 @@ sources:
 
 ## 公平性与验收
 
-不同 tenant 用配额、并发上限和加权队列隔离，而不是共享一条 FIFO。一个超量用户把 KV 占满时，其他租户的 P99 不应一起死。可借用 SRE 的 error budget：交互 SLO 烧得太快就自动收紧 admission，而不是等值班手工限流。配额要用 token 而不是请求数计价，否则短请求用户会被长文档用户挤掉。突发允许一小段借额度，但要有归还，避免「永远 burst」。公平性出问题的典型日志是：总利用率不高，某一租户的 P99 却单独爆炸——那是隔离没做，不是集群不够。
+不同 tenant 用配额、并发上限和加权队列隔离，而不是共享一条 FIFO。一个超量用户把 KV 占满时，其他租户的 P99 不应一起死。可借用 SRE 的 error budget：交互 SLO 烧得太快就自动收紧 admission，而不是等值班手工限流。配额要用 token 而不是请求数计价，否则短请求用户会被长文档用户挤掉。突发允许一小段借额度，但要有归还，避免「永远 burst」。公平性出问题的典型日志是：总利用率不高，某一租户的 P99 却单独爆炸，那是隔离没做，不是集群不够。
 
 验收不要报平均延迟：
 

@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 100. 相同的树
     url: https://leetcode.cn/problems/same-tree/
@@ -32,7 +32,7 @@ sources:
 
 同步递归。`p`、`q` 都是 `None` 则相同；恰好一个是 `None` 或 `val` 不同则否；否则继续比左右。
 
-面试强调「结构和值一起比」，不要只序列化值。层序同时出队也可以。
+白板我会强调「结构和值一起比」，不要只序列化值。层序同时出队也可以。
 
 ## 参考代码
 

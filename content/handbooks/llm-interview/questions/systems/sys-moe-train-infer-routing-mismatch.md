@@ -6,7 +6,7 @@ level: A
 title: 训练和推理的 MoE 路由不一致会怎样？怎么检测？
 quick: >-
   训练开 noisy top-$k$ / expert bias 更新，推理关掉；router 用 FP、推理用量化；RL 的 rollout
-  engine 和 trainer 各算一遍路由。同一输入会进不同 expert，表现为负载直方图漂移和输出 KL。要对齐开关、精度和实现，而不是只调温度。
+  engine 和 trainer 各算一遍路由。同一输入会进不同 expert，表现为负载直方图漂移和输出 KL。要对齐开关、精度和实现，调温度救不了。
 tags:
   - MoE
   - Routing
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeek-V3 Technical Report
     url: https://arxiv.org/abs/2412.19437
@@ -46,3 +46,4 @@ MoE 的「哪几个 expert 干活」是离散 top-$k$。训练图和推理图只
 - **能不能靠温度把推理路由「软回去」？** 温度改的是采样，不改已经离散化的 expert 选择。要对齐的是 router 输入输出，不是 decoder 温度。
 - **Shared expert？** 共享专家每 token 都走，能缓冲一部分 routed expert 翻盘，但不能当对齐的替代。
 - **上线 checklist**：同一份 bias、同一份 capacity 配置、router 精度、以及一份金标 expert-id dump。
+- **RL 更新这一步怎么钉住路由？** GSPO 降的是 token 级 $\rho$ 方差，对齐不了走错的专家。Keep Routing / R3 重放推理引擎路径，R2 重放训练图旧策略路径，见 `pt-r3-routing-replay`。

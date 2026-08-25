@@ -4,7 +4,7 @@ section: mcp-security
 order: 2
 level: S
 title: MCP ToolAnnotations 能否作为执行授权依据？Tool catalog 在运行中变更时如何做 server trust、schema / description diff、pinning 和重新确认？
-quick: 不能。annotations 只是 server 声称的提示，不是可信授权。host / policy / executor 必须独立判定权限；catalog 变更需身份 pinning、schema 与描述 diff、高风险变更重新确认，并保留已批准版本。
+quick: 不能。annotations 只是 server 声称的提示，不是可信授权。host / policy / executor 必须独立判定权限；catalog 变更要身份 pinning、schema 和描述 diff、高风险变更重新确认，并保留已批准版本。
 tags:
   - MCP
   - Tool Security
@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: MCP Tool Annotations
     url: https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/
     type: primary
 ---
 
-`readOnlyHint`、`destructiveHint`、`idempotentHint` 只能当 UI 和风险分级的提示，不能当授权。它们来自 tool server，可能过时、写错或恶意。把 annotation 当 allow/deny，等于让攻击者给自己发许可证。面试官要听：信任锚在 host / policy / executor；catalog 是不可信输入，变更必须 diff 和重新确认。Annotation 仍然有用：给 UI 标红、给路由提示，减少误点；但它不替代策略。
+`readOnlyHint`、`destructiveHint`、`idempotentHint` 只能当 UI 和风险分级的提示，不能当授权。它们来自 tool server，可能过时、写错或恶意。把 annotation 当 allow/deny，等于让攻击者给自己发许可证。信任锚在 host / policy / executor；catalog 是不可信输入，变更必须 diff 和重新确认。Annotation 仍然有用：给 UI 标红、给路由提示，减少误点；但它不替代策略。
 
 ## Annotation 不是权限
 
@@ -31,7 +31,7 @@ sources:
 
 ## 怎么测、哪里会被刷
 
-评测应包含：良性 annotation 但实现有副作用；热更新 description 做注入；把已授权 tool 改成破坏性参数。记录：是否 pin、是否弹出 diff、是否拒绝、模型上下文里出现了哪一版描述。可被刷的点：只在连接时审一次、相信 `readOnly`、catalog 变更不弹窗。面试口径：Catalog 变更就是权限变更；annotation 是提示，pin + policy 才是授权。落地最小集：server 身份 pin、schema hash、description hash、diff 弹窗、未知 tool 默认拒绝、调用审计。缺 hash 比对，热更新注入无法被看见。现场不要说「我们信任官方 MCP」；要说「我们 pin 了哪一版、变更时谁确认」。把 catalog 当不可信输入，还能挡住通过「新工具描述」做的 prompt injection。审批记录要能回放到具体 schema hash，而不是「用户曾经允许过这个域名」。
+评测应包含：良性 annotation 但实现有副作用；热更新 description 做注入；把已授权 tool 改成破坏性参数。记录：是否 pin、是否弹出 diff、是否拒绝、模型上下文里出现了哪一版描述。评测上能刷的是：只在连接时审一次、相信 `readOnly`、catalog 变更不弹窗。Catalog 变更就是权限变更；annotation 是提示，pin + policy 才是授权。落地最小集：server 身份 pin、schema hash、description hash、diff 弹窗、未知 tool 默认拒绝、调用审计。缺 hash 比对，热更新注入无法被看见。现场不要说「我们信任官方 MCP」；要说「我们 pin 了哪一版、变更时谁确认」。把 catalog 当不可信输入，还能挡住通过「新工具描述」做的 prompt injection。审批记录要能回放到具体 schema hash，而不是「用户曾经允许过这个域名」。
 
 把 schema/description hash 写入每次 tool call 的审计行，事后能证明当时执行的是用户批准的那一版。未 pin 的 server 只能只读演示，不能碰副作用工具。这是 host 的责任，不是模型的责任。
 

@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 136. 只出现一次的数字
     url: https://leetcode.cn/problems/single-number/
@@ -31,7 +31,7 @@ sources:
 
 异或满足交换律、结合律，$x\oplus x=0$，$x\oplus 0=x$。所有数 XOR 一遍，成对的变 $0$，只剩单身那个。
 
-哈希计数要 $O(n)$ 空间。排序后看邻居，$O(n\log n)$。面试先写 XOR。
+哈希计数要 $O(n)$ 空间。排序后看邻居，$O(n\log n)$。白板我先写 XOR。
 
 ## 参考代码
 

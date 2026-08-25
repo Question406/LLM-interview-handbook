@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
     url: https://www.nowcoder.com/discuss/866741961221292032
@@ -43,7 +43,7 @@ sources:
 | 窗口 | 对端通告 | 本地估计 `cwnd` |
 | 典型题眼 | 零窗口、窗口探测 | 慢启动门限、AIMD |
 
-慢启动：`cwnd` 指数涨到 `ssthresh`；拥塞避免：接近线性加。超时认为更严重，门限降到一半并回到慢启动；三次重复 ACK 走快恢复，不把 `cwnd` 打回 $1$ 个 MSS。笔试还爱考：基本有序数组用插入排序期望接近线性，快排 / 堆排没有这红利——那是另一题，不要和 TCP 混。
+慢启动：`cwnd` 指数涨到 `ssthresh`；拥塞避免：接近线性加。超时认为更严重，门限降到一半并回到慢启动；三次重复 ACK 走快恢复，不把 `cwnd` 打回 $1$ 个 MSS。笔试还爱考：基本有序数组用插入排序期望接近线性，快排 / 堆排没有这红利。那是另一题，不要和 TCP 混。
 
 **可选题干。** 关于 TCP 流控和拥塞控制，下列说法正确的是？
 

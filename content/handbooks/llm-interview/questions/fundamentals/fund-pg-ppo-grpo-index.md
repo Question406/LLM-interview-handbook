@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-24
 sources:
   - title: Proximal Policy Optimization Algorithms
     url: https://arxiv.org/abs/1707.06347
@@ -25,12 +25,13 @@ sources:
     type: primary
 ---
 
-网上对得上的高频问法已经拆成独立卡。主推导在「从 Policy Gradient 怎么一步步推到 PPO，再推到 GRPO？」，本页只给顺序。点击下面每条即可跳到对应题。
+网上对得上的高频问法已经拆成独立卡。主推导在「从 Policy Gradient 怎么一步步推到 PPO，再推到 GRPO？」，本页只给顺序。点下面每条就能跳到对应题。
 
 ## 梯度从哪来
 
 - Policy Gradient Theorem / REINFORCE 怎么从目标函数推出来？
 - Policy Gradient 为什么可以减 Baseline？
+- 为什么 LLM 用 Actor-Critic，而不是纯 Critic / DQN？
 - Bellman Equation、V、Q、Advantage 的关系？
 - Entropy Regularization 和 Sampling Temperature 有什么区别？
 
@@ -82,5 +83,12 @@ sources:
 - Dr.GRPO 认为 vanilla GRPO 有哪些 bias？
 - 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
 - Schulman 的 $k_1/k_2/k_3$ 各估什么？数值无偏和梯度正确是一回事吗？
+- 相对 GRPO，SAPO / MaxRL / SimKO 各改哪一层？
+- GFPO 怎么用组内过滤压长度膨胀？和 DAPO overlong 差在哪？
+- 熵塌了先动哪几个旋钮？温度为什么排最后？
+- 异步 / partial rollout 里的 TIS，和 CISPO 截断 IS 是一回事吗？
+- MoE RL 的 Routing Replay（R2 / R3）和 Keep Routing、GSPO 各修哪一层？
+- TRPO、DPPO、AReaL 各自怎么给 RL 目标加 trust region？
+- 2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？
 
-口诀：先会无偏梯度，再谈降方差，再谈复用旧数据，最后才是「要不要 Critic」。方差 / 无偏专项见「RL 方差、无偏 / 有偏估计面试要准备哪些题？」。
+我会按这个顺序准备：先会无偏梯度，再谈降方差，再谈复用旧数据，最后才是「要不要 Critic」。方差 / 无偏专项见「RL 方差、无偏 / 有偏估计面试要准备哪些题？」。2026 社区 35 题对照见「2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？」。

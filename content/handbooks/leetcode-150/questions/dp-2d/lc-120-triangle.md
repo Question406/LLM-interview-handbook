@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 120. 三角形最小路径和
     url: https://leetcode.cn/problems/triangle/
@@ -31,7 +31,7 @@ sources:
 
 自底向上更干净：底层就是初值。上一层位置 $j$ 只能接 $j$ 或 $j+1$，所以 `dp[j] = triangle[i][j] + min(dp[j], dp[j+1])`。一层一层滚到顶，`dp[0]` 即答案。
 
-自顶向下要处理左右边界，还得在最后一层再扫一遍最小值。可以原地改三角形，或单独开一维 $O(n)$。面试主答自底向上。
+自顶向下要处理左右边界，还得在最后一层再扫一遍最小值。可以原地改三角形，或单独开一维 $O(n)$。白板我主答自底向上。
 
 ## 参考代码
 

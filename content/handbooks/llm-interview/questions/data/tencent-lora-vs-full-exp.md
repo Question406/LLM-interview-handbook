@@ -5,8 +5,7 @@ order: 210
 level: A
 title: 腾讯混元一面：LoRA 和全参微调怎么设计对照实验？
 quick: >-
-  同一数据、同一评测、只改更新范围。记录可训参数、显存、步数和遗忘（基座原能力）。数据少或要多适配器用
-  LoRA；要改推理风格或领域分布大移再用全参。结论必须带来对照表，不能只说「LoRA 省显存」。
+  同一数据、同一评测、只改更新范围。记录可训参数、显存、步数和遗忘（基座原能力）。数据少或要多适配器用 LoRA；要改推理风格或领域分布大移再用全参。结论必须带来对照表，别只说「LoRA 省显存」。
 tags:
   - Tencent
   - Hunyuan
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 日常实习 腾讯混元大模型一面 好难
     url: https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496
@@ -32,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“LoRA 和全参微调你会怎么做对比实验？”**
 
-陷阱是只说「LoRA 省显存所以更好」。评委要的是 **同一数据、同一评测、只改更新范围** 的对照表，外加遗忘与成本。LoRA 省的是优化器状态和可回滚适配器，不是免费的同等表达力。机制侧（$A$ 随机、$B$ 全零）见同厂 `tencent-lora-ab-init`、`kuaishou-lora-ab-init`；本题问实验设计。插层位置见 `meituan-lora-not-after-ln`，量化适配见 `arch-qlora`。
+这块容易只说「LoRA 省显存所以更好」。评委要的是 **同一数据、同一评测、只改更新范围** 的对照表，外加遗忘与成本。LoRA 省的是优化器状态和可回滚适配器，不是免费的同等表达力。机制侧（$A$ 随机、$B$ 全零）见同厂 `tencent-lora-ab-init`、`kuaishou-lora-ab-init`；本题问实验设计。插层位置见 `meituan-lora-not-after-ln`，量化适配见 `arch-qlora`。
 
 ## 最低对照怎么摆
 

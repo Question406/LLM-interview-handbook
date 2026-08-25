@@ -4,7 +4,9 @@ section: systems
 order: 21
 level: S
 title: JSON Schema / Grammar constrained decoding 能保证什么，不能保证什么？
-quick: 它能在解码阶段保证合法 token、JSON/grammar 和部分字段约束；不能保证业务语义、权限、SQL 安全或参数真的可执行。仍需服务端 validation、canonicalization、policy check，并测量约束的延迟与吞吐代价。
+quick: >-
+  它能在解码阶段保证合法 token、JSON/grammar 和部分字段约束；不能保证业务语义、权限、SQL 安全或参数真的可执行。仍要服务端
+  validation、canonicalization、policy check，并量约束的延迟和吞吐代价。
 tags:
   - Structured Output
   - Constrained Decoding
@@ -12,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: vLLM Structured Outputs
     url: https://docs.vllm.ai/en/v0.9.2/features/structured_outputs.html
@@ -22,7 +24,7 @@ sources:
     type: primary
 ---
 
-别把「模型输出了合法 JSON」说成「工具调用是安全且正确的」。Constrained decoding 只在 **token 集合** 上干活：每一步把不在文法里的 logit 掩掉。它保证的是句法契约，不是业务契约。把这层和鉴权、对象归属、幂等、沙箱叠在一起讲，才像在设计执行器；只讲 grammar 编译和加速，像在背 serving 特性列表。面试加一句「合法空间里仍然什么都能装」，通常就能把追问引到权限而不是再问一个 JSON 库。
+别把「模型输出了合法 JSON」说成「工具调用是安全且正确的」。Constrained decoding 只在 **token 集合** 上干活：每一步把不在文法里的 logit 掩掉。它保证的是句法契约，不是业务契约。把这层和鉴权、对象归属、幂等、沙箱叠在一起讲，才像在设计执行器；只讲 grammar 编译和加速，像在背 serving 特性列表。我会加一句「合法空间里仍然什么都能装」，通常就能把追问引到权限，而不是再问一个 JSON 库。
 
 ## 它能保证什么
 
@@ -67,7 +69,7 @@ Grammar 应在服务启动或 schema 变更时编译好缓存，不要每请求�
 
 以「退款」function call 为例。Schema 可以保证有 `order_id` 字段且类型是字符串；它不能保证这个订单属于当前用户、状态允许退款、金额未被篡改。执行器要用登录态查订单、校验状态机、写幂等键，失败时返回业务错误而不是把模型 JSON 直接丢给支付。SQL 工具更极端：grammar 保证是 `SELECT` 开头，仍可能拼出跨表泄漏；必须有只读账号、表白名单和语句超时。
 
-约束解码的产品价值是 **减少 parse 失败**，把重试预算留给真正的业务校验。把它写成安全方案，面试会被追问「string 字段里能装什么」。和 serving 延迟的关系：schema 越细，mask 越贵，也越容易死状态；所以 grammar 只锁句法最小集，权限放在服务端。
+约束解码的产品价值是 **减少 parse 失败**，把重试预算留给真正的业务校验。把它写成安全方案，会被追问「string 字段里能装什么」。和 serving 延迟的关系：schema 越细，mask 越贵，也越容易死状态；所以 grammar 只锁句法最小集，权限放在服务端。
 
 ## 追问
 

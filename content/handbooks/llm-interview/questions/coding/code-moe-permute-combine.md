@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Switch Transformers
     url: https://arxiv.org/abs/2101.03961
@@ -24,16 +24,16 @@ sources:
     type: primary
 ---
 
-Router 只给出「谁、多重」。真正把矩阵乘喂饱的是一次 **按专家重排**。现场允许伪代码，但必须能说清：展平 $\to$ 排序 $\to$ 分段 GEMM $\to$ 逆重排加权。形状错了后面 Grouped GEMM 全废，见 `sys-moe-grouped-gemm`。
+Router 只给出「谁、多重」。真正把矩阵乘喂饱的是一次按专家重排。现场允许伪代码，但必须能说清：展平 → 排序 → 分段 GEMM → 逆重排加权。形状错了后面 Grouped GEMM 全废，见 `sys-moe-grouped-gemm`。
 
 ## 形状
 
-$token$ 矩阵 $x\in\mathbb{R}^{T\times d}$。Router 得到
+token 矩阵 $x\in\mathbb{R}^{T\times d}$。Router 得到
 
 - `expert_idx`: $[T,k]$，每个 token 的专家下标；
 - `gates`: $[T,k]$，已在选中集合上归一，行和为 $1$。
 
-展平后有 $Tk$ 条「token–专家」记录。Permute 不改变这 $Tk$ 条的内容，只改变顺序，让同一专家的记录相邻。Combine 把 $Tk$ 条输出按原 token 下标加回去。
+展平后有 $Tk$ 条「token-专家」记录。Permute 不改变这 $Tk$ 条的内容，只改变顺序，让同一专家的记录相邻。Combine 把 $Tk$ 条输出按原 token 下标加回去。
 
 Top-$k$ 不可导，梯度只走 `gates` 和被选中专家的 MLP。未选中专家这一步没有 token 梯度；aux / bias 是另一条路，见 `code-moe-router-aux-loss`。
 

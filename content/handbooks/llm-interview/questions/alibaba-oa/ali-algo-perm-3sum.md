@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 全排列
     url: https://leetcode.cn/problems/permutations/

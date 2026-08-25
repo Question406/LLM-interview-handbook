@@ -5,7 +5,7 @@ order: 125
 level: A
 title: 百川智能：多 Agent 如何协作？
 quick: >-
-  先定义共享任务状态、角色接口和唯一写者，再选路由 / 辩论 / 流水线中的一种，而不是多个 chatbot 互聊。协作协议要含交接、冲突解决、超时和失败升级，并用端到端任务成功评，而不是看对话轮数。
+  先定义共享任务状态、角色接口和唯一写者，再选路由、辩论、流水线里的一种，别做成多个 chatbot 互聊。协作协议要含交接、冲突解决、超时和失败升级，用端到端任务成功评，别看对话轮数。
 tags:
   - Baichuan
   - Multi-Agent
@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530

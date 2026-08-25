@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Training language models to follow instructions with human feedback
     url: https://arxiv.org/abs/2203.02155
@@ -33,7 +33,7 @@ InstructGPT 一类流水线维护系数 $\beta_t$，每步估计 $\widehat{\math
 
 固定 $\beta$ 假设损失尺度全程不变。RL 前半段 reward 噪声大、策略还贴着参考，小 $\beta$ 已够；后半段策略方差上升、实测 KL 冲高，需要自动加罚，避免突然变成长篇空话。跨阶段（换奖励、换难度、换组大小）时，controller 能维持同一有效约束，汇报曲线也可比。这是它比固定系数好的地方：你钉的是工作点，不是一个和 reward 归一化绑死的魔法数。
 
-代价是滞后与振荡：$\beta$ 调晚了会先漂一截，调猛了会来回抽。需要和 PPO clip、学习率联动。目标 KL 过小则学不动，过大则 hacking、风格崩、安全回退——controller 只是少一次手工改系数，目标带选错等于固定 $\beta$ 选错。$\beta$ 顶到上限仍压不住 KL，应回头查奖励尺度，而不是再加大目标。
+代价是滞后与振荡：$\beta$ 调晚了会先漂一截，调猛了会来回抽。需要和 PPO clip、学习率联动。目标 KL 过小则学不动，过大则 hacking、风格崩、安全回退，controller 只是少一次手工改系数，目标带选错等于固定 $\beta$ 选错。$\beta$ 顶到上限仍压不住 KL，应回头查奖励尺度，而不是再加大目标。
 
 ## 监控：分位数和切片，不只看均值
 

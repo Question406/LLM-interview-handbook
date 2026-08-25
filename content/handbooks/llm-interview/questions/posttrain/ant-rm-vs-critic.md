@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 蚂蚁大模型一面（被问懵版）
     url: https://www.nowcoder.com/feed/main/detail/1a1a229b1d9f4a5bbfcb6ea6c9857339
@@ -34,11 +34,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“为什么有了reward model还需要critic model？critic model作用是什么？”**
 
-陷阱是把 Reward Model 说成「已经会估价值，所以不需要 critic」。RM（或规则 verifier）回答的是「这条轨迹好不好」，输出标量 $r(x,y)$；它不回答「在这个前缀状态下，当前策略的期望回报是多少」。PPO 更新用的是优势 $A_t$，没有基线就只剩高方差的 Monte Carlo 回报，长思维链尤其不稳。GRPO 用同题组均值代替 learned $V$，那是另一条估计器，不能反过来说 PPO 里的 RM 已经包含 critic，见 `sys-rl-group-n`。两个模型的标签、更新频率和故障模式都不同，混成一个「打分模型」当场穿帮。
+这块容易直接答成「RM 已经会估价值，所以不需要 critic」。RM（或规则 verifier）回答的是「这条轨迹好不好」，输出标量 $r(x,y)$；它不回答「在这个前缀状态下，当前策略的期望回报是多少」。PPO 更新用的是优势 $A_t$，没有基线就只剩高方差的 Monte Carlo 回报，长思维链尤其不稳。GRPO 用同题组均值代替 learned $V$，那是另一条估计器，不能反过来说 PPO 里的 RM 已经包含 critic，见 `sys-rl-group-n`。两个模型的标签、更新频率和故障模式都不同，混成一个「打分模型」当场穿帮。
 
 ## 两个模型，两种标签
 
-RM 吃偏好对或结果标签，拟合 $r(x,y)$，训练时策略可以冻结，甚至可以完全换成可执行 verifier。它给的是轨迹级或结果级的标量，通常不条件于中间前缀，也不随 $\pi$ 漂移而重新定义「好」。Critic 拟合 $V_\psi(s_t)\approx\mathbb{E}[G_t\mid s_t]$，标签来自 **当前策略** 的回报，政策一变，$V$ 的目标就变，必须跟 actor 一起更新。故障也不同：RM 错是奖励偏差——hack、拍马、泄漏测试；Critic 错是方差与偏差的权衡，GAE 的 $\lambda$ 就是这根轴。
+RM 吃偏好对或结果标签，拟合 $r(x,y)$，训练时策略可以冻结，甚至可以完全换成可执行 verifier。它给的是轨迹级或结果级的标量，通常不条件于中间前缀，也不随 $\pi$ 漂移而重新定义「好」。Critic 拟合 $V_\psi(s_t)\approx\mathbb{E}[G_t\mid s_t]$，标签来自当前策略的回报，政策一变，$V$ 的目标就变，必须跟 actor 一起更新。故障也不同：RM 错是奖励偏差，hack、拍马、泄漏测试；Critic 错是方差与偏差的权衡，GAE 的 $\lambda$ 就是这根轴。
 
 白板写 TD 残差和 GAE：
 
@@ -57,7 +57,7 @@ $$
 \hat A_i=\frac{r_i-\mathrm{mean}(r)}{\mathrm{std}(r)+\varepsilon}
 $$
 
-当 baseline，省一张和 actor 同规模的 value 网。前提是 $n\gt 1$；整组同奖励则优势为 0，这一步没有方向。复杂连续权衡、奖励稀疏到无法在组内对照、或必须把过程价值估出来时，仍要 critic。不要把「R1 用了 GRPO」说成「PPO 里 RM 已经够了」——那是换了算法，不是 RM 兼任了 $V$。金融场景把合规失败写成 RM / 硬门；critic 只负责降方差，不负责审计。
+当 baseline，省一张和 actor 同规模的 value 网。前提是 $n\gt 1$；整组同奖励则优势为 0，这一步没有方向。复杂连续权衡、奖励稀疏到无法在组内对照、或必须把过程价值估出来时，仍要 critic。不要把「R1 用了 GRPO」说成「PPO 里 RM 已经够了」，那是换了算法，不是 RM 兼任了 $V$。金融场景把合规失败写成 RM / 硬门；critic 只负责降方差，不负责审计。
 
 ## 追问
 

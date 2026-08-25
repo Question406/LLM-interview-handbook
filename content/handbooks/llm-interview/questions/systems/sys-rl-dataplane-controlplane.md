@@ -5,7 +5,8 @@ order: 267
 level: S
 title: RL 训练为何要把数据平面与控制平面分开？边界画在哪里？
 quick: >-
-  数据面是高频路径：rollout generate、logprob、env/verifier、轨迹张量与梯度。控制面是低频元数据：作业规格、实验配置、权重版本发布与同步协议。分开才能独立扩缩、故障隔离；控制面挂了不该丢掉已在飞的 batch。
+  数据面是高频路径：rollout generate、logprob、env/verifier、轨迹张量和梯度。控制面是低频元数据：作业规格、实验配置、权重版本发布和同步协议。分开才能独立扩缩、故障隔离。控制面挂了，不该丢掉已经在飞的
+  batch。
 tags:
   - RL Infra
   - Architecture
@@ -13,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: HybridFlow / veRL
     url: https://arxiv.org/abs/2409.19256
     type: primary
 ---
 
-陷阱是把 HybridEngine 的「训练布局 $\leftrightarrow$ 推理布局」说成控制面 / 数据面。那是同一批 GPU 上的 **放置与 reshard**，见 `sys-verl-hybridengine`。本题是作业架构：谁走每秒百万 token 的热路径，谁走秒级、可人审的配置路径。SFT 几乎没有这条裂缝——dataset 在磁盘上，一步就是取 batch。On-policy RL 多了生成、环境、版本号，把调度逻辑塞进每个 worker，配置漂移和故障域会缠死，见 `sys-rl-infra`。
+这块容易把 HybridEngine 的「训练布局 $\leftrightarrow$ 推理布局」说成控制面 / 数据面。那是同一批 GPU 上的 **放置与 reshard**，见 `sys-verl-hybridengine`。本题是作业架构：谁走每秒百万 token 的热路径，谁走秒级、可人审的配置路径。SFT 几乎没有这条裂缝，dataset 在磁盘上，一步就是取 batch。On-policy RL 多了生成、环境、版本号，把调度逻辑塞进每个 worker，配置漂移和故障域会缠死，见 `sys-rl-infra`。
 
 ## 边界：热路径 vs 版本与规格
 
@@ -48,7 +49,7 @@ Rollout 池和 trainer 池的瓶颈不同：前者吃 decode 与 sandbox 延迟�
 
 故障隔离：verifier 超时是数据面局部失败，应按 `sys-rl-rollout-admission` drop / retry，而不是让作业控制器把整个 trial 标成 failed。控制面升级（改 clip $\varepsilon$、改 $n$）必须打版本，旧轨迹要么丢要么按旧契约消费，否则 advantage 和 loss 对不上。Freshness 也是控制面的契约：允许的最大 `policy_version` gap 写在 spec 里，数据面只执行过滤。
 
-验收看三件事：控制面重启后数据面 inflight 是否可恢复；改实验配置是否必须等版本栅栏而不是热改一半 worker；weight sync 的成功以版本号为准，而不是「NCCL 没报错」。把「编排」和「张量」画在一张图的两边，比背框架 API 更像做过 RL 集群。
+验收看三件事：控制面重启后数据面 inflight 是否可恢复；改实验配置是否必须等版本栅栏而不是热改一半 worker；weight sync 的成功以版本号为准，而不是「NCCL 没报错」。我会把「编排」和「张量」画在一张图的两边，不背框架 API。
 
 ## 追问
 

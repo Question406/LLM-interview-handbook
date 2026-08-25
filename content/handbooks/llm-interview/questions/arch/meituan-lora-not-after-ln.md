@@ -5,8 +5,8 @@ order: 120
 level: A
 title: 美团 26 校招：LoRA 能否插在 LayerNorm 之后？对稳定性有何影响？
 quick: >-
-  实务上 LoRA 挂在 Linear 权重上；若在 Norm 后乱加可训练残差，会破坏已校准的激活尺度，易造成初期梯度爆炸 / 发散。合并
-  adapter 时也要检查 $\alpha/r$、是否重复 merge 与 dtype。
+  实务上 LoRA 挂在 Linear 权重上；若在 Norm 后乱加可训练残差，会破坏已校准的激活尺度，容易初期梯度爆炸 /
+  发散。合并 adapter 时也要检查 $\alpha/r$、是否重复 merge 与 dtype。
 tags:
   - Meituan
   - LoRA
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 26校招-美团大模型应用算法一面
     url: https://www.nowcoder.com/feed/main/detail/ae849dc9cdc9463782b266b2ca616ac7
@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、届别、岗位与轮次明确）
 - 原始措辞：**“LoRA 是不是只能在 Linear 层插？为什么不能插在 LayerNorm 之后？这会对训练稳定性造成什么影响”**；另问 rank 选择与合并时梯度爆炸
 
-陷阱是把「不能插在 LN 后」说成数学禁令。标准 LoRA 改的是线性层
+这块容易把「不能插在 LN 后」说成数学禁令。标准 LoRA 改的是线性层
 
 $$
 W'=W+\frac{\alpha}{r}BA,

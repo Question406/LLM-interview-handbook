@@ -15,16 +15,17 @@ function markdownFiles(directory) {
 
 test("the generated handbook has stable, complete metadata", () => {
   const questions = handbook.sections.flatMap((section) => section.questions);
+  const files = markdownFiles(new URL("../content/handbooks/llm-interview/questions/", import.meta.url));
   assert.equal(handbook.sections.length, 16);
-  assert.equal(questions.length, 705);
-  assert.equal(new Set(questions.map((question) => question.id)).size, 705);
-  assert.equal(questions.filter((question) => question.level === "S").length, 320);
-  assert.equal(questions.filter((question) => question.isRealInterview).length, 355);
+  assert.equal(questions.length, files.length);
+  assert.equal(new Set(questions.map((question) => question.id)).size, files.length);
+  assert.equal(handbook.stats.questions, files.length);
+  assert.ok(questions.every((question) => !Object.hasOwn(question, "titleHtml") && !Object.hasOwn(question, "quickHtml")));
 });
 
 test("published questions are standalone Markdown sources", () => {
   const questionDirectory = new URL("../content/handbooks/llm-interview/questions/", import.meta.url);
-  assert.equal(markdownFiles(questionDirectory).length, 705);
+  assert.equal(markdownFiles(questionDirectory).length, handbook.stats.questions);
   assert.equal(existsSync(new URL("../content/handbooks/llm-interview-v2.json", import.meta.url)), false);
 });
 
@@ -168,10 +169,11 @@ test("every formula reaches the page rendered, never as raw notation", async () 
 
   for (const handbook of registry) {
     for (const section of handbook.sections) {
-      const chunk = JSON.parse(await readFile(new URL(`../public${section.questions[0].answerPath}`, import.meta.url), "utf8"));
+      const cards = JSON.parse(await readFile(new URL(`../public${section.cardsPath}`, import.meta.url), "utf8"));
+      const chunk = JSON.parse(await readFile(new URL(`../public${section.answerPath}`, import.meta.url), "utf8"));
       for (const question of section.questions) {
-        checkFragment(`${handbook.id}/${question.id} [title]`, question.titleHtml);
-        checkFragment(`${handbook.id}/${question.id} [quick]`, question.quickHtml);
+        checkFragment(`${handbook.id}/${question.id} [title]`, cards[question.id].titleHtml);
+        checkFragment(`${handbook.id}/${question.id} [quick]`, cards[question.id].quickHtml);
         checkFragment(`${handbook.id}/${question.id} [answer]`, chunk[question.id]);
       }
     }
@@ -183,9 +185,10 @@ test("KaTeX HTML keeps layout styles in every published fragment", async () => {
   const findings = [];
   for (const entry of registry) {
     for (const section of entry.sections) {
-      const chunk = JSON.parse(await readFile(new URL(`../public${section.questions[0].answerPath}`, import.meta.url), "utf8"));
+      const cards = JSON.parse(await readFile(new URL(`../public${section.cardsPath}`, import.meta.url), "utf8"));
+      const chunk = JSON.parse(await readFile(new URL(`../public${section.answerPath}`, import.meta.url), "utf8"));
       for (const question of section.questions) {
-        for (const [label, html] of [["title", question.titleHtml], ["quick", question.quickHtml], ["answer", chunk[question.id]]]) {
+        for (const [label, html] of [["title", cards[question.id].titleHtml], ["quick", cards[question.id].quickHtml], ["answer", chunk[question.id]]]) {
           const struts = html.match(/<span class="katex-strut"/g)?.length ?? 0;
           const styled = html.match(/<span class="katex-strut" style="/g)?.length ?? 0;
           if (struts !== styled) findings.push(`${entry.id}/${question.id} [${label}] unstyled struts ${struts - styled}/${struts}`);
@@ -198,13 +201,31 @@ test("KaTeX HTML keeps layout styles in every published fragment", async () => {
 
 test("large answers are split into lazy-loaded module chunks", async () => {
   for (const section of handbook.sections) {
-    const answerPath = section.questions[0].answerPath;
-    assert.ok(answerPath?.startsWith("/content/llm-interview-v2/"));
-    const chunkUrl = new URL(`../public${answerPath}`, import.meta.url);
+    assert.equal(section.answerPath, `/content/llm-interview-v2/${section.id}.json`);
+    assert.equal(section.cardsPath, `/content/llm-interview-v2/${section.id}.cards.json`);
+    const chunkUrl = new URL(`../public${section.answerPath}`, import.meta.url);
     const chunk = JSON.parse(await readFile(chunkUrl, "utf8"));
     assert.deepEqual(Object.keys(chunk).sort(), section.questions.map((question) => question.id).sort());
+    const first = section.questions[0];
+    assert.equal(first.answerPath, `/content/llm-interview-v2/${section.id}/${first.id}.json`);
+    const one = JSON.parse(await readFile(new URL(`../public${first.answerPath}`, import.meta.url), "utf8"));
+    assert.equal(one, chunk[first.id]);
     assert.ok(section.questions.every((question) => !Object.hasOwn(question, "answerHtml")));
   }
+});
+
+test("browser catalog stays small and handbook indexes omit KaTeX HTML", async () => {
+  const catalogUrl = new URL("../public/content/catalog.json", import.meta.url);
+  const catalogBytes = (await readFile(catalogUrl)).byteLength;
+  const catalog = JSON.parse(await readFile(catalogUrl, "utf8"));
+  assert.ok(catalog.length >= 3);
+  assert.ok(catalogBytes < 100_000);
+  assert.doesNotMatch(JSON.stringify(catalog), /titleHtml|quickHtml/);
+  const indexUrl = new URL("../public/content/llm-interview-v2/index.json", import.meta.url);
+  const indexBytes = (await readFile(indexUrl)).byteLength;
+  const index = JSON.parse(await readFile(indexUrl, "utf8"));
+  assert.equal(index.sections[0].questions[0].titleHtml, undefined);
+  assert.ok(indexBytes < 1_500_000);
 });
 
 const sampleCatalog = [

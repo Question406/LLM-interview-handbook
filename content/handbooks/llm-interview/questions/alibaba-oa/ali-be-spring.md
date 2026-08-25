@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
     url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
@@ -25,9 +25,9 @@ sources:
 
 ## 定义
 
-Spring Bean 是容器管理的对象：容器负责创建、注入依赖、调用初始化、在关闭时销毁。生命周期口述抓四段，不要背二十步清单。第一段**实例化**，无参构造或工厂方法 new 出裸对象。第二段**填充属性**，按 `@Autowired` / `@Resource` / setter 把依赖灌进去。第三段**初始化**：先走各种 `Aware`（让 Bean 拿到 `BeanName`、`ApplicationContext`），再进入 `BeanPostProcessor` 的 `postProcessBeforeInitialization`，然后是 `@PostConstruct`、`InitializingBean.afterPropertiesSet`、自定义 `init-method`，最后 `postProcessAfterInitialization`——AOP 代理通常在这里包一层。第四段**销毁**：`@PreDestroy`、`DisposableBean`、`destroy-method`。
+Spring Bean 是容器管理的对象：容器负责创建、注入依赖、调用初始化、在关闭时销毁。生命周期口述我抓四段，不要背二十步清单。第一段实例化，无参构造或工厂方法 new 出裸对象。第二段填充属性，按 `@Autowired` / `@Resource` / setter 把依赖灌进去。第三段初始化：先走各种 `Aware`（让 Bean 拿到 `BeanName`、`ApplicationContext`），再进入 `BeanPostProcessor` 的 `postProcessBeforeInitialization`，然后是 `@PostConstruct`、`InitializingBean.afterPropertiesSet`、自定义 `init-method`，最后 `postProcessAfterInitialization`，AOP 代理通常在这里包一层。第四段销毁：`@PreDestroy`、`DisposableBean`、`destroy-method`。
 
-AOP 的定义是：把横切逻辑（日志、鉴权、事务、限流）从业务方法里拆出去，用代理在方法调用前后织入通知。Spring 默认：有接口走 JDK 动态代理，没接口走 CGLIB 子类。通知类型是 before / after / around / after-returning / after-throwing。切点用表达式选方法。核心限制一句话：**只有经过代理对象的外部调用才会进切面**，`this.foo()` 是直接调目标对象，切面和事务都不生效。
+AOP 是把横切逻辑（日志、鉴权、事务、限流）从业务方法里拆出去，用代理在方法调用前后织入通知。Spring 默认：有接口走 JDK 动态代理，没接口走 CGLIB 子类。通知类型是 before / after / around / after-returning / after-throwing。切点用表达式选方法。核心限制一句话：**只有经过代理对象的外部调用才会进切面**，`this.foo()` 是直接调目标对象，切面和事务都不生效。
 
 ## 对比 / 分层
 
@@ -47,7 +47,7 @@ AOP 的定义是：把横切逻辑（日志、鉴权、事务、限流）从业�
 
 下单服务里 `OrderService.placeOrder()` 标了 `@Transactional`，里面先写订单再 `this.deductCoupon()`。优惠扣减上的事务或锁切面不会走，大促一压就会出现「订单写了、券没扣」或反过来。改法是把扣券抽到独立 Bean，或注入自己的代理再调。初始化阶段也不要在 `@PostConstruct` 里同步拉全量商品库，启动会被拖死；改成异步预热，并用就绪探针挡住流量。
 
-配置中心、HSF / Dubbo 消费者这类 Bean，销毁时必须先摘流量再关线程池，否则发布过程中还有请求打到半关闭的池。阿里内部发布常见「先下线注册中心，再停 JVM」，对应的就是销毁顺序。循环依赖的真实案例：`PriceService` 依赖 `PromotionService`，后者又回调算价，字段注入能跑，但单测和阅读成本高，校招更加分的说法是「能转不等于设计对，尽量拆成事件或第三方面」。
+配置中心、HSF / Dubbo 消费者这类 Bean，销毁时必须先摘流量再关线程池，否则发布过程中还有请求打到半关闭的池。阿里内部发布常见「先下线注册中心，再停 JVM」，对应的就是销毁顺序。循环依赖的真实案例：`PriceService` 依赖 `PromotionService`，后者又回调算价，字段注入能跑，但单测和阅读成本高。校招更加分的说法是：能转不等于设计对，尽量拆成事件或第三方面。
 
 ## 追问
 

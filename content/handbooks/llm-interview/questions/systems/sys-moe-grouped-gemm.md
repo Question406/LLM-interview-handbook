@@ -6,8 +6,8 @@ level: S
 title: MoE 专家计算为什么要用 Grouped GEMM，而不是 for-loop 或 pad 成 batched GEMM？
 quick: >-
   各专家的 token 数 $n_i$ 不同。For-loop 每次 kernel 启动太碎；按 $\max n_i$ 或 capacity
-  $C$ padding 会白算空位。Grouped GEMM 一次 kernel 吃进一组变长 $(n_i,d,d_{\mathrm{ff}})$，把稀疏 MoE
-  重新变成高占用矩阵乘。负载不均时它救不了最慢专家，只救启动开销和 padding。
+  $C$ padding 会白算空位。Grouped GEMM 一次 kernel 吃进一组变长 $(n_i,d,d_{\mathrm{ff}})$，把稀疏
+  MoE 重新变成高占用矩阵乘。负载不均时它救不了最慢专家，只救启动开销和 padding。
 tags:
   - MoE
   - Grouped GEMM
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: MegaBlocks
     url: https://arxiv.org/abs/2211.15841
@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-陷阱是把 MoE 前向画成「$N$ 个 `nn.Linear` 循环」。白板能过，上卡就死在 kernel launch 和空算。Permute 之后每个专家拿到一段连续 token，真正贵的是 **怎么喂进 Tensor Core**。三种喂法对应三种浪费。
+这块容易把 MoE 前向画成「$N$ 个 `nn.Linear` 循环」。白板能过，上卡就死在 kernel launch 和空算。Permute 之后每个专家拿到一段连续 token，真正贵的是 **怎么喂进 Tensor Core**。三种喂法对应三种浪费。
 
 ## 三种算子
 
@@ -35,7 +35,7 @@ Permute 之后专家 $i$ 的输入是 $X_i\in\mathbb{R}^{n_i\times d}$，权重 
 2. **Pad + batched GEMM。** 把每个 $X_i$ 补到 $C$ 或 $\max_i n_i$，堆成 `[N, C, d]`，一次 `bmm`。Shape 静态、好写 CUDA graph，但空位按 dense 算。$\mathrm{CF}=1.25$ 且负载再歪一点，有效 FLOPs 占比会掉到 $50\%$ 以下。这是 capacity padding 的算子面，见 `arch-moe-dropless`、`sys-moe-capacity-token-drop`。
 3. **Grouped GEMM。** 一次 kernel 接收 $N$ 组不同的 $(m_i,n,k)=(n_i,d_{\mathrm{ff}},d)$，组间不要求 $m_i$ 相同。无 padding，启动一次。MegaBlocks / Transformer Engine / CUTLASS grouped GEMM 都是这条。Dropless 训练几乎必须靠它，否则变长 $n_i$ 只能退回循环。
 
-面试把 grouped GEMM 说成「batched GEMM 的变长版」即可：batched 要求每组 $m$ 相同；grouped 允许每组 $m$ 不同。不要背具体 API。
+我会把 grouped GEMM 说成「batched GEMM 的变长版」：batched 要求每组 $m$ 相同；grouped 允许每组 $m$ 不同。不要背具体 API。
 
 ## 什么时候 grouped 也不够
 
@@ -45,9 +45,9 @@ Permute 之后专家 $i$ 的输入是 $X_i\in\mathbb{R}^{n_i\times d}$，权重 
 
 **权重布局。** 专家权重按 `[N, d, d_ff]` 连续存放，grouped kernel 才能按组指到 $W_i$。EP 之后每卡只有 $N/\mathrm{EP}$ 个专家，grouped 的组数是本地专家数，不是全局 $N$，见 `sys-expert-parallel`。Shared expert 每 token 都走，通常单独一条 dense GEMM，不要塞进 routed 的 grouped 调用。
 
-## 选型口诀
+## 怎么选
 
-Prefill / 训练微批足够大：$n_i$ 上百，grouped GEMM 是默认。Shape 必须静态、且均衡已经很好：pad 到 $C$ 换 graph。专家极多、单专家极小：先怀疑细粒度切分过碎，再堆 kernel。评测看 SM 利用率、padding 浪费比例、kernel 次数，不要只报 MFU——MFU 会被 padding 虚高。
+Prefill / 训练微批足够大：$n_i$ 上百，grouped GEMM 是默认。Shape 必须静态、且均衡已经很好：pad 到 $C$ 换 graph。专家极多、单专家极小：先怀疑细粒度切分过碎，再堆 kernel。评测看 SM 利用率、padding 浪费比例、kernel 次数，不要只报 MFU。MFU 会被 padding 虚高。
 
 ## 追问
 

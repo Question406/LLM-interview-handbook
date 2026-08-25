@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ Hindsight Credit Assignment
     url: 'https://arxiv.org/abs/2603.08754'
     type: legacy-reference
 ---
 
-在线 TD / 逐步 critic 只用 $s_t$ 附近的信息估 $A_t$，长工具链里信号极噪。Hindsight 的直觉：episode 结束后我们已有完整未来轨迹和 outcome，可以用「后来发生了什么」回过头判断某步是否关键。陷阱是把事后叙事当成因果——judge 很容易编一个好听的贡献故事。本题讲的是 **事后重估中间步**，和 HER 把失败轨迹 relabel 成「假如目标是已达状态」不是同一件事，对照 `arl-sparse-reward-exploration`。
+在线 TD / 逐步 critic 只用 $s_t$ 附近的信息估 $A_t$，长工具链里信号极噪。Hindsight 的直觉：episode 结束后我们已有完整未来轨迹和 outcome，可以用「后来发生了什么」回过头判断某步是否关键。这块容易直接答成把事后叙事当成因果。judge 很容易编一个好听的贡献故事。本题讲的是事后重估中间步，和 HER 把失败轨迹 relabel 成「假如目标是已达状态」不是同一件事，对照 `arl-sparse-reward-exploration`。
 
 ## 事后看见未来，才能认出关键取证步
 
@@ -43,7 +43,7 @@ Hindsight 回答的问题不是「这步看起来对不对」，而是「没有�
 
 成本上不要全轨迹扫描。先用规则切决策边界（tool-call、权限门），再对少数步做 hindsight。训练时这些分是 shaping，终局 $R$ 仍要锚定，否则模型会优化「让事后 judge 满意的叙事」。
 
-面试收口：hindsight 用完整未来回看中间步，能认出当时不起眼的取证动作；但必须用替换 / 删除实验验证，不能把事后作文当因果。
+最后我会补一句：hindsight 用完整未来回看中间步，能认出当时不起眼的取证动作；但必须用替换 / 删除实验验证，不能把事后作文当因果。
 
 ## 追问
 

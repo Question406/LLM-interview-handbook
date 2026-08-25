@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 39. 组合总和
     url: https://leetcode.cn/problems/combination-sum/
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **每个数至多一次（LC 40 Combination Sum II）？** 候选可以有重复值，同一组合不能因为重复值的不同下标被收两次。先排序。递归改成 `dfs(i+1, remain-x)`（下标前进，不能再用当前元素）。同层跳过：`i > start` 且 `candidates[i] == candidates[i-1]` 则 `continue`——前一个相同值没选，当前再选只会复制同一条路径。时间仍指数级。
+- **每个数至多一次（LC 40 Combination Sum II）？** 候选可以有重复值，同一组合不能因为重复值的不同下标被收两次。先排序。递归改成 `dfs(i+1, remain-x)`（下标前进，不能再用当前元素）。同层跳过：`i > start` 且 `candidates[i] == candidates[i-1]` 则 `continue`，前一个相同值没选，当前再选只会复制同一条路径。时间仍指数级。
 
 ```python
 def combinationSum2(candidates, target):

@@ -5,7 +5,7 @@ order: 40
 level: A
 title: 阿里手撕：最小路径和、最大矩形的 DP 怎么设？
 quick: >-
-  64 只能右/下，`dp=grid+min(上,左)`。85 对每一层当直方图，用 84 的单调栈求最大矩形。
+  64 只能右/下，`dp=grid+min(上,左)`。85 我对每一层当直方图，用 84 的单调栈求最大矩形。
 tags:
   - Alibaba
   - DP
@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 最小路径和
     url: https://leetcode.cn/problems/minimum-path-sum/

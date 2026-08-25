@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 字节实习 agent开发一面
     url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
@@ -32,7 +32,7 @@ sources:
 
 ## 思路
 
-三指针：`i=m-1` 扫 `nums1` 有效段，`j=n-1` 扫 `nums2`，`k=m+n-1` 从尾巴填。谁大填谁，填完该侧指针减一。`j` 耗尽即可停——`nums1` 前缀已经在正确位置。`i` 先耗尽则把 `nums2` 剩下的拷进去。
+三指针：`i=m-1` 扫 `nums1` 有效段，`j=n-1` 扫 `nums2`，`k=m+n-1` 从尾巴填。谁大填谁，填完该侧指针减一。`j` 耗尽即可停，`nums1` 前缀已经在正确位置。`i` 先耗尽则把 `nums2` 剩下的拷进去。
 
 从前往后会覆盖 `nums1` 里还没比较的数，除非先另开缓冲。
 

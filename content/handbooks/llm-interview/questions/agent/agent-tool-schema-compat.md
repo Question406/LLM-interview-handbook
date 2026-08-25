@@ -4,7 +4,7 @@ section: agent
 order: 215
 level: A
 title: Tool Schema 升级时如何保持旧 Agent / 旧轨迹兼容？
-quick: Schema 要版本化与兼容窗口：只加可选字段、废弃字段双读；破坏性变更走新 tool 名。运行时校验并返回可机器读的错误，供模型修复。
+quick: Schema 要版本化，给一段兼容窗口：只加可选字段、废弃字段双读。破坏性变更走新 tool 名。运行时校验并返回可机器读的错误，让模型改参。
 tags:
   - Tool Schema
   - Compatibility
@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: MCP specification (2025-06-18)
     url: https://modelcontextprotocol.io/specification/2025-06-18
     type: primary
 ---
 
-陷阱是把本题答成「schema 要写单位和副作用」——那是 `agent-schema-contract`。这里问的是 **版本化**：权重、prompt、离线轨迹都绑在旧字段名和旧语义上。静默丢掉未知字段、或把 `amount` 从元改成分子而不改名，线上工具与离线数据一起漂，旧轨迹会变成看起来合法的错样本。MCP 把协议版本写进 initialize，就是承认客户端和服务器会长期共存。
+这块容易直接答成「schema 要写单位和副作用」，那是 `agent-schema-contract`。这里问的是 **版本化**：权重、prompt、离线轨迹都绑在旧字段名和旧语义上。静默丢掉未知字段，或把 `amount` 从元改成分子而不改名，线上工具与离线数据一起漂，旧轨迹会变成看起来合法的错样本。MCP 把协议版本写进 initialize，就是承认客户端和服务器会长期共存。
 
 ## 兼容窗口：加可选、双读废弃、破坏性换名
 
@@ -31,13 +31,13 @@ $$
 
 不要为「旧模型还在用」无限延期，否则 catalog 永远无法收口。
 
-运行时严格 validate：缺字段、类型错、未知字段策略要显式（reject 或 persist-in-`extensions`），禁止静默丢字段——那是行为漂移且不可观测。错误含 `error_code`、缺哪个字段、期望版本，让模型改参而不是改计划乱猜。影子流量比对 v1/v2：同一请求两路执行只读差异，写操作只在一方落地。默认值若有副作用（自动重试、自动抄送），升级时必须当破坏性变更，不能靠「合理默认」偷换。
+运行时严格 validate：缺字段、类型错、未知字段策略要显式（reject 或 persist-in-`extensions`），禁止静默丢字段。那是行为漂移且不可观测。错误含 `error_code`、缺哪个字段、期望版本，让模型改参而不是改计划乱猜。影子流量比对 v1/v2：同一请求两路执行只读差异，写操作只在一方落地。默认值若有副作用（自动重试、自动抄送），升级时必须当破坏性变更，不能靠「合理默认」偷换。
 
 ## 旧轨迹怎么搬家，失败不要硬训
 
-训练与评测数据是最大的兼容负担。写重写脚本：旧字段映射到新 schema，能证明语义不变才入库。映射失败则丢弃或标成负例，不要用新 schema 的解码器去「尽量解析」旧 JSON——那会制造虚假成功轨迹，见 `arl-trajectories`。评测集按 schema 版本切片：v1 轨迹只在 v1 harness 上回归，混跑会把兼容 bug 当成模型退步。迁移脚本本身要版本化：同一批旧轨迹用不同脚本会得到不同正例，后续 RL 无法复现。
+训练与评测数据是最大的兼容负担。写重写脚本：旧字段映射到新 schema，能证明语义不变才入库。映射失败则丢弃或标成负例，不要用新 schema 的解码器去「尽量解析」旧 JSON。那会制造虚假成功轨迹，见 `arl-trajectories`。评测集按 schema 版本切片：v1 轨迹只在 v1 harness 上回归，混跑会把兼容 bug 当成模型退步。迁移脚本本身要版本化：同一批旧轨迹用不同脚本会得到不同正例，后续 RL 无法复现。
 
-发布清单：catalog 版本、兼容窗口、双读字段表、轨迹迁移成功率、影子 diff。缺一项就不要切主流量。在飞的 durable 工作流还绑着旧 tool 名，升级要与 `agent-durable-execution` 的 workflow 版本一起排空，不能只改 catalog。面试收口：契约题管字段该有什么；本题管旧调用和旧轨迹如何活过升级。破坏性变更换名；未知字段不要静默丢。
+发布清单：catalog 版本、兼容窗口、双读字段表、轨迹迁移成功率、影子 diff。缺一项就不要切主流量。在飞的 durable 工作流还绑着旧 tool 名，升级要与 `agent-durable-execution` 的 workflow 版本一起排空，不能只改 catalog。契约题管字段该有什么；本题管旧调用和旧轨迹如何活过升级。破坏性变更换名；未知字段不要静默丢。
 
 ## 追问
 

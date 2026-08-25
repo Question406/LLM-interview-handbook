@@ -5,7 +5,7 @@ order: 212
 level: S
 title: SFT / RL 的多源数据配比与 Curriculum 怎么定，如何证明没有过拟合某一源？
 quick: >-
-  先按任务价值与难度分桶设配额，再用温度采样或 mixing law 做小规模配比 sweep；Curriculum 从高通过率短轨迹抬到长程难例。证明没过拟合某一源要靠按来源 held-out、leave-one-source-out 和近重复污染率，而不是总 loss 下降。
+  先按任务价值与难度分桶设配额，再用温度采样或 mixing law 做小规模配比 sweep。Curriculum 从高通过率短轨迹抬到长程难例。证明没过拟合某一源要靠按来源 held-out、leave-one-source-out 和近重复污染率，总 loss 下降不够。
 tags:
   - Data Mix
   - Curriculum
@@ -13,14 +13,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Data Mixing Laws
     url: https://arxiv.org/abs/2403.16952
     type: primary
 ---
 
-陷阱是把配比讲成「经验 $1:1:1$」或「难例越多越好」。评委要的是可回放的配额实验：每源独立 held-out、配比变更可版本化，以及增益来自泛化而不是背诵主数据源。快手题（`kuaishou-sft-source-mix`）是 SFT 来源配比的场景版；阶跃题（`stepfun-agent-data-mix`）是 Agent RL 的场景版。本题是通用方法：先分桶，再拟合或扫配比，最后用切片证明没有过拟合某一源。
+这块容易直接答成「经验 $1:1:1$」或「难例越多越好」。评委要的是可回放的配额实验：每源独立 held-out、配比变更可版本化，以及增益来自泛化而不是背诵主数据源。快手题（`kuaishou-sft-source-mix`）是 SFT 来源配比的场景版；阶跃题（`stepfun-agent-data-mix`）是 Agent RL 的场景版。本题是通用方法：先分桶，再拟合或扫配比，最后用切片证明没有过拟合某一源。
 
 ## 配比是优化问题，不是审美
 
@@ -34,7 +34,7 @@ $$
 
 ## Curriculum 避免梯度稀疏
 
-Curriculum 不是「先简单后难」的口号。SFT 先格式与高置信短样本，再提高难例温度。RL 从高通过率、短轨迹到低通过率、长程 agent，避免一开始全是不可能成功的题导致组内全错、advantage 全零。只加难例、无 verifier、无课程，会学噪声。各桶要盯非零 advantage 比例：全对或全错都该调采样，而不是加条数。配比变更必须绑定 `dataset_version`，能回放才能归因。
+Curriculum 别停在「先简单后难」这句话。SFT 先格式与高置信短样本，再提高难例温度。RL 从高通过率、短轨迹到低通过率、长程 agent，避免一开始全是不可能成功的题导致组内全错、advantage 全零。只加难例、无 verifier、无课程，会学噪声。各桶要盯非零 advantage 比例：全对或全错都该调采样，而不是加条数。配比变更必须绑定 `dataset_version`，能回放才能归因。
 
 ## 怎么证明没有过拟合某一源
 
@@ -43,7 +43,7 @@ Curriculum 不是「先简单后难」的口号。SFT 先格式与高置信短�
 3. 报告近重复污染率、各桶 $\Delta$ 能力 / $\Delta$ token，而不是总 loss。
 4. 对照至少：等比例、按缺口加权、按质量加权、curriculum。过拟合防护与 `meituan-sft-overfit` 同一套：模板重复会把配比实验变成背数据。
 
-Mixing law 拟合的是预训练域损失，不能直接当 SFT win-rate 或 RL 成功率的预言机：后训练目标更稀疏、标签更噪，仍要按任务 held-out 做小规模真实 sweep，定律只提供初值和哪些域互相伤害的先验。RL 配比还有一层动态：用当前 actor 估各桶 pass@$1$ 与非零 advantage 率，难度标签每周更新，静态 $r$ 会在政策变强后变成全对。面试收口：比例是实验结果，不是出发假设；没有按源切片和 leave-one-source-out，任何 mix 都只是口味。难例必须落在当前政策可探索区间，否则课程只是在灌噪声。
+Mixing law 拟合的是预训练域损失，不能直接当 SFT win-rate 或 RL 成功率的预言机：后训练目标更稀疏、标签更噪，仍要按任务 held-out 做小规模真实 sweep，定律只提供初值和哪些域互相伤害的先验。RL 配比还有一层动态：用当前 actor 估各桶 pass@$1$ 与非零 advantage 率，难度标签每周更新，静态 $r$ 会在政策变强后变成全对。最后我会补一句：比例是实验结果，不是出发假设；没有按源切片和 leave-one-source-out，任何 mix 都只是口味。难例必须落在当前政策可探索区间，否则课程只是在灌噪声。
 
 ## 追问
 

@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Delta 权重同步 — slime
     url: https://thudm.github.io/slime/zh/advanced/delta-weight-sync.html
@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-别把「权重已经推到 SGLang」说成「ratio 可以用引擎 logp 了」。同步解决的是 **推理进程看到的 $\theta$ 版本**；Megatron 上再 forward 解决的是 **$\pi_{\mathrm{old}}$ / $\pi_\theta$ 用哪张计算图**。一个管 freshness，一个管数值，见 `meituan-verl-recompute-logprob`、`infra-rl-weight-sync`。现场把 delta、NCCL、disk 背得很熟，却说「同步完 logp 就对齐了」，会直接被判成没做过 on-policy 数学。先画两个箭头：trainer → engine 是版本，engine tokens → trainer forward 是 logp，再往下讲运输方式。
+别把「权重已经推到 SGLang」说成「ratio 可以用引擎 logp 了」。同步解决的是 **推理进程看到的 $\theta$ 版本**；Megatron 上再 forward 解决的是 **$\pi_{\mathrm{old}}$ / $\pi_\theta$ 用哪张计算图**。一个管 freshness，一个管数值，见 `meituan-verl-recompute-logprob`、`infra-rl-weight-sync`。现场把 delta、NCCL、disk 背得很熟，却说「同步完 logp 就对齐了」，会直接被判成没做过 on-policy 数学。我会先画两个箭头：trainer → engine 是版本，engine tokens → trainer forward 是 logp，再往下讲运输方式。
 
 ## 三条运输，对应三种放置
 
@@ -35,7 +35,7 @@ slime 默认训练是 Megatron、推理是 SGLang，权重布局本来就不一�
 - **`--update-weight-transport disk`（full）。** 写成 HF 目录，SGLang `update_weights_from_disk`。外部 engine、跨集群、建不了 NCCL 时的保底。`--rollout-external-engine-addrs` 接已有服务时经常走这条，见 `slime-external-engine`。磁盘是可调试的 source of truth，也是最慢的一条，适合扩容和新 replica seed，不适合每步热路径。
 - **`--update-weight-mode delta`。** 两次同步之间只发 **变化了的 tensor**，engine `/pull_weights` 原地 apply。官方定位是大 MoE、跨机房：全量百 B 级权重每步走磁盘或满带宽广播不可接受。它 **不替代** colocate 的 IPC，也不是「可以少做一次 full」。Diff 的正确性依赖双方从同一份 full 起步，版本号对不上就不要 apply。
 
-选型口诀：能建 group 用 NCCL；跨集群用 disk full；参数极大且变动稀疏再叠 delta。不要在 colocate 上强行 delta 来「优化」，那不是这条路径的瓶颈。Delta 省的是 **传输字节**，不是计算图差异。MoE 里大部分 expert 本步没被更新时，diff 才划算；稠密模型每层都动，delta 可能并不比 full 小多少，还多了计算 diff 和 apply 的复杂度。面试被问「为什么开 delta」要能答到模型结构和放置，而不是「大模型都应该开」。
+选型口诀：能建 group 用 NCCL；跨集群用 disk full；参数极大且变动稀疏再叠 delta。不要在 colocate 上强行 delta 来「优化」，那不是这条路径的瓶颈。Delta 省的是 **传输字节**，不是计算图差异。MoE 里大部分 expert 本步没被更新时，diff 才划算；稠密模型每层都动，delta 可能并不比 full 小多少，还多了计算 diff 和 apply 的复杂度。被问「为什么开 delta」要能答到模型结构和放置，而不是「大模型都应该开」。
 
 ## 同步之后必须做的两件事
 
@@ -57,7 +57,7 @@ SGLang 的采样 logp（尤其 BF16 训练 + FP8 rollout）和 Megatron 训练�
 
 同步后忘了 flush KV：新 $\theta$ 配旧缓存，采样分布既不是 old 也不是 new，ratio 再准也救不了这条轨迹。Delta 在有的 replica 丢包、有的 apply 成功：集群里多版本并存，必须靠 `rollout_id` 丢掉对不上的样本，而不是平均掉。晚加入节点只拉 delta：权重从零加上 diff，数值是垃圾，要用最近的 full 做 seed。这些都是 **版本** 问题；logp 对不齐则是 **图** 问题，不要用同一次「同步失败」解释。
 
-和 veRL 对答：HybridEngine 同进程 reshard，传输问题更少、布局转换更重；slime 跨进程 `update_weights`，传输问题更显式。分卡 + 外部 engine 时 disk/delta 几乎是必选项，见 `slime-external-engine`。跨进程意味着可以独立重启 SGLang、独立升级引擎，这是 slime 相对 HybridEngine 的运维弹性；代价是必须把同步做成可靠协议，而不是「同进程里改个指针」。面试被问「你们怎么保证训推一致」，先答版本号和 checksum，再答 delta，不要一上来讲 diff 算法。
+和 veRL 对答：HybridEngine 同进程 reshard，传输问题更少、布局转换更重；slime 跨进程 `update_weights`，传输问题更显式。分卡 + 外部 engine 时 disk/delta 几乎是必选项，见 `slime-external-engine`。跨进程意味着可以独立重启 SGLang、独立升级引擎，这是 slime 相对 HybridEngine 的运维弹性；代价是必须把同步做成可靠协议，而不是「同进程里改个指针」。被问「你们怎么保证训推一致」，先答版本号和 checksum，再答 delta，不要一上来讲 diff 算法。
 
 ## 追问
 

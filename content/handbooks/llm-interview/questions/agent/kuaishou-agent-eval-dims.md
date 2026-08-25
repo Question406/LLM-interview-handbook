@@ -5,7 +5,7 @@ order: 145
 level: S
 title: 快手：Agent 评估要哪些维度，Planning 和幻觉率怎么量化？
 quick: >-
-  维度至少包括任务成功、规划正确、工具合法、幻觉 / 无依据断言、步数成本和恢复。Planning 用「必要步骤是否出现、顺序是否可行」；幻觉率用无证据断言占比，不要用流畅度代替。
+  维度至少包括任务成功、规划正确、工具合法、幻觉 / 无依据断言、步数成本和恢复。Planning 用「必要步骤是否出现、顺序是否可行」；幻觉率用无证据断言占比，别用流畅度代替。
 tags:
   - Kuaishou
   - Agent Evaluation
@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手大模型LLM二面分享-日常实习
     url: https://www.nowcoder.com/feed/main/detail/058475a3d9204493bc145510c72e10f1
@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“Agent 评估体系包含哪些核心维度？如何量化衡量Planning能力与Hallucination Rate?”**
 
-陷阱是用最终回答的流畅度或单一 QA 准确率代表 Agent。快手 LLM 二面把评估、规划调度、RAG 是否 work 连问，要的是过程可拆。Agent 会选工具、填参、决定继续或停，答对但乱调工具在工程上不合格，京东侧同构问题见 `jd-agent-eval-beyond-qa`。原帖还问高 QPS 下三工具延迟，评估集应含负载与超时 case，见 `kuaishou-tool-timeout-empty-result`。
+这块容易直接答成用最终回答的流畅度，或单一 QA 准确率代表 Agent。快手 LLM 二面把评估、规划调度、RAG 是否 work 连问，要的是过程可拆。Agent 会选工具、填参、决定继续或停，答对但乱调工具在工程上不合格，京东侧同构问题见 `jd-agent-eval-beyond-qa`。原帖还问高 QPS 下三工具延迟，评估集应含负载与超时 case，见 `kuaishou-tool-timeout-empty-result`。
 
 ## 核心维度：成功、过程、成本、安全
 
@@ -49,7 +49,7 @@ sources:
 
 Planning 不要用计划文本的 BLEU。给任务写 gold 计划图（必要节点与偏序），看：必要节点覆盖、非法顺序（未查权限就写）、过早终止、多余步骤。探针可以是「给残缺 state 补计划」或中途注入环境变化，看会不会死守过期计划，见 `agent-when-to-replan`、`kuaishou-modular-planning`。
 
-Hallucination Rate：先定义断言。分母用全部事实断言或全部回复中的可核验句，分子是无法在检索 / 工具结果中对齐的断言。工具幻觉（编造 API 返回、伪造 request ID）必须单独桶，不能和文档幻觉混报。自动对齐（span / 结构化字段）加人工校准；按场景切片——推荐理由、数据指标、政策条款的幻觉代价不同。流畅、自信的错答要算进分子。RAG 侧三层指标见 `kuaishou-rag-eval-build`。量化时分母必须写死：Planning 覆盖率的分母是 gold 必要节点，不是模型自己生成的步骤数；幻觉率的分母是可核验断言，不是 token 数。分母一漂，周报上的「下降」没有意义。高 QPS 切片要单独报超时后的诚实率：任务失败但正确说明超时，优于编造成功。二面把评估和调度连问，是因为没有这些分母，调度策略无法回归。
+Hallucination Rate：先定义断言。分母用全部事实断言或全部回复中的可核验句，分子是无法在检索 / 工具结果中对齐的断言。工具幻觉（编造 API 返回、伪造 request ID）必须单独桶，不能和文档幻觉混报。自动对齐（span / 结构化字段）加人工校准；按场景切片，推荐理由、数据指标、政策条款的幻觉代价不同。流畅、自信的错答要算进分子。RAG 侧三层指标见 `kuaishou-rag-eval-build`。量化时分母必须写死：Planning 覆盖率的分母是 gold 必要节点，不是模型自己生成的步骤数；幻觉率的分母是可核验断言，不是 token 数。分母一漂，周报上的「下降」没有意义。高 QPS 切片要单独报超时后的诚实率：任务失败但正确说明超时，优于编造成功。二面把评估和调度连问，是因为没有这些分母，调度策略无法回归。
 
 ## 追问
 

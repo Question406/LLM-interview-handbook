@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeek 大模型算法岗笔试面经分享（练习向整理）
     url: https://www.nowcoder.com/discuss/913482312753418240
@@ -29,7 +29,7 @@ sources:
 
 来源为公开练习向整理帖（非严格候选人逐字实录），按 DeepSeek 系算法岗高频手撕准备；`realInterview: false`。
 
-陷阱是公式能背、形状写错，或把 GQA/MLA 说成改了 softmax。数学骨架不变：缩放点积 + mask + 加权 $V$。MLA 是另一压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
+这块容易公式能背、形状写错，或把 GQA/MLA 说成改了 softmax。数学骨架不变：缩放点积 + mask + 加权 $V$。MLA 是另一压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
 
 ## 公式与白板检查清单
 
@@ -60,7 +60,7 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
 
 ## GQA / MLA：只改组织，不改 softmax
 
-GQA：$H_{\mathrm{kv}}\lt H$，K/V 少头，Q 做 `repeat_interleave`。KV cache 从 $O(H d_h)$ 降到 $O(H_{\mathrm{kv}} d_h)$。MLA：沿表示维压 latent，RoPE 拆开，推理吸收矩阵，见 `arch-mla`。面试一句话：二者都为 decode 带宽，**压缩轴不同**。不要在 MHA 代码里假装写了 MLA。
+GQA：$H_{\mathrm{kv}}\lt H$，K/V 少头，Q 做 `repeat_interleave`。KV cache 从 $O(H d_h)$ 降到 $O(H_{\mathrm{kv}} d_h)$。MLA：沿表示维压 latent，RoPE 拆开，推理吸收矩阵，见 `arch-mla`。面试一句话：二者都为 decode 带宽，压缩轴不同。不要在 MHA 代码里假装写了 MLA。
 
 数值：mask 后若一整行全 `-inf`，softmax 变 NaN，应对该行单独保护（padding 全 mask 的 query）。Dropout 若写，打在 attn 权重上且训练态才开。
 

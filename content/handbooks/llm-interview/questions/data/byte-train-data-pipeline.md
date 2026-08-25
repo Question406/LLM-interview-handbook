@@ -5,8 +5,7 @@ order: 200
 level: A
 title: 字节大模型算法：如何搭建训练数据构造 Pipeline？
 quick: >-
-  按任务定义 schema → 多源采集 → 去污/去重/难度分层 → 自动 verifier 与人工抽检 →
-  train/dev/test 泄漏隔离 → 版本化与回流。场景题要讲清质量门禁与失败样本闭环，而不是只列爬虫步骤。
+  按任务定义 schema，再多源采集，去污 / 去重 / 难度分层，自动 verifier 加人工抽检，train/dev/test 泄漏隔离，最后版本化与回流。场景题要讲清质量门禁和失败样本闭环，别只列爬虫步骤。
 tags:
   - ByteDance
   - Data Pipeline
@@ -14,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 26届秋招｜字节大模型算法岗面经（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/029a292419294b4a8227acde5a00124b
@@ -27,7 +26,7 @@ sources:
 - 届别：26 届秋招；一面场景题
 - 原始措辞：**“如何搭建训练数据构造 Pipeline”**
 
-陷阱是把 Pipeline 讲成爬虫清单。评委要的是**质量门禁、泄漏隔离、失败闭环**：每一步有可观测指标，坏 case 能回到标注队列。没有标准答案时，不要假装有 oracle，而要讲偏好对、过程检查点或多模型投票，并报告 judge 与人工一致性。
+这块容易直接答成爬虫清单。评委要听的是**质量门禁、泄漏隔离、失败闭环**：每一步有可观测指标，坏 case 能回到标注队列。没有标准答案时，不要假装有 oracle。讲偏好对、过程检查点或多模型投票，并报告 judge 与人工一致性。
 
 ## 七段流水线，每段给指标
 
@@ -43,7 +42,7 @@ sources:
 
 ## 无标准答案时的构造
 
-构造成对偏好、过程检查点、或多模型一致性投票；报告 judge–human 一致率和切片。Judge 只当过滤器，抽检校准（`data-reward-calibration`）。合成数据要查自污染（`data-synthetic-self-contamination`）。
+构造成对偏好、过程检查点、或多模型一致性投票；报告 judge 与 human 一致率和切片。Judge 只当过滤器，抽检校准（`data-reward-calibration`）。合成数据要查自污染（`data-synthetic-self-contamination`）。
 
 ## 追问
 

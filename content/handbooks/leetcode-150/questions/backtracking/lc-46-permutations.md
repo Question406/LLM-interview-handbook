@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 46. 全排列
     url: https://leetcode.cn/problems/permutations/
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
 - $n=1$：答案就是 `[[nums[0]]]`。
 - 含负数 / $0$：值不参与运算，当普通元素即可。
-- $n$ 较大（如 $n \gt 10$）：$n!$ 爆炸，面试只问复杂度 $O(n\cdot n!)$，不要硬优化爆搜。组合（与顺序无关）见 LC 77，独立卡 `lc-77-combinations`。
+- $n$ 较大（如 $n \gt 10$）：$n!$ 爆炸，白板只问复杂度 $O(n\cdot n!)$，不要硬优化爆搜。组合（与顺序无关）见 LC 77，独立卡 `lc-77-combinations`。
 
 ## 追问
 

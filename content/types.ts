@@ -5,20 +5,51 @@ export interface HandbookQuestion {
   level: QuestionLevel;
   sectionId: string;
   title: string;
-  titleHtml: string;
   quick: string;
-  quickHtml: string;
   tags: string[];
   isRealInterview: boolean;
   searchText: string;
   answerPath: string;
+  titleHtml?: string;
+  quickHtml?: string;
+}
+
+export interface HandbookSectionSummary {
+  id: string;
+  title: string;
+  description: string;
+  questionCount: number;
 }
 
 export interface HandbookSection {
   id: string;
   title: string;
   description: string;
+  cardsPath: string;
+  answerPath: string;
   questions: HandbookQuestion[];
+}
+
+export interface HandbookStats {
+  questions: number;
+  mustKnow: number;
+  realInterviews: number;
+  sources: number;
+}
+
+export interface HandbookCatalogEntry {
+  schemaVersion: 1;
+  id: string;
+  slug: string;
+  title: string;
+  shortTitle: string;
+  edition: string;
+  audience: string;
+  description: string;
+  updatedAt: string;
+  stats: HandbookStats;
+  indexPath: string;
+  sections: HandbookSectionSummary[];
 }
 
 export interface Handbook {
@@ -31,11 +62,11 @@ export interface Handbook {
   audience: string;
   description: string;
   updatedAt: string;
-  stats: {
-    questions: number;
-    mustKnow: number;
-    realInterviews: number;
-    sources: number;
-  };
+  stats: HandbookStats;
   sections: HandbookSection[];
+}
+
+export interface QuestionCardHtml {
+  titleHtml: string;
+  quickHtml: string;
 }

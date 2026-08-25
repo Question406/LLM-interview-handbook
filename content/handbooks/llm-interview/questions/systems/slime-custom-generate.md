@@ -16,14 +16,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime 使用文档
     url: https://thudm.github.io/slime/zh/get_started/usage.html
     type: primary
 ---
 
-陷阱是改 Megatron kernel 或 trainer step 去做工具循环。官方精神：Agent 就是数据生成，训练核不动。三档函数由浅到深，选错层会丢掉 continuous batching、dynamic sampling、partial rollout。字节那道「veRL 怎么魔改」用 slime 答：Reward Manager ↔ `--custom-rm-path`，Env / tool loop ↔ `--custom-generate-function-path`，自定义 rollout worker ↔ `--rollout-function-path`。请求打 **router**（`--sglang-router-ip/port`），不要绑死某一个 engine。`rollout_id` 保证续训顺序。评测另挂 `--eval-function-path`，别和 train generate 搅在一起。
+这块容易改 Megatron kernel 或 trainer step 去做工具循环。官方精神：Agent 就是数据生成，训练核不动。三档函数由浅到深，选错层会丢掉 continuous batching、dynamic sampling、partial rollout。字节那道「veRL 怎么魔改」用 slime 答：Reward Manager ↔ `--custom-rm-path`，Env / tool loop ↔ `--custom-generate-function-path`，自定义 rollout worker ↔ `--rollout-function-path`。请求打 **router**（`--sglang-router-ip/port`），不要绑死某一个 engine。`rollout_id` 保证续训顺序。评测另挂 `--eval-function-path`，别和 train generate 搅在一起。
 
 ## 三档分别换什么
 

@@ -5,7 +5,7 @@ order: 123
 level: A
 title: 蚂蚁日常实习：资源受限时为何选用 DPO？
 quick: >-
-  卡时和并发有限时，DPO 不必同时驻留 RM、critic 与大量 online rollout，只要有稳定偏好对就能对齐。前提是偏好数据覆盖关键失败，且接受离线
+  卡不够、推理并发也紧的时候，我会用 DPO。它不用同时占着 reward model、critic，也不用拉一大坨 online rollout，有比较稳的偏好对就能对齐。前提是偏好数据覆盖关键失败，且接受离线
   bias；若必须探索可验证推理或工具轨迹，仍应留给 GRPO / PPO。
 tags:
   - Ant Group
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 蚂蚁大模型llm算法日常实习面经
     url: https://www.nowcoder.com/feed/main/detail/c6aadaf60f9c431bbe0738e0c802dfd7
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“场景下为什么选用DPO，卡和资源环境”**
 
-陷阱是只说「DPO 更简单、更好训」。面试要先报资源账，再谈算法。PPO 通常要同时驻留 actor、reference、RM（或 verifier 服务）、critic，外加大量 online rollout；GRPO 可以弱化 critic，但仍吃每题 $n\gt 1$ 的采样和 verifier QPS，见 `sys-rl-group-n`。实习或业务试点常见约束是少量 GPU、排队长、不能长时间占推理集群。DPO 把问题收成离线偏好学习，训练图里主要是可训策略外加冻结参考，性价比才说得清。没报卡、没报能不能开 vLLM rollout，只说「简单」，不像练过。
+这块容易只说「DPO 更简单、更好训」。我会先报资源账，再谈算法。PPO 通常要同时驻留 actor、reference、RM（或 verifier 服务）、critic，外加大量 online rollout；GRPO 可以弱化 critic，但仍吃每题 $n\gt 1$ 的采样和 verifier QPS，见 `sys-rl-group-n`。实习或业务试点常见约束是少量 GPU、排队长、不能长时间占推理集群。DPO 把问题收成离线偏好学习，训练图里主要是可训策略外加冻结参考，性价比才说得清。没报卡、没报能不能开 vLLM rollout，只说「简单」，账就没立住。
 
 ## 省掉的是采样环，不是数学
 
@@ -44,7 +44,7 @@ $$
 
 ## 必须主动报的限制与升级条件
 
-三件限制要自己讲：偏好对质量——覆盖不到的失败不会自己出现；长度 bias——总 logp 差偏向长 chosen；离线分布漂移——线上用户一变，间隔再漂亮也救不了。若卡其实够、verifier 可靠、任务需要没见过的推理链或工具路径，应升级 GRPO；需要价值估计或连续权衡再上 PPO。Clip / IS 变体（CISPO）解决的是已经在 rollout 之后的 off-policy 权重，见 `pt-cispo`，救不了「根本没有 rollout 预算」。回答里点名卡型号、单卡 batch、是否能开推理引擎，比背「DPO 省资源」更像做过项目。
+三件限制要自己讲：偏好对质量，覆盖不到的失败不会自己出现；长度 bias，总 logp 差偏向长 chosen；离线分布漂移，线上用户一变，间隔再漂亮也救不了。若卡其实够、verifier 可靠、任务需要没见过的推理链或工具路径，应升级 GRPO；需要价值估计或连续权衡再上 PPO。Clip / IS 变体（CISPO）解决的是已经在 rollout 之后的 off-policy 权重，见 `pt-cispo`，救不了「根本没有 rollout 预算」。回答里我会点名卡型号、单卡 batch、是否能开推理引擎，不背「DPO 省资源」。
 
 ## 追问
 

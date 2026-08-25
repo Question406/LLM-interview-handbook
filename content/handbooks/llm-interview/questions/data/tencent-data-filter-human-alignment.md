@@ -5,8 +5,7 @@ order: 102
 level: S
 title: 腾讯大模型实习：怎样证明自动数据筛选与人工标准对齐？
 quick: >-
-  不能只报过滤通过率。以独立、分层抽样的人审作 gold set，测 precision / recall、分桶 calibration、标注者一致性和高风险 slice；再把
-  人审 disagreement 回流到 rubric、filter 或阈值，并持续监控线上分布漂移。
+  不能只报过滤通过率。以独立、分层抽样的人审作 gold set，测 precision / recall、分桶 calibration、标注者一致性和高风险 slice；再把人审 disagreement 回流到 rubric、filter 或阈值，并持续监控线上分布漂移。
 tags:
   - Tencent
   - Data Filtering
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯大模型实习一面 1h（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/046ac6fcaf4c4b0696c6573416712416
@@ -31,11 +30,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位和轮次明确；届别、面试日期未披露）
 - 原始措辞：**“介绍一下如何筛选数据(大模型从哪几个维度)，怎么确定模型筛选一定能和人工对齐?”**
 
-陷阱是承诺「一定对齐」或只报过滤通过率。自动筛选相对人标是分类器，**对齐只能被检验、不能被一次证明**。正确叙事：rubric → 独立 gold set → precision / recall / 校准 → 高风险切片 → disagreement 回流 → 分布漂移时重标定。标注一致性见 `data-annotator-agreement`，分数校准见 `data-reward-calibration`、`fund-calibration`。
+这块容易承诺「一定对齐」或只报过滤通过率。自动筛选相对人标是分类器，**对齐只能被检验、不能被一次证明**。正确叙事：rubric → 独立 gold set → precision / recall / 校准 → 高风险切片 → disagreement 回流 → 分布漂移时重标定。标注一致性见 `data-annotator-agreement`，分数校准见 `data-reward-calibration`、`fund-calibration`。
 
 ## 维度、gold set 与指标
 
-先在内容质量、事实性、指令遵循、安全、去重 / contamination、任务难度和领域覆盖上写成可操作 rubric，而不是口头「质量好」。Gold set 必须：**未参与调阈值**、分层抽样（领域、长度、安全、语言），并报告标注者一致性。每个 filter 当二分类器：人标「该留 / 该丢」对照自动决策，看 precision、recall 和校准曲线——通过率高但 recall 低，等于把难例滤掉。标签质量门禁同 `meituan-label-quality`。
+先在内容质量、事实性、指令遵循、安全、去重 / contamination、任务难度和领域覆盖上写成可操作 rubric，而不是口头「质量好」。Gold set 必须：**未参与调阈值**、分层抽样（领域、长度、安全、语言），并报告标注者一致性。每个 filter 当二分类器：人标「该留 / 该丢」对照自动决策，看 precision、recall 和校准曲线。通过率高但 recall 低，等于把难例滤掉。标签质量门禁同 `meituan-label-quality`。
 
 整体平均会掩盖风险。必须单列安全、长尾领域、长答案、低资源语言与边界样本。安全 slice 假阴性（该丢却留）优先于多滤掉一些无害样本。
 
@@ -49,7 +48,7 @@ sources:
 
 面试官要听的是协议而不是形容词。书面约定至少包括：rubric 版本号、gold 抽样框（按领域 / 长度 / 安全分层）、双人标注与仲裁规则、每个 filter 的决策表（过 / 不过 / 人工复核）、以及阈值锁定日期。调阈值用的开发集与最终报数的 gold set 必须分开，否则「对齐良好」是信息泄漏。一致性只报一个总 κ 不够，要按字段或错误类型分层，见 `data-annotator-agreement`。
 
-自动筛选常见是多级门：规则（PII、语言、schema）→ 近重复 / 评测重叠（`data-contamination`）→ 模型质量分 → 安全分类器。每一级都是分类器，都要有自己的 precision–recall，不要只报级联后的通过率。安全假阴性（该丢却留）的代价远高于多丢一些无害样本，阈值应对称着业务损失设，而不是对着「过多少才够训」。模型打分还要看校准：分数 $0.9$ 是否真有 $90\%$ 人审通过，曲线见 `fund-calibration`、`data-reward-calibration`。
+自动筛选常见是多级门：规则（PII、语言、schema）→ 近重复 / 评测重叠（`data-contamination`）→ 模型质量分 → 安全分类器。每一级都是分类器，都要有自己的 precision / recall，不要只报级联后的通过率。安全假阴性（该丢却留）的代价远高于多丢一些无害样本，阈值应对称着业务损失设，而不是对着「过多少才够训」。模型打分还要看校准：分数 $0.9$ 是否真有 $90\%$ 人审通过，曲线见 `fund-calibration`、`data-reward-calibration`。
 
 线上要有漂移检测：新数据源、新教师、新安全词表都触发重标定。Canary 是两份滤器并行，比较下游 holdout 与安全 slice，而不是比较「看起来更干净」。滤器改动记入 `dataset_version`，训练 run 必须能回溯当时用的哪一版门禁。对齐证据是一张会过期的校准表：分布一变，旧 precision / recall 立刻失效。高风险 slice 的假阴性要单独设告警，不能被整体通过率稀释。人审 disagreement 不是噪声，而是 rubric 缺口；不回流就会在下一批评测里重复同一类错杀或漏放。
 

@@ -5,8 +5,8 @@ order: 106
 level: S
 title: 阿里云：Skills 和 Rules 的区别是什么？
 quick: >-
-  Rule 是始终生效、可强制执行的治理约束，如权限、数据边界和输出 policy；Skill 是按任务发现、加载和执行的
-  程序性知识包。Rule 决定“能不能做”，Skill 指导“怎么做”，二者冲突时由 runtime policy 而非模型自行裁决。
+  Rule 是始终生效、可强制执行的治理约束，比如权限、数据边界和输出 policy；Skill 是按任务发现、加载和执行的程序性知识包。Rule
+  决定能不能做，Skill 指导怎么做。二者冲突时由 runtime policy 裁决，别让模型自己和解。
 tags:
   - Alibaba Cloud
   - Agent Platform
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阿里云 AI agent平台研发工程师 一面凉经（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/476de2514a3c457c8be774623549f4b1?sourceSSR=post
@@ -30,11 +30,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位、轮次与发帖时间明确，届别和面试日期未披露）
 - 原始措辞：**“skills和rules的区别？”**
 
-这题别答成「都是 prompt 里的说明」。阿里云 Agent 平台一面要听的是治理边界：Skill 是能力包，Rule 是强制约束。我会先说一句话——Rule 决定能不能做，Skill 指导怎么做——再讲生命周期和冲突裁决必须落在 runtime，而不是模型自觉。和 `ant-skills-vs-harness`、`agent-skill-eval` 同一套分层。
+这题别答成「都是 prompt 里的说明」。阿里云 Agent 平台一面要听的是治理边界：Skill 是能力包，Rule 是强制约束。我会先说一句：Rule 决定能不能做，Skill 指导怎么做。再讲生命周期和冲突裁决必须落在 runtime，不是模型自觉。和 `ant-skills-vs-harness`、`agent-skill-eval` 同一套分层。
 
 ## Skill 是按需加载的程序知识
 
-Skill 面向某类任务：步骤、脚本、模板、允许的工具子集和参考资料，例如「发布服务」的检查清单。它可发现、可版本化、可按任务加载，优化的是能力复用与上下文成本——先目录后展开，而不是把说明书一次性塞进 system prompt。Skill 有 owner、适用条件、评测和渐进披露；写得好不好要用 no-skill / full-skill ablation 看任务成功和 token，而不是文笔。建议调用某工具，只是建议。
+Skill 面向某类任务：步骤、脚本、模板、允许的工具子集和参考资料，例如「发布服务」的检查清单。它可发现、可版本化、可按任务加载，优化的是能力复用与上下文成本。先目录后展开，别把说明书一次性塞进 system prompt。Skill 有 owner、适用条件、评测和渐进披露；写得好不好要用 no-skill / full-skill ablation 看任务成功和 token，不是文笔。建议调用某工具，只是建议。
 
 ## Rule 是始终生效的治理
 
@@ -42,7 +42,7 @@ Rule 跨任务：不可读哪些路径、必须人工确认哪些动作、输出
 
 ## 冲突时 runtime 裁决
 
-Skill 建议「调用生产发布」但 Rule 不允许写生产时，网关直接拒绝并给出可解释错误；不能让模型换一个 Skill 绕开，也不能让「更具体的用户指令」覆盖安全 Rule。同层 Rule 按 scope 与优先级；安全类 fail-closed。这样才分得清「每次都必须遵守的 policy」和「完成任务时可能有用的知识」。评测要构造「Skill 教了越权步骤」看是否被拦。
+Skill 建议「调用生产发布」但 Rule 不允许写生产时，网关直接拒绝并给出可解释错误。不能让模型换一个 Skill 绕开，也不能让「更具体的用户指令」覆盖安全 Rule。同层 Rule 按 scope 与优先级；安全类 fail-closed。这样才分得清「每次都必须遵守的 policy」和「完成任务时可能有用的知识」。评测要构造「Skill 教了越权步骤」看是否被拦。
 
 ## 追问
 

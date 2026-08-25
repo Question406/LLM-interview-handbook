@@ -15,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: LangGraph Persistence
     url: https://langchain-ai.github.io/langgraph/concepts/persistence/
     type: primary
 ---
 
-只把对话文本存下来不够。恢复后文件系统已变、网页 session 过期、事务状态未知，Agent 会基于错误世界继续——看起来像「接着聊」，其实 MDP 已经换了。陷阱是把 checkpoint 当成 chatbot 的 session 序列化。生产 Agent 的持久化（如 LangGraph thread checkpoint）存的是图状态与通道，不是聊天记录副本。
+只把对话文本存下来不够。恢复后文件系统已变、网页 session 过期、事务状态未知，Agent 会基于错误世界继续。看起来像「接着聊」，其实 MDP 已经换了。这块容易直接答成把 checkpoint 当成 chatbot 的 session 序列化。生产 Agent 的持久化（如 LangGraph thread checkpoint）存的是图状态与通道，不是聊天记录副本。
 
 ## 逻辑状态与外部世界必须一起钉住
 
@@ -39,15 +39,15 @@ sources:
 
 - **可回放的纯观察：** 已拉取的检索结果、只读 API 回包。可以存原文或内容哈希，恢复时直接喂回上下文。
 - **版本化产物：** 代码 diff、生成文件、中间表格。存对象存储 + 内容哈希，恢复时 checkout 到同一 commit / 目录树。
-- **不可逆副作用：** 已发邮件、已扣款、已删数据。不能靠「再执行一遍」恢复。必须记录 durable transaction ID，恢复后 **重新 query 真相**，而不是相信内存里的「我发过了」。
+- **不可逆副作用：** 已发邮件、已扣款、已删数据。不能靠「再执行一遍」恢复。必须记录 durable transaction ID，恢复后重新 query 真相，而不是相信内存里的「我发过了」。
 
 超时后不知道写操作有没有落地，属于第三类：下一跳是查单，不是 replay，见 `arl-retry`。Checkpoint 里应留下 `UNKNOWN_SIDE_EFFECT` 和查询句柄，否则恢复进程会双发。
 
 ## 恢复协议：先对世界，再对策略
 
-Restore 顺序建议：加载 harness 版本 → 恢复文件系统 / 容器 → 用事务 ID 刷新外部真相 → 校验逻辑状态与观察是否一致 → 才允许策略继续生成。不一致就停：标 dirty，不要让模型「猜世界还是不是那样」。长任务还要能从任意 tool 边界恢复，而不是只在用户回合存一次——崩溃往往发生在工具执行中。评测应注入：恢复后目录哈希变了、session 过期、事务其实已成功。看 Agent 是查状态还是盲目接着点。
+Restore 顺序建议：加载 harness 版本 → 恢复文件系统 / 容器 → 用事务 ID 刷新外部真相 → 校验逻辑状态与观察是否一致 → 才允许策略继续生成。不一致就停：标 dirty，不要让模型「猜世界还是不是那样」。长任务还要能从任意 tool 边界恢复，而不是只在用户回合存一次。崩溃往往发生在工具执行中。评测应注入：恢复后目录哈希变了、session 过期、事务其实已成功。看 Agent 是查状态还是盲目接着点。
 
-面试收口：checkpoint 是 $(s_t, \text{handles}, \text{versions})$，不是聊天日志。可回放的存哈希，不可逆的存事务 ID 并重查。对不齐就标 dirty，禁止在错误世界上继续优化。
+最后我会补一句：checkpoint 是 $(s_t, \text{handles}, \text{versions})$，不是聊天日志。可回放的存哈希，不可逆的存事务 ID 并重查。对不齐就标 dirty，禁止在错误世界上继续优化。
 
 ## 追问
 

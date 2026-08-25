@@ -5,8 +5,8 @@ order: 113
 level: A
 title: 百川智能：SQL Agent 如何做安全检查，检测率应怎样衡量？
 quick: >-
-  SQL 安全不能只靠关键词黑名单：先用 parser/AST、身份与 schema allowlist、行列级 policy 和成本估计做执行前
-  拦截，再以只读 sandbox / explain 和审批保护高风险查询。检测率需在标注攻击集与正常业务集上同时报告 recall、误拦率、逃逸率和延迟。
+  SQL 安全不能只靠关键词黑名单。先用 parser/AST、身份与 schema allowlist、行列级 policy 和成本估计做执行前拦截，再用只读
+  sandbox、explain 和审批保护高风险查询。检测率要在标注攻击集和正常业务集上同时报 recall、误拦率、逃逸率和延迟。
 tags:
   - Baichuan
   - SQL Agent
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530

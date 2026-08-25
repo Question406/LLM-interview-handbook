@@ -6,14 +6,14 @@ level: S
 title: 字节 Agent 实习一面：什么是 Harness Engineering？和只调 LLM API 差在哪？
 quick: >-
   Harness 是模型外的操作系统：权限、工具执行、状态、日志、校验与重试。调 API
-  只负责生成文本。复杂任务能完成，是因为每步被约束、可观测、失败可回放，而不是模型更会聊天。
+  只负责生成文本。复杂任务能完成，是因为每步被约束、可观测、失败可回放，不是模型更会聊天。
 tags:
   - ByteDance
   - Harness
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节跳动-Agent开发实习生 一面（45分钟）
     url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
@@ -30,11 +30,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“什么是Harness Engineering”**；**“Harness的五个核心模块”**；**“你对 Agent Harness 怎么理解？它和单纯调用 LLM API 的区别是什么？”**
 
-把 Harness 讲成「更好的 system prompt」或「SDK 再包一层 chat API」，这面会立刻觉得没做过。模型只产出意图文本；复杂任务能跑完，是因为每一步被约束、可观测、失败可回放。同一权重换一套工具错误码和重试策略，成功率可以差一截——测的是 model + harness，不是「模型更会聊天」。概念总览见 `agent-harness`。
+把 Harness 讲成「更好的 system prompt」或「SDK 再包一层 chat API」，这面会立刻觉得没做过。模型只产出意图文本；复杂任务能跑完，是因为每一步被约束、可观测、失败可回放。同一权重换一套工具错误码和重试策略，成功率可以差一截。测的是 model + harness，不是「模型更会聊天」。概念总览见 `agent-harness`。
 
 ## 五个控制面怎么切
 
-划法不唯一，面试要覆盖模型外职责，而不是背五个英文词。常用切法：
+划法不唯一，我会覆盖模型外职责，不背五个英文词。常用切法：
 
 - **感知 / 上下文组装**：当前任务、仓库切片、工具观察、权限可见范围，决定窗口里放什么。
 - **规划**：把目标拆成可验证子步骤；规划仍是模型，但步数、终止、是否允许改计划由 Harness 卡死。

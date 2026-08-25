@@ -1,6 +1,6 @@
 # Content system
 
-题库的唯一人工维护源是 `content/handbooks/<handbook>/` 下的 Markdown。前端使用的索引、搜索文本、统计数字和按模块懒加载的答案包，全部由构建器生成；不要手改 `content/generated/` 或 `public/content/`。
+题库的唯一人工维护源是 `content/handbooks/<handbook>/` 下的 Markdown。前端使用的目录、搜索文本、统计数字、卡片公式和按题懒加载的答案，全部由构建器生成；不要手改 `content/generated/` 或 `public/content/`。
 
 ```text
 content/
@@ -10,6 +10,13 @@ content/
       questions/<section>/<id>.md  # 已发布：一题一个文件
       drafts/<agent-id>/<id>.md    # 多 agent 各自的草稿区
   templates/question.md            # 新题模板
+public/content/
+  catalog.json                     # 手册列表（开机只拉这一份）
+  <handbook-id>/
+    index.json                     # 本题库目录：纯文本 title / quick / searchText
+    <section>.cards.json           # 进章后才拉的 titleHtml / quickHtml
+    <section>.json                 # 整章答案（全部展开时用）
+    <section>/<id>.json            # 单题答案（点开一张卡才拉）
 ```
 
 ## 新增题目

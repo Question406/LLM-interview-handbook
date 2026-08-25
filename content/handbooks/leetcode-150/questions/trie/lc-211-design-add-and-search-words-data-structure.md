@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 211. 添加与搜索单词 - 数据结构设计
     url: https://leetcode.cn/problems/design-add-and-search-words-data-structure/
@@ -31,7 +31,7 @@ sources:
 
 底层仍是前缀树。`addWord` 与 LC 208 的 `insert` 相同。`search` 改成 DFS：普通字母只走对应孩子；遇到 `'.'` 则枚举当前节点全部孩子。走到串尾时看 `is_end`。
 
-不要把整棵树展成正则去扫。面试讲清「通配只在当前层分叉」，并提最坏 $26^L$。
+别把整棵树展成正则去扫。白板我会讲清「通配只在当前层分叉」，并提最坏 $26^L$。
 
 ## 参考代码
 

@@ -15,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: DAPO — Decoupled Clip and Dynamic sAmpling Policy Optimization
     url: https://arxiv.org/abs/2503.14476
     type: primary
 ---
 
-不要把 DAPO 答成「又一个优势公式」或「把 KL 删掉的 GRPO」。它仍用组相对优势，改的是 **clip、有效样本、loss 归约、超长惩罚** 这四件工程失败。小红书真题卡 `xiaohongshu-dapo-vs-grpo` 问的是同一件事；本题把四个旋钮拆开，能白板写公式。
+不要把 DAPO 答成「又一个优势公式」或「把 KL 删掉的 GRPO」。它仍用组相对优势，改的是 clip、有效样本、loss 归约、超长惩罚这四件工程失败。小红书真题卡 `xiaohongshu-dapo-vs-grpo` 问的是同一件事；本题把四个旋钮拆开，能白板写公式。
 
 ## Clip-Higher：正向上界单独放宽
 
@@ -44,9 +44,9 @@ $$
 0 \lt \bigl|\{o_i:\ \mathrm{is\_equivalent}(a,o_i)\}\bigr| \lt G.
 $$
 
-全对或全错时组内 $\hat A=0$，这步白算，见 `byte-grpo-all-same-zero-adv`。过滤发生在 **当前策略** 上：同一道题以后可能又变得可分，所以不是永久删题。实现上不够有效组就继续采，凑满 mini-batch 再更新。
+全对或全错时组内 $\hat A=0$，这步白算，见 `byte-grpo-all-same-zero-adv`。过滤发生在当前策略上：同一道题以后可能又变得可分，所以不是永久删题。实现上不够有效组就继续采，凑满 mini-batch 再更新。
 
-副作用是隐性 curriculum：长期只留当前能解的题，超难桶再也进不了梯度。要配覆盖配额，周期性把全错桶再探回来。过滤后有效 batch 过小，更新频率会崩——先加 $G$ 或降温难度，而不是加学习率。
+副作用是隐性 curriculum：长期只留当前能解的题，超难桶再也进不了梯度。要配覆盖配额，周期性把全错桶再探回来。过滤后有效 batch 过小，更新频率会崩，先加 $G$ 或降温难度，而不是加学习率。
 
 ## Token-level PG：每 token 等权
 
@@ -67,6 +67,6 @@ $$
 ## 追问
 
 - **和「去掉 KL」是一回事吗？** 不是。高德 / 小红书去 KL 是另一条取舍，见 `gaode-dapo-no-kl`。DAPO 论文可以弱化显式 $\beta\mathrm{KL}$，靠 clip-higher 和动态采样管步长，但四个修改本身不定义「无 KL」。
-- **Clip-Higher 和熵崩？** 稀有好 token 的 $\rho$ 很快顶到 $1+\varepsilon$，正向梯度没了，策略锁进已有高概率模式。放宽上界是延长探索窗口，不是保证熵不掉。
+- **Clip-Higher 和熵崩？** 稀有好 token 的 $\rho$ 很快顶到 $1+\varepsilon$，正向梯度没了，策略锁进已有高概率模式。放宽上界是延长探索窗口，不是保证熵不掉。塌了先动哪几个旋钮，见 `data-entropy-fix-order`。
 - **动态采样会不会变慢？** 会多采一些全错组，但同步 RL 的墙钟常被最长样本主导；论文观察到收敛步数下降，总时间不一定更差。监控有效组比例，不要只报采样条数。
 - **Token-level 一定更好？** 不一定。你要每道题等权就用序列平均；要惩罚长胡话、让关键长链里的 token 够响，用 token 平均。先说目标再选归约。

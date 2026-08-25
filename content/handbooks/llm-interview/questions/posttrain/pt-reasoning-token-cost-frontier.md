@@ -5,7 +5,7 @@ order: 41
 level: S
 title: 如何在 RL / 偏好训练里惩罚无效 thinking，并测量其边际收益？
 quick: >-
-  区别于「自适应预算控制器」：这里直接把无效推理当作可优化目标——对无增益的 thinking
+  区别于「自适应预算控制器」：这里直接把无效推理当作可优化目标。对无增益的 thinking
   token 给代价，并用固定预算消融估计每多花 $k$ token 的准确率边际收益。
 tags:
   - Reasoning
@@ -14,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Training Language Models to Reason Efficiently
     url: https://arxiv.org/abs/2502.04463
     type: primary
 ---
 
-`pt-adaptive-thinking-budget` 问的是 **推理时** 决定想多久；本题问 **训练目标** 如何让模型少刷无效 CoT。策略会刷长思维骗过程奖励或格式分，要把质量–成本写成可训信号。
+`pt-adaptive-thinking-budget` 问的是推理时决定想多久；本题问训练目标如何让模型少刷无效 CoT。策略会刷长思维骗过程奖励或格式分，要把质量-成本写成可训信号。
 
 ## 训练信号
 
@@ -45,7 +45,7 @@ $$
 
 ## 例子
 
-数学 RL 加轻度长度惩罚后，简单题平均 thinking 从 800 降到 200 token 而准确率不变，难题仍保留长链——惩罚打中了无效 token，而不是伤到必要搜索。这和 long-to-short 蒸馏互补：蒸馏换模型，本题改同一策略的目标。
+数学 RL 加轻度长度惩罚后，简单题平均 thinking 从 800 降到 200 token 而准确率不变，难题仍保留长链。惩罚打中了无效 token，而不是伤到必要搜索。这和 long-to-short 蒸馏互补：蒸馏换模型，本题改同一策略的目标。
 
 ## 追问
 

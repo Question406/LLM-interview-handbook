@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 大模型算法 美团面经分享（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/c6573225622842c290a00496c58db386
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位与发帖时间明确，届别和轮次未披露）
 - 原始措辞：**“在组内采样类型的 RL 算法中，on-policy rollout 不出正确答案怎么办？”**
 
-陷阱是第一时间加大学习率，或把错误轨迹硬标成正例。全错时组内 $r_i$ 全相同，$\hat{A}=0$，更新没有任务方向。先排除 verifier、环境、prompt 把本该正确的 rollout 判成零，再谈课程和探索。硬标正例会把 on-policy GRPO 悄悄改成脏 SFT，线上换个采样种子又全错。这题考的是你知不知道 **相对优势吃的是组内方差**，不是「多训一会就会对」。
+这块容易第一时间加大学习率，或把错误轨迹硬标成正例。全错时组内 $r_i$ 全相同，$\hat{A}=0$，更新没有任务方向。先排除 verifier、环境、prompt 把本该正确的 rollout 判成零，再谈课程和探索。硬标正例会把 on-policy GRPO 悄悄改成脏 SFT，线上换个采样种子又全错。这题考的是你知不知道相对优势吃的是组内方差，不是「多训一会就会对」。
 
 ## 1. 先分桶：真全错还是判错了
 

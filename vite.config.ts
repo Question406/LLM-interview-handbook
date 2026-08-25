@@ -1,7 +1,48 @@
+import { existsSync, readFileSync } from "node:fs";
+import { extname, relative, resolve } from "node:path";
+import { gzipSync } from "node:zlib";
 import { sites } from "@openai/sites-vite-plugin";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
+
+function gzipContentJson() {
+  const publicDir = resolve(process.cwd(), "public");
+  return {
+    name: "gzip-content-json",
+    configureServer(server: { middlewares: { use: (handler: (req: unknown, res: unknown, next: () => void) => void) => void } }) {
+      server.middlewares.use((req, res, next) => {
+        const request = req as { url?: string; headers: { [key: string]: string | string[] | undefined } };
+        const response = res as { setHeader: (name: string, value: string) => void; end: (body: Buffer) => void };
+        const pathname = request.url?.split("?")[0] ?? "";
+        if (!pathname.startsWith("/content/") || extname(pathname) !== ".json") {
+          next();
+          return;
+        }
+        if (!String(request.headers["accept-encoding"] ?? "").includes("gzip")) {
+          next();
+          return;
+        }
+        const filePath = resolve(publicDir, pathname.slice(1));
+        const relativePath = relative(publicDir, filePath);
+        if (relativePath.startsWith("..") || relativePath.includes("..")) {
+          next();
+          return;
+        }
+        if (!existsSync(filePath)) {
+          next();
+          return;
+        }
+        const body = gzipSync(readFileSync(filePath));
+        response.setHeader("Content-Type", "application/json; charset=utf-8");
+        response.setHeader("Content-Encoding", "gzip");
+        response.setHeader("Vary", "Accept-Encoding");
+        response.setHeader("Cache-Control", "no-cache");
+        response.end(body);
+      });
+    },
+  };
+}
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -51,6 +92,7 @@ export default defineConfig(async () => {
       },
     },
     plugins: [
+      gzipContentJson(),
       vinext(),
       sites(),
       cloudflare({

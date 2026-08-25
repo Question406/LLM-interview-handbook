@@ -15,14 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeek-V3 Technical Report
     url: https://arxiv.org/abs/2412.19437
     type: primary
 ---
 
-陷阱是把 device-limited 说成「尽量本地路由的启发式」或「capacity 的另一种写法」。V3 的约束是硬的：**一个 token 的 $k$ 个 routed expert 必须落在至多 $M$ 台设备上**。先全局 Top-$k$ 再发现跨了 $8$ 个节点，通信已经碎了。正确顺序是 **先锁设备集合，再在集合内选专家**。
+这块容易把 device-limited 说成「尽量本地路由的启发式」，或「capacity 的另一种写法」。V3 的约束是硬的：**一个 token 的 $k$ 个 routed expert 必须落在至多 $M$ 台设备上**。先全局 Top-$k$ 再发现跨了 $8$ 个节点，通信已经碎了。正确顺序是 **先锁设备集合，再在集合内选专家**。
 
 ## 两步选择
 
@@ -46,7 +46,7 @@ EP all-to-all 的痛是 **不规则小消息 × 多目的 rank**，见 `sys-expe
 ## 实现注意
 
 - **亲和要在限制之前算全局。** 先算全部 $s_{i,t}$，再聚合成 $a_{m,t}$。不要只在本机专家上算分数，否则无法比较「要不要去别的节点」。
-- **Top-$k$ 的候选集是设备并集，不是每设备再 Top-$k/M$。** 某台入选设备上的专家可能全被淘汰，那该设备这一 token 就没有 payload——$M$ 是上限不是配额。
+- **Top-$k$ 的候选集是设备并集，不是每设备再 Top-$k/M$。** 某台入选设备上的专家可能全被淘汰，那该设备这一 token 就没有 payload。$M$ 是上限不是配额。
 - **和节点内拓扑。** 实践上常「节点内尽量满、跨节点按 $M$」。面试对齐 V3 原文：先选 $M$ 设备，再选 $k$ 专家。
 - **训推必须同一套 $M$。** 训练 $M=4$、推理改成不限制，路由集合会变，见 `sys-moe-train-infer-routing-mismatch`。
 

@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 21. 合并两个有序链表
     url: https://leetcode.cn/problems/merge-two-sorted-lists/
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **$k$ 条有序链表（LC 23）？** 不要循环 $k-1$ 次两两扫，那是 $O(Nk)$。小根堆每次弹最小头结点，把它的后继再压回去，时间 $O(N\log k)$，$N$ 为总结点数。Python 结点不可比，堆里放 `(val, i, node)` 用下标打破平局。分治是相邻两条按本题合并，层数 $\log k$，复杂度相同。独立卡见 `lc-23-merge-k-sorted-lists`。
+- **$k$ 条有序链表（LC 23）？** 别循环 $k-1$ 次两两扫，那是 $O(Nk)$。小根堆每次弹最小头结点，把它的后继再压回去，时间 $O(N\log k)$，$N$ 为总结点数。Python 结点不可比，堆里放 `(val, i, node)` 用下标打破平局。分治是相邻两条按这题合并，层数 $\log k$，复杂度相同。独立卡见 `lc-23-merge-k-sorted-lists`。
 
 ```python
 import heapq

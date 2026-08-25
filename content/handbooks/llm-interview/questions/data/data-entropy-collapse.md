@@ -5,8 +5,7 @@ order: 7
 level: S
 title: Entropy collapse 一定是坏事吗？
 quick: >-
-  不一定。任务接近确定性最优时熵下降是收敛；危险的是成功率还没起来熵就掉，探索提前停。要并排看 entropy、pass 率、unique
-  trajectory、clip fraction 和零方差组比例，不要把采样温度当成训练目标里的熵正则。
+  不一定。任务接近确定性最优时熵下降是收敛；危险的是成功率还没起来熵就掉，探索提前停。要并排看 entropy、pass 率、unique trajectory、clip fraction 和零方差组比例。采样温度当不了训练目标里的熵正则。
 tags:
   - RL Debug
   - Exploration
@@ -15,7 +14,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: DAPO
     url: https://arxiv.org/abs/2503.14476
@@ -25,13 +24,13 @@ sources:
     type: secondary
 ---
 
-陷阱是看到熵曲线往下就喊「崩了」，或反过来把熵当唯一健康指标。策略熵是动作分布的不确定度
+这块容易看到熵曲线往下就喊「崩了」，或反过来把熵当唯一健康指标。策略熵是动作分布的不确定度
 
 $$
 H(\pi(\cdot\mid x))=-\mathbb{E}_{a\sim\pi(\cdot\mid x)}\big[\log\pi(a\mid x)\big],
 $$
 
-对 LLM 通常在 response token 上平均。任务本身接近确定性（标准答案、格式锁死）且已经会做时，低熵是收敛，不是事故。真正要判的是 **熵掉下去的时刻，成功有没有跟上**。
+对 LLM 通常在 response token 上平均。任务本身接近确定性（标准答案、格式锁死）且已经会做时，低熵是收敛，不是事故。要判的是 **熵掉下去的时刻，成功有没有跟上**。
 
 ## 先看时序，再谈失败
 
@@ -57,7 +56,7 @@ Entropy bonus 是 $\mathcal{L}\leftarrow\mathcal{L}-\lambda H(\pi)$，直接改 
 
 最低监控集：success / pass@k、unique n-gram 或轨迹哈希、clip fraction、相对 $\pi_{\mathrm{old}}$ 和 $\pi_{\mathrm{ref}}$ 的 KL、平均长度、零方差组比例。缺 clip fraction 就看不见「正 token 是不是被 clip 吃掉」。缺 unique 轨迹，熵掉了你不知道是收敛还是模式坍缩。
 
-修复顺序：有效组比例太低先改题难度和 $G$；clip fraction 长期贴上界就考虑 clip-higher 或减小学习率；长度 hack 用 overlong shaping 或预算评测，而不是先加熵系数把模型写得更散。
+旋钮先后见 `data-entropy-fix-order`：有效组 → clip / 学习率 → 长度 → 熵正则。有效组比例太低先改题难度和 $G$；clip fraction 长期贴上界就考虑 clip-higher 或减小学习率；长度 hack 用 overlong shaping 或预算评测，不要先加熵系数把模型写得更散。
 
 ## 追问
 
@@ -65,3 +64,4 @@ Entropy bonus 是 $\mathcal{L}\leftarrow\mathcal{L}-\lambda H(\pi)$，直接改 
 - **确定性任务熵必须高吗？** 不必。最终答案峰可以尖；过程 token 仍可保留分支。要拆「答案熵」和「推理熵」，不要一个标量宣判。
 - **和 DAPO clip-higher？** 正向上界太紧会加速塌缩；放宽是给新模式时间，不是熵的目标值。仍要看成功有没有跟上。
 - **反向 KL / OPD 会不会更快塌？** 会。mode-seeking 目标（OPD、RLHF 的 ref KL）本身就锁主峰，见 `pt-kd-forward-vs-reverse`。那是设计，要用 gold 成功率和多样性一起验收，而不是单靠把熵拉高。
+- **已经确认是坏塌，先动哪个旋钮？** 温度不是第一刀。顺序见 `data-entropy-fix-order`。

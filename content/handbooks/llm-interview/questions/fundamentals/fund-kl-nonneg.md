@@ -14,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Kullback–Leibler divergence
     url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
     type: primary
   - title: Jensen's inequality
-    url: https://en.wikipedia.org/wiki/Jensen%27s_inequality
+    url: https://en.wikipedia.org/wiki/Jensen's_inequality
     type: reference
 ---
 
@@ -49,4 +49,4 @@ $$
 3. **支撑。** $p$ 有质量、$q=0$ 的点会让 $\log(p/q)\to+\infty$。这就是 forward KL 对「漏掉 $p$ 的某个 mode」零容忍的根源。
 4. **和交叉熵。** $D_{\mathrm{KL}}(p\|q)=H(p,q)-H(p)$。$H(p)$ 与 $q$ 无关，所以「最小 CE」和「最小正向 KL」是同一场优化。
 
-白板顺序：定义 → $-\log$ 凸 → Jensen → $\sum q=1$ → 等号条件 → 提一句不对称。不要只背「KL 大于等于 0」。
+白板我会按这个顺序：定义 → $-\log$ 凸 → Jensen → $\sum q=1$ → 等号条件 → 提一句不对称。不要只背「KL 大于等于 0」。

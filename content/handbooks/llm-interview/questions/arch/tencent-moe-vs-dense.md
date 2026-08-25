@@ -5,7 +5,7 @@ order: 202
 level: A
 title: 腾讯混元一面：MoE 相对 Dense 赚在哪、亏在哪？
 quick: >-
-  赚的是同等激活参数下容量更大；亏的是路由不均、专家通信和训练/推理两套并行。面试要能画
+  赚的是同等激活参数下容量更大；亏的是路由不均、专家通信和训练/推理两套并行。我会画
   top-$k$ 路由，并说出何时 Dense 更稳：数据少、延迟硬约束、或还不会做负载均衡。
 tags:
   - Tencent
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 日常实习 腾讯混元大模型一面 好难
     url: https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496
@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“MoE 和 Dense 比，优势和代价是什么？”**
 
-陷阱是只复读「稀疏省算力」。MoE **总参数往往更大**，省的是每 token **激活** 的 FFN；代价是路由、通信、训推两套并行。和同面「Qwen vs DeepSeek」连问时，落到共享专家与 MLA，见 `tencent-qwen-vs-deepseek`、`arch-moe`。参数怎么拆见 `minimax-param-breakdown`。
+这块容易只复读「稀疏省算力」。MoE 总参数往往更大，省的是每 token 激活的 FFN；代价是路由、通信、训推两套并行。和同面「Qwen vs DeepSeek」连问时，落到共享专家与 MLA，见 `tencent-qwen-vs-deepseek`、`arch-moe`。参数怎么拆见 `minimax-param-breakdown`。
 
 ## 赚：容量与激活解耦
 
@@ -38,14 +38,14 @@ $$
 y=\sum_{i\in\mathrm{Top}k} g_i(x)\,E_i(x).
 $$
 
-总参数可到百 B / 万亿，单 token 只跑 $k$ 个专家，激活 FLOPs 接近「小 Dense」。同等激活下容量更大，长尾知识、多领域更好装。Router 本身是 $d\times E$，相对专家矩阵可忽略。面试要能画：token → 门控 logits → softmax/sigmoid → 取 top-$k$ → 分发到专家 → 加权合回。
+总参数可到百 B / 万亿，单 token 只跑 $k$ 个专家，激活 FLOPs 接近「小 Dense」。同等激活下容量更大，长尾知识、多领域更好装。Router 本身是 $d\times E$，相对专家矩阵可忽略。我会画：token → 门控 logits → softmax/sigmoid → 取 top-$k$ → 分发到专家 → 加权合回。
 
-何时 Dense 更稳：**数据少**（专家学不热、路由塌缩）、**延迟硬约束**（小 batch 时 all-to-all 吃掉稀疏红利）、团队还不会做负载均衡。不要在 7B 数据、单机推理场景硬上 MoE。
+何时 Dense 更稳：数据少（专家学不热、路由塌缩）、延迟硬约束（小 batch 时 all-to-all 吃掉稀疏红利）、团队还不会做负载均衡。不要在 7B 数据、单机推理场景硬上 MoE。
 
 ## 亏：不均、通信、训推两套世界
 
 - **负载不均**：少数专家吃掉流量，其余坏死；aux loss / sequence-level balance / capacity factor 防塌缩，见 `arch-moe-balance`、`ant-moe-aux-load-balance`、`code-moe-router-aux-loss`。capacity 太紧则 drop token，见 `sys-moe-capacity-token-drop`。
-- **通信**：expert parallel 要把 token 按专家 all-to-all；EP size 绑通信体积。小 batch、decode 单 token 时 MoE **并不更快**。
+- **通信**：expert parallel 要把 token 按专家 all-to-all；EP size 绑通信体积。小 batch、decode 单 token 时 MoE 并不更快。
 - **训推不一致**：训练 drop / 不同 capacity，serving 另一套 top-$k$ 或 EP，路由统计对不齐，见 `sys-moe-train-infer-routing-mismatch`。RL 还会让路由跟着政策漂，见 `stepfun-rl-moe-gspo`。
 
 评测时必须关掉训练专用的随机 drop，用与线上一致的路由。混元若追「和 Dense 训练稳定性」，承认 MoE 超参面更大：lr、aux 系数、$k$、capacity 要一起拧。

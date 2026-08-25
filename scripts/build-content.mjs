@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
@@ -10,6 +10,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const handbooksRoot = resolve(projectRoot, "content/handbooks");
 const generatedRoot = resolve(projectRoot, "content/generated/handbooks");
 const generatedRegistry = resolve(projectRoot, "content/generated/registry.json");
+const generatedCatalog = resolve(projectRoot, "content/generated/catalog.json");
 const publicRoot = resolve(projectRoot, "public/content");
 const isCheckOnly = process.argv.includes("--check");
 
@@ -580,11 +581,46 @@ function writeIfChanged(filePath, content) {
   if (!existsSync(filePath) || readFileSync(filePath, "utf8") !== content) writeFileSync(filePath, content);
 }
 
-function removeStaleChunks(directory, expected) {
+function removeStalePublicEntries(directory, expectedFiles, expectedDirs) {
   if (!existsSync(directory)) return;
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.isFile() && entry.name.endsWith(".json") && !expected.has(entry.name)) unlinkSync(join(directory, entry.name));
+    const filePath = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (!expectedDirs.has(entry.name)) rmSync(filePath, { recursive: true, force: true });
+      continue;
+    }
+    if (entry.isFile() && !expectedFiles.has(entry.name)) unlinkSync(filePath);
   }
+}
+
+function removeStaleQuestionFiles(directory, expectedIds) {
+  if (!existsSync(directory)) return;
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    if (!expectedIds.has(entry.name.slice(0, -5))) unlinkSync(join(directory, entry.name));
+  }
+}
+
+function toCatalogEntry(handbook) {
+  return {
+    schemaVersion: handbook.schemaVersion,
+    id: handbook.id,
+    slug: handbook.slug,
+    title: handbook.title,
+    shortTitle: handbook.shortTitle,
+    edition: handbook.edition,
+    audience: handbook.audience,
+    description: handbook.description,
+    updatedAt: handbook.updatedAt,
+    stats: handbook.stats,
+    indexPath: `/content/${handbook.id}/index.json`,
+    sections: handbook.sections.map((section) => ({
+      id: section.id,
+      title: section.title,
+      description: section.description,
+      questionCount: section.questions.length,
+    })),
+  };
 }
 
 function buildHandbook(handbookFile, { write = true } = {}) {
@@ -602,6 +638,7 @@ function buildHandbook(handbookFile, { write = true } = {}) {
 
   const answerDirectory = join(publicRoot, handbook.id);
   const answerChunks = {};
+  const cardChunks = {};
   const catalog = questions.map((question) => ({ id: question.id, sectionId: question.sectionId, title: question.title }));
   const sections = handbook.sections.map((section) => {
     const sectionQuestions = questions
@@ -609,21 +646,26 @@ function buildHandbook(handbookFile, { write = true } = {}) {
       .sort((left, right) => left.order - right.order || left.title.localeCompare(right.title, "zh-Hans-CN"));
     if (!sectionQuestions.length) fail(handbook.filePath, `section ${section.id} has no published questions`);
     const answerPath = `/content/${handbook.id}/${section.id}.json`;
+    const cardsPath = `/content/${handbook.id}/${section.id}.cards.json`;
     answerChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, renderAnswer(question, catalog)]));
+    cardChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, {
+      titleHtml: renderMathInText(question.title),
+      quickHtml: renderMathInText(question.quick),
+    }]));
     return {
       ...section,
+      cardsPath,
+      answerPath,
       questions: sectionQuestions.map((question) => ({
         id: question.id,
         level: question.level,
         sectionId: question.sectionId,
         title: question.title,
-        titleHtml: renderMathInText(question.title),
         quick: question.quick,
-        quickHtml: renderMathInText(question.quick),
         tags: question.tags,
         isRealInterview: question.isRealInterview,
         searchText: `${question.title.replace(/\$/g, "")} ${question.quick.replace(/\$/g, "")} ${question.tags.join(" ")}`.replace(/\s+/g, " ").trim(),
-        answerPath,
+        answerPath: `/content/${handbook.id}/${section.id}/${question.id}.json`,
       })),
     };
   });
@@ -650,14 +692,27 @@ function buildHandbook(handbookFile, { write = true } = {}) {
   };
 
   if (write) {
+    mkdirSync(answerDirectory, { recursive: true });
     writeIfChanged(join(generatedRoot, `${handbook.id}.json`), `${JSON.stringify(generated)}\n`);
-    const expected = new Set();
+    writeIfChanged(join(answerDirectory, "index.json"), `${JSON.stringify(generated)}\n`);
+    const expectedFiles = new Set(["index.json"]);
+    const expectedDirs = new Set();
     for (const [sectionId, chunk] of Object.entries(answerChunks)) {
-      const filename = `${sectionId}.json`;
-      expected.add(filename);
-      writeIfChanged(join(answerDirectory, filename), `${JSON.stringify(chunk)}\n`);
+      expectedFiles.add(`${sectionId}.json`);
+      expectedFiles.add(`${sectionId}.cards.json`);
+      expectedDirs.add(sectionId);
+      writeIfChanged(join(answerDirectory, `${sectionId}.json`), `${JSON.stringify(chunk)}\n`);
+      writeIfChanged(join(answerDirectory, `${sectionId}.cards.json`), `${JSON.stringify(cardChunks[sectionId])}\n`);
+      const questionDirectory = join(answerDirectory, sectionId);
+      mkdirSync(questionDirectory, { recursive: true });
+      const expectedIds = new Set();
+      for (const [questionId, html] of Object.entries(chunk)) {
+        expectedIds.add(questionId);
+        writeIfChanged(join(questionDirectory, `${questionId}.json`), `${JSON.stringify(html)}\n`);
+      }
+      removeStaleQuestionFiles(questionDirectory, expectedIds);
     }
-    removeStaleChunks(answerDirectory, expected);
+    removeStalePublicEntries(answerDirectory, expectedFiles, expectedDirs);
   }
 
   return { handbook: generated, questionFiles: files, questions };
@@ -680,10 +735,15 @@ export function buildContent({ write = true } = {}) {
     ids.add(result.handbook.id);
   }
   if (write) {
+    mkdirSync(publicRoot, { recursive: true });
     removeStaleIndexes(new Set(results.map((result) => `${result.handbook.id}.json`)));
-    const registryJson = `${JSON.stringify(results.map((result) => result.handbook))}\n`;
-    writeIfChanged(generatedRegistry, registryJson);
-    writeIfChanged(join(publicRoot, "registry.json"), registryJson);
+    const indexes = results.map((result) => result.handbook);
+    const catalog = indexes.map(toCatalogEntry);
+    writeIfChanged(generatedRegistry, `${JSON.stringify(indexes)}\n`);
+    writeIfChanged(generatedCatalog, `${JSON.stringify(catalog)}\n`);
+    writeIfChanged(join(publicRoot, "catalog.json"), `${JSON.stringify(catalog)}\n`);
+    const staleRegistry = join(publicRoot, "registry.json");
+    if (existsSync(staleRegistry)) unlinkSync(staleRegistry);
   }
   return {
     handbooks: results.map((result) => result.handbook),

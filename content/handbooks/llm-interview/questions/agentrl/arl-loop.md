@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ReAct
     url: https://arxiv.org/abs/2210.03629
     type: primary
 ---
 
-只设 `max_turns` 能止损，不能判断「已经没有进展」。ReAct 式 Thought–Action–Observation 很容易在同一查询上换措辞空转。陷阱是把循环当成长度问题：截断只防止账单爆炸，不告诉你该换策略还是该停。检测要同时看动作重复、语义重复、环境无进展和预算。
+只设 `max_turns` 能止损，不能判断「已经没有进展」。ReAct 式 Thought / Action / Observation 很容易在同一查询上换措辞空转。这块容易直接答成把循环当成长度问题：截断只防止账单爆炸，不告诉你该换策略还是该停。检测要同时看动作重复、语义重复、环境无进展和预算。
 
 ## 四类信号，缺一就会漏
 
@@ -45,7 +45,7 @@ sources:
 
 训练标签：把「同一失败调用再发三遍」标成负例；把「发现无进展后换工具或停」标成正 recovery。Reward 若惩罚步数但没惩罚空转，模型会改成「换同义查询刷步数」。评测应注入：工具恒返回同一错误、页面不随点击变化、检索结果集合不变。看 Agent 是重试到超时，还是切换 / 终止。
 
-面试收口：环 = 动作重复 + 状态不前进 + 预算。`max_turns` 只是保险丝。触发后换策略或停，不要原样重放。
+最后我会补一句：环 = 动作重复 + 状态不前进 + 预算。`max_turns` 只是保险丝。触发后换策略或停，不要原样重放。
 
 ## 追问
 

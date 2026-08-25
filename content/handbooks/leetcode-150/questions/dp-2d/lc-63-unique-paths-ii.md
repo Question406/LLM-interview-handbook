@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 63. 不同路径 II
     url: https://leetcode.cn/problems/unique-paths-ii/
@@ -31,7 +31,7 @@ sources:
 
 LC 62 加障碍：障碍格方案数为 $0$，不能往外贡献。其余格仍是上方加左方。起点是障碍则答案 $0$。
 
-第一行 / 列一旦出现障碍，后面整段都是 $0$。一维 `dp[j]`：本行障碍则置 $0$，否则加上 `dp[j-1]`（左）。面试先画清「障碍切断前缀」。
+第一行 / 列一旦出现障碍，后面整段都是 $0$。一维 `dp[j]`：本行障碍则置 $0$，否则加上 `dp[j-1]`（左）。白板我先画清「障碍切断前缀」。
 
 ## 参考代码
 
@@ -100,7 +100,7 @@ def minPathObstacles(grid):
     return -1 if dp[-1] >= inf else dp[-1]
 ```
 
-- **路径数要取模？** 无障碍时 $C(m+n-2,m-1)$ 很快超过 32 位。按题意每次加法对 $10^9+7$ 取模；障碍置零后再加。Python 无限整数可以最后再模，面试仍建议滚动时就模。
+- **路径数要取模？** 无障碍时 $C(m+n-2,m-1)$ 很快超过 32 位。按题意每次加法对 $10^9+7$ 取模；障碍置零后再加。Python 无限整数可以最后再模，白板仍建议滚动时就模。
 
 ```python
 def uniquePathsWithObstacles_mod(grid, mod=10**9 + 7):

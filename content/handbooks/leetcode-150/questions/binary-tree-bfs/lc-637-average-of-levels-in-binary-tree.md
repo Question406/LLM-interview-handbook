@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 637. 二叉树的层平均值
     url: https://leetcode.cn/problems/average-of-levels-in-binary-tree/
@@ -32,7 +32,7 @@ sources:
 
 队列 BFS，每轮 `size=len(q)` 只处理一层。累加该层和，除以 `size` 写入答案。
 
-DFS 按深度塞桶再平均也能做。面试先给切层 BFS，和右视图同一骨架。
+DFS 按深度塞桶再平均也能做。白板我先给切层 BFS，和右视图同一骨架。
 
 ## 参考代码
 

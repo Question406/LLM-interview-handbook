@@ -4,7 +4,9 @@ section: systems
 order: 25
 level: A
 title: 共享 Prefix Cache 如何省钱但不串数据？
-quick: cache key 必须覆盖 model、adapter、tokenizer、RoPE、system context 以及 tenant / security context；用每请求 salt 或 namespace 阻止跨安全边界复用，显式失效并把 cache hit 当作潜在侧信道监控。
+quick: >-
+  Cache key 必须覆盖 model、adapter、tokenizer、RoPE、system context 以及 tenant /
+  security context。用每请求 salt 或 namespace 挡住跨安全边界复用，显式失效，并把 cache hit 当成潜在侧信道来监控。
 tags:
   - Prefix Cache
   - Multi-tenant
@@ -12,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: vLLM Automatic Prefix Caching
     url: https://docs.vllm.ai/en/v0.18.1/design/prefix_caching/
     type: primary
 ---
 
-陷阱是「前缀 token 相同就可以共享 KV」。Prefix cache 复用的是 **已经算过的 K/V**，能砍掉重复 system prompt 的 prefill，TTFT 和成本都下降。但 token id 相同不等于语义可共享：换一个 LoRA、换一套 RoPE、换一个租户的检索上下文，KV 都不能给下一个人用。成本优化不能绕过数据隔离模型。多租户 serving 里，省钱发生在真正公共的前缀；私有上下文一旦进共享缓存，就是事故而不是优化。面试把「可以共享的前缀」和「绝对不能共享的前缀」各举一例，比只背 key 列表像做过多租户。
+这块容易答「前缀 token 相同就可以共享 KV」。Prefix cache 复用的是 **已经算过的 K/V**，能砍掉重复 system prompt 的 prefill，TTFT 和成本都下降。但 token id 相同不等于语义可共享：换一个 LoRA、换一套 RoPE、换一个租户的检索上下文，KV 都不能给下一个人用。成本优化不能绕过数据隔离。多租户 serving 里，省钱发生在真正公共的前缀；私有上下文一旦进共享缓存，就是事故。我会把「可以共享的前缀」和「绝对不能共享的前缀」各举一例，比只背 key 列表像做过。
 
 ## Cache key 必须覆盖什么
 
@@ -46,15 +48,9 @@ sources:
 
 ## 命中本身是侧信道
 
-Cache 读写不应暴露「别人是不是刚问过同样的话」。命中导致 TTFT 明显变短，攻击者可以用时序判断某前缀是否在缓存里——多租户下这是经典侧信道。缓解：对安全敏感路径关闭共享、加 salt、或把命中延迟填充到与未命中同量级（贵，只用于高敏）。监控错误复用率、跨 tenant 探测、版本失效率，不能只报 hit rate 和 TTFT 节省。
+Cache 读写不应暴露「别人是不是刚问过同样的话」。命中导致 TTFT 明显变短，攻击者可以用时序判断某前缀是否在缓存里。多租户下这是经典侧信道。缓解：对安全敏感路径关闭共享、加 salt、或把命中延迟填充到与未命中同量级（贵，只用于高敏）。监控错误复用率、跨 tenant 探测、版本失效率，不能只报 hit rate 和 TTFT 节省。
 
-验收：hit rate、TTFT 节省、错误复用率、版本失效率、跨 tenant 安全测试。缺后三项的「省了 40% prefill」不能上线。共享前缀要尽量短而稳：产品级 system prompt、工具 JSON schema 可以进公共池；用户姓名、订单、检索片段进私有段。公共池还可以按模型版本分桶，避免灰度时新旧模型互相命中。侧信道方面，即便不返回「是否命中」，TTFT 差一个数量级就已经泄露。高敏行业（金融、医疗、内部代码）默认 salt，用多付一点 prefill 换隔离。面试把「省钱的前缀」和「绝对不能共享的前缀」各举一个例子，比只背 key 列表像做过多租户。
-
-## 省钱和隔离怎么同时验收
-
-公共 system prompt、稳定工具 schema 进共享 namespace，按模型版本分桶，这是省 prefill 的主战场。用户文档、检索片段、会话盐、租户权限进私有段或直接 salt，这是隔离的底线。key 漏 adapter / RoPE / tokenizer / policy_version 任一字段，都会在「token 看起来一样」时串激活。命中率只在公共段有意义；为了总 hit rate 拿掉租户键，就是在用事故换成本。TTFT 差一个数量级会泄露是否命中，高敏路径默认 salt 或把命中延迟垫平。RL 里同一 prompt 的 $n$ 条共享 prompt KV 合法，跨用户、跨策略版本不合法。上线清单：hit rate、TTFT 节省、错误复用、版本失效、跨 tenant 探测，后三项不过不能宣称省了 40%。
-
-省钱发生在真正公共、稳定的前缀；隔离发生在租户、会话盐、检索私有段。key 必须覆盖模型、adapter、tokenizer、RoPE、system 与安全上下文，RL 还要加 policy version。引擎 block hash 不含租户，必须外包 namespace。命中率只在公共段有意义；为总 hit rate 拿掉租户键就是事故。TTFT 时序差是侧信道，高敏路径默认 salt。上线缺错误复用和跨 tenant 测试，不能宣称省了 prefill。
+公共 system prompt、稳定工具 schema 进共享 namespace，按模型版本分桶，这是省 prefill 的主战场。用户文档、检索片段、会话盐、租户权限进私有段或直接 salt，这是隔离的底线。key 漏 adapter / RoPE / tokenizer / policy_version 任一字段，都会在「token 看起来一样」时串激活。命中率只在公共段有意义；为了总 hit rate 拿掉租户键，就是在用事故换成本。TTFT 差一个数量级会泄露是否命中，高敏路径默认 salt 或把命中延迟垫平。RL 里同一 prompt 的 $n$ 条共享 prompt KV 合法，跨用户、跨策略版本不合法。上线清单：hit rate、TTFT 节省、错误复用、版本失效、跨 tenant 探测。后三项不过，不能宣称省了 40%。高敏行业（金融、医疗、内部代码）默认 salt，用多付一点 prefill 换隔离。
 
 ## 追问
 

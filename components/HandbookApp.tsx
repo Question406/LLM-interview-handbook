@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Handbook, HandbookQuestion } from "@/content/types";
-import { sortHandbooks, validateHandbook } from "@/content/validate";
+import type { Handbook, HandbookCatalogEntry, HandbookQuestion, HandbookSection, QuestionCardHtml } from "@/content/types";
+import { sortHandbooks, validateCatalog, validateHandbook } from "@/content/validate";
 
 type Filter = "all" | "S" | "A" | "mastered" | "unmastered" | "real";
 
@@ -20,6 +20,16 @@ function isTextEntryTarget(target: EventTarget | null) {
 }
 
 type CopiedKind = "link" | "prompt";
+
+function displayPlain(text: string) {
+  return text.replace(/\$\$([\s\S]+?)\$\$/g, "$1").replace(/\$([^$\n]+?)\$/g, "$1");
+}
+
+async function fetchJson<T>(path: string): Promise<T> {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error(`${path}（${response.status}）`);
+  return response.json() as Promise<T>;
+}
 
 function questionPrompt(question: HandbookQuestion, sectionTitle: string) {
   const context = [
@@ -59,6 +69,7 @@ function QuestionCard({
   isMastered,
   copiedKind,
   isKeyboardActive,
+  card,
   answer,
   onToggleOpen,
   onToggleMastered,
@@ -73,6 +84,7 @@ function QuestionCard({
   isMastered: boolean;
   copiedKind: CopiedKind | null;
   isKeyboardActive: boolean;
+  card?: QuestionCardHtml;
   answer?: string;
   onToggleOpen: () => void;
   onToggleMastered: () => void;
@@ -92,7 +104,9 @@ function QuestionCard({
         <button className="question-heading" data-question-id={question.id} type="button" onClick={onToggleOpen} onFocus={onFocus} aria-expanded={isOpen}>
           <span className="question-title-wrap">
             <span className="question-number">{String(index + 1).padStart(2, "0")}</span>
-            <span className="question-title" dangerouslySetInnerHTML={{ __html: question.titleHtml }} />
+            {card?.titleHtml
+              ? <span className="question-title" dangerouslySetInnerHTML={{ __html: card.titleHtml }} />
+              : <span className="question-title">{displayPlain(question.title)}</span>}
           </span>
         </button>
         <div className="question-head-actions">
@@ -113,7 +127,9 @@ function QuestionCard({
       {!isOpen && question.quick && (
         <div className="quick-answer compact">
           <span>30 秒回答</span>
-          <p dangerouslySetInnerHTML={{ __html: question.quickHtml }} />
+          {card?.quickHtml
+            ? <p dangerouslySetInnerHTML={{ __html: card.quickHtml }} />
+            : <p>{displayPlain(question.quick)}</p>}
         </div>
       )}
       {isOpen && answer && (
@@ -145,8 +161,15 @@ function QuestionCard({
   );
 }
 
-function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
-  const [handbookId, setHandbookId] = useState(handbooks[0].id);
+function HandbookWorkspace({
+  catalog,
+  initialHandbook,
+}: {
+  catalog: HandbookCatalogEntry[];
+  initialHandbook: Handbook;
+}) {
+  const [indexes, setIndexes] = useState<Record<string, Handbook>>({ [initialHandbook.id]: initialHandbook });
+  const [handbookId, setHandbookId] = useState(initialHandbook.id);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [mastered, setMastered] = useState<Set<string>>(new Set());
@@ -159,9 +182,11 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [answerChunks, setAnswerChunks] = useState<Record<string, Record<string, string>>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [cards, setCards] = useState<Record<string, Record<string, QuestionCardHtml>>>({});
+  const [indexError, setIndexError] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
-  const chunkPromises = useRef(new Map<string, Promise<Record<string, string>>>());
+  const jsonPromises = useRef(new Map<string, Promise<unknown>>());
   const pendingScrollRef = useRef<string | null>(null);
   const keyboardStateRef = useRef<{
     shortcutsOpen: boolean;
@@ -171,7 +196,7 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
     toggleOpen: (question: HandbookQuestion) => void;
   } | null>(null);
 
-  const handbook = handbooks.find((candidate) => candidate.id === handbookId) ?? handbooks[0];
+  const handbook = indexes[handbookId] ?? initialHandbook;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -189,18 +214,58 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
     return () => window.clearTimeout(timer);
   }, []);
 
+  const loadJson = <T,>(path: string, loader: () => Promise<T>) => {
+    const existing = jsonPromises.current.get(path) as Promise<T> | undefined;
+    if (existing) return existing;
+    const request = loader();
+    jsonPromises.current.set(path, request);
+    return request;
+  };
+
+  const loadCards = async (section: HandbookSection) => {
+    if (cards[section.cardsPath]) return;
+    try {
+      const chunk = await loadJson(section.cardsPath, () => fetchJson<Record<string, QuestionCardHtml>>(section.cardsPath));
+      setCards((current) => current[section.cardsPath] ? current : { ...current, [section.cardsPath]: chunk });
+    } catch {
+      jsonPromises.current.delete(section.cardsPath);
+    }
+  };
+
+  const loadAnswer = async (question: HandbookQuestion) => {
+    if (answers[question.id]) return;
+    try {
+      const html = await loadJson(question.answerPath, () => fetchJson<string>(question.answerPath));
+      setAnswers((current) => (current[question.id] ? current : { ...current, [question.id]: html }));
+    } catch {
+      jsonPromises.current.delete(question.answerPath);
+    }
+  };
+
+  const loadSectionAnswers = async (section: HandbookSection) => {
+    if (section.questions.every((question) => answers[question.id])) return;
+    try {
+      const chunk = await loadJson(section.answerPath, () => fetchJson<Record<string, string>>(section.answerPath));
+      setAnswers((current) => ({ ...current, ...chunk }));
+    } catch {
+      jsonPromises.current.delete(section.answerPath);
+      await Promise.all(section.questions.map((question) => loadAnswer(question)));
+    }
+  };
+
   useEffect(() => {
     const applyLocation = () => {
       const params = new URLSearchParams(location.search);
       const questionId = params.get("question");
       const question = handbook.sections.flatMap((section) => section.questions).find((candidate) => candidate.id === questionId);
-      const sectionId = question
-        ? handbook.sections.find((section) => section.questions.some((candidate) => candidate.id === question.id))?.id
-        : params.get("section");
+      const section = question
+        ? handbook.sections.find((candidate) => candidate.questions.some((item) => item.id === question.id))
+        : handbook.sections.find((candidate) => candidate.id === params.get("section"));
 
-      if (sectionId && handbook.sections.some((section) => section.id === sectionId)) {
-        setActiveSection(sectionId);
+      if (section) {
+        setActiveSection(section.id);
         setGuideOpen(false);
+        void loadCards(section);
       } else {
         setActiveSection(null);
         setGuideOpen(params.get("view") === "guide");
@@ -212,18 +277,19 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
       setFocusedQuestionId(question.id);
       setOpenQuestions((current) => new Set(current).add(question.id));
       pendingScrollRef.current = question.id;
-      let request = chunkPromises.current.get(question.answerPath);
-      if (!request) {
-        request = fetch(question.answerPath).then((response) => response.json() as Promise<Record<string, string>>);
-        chunkPromises.current.set(question.answerPath, request);
-      }
-      void request.then((chunk) => setAnswerChunks((current) => ({ ...current, [question.answerPath]: chunk })));
+      void loadAnswer(question);
     };
 
     applyLocation();
     window.addEventListener("popstate", applyLocation);
     return () => window.removeEventListener("popstate", applyLocation);
   }, [handbook]);
+
+  useEffect(() => {
+    if (!activeSection) return;
+    const section = handbook.sections.find((candidate) => candidate.id === activeSection);
+    if (section) void loadCards(section);
+  }, [activeSection, handbook]);
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const isSearching = Boolean(normalizedQuery);
@@ -267,24 +333,6 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
       return next;
     });
-  };
-
-  const loadAnswer = async (question: HandbookQuestion) => {
-    if (answerChunks[question.answerPath]) return;
-    let request = chunkPromises.current.get(question.answerPath);
-    if (!request) {
-      request = fetch(question.answerPath).then((response) => {
-        if (!response.ok) throw new Error(`Could not load ${question.answerPath}`);
-        return response.json() as Promise<Record<string, string>>;
-      });
-      chunkPromises.current.set(question.answerPath, request);
-    }
-    try {
-      const chunk = await request;
-      setAnswerChunks((current) => current[question.answerPath] ? current : { ...current, [question.answerPath]: chunk });
-    } catch {
-      chunkPromises.current.delete(question.answerPath);
-    }
   };
 
   const toggleOpen = (question: HandbookQuestion) => {
@@ -335,6 +383,7 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
     const question = handbook.sections.flatMap((section) => section.questions).find((candidate) => candidate.id === questionId);
     const section = handbook.sections.find((candidate) => candidate.questions.some((item) => item.id === questionId));
     if (!question || !section) return;
+    void loadCards(section);
     void loadAnswer(question);
     setActiveSection(section.id);
     setGuideOpen(false);
@@ -394,9 +443,18 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
     openSection(handbook.sections[nextIndex].id);
   };
 
-  const switchHandbook = (nextId: string) => {
-    const next = handbooks.find((candidate) => candidate.id === nextId);
-    if (!next) return;
+  const switchHandbook = async (nextId: string) => {
+    const entry = catalog.find((candidate) => candidate.id === nextId);
+    if (!entry) return;
+    if (!indexes[nextId]) {
+      try {
+        const next = validateHandbook(await loadJson(entry.indexPath, () => fetchJson<Handbook>(entry.indexPath)));
+        setIndexes((current) => (current[next.id] ? current : { ...current, [next.id]: next }));
+      } catch (error: unknown) {
+        setIndexError(error instanceof Error ? error.message : "手册索引加载失败");
+        return;
+      }
+    }
     setHandbookId(nextId);
     setQuery("");
     setFilter("all");
@@ -405,6 +463,9 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
     setGuideOpen(false);
     setFocusedQuestionId(null);
     setLibraryOpen(false);
+    setAnswers({});
+    setCards({});
+    jsonPromises.current.clear();
     history.replaceState(null, "", location.pathname);
     window.scrollTo(0, 0);
   };
@@ -484,8 +545,8 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
             <span><small>当前资料</small><b>{handbook.shortTitle}</b></span><span>{libraryOpen ? "−" : "+"}</span>
           </button>
           {libraryOpen && <div className="library-menu">
-            {handbooks.map((candidate) => (
-              <button type="button" className={candidate.id === handbook.id ? "active" : ""} key={candidate.id} onClick={() => switchHandbook(candidate.id)}>
+            {catalog.map((candidate) => (
+              <button type="button" className={candidate.id === handbook.id ? "active" : ""} key={candidate.id} onClick={() => void switchHandbook(candidate.id)}>
                 <span>{candidate.shortTitle}</span><small>{candidate.stats.questions} 题</small>
               </button>
             ))}
@@ -537,6 +598,7 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
         </header>
 
         <div className="page-wrap">
+          {indexError && <div className="empty-state"><b>手册加载失败</b><p>{indexError}</p></div>}
           {!isContentView && !guideOpen && <section className="hero">
             <div className="hero-copy">
               <div className="eyebrow"><span /> {handbook.edition} · INTERVIEW HANDBOOK</div>
@@ -564,7 +626,7 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
               ] as [Filter, string][]).map(([value, label]) => <button className={filter === value ? "active" : ""} type="button" key={value} onClick={() => setFilter(value)}>{label}</button>)}
             </div>
             <div className="bulk-actions">
-              <button type="button" onClick={() => { visibleQuestions.forEach((question) => void loadAnswer(question)); setOpenQuestions(new Set(visibleQuestions.map((question) => question.id))); }}>全部展开</button>
+              <button type="button" onClick={() => { visibleSections.forEach((section) => void loadSectionAnswers(section)); setOpenQuestions(new Set(visibleQuestions.map((question) => question.id))); }}>全部展开</button>
               <button type="button" onClick={() => setOpenQuestions(new Set())}>全部折叠</button>
             </div>
           </section>}
@@ -591,7 +653,8 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
                       isMastered={mastered.has(qualifiedId(handbook.id, question.id))}
                       copiedKind={copied?.id === question.id ? copied.kind : null}
                       isKeyboardActive={focusedQuestionId === question.id}
-                      answer={answerChunks[question.answerPath]?.[question.id]}
+                      card={cards[section.cardsPath]?.[question.id]}
+                      answer={answers[question.id]}
                       onToggleOpen={() => toggleOpen(question)}
                       onToggleMastered={() => toggleMastered(question.id)}
                       onCopyPrompt={() => copyQuestionPrompt(question)}
@@ -619,19 +682,22 @@ function HandbookWorkspace({ handbooks }: { handbooks: Handbook[] }) {
 }
 
 export default function HandbookApp() {
-  const [handbooks, setHandbooks] = useState<Handbook[] | null>(null);
+  const [catalog, setCatalog] = useState<HandbookCatalogEntry[] | null>(null);
+  const [initialHandbook, setInitialHandbook] = useState<Handbook | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/content/registry.json")
-      .then((response) => {
-        if (!response.ok) throw new Error(`手册索引加载失败（${response.status}）`);
-        return response.json() as Promise<Handbook[]>;
-      })
+    fetchJson<HandbookCatalogEntry[]>("/content/catalog.json")
       .then((data) => {
-        const next = sortHandbooks(data.map(validateHandbook));
-        if (!cancelled) setHandbooks(next);
+        const nextCatalog = sortHandbooks(data.map(validateCatalog));
+        const first = nextCatalog[0];
+        if (!first) throw new Error("手册目录为空");
+        return fetchJson<Handbook>(first.indexPath).then((index) => {
+          if (cancelled) return;
+          setCatalog(nextCatalog);
+          setInitialHandbook(validateHandbook(index));
+        });
       })
       .catch((error: unknown) => {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : "手册索引加载失败");
@@ -656,7 +722,7 @@ export default function HandbookApp() {
     );
   }
 
-  if (!handbooks) {
+  if (!catalog || !initialHandbook) {
     return (
       <main className="app-shell">
         <section className="workspace">
@@ -668,5 +734,5 @@ export default function HandbookApp() {
     );
   }
 
-  return <HandbookWorkspace handbooks={handbooks} />;
+  return <HandbookWorkspace catalog={catalog} initialHandbook={initialHandbook} />;
 }

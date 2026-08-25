@@ -16,7 +16,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 美团大模型算法岗完整面经（一面+二面）
     url: https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981
@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位与原话明确，届别未披露）
 - 原始措辞：**“已经构建推理类 Reasoning 训练数据，为什么还需要接入 RL？仅依靠 SFT 能否满足？”**；**“SFT 达到怎样的效果指标后才适合接入 RL？”**
 
-陷阱是「数据已经有思维链，继续 SFT 就行」或「有数据就可以立刻 GRPO」。SFT 是行为克隆，RL 才在 fresh rollout 上优化期望奖励。切不切看门禁，不看你有没有推理数据集这个事实。一面问为什么还要 RL，二面问何时切：两问都要把失败模式说成可检查的指标，不要只报训练 loss。仅靠 SFT 能满足格式与中等难度复述，满足不了需要搜索的难推理和「看起来像 CoT 但结论错」的系统惩罚。
+这块容易答「数据已经有思维链，继续 SFT 就行」或「有数据就可以立刻 GRPO」。SFT 是行为克隆，RL 才在 fresh rollout 上优化期望奖励。切不切看门禁，不看你有没有推理数据集这个事实。一面问为什么还要 RL，二面问何时切：两问都要把失败模式说成可检查的指标，不要只报训练 loss。仅靠 SFT 能满足格式与中等难度复述，满足不了需要搜索的难推理和「看起来像 CoT 但结论错」的系统惩罚。
 
 ## 1. SFT 为什么不够：似然看不见奖励
 

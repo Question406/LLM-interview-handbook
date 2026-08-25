@@ -5,9 +5,9 @@ order: 141
 level: A
 title: 蚂蚁：DPO 的 loss 怎么写？
 quick: >-
-  DPO 把最优策略写成对 reference 的闭式，损失是
+  DPO 的 loss 我直接写闭式：最优策略相对 frozen reference，再套进 Bradley-Terry，就是
   $-\log\sigma\big(\beta(\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)})\big)$。$\beta$
-  控制偏离 ref 的幅度，不是学习率。
+  管偏离 ref 的幅度，别说成学习率。
 tags:
   - Ant Group
   - DPO
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 蚂蚁大模型面经
     url: https://www.nowcoder.com/feed/main/detail/2b27dfe1f1ab4efa87eb0aea70ffdc20
@@ -34,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“讲一下 DPO , PPO , GRPO 的原理和区别，写一下 DPO loss 函数”**
 
-陷阱是把 DPO 背成「再做一次 pairwise 交叉熵」，或把 $\beta$ 说成学习率。它不是凭空发明的分类损失，而是从 **反向 KL 约束 RL** 的闭式最优策略反解奖励，再代入 Bradley-Terry。方向写反，最优策略对不上，后面所有符号都会漂，见 `fund-kl-directions`。白板必须主动写出三样东西：冻结的 $\pi_{\mathrm{ref}}$、完成序列上的 $\log\pi$ 求和、以及「优化的是 chosen 相对 rejected 的间隔，不是正例绝对似然」。缺任何一项，面试官下一问就会拆穿。
+这块容易直接答成「再做一次 pairwise 交叉熵」，或者把 $\beta$ 说成学习率。DPO 不是凭空发明的分类损失，它是从反向 KL 约束 RL 的闭式最优策略反解奖励，再代入 Bradley-Terry。方向写反，最优策略对不上，后面所有符号都会漂，见 `fund-kl-directions`。白板我会主动写出三样：冻结的 $\pi_{\mathrm{ref}}$、完成序列上的 $\log\pi$ 求和，以及优化的是 chosen 相对 rejected 的间隔，不是正例绝对似然。缺任何一项，面试官下一问就会拆穿。
 
 ## 从最优策略反解到分类损失
 
@@ -56,13 +56,13 @@ $$
 \mathcal{L}_{\mathrm{DPO}}=-\mathbb{E}\log\sigma\Big(\beta\big(\log\tfrac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\log\tfrac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}\big)\Big).
 $$
 
-现场顺序必须是：先写约束目标 $\to$ 再写 $\pi^*$ $\to$ 再反解 $r$ $\to$ 最后写 $\sigma$。跳过反解最常见的事故是把 $\beta$ 乘在 $\sigma$ 外面，或漏掉 ref 只写 $\log\pi(y_w)-\log\pi(y_l)$，那就退化成没有锚的偏好 CE，最优策略不再对应原来的 RL 目标。
+现场顺序必须是：先写约束目标 $\to$ 再写 $\pi^*$ $\to$ 再反解 $r$ $\to$ 最后写 $\sigma$。跳过反解，最常见的事故是把 $\beta$ 乘在 $\sigma$ 外面，或者漏掉 ref 只写 $\log\pi(y_w)-\log\pi(y_l)$。那就退化成没有锚的偏好 CE，最优策略不再对应原来的 RL 目标。
 
 ## 白板符号与失败模式
 
 $y_w/y_l$ 是 chosen / rejected；$\log\pi$ 对完成序列（response token）求和，prompt 要 mask 掉；$\pi_{\mathrm{ref}}$ 全程冻结，通常是 SFT 权重。$\beta$ 大则更贴 ref、间隔难拉开；$\beta$ 小则偏好信号强，但策略容易漂出参考支撑。梯度推的是 **margin**，不是 SFT 那种「正例似然单调上升」：chosen 与 rejected 的绝对 $\log\pi$ 可以双降，只要相对间隔在涨、下游胜率在涨，这仍可能是健康曲线，见 `baidu-dpo-chosen-curve`。
 
-失败模式要主动报。长 chosen 天然占总 logprob 优势，模型学会啰嗦但偏好赢，需要长度归一、SimPO 或标注时控长。没有 online rollout 与显式 RM，偏好标签错了无法靠采样自纠；离线分布和线上用户一漂，间隔再漂亮也救不了。过拟合噪声 pair 会出现 offline 赢、online 崩。这些都不是「再加学习率」能修的。和 PPO / GRPO 差一句：DPO 离线吃 pair；PPO 有 RM + critic + clip；GRPO 用组相对优势，组大小必须 $n\gt 1$，见 `sys-rl-group-n`。
+失败模式我会主动报。长 chosen 天然占总 logprob 优势，模型学会啰嗦但偏好赢，需要长度归一、SimPO 或标注时控长。没有 online rollout 与显式 RM，偏好标签错了没法靠采样自纠；离线分布和线上用户一漂，间隔再漂亮也救不了。过拟合噪声 pair 会出现 offline 赢、online 崩。这些都不是「再加学习率」能修的。和 PPO / GRPO 我会差一句：DPO 离线吃 pair；PPO 有 RM + critic + clip；GRPO 用组相对优势，组大小必须 $n\gt 1$，见 `sys-rl-group-n`。
 
 ## 追问
 

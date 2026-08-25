@@ -18,7 +18,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime 使用文档
     url: https://thudm.github.io/slime/zh/get_started/usage.html
@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-陷阱是把动态采样说成「把 temperature 调高一点」。DAPO 要解决的是 **零信息组**：整组全对或全错，$\mathrm{std}(r)=0$，GRPO 优势为 0，见 `sys-rl-group-n`。slime 的做法是多采、按组过滤、把还在跑的请求 abort，再决定半截轨迹怎么用。半截 **不是** 新的 on-policy token。温度管的是组内多样性，动态采样管的是这组有没有可学信号，两条轴不要拧在一个开关上。面试按三步答：filter 保证有效组、abort 避免长尾白烧、mask/TIS 处理旧 prefix。只说「我们开了 DAPO」而不提半截是否 on-policy，下一问会把数学拆穿。验收看零方差比例、partial 复用、mask 掉的 token，不看 flag 是否打开。
+这块容易把动态采样说成「把 temperature 调高一点」。DAPO 要解决的是 **零信息组**：整组全对或全错，$\mathrm{std}(r)=0$，GRPO 优势为 0，见 `sys-rl-group-n`。slime 的做法是多采、按组过滤、把还在跑的请求 abort，再决定半截轨迹怎么用。半截 **不是** 新的 on-policy token。温度管的是组内多样性，动态采样管的是这组有没有可学信号，两条轴不要拧在一个开关上。我会按三步答：filter 保证有效组、abort 避免长尾白烧、mask/TIS 处理旧 prefix。只说「我们开了 DAPO」而不提半截是否 on-policy，下一问会把数学拆穿。验收看零方差比例、partial 复用、mask 掉的 token，不看 flag 是否打开。
 
 ## 多采再滤
 
@@ -45,7 +45,7 @@ sources:
 - `--mask-offpolicy-in-partial-rollout`：已有 `response_length` 的 mask 置 0，只训本步新生成的 token。
 - `--use-tis`：对旧 token 做截断重要性采样，而不是假装 $\rho=1$。
 
-两边都关 = 把 stale prefix 当 on-policy，KL 和 clip 会 silently 偏。验收看 zero-std 组比例、partial 复用率、mask 掉的 token 占比，不看「开了 dynamic sampling」。半截续写还有长度尾部问题：上次没写完的往往是最长、最难的题，FIFO 把它们优先弹出，下一步会被同一批长尾拖住。这和「动态采样提高有效组」是相反的压力，要用 `--buffer-filter-path` 或长度惩罚对冲，不能只开 partial 就以为长尾消失了。mask 掉的 token 不进 loss，等于你付了 decode 却不训它们——这是用算力换利用率，账要算清楚。TIS 则把旧 token 留在 loss 里但降权，方差更大，clip 更要紧。面试把 abort、recycle、mask/TIS 说成三步，比说「我们开了 DAPO」像做过。
+两边都关 = 把 stale prefix 当 on-policy，KL 和 clip 会 silently 偏。验收看 zero-std 组比例、partial 复用率、mask 掉的 token 占比，不看「开了 dynamic sampling」。半截续写还有长度尾部问题：上次没写完的往往是最长、最难的题，FIFO 把它们优先弹出，下一步会被同一批长尾拖住。这和「动态采样提高有效组」是相反的压力，要用 `--buffer-filter-path` 或长度惩罚对冲，不能只开 partial 就以为长尾消失了。mask 掉的 token 不进 loss，等于你付了 decode 却不训它们，这是用算力换利用率，账要算清楚。TIS 则把旧 token 留在 loss 里但降权，方差更大，clip 更要紧。面试把 abort、recycle、mask/TIS 说成三步，比说「我们开了 DAPO」像做过。
 
 ## 和 veRL 怎么对
 
@@ -53,13 +53,13 @@ veRL 社区用 DAPO recipe + fully async 的 staleness 阈值丢过旧轨迹。s
 
 ## 三步怎么验收
 
-字节长尾题用 slime 答：多采滤零方差 → abort 回收半截 → 旧 token mask 或 TIS。验收不要看开关是否打开，看零方差组比例是否下降、partial 复用率、mask 掉的 token 占比、以及 holdout 有没有因为 stale prefix 变差。FIFO Buffer 会把没写完的长题优先送回来，长尾可能更尖，要用 filter 或长度惩罚对冲。over-sample 倍数开太大只是多烧 decode，滤完凑满 `--rollout-batch-size` 即可。两边 mask 和 TIS 都关，等于把上一版权的 prefix 当 on-policy，clip 和 KL 会 silently 偏——这比「没开动态采样」更危险，因为看起来在训、数学已经错了。和 veRL DAPO recipe 对答时，强调 slime 把 abort / recycle / mask 做成一等 flag，而不是藏在 trainer 循环里。半截轨迹不是免费加速，是用 off-policy 债换利用率。
+字节长尾题用 slime 答：多采滤零方差 → abort 回收半截 → 旧 token mask 或 TIS。验收不要看开关是否打开，看零方差组比例是否下降、partial 复用率、mask 掉的 token 占比、以及 holdout 有没有因为 stale prefix 变差。FIFO Buffer 会把没写完的长题优先送回来，长尾可能更尖，要用 filter 或长度惩罚对冲。over-sample 倍数开太大只是多烧 decode，滤完凑满 `--rollout-batch-size` 即可。两边 mask 和 TIS 都关，等于把上一版权的 prefix 当 on-policy，clip 和 KL 会 silently 偏。这比「没开动态采样」更危险，因为看起来在训、数学已经错了。和 veRL DAPO recipe 对答时，强调 slime 把 abort / recycle / mask 做成一等 flag，而不是藏在 trainer 循环里。半截轨迹不是免费加速，是用 off-policy 债换利用率。
 
 半截轨迹是旧权生成的 prefix，不能当新的 on-policy token，这是这题和「开了 DAPO」之间的差。mask 把已有长度置 0，TIS 把旧 token 留在 loss 里但降权；两边都关是 silent 的数学错误。FIFO 会把最长最难的半截优先送回，长尾可能更尖。over-sample 只为滤完仍凑满 batch，再大是白烧 decode。面试按 filter → abort → mask/TIS 三步答，并报零方差比例和 mask 占比，而不是报开关名字。
 
 ## 追问
 
-- **半截算不算 on-policy？** 不算。前半段是上一版 $\theta$ 生成的。必须 `--mask-offpolicy-in-partial-rollout` 把已有 `response_length` 置 0，或 `--use-tis` 做截断 IS。两边都关等于把 stale prefix 当新 token。
+- **半截算不算 on-policy？** 不算。前半段是上一版 $\theta$ 生成的。必须 `--mask-offpolicy-in-partial-rollout` 把已有 `response_length` 置 0，或 `--use-tis` 做截断 IS。两边都关等于把 stale prefix 当新 token。TIS 和 CISPO 不是同一个 clip，见 `pt-tis-async`。
 - **over-sampling 是不是越大越好？** 滤完要能凑满 `--rollout-batch-size`；再大只是多烧 decode。盯有效组比例和 zero-std 下降，不是盯 over-sample 倍数。filter 还要跨 rank 稳定，否则又成分叉。
 - **FIFO Buffer 会不会让最难的题永远排前面？** 默认 `pop_first` 偏公平；没写完的往往是最长最难的题，下一步会被同一批长尾拖住。可用 `--buffer-filter-path` 换策略，但要声明 freshness 变了。
 - **和 fully-async 一起开吗？** 可以，但 stale 来源变成两条：partial 的旧 prefix，以及跨 rollout 的旧整条。TIS / freshness 要一起配，见 `slime-async-train`。不要只开一个开关就报已经处理 off-policy。

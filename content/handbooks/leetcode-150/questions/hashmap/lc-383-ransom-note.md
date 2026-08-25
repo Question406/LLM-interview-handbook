@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 383. 赎金信
     url: https://leetcode.cn/problems/ransom-note/
@@ -31,7 +31,7 @@ sources:
 
 哈希计数：先把杂志里每个字符的出现次数记进 26 维桶（或 `Counter`）。再扫赎金信，每用一个字母就把对应计数减一；减到小于 $0$ 说明缺货。杂志更长时，先计数短串再去长串里扣，写法对称。
 
-面试强调「是多重集合包含，不是子序列」：字母顺序无关。
+白板我会强调：这是多重集合包含，不是子序列。字母顺序无关。
 
 ## 参考代码
 

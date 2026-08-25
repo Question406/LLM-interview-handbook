@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 69. x 的平方根
     url: https://leetcode.cn/problems/sqrtx/
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **溢出？** 32 位里 `mid * mid` 可能超过 `INT_MAX`。改写成 `mid <= x // mid`（`mid\gt 0`），整除向零，与「平方不超过 $x$」等价。不要先转浮点再比较，精度会在大整数上翻车。
+- **溢出？** 32 位里 `mid * mid` 可能超过 `INT_MAX`。改写成 `mid <= x // mid`（`mid\gt 0`），整除向零，与「平方不超过 $x$」等价。别先转浮点再比较，精度会在大整数上翻车。
 
 - **浮点牛顿？** 迭代 $r \leftarrow (r + x/r)/2$，从 $r=x$ 出发，直到 $r^2$ 足够接近 $x$。取整前要处理「算大了就减一」：浮点误差可能让 $\lfloor r\rfloor^2 \gt x$。整数牛顿同样可用 `r = (r + x//r)//2`，且无精度问题。
 

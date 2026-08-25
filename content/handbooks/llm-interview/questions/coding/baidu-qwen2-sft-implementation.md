@@ -5,7 +5,7 @@ order: 100
 level: A
 title: 百度文心后训练：用 Transformers / PyTorch 实现 Qwen2 的 SFT 训练
 quick: >-
-  面试里先写清 chat template 后的 input_ids、attention_mask 与 labels：只让 assistant target token 参与 loss，其余设为 -100；再给出
+  我会先写清 chat template 后的 input_ids、attention_mask 与 labels：只让 assistant target token 参与 loss，其余设为 -100；再给出
   batch collator、causal-LM forward、梯度累积 / precision、checkpoint 和 held-out eval 的最小训练闭环。
 tags:
   - Baidu
@@ -16,7 +16,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百度 - 大模型后训练实习生 二面（候选人原帖）
     url: https://www.nowcoder.com/discuss/864605093486682112
@@ -32,11 +32,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“使用transformers，pytorch实现Qwen2模型的SFT训练”**
 
-陷阱是「把 prompt 整段截掉再训」代替 **逐 token loss mask**，或用错 Qwen2 chat template 导致 special token 对不齐。SFT 的数据契约是：`input_ids` 仍是整段对话，`labels` 里只有 assistant 目标为真实 id，其余 $-100$。后训练目标对比见 `byte-sft-vs-grpo-objective`；本题要的是能跑的最小闭环。
+这块容易「把 prompt 整段截掉再训」代替逐 token loss mask，或用错 Qwen2 chat template 导致 special token 对不齐。SFT 的数据契约是：`input_ids` 仍是整段对话，`labels` 里只有 assistant 目标为真实 id，其余 $-100$。后训练目标对比见 `byte-sft-vs-grpo-objective`；本题要的是能跑的最小闭环。
 
 ## 数据契约：template、labels=-100、多轮
 
-用该模型的 `apply_chat_template` 串行化 messages，tokenize 后 `labels = input_ids.clone()`，把 system、user、role 分隔符、padding、以及不希望学习的 tool observation 置为 `-100`。多轮则 **每段 assistant 都标**，不能只留最后一轮。截断发生在 max length 时，先保证 answer 还在；把答案截光等于这步零梯度。
+用该模型的 `apply_chat_template` 串行化 messages，tokenize 后 `labels = input_ids.clone()`，把 system、user、role 分隔符、padding、以及不希望学习的 tool observation 置为 `-100`。多轮则每段 assistant 都标，不能只留最后一轮。截断发生在 max length 时，先保证 answer 还在；把答案截光等于这步零梯度。
 
 ```python
 def build_sft_labels(input_ids, assistant_mask, pad_id=-100):
@@ -60,7 +60,7 @@ def sft_step(model, batch):
 
 动态 padding 或 packing；`attention_mask` 与 labels 同步。BF16 + gradient accumulation 模拟大 batch。`AutoModelForCausalLM(..., labels=labels)` 内部已做 shift：logits[..., :-1] 对 labels[..., 1:]，不要自己再 shift 一次。Optimizer / cosine warmup、按 step 存 ckpt、从 `global_step` resume。
 
-**必须有 held-out**：instruction 格式、拒绝、工具调用各一薄集。train loss 下降但 eval 格式崩，通常是 mask 把分隔符学进去了，或 pad 进了 loss。常见坑：template 不匹配、截断切掉 answer、`pad_token` 未设导致 eos 当 pad、packing 跨样本没有切断 attention。面试把 mask 讲清楚，比展示 Trainer 参数表更像做过文心后训练。
+必须有 held-out：instruction 格式、拒绝、工具调用各一薄集。train loss 下降但 eval 格式崩，通常是 mask 把分隔符学进去了，或 pad 进了 loss。常见坑：template 不匹配、截断切掉 answer、`pad_token` 未设导致 eos 当 pad、packing 跨样本没有切断 attention。我会把 mask 讲清楚，不展示 Trainer 参数表。
 
 ## 追问
 

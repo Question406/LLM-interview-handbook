@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 26秋招蚂蚁金服大模型算法一面（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/e2585943c7874b3081b0878b646b6f01
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、届别、岗位与轮次明确）
 - 原始措辞：**“核心代码模式，写一下大模型预测token时，beam树如何构建，如何得到最终的结果(pytorch简单实现了一下，主要是还是讲明白)”**
 
-陷阱是把 beam search 写成「每步取当前条件概率最大的 $k$ 个 token」，丢掉 **累计 log-prob** 和 **父节点回溯**。树的节点是整条前缀，不是孤立 token。最终从 `finished`（已写 EOS）里选，没有完成序列才回退活跃 beam。采样分布见 `code-sampling`；本题是搜索不是采样。
+这块容易把 beam search 写成「每步取当前条件概率最大的 $k$ 个 token」，丢掉累计 log-prob 和父节点回溯。树的节点是整条前缀，不是孤立 token。最终从 `finished`（已写 EOS）里选，没有完成序列才回退活跃 beam。采样分布见 `code-sampling`；本题是搜索不是采样。
 
 ## 树怎么长：扩展、扁平 top-$k$、拆父索引
 
@@ -57,7 +57,7 @@ def beam_expand(logp, scores, k, eos_id):
     return parent, token, topv, done
 ```
 
-`parent` 用来复制前缀和 **reorder KV cache**。`done` 为真的候选进 `finished`，其余留在活跃集合。直到最大长度或没有活跃 beam。禁止用概率相乘（下溢）；必须累计 log 域。扩展成本 $O(kV)$，所以 $k$ 通常很小（4–8），大词表靠 `topk` 不要真物化排序全词表以外的逻辑——实现上仍是对 $k\times V$ 取 top。
+`parent` 用来复制前缀和 reorder KV cache。`done` 为真的候选进 `finished`，其余留在活跃集合。直到最大长度或没有活跃 beam。禁止用概率相乘（下溢）；必须累计 log 域。扩展成本 $O(kV)$，所以 $k$ 通常很小（4 到 8），大词表靠 `topk` 不要真物化排序全词表以外的逻辑，实现上仍是对 $k\times V$ 取 top。
 
 ## 长度惩罚与最终怎么选
 
@@ -67,7 +67,7 @@ $$
 \mathrm{score}(y)=\frac{1}{|y|^\lambda}\sum_t\log\pi(y_t\mid y_{\lt t}),
 $$
 
-$\lambda\in[0.6,1]$。也可在 EOS 后不再扩展。重复 n-gram 屏蔽、坏 token mask 在加分之前做。最终：**先比 `finished` 里惩罚后分数**；全部顶到 `max_len` 仍无 EOS，才从活跃 beam 里选。不要返回「最后一步 logit 最大的那个 token 串起来」。
+$\lambda\in[0.6,1]$。也可在 EOS 后不再扩展。重复 n-gram 屏蔽、坏 token mask 在加分之前做。最终：先比 `finished` 里惩罚后分数；全部顶到 `max_len` 仍无 EOS，才从活跃 beam 里选。不要返回「最后一步 logit 最大的那个 token 串起来」。
 
 真实实现还要：batch 内各条样本 beam 独立；pad 不扩展；cache 按 `parent` gather。面试把「累计 logp → 扁平 top-k → 拆 parent → EOS 分流」讲完，代码短于调 `generate`。
 

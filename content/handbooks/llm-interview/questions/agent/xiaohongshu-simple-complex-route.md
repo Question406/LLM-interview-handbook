@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书Ai agent算法一面 攒人品
     url: https://www.nowcoder.com/feed/main/detail/6819d2a74f00489ea3e3913a5139346a
@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“会根据不同问题切换不同模型吗？”**；**“那你是怎么判断一个问题是简单还是复杂的？”**
 
-陷阱是「难的就换大模型」。复杂度应看是否多跳、是否要工具、槽位是否齐、失误成本多高，而不是句子长不长。简单走小模型短链路，复杂才升级并开 Deep Research。同面还问限流与多租户——路由必须带配额，复杂链路不能把简单租户拖死。停止策略见 `xiaohongshu-deep-research-stop`。
+这块容易直接答成「难的就换大模型」。复杂度应看是否多跳、是否要工具、槽位是否齐、失误成本多高，别看句子长不长。简单走小模型短链路，复杂才升级并开 Deep Research。同面还问限流与多租户，路由必须带配额，复杂链路不能把简单租户拖死。停止策略见 `xiaohongshu-deep-research-stop`。
 
 ## 简单 / 复杂的信号
 

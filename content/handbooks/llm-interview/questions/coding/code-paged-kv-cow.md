@@ -15,18 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: PagedAttention / vLLM
     url: https://arxiv.org/abs/2309.06180
     type: primary
 ---
 
-陷阱是 `fork` 时把整段 $K,V$ 深拷贝一份。PagedAttention 的收益就是 **前缀共享物理页**：beam / 树采样 / 前缀缓存命中时，多条逻辑序列指向同一批 block。写冲突才拆页。注意力公式不变，见 `code-kv-cache-step`；本题只维护分配器不变量。vLLM 论文把 KV 切成固定 token 页，逻辑连续、物理可散落，见 `sys-pagedattention`。
+这块容易 `fork` 时把整段 $K,V$ 深拷贝一份。PagedAttention 的收益就是前缀共享物理页：beam / 树采样 / 前缀缓存命中时，多条逻辑序列指向同一批 block。写冲突才拆页。注意力公式不变，见 `code-kv-cache-step`；本题只维护分配器不变量。vLLM 论文把 KV 切成固定 token 页，逻辑连续、物理可散落，见 `sys-pagedattention`。
 
 ## 不变量
 
-每条序列一份 `block_table: List[phys_id]`。物理页有 `refcount`。`fork(parent)` 复制 table，$O(\#\mathrm{blocks})$ 指针，每个 phys $+1$。`append` 只动 **最后一页**：若该页 $\mathrm{refcount}\gt 1$ 或已满，分配新页（满则追加；共享则 COW 替换末页）。`free` 逐页 $-1$，到 0 回空闲链表。OOM 就是 `free` 空了；不要用悬空 phys id。
+每条序列一份 `block_table: List[phys_id]`。物理页有 `refcount`。`fork(parent)` 复制 table，$O(\#\mathrm{blocks})$ 指针，每个 phys $+1$。`append` 只动最后一页：若该页 $\mathrm{refcount}\gt 1$ 或已满，分配新页（满则追加；共享则 COW 替换末页）。`free` 逐页 $-1$，到 0 回空闲链表。OOM 就是 `free` 空了；不要用悬空 phys id。
 
 ```python
 class PagedKV:
@@ -74,7 +74,7 @@ class PagedKV:
 
 ## 分支采样时为什么必须 COW
 
-Beam、树搜索、投机解码的多条候选共享同一 prompt 前缀。若每条候选独占连续 KV，显存按宽度线性涨，paging 的共享就没了。COW 把共享停在「尚未分叉的最后一页」：只读前缀 `refcount` 可以很大；一旦某条序列要写新 token，只拆它自己的末页。Prefix cache 命中是同一套不变量：缓存的物理页只读，新请求 `fork` 一份 table，用户 token 到来再拆。不要在 `fork` 时预分配到 `max_len`——那会把内部碎片和预留策略请回来。OOM 时拒绝新 fork / append，而不是覆盖别人的页。和 `sys-pagedattention` 对照：那题讲虚拟内存类比；本题要能维护 refcount 不变量，并指出写路径只碰尾块。`allocate` 现场按 $\lceil T / B\rceil$ 向空闲链表要页，最后一页 $\mathrm{used}=T\bmod B$（整除则记 $B$）。不要给未 fork 的序列预留到 `max_len`：那正是 paging 要消灭的内部浪费。物理 KV 可做成 `pages[phys, B, H, D]`，COW 时 `pages[nb] = pages[old].clone()` 再写新 token；手写题可以只维护表与引用计数，但要口头补上拷贝字节这一步，否则两条 beam 会打到同一块 HBM。
+Beam、树搜索、投机解码的多条候选共享同一 prompt 前缀。若每条候选独占连续 KV，显存按宽度线性涨，paging 的共享就没了。COW 把共享停在「尚未分叉的最后一页」：只读前缀 `refcount` 可以很大；一旦某条序列要写新 token，只拆它自己的末页。Prefix cache 命中是同一套不变量：缓存的物理页只读，新请求 `fork` 一份 table，用户 token 到来再拆。不要在 `fork` 时预分配到 `max_len`，那会把内部碎片和预留策略请回来。OOM 时拒绝新 fork / append，而不是覆盖别人的页。和 `sys-pagedattention` 对照：那题讲虚拟内存类比；本题要能维护 refcount 不变量，并指出写路径只碰尾块。`allocate` 现场按 $\lceil T / B\rceil$ 向空闲链表要页，最后一页 $\mathrm{used}=T\bmod B$（整除则记 $B$）。不要给未 fork 的序列预留到 `max_len`：那正是 paging 要消灭的内部浪费。物理 KV 可做成 `pages[phys, B, H, D]`，COW 时 `pages[nb] = pages[old].clone()` 再写新 token；手写题可以只维护表与引用计数，但要口头补上拷贝字节这一步，否则两条 beam 会打到同一块 HBM。
 
 ## 追问
 

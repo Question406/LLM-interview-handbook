@@ -5,7 +5,7 @@ order: 161
 level: A
 title: 百川智能：了解搜索推荐吗？和 RAG / 改写怎么接？
 quick: >-
-  搜索有明确 query，优化相关性与准召；推荐偏用户状态，优化下一曝光。RAG
+  搜索有明确 query，优化相关性和准召；推荐偏用户状态，优化下一曝光。RAG
   的检索更像搜索；Query 改写、三路召回、例子库都是搜索组件。不要把推荐的隐式反馈直接当 RAG 金标。
 tags:
   - Baichuan
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“了解搜索推荐相关内容吗”**
 
-陷阱是把搜索和推荐讲成「都是召回 + 排序」，或把推荐点击直接当 RAG 正负例。二者目标函数不同：**搜索有明确 query，优化相关性与准召；推荐常无 query，优化下一曝光与消费**。本面后续的 Query 改写、三路召回、例子库都是搜索组件，不要用推荐口吻回答。改写见 `baichuan-query-rewrite-model-choice`，三路召回见 `baichuan-three-path-recall`，例子库见 `baichuan-case-library-construction`。RAG 管线见 `fund-rag`，评测见 `baichuan-ragas-eval`。
+这块容易直接答成「都是召回加排序」，或者把推荐点击直接当 RAG 正负例。二者目标函数不同：搜索有明确 query，优化相关性和准召；推荐常无 query，优化下一曝光与消费。本面后面的 Query 改写、三路召回、例子库都是搜索组件，不要用推荐口吻回答。改写见 `baichuan-query-rewrite-model-choice`，三路召回见 `baichuan-three-path-recall`，例子库见 `baichuan-case-library-construction`。RAG 管线见 `fund-rag`，评测见 `baichuan-ragas-eval`。
 
 ## 目标、样本与偏差
 
@@ -40,7 +40,7 @@ RAG 检索更像搜索：有当前问题当 query，要的是能支撑回答的�
 
 ## 怎么接到大模型项目
 
-若只做过推荐，面试要主动画边界：有 query 的检索 vs 无 query 的排序。Agent / RAG 里，召回失败应走改写或多路，而不是用推荐模型补「猜你想问」。评估时检索召回与生成忠实要拆开；推荐 AUC 高不代表证据够用。权限与安全：例子库和笔记检索都有可见性约束，推荐里常见的「相似用户看过」不能突破权限。
+若只做过推荐，我会主动画边界：有 query 的检索 vs 无 query 的排序。Agent / RAG 里，召回失败应走改写或多路，而不是用推荐模型补「猜你想问」。评估时检索召回与生成忠实要拆开；推荐 AUC 高不代表证据够用。权限与安全：例子库和笔记检索都有可见性约束，推荐里常见的「相似用户看过」不能突破权限。
 
 失败模式：用点击当证据充分；把 nDCG 当幻觉指标；三路召回讲成推荐的多路精排却说不清 query。
 

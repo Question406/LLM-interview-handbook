@@ -5,8 +5,8 @@ order: 20
 level: S
 title: 分布式训练卡住没有报错，怎样判断是 NCCL 问题还是代码路径不一致？
 quick: >-
-  Collective 要求所有 rank 以相同顺序、相同 shape 参与。某个 rank 提前异常、数据耗尽、条件分支跳过通信，就会让其他 rank
-  看起来像“卡在 NCCL”；先定位最早发生分歧的 rank 和 collective。
+  Collective 要求所有 rank 按相同顺序、相同 shape 进来。某个 rank 提前异常、数据耗尽、条件分支跳过通信，别人就会看起来像「卡在
+  NCCL」。我会先找最早发生分歧的那个 rank 和那一次 collective，不会一上来换网卡。
 tags:
   - NCCL
   - Distributed Training
@@ -15,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: NCCL communicator guide
     url: >-
@@ -23,7 +23,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是一看到 `nccl` 栈就报「网络坏了 / 换网卡」。Hang 是现象：某个 rank 没来参加这次 collective，其他 rank 会在 NCCL 里无限等。真正的根因更常是 **rank divergence**——代码路径、数据量、shape 不一致——而不是 IB 掉了。先证明所有 rank 要以相同顺序、相同 shape 进入同一个 communicator，再怀疑链路。NCCL 本身很少「随机卡住还完全没日志」；更常见的是它在正确等待一个永远不会来的 peer。把现象当成诊断，会把一天花在 `nccl-tests` 上，而 bug 在 dataloader。RL 框架里还有训练图和推理引擎两套通信组，要先标 hang 发生在哪一套。
+这块容易一看到 `nccl` 栈就报「网络坏了 / 换网卡」。Hang 是现象：某个 rank 没来参加这次 collective，其他 rank 会在 NCCL 里无限等。根因更常是 **rank divergence**，代码路径、数据量、shape 不一致，而不是 IB 掉了。我先证明所有 rank 要以相同顺序、相同 shape 进入同一个 communicator，再怀疑链路。NCCL 本身很少「随机卡住还完全没日志」；更常见的是它在正确等待一个永远不会来的 peer。把现象当成诊断，会把一天花在 `nccl-tests` 上，而 bug 在 dataloader。RL 框架里还有训练图和推理引擎两套通信组，要先标 hang 发生在哪一套。
 
 ## 为什么「卡在 NCCL」常常不是 NCCL
 
@@ -57,13 +57,11 @@ barrier 可以缩小范围（「卡在第 $k$ 个 barrier 之前」），但在�
 - 网卡、拓扑、PXN、是否跨 NUMA、驱动与 NCCL 版本；
 - 是否有 rank 落在错误的 rail / 错误的 NIC。
 
-先 divergence、后网络，顺序反了会浪费一天。RL 一步里训练图和推理引擎各有一套通信组，更要把「哪一次 hang」标成 train 还是 rollout。veRL / slime 里 vLLM、SGLang 常会 `init_process_group`，和训练默认组抢 `WORLD`，第一次 collective 就挂，单跑 trainer 或单跑引擎却都正常——这是 communicator 混用，不是网线。查的时候把 `NCCL_DEBUG=INFO`、PyTorch distributed timeout、以及每个 rank 的最后一条用户日志对齐到同一时间轴。最早停止打日志的 rank 才是嫌疑人；最后 watchdog 炸掉的 rank 只是等得最久的受害者。真正的链路故障通常伴有 crc / ibv 报错、个别节点反复掉，而不是「所有 rank 整齐地停在同一个 op、其中几个永远不来」。两种栈长得像，根因表完全不同。
+先 divergence、后网络，顺序反了会浪费一天。RL 一步里训练图和推理引擎各有一套通信组，更要把「哪一次 hang」标成 train 还是 rollout。veRL / slime 里 vLLM、SGLang 常会 `init_process_group`，和训练默认组抢 `WORLD`，第一次 collective 就挂，单跑 trainer 或单跑引擎却都正常。这是 communicator 混用，不是网线。查的时候把 `NCCL_DEBUG=INFO`、PyTorch distributed timeout、以及每个 rank 的最后一条用户日志对齐到同一时间轴。最早停止打日志的 rank 才是嫌疑人；最后 watchdog 炸掉的 rank 只是等得最久的受害者。真正的链路故障通常伴有 crc / ibv 报错、个别节点反复掉，而不是「所有 rank 整齐地停在同一个 op、其中几个永远不来」。两种栈长得像，根因表完全不同。
 
 ## 排查顺序写成清单
 
-第一刀永远是：这次 hang 发生在 train collective 还是 rollout 初始化。第二刀：所有 rank 的最后一条用户日志时间戳，找出最早停住的那个。第三刀：那条路径上有没有 `if`、空 batch、动态 shape、吞掉的异常。第四刀：shape 和 sequence number 是否一致。以上都齐了，才查 NIC、拓扑、NCCL 版本、是否混用 communicator。RL 框架里第三、第四刀最常中招：某一 DP 先耗尽 buffer、动态采样只 abort 部分 worker、vLLM 和 Megatron 抢同一个 process group。barrier 只能当探针，不能当补丁——乱插 barrier 会制造新的等待环。超时要设成「数倍于一步墙钟」，并保证异常能把进程拉死，避免「挂了但还活着、不参加通信」的僵尸 rank。面试按这张清单答，而不是一上来 `nccl-tests`，才像排过分布式故障。
-
-Hang 是「有人没来参加 collective」的现象。先找最早停住的 rank 和那条路径上的 `if`、空 batch、吞掉的异常，再查 NIC。控制流上的通信点必须对所有 rank 是常量。RL 里还有动态采样 abort、两套 process group 抢 WORLD。barrier 当探针不当补丁。整齐地停在同一个 op、其中几个永远不来，优先 divergence；crc / 个别节点反复掉，才是链路。按这张清单答，而不是一上来 `nccl-tests`。
+第一刀永远是：这次 hang 发生在 train collective 还是 rollout 初始化。第二刀：所有 rank 的最后一条用户日志时间戳，找出最早停住的那个。第三刀：那条路径上有没有 `if`、空 batch、动态 shape、吞掉的异常。第四刀：shape 和 sequence number 是否一致。以上都齐了，才查 NIC、拓扑、NCCL 版本、是否混用 communicator。RL 框架里第三、第四刀最常中招：某一 DP 先耗尽 buffer、动态采样只 abort 部分 worker、vLLM 和 Megatron 抢同一个 process group。barrier 只能当探针，不能当补丁。乱插 barrier 会制造新的等待环。超时要设成「数倍于一步墙钟」，并保证异常能把进程拉死，避免「挂了但还活着、不参加通信」的僵尸 rank。我会按这张清单答，而不是一上来 `nccl-tests`。
 
 ## 追问
 

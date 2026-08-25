@@ -4,7 +4,7 @@ section: alibaba
 order: 27
 level: A
 title: Agent 编排选 LangChain 类开源还是自研？
-quick: PoC 可用开源加速；生产看可控性、可观测、权限与性能。核心业务链路往往自研状态机/图编排，开源作外围。关键是 trade-off，不是站队。
+quick: PoC 可用开源加速；生产看可控性、可观测、权限与性能。核心业务链路我一般自研状态机/图编排，开源作外围。关键是 trade-off，不是站队。
 tags:
   - Alibaba
   - Agent
@@ -13,7 +13,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 开发技术面
     url: 'https://www.nowcoder.com/feed/main/detail/4c8da8a740e64eb5827fb1b962928eda'
@@ -23,7 +23,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是站队：「LangChain 不生产」或「自研才专业」。PoC 可用 LangChain / LangGraph 类开源加速；生产看可控性、可观测、权限与性能。核心业务链路往往自研状态机或图编排，开源作外围（连接器、评测脚手架）。淘天/闪购面经共同点：能说清「为何选/为何不选」，并承认企业内数据不出域、私有化约束。MCP vs Function Calling 是协议层，和编排框架不是同一题（`ali-mcp-vs-fc`）。
+这块容易直接答成站队：「LangChain 不生产」或「自研才专业」。PoC 可用 LangChain / LangGraph 类开源加速；生产看可控性、可观测、权限与性能。核心业务链路往往自研状态机或图编排，开源作外围（连接器、评测脚手架）。淘天/闪购面经共同点：能说清「为何选/为何不选」，并承认企业内数据不出域、私有化约束。MCP vs Function Calling 是协议层，和编排框架不是同一题（`ali-mcp-vs-fc`）。
 
 ## 适用条件：验证期开源，资金链路自研
 
@@ -35,7 +35,7 @@ sources:
 
 自研成本在脚手架：trace、回放、权限矩阵、熔断。这些在双十一峰值下是存活条件（`ali-double11-scale`），不是框架 feature 列表上的可选项。开源适合：评测跑 batch、连一批只读工具、prompt 实验。不适合：不可逆写、跨域数据、需要确定性状态机的售后。模块化规划与 fallback 应是显式图，而不是 agent 循环里碰运气（`ali-modular-agent-plan`）。
 
-追问「自研成本会不会更高」：承认脚手架成本，但强调可观测和权限是业务约束。混合是常态：外围开源、核心自研，用稳定的 tool schema 当边界，而不是把整个图锁死在某一个库的大版本上。闪购/淘天面试听的是 trade-off：PoC 速度 vs 生产可控。能画出「哪些边必须确定性、哪些边可以 LLM 发挥」，比背框架名更像做过。版本锁定、隐式 memory、全量工具注入这三件事，要主动说你会关或下沉到服务端。
+追问「自研成本会不会更高」：承认脚手架成本，但强调可观测和权限是业务约束。混合是常态：外围开源、核心自研，用稳定的 tool schema 当边界，而不是把整个图锁死在某一个库的大版本上。闪购/淘天这题我会讲 trade-off：PoC 速度 vs 生产可控。我会画出「哪些边必须确定性、哪些边可以 LLM 发挥」，不背框架名。版本锁定、隐式 memory、全量工具注入这三件事，我会主动说关或下沉到服务端。
 
 ## 追问
 

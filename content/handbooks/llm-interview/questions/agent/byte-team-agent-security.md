@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节实习 agent开发一面
     url: https://www.nowcoder.com/feed/main/detail/075c06bf50a143a785c039f9951624f6
@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“如果让你把这个本地 Coding Agent 做成团队内部工具，你会怎么处理权限、安全和审计？比如文件读写、命令执行、敏感信息泄露。”**
 
-陷阱是把安全写进 prompt「请不要泄露」。内部 Coding Agent 一旦共享、能执行命令、能读仓，边界必须在工具服务端和策略引擎。模型会被注入或「忽略以上指令」打穿；审计日志若允许模型写，等于没有审计。这是 Harness 的授权层，见 `byte-harness-engineering`、`agent-tool-permissions`、`agent-prompt-injection`。
+这块容易直接答成把安全写进 prompt「请不要泄露」。内部 Coding Agent 一旦共享、能执行命令、能读仓，边界必须在工具服务端和策略引擎。模型会被注入或「忽略以上指令」打穿；审计日志若允许模型写，等于没有审计。这是 Harness 的授权层，见 `byte-harness-engineering`、`agent-tool-permissions`、`agent-prompt-injection`。
 
 ## 按人、仓、命令三类授权
 
@@ -40,7 +40,7 @@ sources:
 
 密钥扫描拦截 `.env`、私钥、云厂商 AK。命中则拒绝读、拒绝写入上下文、拒绝出现在 Observation。生产部署密钥走独立 secret 服务；会话里如需访问下游，只发一次性、短 TTL、最小权限的只读凭证，用完即废。模型上下文里不应出现长期凭据。
 
-输出脱敏处理工具返回和模型最终回复：订单号可保留后四位，完整身份证、cookie、token 打码。要接受误杀——多打码比漏出密钥可修复。脱敏在执行层做，不要指望模型「注意别输出」。
+输出脱敏处理工具返回和模型最终回复：订单号可保留后四位，完整身份证、cookie、token 打码。要接受误杀，多打码比漏出密钥可修复。脱敏在执行层做，不要指望模型「注意别输出」。
 
 ## 审计日志不可被模型改写
 

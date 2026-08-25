@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 228. 汇总区间
     url: https://leetcode.cn/problems/summary-ranges/
@@ -29,9 +29,9 @@ sources:
 
 ## 思路
 
-一次扫描。记下段起点 `start`，只要 `nums[i+1] == nums[i] + 1` 就延伸。断开时：`start == nums[i]` 则输出单点，否则输出 `start->nums[i]`。然后从下一个数开新段。
+一次扫描。我记下段起点 `start`，只要 `nums[i+1] == nums[i] + 1` 就延伸。断开时：`start == nums[i]` 就输出单点，否则输出 `start->nums[i]`。然后从下一个数开新段。
 
-数组已有序且无重复，不必排序、不必哈希。
+数组已经有序且无重复，不必排序、不必哈希。
 
 ## 参考代码
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **数组里有重复怎么办？** 题面保证严格递增，相等不会出现。若允许重复，连续相等也应并进同一段：把延伸条件改成 $nums[i+1]\le nums[i]+1$（相等或恰好大 $1$ 都不断开）。输出仍只写两端，中间重复值不会出现在字符串里。也可以先线性去重再跑原算法，额外空间 $O(n)$。时间仍 $O(n)$。面试先问清「重复算一段还是非法输入」。
+- **数组里有重复怎么办？** 题面保证严格递增，相等不会出现。若允许重复，连续相等也应并进同一段：把延伸条件改成 $nums[i+1]\le nums[i]+1$（相等或恰好大 $1$ 都不断开）。输出仍只写两端，中间重复值不会出现在字符串里。也可以先线性去重再跑原算法，额外空间 $O(n)$。时间仍 $O(n)$。白板我会先问清「重复算一段还是非法输入」。
 
 ```python
 def summaryRangesDup(nums):
@@ -89,7 +89,7 @@ def summaryRangesDup(nums):
     return res
 ```
 
-- **返回闭区间对而不是字符串？** 扫描完全一样，断开时收 `[start, nums[i]]`，单点就是 `[a, a]`。这是「有序数组转区间列表」的标准写法。后续若要合并或插入一段，把这对列表交给 `lc-56-merge-intervals` / `lc-57-insert-interval` 即可。时间 $O(n)$，额外空间只在答案。不要先转字符串再解析回端点。
+- **返回闭区间对而不是字符串？** 扫描完全一样，断开时收 `[start, nums[i]]`，单点就是 `[a, a]`。这是「有序数组转区间列表」的标准写法。后续若要合并或插入一段，把这对列表交给 `lc-56-merge-intervals` / `lc-57-insert-interval` 即可。时间 $O(n)$，额外空间只在答案。别先转字符串再解析回端点。
 
 ```python
 def summaryRangePairs(nums):

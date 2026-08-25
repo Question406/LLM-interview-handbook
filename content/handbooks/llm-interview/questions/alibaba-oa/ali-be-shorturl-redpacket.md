@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
     url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
@@ -56,7 +56,7 @@ sources:
 
 ## 追问
 
-- 短链用 $62$ 进制多少位够？$6$–$8$ 位通常够亿到百亿级，按发号空间算 $62^n$。
+- 短链用 $62$ 进制多少位够？$6$ 到 $8$ 位通常够亿到百亿级，按发号空间算 $62^n$。
 - 为什么不直接哈希长链？碰撞和无法递增扫描；发号更好控。
 - $301$ 改不了指向怎么办？活动链用 $302$，品牌短链才 $301$。
 - 红包如何保证总额分完？最后一份不随机，直接给剩余。

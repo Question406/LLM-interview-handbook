@@ -5,8 +5,8 @@ order: 181
 level: B
 title: 蚂蚁智能体优化一面：Dify 和 ms-swift 各解决什么问题？
 quick: >-
-  Dify 是应用编排（工作流、知识库、Agent 可视化），偏上线与运营。ms-swift
-  是训练 / 微调 / 评测工具链（SFT、LoRA、RLHF 等），偏改权重。面试各给一句边界，不要把二者说成同一个平台。
+  Dify 管应用编排，工作流、知识库、Agent 可视化，偏上线和运营。ms-swift
+  管训练、微调、评测，SFT、LoRA、RLHF 这些，偏改权重。面试各说一句边界就行，别把它们说成同一个平台。
 tags:
   - Ant Group
   - Dify
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 20260508蚂蚁集团大模型智能体优化算法一二面
     url: https://www.nowcoder.com/feed/main/detail/263bc804663b4a0aa7b312154d720817
@@ -36,19 +36,19 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“介绍Dify平台”**；**“介绍Ms-swift平台”**
 
-蚂蚁智能体优化一面这题，最容易把 Dify 和 ms-swift 说成「都是大模型平台」或展开成产品广告。面试要听边界：一个管编排与上线，一个管改权重；交接物是 checkpoint / 推理服务，而不是把训练框架嵌进工作流画布。各给一句输入输出，再落到你项目里用了哪一层。智能体优化岗两者都可能碰到：线上改路由走 Dify，领域话术不够走 swift，不要用其中一个覆盖另一个的职责。
+蚂蚁智能体优化一面这题，这块容易直接答成「都是大模型平台」，或者展开成产品广告。我会先划边界：一个管编排和上线，一个管改权重；交接物是 checkpoint / 推理服务，不是把训练框架嵌进工作流画布。各给一句输入输出，再落到项目里用了哪一层。智能体优化岗两者都可能碰到：线上改路由走 Dify，领域话术不够走 swift，别用其中一个去覆盖另一个的职责。
 
 ## Dify：编排应用，不改基座
 
-Dify 把 prompt、知识库、工具和工作流配成可发布应用，适合「不改基座、先跑通业务」。输入是文档 / API / 工作流 DSL，输出是可观测的应用与会话。强项是可视化编排、知识库接入和运营侧的日志；弱项是不能替代检索质量、工具鉴权和评测设计。Agent 节点仍要你自己定义 schema、超时和失败策略。把它当「低代码 LangGraph」来讲边界即可，不要背功能清单。相关卡：`meituan-langgraph-vs-prompt`、`ant-skills-vs-harness`。
+Dify 把 prompt、知识库、工具和工作流配成可发布应用，适合「不改基座、先跑通业务」。输入是文档 / API / 工作流 DSL，输出是可观测的应用和会话。强项是可视化编排、知识库接入和运营侧日志；弱项是替代不了检索质量、工具鉴权和评测设计。Agent 节点仍要自己定义 schema、超时和失败策略。把它当「低代码 LangGraph」讲边界就行，别背功能清单。相关卡：`meituan-langgraph-vs-prompt`、`ant-skills-vs-harness`。
 
 ## ms-swift：改权重的训练工具链
 
-ms-swift 是 ModelScope 侧的轻量训练框架，把数据格式、LoRA / 全参、多卡、部分 SFT / RLHF / GRPO 收成命令行与配置。输入是数据集与模型，输出是 checkpoint 和评测指标。强项是把常见微调路径跑通；弱项是不管你的线上工作流、权限和知识库。蚂蚁问它，是因为智能体优化经常要 LoRA 改工具格式或领域话术，而不是因为要用它替代 Dify。训练并行、ZeRO 细节若追问，转到 `baichuan-deepspeed`，不要在这题里展开内核。
+ms-swift 是 ModelScope 侧的轻量训练框架，把数据格式、LoRA / 全参、多卡、部分 SFT / RLHF / GRPO 收成命令行和配置。输入是数据集与模型，输出是 checkpoint 和评测指标。强项是把常见微调路径跑通；弱项是不管线上工作流、权限和知识库。蚂蚁问它，是因为智能体优化经常要 LoRA 改工具格式或领域话术，不是要用它替代 Dify。训练并行、ZeRO 细节若追问，转到 `baichuan-deepspeed`，别在这题里展开内核。
 
 ## 二者如何交接
 
-swift 产出可部署权重 → 推理服务（vLLM 等）→ Dify 只引用 endpoint 与 prompt / 工具配置。版本要钉死：哪个 checkpoint、哪套模板、哪版工具 schema。不要在 Dify 里「再训一版」，也不要指望 swift 给你会话记忆。评测也不要混：swift 侧看 SFT/RL 指标，Dify 侧看工作流完成率、检索命中和工具失败码。面试收口：Dify 解决怎么把模型用起来；ms-swift 解决怎么把模型改得更听话；中间隔着推理网关。
+swift 产出可部署权重 → 推理服务（vLLM 等）→ Dify 只引用 endpoint 与 prompt / 工具配置。版本要钉死：哪个 checkpoint、哪套模板、哪版工具 schema。别在 Dify 里「再训一版」，也别指望 swift 给你会话记忆。评测也不要混：swift 侧看 SFT/RL 指标，Dify 侧看工作流完成率、检索命中和工具失败码。最后我会补一句：Dify 解决怎么把模型用起来，ms-swift 解决怎么把模型改得更听话，中间隔着推理网关。
 
 ## 追问
 

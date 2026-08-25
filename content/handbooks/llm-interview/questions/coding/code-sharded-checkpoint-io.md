@@ -15,18 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: PyTorch Distributed Checkpoint
     url: https://pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html
     type: primary
 ---
 
-陷阱是「每个 rank `torch.save` 完就算成功」。进程在写第 $N-1$ 片时崩溃，目录里会留下半旧半新文件，下次 resume 静默 load 会训飞。生产语义是：**清单是提交点**。PyTorch DCP 用 planner 写分片、读时可 reshard；本题用手写 IO 把原子性讲清楚。异步上传、步边界一致性见 `sys-async-checkpoint`；换 world size 重切见 `sys-elastic-resume-reshard`。
+这块容易「每个 rank `torch.save` 完就算成功」。进程在写第 $N-1$ 片时崩溃，目录里会留下半旧半新文件，下次 resume 静默 load 会训飞。生产语义是：清单是提交点。PyTorch DCP 用 planner 写分片、读时可 reshard；本题用手写 IO 把原子性讲清楚。异步上传、步边界一致性见 `sys-async-checkpoint`；换 world size 重切见 `sys-elastic-resume-reshard`。
 
 ## 协议
 
-写：各 rank 把 bytes 写到 `ckpt/tmp/shard_{rank}.bin` 并算 sha256 $\to$ rank 0 收齐元数据 $\to$ 写 `MANIFEST.json.tmp`（version、world、shard 列表、digest）$\to$ `os.replace` 成 `MANIFEST.json`。读：清单不存在则失败；缺文件或 digest 不符则整版作废，回退上一成功目录。不要先 rename 数据目录再写清单——崩溃窗口会把「有目录无清单」和「有清单缺数据」两种半态都制造出来。清单后出现才是 commit。
+写：各 rank 把 bytes 写到 `ckpt/tmp/shard_{rank}.bin` 并算 sha256 → rank 0 收齐元数据 → 写 `MANIFEST.json.tmp`（version、world、shard 列表、digest）→ `os.replace` 成 `MANIFEST.json`。读：清单不存在则失败；缺文件或 digest 不符则整版作废，回退上一成功目录。不要先 rename 数据目录再写清单，崩溃窗口会把「有目录无清单」和「有清单缺数据」两种半态都制造出来。清单后出现才是 commit。
 
 ```python
 import hashlib, json, os
@@ -74,9 +74,9 @@ def load_shards(ckpt_dir: str) -> dict[int, bytes]:
 
 ## 追问
 
-- **为什么清单不能先写？** 读者会按清单去打开还不存在的 shard。必须数据齐 $\to$ 清单 tmp $\to$ rename 清单。
+- **为什么清单不能先写？** 读者会按清单去打开还不存在的 shard。必须数据齐 → 清单 tmp → rename 清单。
 - **校验和算哪一层？** 每 shard 一份 sha256，清单里再列出来。只对清单哈希不够，缺片无法定位。
-- **和 DCP 的关系？** DCP 把「逻辑张量 $\to$ 分片文件」做成 planner；原子提交和校验的语义相同。手写本题是把提交点讲死。
+- **和 DCP 的关系？** DCP 把「逻辑张量 → 分片文件」做成 planner；原子提交和校验的语义相同。手写本题是把提交点讲死。
 - **async 上传怎么接？** 后台拷到对象存储后，仍然只有齐套清单可见。失败不得覆盖上一 `MANIFEST`。见 `sys-async-checkpoint`。
 - **恢复时 world size 变了？** 这份按 rank 存的 blob 不能直接用，需要按逻辑 ID 的 DCP 再切。本题 load 按原 world 校验齐套。
 ---

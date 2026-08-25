@@ -13,14 +13,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
     type: legacy-reference
 ---
 
-陷阱是一上来换更大模型，或把三条工具一律串进 ReAct、每步再「思考一下」。三条工具加高频请求，先画依赖图再改：能并行的并行，高频路径缓存或走固定 workflow，缩小 prompt 与工具集，投机或小模型打草稿，超时降级与限流。先量测 p95/p99、工具 RT、LLM RT、排队，再动架构。规划与调度见 `ali-modular-agent-plan`，prompt 裁剪见 `ali-prompt-optimize`。
+这块容易直接答成换更大模型，或把三条工具一律串进 ReAct、每步再「思考一下」。三条工具加高频请求，先画依赖图再改：能并行的并行，高频路径缓存或走固定 workflow，缩小 prompt 与工具集，投机或小模型打草稿，超时降级与限流。先量测 p95/p99、工具 RT、LLM RT、排队，再动架构。规划与调度见 `ali-modular-agent-plan`，prompt 裁剪见 `ali-prompt-optimize`。
 
 ## 先画依赖图，再谈并行
 

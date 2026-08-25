@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面
     url: https://www.nowcoder.com/feed/main/detail/290832d2cd3242c386e56f27f975bce3
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“有了解过最近那些超长文本大模型的预训练吗？”**；**“常见的提高外推能力的方式”**；**“讲一下你对旋转位置编码的理解”**
 
-陷阱是把 RoPE 外推说成「把 `max_position_embeddings` 改大就行」。RoPE 把相对位置编进点积，实现简单、和 KV cache 兼容，但**不保证**训练长度之外仍然准：高频分量在远距离会快速振荡，注意力分数失真。
+这块容易把 RoPE 外推说成「把 `max_position_embeddings` 改大就行」。RoPE 把相对位置编进点积，实现简单、和 KV cache 兼容，但不保证训练长度之外仍然准：高频分量在远距离会快速振荡，注意力分数失真。
 
 ## RoPE 在编码什么
 
@@ -40,7 +40,7 @@ $$
 (R_{\theta,m}q)^\top(R_{\theta,n}k)=q^\top R_{\theta,n-m}k,
 $$
 
-即 score 只依赖相对位移 $n-m$。第 $i$ 对频率 $\theta_i=10000^{-2i/d}$：低频管长距，高频管近距。这与 SwiGLU FFN、MoE 路由无关——位置在注意力侧，专家选择看的是内容 $x$，不是 $R_{\theta,m}$。
+即 score 只依赖相对位移 $n-m$。第 $i$ 对频率 $\theta_i=10000^{-2i/d}$：低频管长距，高频管近距。这与 SwiGLU FFN、MoE 路由无关，位置在注意力侧，专家选择看的是内容 $x$，不是 $R_{\theta,m}$。
 
 面试画一个 2D 旋转即可：同一相对位移，旋转差相同。绝对位置不显式出现在 score 里。
 

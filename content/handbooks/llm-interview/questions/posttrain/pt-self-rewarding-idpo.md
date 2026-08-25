@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Self-Rewarding Language Models
     url: https://arxiv.org/abs/2401.10020
     type: primary
 ---
 
-Self-rewarding / Iterative DPO 用同一模型家族当 judge，给自己的候选打偏好，再做 DPO（或同类目标）更新 policy，从而扩大标注供给。Self-Rewarding Language Models 展示了这条回路可行，但没有自动保证 judge 是真值。面试陷阱是把「本轮 self-judge win rate 上涨」当成对齐成功。judge、数据生成器和被训 policy 若同步更新，模型会强化自己的措辞、长度和立场，形成自证循环。这和 `pt-online-preference-loop` 的在线偏好闭环同类，只是反馈源更不安全。
+Self-rewarding / Iterative DPO 用同一模型家族当 judge，给自己的候选打偏好，再做 DPO（或同类目标）更新 policy，从而扩大标注供给。Self-Rewarding Language Models 展示了这条回路可行，但没有自动保证 judge 是真值。这块容易直接答成把「本轮 self-judge win rate 上涨」当成对齐成功。judge、数据生成器和被训 policy 若同步更新，模型会强化自己的措辞、长度和立场，形成自证循环。这和 `pt-online-preference-loop` 的在线偏好闭环同类，只是反馈源更不安全。
 
 ## 先隔离版本，再量偏差
 

@@ -6,7 +6,8 @@ level: A
 title: MoE 推理时 prefill 和 decode 为什么不能共用训练那套 Grouped GEMM？
 quick: >-
   Prefill 一次吃整段 prompt，$n_i$ 够大，训练用的 grouped GEMM / all-to-all 还划算。Decode 每步每请求一个
-  token，摊到专家上 $n_i$ 经常是 $1$，启动和带宽绑死算力。要用 fused MoE、CUDA graph、以及和训练对齐的路由开关，而不是把训练图原样 serving。
+  token，摊到专家上 $n_i$ 经常是 $1$，启动和带宽绑死算力。我会用 fused MoE、CUDA graph，以及和训练对齐的路由开关，不会把训练图原样
+  serving。
 tags:
   - MoE
   - Inference
@@ -15,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Mixtral of Experts
     url: https://arxiv.org/abs/2401.04088
@@ -25,20 +26,20 @@ sources:
     type: primary
 ---
 
-陷阱是说「MoE 省 FLOPs，所以 decode 一定比 Dense 快」。Prefill 确实接近训练：token 多、GEMM 饱。Decode 是另一个算子画像——**每步激活参数仍按 $k$ 个专家读权重**，但计算强度掉到带宽墙。训练图上的 permute + grouped GEMM + 变长 all-to-all 在这一步会变成启动开销展览。
+这块容易答「MoE 省 FLOPs，所以 decode 一定比 Dense 快」。Prefill 确实接近训练：token 多、GEMM 饱。Decode 是另一个算子画像：**每步激活参数仍按 $k$ 个专家读权重**，但计算强度掉到带宽墙。训练图上的 permute + grouped GEMM + 变长 all-to-all 在这一步会变成启动开销展览。
 
 ## Prefill：还像训练
 
 一段长 prompt，$T$ 大。Router → dispatch → 本地专家 MLP → combine，和训练前向同一条数据路径。$n_i$ 上百时 grouped GEMM 吃得饱，见 `sys-moe-grouped-gemm`。EP 的 all-to-all 按 $2k\cdot T\cdot d$ 摊，消息够长。这时 MoE 相对同激活 Dense 的优势看得见：总参数更大，但激活 FFN 只有 $k$（加 shared）路。
 
-要注意的是 **batch 里各序列长度不同** 和 **chunked prefill**：微批一切，专家直方图跟着变，capacity / drop 若和训练不一致，首字质量会漂，见 `sys-moe-train-infer-routing-mismatch`。Prefill 仍建议 dropless 或 CF 与训练同档，不要为了吞吐在 prompt 阶段丢 token。
+batch 里各序列长度不同，再加上 **chunked prefill**：微批一切，专家直方图跟着变，capacity / drop 若和训练不一致，首字质量会漂，见 `sys-moe-train-infer-routing-mismatch`。Prefill 仍建议 dropless 或 CF 与训练同档，不要为了吞吐在 prompt 阶段丢 token。
 
 ## Decode：权重读带宽，不是 FLOPs
 
 一步 decode：每个活着的请求一个 token。即使连续 batch 到 $B=64$，摊到 $N=64$ 个专家上期望 $n_i\approx kB/N$，常常是个位数。此时：
 
 - Grouped GEMM 的 $m$ 太小，Tensor Core 空转；
-- 每个专家一份 $W$ 要从 HBM 读进来，**激活省了，权重流量没省**——稀疏的是计算，不是参数搬运；
+- 每个专家一份 $W$ 要从 HBM 读进来，**激活省了，权重流量没省**。稀疏的是计算，不是参数搬运；
 - Python 循环 $N$ 次或变长 all-to-all 的 handshake 比 GEMM 还贵；
 - CUDA graph 讨厌每步变化的 $n_i$ 和目的 rank 集合。
 

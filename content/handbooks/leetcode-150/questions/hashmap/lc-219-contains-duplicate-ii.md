@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 219. 存在重复元素 II
     url: https://leetcode.cn/problems/contains-duplicate-ii/
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **任意距离重复（LC 217）？** 丢掉 $k$ 限制，只问数组里有没有重复值。一遍放进 `set`，插入前已在集合里就真；或直接比较 `len(nums)` 与 `len(set(nums))`。时间 $O(n)$，空间 $O(n)$。本题的「最近下标哈希」也能做，只是多存了用不上的距离。面试若强调 $O(1)$ 额外空间，只能排序后扫相邻，时间变成 $O(n\log n)$，会打乱原数组。
+- **任意距离重复（LC 217）？** 丢掉 $k$ 限制，只问数组里有没有重复值。一遍放进 `set`，插入前已在集合里就真；或直接比较 `len(nums)` 与 `len(set(nums))`。时间 $O(n)$，空间 $O(n)$。本题的「最近下标哈希」也能做，只是多存了用不上的距离。白板若强调 $O(1)$ 额外空间，只能排序后扫相邻，时间变成 $O(n\log n)$，会打乱原数组。
 
 ```python
 def containsDuplicate(nums):

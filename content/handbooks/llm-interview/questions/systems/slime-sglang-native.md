@@ -15,14 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime 文档
     url: https://thudm.github.io/slime/zh/index.html
     type: primary
 ---
 
-陷阱是把「slime 更轻」说成少写了几行抽象，却落不到具体能力。veRL 为了 FSDP+vLLM 和 Megatron+SGLang 都能跑，必须做公共层；slime 拿掉这层，换的是 SGLang 特有能力：router 按前缀切流、PD、delta 同步、engine 内 DP attention。说「更轻」要落到这些，否则下一问「那为什么不用 vLLM」答不上。
+这块容易把「slime 更轻」说成少写了几行抽象，却落不到具体能力。veRL 为了 FSDP+vLLM 和 Megatron+SGLang 都能跑，必须做公共层；slime 拿掉这层，换的是 SGLang 特有能力：router 按前缀切流、PD、delta 同步、engine 内 DP attention。说「更轻」要落到这些，否则下一问「那为什么不用 vLLM」答不上。
 
 ## 单一后端换来什么
 

@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: SWE-bench Multimodal
     url: https://arxiv.org/abs/2505.23419
@@ -33,7 +33,7 @@ sources:
 
 ## 怎么报告、哪里会被刷
 
-必须拆开三列，禁止加总成一个 headline：frozen leaderboard resolve rate、cutoff 之后 live rate、污染审计命中率（patch 近重复 / 测试名命中）。Live 更低通常更接近真实泛化，不要解释成模型退化，也不要用「我们后来又训了 live」把两列重新对齐。可被刷的点：只报公开集；把 live 任务事后并进训练；评测开检索找 gold PR；harness 泄漏测试；用同一 issue 的镜像仓库充新题。面试官要听的是：你有 frozen 与 live 两套数字，审计方法写在报告里，并且失败日志有隔离通道。持续 bench 的价值是趋势，单次百分点没有意义。发布清单至少附：任务版本、cutoff、是否允许检索、审计方法、frozen / live 两列。缺任何一项，数字只能当内部调试，不能当对外能力声明。
+必须拆开三列，禁止加总成一个 headline：frozen leaderboard resolve rate、cutoff 之后 live rate、污染审计命中率（patch 近重复 / 测试名命中）。Live 更低通常更接近真实泛化，不要解释成模型退化，也不要用「我们后来又训了 live」把两列重新对齐。评测上能刷的是：只报公开集；把 live 任务事后并进训练；评测开检索找 gold PR；harness 泄漏测试；用同一 issue 的镜像仓库充新题。面试官要听的是：你有 frozen 与 live 两套数字，审计方法写在报告里，并且失败日志有隔离通道。持续 bench 的价值是趋势，单次百分点没有意义。发布清单至少附：任务版本、cutoff、是否允许检索、审计方法、frozen / live 两列。缺任何一项，数字只能当内部调试，不能当对外能力声明。
 
 ## 追问
 

@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 76. 最小覆盖子串
     url: https://leetcode.cn/problems/minimum-window-substring/
@@ -31,7 +31,7 @@ sources:
 
 `need` 是 `t` 的计数，`required` 为其中不同字符数。右指针吃进 `s[right]`，当某个字符的窗口计数刚好顶到 `need` 时 `valid` 加一。`valid == required` 说明已覆盖，此时收缩左端：能缩就缩，并更新最短区间；左端字符掉到缺额以下则 `valid` 减一，停止收缩。
 
-不要每次重新扫窗口比对。面试讲「覆盖计数 + 收缩」两段。
+别每次重新扫窗口比对。白板我会讲「覆盖计数 + 收缩」两段。
 
 ## 参考代码
 
@@ -100,7 +100,7 @@ def anyWindow(s, t):
     return ""
 ```
 
-- **统计覆盖 `t` 的子串个数？** 模板从「最短」改成「计数」。右端推进后，一旦窗口覆盖，就说明以当前 `left` 为起点、右端 $\ge right$ 的子串都覆盖，答案加上 $|s|-right$，再收缩左端，重复直到窗口不再覆盖。这样每个合法 $[L,R]$ 恰好被数一次。时间 $O(|s|+|t|)$。不要对每个右端重新比对 `t`。若只要「以该右端结尾的覆盖子串个数」，覆盖后答案加 `left+1`（最短左端及其左边所有起点）。
+- **统计覆盖 `t` 的子串个数？** 模板从「最短」改成「计数」。右端推进后，一旦窗口覆盖，就说明以当前 `left` 为起点、右端 $\ge right$ 的子串都覆盖，答案加上 $|s|-right$，再收缩左端，重复直到窗口不再覆盖。这样每个合法 $[L,R]$ 恰好被数一次。时间 $O(|s|+|t|)$。别对每个右端重新比对 `t`。若只要「以该右端结尾的覆盖子串个数」，覆盖后答案加 `left+1`（最短左端及其左边所有起点）。
 
 ```python
 from collections import Counter

@@ -5,8 +5,8 @@ order: 12
 level: A
 title: 京东：大模型 / Agent 研发应重点准备什么？
 quick: >-
-  Agent 工程题密度高：工具目录治理、MCP / Skill 分层、Reflection 归因、工具权限与 AI IDE
-  隔离、RAG 幻觉兜底。电商场景还要能把导购以外的用例和 Redis / 压测讲清楚。
+  Agent 工程题密度高：工具目录治理、MCP / Skill 分层、Reflection 归因、工具权限和 AI IDE
+  隔离、RAG 幻觉兜底。电商场景还要把导购以外的用例，以及 Redis、压测讲清楚。
 tags:
   - JD
   - 真题导航
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 秋招面经-京东大模型算法一面
     url: https://www.nowcoder.com/feed/main/detail/3f02a8e652fa414c819de810452a2b2a
@@ -39,13 +39,13 @@ sources:
     type: candidate-first-hand
 ---
 
-京东相关岗分两条线：大模型算法会追 Toolformer、Reflection、PPO/GRPO 与复读机；Agent 研发会追工具目录、RAG 幻觉、意图识别评测和电商场景。准备时不要把「会调工具」当成终点。
+京东相关岗分两条线。大模型算法会追 Toolformer、Reflection、PPO/GRPO 和复读机；Agent 研发会追工具目录、RAG 幻觉、意图识别评测和电商场景。准备时我不会把「会调工具」当成终点。
 
 ## 准备主线
 
 1. **工具、协议与隔离**：MCP 只解决连接；Skill 解决流程；执行权在 Host。AI IDE / 工作区要防「幻读」式过期快照。
-2. **训练范式**：Toolformer 自监督 vs RLHF；何时 PPO、何时 GRPO。
-3. **生成病态**：复读机 / 重复解码如何从数据、解码和训练三侧处理。
+2. **训练范式**：Toolformer 自监督 vs RLHF；什么时候 PPO、什么时候 GRPO。
+3. **生成病态**：复读机、重复解码怎么从数据、解码和训练三侧处理。
 4. **RAG 生产**：幻觉不能只靠 prompt，要有检索归因、拒答和人工兜底。
 
 ## 本手册真题卡

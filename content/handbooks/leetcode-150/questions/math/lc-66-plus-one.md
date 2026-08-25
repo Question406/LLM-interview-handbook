@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 66. 加一
     url: https://leetcode.cn/problems/plus-one/
@@ -32,7 +32,7 @@ sources:
 
 从右往左模拟进位。当前位小于 $9$，加一即可返回，后面不用动。当前位是 $9$，写成 $0$，进位继续往左。
 
-若一路进到头，说明全是 $9$，结果长度加一，最高位为 $1$，其余为 $0$。不要先转成整数再加：位数可以很长。
+若一路进到头，说明全是 $9$，结果长度加一，最高位为 $1$，其余为 $0$。别先转成整数再加：位数可以很长。
 
 ## 参考代码
 

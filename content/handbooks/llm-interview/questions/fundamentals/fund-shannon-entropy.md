@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: A Mathematical Theory of Communication (Shannon, 1948)
     url: https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf

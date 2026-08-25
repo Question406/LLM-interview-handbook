@@ -5,8 +5,8 @@ order: 151
 level: S
 title: Advantage 减均值、除标准差、按长度归一化，分别改了什么目标？
 quick: >-
-  减均值（常数 / state baseline）不改策略梯度期望，只降方差。除 $\sigma$ 按切片重加权：低方差题被放大，是改目标不是数值稳定。按回复长度平均让每条序列等权，全局
-  token 平均让每个 token 等权——Dr.GRPO / DAPO 争的就是这一层，没有脱离目标的「正确归一化」。
+  减均值（常数 / state baseline）不改策略梯度期望，只降方差。除 $\sigma$ 按切片重加权：低方差题被放大，这是改目标，不是数值稳定。按回复长度平均让每条序列等权，全局
+  token 平均让每个 token 等权。Dr.GRPO / DAPO 争的就是这一层，没有脱离目标的「正确归一化」。
 tags:
   - Advantage
   - GRPO
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Understanding R1-Zero-Like Training — A Critical Perspective (Dr.GRPO)
     url: https://arxiv.org/abs/2503.20783
@@ -28,12 +28,12 @@ sources:
     type: secondary
 ---
 
-陷阱是把 OpenRLHF / veRL 里默认的 `adv = (adv - mean) / std` 说成「标准无偏预处理」。三件事要拆开：**减位置、除尺度、loss 按什么平均**。前一件多数时候还在无偏族；后两件直接定义你在优化谁。Dr.GRPO 的价值就是指出 normalization 本身是目标，见 `pt-drgrpo`。
+这块容易直接答成：OpenRLHF / veRL 里默认的 `adv = (adv - mean) / std` 是「标准无偏预处理」。三件事要拆开：**减位置、除尺度、loss 按什么平均**。前一件多数时候还在无偏族；后两件直接定义你在优化谁。Dr.GRPO 的价值就是指出 normalization 本身是目标，见 `pt-drgrpo`。
 
 ## 减均值：合法 baseline，或「相对这个 batch」
 
 - **只依赖 state / prompt 的均值。** 同题组均值、或 critic $V(s)$，属于 `fund-pg-baseline`。期望不变。有限样本含自身会有 $O(1/G)$ 收缩，见 `fund-finite-sample-baseline`。
-- **全局 batch 减一个数。** 这是常数 baseline，仍无偏。同一条高分回答在「全是高分的 batch」里优势变小——稳，但跨实验的 advantage 曲线不能比绝对值。
+- **全局 batch 减一个数。** 这是常数 baseline，仍无偏。同一条高分回答在「全是高分的 batch」里优势变小，稳，但跨实验的 advantage 曲线不能比绝对值。
 - **对已经是 $A=Q-V$ 的量再减均值。** 若 $A$ 已在 state 上 centered，再减全局均值几乎只是数值；若不同 prompt 混在一起，等于把题与题的绝对难度再抹一层。
 
 PPO 实现里常见「对当前 mini-batch 的 advantage 做 whitening」。减均值这一半问题不大；危险的是紧接着除 $\sigma$。
@@ -46,7 +46,7 @@ $$
 
 $\sigma$ 小的组（差不多都对、只差一点点）优势被放大，等于提高这些题的有效学习率；$\sigma$ 大的难题被压扁。这不是防 overflow，是 **question-level reweighting**。全对组 $\sigma=0$，再加 $\varepsilon$ 只能避免 NaN，变不出信号。Dr.GRPO 去掉这层，让优势保持 reward 原尺度，估计更接近它定义的无偏 PG。REINFORCE++ 把 $\sigma$ 改到全局 batch：不再按题放大，但 batch 配方一变尺度就变，见 `fund-reinforce-pp`。
 
-面试被问「为什么还要除 std」不要只答稳定。要答：想跨题统一幅度、和 DeepSeekMath 对齐，才除；想保持无偏 control variate、避免低方差题主导，就只减均值。两边都要监控：除 $\sigma$ 之后看的是相对排序，不是绝对回报。
+被问「为什么还要除 std」，不要只答稳定。想跨题统一幅度、和 DeepSeekMath 对齐，才除；想保持无偏 control variate、避免低方差题主导，就只减均值。两边都要监控：除 $\sigma$ 之后看的是相对排序，不是绝对回报。
 
 ## 长度：每条回复等权，还是每个 token 等权
 

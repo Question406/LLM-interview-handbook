@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Minimax大模型算法面经分享-攒人品（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/0380bd3ab1ba40f48865eeff2d15d746
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“Agent评估体系包括哪些维度？如何衡量规划能力 vs 幻觉率？”**
 
-不能把规划能力和幻觉率压进一个成功率。轨迹可以「最终做成了但中间编了工具」，也可以「计划合法但执行器超时」。MiniMax 这问要两套 **可执行定义**，再和成本 / 安全一起做 Pareto，而不是请 LLM judge 打总分。总原则见 `arl-eval`。
+不能把规划能力和幻觉率压进一个成功率。轨迹可以「最终做成了但中间编了工具」，也可以「计划合法但执行器超时」。MiniMax 这问要两套可执行定义，再和成本 / 安全一起做 Pareto，而不是请 LLM judge 打总分。总原则见 `arl-eval`。
 
 ## 规划：测状态感知，不测文笔
 
@@ -41,7 +41,7 @@ sources:
 - **Replan：** 观察与预期不符时是否改分解，见 `agent-when-to-replan`。
 - **Goal-state：** 最终环境是否满足成功 oracle。
 
-要用局部 oracle、trace 标注和干预 replay 区分 **plan 错** 与 **executor 错**：同一计划换确定性执行器仍失败，多半是计划；计划合法但工具超时，不应记成不会规划。报告按桶：短链 / 长依赖 / 注入失败后的恢复率，而不是一个 plan score。规划评测集要主动藏状态：库存其实为零、依赖工具第一次失败、成本只够三次调用。只拿「步骤写得很完整」的静态题，测到的是文笔。
+要用局部 oracle、trace 标注和干预 replay 区分 plan 错 与 executor 错：同一计划换确定性执行器仍失败，多半是计划；计划合法但工具超时，不应记成不会规划。报告按桶：短链 / 长依赖 / 注入失败后的恢复率，而不是一个 plan score。规划评测集要主动藏状态：库存其实为零、依赖工具第一次失败、成本只够三次调用。只拿「步骤写得很完整」的静态题，测到的是文笔。
 
 ## 幻觉：拆错误类型，成功轨迹也要计
 
@@ -53,9 +53,9 @@ sources:
 - 错误环境状态（URL、库存、权限）；
 - 未授权 action。
 
-每类报 rate、severity，以及 **最终成功轨迹中的比例**——成功但不能洗白中间幻觉。和 success、steps、latency、token / API cost、安全违规一起出表。单一 LLM judge 总分会把「做成了但编过」排到前面。提示层拦截对照 `xiaohongshu-hallucination-prompt`，本题强调的是评测定义。评估体系至少还有：任务成功、成本、安全、恢复。规划与幻觉是其中两根轴，不能互相替代，也不能被总分稀释。
+每类报 rate、severity，以及最终成功轨迹中的比例。成功但不能洗白中间幻觉。和 success、steps、latency、token / API cost、安全违规一起出表。单一 LLM judge 总分会把「做成了但编过」排到前面。提示层拦截对照 `xiaohongshu-hallucination-prompt`，本题强调的是评测定义。评估体系至少还有：任务成功、成本、安全、恢复。规划与幻觉是其中两根轴，不能互相替代，也不能被总分稀释。
 
-面试收口：规划看 subgoal / 顺序 / replan / 终局；幻觉看不可用工具、无证据断言、错误 grounding、越权。两套指标 + 成本安全 Pareto，不用一个分数代替。
+最后我会补一句：规划看 subgoal / 顺序 / replan / 终局；幻觉看不可用工具、无证据断言、错误 grounding、越权。两套指标 + 成本安全 Pareto，不用一个分数代替。
 
 ## 追问
 

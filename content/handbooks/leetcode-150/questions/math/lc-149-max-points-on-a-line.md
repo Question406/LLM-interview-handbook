@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 149. 直线上最多的点数
     url: https://leetcode.cn/problems/max-points-on-a-line/
@@ -32,9 +32,9 @@ sources:
 
 过定点 $i$ 的直线由斜率唯一确定。对每个 $i$，把 $j\gt i$ 的点按斜率计数，再加上 $i$ 自己。全局取最大。
 
-斜率不要用 `float`：精度会把不同直线并到一起。用分数 $(\Delta x,\Delta y)$，先 `gcd` 约分，再把符号归一（例如让 $\Delta x\gt 0$，竖线让 $\Delta y\gt 0$），同一直线落到同一 key。与 $i$ 重合的点不能当斜率，单独记 `same`，最后加到每条直线上。
+斜率别用 `float`：精度会把不同直线并到一起。用分数 $(\Delta x,\Delta y)$，先 `gcd` 约分，再把符号归一（例如让 $\Delta x\gt 0$，竖线让 $\Delta y\gt 0$），同一直线落到同一 key。与 $i$ 重合的点不能当斜率，单独记 `same`，最后加到每条直线上。
 
-点数 $\le 2$ 直接返回。面试先讲「定点 + 哈希斜率」，再写约分。
+点数 $\le 2$ 直接返回。白板我会先讲「定点 + 哈希斜率」，再写约分。
 
 ## 参考代码
 

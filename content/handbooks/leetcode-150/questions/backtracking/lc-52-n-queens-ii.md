@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 52. N 皇后 II
     url: https://leetcode.cn/problems/n-queens-ii/
@@ -31,7 +31,7 @@ $n$ 皇后：在 $n\times n$ 棋盘放 $n$ 个皇后，彼此不能同行、同�
 
 一行放一个。到第 $r$ 行时枚举列 $c$，若列、主对角 `r-c`、副对角 `r+c` 任一被占则跳。放下后递归 $r+1$，回来撤销。$r=n$ 计数加一。
 
-只需个数，不必构造字符串棋盘。$n\le 9$ 可用三个位掩码代替集合。面试先讲三个约束，再写回溯。
+只需个数，不必构造字符串棋盘。$n\le 9$ 可用三个位掩码代替集合。白板我会先讲三个约束，再写回溯。
 
 ## 参考代码
 

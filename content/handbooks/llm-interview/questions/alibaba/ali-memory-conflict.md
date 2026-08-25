@@ -12,7 +12,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 社招一面
     url: 'https://www.nowcoder.com/feed/main/detail/90afe4cd751f4bd38b1e48bcec35263f'
@@ -22,11 +22,11 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是无脑 append：两句矛盾的话一起写进向量库，让模型现场猜。记忆要分短 / 长期。短期是窗口加摘要；长期结构化写入必须带时间戳、来源、置信度。新旧冲突按时间、权威来源、用户显式更正取舍，并支持遗忘与审计。Skill / Memory / RAG 的边界见 `ali-skill-memory-rag`，证据检索不要和偏好记忆混库，见 `ali-rag-eval`。
+这块容易直接答成无脑 append：两句矛盾的话一起写进向量库，让模型现场猜。记忆要分短 / 长期。短期是窗口加摘要；长期结构化写入必须带时间戳、来源、置信度。新旧冲突按时间、权威来源、用户显式更正取舍，并支持遗忘与审计。Skill / Memory / RAG 的边界见 `ali-skill-memory-rag`，证据检索不要和偏好记忆混库，见 `ali-rag-eval`。
 
 ## 短长期必须分开，写入要带 provenance
 
-短期记忆服务本轮：最近对话、未填槽、当前订单 id。窗口满了做分层压缩——近详远略，关键事件入库检索，而不是全文拼接。长期记忆只收**跨会话仍成立**的结构化事实：默认地址、忌口、履约偏好。写入前必须能做同实体检测；没有实体键就不要进长期库。每条留下 provenance：谁说的、何时、哪次工具结果、置信度。闪购面经常问长周期对话：冷启动靠检索关键事件，不是把三个月聊天塞进 context。
+短期记忆服务本轮：最近对话、未填槽、当前订单 id。窗口满了做分层压缩。近详远略，关键事件入库检索，而不是全文拼接。长期记忆只收跨会话仍成立的结构化事实：默认地址、忌口、履约偏好。写入前必须能做同实体检测；没有实体键就不要进长期库。每条留下 provenance：谁说的、何时、哪次工具结果、置信度。闪购面经常问长周期对话：冷启动靠检索关键事件，不是把三个月聊天塞进 context。
 
 ## 冲突取舍：用户更正优先
 

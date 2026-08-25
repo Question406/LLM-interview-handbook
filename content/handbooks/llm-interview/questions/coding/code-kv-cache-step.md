@@ -14,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: GQA
     url: https://arxiv.org/abs/2305.13245
     type: primary
 ---
 
-`arch-kv-cache` 讲显存公式；本题要能写出 **一步** 的张量变化。面试官常画：「已经有 $t-1$ 个 token 的 cache，来了第 $t$ 个」。
+`arch-kv-cache` 讲显存公式；本题要能写出一步的张量变化。面试官常画：「已经有 $t-1$ 个 token 的 cache，来了第 $t$ 个」。
 
 ## 形状
 

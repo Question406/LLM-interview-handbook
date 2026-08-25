@@ -14,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: HybridFlow / veRL
     url: https://arxiv.org/abs/2409.19256
     type: primary
 ---
 
-陷阱是把它讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 TTFT / error budget，容量单位是 token 与 KV。本题发生在 **RL 训练环**：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据不是用户 SLO，而是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步墙钟和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
+这块容易讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 TTFT / error budget，容量单位是 token 与 KV。本题发生在 **RL 训练环**：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据不是用户 SLO，而是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步墙钟和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
 
 ## 四类闸门：长度、零方差组、stale、verifier
 
@@ -38,7 +38,7 @@ sources:
 
 准入会改「一步看见几条」，不要和动态 batch、动态采样当成同一个开关。动态 batch 管显存形状；动态采样管零方差组；本题管 **这条轨迹配不配进当前更新**。超长先砍尾部再拼 token 帽；有效组比例低先滤零方差再加 $n$；stale 高就降异步 gap 或丢掉旧轨迹，而不是先加学习率。Agent 场景还要算 sandbox 槽位：同时进行的长 episode 太多，GPU 等环境，整群空转，见 `sys-rl-infra`。
 
-指标不要报平均 reward：admission 率、按原因的 drop 直方图、零方差组占比、轨迹年龄、verifier 超时率、tokens/step、最长尾。平均分好看可能只是全对组没被丢掉。过载时优先 drop 无信息样本（零方差、未知超时、过期版本），而不是随机丢短轨迹——短轨迹往往是能填气泡的有效梯度。
+指标不要报平均 reward：admission 率、按原因的 drop 直方图、零方差组占比、轨迹年龄、verifier 超时率、tokens/step、最长尾。平均分好看可能只是全对组没被丢掉。过载时优先 drop 无信息样本（零方差、未知超时、过期版本），而不是随机丢短轨迹。短轨迹往往是能填气泡的有效梯度。
 
 ## 追问
 

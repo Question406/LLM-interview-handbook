@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 45. 跳跃游戏 II
     url: https://leetcode.cn/problems/jump-game-ii/
@@ -32,7 +32,7 @@ sources:
 
 把「一次跳跃能落到的区间」看成 BFS 的一层。扫 $i$，用 `i + nums[i]` 更新下一层最远 `farthest`。当 $i$ 走到本层右端 `end`，必须再跳一次：`steps += 1`，`end = farthest`。
 
-不要在每个位置枚举落点做 $O(n^2)$ DP。面试讲清「层」再写 `end` / `farthest`。循环只需扫到倒数第二个：站在终点不必再跳。
+不要在每个位置枚举落点做 $O(n^2)$ DP。白板我会先讲清「层」，再写 `end` / `farthest`。循环只需扫到倒数第二个：站在终点不必再跳。
 
 ## 参考代码
 
@@ -84,7 +84,7 @@ def canJump(nums):
     return True
 ```
 
-- **输出一条最少跳数路径？** 贪心分层本身就是 BFS，第一次覆盖到的下标一定来自最短路径上的某一跳。扩展 `farthest` 时，把新覆盖的 `(old_farthest, reach]` 全部记 `parent[j] = i`。扫完从终点沿 `parent` 回 $0$ 再反转。时间 $O(n)$，额外空间 $O(n)$。从终点往左找「最左能跳到当前点的 $i$」也能还原，但是 $O(n^2)$。易错点是整层共用同一个前驱（层内不是所有格都能跳到层右端），以及 $n=1$ 时 `parent[0]` 仍是 $-1$ 要单独返回 `[0]`。路径下标序列长度应等于最少步数加一。
+- **输出一条最少跳数路径？** 贪心分层本身就是 BFS，第一次覆盖到的下标一定来自最短路径上的某一跳。扩展 `farthest` 时，把新覆盖的 `(old_farthest, reach]` 全部记 `parent[j] = i`。扫完从终点沿 `parent` 回 $0$ 再反转。时间 $O(n)$，额外空间 $O(n)$。从终点往左找「最左能跳到当前点的 $i$」也能还原，但是 $O(n^2)$。这块容易栽：整层共用同一个前驱（层内不是所有格都能跳到层右端），以及 $n=1$ 时 `parent[0]` 仍是 $-1$ 要单独返回 `[0]`。路径下标序列长度应等于最少步数加一。
 
 ```python
 def jump_path(nums):
@@ -112,4 +112,3 @@ def jump_path(nums):
     path.reverse()
     return path
 ```
-

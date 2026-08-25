@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 20. 有效的括号
     url: https://leetcode.cn/problems/valid-parentheses/
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **最长有效括号（LC 32）？** 栈里放下标，先压 $-1$ 当哨兵。遇 `(` 压下标；遇 `)` 先弹，若栈空则把当前下标当新哨兵（这段已经坏了），否则用 $i - st[-1]$ 更新最长。哨兵是「最后一个未匹配右括号」的位置，有效段长度是当前与它的距离。时间 $O(n)$。DP 也可：`dp[i]` 为以 $i$ 结尾的最长有效长，`()` 贡献 $dp[i-2]+2$，`))` 且前面能配上则再累加更早的 `dp`。不要只计数左右括号个数，那判不了交错。
+- **最长有效括号（LC 32）？** 栈里放下标，先压 $-1$ 当哨兵。遇 `(` 压下标；遇 `)` 先弹，若栈空则把当前下标当新哨兵（这段已经坏了），否则用 $i - st[-1]$ 更新最长。哨兵是「最后一个未匹配右括号」的位置，有效段长度是当前与它的距离。时间 $O(n)$。DP 也可：`dp[i]` 为以 $i$ 结尾的最长有效长，`()` 贡献 $dp[i-2]+2$，`))` 且前面能配上则再累加更早的 `dp`。别只计数左右括号个数，那判不了交错。
 
 ```python
 def longestValidParentheses(s):
@@ -89,7 +89,7 @@ def longestValidParentheses(s):
     return best
 ```
 
-- **生成所有合法括号串（LC 22）？** 这是构造不是判定。回溯两个计数器：还能放左括号就放（$open \lt n$）；右括号只有少于已放左括号时才放（$close \lt open$）。长度 $2n$ 时必合法。方案数是卡特兰数。不要先生成全部再拿本题过滤。独立卡见 `lc-22-generate-parentheses`。
+- **生成所有合法括号串（LC 22）？** 这是构造不是判定。回溯两个计数器：还能放左括号就放（$open \lt n$）；右括号只有少于已放左括号时才放（$close \lt open$）。长度 $2n$ 时必合法。方案数是卡特兰数。别先生成全部再拿这题过滤。独立卡见 `lc-22-generate-parentheses`。
 
 ```python
 def generateParenthesis(n):

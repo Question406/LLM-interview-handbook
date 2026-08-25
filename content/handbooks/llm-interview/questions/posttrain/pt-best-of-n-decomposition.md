@@ -4,7 +4,7 @@ section: posttrain
 order: 29
 level: S
 title: Best-of-N 的提升中，生成器覆盖率与 Verifier / Selector 排序能力各贡献多少？如何分配算力？
-quick: 把 Best-of-N 拆成“候选池有没有正确答案”和“selector 能否挑中它”。先报告 oracle-selection 上界，再报告 selector gap；若覆盖率低就增加或改善生成，若 gap 大就投资 verifier，而不是盲目增大 N。
+quick: 把 Best-of-N 拆成「候选池有没有正确答案」和「selector 能否挑中它」。先报告 oracle-selection 上界，再报告 selector gap；若覆盖率低就增加或改善生成，若 gap 大就投资 verifier，而不是盲目增大 N。
 tags:
   - Best-of-N
   - Verifier
@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: OpenAI — Solving Math Word Problems
     url: https://openai.com/index/solving-math-word-problems/
@@ -29,9 +29,9 @@ sources:
 
 ## 把分数拆成 coverage 和 selection
 
-对每道题保留全部 $N$ 条候选，并用 **与正在优化的 selector 独立** 的 oracle（可执行答案、更强独立裁判、人类）标记对错。三个量必须同时报：
+对每道题保留全部 $N$ 条候选，并用与正在优化的 selector 独立的 oracle（可执行答案、更强独立裁判、人类）标记对错。三个量必须同时报：
 
-- **Candidate coverage**：池子里至少有一条正确答案的比例。这是生成器的上界，和 `pt-rejection-sampling-vs-rl` 里的 K–success 曲线是同一类诊断。
+- **Candidate coverage**：池子里至少有一条正确答案的比例。这是生成器的上界，和 `pt-rejection-sampling-vs-rl` 里的 K-success 曲线是同一类诊断。
 - **Oracle selection**：假设完美 selector，从池子里总能挑出那条正确候选时的准确率。没有正确候选时记失败，因此它 $\le$ coverage，两者在「每题最多一条满分」的设定下常常重合。
 - **Actual Best-of-N**：真实 verifier / RM / 投票选出的准确率。与 oracle 的差就是 **selector gap**。
 
@@ -39,23 +39,23 @@ sources:
 
 ## 三条曲线怎么读
 
-画 $N$–coverage、$N$–oracle、$N$–actual。读法比调 $N$ 重要：
+画 $N$-coverage、$N$-oracle、$N$-actual。读法比调 $N$ 重要：
 
 - **Coverage 随 $N$ 缓慢上升，actual 贴着 coverage。** Selector 已经够用，瓶颈在生成分布。应改善 sampling（温度、diverse beam）、训更好的 generator，或接受更大 $N$；把算力砸在更复杂的 judge 上收益很小。
 - **Coverage 已饱和，actual 远远落后。** 候选高度相关（$N$ 条几乎是同一条的改写）、verifier 校准差、或 selector 偏好冗长/套话。这时增大 $N$ 是在复制同一错误。应投资过程监督、校准、去相关采样，而不是盲目加候选，见 `pt-reward-ood-failure`。
 - **Actual 接近 oracle，但 oracle 本身不高。** 生成器根本没把正确解采出来。BoN 不能从没有的东西里挑。先回去看 Pass@K 训练曲线和温度，而不是换一个更大的 RM。
 
-相关候选会让「名义 $N$」远大于「有效 $N$」。看 unique 答案数、n-gram 重叠、是否总在同一条错误思路上打转。过程奖励（Let's Verify Step by Step 一类）改变的是 **selector 的信息**，不自动提高 coverage。去相关可以用不同温度、不同系统提示、或显式 diversity 惩罚；不去做，N–coverage 曲线会过早变平，让人误以为生成器已经饱和。
+相关候选会让「名义 $N$」远大于「有效 $N$」。看 unique 答案数、n-gram 重叠、是否总在同一条错误思路上打转。过程奖励（Let's Verify Step by Step 一类）改变的是 **selector 的信息**，不自动提高 coverage。去相关可以用不同温度、不同系统提示、或显式 diversity 惩罚；不去做，N-coverage 曲线会过早变平，让人误以为生成器已经饱和。
 
 ## 算力怎么分配
 
-比较时要把生成、judge、重试、聚合的 token 和延迟全部计入，换算成同一条准确率–成本曲线，和 `pt-reasoning-token-cost-frontier` 的边际收益是同一张图的测试时版本。
+比较时要把生成、judge、重试、聚合的 token 和延迟全部计入，换算成同一条准确率-成本曲线，和 `pt-reasoning-token-cost-frontier` 的边际收益是同一张图的测试时版本。
 
 经验决策：coverage 离 1 还很远 → 把增量预算给 generator 或更大 $N$；gap 占了大部分失败 → 把预算给 verifier / 过程检查 / 独立裁判；两者都高但线上延迟爆 → 降 $N$、级联（先短生成再对不确定题加采样）、或蒸馏进单次生成。不要用「训练时没涨、测试时加大 $N$ 涨了」对外宣称模型变强。那是买测试时计算，账要记在 serving 成本上。级联比固定大 $N$ 更接近产品：用小 $N$ 或短解码先筛容易题，只对 selector 不确定的题加采样，这样平均成本低于「每题都 $N$ 路」。不确定度可以用候选间一致性或 RM 分差定义，不必一上来上最贵的过程裁判。
 
 ## 一个定性例子
 
-同一道可验证题，生成器在中等温度下采一批候选。若池子里已经出现正确最终答案，但 RM 总挑最长、最像「逐步说明」的那条，而那条算错了——coverage 高、actual 低，钱应该花在 verifier 校准和去长度偏置，而不是把 $N$ 再翻倍。若 $N$ 条都在同一个错误代数变形上打转，一条正确答案都没有——coverage 低，应改采样多样性或回去训生成器 / 上 on-policy RL，BoN 只是把同一错误复制多遍。
+同一道可验证题，生成器在中等温度下采一批候选。若池子里已经出现正确最终答案，但 RM 总挑最长、最像「逐步说明」的那条，而那条算错了，coverage 高、actual 低，钱应该花在 verifier 校准和去长度偏置，而不是把 $N$ 再翻倍。若 $N$ 条都在同一个错误代数变形上打转，一条正确答案都没有，coverage 低，应改采样多样性或回去训生成器 / 上 on-policy RL，BoN 只是把同一错误复制多遍。
 
 过程奖励改变 selector 的信息密度，不自动提高 coverage：步骤看起来像样的错解会被 PRM 排得更靠前，gap 甚至变大。这和 `pt-reward-ood-failure` 的「高分幻觉」是同一类失效。线上还要把 judge 延迟算进 SLO：N 路生成已经贵，再串一个大 RM，TTFT 可能先爆。若必须用大裁判，做成异步或只对分差接近的题调用，不要每条候选都走一遍完整过程模型。Coverage 诊断应在生成结束后立刻用 oracle 算，不要等 judge 跑完才发现池子里根本没有正确答案。
 

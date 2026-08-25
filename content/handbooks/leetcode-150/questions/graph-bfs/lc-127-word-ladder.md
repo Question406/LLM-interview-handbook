@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 127. 单词接龙
     url: https://leetcode.cn/problems/word-ladder/
@@ -31,7 +31,7 @@ sources:
 
 隐式无向图，边权 $1$，BFS 最短。不要 $O(N^2)$ 两两比词。对当前词每个位置换 $26$ 个字母，用哈希集合 $O(1)$ 判断是否在剩余词表；入队即删除，保证每个词只扩一次。
 
-终点不在表里直接 $0$。双向 BFS：从起、终两端交替扩，相遇即最短，单词多时更快。面试先写单向，再提双向。
+终点不在表里直接 $0$。双向 BFS：从起、终两端交替扩，相遇即最短，单词多时更快。白板我先写单向，再提双向。
 
 ## 参考代码
 
@@ -126,7 +126,7 @@ def findLadders(beginWord, endWord, wordList):
     return ans
 ```
 
-- **双向 BFS？** 从 `beginWord`、`endWord` 各持一个集合，每次扩展**更小**的一端。新词若落在对端集合里，两端相遇，步数相加即最短长度。入队即从词表删除，避免回头。单词多、分叉大时比单向快。注意先判断终点在表里，否则对端是空的。
+- **双向 BFS？** 从 `beginWord`、`endWord` 各持一个集合，每次扩展更小的一端。新词若落在对端集合里，两端相遇，步数相加即最短长度。入队即从词表删除，避免回头。单词多、分叉大时比单向快。注意先判断终点在表里，否则对端是空的。
 
 ```python
 def ladderLengthBidirect(beginWord, endWord, wordList):

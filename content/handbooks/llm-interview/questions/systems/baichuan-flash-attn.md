@@ -5,15 +5,15 @@ order: 165
 level: A
 title: 百川智能：FlashAttention 是什么，能提多少性能？
 quick: >-
-  它是 IO 感知的精确 attention：分块 + online softmax，减少 HBM
-  读写。加速取决于序列长度和是否已经算力打满，长序列收益大，短序列可能几乎没感，不要背一个全球倍数。
+  它是 IO 感知的精确 attention：分块加 online softmax，少写 HBM。
+  加速取决于序列长度、以及是不是已经算力打满。长序列收益大，短序列可能几乎没感，别背一个全球倍数。
 tags:
   - Baichuan
   - FlashAttention
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面
     url: https://www.nowcoder.com/feed/main/detail/290832d2cd3242c386e56f27f975bce3
@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“你知道 flask attention 吗？”**（现场口误，指 FlashAttention）；**“能有多大的性能提升吗？”**
 
-百川这题常带着口误「flask attention」，先确认是 FlashAttention，不要纠正语气。陷阱是背「快 10 倍」或把它说成近似注意力。原理与蚂蚁卡相同：SRAM 分块、online softmax 精确合并，省 HBM 而不是改公式。第二问要答「何时快」，而不是虚构全球倍数。同面还追过 encoder-decoder 里 $Q$ 与 $K/V$ 来源，要能顺口接上。相关卡：`ant-flash-attention`、`sys-flash`。
+百川这题常带着口误「flask attention」，先确认是 FlashAttention，别纠正语气。这块容易栽在背「快 10 倍」，或把它说成近似注意力。原理和蚂蚁卡相同：SRAM 分块、online softmax 精确合并，省 HBM 而不是改公式。第二问要答「何时快」，而不是虚构全球倍数。同面还追过 encoder-decoder 里 $Q$ 与 $K/V$ 来源，要能顺口接上。相关卡：`ant-flash-attention`、`sys-flash`。
 
 ## 它是什么：IO-aware 的精确 attention
 
@@ -40,7 +40,7 @@ sources:
 
 ## 「能提多少」取决于是不是 I/O 瓶颈
 
-官方与实践常见：长序列上墙钟数倍、attention 显存大幅下降；短 seq、已经融合的 kernel、或瓶颈在 TP/PP 通信、优化器、数据加载时，提升接近零甚至为负（额外 kernel 约束）。正确答法：先问序列长度、是否训练还是 decode、GPU 代数。训练长上下文收益大；decode 单步 $N$ 虽增但还受 KV 读写和 batch 调度影响，不能把训练论文数字直接当推理 SLA。同一面若追「和 GQA 一起开」，可以说：GQA 降 KV 体积，FA 降 attention 中间 I/O，正交。面试给区间和条件，比给一个倍数更像做过。
+官方与实践常见：长序列上墙钟数倍、attention 显存大幅下降；短 seq、已经融合的 kernel、或瓶颈在 TP/PP 通信、优化器、数据加载时，提升接近零甚至为负（额外 kernel 约束）。正确答法：先问序列长度、是否训练还是 decode、GPU 代数。训练长上下文收益大；decode 单步 $N$ 虽增但还受 KV 读写和 batch 调度影响，不能把训练论文数字直接当推理 SLA。同一面若追「和 GQA 一起开」，可以说：GQA 降 KV 体积，FA 降 attention 中间 I/O，正交。我会给区间和条件，不给一个倍数。
 
 ## 顺手接上 cross-attn
 

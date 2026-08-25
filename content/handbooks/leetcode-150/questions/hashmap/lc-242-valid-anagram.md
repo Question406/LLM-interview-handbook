@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 242. 有效的字母异位词
     url: https://leetcode.cn/problems/valid-anagram/
@@ -31,7 +31,7 @@ sources:
 
 哈希计数最稳：长度先剪枝，再一个 26 维数组对 $s$ 加一对 $t$ 减一，最后全零。排序后比较也行，少写几行但多 $\log n$。`aacc` 与 `ccac` 不是异位词，次数对不上。
 
-面试先问清字符集：只有小写用数组，否则用哈希表。
+白板我先问清字符集：只有小写用数组，否则用哈希表。
 
 ## 参考代码
 

@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeek-R1
     url: https://arxiv.org/abs/2501.12948
     type: primary
 ---
 
-R1-Zero 证明的是「可验证奖励下，强 base 也能被 RL 放大推理」，不是「生产应该删掉 SFT」。把论文里的存在性实验当成部署处方，是这题最常见的坑。面试要讲清：Zero 回答「纯 RL 能不能涌现长思考」，生产配方回答「可读、可解析、可对齐、还能保持通用能力」——目标集合更大，所以阶段更多。Cold start 不是因为 RL 数学上需要演示，而是因为 outcome reward 对语言混杂和格式崩溃几乎无感；后面每一段都在补一种 Zero 故意没优化的瓶颈。
+R1-Zero 证明的是「可验证奖励下，强 base 也能被 RL 放大推理」，不是「生产应该删掉 SFT」。把论文里的存在性实验当成部署处方，是这题最常见的坑。我会讲清：Zero 回答「纯 RL 能不能涌现长思考」，生产配方回答「可读、可解析、可对齐、还能保持通用能力」，目标集合更大，所以阶段更多。Cold start 不是因为 RL 数学上需要演示，而是因为 outcome reward 对语言混杂和格式崩溃几乎无感；后面每一段都在补一种 Zero 故意没优化的瓶颈。
 
 ## 每一阶段修的是不同瓶颈
 
@@ -27,9 +27,9 @@ DeepSeek-R1 的生产路径是四段课程，不是把同一目标重复四遍�
 
 **Cold-start SFT。** 用少量可读的长 CoT，把策略拉进「能被解析、语言一致、格式能拿到 reward」的区域。R1-Zero 会混语言、可读性差，不是因为 RL 不会解题，而是 outcome reward 不惩罚这些表面缺陷。没有 cold start，后续 verifier 的有效样本率会很低：格式错了等于零奖励，探索预算浪费在不可解析轨迹上。可读性还影响产品：即使用户能接受长思考，混中英、无标记的跳跃推理也无法上线。Cold start 等于给奖励函数补了一层「人类可消费」的先验，而不是再做一遍全量指令微调。
 
-**第一段 reasoning RL。** 在可验证任务上做 on-policy 搜索。目标是提高解题能力，不是把所有产品属性一次对齐。奖励应尽量干净（正确性加轻量格式），让策略在 cold-start 附近发现更长、更有用的搜索。机制上仍是 search–selection–amplification，见 `pt-r1zero`。这一段最怕的是奖励泄漏和长度 hacking：格式分过重会变成套模板，过程分过松会写空洞步骤。Verifier 要比 Zero 实验更严，因为 cold start 已经会「写得像对的」。
+**第一段 reasoning RL。** 在可验证任务上做 on-policy 搜索。目标是提高解题能力，不是把所有产品属性一次对齐。奖励应尽量干净（正确性加轻量格式），让策略在 cold-start 附近发现更长、更有用的搜索。机制上仍是 search-selection-amplification，见 `pt-r1zero`。这一段最怕的是奖励泄漏和长度 hacking：格式分过重会变成套模板，过程分过松会写空洞步骤。Verifier 要比 Zero 实验更严，因为 cold start 已经会「写得像对的」。
 
-**Rejection sampling + 混合 SFT。** RL 之后策略已经能产出高质量推理轨迹，但分布仍偏数学和代码。RS 把验证过的成功轨迹冻成监督数据，再混入写作、事实问答、翻译、安全拒答等非推理数据。这一步是 **support 回收与能力混合**，不是又一次 RL。RS 只能筛选已有候选：覆盖率低时筛出来的数据又少又窄，见 `pt-rejection-sampling-vs-rl`。混入非推理数据的比例要单独扫：太少则二次 RL 之前通用能力已经掉，太多则把刚搜到的解题路径冲淡。RS 数据要去重、控长度，避免把最长的成功轨迹复制成新的长度先验。
+**Rejection sampling + 混合 SFT。** RL 之后策略已经能产出高质量推理轨迹，但分布仍偏数学和代码。RS 把验证过的成功轨迹冻成监督数据，再混入写作、事实问答、翻译、安全拒答等非推理数据。这一步是 support 回收与能力混合，不是又一次 RL。RS 只能筛选已有候选：覆盖率低时筛出来的数据又少又窄，见 `pt-rejection-sampling-vs-rl`。混入非推理数据的比例要单独扫：太少则二次 RL 之前通用能力已经掉，太多则把刚搜到的解题路径冲淡。RS 数据要去重、控长度，避免把最长的成功轨迹复制成新的长度先验。
 
 **第二段 RL。** 在更宽的任务和偏好目标上再对齐：有用性、无害性、可读性、不过度拒绝。推理能力已经有了，这一段防止「只会刷题、不会聊天」。偏好奖励噪声大，更新要更保守，并继续混入可验证题，避免把第一段 RL 搜到的解题路径优化没。产品指标和推理基准要同一天看，不能只看对齐 leaderboard。
 
@@ -37,7 +37,7 @@ DeepSeek-R1 的生产路径是四段课程，不是把同一目标重复四遍�
 
 R1-Zero 的价值是机制证明：base 的长尾里已有成功推理，verifier 做选择，policy gradient 做放大。生产还要语言一致性、指令遵循、安全拒答、长度可控（`pt-reasoning-token-cost-frontier`）和通用能力不回退（`pt-safety-capability-regression`）。这些目标的奖励噪声远大于「答案对不对」。用同一套稀疏 outcome reward 硬冲，往往会牺牲可读性和安全。
 
-Cold start 还有一个常被忽略的作用：给 RL 一个 **可解析的状态分布**。on-policy 方法只能优化自己访问过的状态；一开始格式全崩，后续再密的奖励也帮不上。这和 `pt-on-policy-distillation` 同源：先让学生走到有信号的区域。
+Cold start 还有一个常被忽略的作用：给 RL 一个可解析的状态分布。on-policy 方法只能优化自己访问过的状态；一开始格式全崩，后续再密的奖励也帮不上。这和 `pt-on-policy-distillation` 同源：先让学生走到有信号的区域。
 
 ## 怎么拆实验
 

@@ -13,7 +13,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 开发技术面
     url: 'https://www.nowcoder.com/feed/main/detail/4c8da8a740e64eb5827fb1b962928eda'
@@ -23,7 +23,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是把 Guardrail 写成 system prompt 里的「不要越权」。规则引擎管硬约束，LLM 管柔推理。工具分级为只读 / 可逆 / 不可逆；不可逆前人工确认。输出过滤与策略引擎是双闸门，自主性随风险升高而降低。边界必须写在编排和工具服务端。HITL 细节见 `ali-hitl-risk`，幻觉拦截见 `ali-hallucination-intercept`。
+这块容易直接答成把 Guardrail 写进 system prompt 的「不要越权」。规则引擎管硬约束，LLM 管柔推理。工具分级为只读 / 可逆 / 不可逆；不可逆前人工确认。输出过滤与策略引擎是双闸门，自主性随风险升高而降低。边界必须写在编排和工具服务端。HITL 细节见 `ali-hitl-risk`，幻觉拦截见 `ali-hallucination-intercept`。
 
 ## 分层：输入 → 工具权限 → 执行确认 → 输出 → 审计
 
@@ -33,7 +33,7 @@ sources:
 
 ## 和内容安全不是同一道闸
 
-内容安全拦违禁输出；Guardrail 还要拦 **错误动作**（错退、错改地址、越权查单）。两者都要审计，但动作闸门更靠策略引擎和工具服务端鉴权。高并发下降级不能把写路径闸门摘掉（`ali-double11-scale`）。编排若用开源自动重试，必须在服务端做幂等，否则确认过的写操作会被重放（`ali-framework-choice`）。
+内容安全拦违禁输出；Guardrail 还要拦错误动作（错退、错改地址、越权查单）。两者都要审计，但动作闸门更靠策略引擎和工具服务端鉴权。高并发下降级不能把写路径闸门摘掉（`ali-double11-scale`）。编排若用开源自动重试，必须在服务端做幂等，否则确认过的写操作会被重放（`ali-framework-choice`）。
 
 RL 训练时若最终成功包含「绕过确认」，过程奖励会强化越权，必须把权限失败当硬负例（`ali-agent-final-reward`、`ali-reward-hacking`）。评估要单开安全越权率，不要并进 hallucination（`ali-agent-eval-dims`）。
 

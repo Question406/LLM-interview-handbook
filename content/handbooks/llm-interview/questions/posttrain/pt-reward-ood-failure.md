@@ -14,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Scaling Laws for Reward Model Overoptimization
     url: https://arxiv.org/abs/2210.10760
     type: primary
 ---
 
-奖励失效的典型形态：策略生成的 $(x,y)$ 相对偏好 / 规则训练集是 OOD——新题型、更长 CoT、新工具轨迹、对抗风格——此时 $\hat{r}(x,y)$ 的排序与人类或可执行 oracle 脱钩，甚至奖励「看起来像好答案」的幻觉。Policy 自己把分布推开，就是一种持续的 OOD。
+奖励失效的典型形态：策略生成的 $(x,y)$ 相对偏好 / 规则训练集是 OOD。新题型、更长 CoT、新工具轨迹、对抗风格，此时 $\hat{r}(x,y)$ 的排序与人类或可执行 oracle 脱钩，甚至奖励「看起来像好答案」的幻觉。Policy 自己把分布推开，就是一种持续的 OOD。
 
 ## 为什么会失效
 
@@ -31,7 +31,7 @@ RM 拟合的是标注支撑上的代理效用。Gao et al. 的 overoptimization 
 
 ## 怎么发现
 
-- **Proxy–gold 相关**：held-out 域切片上 Spearman / 准确率，按长度、工具调用次数、题型切。相关掉了比「训练 reward 还在涨」更早。
+- **Proxy-gold 相关**：held-out 域切片上 Spearman / 准确率，按长度、工具调用次数、题型切。相关掉了比「训练 reward 还在涨」更早。
 - **漂移仪表盘**：embedding 距离、长度、n-gram 新颖性、expert/tool 直方图。突然变长且 gold 不动，优先怀疑 hacking 而不是能力。
 - **高分审计**：每个 bucket 抽高 $\hat{r}$ 样本给人 / 更严 verifier。OOD 失效经常表现为「高分幻觉」。
 

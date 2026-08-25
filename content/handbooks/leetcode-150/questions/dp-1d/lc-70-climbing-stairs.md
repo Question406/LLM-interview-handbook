@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 70. 爬楼梯
     url: https://leetcode.cn/problems/climbing-stairs/
@@ -31,7 +31,7 @@ sources:
 
 最后一步只能从 $n-1$ 或 $n-2$ 过来，所以 $f(n)=f(n-1)+f(n-2)$，$f(1)=1$，$f(2)=2$。斐波那契。
 
-数组可以滚成两个变量。递归不记忆会爆指数。面试先写清转移，再压缩空间。
+数组可以滚成两个变量。递归不记忆会爆指数。白板我先写清转移，再压缩空间。
 
 ## 参考代码
 

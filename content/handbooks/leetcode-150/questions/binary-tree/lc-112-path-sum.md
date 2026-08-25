@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 112. 路径总和
     url: https://leetcode.cn/problems/path-sum/
@@ -32,7 +32,7 @@ sources:
 
 递归带剩余和。当前是叶子时，判断 `remain == node.val`。否则左右只要有一侧能走通即可。空节点返回假。
 
-不要在非叶子提前返回「剩余为 $0$」——题目要根到叶整条路径。负数节点也合法，不能剪枝「剩余已负」。
+不要在非叶子提前返回「剩余为 $0$」，题目要根到叶整条路径。负数节点也合法，不能剪枝「剩余已负」。
 
 ## 参考代码
 

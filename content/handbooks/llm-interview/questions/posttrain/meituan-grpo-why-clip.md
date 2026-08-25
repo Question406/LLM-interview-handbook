@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 美团大模型算法二面-秋招面经
     url: https://www.nowcoder.com/feed/main/detail/e72d861f57c1499393be6651f8611177
@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“GRPO为什么要做clip，直接用SFT后的模型还会不稳定吗？优势度可以怎样改进？”**
 
-陷阱是答「有 SFT 就可以去掉 clip」或「没有 critic 就不需要信任域」。GRPO 只换了 advantage 的构造，**clipped importance-weighted surrogate 原样留下**。组内 $A$ 很大时，不 clip 会一步毁掉刚 SFT 好的格式。SFT 降低的是解析噪声的先验，不是稳定性证明。这题三问要一起答：为什么 clip、SFT 后为何仍抖、优势怎么改——后两问不是让你把 clip 拆掉。
+这块容易答「有 SFT 就可以去掉 clip」或「没有 critic 就不需要信任域」。GRPO 只换了 advantage 的构造，clipped importance-weighted surrogate 原样留下。组内 $A$ 很大时，不 clip 会一步毁掉刚 SFT 好的格式。SFT 降低的是解析噪声的先验，不是稳定性证明。这题三问要一起答：为什么 clip、SFT 后为何仍抖、优势怎么改。后两问不是让你把 clip 拆掉。
 
 ## 1. Clip 管的是相对 $\pi_{\mathrm{old}}$ 的一步偏离
 
@@ -52,7 +52,7 @@ SFT 给了格式和基本能力，但 on-policy 采样仍会偏出示范：奖�
 
 ## 3. 改进优势，而不是拆 clip
 
-过程分让「全错组」内部仍可排序；长度归一减轻长回复霸权；过滤 $\sigma\approx 0$ 的组；增大 $G$；DAPO 的 clip-higher、动态采样、token 级归约。这些改的是 **$A$ 的质量和哪些样本进 batch**，替代不了 clip 对 $\rho$ 的限制。Clip-higher 是改 $\varepsilon$ 的不对称，不是取消 clip。验收看 clip fraction、KL 到 old、holdout 格式和成功率，而不是训练 $L$ 是否更平滑。
+过程分让「全错组」内部仍可排序；长度归一减轻长回复霸权；过滤 $\sigma\approx 0$ 的组；增大 $G$；DAPO 的 clip-higher、动态采样、token 级归约。这些改的是 $A$ 的质量和哪些样本进 batch，替代不了 clip 对 $\rho$ 的限制。Clip-higher 是改 $\varepsilon$ 的不对称，不是取消 clip。验收看 clip fraction、KL 到 old、holdout 格式和成功率，而不是训练 $L$ 是否更平滑。
 
 方法失败：过滤后有效 batch 过小；过程分可 hack；clip-higher 过大等于没 clip。改优势之前先确认 verifier 对同一轨迹重打分一致。
 

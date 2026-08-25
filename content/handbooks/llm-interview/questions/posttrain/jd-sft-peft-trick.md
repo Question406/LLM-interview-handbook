@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 京东大模型算法 实习面经
     url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46
@@ -31,13 +31,13 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“模型的SFT和PEFT训练的时候有什么小trick”**
 
-陷阱是背一串超参清单。Trick 要能解释「解决什么失败」：prompt 泄漏进 loss、过拟合示范、LoRA 没挂到真正更新的模块、训练模板和线上不一致。PEFT 省显存，不自动更好。数据质量和 mask 比再加一个 adapter 重要。面试官听的是你能不能把 trick 映射到过拟合、遗忘、数值对不齐这几类病。
+这块容易背一串超参清单。Trick 要能解释「解决什么失败」：prompt 泄漏进 loss、过拟合示范、LoRA 没挂到真正更新的模块、训练模板和线上不一致。PEFT 省显存，不自动更好。数据质量和 mask 比再加一个 adapter 重要。面试官听的是你能不能把 trick 映射到过拟合、遗忘、数值对不齐这几类病。
 
 ## 1. SFT：mask、packing、采样和早停
 
 只对 completion token 计交叉熵，prompt 和系统提示 mask 掉，否则模型在学复述用户话，指令遵循看起来很好、换个用户表述就崩。Packing 必须切断跨样本 attention，否则下一条的答案会当上一条的继续，这是复读和串答的隐源。学习率对 embedding / lm_head 可分开：新 special token 没学够，工具调用括号会乱。长样本不要被短样本在 token-mean 里淹没，可按长度分层采样，或明确选择 `seq-mean` 还是 `token-mean`。
 
-流程上：先用几十条过拟合自检「数据进没进图、loss 会不会掉到接近 0」——掉不下去说明模板或 mask 错了。再用 holdout 早停，而不是固定 3 epoch。轮数过多会遗忘通用能力，过少则格式都没锁住。失败模式是训练 loss 很好、线上换模板就崩：根因几乎总是 chat template、停止符、工具 schema 与推理不一致，或系统提示没进训练。评测不能用训练改写过的题目。
+流程上：先用几十条过拟合自检「数据进没进图、loss 会不会掉到接近 0」，掉不下去说明模板或 mask 错了。再用 holdout 早停，而不是固定 3 epoch。轮数过多会遗忘通用能力，过少则格式都没锁住。失败模式是训练 loss 很好、线上换模板就崩：根因几乎总是 chat template、停止符、工具 schema 与推理不一致，或系统提示没进训练。评测不能用训练改写过的题目。
 
 和后续 RL 的衔接：SFT 的 tokenizer 与 special token 必须同一套。Mask 错了，GRPO 的 parser 会把大量 rollout 判零，组内全错，优势为 0，看起来像 RL 不稳，其实是 SFT 没把格式锁住。
 

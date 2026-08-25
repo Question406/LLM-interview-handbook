@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 207. 课程表
     url: https://leetcode.cn/problems/course-schedule/
@@ -36,7 +36,7 @@ DFS 三色：`0` 未访、`1` 正在访、`2` 已完成。走到 `1` 说明回�
 
 Kahn：统计入度，入度为 $0$ 的入队，弹出后把它指向的入度减一。能弹出 $n$ 个则无环。
 
-面试先画「先修 $\to$ 后修」，再说判环，别把边方向画反。
+白板我先画「先修 $\to$ 后修」，再说判环，别把边方向画反。
 
 ## 参考代码
 
@@ -105,4 +105,4 @@ def findOrder(n, prerequisites):
     return order if len(order) == n else []
 ```
 
-- **为何不能只看强连通？** 「能修完」的充要条件是有向无环（DAG）。Tarjan / Kosaraju 求 SCC 也能判环：存在大小 $\gt 1$ 的分量，或大小为 $1$ 但带自环，就不能修完。代价更高，还容易漏自环。无向图的连通块与本题无关——先修是有向的。面试用三色 DFS 或 Kahn 即可，不要上 SCC。
+- **为何不能只看强连通？** 「能修完」的充要条件是有向无环（DAG）。Tarjan / Kosaraju 求 SCC 也能判环：存在大小 $\gt 1$ 的分量，或大小为 $1$ 但带自环，就不能修完。代价更高，还容易漏自环。无向图的连通块与本题无关，先修是有向的。白板用三色 DFS 或 Kahn 即可，不要上 SCC。

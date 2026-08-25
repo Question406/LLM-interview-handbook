@@ -6,7 +6,7 @@ level: S
 title: Adam 训练一个 7B 模型为什么远不止 14GB？
 quick: >-
   BF16 参数 2 bytes/param 只是权重本身。训练还要存梯度、FP32 master、Adam m/v，以及 activation
-  与临时 buffer。经典 mixed-precision Adam 的参数状态约 16 bytes/param，$7\mathrm{B}$ 量级约
+  与临时 buffer。经典 mixed-precision Adam 的参数状态大约 16 bytes/param，$7\mathrm{B}$ 量级大约
   $112\,\mathrm{GB}$，还没算 activation。ZeRO/FSDP 分的是状态，不是激活。
 tags:
   - Memory
@@ -15,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 'ZeRO: Memory Optimizations Toward Training Trillion Parameter Models'
     url: https://arxiv.org/abs/1910.02054
     type: primary
 ---
 
-白板陷阱是把「$7\mathrm{B}\times 2\,\mathrm{B}=14\,\mathrm{GB}$」当成训练显存。那只是一份 BF16 权重，推理或冻结前向才够。Adam 训练要把**参数副本、梯度、优化器状态**和 **activation** 分开列，数字才能对上。
+白板这块容易把「$7\mathrm{B}\times 2\,\mathrm{B}=14\,\mathrm{GB}$」当成训练显存。那只是一份 BF16 权重，推理或冻结前向才够。Adam 训练要把**参数副本、梯度、优化器状态**和 **activation** 分开列，数字才能对上。
 
 ## 1. 先按 bytes/param 拆参数状态
 
@@ -36,7 +36,7 @@ sources:
 | Adam 一阶矩 $m$ | FP32 | $4$ | 梯度指数滑动平均 |
 | Adam 二阶矩 $v$ | FP32 | $4$ | 梯度平方的滑动平均 |
 
-相加：$2+2+4+4+4=16$ bytes/param。若梯度走 FP32、或没有 master、或 fused Adam 把 master 与 $m/v$ 叠在一起，总数会落到约 $12$–$18$。不要背死「永远 16」，要能指出**哪一份可以省、哪一份不能省**。
+相加：$2+2+4+4+4=16$ bytes/param。若梯度走 FP32、或没有 master、或 fused Adam 把 master 与 $m/v$ 叠在一起，总数会落到大约 $12$ 到 $18$。不要背死「永远 16」，要能指出**哪一份可以省、哪一份不能省**。
 
 对 $7\times 10^9$ 参数：
 
@@ -64,7 +64,7 @@ ZeRO 针对的是上一节的参数 / 梯度 / optimizer，不是 activation：
 
 $7\mathrm{B}$ 在 8 卡 ZeRO-3 上，参数状态可落到十几 GB/卡量级，**activation 仍按本地 micro-batch 全量存在**。所以还要叠 TP（切隐层矩阵）、PP（切层）、CP（切序列）和 checkpoint。
 
-口诀：**14GB 是权重；112GB 是未分片 Adam 状态；真正 OOM 经常是 activation 或通信缓冲。**
+我会收口成：**14GB 是权重；112GB 是未分片 Adam 状态；真正 OOM 经常是 activation 或通信缓冲。**
 
 ## 追问
 

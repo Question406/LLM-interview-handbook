@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书大模型实习一面
     url: https://www.nowcoder.com/feed/main/detail/3f96f6fe7ed44c3b8c49cea3455d38a4
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“了解ReAct结构吗，介绍一下?”**
 
-陷阱是把任何 Agent 都叫 ReAct。没有显式 Thought 或没有环境反馈，只是 function calling 循环。ReAct（Yao et al.）把「只想」和「只做」拼起来：Thought 决定假设与下一步，Action 调用检索 / 工具，Observation 把结果接回，再进入下一轮，直到给出最终答案。它是策略骨架，不是训练算法。多轮检索何时停，见 `xiaohongshu-deep-research-stop`。
+这块容易直接答成把任何 Agent 都叫 ReAct。没有显式 Thought 或没有环境反馈，只是 function calling 循环。ReAct（Yao et al.）把「只想」和「只做」拼起来：Thought 决定假设与下一步，Action 调用检索 / 工具，Observation 把结果接回，再进入下一轮，直到给出最终答案。它是策略骨架，不是训练算法。多轮检索何时停，见 `xiaohongshu-deep-research-stop`。
 
 ## Thought / Action / Observation
 
@@ -39,11 +39,11 @@ sources:
 
 ## 上线必须补的工程
 
-生产不能只复述论文三元组。要补：Action 解析失败怎么办、最大步数、Observation 过长如何摘要、工具超时 / 空结果如何重试、日志是否可回放。训练或 SFT 时要对齐这三块的 schema，而不是只拟合最终答案。Observation 进上下文会迅速涨 token，压缩顺序见 `pdd-context-overflow`。权限和副作用不能写在 Thought 里「注意安全」，要在工具层强制。
+生产不能只复述论文三元组。要补：Action 解析失败怎么办、最大步数、Observation 过长如何摘要、工具超时 / 空结果如何重试、日志是否可回放。训练或 SFT 时要对齐这三块的 schema，别只拟合最终答案。Observation 进上下文会迅速涨 token，压缩顺序见 `pdd-context-overflow`。权限和副作用不能写在 Thought 里「注意安全」，要在工具层强制。
 
 ## 和 function calling、多 Agent 的界限
 
-现代 API 的 tool call 可以没有自然语言 Thought，仍是 ReAct 的亲戚：模型选动作、环境返回、再决策。面试要主动说差别：ReAct 论文强调可检查的推理痕迹；生产可以结构化 Thought。没有环境反馈的多步自说自话不是 ReAct。多 Agent 只是把某些 Action 交给另一个策略，协作协议见 `pdd-multi-vs-single-agent`。不要把 LangGraph、MCP、Skill 都说成 ReAct——那些是图、协议和操作知识，见 `xiaohongshu-mcp-skill-token-efficiency`。介绍时按循环画一遍，再补工程补丁，比背三个英文单词更像用过。
+现代 API 的 tool call 可以没有自然语言 Thought，仍是 ReAct 的亲戚：模型选动作、环境返回、再决策。我会主动说差别：ReAct 论文强调可检查的推理痕迹；生产可以结构化 Thought。没有环境反馈的多步自说自话不是 ReAct。多 Agent 只是把某些 Action 交给另一个策略，协作协议见 `pdd-multi-vs-single-agent`。LangGraph、MCP、Skill 不是 ReAct，那些是图、协议和操作知识，见 `xiaohongshu-mcp-skill-token-efficiency`。介绍时我会按循环画一遍，再补工程补丁。
 
 ## 追问
 

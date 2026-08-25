@@ -6,7 +6,7 @@ level: S
 title: 手写 MoE router（softmax + top-k）和 Switch 风格 aux loss
 quick: >-
   $x\in\mathbb{R}^{T\times d}$，$W_r$ 得到 logits，softmax 成 $P$，top-$k$ 取门控。Aux 用
-  $N\sum_i f_i P_i$，$f_i$ 是实际被选频率，$P_i$ 是平均门控概率。面试要能处理 $k=1$ 和 $k\gt 1$，并说清 capacity / ties。
+  $N\sum_i f_i P_i$，$f_i$ 是实际被选频率，$P_i$ 是平均门控概率。我会处理 $k=1$ 和 $k\gt 1$，并说清 capacity / ties。
 tags:
   - MoE
   - Router
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Switch Transformers
     url: https://arxiv.org/abs/2101.03961
@@ -68,6 +68,6 @@ def moe_router_aux(x, W_r, k=1):
 
 ## 追问
 
-- **$f$ 要不要 detach？** Switch 原文 $f$ 当经验频率；实现里常对 one-hot 用 STE 或直接当常数。面试说「$f$ 统计负载，$P$ 可导」即可。
+- **$f$ 要不要 detach？** Switch 原文 $f$ 当经验频率；实现里常对 one-hot 用 STE 或直接当常数。我会说「$f$ 统计负载，$P$ 可导」即可。
 - **和 CE 怎么加？** $\mathcal{L}=\mathcal{L}_{\mathrm{LM}}+\lambda\mathcal{L}_{\mathrm{aux}}$，$\lambda$ 过大伤语义路由。
 - **测什么？** 均匀输入下 $f$ 应接近 $1/N$；构造一个 expert 分数恒大的输入，aux 应明显大于 1。

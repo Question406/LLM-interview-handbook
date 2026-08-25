@@ -5,8 +5,8 @@ order: 7
 level: S
 title: 真题：Streaming Parser 中 think/tool tag 可能跨 chunk，怎么写？
 quick: >-
-  不能简单 replace/regex 一次处理；需要有限状态机 + pending suffix buffer。只消费已经确定不可能构成 tag
-  的前缀，把最长“可能是 tag 前缀”的 suffix 留给下一个 chunk。
+  不能对整个缓冲做一次 replace 或 regex。需要有限状态机，外加 pending suffix buffer。只消费已经确定不可能构成 tag
+  的前缀，把最长「可能是 tag 前缀」的 suffix 留给下一个 chunk。
 tags:
   - Agent
   - Parser
@@ -14,13 +14,13 @@ realInterview: true
 status: published
 format: legacy-html
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-17'
+updatedAt: '2026-08-21'
 sources:
   - title: ↗ 智谱 Agent 面经
     url: 'https://www.nowcoder.com/feed/main/detail/24952c828c59435abd3c302c97fa358d'
     type: legacy-reference
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>不能简单 replace/regex 一次处理；需要有限状态机 + pending suffix buffer。只消费已经确定不可能构成 tag 的前缀，把最长“可能是 tag 前缀”的 suffix 留给下一个 chunk。</p></div>
+<div class="quick"><div class="mini-title">30 秒回答</div><p>不能对整个缓冲做一次 replace 或 regex。需要有限状态机，外加 pending suffix buffer。只消费已经确定不可能构成 tag 的前缀，把最长「可能是 tag 前缀」的 suffix 留给下一个 chunk。</p></div>
           <div class="full-answer"><div class="mini-title">完整答案</div><pre><code data-lang="python">class StreamParser:
     def __init__(self):
         self.state = &quot;NORMAL&quot;
@@ -54,7 +54,7 @@ sources:
                 out.append(safe)
             self.buf = self.buf[-keep:] if keep else &quot;&quot;
             break
-        return &quot;&quot;.join(out)</code></pre><p>真实题往往还要求 tool-call payload 只展示某些字段，此时应把 NORMAL / IN_THINK / IN_TOOL / TOOL_JSON 等状态分开，并用 streaming JSON parser，而不是对 JSON 字符串再写脆弱 regex。</p><p>如果底层网络传的是 bytes，要先用 incremental UTF-8 decoder，避免一个中文字符的多字节序列被 chunk 切开。</p></div>
-          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>为什么普通 regex 不够？</summary><div class="follow-answer"><p>正则可以处理完整字符串，但 streaming 时 closing/opening tag 可能只出现半截；必须保留跨 chunk 状态。</p></div></details><details class="followup"><summary>Tool JSON 中出现 &quot;&lt;/think&gt;&quot; 字符串怎么办？</summary><div class="follow-answer"><p>Parser 必须知道当前语法层级。进入 JSON/tool payload 后不应把普通字符串内容按顶层 tag 解释；最好使用协议级 framing，而不是混合文本 tag。</p></div></details></div>
+        return &quot;&quot;.join(out)</code></pre><p>真实题往往还要求 tool-call payload 只展示某些字段。这时应把 NORMAL / IN_THINK / IN_TOOL / TOOL_JSON 这些状态分开，并用 streaming JSON parser，别对 JSON 字符串再写一套脆弱 regex。</p><p>如果底层网络传的是 bytes，要先用 incremental UTF-8 decoder，避免一个中文字符的多字节序列被 chunk 切开。</p></div>
+          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>为什么普通 regex 不够？</summary><div class="follow-answer"><p>正则可以处理完整字符串，但 streaming 时 closing 或 opening tag 可能只出现半截，必须保留跨 chunk 的状态。</p></div></details><details class="followup"><summary>Tool JSON 中出现 &quot;&lt;/think&gt;&quot; 字符串怎么办？</summary><div class="follow-answer"><p>Parser 必须知道当前语法层级。进了 JSON 或 tool payload 之后，不该把普通字符串内容按顶层 tag 解释。最好用协议级 framing，别混在文本 tag 里。</p></div></details></div>
           
           <div class="sources"><div class="mini-title">原始材料</div><a href="https://www.nowcoder.com/feed/main/detail/24952c828c59435abd3c302c97fa358d" target="_blank" rel="noopener noreferrer">↗ 智谱 Agent 面经</a></div>

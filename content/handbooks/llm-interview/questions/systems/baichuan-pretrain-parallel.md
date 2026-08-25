@@ -5,14 +5,14 @@ order: 166
 level: A
 title: 百川智能：预训练有哪些并行方式？
 quick: >-
-  数据并行复制模型切数据；张量并行切矩阵；流水线并行切层；序列 / 上下文并行切序列；MoE 再加专家并行。组合取决于单卡放不下的是参数、激活还是 batch。
+  数据并行复制模型切数据；张量并行切矩阵；流水线并行切层；序列 / 上下文并行切序列；MoE 再加专家并行。组合看单卡放不下的是参数、激活还是 batch。
 tags:
   - Baichuan
   - Parallelism
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面
     url: https://www.nowcoder.com/feed/main/detail/290832d2cd3242c386e56f27f975bce3
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“你知道预训练的一些并行方式吗？”**
 
-百川这题最容易只报「DP / MP」两个缩写，或把 ZeRO 和张量并行说成一回事。面试要按「哪块显存 / 哪段通信先爆」选切法：复制模型切数据、切矩阵、切层、切序列、MoE 再切专家。没做过千卡预训练也可以按这条诊断链答。原帖候选人只讲了 DP/MP，补上 ZeRO 与 TP 的差别会完整得多。相关卡：`sys-parallel`、`infra-megatron-mlp-tp`、`baichuan-deepspeed`。组合并行时先固定 TP 再加 PP/DP，避免三个维度一起调到不可复现。
+百川这题，这块容易只报「DP / MP」两个缩写，或把 ZeRO 和张量并行说成一回事。我会按「哪块显存 / 哪段通信先爆」选切法：复制模型切数据、切矩阵、切层、切序列、MoE 再切专家。没做过千卡预训练也可以按这条诊断链答。原帖候选人只讲了 DP/MP，补上 ZeRO 与 TP 的差别会完整得多。相关卡：`sys-parallel`、`infra-megatron-mlp-tp`、`baichuan-deepspeed`。组合并行时我一般先固定 TP 再加 PP/DP，避免三个维度一起调到不可复现。
 
 ## 数据并行与 ZeRO
 

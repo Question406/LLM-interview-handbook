@@ -15,14 +15,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 社招一面
     url: 'https://www.nowcoder.com/feed/main/detail/90afe4cd751f4bd38b1e48bcec35263f'
     type: legacy-reference
 ---
 
-陷阱是两句口号：「多负 DPO 已经学全排序，不必再 RL」或「DPO 后熵一定崩，不能接 GRPO」。多负 DPO 主要学「正优于各负」，不保证 rejected 之间的精细序。DPO 压尖后可以接 GRPO 做 on-policy 探索，但要先确认组内还能采出可被奖励分开的差异。分类 / 偏好清晰时 DPO 往往更稳、更省。接续诊断见 `pt-dpo-to-grpo`，三者对比见 `ali-ppo-dpo-grpo-ask`。
+这块容易直接答成两句口号：「多负 DPO 已经学全排序，不必再 RL」或「DPO 后熵一定崩，不能接 GRPO」。多负 DPO 主要学「正优于各负」，不保证 rejected 之间的精细序。DPO 压尖后可以接 GRPO 做 on-policy 探索，但要先确认组内还能采出可被奖励分开的差异。分类 / 偏好清晰时 DPO 往往更稳、更省。接续诊断见 `pt-dpo-to-grpo`，三者对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## 多负 DPO 学的是什么
 

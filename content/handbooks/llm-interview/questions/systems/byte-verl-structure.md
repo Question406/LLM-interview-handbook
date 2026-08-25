@@ -6,8 +6,8 @@ level: S
 title: 字节 Agent 算法一面：讲讲 veRL 的结构、关键组件，怎么魔改？
 quick: >-
   按 HybridFlow：Ray Trainer 编排数据流；`actor_rollout_ref` 同一组 GPU
-  上训练/采样/算参考 logp；Reward / Env 打分或跑工具；PPO 才加 Critic。魔改先动 Reward 与
-  Env，再动 loss 与异步 rollout，不要一上来改 Megatron kernel。
+  上训练/采样/算参考 logp；Reward / Env 打分或跑工具；PPO 才加 Critic。魔改我先动 Reward 与
+  Env，再动 loss 与异步 rollout，不会一上来改 Megatron kernel。
 tags:
   - ByteDance
   - VeRL
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节大模型agent算法一面分享
     url: https://www.nowcoder.com/feed/main/detail/f6e62eddaae1460fa80c0a0052f3267a
@@ -35,7 +35,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“讲讲verl的结构，关键组件，如何魔改,遇到的问题”**
 
-字节 Agent 算法一面这题，最容易按目录名报 `workers/` 或一上来讲 Megatron kernel。面试要按数据流：Trainer 编排 → Actor/Rollout/Ref 在同一组 GPU 上换布局采样 → Reward/Env 打分 →（PPO 才有）Critic。魔改优先级是 Reward 与工具协议，再是 loss 与异步，最后才动内核。相关卡：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`didi-verl-metrics`。
+字节 Agent 算法一面这题，这块容易按目录名报 `workers/`，或一上来讲 Megatron kernel。我会按数据流讲：Trainer 编排 → Actor/Rollout/Ref 在同一组 GPU 上换布局采样 → Reward/Env 打分 →（PPO 才有）Critic。魔改优先级是 Reward 与工具协议，再是 loss 与异步，最后才动内核。相关卡：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`didi-verl-metrics`。
 
 ## 按数据流说组件
 

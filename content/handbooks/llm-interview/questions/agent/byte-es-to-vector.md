@@ -6,7 +6,7 @@ level: A
 title: 字节 Agent 一面：从 ES 切到向量检索，哪些能力升、哪些会降？
 quick: >-
   升的是同义、口语、改写召回；降的是精确 ID、错误码、必须命中的关键词和可解释过滤。生产应混合：过滤与专有名词留
-  ES，语义近邻走向量，再用 rerank。不要把切换讲成全面升级。
+  ES，语义近邻走向量，再用 rerank。别把切换讲成全面升级。
 tags:
   - ByteDance
   - Elasticsearch
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节跳动-Agent开发实习生 一面（45分钟）
     url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“为什么选择用ElasticSearch”**；**“如果从ES切换向向量检索，哪些能力会下降，哪些能力会提升？”**
 
-字节 Agent 实习一面连问「为什么用 ES」和「切到向量升什么降什么」。陷阱是把切换讲成全面升级。正确结构：升 / 降各举一例 → 混合检索 → 用 Recall@$K$ 与精确命中率分别验收。混合细节见 `ant-bm25-hybrid`、`baichuan-three-path-recall`，ES 用法也可对照 `jd-es-vector-usage`。
+字节 Agent 实习一面连问「为什么用 ES」和「切到向量升什么降什么」。这块容易直接答成把切换讲成全面升级。正确结构：升 / 降各举一例 → 混合检索 → 用 Recall@$K$ 与精确命中率分别验收。混合细节见 `ant-bm25-hybrid`、`baichuan-three-path-recall`，ES 用法也可对照 `jd-es-vector-usage`。
 
 ## 为什么先用 ES
 

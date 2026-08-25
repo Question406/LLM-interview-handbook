@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 22. 括号生成
     url: https://leetcode.cn/problems/generate-parentheses/
@@ -31,7 +31,7 @@ sources:
 
 回溯两个计数器。还能放左括号就放（`open < n`）；右括号只有少于已放左括号时才放（`close < open`），否则前缀非法。长度 $2n$ 时必合法。
 
-不要先生成再过滤。卡特兰数 $C_n$ 就是方案数。面试先讲两条约束，再写递归。
+不要先生成再过滤。卡特兰数 $C_n$ 就是方案数。白板我会先讲两条约束，再写递归。
 
 ## 参考代码
 

@@ -14,14 +14,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 社招一面
     url: 'https://www.nowcoder.com/feed/main/detail/90afe4cd751f4bd38b1e48bcec35263f'
     type: legacy-reference
 ---
 
-陷阱是把三者塞进同一个向量库，或把操作手册检索叫 Skill、把历史全文拼接叫 Memory。Skill 解决「这类任务怎么做」的程序化经验复用；Memory 解决跨会话状态与个性化；RAG 解决「此刻需要哪条外部证据」。淘天追问重点是边界：手册进 RAG ≠ 有 Skill；所有历史进窗口 ≠ 有 Memory 治理。冲突写入见 `ali-memory-conflict`，RAG 评估见 `ali-rag-eval`，工具连接见 `ali-mcp-vs-fc`。
+这块容易直接答成把三者塞进同一个向量库，或把操作手册检索叫 Skill、把历史全文拼接叫 Memory。Skill 解决「这类任务怎么做」的程序化经验复用；Memory 解决跨会话状态与个性化；RAG 解决「此刻需要哪条外部证据」。淘天追问重点是边界：手册进 RAG ≠ 有 Skill；所有历史进窗口 ≠ 有 Memory 治理。冲突写入见 `ali-memory-conflict`，RAG 评估见 `ali-rag-eval`，工具连接见 `ali-mcp-vs-fc`。
 
 ## 三个组件解决三个问题
 
@@ -37,7 +37,7 @@ Skill 是可加载的 procedure：退货怎么填槽、先查哪、何时转人�
 
 混库的失败很具体：用户上周的地址和今年的退货政策被同一套相似度捞出来，模型随机引用。Skill 变更是发版（流程改了要回归）；Memory 变更是写入冲突与 GDPR 式删除；RAG 变更是索引更新。权限也不同：Skill 决定能调哪些工具，Memory 按用户隔离，RAG 按文档 ACL 过滤。用一个「全公司向量库」承担三职，审计和回滚都会乱。
 
-把操作手册塞进 RAG，模型仍可能不按步骤执行——procedure 要 Skill 或工作流强制，见 `ali-modular-agent-plan`。把所有历史塞进窗口，没有实体键与 supersede，下一轮仍会用旧地址。
+把操作手册塞进 RAG，模型仍可能不按步骤执行。procedure 要 Skill 或工作流强制，见 `ali-modular-agent-plan`。把所有历史塞进窗口，没有实体键与 supersede，下一轮仍会用旧地址。
 
 ## 边界怎么验收
 

@@ -5,8 +5,8 @@ order: 3
 level: A
 title: 腾讯混元：公开面经反映的考察风格是什么？
 quick: >-
-  覆盖面很宽：Qwen vs DeepSeek、MoE vs Dense、LoRA / 全参对比实验、ZeRO 1/2/3、SFT
-  数据构造、RLHF，再穿插括号生成 / 最长子串 / 零钱兑换。需要对齐算法和训练系统都没有明显短板。
+  覆盖面很宽：Qwen vs DeepSeek、MoE vs Dense、LoRA / 全参对照实验、ZeRO 1/2/3、SFT
+  数据构造、RLHF，再穿插括号生成、最长子串、零钱兑换。对齐算法和训练系统都不能有明显短板。
 tags:
   - Tencent
   - Hunyuan
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 日常实习 腾讯混元大模型一面 好难
     url: https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496
@@ -30,14 +30,14 @@ sources:
     type: candidate-first-hand
 ---
 
-混元 / TEG / WXG 都容易从你项目细节追机制：数据怎么配、reward 为何有效、ZeRO-3 省的是什么、通信是什么。不要只背定义。
+混元、TEG、WXG 都容易从你项目细节追机制：数据怎么配、reward 为何有效、ZeRO-3 省的是什么、通信是什么。不要只背定义。
 
 ## 准备主线
 
-1. **架构选型**：MoE 收益与通信代价；Qwen 与 DeepSeek 差在路由 / MLA / 后训练。
+1. **架构选型**：MoE 收益和通信代价；Qwen 和 DeepSeek 差在路由、MLA、后训练。
 2. **微调实验**：LoRA vs 全参要能设计对照，不只说「LoRA 省显存」。
 3. **系统**：ZeRO 三级、除 DeepSpeed 外的优化、72B 单卡估算。
-4. **对齐**：SFT 之后为何还要 RL；GSPO / SPO 在 WXG 会被追。
+4. **对齐**：SFT 之后为什么还要 RL；GSPO / SPO 在 WXG 会被追。
 5. **手撕**：括号生成、最长无重复子串、零钱兑换、MHA。
 
 ## 本手册真题卡

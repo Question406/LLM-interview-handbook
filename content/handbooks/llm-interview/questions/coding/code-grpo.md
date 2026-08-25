@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeekMath / GRPO
     url: https://arxiv.org/abs/2402.03300
     type: primary
 ---
 
-陷阱是只在分母加 `eps` 假装有信号。$\mathrm{std}\approx 0$ 表示 **整组没有相对差别**（全对或全错），优势应为 0，这步更新无效。`eps` 只防 NaN，不能制造学习信号。组大小 $n\gt 1$ 的定义见 `sys-rl-group-n`；手撕完整 surrogate 见 `stepfun-grpo-loss-handwrite`。
+这块容易只在分母加 `eps` 假装有信号。$\mathrm{std}\approx 0$ 表示整组没有相对差别（全对或全错），优势应为 0，这步更新无效。`eps` 只防 NaN，不能制造学习信号。组大小 $n\gt 1$ 的定义见 `sys-rl-group-n`；手撕完整 surrogate 见 `stepfun-grpo-loss-handwrite`。
 
 ## 组内标准化：维要对，unbiased 要和论文一致
 
@@ -31,7 +31,7 @@ $$
 A_{i}=\frac{r_{i}-\mathrm{mean}_{G}(r)}{\mathrm{std}_{G}(r)+\varepsilon}.
 $$
 
-必须在 **group 维** 上求 mean/std，不能把不同题混在一个 batch 里减全局均值（题难度会泄漏进优势）。
+必须在 group 维上求 mean/std，不能把不同题混在一个 batch 里减全局均值（题难度会泄漏进优势）。
 
 ```python
 import torch
@@ -45,11 +45,11 @@ def group_advantage(rewards, eps=1e-6):
     return adv, informative
 ```
 
-`torch.std` 默认 `unbiased=True`（除 $G-1$）。小 $G$ 时样本标准差与总体标准差数值不同；$G=1$ 时 unbiased std 不可定义。实现必须和 DeepSeekMath / 框架约定一致，通常 **population std**（`unbiased=False`）。$G=1$ 根本不是 GRPO，见 `pt-grpo`。
+`torch.std` 默认 `unbiased=True`（除 $G-1$）。小 $G$ 时样本标准差与总体标准差数值不同；$G=1$ 时 unbiased std 不可定义。实现必须和 DeepSeekMath / 框架约定一致，通常 population std（`unbiased=False`）。$G=1$ 根本不是 GRPO，见 `pt-grpo`。
 
 ## $\mathrm{std}\approx 0$：过滤或改采样，不要靠 eps 救命
 
-binary reward 下全 0 或全 1，中心化后全 0，`std=0`。加上 `eps` 后 $A$ 仍约 0（分子也是 0），看起来「能跑」，但 **informative 标志必须记下来**：零方差组占用了 rollout 预算。工程上监控 zero-variance group rate；DAPO Dynamic Sampling 就是少让这些组进训练 batch，见 `slime-dynamic-partial`、`byte-grpo-all-same-zero-adv`。
+binary reward 下全 0 或全 1，中心化后全 0，`std=0`。加上 `eps` 后 $A$ 仍约 0（分子也是 0），看起来「能跑」，但 informative 标志必须记下来：零方差组占用了 rollout 预算。工程上监控 zero-variance group rate；DAPO Dynamic Sampling 就是少让这些组进训练 batch，见 `slime-dynamic-partial`、`byte-grpo-all-same-zero-adv`。
 
 Dr.GRPO 类 objective 可能去掉 std 除法，只减均值，见 `pt-drgrpo`。多路奖励（正确性 + 格式 + 长度）要先决定：先合成标量再 group-norm，还是每条 component 单独 norm 再加权。两种不可混着调系数。token 级往往广播同一 $A_i$；不要对每个 token 再减一次均值。
 

@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Proximal Policy Optimization Algorithms
     url: https://arxiv.org/abs/1707.06347
@@ -29,7 +29,7 @@ sources:
     type: secondary
 ---
 
-陷阱是把 PPO 的 $\rho_t$ 说成「完整轨迹 IS」。完整无偏校正是整段似然比；token 级 surrogate 已经是为了 **躲开连乘** 的工程近似。基础见 `fund-is`：proposal 一旦在目标重要区域偏薄，$w=p/q$ 没有好的二阶矩。序列把这件事乘 $T$ 次。
+这块容易把 PPO 的 $\rho_t$ 说成「完整轨迹 IS」。完整无偏校正是整段似然比；token 级 surrogate 已经是为了 **躲开连乘** 的工程近似。基础见 `fund-is`：proposal 一旦在目标重要区域偏薄，$w=p/q$ 没有好的二阶矩。序列把这件事乘 $T$ 次。
 
 ## 为什么是指数，不是加几个噪声
 
@@ -57,7 +57,7 @@ MoE / 量化 / 混合精度会再给单步 $\rho_t$ 加噪声：路由不一致�
 | GSPO 序列几何平均 | $\rho^{1/T}=\exp(\frac1T\sum\log\rho_t)$ | 粒度变成整段；局部极端被平均掉 |
 | CISPO / V-trace / TIS | 把 $\rho$ 截断后仍更新 | $\mathbb{E}[\mathrm{clip}(\rho)f]\neq\mathbb{E}_\pi[f]$ |
 
-PPO 论文允许同一批 rollout 上多个 epoch，靠 $\rho_t$ 靠近 1 加 clip。Epoch 多了、actor 更新快了，$(1+\varepsilon)^T$ 里的 $\varepsilon$ 变大，clip fraction 飙升——不是学习率 magically 不合适，是 IS 方差已经不可用。GSPO 把 clip 对象改成序列 likelihood ratio，针对的就是超长 CoT 上 token 级 $\rho$ 拉爆，见 `tencent-gspo-spo-comparison`。CISPO 不扔掉越界 token，只封顶系数，见 `pt-cispo`。V-trace 用 $\prod c_i$ 且 $c_i\le 1$ 挡住回传，见 `fund-vtrace`。
+PPO 论文允许同一批 rollout 上多个 epoch，靠 $\rho_t$ 靠近 1 加 clip。Epoch 多了、actor 更新快了，$(1+\varepsilon)^T$ 里的 $\varepsilon$ 变大，clip fraction 飙升，不是学习率 magically 不合适，是 IS 方差已经不可用。GSPO 把 clip 对象改成序列 likelihood ratio，针对的就是超长 CoT 上 token 级 $\rho$ 拉爆，见 `tencent-gspo-spo-comparison`。CISPO 不扔掉越界 token，只封顶系数，见 `pt-cispo`。V-trace 用 $\prod c_i$ 且 $c_i\le 1$ 挡住回传，见 `fund-vtrace`。
 
 不要说「所以应该永远用序列 IS」。序列比仍是一个数，极端整段（格式崩了、突然换套路）还是会炸，只是不再被单个虚词主导。选择看 $T$ 和 stale：短、够新鲜，token 级 + 小 clip 够用；长思维链 / 异步队列，要序列粒度或截断权重，并报 ESS、$\rho$ 分位数，而不是只报 reward。
 

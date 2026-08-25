@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 433. 最小基因变化
     url: https://leetcode.cn/problems/minimum-genetic-mutation/

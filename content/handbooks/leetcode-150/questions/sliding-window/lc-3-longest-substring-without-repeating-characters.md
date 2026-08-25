@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 3. 无重复字符的最长子串
     url: https://leetcode.cn/problems/longest-substring-without-repeating-characters/
@@ -31,7 +31,7 @@ sources:
 
 `last[ch]` 记 `ch` 最近一次出现的下标。右指针 `i` 扫到 `ch` 时，若 `last[ch]` 仍在窗口内（$\ge$ `left`），把 `left` 跳到 `last[ch]+1`。再更新 `last[ch]=i`，用 `i-left+1` 刷新最长。
 
-集合 + 一步步左移也对，但哈希直接跳更快讲。面试说清「窗口永远无重复」。
+集合 + 一步步左移也对，但哈希直接跳更快讲。白板我会说清「窗口永远无重复」。
 
 ## 参考代码
 
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **要返回子串本身而不是长度？** 刷新 `ans` 的同时记下当时的 `best_left`。最后切片 `s[best_left : best_left + ans]`。时间仍 $O(n)$。多个同样长的无重复子串，题面没要求就返回第一次取到最大长度的那段。不要在循环里每次 `s[left:i+1]` 拷贝，那会把时间抬到 $O(n^2)$。
+- **要返回子串本身而不是长度？** 刷新 `ans` 的同时记下当时的 `best_left`。最后切片 `s[best_left : best_left + ans]`。时间仍 $O(n)$。多个同样长的无重复子串，题面没要求就返回第一次取到最大长度的那段。别在循环里每次 `s[left:i+1]` 拷贝，那会把时间抬到 $O(n^2)$。
 
 ```python
 def longestSubstring(s):
@@ -81,7 +81,7 @@ def longestSubstring(s):
     return s[best_left : best_left + ans]
 ```
 
-- **最多含 $k$ 个不同字符（LC 340）？** 窗口改成「种类数 $\le k$」。哈希计数：右端吃进字符，`len(cnt) \gt k` 时减左端，减到 $0$ 就删掉这个 key。每次窗口合法后用 $right-left+1$ 更新最长。$k=0$ 对非空串答案是 $0$；$k=1$ 退化成最长相同字符段。时间 $O(n)$，空间 $O(\min(|\Sigma|,k))$。本题是 $k=|\Sigma|$ 且还要求窗口内无重复，相当于每种字符次数 $\le 1$，用「上次下标」比计数更直接。
+- **最多含 $k$ 个不同字符（LC 340）？** 窗口改成「种类数 $\le k$」。哈希计数：右端吃进字符，`len(cnt) \gt k` 时减左端，减到 $0$ 就删掉这个 key。每次窗口合法后用 $right-left+1$ 更新最长。$k=0$ 对非空串答案是 $0$；$k=1$ 退化成最长相同字符段。时间 $O(n)$，空间 $O(\min(|\Sigma|,k))$。这题是 $k=|\Sigma|$ 且还要求窗口内无重复，相当于每种字符次数 $\le 1$，用「上次下标」比计数更直接。
 
 ```python
 from collections import Counter

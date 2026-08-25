@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书Hi lab 日常实习 一面
     url: https://www.nowcoder.com/feed/main/detail/8f02e3837274408d9c94c312e8ee578d
@@ -29,9 +29,9 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“数据集构造：如何保证问题能对应某个事实类的答案”**
 
-陷阱是「先让模型自由出题，再去搜一条能对上的笔记」。反向流程容易造出无解、多解或答案不在证据里的题，后面的 RL verifier 只能互捧。正确方向是 **证据先行**：选可核验 span，再写只能由该 span 回答的问题，答案字段带 `doc_id` 与偏移。生成侧评测见 `xiaohongshu-gen-eval`；RAG 解决不了无依据生成见 `xiaohongshu-rag-limits`。
+这块容易直接答成「先让模型自由出题，再去搜一条能对上的笔记」。反向流程容易造出无解、多解或答案不在证据里的题，后面的 RL verifier 只能互捧。正确方向是 **证据先行**：选可核验 span，再写只能由该 span 回答的问题，答案字段带 `doc_id` 与偏移。生成侧评测见 `xiaohongshu-gen-eval`；RAG 解决不了无依据生成见 `xiaohongshu-rag-limits`。
 
-## 从 span 出题，而不是从问题找 span
+## 从 span 出题，别从问题找 span
 
 知识源可以是百科、结构化字段或平台笔记，但必须能定位到文本区间。问题约束：去掉该 span 后，金标答案应无法稳定得出（避免世界知识短路）。时间敏感题打时间戳；意见 / 种草不要标成事实。自动过滤：答案无法与证据做精确或蕴含对齐则丢；多跳题要每跳都有 span，不能只在最后一句「看起来对」。硬验证优先，judge 只做辅助（`data-verifier`）。Grounded RL 的奖励分期见 `pt-grounded-rlvr-reward-staging`：没有可指回证据，阶段二奖励会漂。
 

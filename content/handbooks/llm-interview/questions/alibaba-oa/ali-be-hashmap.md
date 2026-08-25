@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
     url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
@@ -25,9 +25,9 @@ sources:
 
 ## 定义
 
-`HashMap` 是数组上的哈希表。下标计算先扰动再掩码：`(h ^ (h >>> 16)) & (n - 1)`，高位参与，容量必须是 $2$ 的幂。冲突后同一桶用链表串起来；JDK 8 在链长超过树化阈值且容量达到最小树化容量时，把链表升级成红黑树，把最坏查找从 $O(n)$ 压到 $O(\log n)$。负载因子默认 $0.75$，超过就扩容到两倍。扩容时按原哈希的「更高一位」决定去留：该位为 $0$ 留在原下标，为 $1$ 搬到 `i + oldCap`，不必重算完整哈希。
+`HashMap` 是数组上的哈希表。下标我一般这么算：先扰动再掩码，`(h ^ (h >>> 16)) & (n - 1)`，高位也参与，容量必须是 $2$ 的幂。冲突后同一桶用链表串起来；JDK 8 在链长超过树化阈值、且容量达到最小树化容量时，把链表升级成红黑树，最坏查找从 $O(n)$ 压到 $O(\log n)$。负载因子默认 $0.75$，超过就扩容到两倍。扩容时按原哈希的「更高一位」决定去留：该位为 $0$ 留在原下标，为 $1$ 搬到 `i + oldCap`，不必重算完整哈希。
 
-`ConcurrentHashMap` 的对外语义是「分段并发的哈希表」：读基本无锁，写在桶头用 CAS 占位，桶上已有节点再用 `synchronized` 锁住桶头（JDK 8）。没有 Hashtable 那种整表锁，也没有 JDK 7 那种 Segment 数组。`size` 不是每次遍历全表，而是用 `CounterCell` 做分核累加，减少热点。定义里要补一句：它保证单次 `put/get` 的线程安全，**不**保证复合操作（先 get 再 put）的原子性，复合仍要外层同步或用 `computeIfAbsent`。
+`ConcurrentHashMap` 对外是「分段并发的哈希表」：读基本无锁，写在桶头用 CAS 占位，桶上已有节点再用 `synchronized` 锁住桶头（JDK 8）。没有 Hashtable 那种整表锁，也没有 JDK 7 那种 Segment 数组。`size` 不是每次遍历全表，而是用 `CounterCell` 做分核累加，减少热点。最后我会补一句：它保证单次 `put/get` 的线程安全，**不**保证复合操作（先 get 再 put）的原子性，复合仍要外层同步或用 `computeIfAbsent`。
 
 ## 对比 / 分层
 
@@ -39,7 +39,7 @@ sources:
 | 迭代 | fail-fast | 弱一致，不抛 CME | 枚举偏老 |
 | 选用 | 单线程、请求内局部 Map | 共享缓存、计数、去重 | 基本不推荐 |
 
-分层记三件事。第一，JDK 7 头插在并发扩容时可能成环，JDK 8 改尾插是正确性修复，不是性能炫技。第二，树化有退化：哈希太差或容量太小会一直挨打，所以扰动函数和容量幂次都重要。第三，`key` 的 `hashCode` / `equals` 必须稳定；用可变对象当 key，改字段后会丢映射，表现为「明明 put 过却 get 不到」。
+分层我记三件事。第一，JDK 7 头插在并发扩容时可能成环，JDK 8 改尾插是正确性修复，不是性能炫技。第二，树化有退化：哈希太差或容量太小会一直挨打，所以扰动函数和容量幂次都重要。第三，`key` 的 `hashCode` / `equals` 必须稳定；用可变对象当 key，改字段后会丢映射，表现为「明明 put 过却 get 不到」。
 
 `LinkedHashMap` 在 HashMap 上加访问顺序，可做 LRU；`TreeMap` 是红黑树有序表，不是同一条赛道。面试只在被追问「有序 Map」时展开。
 

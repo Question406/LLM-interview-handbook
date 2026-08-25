@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 2026 校招高频题总览
     url: https://www.cnblogs.com/autodriver/p/19829365
@@ -23,7 +23,7 @@ sources:
     type: candidate-first-hand
 ---
 
-陷阱是按力扣题号顺序刷，或把 LLM 人才计划的 GRPO / Agent 题和本章机试卡混成一套背诵。近年公开场次结构大致稳定：选择（CS + 近年 AI）+ 2–3 道编程；AI 研发还会加 1 道 Prompt。编程爱考经典算法加约束，而不是原题照搬。下面按手册题卡 id 分线，本页只给地图。
+这块容易直接答成：按力扣题号顺序刷，或者把 LLM 人才计划的 GRPO / Agent 题和本章机试卡混成一套背诵。近年公开场次结构大致稳定：选择（CS + 近年 AI）+ 2 到 3 道编程；AI 研发还会加 1 道 Prompt。编程爱考经典算法加约束，而不是原题照搬。下面按手册题卡 id 分线，本页只给地图。
 
 ## 线 1：机试变形（先过编程）
 

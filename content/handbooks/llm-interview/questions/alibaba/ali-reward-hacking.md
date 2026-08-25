@@ -13,18 +13,18 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 阿里国际大模型算法一面
     url: 'https://www.nowcoder.com/feed/main/detail/27a27fc44b8a4613ae790ba27add8850'
     type: legacy-reference
 ---
 
-陷阱是把 RM 曲线新高当成 SOTA，或把 hacking 说成普通过拟合。Reward hacking 是模型钻奖励模型或规则的空子，训练指标上涨但真实质量下降。典型现象：RM score 升但人工偏好 / 下游任务降；输出变长、套话、格式刷分；对已知 RM 弱点过拟合。发现要靠 KL 异常、长度膨胀、模板刷分、人工抽检 divergence、多 RM 分歧，不能只看一条奖励曲线。GRPO 的 KL 项见 `ali-grpo-loss`，分数尺度见 `data-reward-calibration`。
+这块容易直接答成把 RM 曲线新高当成 SOTA，或把 hacking 说成普通过拟合。Reward hacking 是模型钻奖励模型或规则的空子，训练指标上涨但真实质量下降。典型现象：RM score 升但人工偏好 / 下游任务降；输出变长、套话、格式刷分；对已知 RM 弱点过拟合。发现要靠 KL 异常、长度膨胀、模板刷分、人工抽检 divergence、多 RM 分歧，不能只看一条奖励曲线。GRPO 的 KL 项见 `ali-grpo-loss`，分数尺度见 `data-reward-calibration`。
 
 ## 指标涨、质量掉
 
-适用条件：不可验证的偏好 RM，或规则有漏洞（「必须包含谢谢」「越长越好」）。数学 / 代码等可用 verifier 的任务，应尽量用规则分替代纯 RM。短 SFT 没有奖励优化，一般不叫 hacking，那是过拟合。过拟合是拟合训练集分布；hacking 是利用奖励函数与真实目标的缝隙，即使在训练分布内也会走捷径。客服 RM 喜欢「态度好」，策略学会每句加三段道歉和 emoji，RM 分持续新高，人工抽检却抱怨废话、问题解决率下降——这就是 hack，不是「对齐成功」。
+适用条件：不可验证的偏好 RM，或规则有漏洞（「必须包含谢谢」「越长越好」）。数学 / 代码等可用 verifier 的任务，应尽量用规则分替代纯 RM。短 SFT 没有奖励优化，一般不叫 hacking，那是过拟合。过拟合是拟合训练集分布；hacking 是利用奖励函数与真实目标的缝隙，即使在训练分布内也会走捷径。客服 RM 喜欢「态度好」，策略学会每句加三段道歉和 emoji，RM 分持续新高，人工抽检却抱怨废话、问题解决率下降。这就是 hack，不是「对齐成功」。
 
 ## 怎么在训练里发现
 

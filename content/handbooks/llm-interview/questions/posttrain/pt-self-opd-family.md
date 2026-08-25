@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Self-Distilled Reasoner (OPSD)
     url: https://arxiv.org/abs/2601.18734
@@ -79,7 +79,7 @@ u-OPSD 的系统性风险是 **自信的错共识**。多数票错了，$y^+$ �
 
 ## 和 GRPO / SFT 的边界
 
-SFT 在 $y^\star$ 的教师前缀上做 CE：学生从未在自己的错前缀上受训。OPSD 家族都在 **学生前缀** 上给分布，这是 on-policy 这一半。GRPO 在学生轨迹上但信号稀疏，全对/全错组为零。Self-OPD 用特权分布填中间步，所以短蒸馏长度也可能够——作者假设早期 token 是分支点，后面教师几乎能从长前缀预测。多轮规划、工具环是否仍成立，论文自己标成开放问题。
+SFT 在 $y^\star$ 的教师前缀上做 CE：学生从未在自己的错前缀上受训。OPSD 家族都在 **学生前缀** 上给分布，这是 on-policy 这一半。GRPO 在学生轨迹上但信号稀疏，全对/全错组为零。Self-OPD 用特权分布填中间步，所以短蒸馏长度也可能够，作者假设早期 token 是分支点，后面教师几乎能从长前缀预测。多轮规划、工具环是否仍成立，论文自己标成开放问题。
 
 不要把 Self-OPD 答成「替代全部 RL」。Verifier 可靠且探索还不够时，RLVR 仍负责发现新模式；蒸馏负责把已有特权（GT、共识、PI）变成稠密纠正。冲突时以可执行 oracle 为准，不要让教师文风压过正确答案。
 

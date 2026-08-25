@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: SWE-bench Multimodal
     url: https://arxiv.org/abs/2505.23419
@@ -29,9 +29,9 @@ sources:
 
 输出应能让第二个人在相同环境 replay，并判断失败来自模型、工具、依赖还是评测器。最低集合：统一 diff、逐步 trace（每次 tool 的请求 / 响应）、测试日志、机器可读 verdict（`resolved` / `failed` / `timeout` / `policy_denied` / `env_error`）、退出原因、资源消耗。verdict 必须由冻结的 evaluator 产生，而不是模型自称「已修复」。artifact 与 trace 要版本化存放，并和任务 ID、attempt ID 绑定。没有 trace 的成功不可审计：无法证明没改测试、没检索 gold PR。预算耗尽要单独计，不要并进「模型不会修」。
 
-## 可被刷的缺口
+## 评测上能刷的缺口
 
-常见缺口：不冻依赖导致「环境碰巧能编过」；允许评测时上网把 gold PR 检索回来；预算不封顶，用无限 retry 堆成功率；只交最终 patch、不交 trace；把环境崩溃算模型失败或反过来全甩给环境。报告应同时给出成功定义、预算耗尽率、不可复现率和多次重跑方差。合同的价值是：别人按同一 YAML 能重跑出同一 verdict，误差来自模型随机性而不是环境漂移。面试口径：最小可发表物是任务版本 + 镜像 digest + 模型 snapshot + patch + evaluator verdict + 完整 trace。把这份清单当成实验的 schema：缺字段的 run 不得进入对比表。现场被问「为什么你们分数和官方不一致」时，先对合同字段，再谈模型。
+常见缺口：不冻依赖导致「环境碰巧能编过」；允许评测时上网把 gold PR 检索回来；预算不封顶，用无限 retry 堆成功率；只交最终 patch、不交 trace；把环境崩溃算模型失败或反过来全甩给环境。报告应同时给出成功定义、预算耗尽率、不可复现率和多次重跑方差。合同的价值是：别人按同一 YAML 能重跑出同一 verdict，误差来自模型随机性而不是环境漂移。最小可发表物是任务版本 + 镜像 digest + 模型 snapshot + patch + evaluator verdict + 完整 trace。把这份清单当成实验的 schema：缺字段的 run 不得进入对比表。现场被问「为什么你们分数和官方不一致」时，先对合同字段，再谈模型。
 
 把 run contract 存成与 patch 同目录的机器可读文件，CI 拒绝缺 digest / 缺 verdict / 缺 trace 的提交。对比实验只能在合同字段完全一致时进行。口头对齐环境和可复现不是一回事。
 

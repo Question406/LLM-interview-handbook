@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 102. 二叉树的层序遍历
     url: https://leetcode.cn/problems/binary-tree-level-order-traversal/
@@ -30,9 +30,9 @@ sources:
 
 ## 思路
 
-队列先放根。每一轮开始记下 `size=len(q)`，只弹出这么多个，收集成一层，同时把左右孩子入队。空根直接 `[]`。
+队列先放根。每一轮开始记下 `size=len(q)`，只弹出这么多个，收成一层，同时把左右孩子入队。空根直接 `[]`。
 
-不要一次掏光队列再事后切层。面试强调「用当轮 `size` 切开」。
+这块容易栽：一次把队列掏光再事后切层。白板我会强调，用当轮 `size` 切开。
 
 ## 参考代码
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **自底向上层序（LC 107）？** 先按本题从根到叶收集，最后把外层列表反转（或每层 `appendleft` / 插到下标 $0$）。层内仍从左到右，只是层的顺序反过来。时间 $O(n)$。不要在队列里从叶往根走——没有父指针。
+- **自底向上层序（LC 107）？** 先按本题从根到叶收集，最后把外层列表反转（或每层 `appendleft` / 插到下标 $0$）。层内仍从左到右，只是层的顺序反过来。时间 $O(n)$。不要在队列里从叶往根走，没有父指针。
 
 ```python
 from collections import deque
@@ -116,7 +116,7 @@ def levelOrderBottom(root):
     return ans
 ```
 
-- **改成 DFS？** 按深度把值塞进对应桶：进入节点时若 `d == len(ans)` 就新开一层，再先左后右。结果与 BFS 相同。能过题，但面试先声明标准答案是切层 BFS；DFS 栈深最坏 $O(n)$，宽树时 BFS 才吃宽度。
+- **改成 DFS？** 按深度把值塞进对应桶：进入节点时若 `d == len(ans)` 就新开一层，再先左后右。结果和 BFS 相同。能过题，但白板我会先声明标准答案是切层 BFS；DFS 栈深最坏 $O(n)$，宽树时 BFS 才吃宽度。
 
 ```python
 def levelOrder_dfs(root):

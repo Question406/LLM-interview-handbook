@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Cross-entropy
     url: https://en.wikipedia.org/wiki/Cross-entropy
@@ -25,7 +25,7 @@ sources:
     type: reference
 ---
 
-三个定义先写齐。$p$ 是「目标 / 数据」，$q$ 是「模型」：
+我会先把三个定义写齐。$p$ 是「目标 / 数据」，$q$ 是「模型」：
 
 $$
 \begin{aligned}
@@ -53,7 +53,7 @@ $$
 H(p,q)=H(p)+D_{\mathrm{KL}}(p\|q).
 $$
 
-$H(p)$ 不含 $q$。对模型做梯度时 $\nabla_q H(p,q)=\nabla_q D_{\mathrm{KL}}(p\|q)$。所以「最小 CE」$\Leftrightarrow$「最小正向 KL」。KL 非负还立刻给出 $H(p,q)\ge H(p)$，等号当 $q=p$。
+$H(p)$ 不含 $q$。对模型做梯度时 $\nabla_q H(p,q)=\nabla_q D_{\mathrm{KL}}(p\|q)$。所以最小 CE 就是最小正向 KL。KL 非负还立刻给出 $H(p,q)\ge H(p)$，等号当 $q=p$。
 
 最大熵也是这条：均匀 $u(x)=1/V$，则 $H(p)=\log V-D_{\mathrm{KL}}(p\|u)\le\log V$。
 
@@ -65,7 +65,7 @@ $$
 \frac1n\sum_{i=1}^n\log q_\theta(x_i)\approx \mathbb{E}_{x\sim p_{\mathrm{data}}}[\log q_\theta(x)]=-H(p_{\mathrm{data}},q_\theta).
 $$
 
-所以 **最大似然 = 最小经验交叉熵 = 最小经验正向 KL**。LLM 的 next-token loss 就是把 $p$ 换成 one-hot 标签（或教师软标签）后的这个目标。
+所以最大似然 = 最小经验交叉熵 = 最小经验正向 KL。LLM 的 next-token loss 就是把 $p$ 换成 one-hot 标签（或教师软标签）后的这个目标。
 
 有限数据、teacher forcing、mask 会让「SFT = 完美 mode-covering」只是直觉，不是定理；但方向仍是正向：$p$ 采样（数据），$q$ 被拟合。
 

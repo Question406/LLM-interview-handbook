@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 230. 二叉搜索树中第K小的元素
     url: https://leetcode.cn/problems/kth-smallest-element-in-a-bst/

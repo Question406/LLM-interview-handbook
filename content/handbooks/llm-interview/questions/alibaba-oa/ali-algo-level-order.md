@@ -5,14 +5,14 @@ order: 35
 level: B
 title: 阿里手撕：二叉树层序及变形要准备哪些？
 quick: >-
-  队列 BFS，每层先 `size=q.size()` 再吐正好一层。锯齿、右侧视图、层均值都是同一骨架换收集方式。
+  我会用队列 BFS，每层先 `size=q.size()` 再吐正好一层。锯齿、右侧视图、层均值都是同一骨架，只换收集方式。
 tags:
   - Alibaba
   - BFS
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 二叉树的层序遍历
     url: https://leetcode.cn/problems/binary-tree-level-order-traversal/
@@ -26,7 +26,7 @@ sources:
 
 - 对应：LeetCode 102 及 103 / 199 变形
 
-层序的考点不是「会不会 BFS」，而是能不能按层切开。不要把整棵树丢进一个 list 再事后切层。空根返回空。锯齿、右侧视图、层均值都是同一骨架换收集方式。
+层序考的不是「会不会 BFS」，是能不能按层切开。不要把整棵树丢进一个 list 再事后切层。空根返回空。锯齿、右侧视图、层均值都是同一骨架，只换收集方式。
 
 ## 思路
 
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
 ## 复杂度
 
-时间 $O(n)$，空间 $O(w)$，$w$ 是最宽一层（最坏 $O(n)$）。不要 DFS 按深度塞桶还声称「这才是层序」——能过题，但面试要先给 BFS。
+时间 $O(n)$，空间 $O(w)$，$w$ 是最宽一层（最坏 $O(n)$）。不要 DFS 按深度塞桶还声称「这才是层序」。能过题，我会先给 BFS。
 
 ## 边界与追问
 

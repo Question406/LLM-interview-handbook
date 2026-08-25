@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Softmax function — temperature
     url: https://en.wikipedia.org/wiki/Softmax_function#Smooth_argmax
@@ -24,7 +24,7 @@ sources:
     type: secondary
 ---
 
-陷阱是把两者都说成「让模型更随机」。一个改 **这一次怎么抽样**，一个改 **权重被训练成什么样**。明天把温度调回去，策略立刻复原；entropy bonus 写进损失后，存盘的 $\pi$ 已经变了。熵的定义见 `fund-shannon-entropy`，softmax 与 NLL 见 `fund-softmax-nll`。训练时熵塌缩是数据/奖励问题，见 `data-entropy-collapse`。
+这块容易直接答成两者都是「让模型更随机」。一个改 **这一次怎么抽样**，一个改 **权重被训练成什么样**。明天把温度调回去，策略立刻复原；entropy bonus 写进损失后，存盘的 $\pi$ 已经变了。熵的定义见 `fund-shannon-entropy`，softmax 与 NLL 见 `fund-softmax-nll`。训练时熵塌缩是数据/奖励问题，见 `data-entropy-collapse`；确认是坏塌之后的旋钮顺序见 `data-entropy-fix-order`。
 
 ## Temperature（推理 / rollout）
 
@@ -56,12 +56,12 @@ $$
 
 反过来，entropy bonus 过大，策略接近均匀，reward 学不动，像在随机乱采样。SAC 用目标熵调节 $\alpha$，LLM RL 更常见的是固定小 $\alpha$ 再靠 KL 锚住 $\pi_{\mathrm{ref}}$。两者同时出现时量纲不同：KL 是相对参考策略，熵是相对均匀分布，不要合成一个「随机度」旋钮。评测必须锁 $T$（常见 $0$ 或 $1$）；用训练时的高温去报分数，会把随机性当成能力。
 
-口头对照：温度是解码器旋钮，拧回去分布复原；熵正则是优化器旋钮，权重已改。一个改采样，一个改 $\pi$。
+说白了：温度是解码器旋钮，拧回去分布复原；熵正则是优化器旋钮，权重已改。一个改采样，一个改 $\pi$。
 
 ## 追问
 
 - **推理 greedy 还能有熵 bonus 的效果吗？** 有。权重已经变，greedy 下的峰值也可能更平、更不易锁死单一模板。
 - **和 KL penalty 什么关系？** KL 把 $\pi$ 拉向参考策略；熵 bonus 把 $\pi$ 推向更均匀。常同时出现，量纲要分开调。
-- **为什么 LLM RL 还要看 entropy 曲线？** 熵过早塌缩意味着组内无方差、GRPO/PPO 没信号，先查数据与 $\alpha$，再查温度。
+- **为什么 LLM RL 还要看 entropy 曲线？** 熵过早塌缩意味着组内无方差、GRPO/PPO 没信号。先查是不是坏塌（`data-entropy-collapse`），再按有效组 → clip → 长度 → 熵正则动手（`data-entropy-fix-order`），不要先把温度调到 $1.5$。
 - **能不能把 $T$ 编进训练图？** 能，但 $H$ 的尺度会变，$\alpha$ 要重调；多数实现训练固定 $T=1$，只在 rollout 改 $T$。
-- **高温采样算 off-policy 吗？** 若 $\log\pi$ 按 $T=1$ 算而数据来自 $T\neq 1$，严格说行为策略变了，应用 IS 或承认偏差；工程上小偏移常被忽略，面试要能点出这一点。
+- **高温采样算 off-policy 吗？** 若 $\log\pi$ 按 $T=1$ 算而数据来自 $T\neq 1$，严格说行为策略变了，应用 IS 或承认偏差；工程上小偏移常被忽略，这一点我会点出来。

@@ -15,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: OpenAI — A practical guide to building AI agents
     url: https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/
@@ -25,7 +25,7 @@ sources:
     type: reference
 ---
 
-陷阱是把 tool 调用的进度写进对话里让模型「自己记得」。LLM 擅长语义决策（叫不叫、填哪个槽），但 **transaction、权限、重试次数、是否已有副作用** 必须由 harness 结构化保存。压缩 context、幻觉、进程重启都会丢掉自然语言里的安全信息。权限模型见 `agent-tool-permissions`；schema 见 `agent-schema-contract`。
+这块容易把 tool 调用的进度写进对话里让模型「自己记得」。LLM 擅长语义决策（叫不叫、填哪个槽），但 transaction、权限、重试次数、是否已有副作用必须由 harness 结构化保存。压缩 context、幻觉、进程重启都会丢掉自然语言里的安全信息。权限模型见 `agent-tool-permissions`；schema 见 `agent-schema-contract`。
 
 ## 显式状态：PARSE 到 RETURN，失败有单独边
 
@@ -70,7 +70,7 @@ def step(state, event, ctx):
 
 ## 什么不能只存在 context 里
 
-必须持久化：**tool-call ID**（幂等）、**attempt**、**是否已执行成功**、**权限快照**、**预算 / 超时**、**用户确认 token**。这些若只出现在 assistant 文本里，下轮模型可能重放一次转账，或忘掉已经 DENY。副作用工具（写库、支付、发邮件）在 EXECUTE 前生成 idempotency key，失败走 STATUS_CHECK 而不是盲目重试。LLM 可以提议「再试一次」，harness 有权拒绝。Prompt injection 只能影响 PARSE 之后的语义，不能绕过 AUTHORIZE，见 `agent-prompt-injection`。
+必须持久化：tool-call ID（幂等）、attempt、是否已执行成功、权限快照、预算 / 超时、用户确认 token。这些若只出现在 assistant 文本里，下轮模型可能重放一次转账，或忘掉已经 DENY。副作用工具（写库、支付、发邮件）在 EXECUTE 前生成 idempotency key，失败走 STATUS_CHECK 而不是盲目重试。LLM 可以提议「再试一次」，harness 有权拒绝。Prompt injection 只能影响 PARSE 之后的语义，不能绕过 AUTHORIZE，见 `agent-prompt-injection`。
 
 ## 追问
 

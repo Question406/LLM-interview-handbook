@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 6. Z 字形变换
     url: https://leetcode.cn/problems/zigzag-conversion/
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **只要某一行的字符？** 不必开 `numRows` 个缓冲区。周期 `cycle = 2*(numRows-1)`。第 `row` 行在每个周期里先取 `k*cycle + row`；若是中间行，同一周期还有斜上的那个字符，下标是 `k*cycle + cycle - row`。首行和末行每个周期只有一个字符。时间 $O(n/\texttt{numRows})$ 量级地跳着取，最坏仍 $O(n)$，额外空间只保存这一行。易错点是中间行漏掉斜上那个下标，以及 `numRows=1` 时周期变成 $0$ 不能做模。`row` 越界应返回空串。
+- **只要某一行的字符？** 不必开 `numRows` 个缓冲区。周期 `cycle = 2*(numRows-1)`。第 `row` 行在每个周期里先取 `k*cycle + row`；若是中间行，同一周期还有斜上的那个字符，下标是 `k*cycle + cycle - row`。首行和末行每个周期只有一个字符。时间 $O(n/\texttt{numRows})$ 量级地跳着取，最坏仍 $O(n)$，额外空间只保存这一行。这块容易栽：中间行漏掉斜上那个下标，以及 `numRows=1` 时周期变成 $0$ 不能做模。`row` 越界应返回空串。
 
 ```python
 def nth_row(s, numRows, row):
@@ -91,7 +91,7 @@ def nth_row(s, numRows, row):
     return "".join(chars)
 ```
 
-- **要打印带空格的 Z 字形图？** 按行读出的压缩串不够，必须真的落二维网格。列在竖直向下时不变，斜向上时每次列加一、行减一；碰到顶或底就换方向。字符按这个坐标写入，其余填空格，最后按行 `join`。时间 $O(\texttt{numRows} \cdot n)$（网格宽度最坏 $O(n)$），额外空间同阶。易错点是斜上时忘了加列，图会叠在同一列；以及 `numRows=1` 仍去走折返。输出给人工看时记得 `rstrip` 掉行尾空格，判题版原题并不要这张图。
+- **要打印带空格的 Z 字形图？** 按行读出的压缩串不够，必须真的落二维网格。列在竖直向下时不变，斜向上时每次列加一、行减一；碰到顶或底就换方向。字符按这个坐标写入，其余填空格，最后按行 `join`。时间 $O(\texttt{numRows} \cdot n)$（网格宽度最坏 $O(n)$），额外空间同阶。这块容易栽：斜上时忘了加列，图会叠在同一列；以及 `numRows=1` 仍去走折返。输出给人工看时记得 `rstrip` 掉行尾空格，判题版原题并不要这张图。
 
 ```python
 def zigzag_grid(s, numRows):
@@ -120,4 +120,3 @@ def zigzag_grid(s, numRows):
     width = c + 1
     return "\n".join("".join(row[:width]).rstrip() for row in grid)
 ```
-

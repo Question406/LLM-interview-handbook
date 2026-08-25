@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 201. 数字范围按位与
     url: https://leetcode.cn/problems/bitwise-and-of-numbers-range/

@@ -5,8 +5,7 @@ order: 103
 level: S
 title: 腾讯 TEG：使用 GRPO 时，构造数据要符合什么要求？
 quick: >-
-  同一 prompt 必须能采样出可比较、可验证且有 reward 方差的多条回答；任务不能大面积全对 / 全错，verifier 要稳定、抗投机，prompt
-  分布要覆盖真实目标。先看有效 group 比例，而不是只堆样本量。
+  同一 prompt 必须能采样出可比较、可验证且有 reward 方差的多条回答；任务不能大面积全对 / 全错，verifier 要稳定、抗投机，prompt 分布要覆盖真实目标。先看有效 group 比例，别只堆样本量。
 tags:
   - Tencent
   - TEG
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯Teg大模型暑期算法面经（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/cce12c13c4af401788cfe08bd76b94b9?urlSource=sitemap
@@ -31,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“使用 GRPO 时，构造数据要符合什么要求”**
 
-陷阱是把 GRPO 数据讲成「再多采一些 SFT 题」。GRPO 的信号来自 **同一 prompt 下 $G$ 条 rollout 的相对优势**；组内几乎全对或全错时，group-normalized advantage 接近零，加再多条也是空转。何时 GRPO 失效见 `tencent-teg-grpo-when-bad`，全同组零优势见 `byte-grpo-all-same-zero-adv`、`ali-grpo-advantage`。先报有效 group 比例，再报样本量。
+这块容易把 GRPO 数据讲成「再多采一些 SFT 题」。GRPO 的信号来自 **同一 prompt 下 $G$ 条 rollout 的相对优势**；组内几乎全对或全错时，group-normalized advantage 接近零，加再多条也是空转。何时 GRPO 失效见 `tencent-teg-grpo-when-bad`，全同组零优势见 `byte-grpo-all-same-zero-adv`、`ali-grpo-advantage`。先报有效 group 比例，再报样本量。
 
 ## 题目要落在可探索带
 
@@ -51,7 +50,7 @@ GRPO 的 advantage 是组内相对量：$\hat A_i=(r_i-\bar r)/\sigma_r$。构�
 
 prompt 侧：去掉重复模板（改几个数字仍是同一道题）、控制长度分布，避免长题占满上下文导致短题学不到。领域覆盖要对着产品 query，而不是对着公开榜单。动态过滤：训练中 pass 率已饱和的题降权或移出；全错题先回到 SFT 或降难度，而不是空转浪费 rollout。Curriculum 不是「从易到难一条路走完」，而是维持探索带：始终有一部分题的 pass@$1$ 在中间。
 
-和「什么时候 GRPO 不好用」是同一面的前后问（`tencent-teg-grpo-when-bad`）：奖励不可靠、组内无方差、格式都没学会时，先别上 GRPO。数据要求就是把这三件事挡在进池之前。有效 group 比例应写进 dashboard，低于阈值就停，查 verifier 与配比，而不是把学习率加大。构造阶段就要拒绝「看起来很难但当前政策零通过」的题，把它们留给 SFT 或更强的 teacher 示范；也要拒绝「已经 95% 通过」的题，它们只会制造空组。等价解、格式变体、部分正确都应在 reward 设计里显式处理，否则组方差是假的——全是格式分在抖。
+和「什么时候 GRPO 不好用」是同一面的前后问（`tencent-teg-grpo-when-bad`）：奖励不可靠、组内无方差、格式都没学会时，先别上 GRPO。数据要求就是把这三件事挡在进池之前。有效 group 比例应写进 dashboard，低于阈值就停，查 verifier 与配比，而不是把学习率加大。构造阶段就要拒绝「看起来很难但当前政策零通过」的题，把它们留给 SFT 或更强的 teacher 示范；也要拒绝「已经 95% 通过」的题，它们只会制造空组。等价解、格式变体、部分正确都应在 reward 设计里显式处理，否则组方差是假的，全是格式分在抖。
 
 ## 追问
 

@@ -5,8 +5,7 @@ order: 181
 level: A
 title: 小红书 Hi lab：如何评估训练后的收益？搜索 top-k 该固定还是由模型选？
 quick: >-
-  收益必须对照冻结的离线集和线上护栏，分能力桶看，而不是只报平均分涨了。top-k
-  默认固定并按 query 类型设档；模型动态选 k 要有延迟与漏召预算，否则会变成「永远再多要一点上下文」。
+  收益必须对照冻结的离线集和线上护栏，分能力桶看，别只报平均分涨了。top-k 默认固定并按 query 类型设档；模型动态选 k 要有延迟与漏召预算，否则会变成「永远再多要一点上下文」。
 tags:
   - Xiaohongshu
   - Evaluation
@@ -14,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书Hi lab 日常实习 一面
     url: https://www.nowcoder.com/feed/main/detail/8f02e3837274408d9c94c312e8ee578d
@@ -29,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“是否有评估训练后的收益”**；**“搜索引擎召回的top-k值是固定还是模型选择”**
 
-陷阱是报「平均分涨了」或让 Agent 自己决定无限加大 $k$。收益必须是 **对照实验**：同一 prompt、同一检索版本、同一解码，比训练前；分事实、多轮、安全桶；报告胜率置信区间和回归。没有冻结对照集的「感觉更好」不算收益。生成评测操作见 `xiaohongshu-gen-eval`；离线-线上缺口见 `data-offline-online-metric-gap`。原帖也强调落地重于背 DAPO 公式，算法对比见 `xiaohongshu-dapo-vs-grpo`。
+这块容易报「平均分涨了」或让 Agent 自己决定无限加大 $k$。收益必须是 **对照实验**：同一 prompt、同一检索版本、同一解码，比训练前；分事实、多轮、安全桶；报告胜率置信区间和回归。没有冻结对照集的「感觉更好」不算收益。生成评测操作见 `xiaohongshu-gen-eval`；离线-线上缺口见 `data-offline-online-metric-gap`。原帖也强调落地重于背 DAPO 公式，算法对比见 `xiaohongshu-dapo-vs-grpo`。
 
 ## 训练收益怎么报
 

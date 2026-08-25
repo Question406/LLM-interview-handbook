@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 399. 除法求值
     url: https://leetcode.cn/problems/evaluate-division/
@@ -31,7 +31,7 @@ sources:
 
 把变量当点、除法当带权边。$a/b=v$ 建 $a\to b$ 权 $v$，反向权 $1/v$。查询就是找一条 $c\rightsquigarrow d$ 的路径，答案是边上权的乘积。BFS 或 DFS 均可；点很少，不必最短路算法。
 
-同一变量比自己是 $1$（前提是它在图里）。并查集也可：维护到根的乘积，路径压缩时更新权。面试 BFS 更好讲。
+同一变量比自己是 $1$（前提是它在图里）。并查集也可：维护到根的乘积，路径压缩时更新权。白板 BFS 更好讲。
 
 ## 参考代码
 

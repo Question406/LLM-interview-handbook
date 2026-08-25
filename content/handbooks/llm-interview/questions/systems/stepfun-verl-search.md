@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰agent算法面经分享
     url: https://www.nowcoder.com/feed/main/detail/d01a17cf25344f4bb73eff2dbbaf6eee
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“介绍一下trl/verl架构，有哪些类，主要参数”**；**“用verl训agent调用搜索工具为例，讲一下每一类大致怎么设计”**
 
-陷阱是背源码类名，或把搜索 RTT 和 GPU generate 绑在同一个同步循环里。按职责说：谁采样、谁搜、谁打分、谁更新、谁算 KL。搜索延迟远高于纯生成，不异步、不缓存，GPU 会空转。蚂蚁 VeRL 账本卡讲样本数；本题讲角色与搜索耦合，见 `sys-rl-grpo-loop-roles`、`byte-verl-structure`。
+这块容易背源码类名，或把搜索 RTT 和 GPU generate 绑在同一个同步循环里。我会按职责说：谁采样、谁搜、谁打分、谁更新、谁算 KL。搜索延迟远高于纯生成，不异步、不缓存，GPU 会空转。蚂蚁 VeRL 账本卡讲样本数；本题讲角色与搜索耦合，见 `sys-rl-grpo-loop-roles`、`byte-verl-structure`。
 
 ## 按职责拆角色
 

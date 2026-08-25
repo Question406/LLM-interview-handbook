@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
     url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
@@ -25,9 +25,9 @@ sources:
 
 ## 定义
 
-线程池把「创建线程」和「执行任务」拆开。`ThreadPoolExecutor` 七参数按执行语义记，不要背成单词表：`corePoolSize` 是常驻工人；`maximumPoolSize` 是峰值上限；`keepAliveTime` + `TimeUnit` 是非核心线程空闲回收；`workQueue` 是任务缓冲；`threadFactory` 决定线程名、守护属性，方便排查；`handler` 是队列和线程都满之后的拒绝策略。提交顺序必须说对：先把核心线程填满，再入队，队列满才开到最大线程，再满才拒绝。很多人把「先扩线程再入队」讲反，面试官会立刻打断。
+线程池把「创建线程」和「执行任务」拆开。`ThreadPoolExecutor` 七参数按执行语义记，不要背成单词表：`corePoolSize` 是常驻工人；`maximumPoolSize` 是峰值上限；`keepAliveTime` + `TimeUnit` 是非核心线程空闲回收；`workQueue` 是任务缓冲；`threadFactory` 决定线程名、守护属性，方便排查；`handler` 是队列和线程都满之后的拒绝策略。提交顺序必须说对：先把核心线程填满，再入队，队列满才开到最大线程，再满才拒绝。这块容易把「先扩线程再入队」讲反，面试官会立刻打断。
 
-锁的定义更简单：保护临界区，保证同一时刻只有约定数量的线程能改共享状态。`synchronized` 是 JVM 内置监视器锁，进入代码块或方法时获取，退出或异常时自动释放，可重入。`ReentrantLock` 是 JUC 里基于 AQS 的显式锁，必须在 `finally` 里 `unlock`。AQS 本体是一个 `state` 整数加一条 CLH 变体的双向等待队列：获取失败的线程入队停车，释放时唤醒后继；独占模式对应锁，共享模式对应 `CountDownLatch` / `Semaphore`。
+锁更简单：保护临界区，保证同一时刻只有约定数量的线程能改共享状态。`synchronized` 是 JVM 内置监视器锁，进入代码块或方法时获取，退出或异常时自动释放，可重入。`ReentrantLock` 是 JUC 里基于 AQS 的显式锁，必须在 `finally` 里 `unlock`。AQS 本体是一个 `state` 整数加一条 CLH 变体的双向等待队列：获取失败的线程入队停车，释放时唤醒后继；独占模式对应锁，共享模式对应 `CountDownLatch` / `Semaphore`。
 
 ## 对比 / 分层
 

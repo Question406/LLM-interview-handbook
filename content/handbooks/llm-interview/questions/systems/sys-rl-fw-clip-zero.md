@@ -5,7 +5,7 @@ order: 236
 level: S
 title: TRL / veRL / OpenRLHF 里为什么 clip fraction 会一直是 0？
 quick: >-
-  clip 只在 $\pi_\theta$ 相对采样时的 $\pi_{\mathrm{old}}$ 已经更新过之后才有意义。一批 rollout
+  Clip 只在 $\pi_\theta$ 相对采样时的 $\pi_{\mathrm{old}}$ 已经更新过之后才有意义。一批 rollout
   只做一次 `optimizer.step()` 时 $\rho\approx 1$，clip 恒为 0。TRL 看
   `generate_every` 是否大于累积步；veRL 看 `ppo_epochs>1` 或 mini-batch 小于整包；OpenRLHF
   看是否对同一批做多次真正 step。
@@ -17,7 +17,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Proximal Policy Optimization Algorithms
     url: https://arxiv.org/abs/1707.06347
@@ -58,7 +58,7 @@ CISPO 把 clip 对象换成 IS 权重并 detach，梯度仍走 $\log\pi$，见 `
 
 同一批轨迹上：step 0 的 $\rho$ 在 1 附近，clip fraction $\approx 0$；后续 mini-batch / epoch，$\theta$ 离开 old，ratio 分布变宽，越出 $\varepsilon$ 的比例上升。若你的曲线从第一步到最后一步都贴零，说明中间没有对这批数据做第二次真正的 `step`，或 old logp 每步都在用「当前 $\theta$」重算导致 $\rho$ 被重置为 1。后一种是日志口径错误：old 必须冻结在采样时（或采样后那一次训练图 forward），不能跟 new 用同一份即时 logp。
 
-监控要和 KL（对 $\pi_{\mathrm{ref}}$）、熵一起看。Clip 为 0 且 KL 也几乎为 0：可能更新太弱。Clip 为 0 但 KL 在涨：单步 on-policy 仍在离开参考，护栏来自 KL 不是 clip。不要只盯一个标量。Ratio 直方图比单一 clip fraction 更有用：全部贴在 1 上，就是没发生第二次更新；已经散开却分数仍为 0，才去查 $\varepsilon$ 是否过大或统计 mask 是否把越界 token 排除了。日志口径和算法口径必须分开查。统计时还要注意 response mask：把 prompt token 算进 clip fraction，会把大量 $\rho=1$ 的前缀灌进均值，分数被稀释成假零。只在生成段上统计，才和 PPO 论文里的 action 一致，见 `sys-rl-response-mask`。排查时把「更新次数、old 是否冻结、mask 是否只盖 response」写成检查清单，三问都能当场答，比打开 TensorBoard 猜更像用过 TRL / veRL / OpenRLHF。单步 run 就把 clip 面板摘掉，避免假零消耗值班注意力。若必须留着面板，把「本 batch 的 optimizer.step 次数」做成并列指标，次数为 1 时 clip=0 标成预期而不是红色告警。这样框架配置和监控语义才一致。把「预期为零」写进 run 的 README，比事后解释为什么看板全红更省事。值班手册里单步与多 epoch 要分成两种正常形态，避免同一条告警规则两套配方互打。
+监控要和 KL（对 $\pi_{\mathrm{ref}}$）、熵一起看。Clip 为 0 且 KL 也几乎为 0：可能更新太弱。Clip 为 0 但 KL 在涨：单步 on-policy 仍在离开参考，护栏来自 KL 不是 clip。不要只盯一个标量。Ratio 直方图比单一 clip fraction 更有用：全部贴在 1 上，就是没发生第二次更新；已经散开却分数仍为 0，才去查 $\varepsilon$ 是否过大或统计 mask 是否把越界 token 排除了。日志口径和算法口径必须分开查。统计时还要注意 response mask：把 prompt token 算进 clip fraction，会把大量 $\rho=1$ 的前缀灌进均值，分数被稀释成假零。只在生成段上统计，才和 PPO 论文里的 action 一致，见 `sys-rl-response-mask`。排查时把「更新次数、old 是否冻结、mask 是否只盖 response」写成检查清单。单步 run 就把 clip 面板摘掉，避免假零消耗值班注意力。若必须留着面板，把「本 batch 的 optimizer.step 次数」做成并列指标，次数为 1 时 clip=0 标成预期而不是红色告警。值班手册里单步与多 epoch 要分成两种正常形态，避免同一条告警规则两套配方互打。
 
 ## 追问
 

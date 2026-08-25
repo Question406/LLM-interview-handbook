@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Mutual information
     url: https://en.wikipedia.org/wiki/Mutual_information
@@ -51,7 +51,7 @@ $$
 I(X;Y)=H(X)-H(X\mid Y)=H(Y)-H(Y\mid X)=H(X)+H(Y)-H(X,Y).
 $$
 
-再写成 KL（这步面试最加分）：
+再写成 KL（这步最好能手推）：
 
 $$
 \begin{aligned}
@@ -69,4 +69,4 @@ $$
 - Attention / 表征里说的「token 之间的依赖」可以粗说成互信息，但不要把点积注意力直接写成 $I(Q;K)$。
 - 信息瓶颈、对比学习都在最大化某种 $I(\text{repr};\text{target})$，实现上仍常落到 CE / InfoNCE，而 InfoNCE 是互信息的变分下界。
 
-白板：先画 $H(X)$、$H(Y)$、$H(X,Y)$ 三个圈，交叠就是 $I$；再写那条 KL。
+白板我会先画 $H(X)$、$H(Y)$、$H(X,Y)$ 三个圈，交叠就是 $I$，再写那条 KL。

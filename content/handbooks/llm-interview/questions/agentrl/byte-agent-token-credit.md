@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节27暑期 大模型算法一面凉经分享（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/28b254940eb940189188d795f4606c52?urlSource=home-api
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“针对Agent行为打分，在反向传播的时候，具体到token分数是怎么计算的”**
 
-这题容易答成「每个 token 都有自己的真实奖励」。环境通常只在完整 action / 轨迹结束后给一个标量，语言模型的 $\sum_t \log\pi(a_t)$ 却是逐 token。面试官要听的是 **credit 粒度与 mask 边界**，不是发明 per-token 真值。和 `arl-credit`、`xiaohongshu-credit-assignment` 同一条线，只是字节这问落到反传实现。
+这块容易直接答成「每个 token 都有自己的真实奖励」。环境通常只在完整 action / 轨迹结束后给一个标量，语言模型的 $\sum_t \log\pi(a_t)$ 却是逐 token。面试官要听的是 credit 粒度与 mask 边界，不是发明 per-token 真值。和 `arl-credit`、`xiaohongshu-credit-assignment` 同一条线，只是字节这问落到反传实现。
 
 ## 先定分数在哪一层，再广播到可训练 token
 
@@ -42,7 +42,7 @@ sources:
 
 Mask 必须关掉：system / user prompt、tool result / observation、padding、以及 harness 插入的非策略文本。这些 token 没有 $\pi_\theta$ 的因果贡献，反传会污染。Observation 属于 $s$，不属于 $a$，见 `arl-gui-observation` 里同一原则。
 
-广播的含义是：同一步里的 Thought 与 JSON 共享同一个 $A_k$，**不是**每个 token 独立测到了环境奖励。长 action 会让 credit 变粗；token 平均与 sequence 平均会改变长度权重——平均会打压长调用，求和会鼓励啰嗦。报告时必须写清归一化口径和长度分布，避免把 length effect 当能力。
+广播的含义是：同一步里的 Thought 与 JSON 共享同一个 $A_k$，不是每个 token 独立测到了环境奖励。长 action 会让 credit 变粗；token 平均与 sequence 平均会改变长度权重。平均会打压长调用，求和会鼓励啰嗦。报告时必须写清归一化口径和长度分布，避免把 length effect 当能力。
 
 ## 长 horizon 不要只靠一层广播
 
@@ -54,7 +54,7 @@ Mask 必须关掉：system / user prompt、tool result / observation、padding�
 
 诊断看：去掉 observation 的梯度是否真为零；等价改写 JSON 空白后 $A$ 是否稳定；按 action 长度分桶的回报。mask 漏了 tool 回包，模型会「背答案」而不是学调用。
 
-面试收口：环境分在 action / 轨迹级；优势广播到该 action 的可训练 token；prompt、tool 结果、padding 全 mask。这不是 per-token 真值。长链用 step reward 或组相对改善归因，并报 mask 与长度口径。
+最后我会补一句：环境分在 action / 轨迹级；优势广播到该 action 的可训练 token；prompt、tool 结果、padding 全 mask。这不是 per-token 真值。长链用 step reward 或组相对改善归因，并报 mask 与长度口径。
 
 ## 追问
 

@@ -5,8 +5,7 @@ order: 180
 level: A
 title: 小红书秋招一面：生成内容怎么评，具体如何操作？
 quick: >-
-  自动指标看忠实、安全和重复；LLM-as-judge 要校准；人工 rubric
-  管开放质量。必须有分层 golden set，并和线上采纳 / 投诉闭环，不能只报 BLEU。
+  自动指标看忠实、安全和重复；LLM-as-judge 要校准；人工 rubric 管开放质量。必须有分层 golden set，并和线上采纳 / 投诉闭环，不能只报 BLEU。
 tags:
   - Xiaohongshu
   - Evaluation
@@ -14,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书大模型秋招算法一面
     url: https://www.nowcoder.com/feed/main/detail/f41f88405bf844489452feeb26bf4a8b
@@ -30,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“大模型生成内容的评测方式有哪些，具体如何操作？”**
 
-陷阱是只报 BLEU / ROUGE，或把 LLM-as-judge 当金标。开放生成没有唯一参考句，n-gram 重叠既惩罚合理改写，也奖励套话。正确做法是 **拆维 + 分层 golden + 线上闭环**。Judge 校准见 `fund-judge`；业务侧成功见 `xiaohongshu-agent-business-eval`；事实题构造见 `xiaohongshu-factoid-data`。同面一致性、幻觉、多智能体是同一棵树：先定义「错」，再谈抑制。
+这块容易只报 BLEU / ROUGE，或把 LLM-as-judge 当金标。开放生成没有唯一参考句，n-gram 重叠既惩罚合理改写，也奖励套话。我会拆维，再加分层 golden，最后和线上闭环。Judge 校准见 `fund-judge`；业务侧成功见 `xiaohongshu-agent-business-eval`；事实题构造见 `xiaohongshu-factoid-data`。同面一致性、幻觉、多智能体是同一棵树：先定义「错」，再谈抑制。
 
 ## 拆维与自动指标
 

@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书 大模型后训练一面
     url: https://www.nowcoder.com/discuss/872533899736334336
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“MMKG-RAG，如何分块，实体和关系的抽取与合并”**
 
-陷阱是按纯文本 token 长度切笔记，或让模型空想「代言」「同款」边。小红书笔记是图文混排：图注离开图片、表格被横切，检索会召回半截事实。实体要跨模态对齐，关系必须能指回证据。选块和冲突处理见 `pdd-pick-relevant-chunks`；RAG 短板见 `xiaohongshu-rag-limits`。
+这块容易直接答成按纯文本 token 长度切笔记，或让模型空想「代言」「同款」边。小红书笔记是图文混排：图注离开图片、表格被横切，检索会召回半截事实。实体要跨模态对齐，关系必须能指回证据。选块和冲突处理见 `pdd-pick-relevant-chunks`；RAG 短板见 `xiaohongshu-rag-limits`。
 
 ## 分块：按版面和语义单元
 

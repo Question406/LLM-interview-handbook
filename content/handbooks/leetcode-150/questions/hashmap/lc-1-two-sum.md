@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 1. 两数之和
     url: https://leetcode.cn/problems/two-sum/
@@ -31,7 +31,7 @@ sources:
 
 一遍哈希：扫到 $x$ 时查 $target - x$ 是否已在表里。在则返回「旧下标、当前下标」；否则把 $x$ 的下标写入。必须先查再写，避免同一个元素用两次（`[3,3]`、$target=6$ 仍合法，因为是两个位置）。
 
-排序双指针也能找值，但会打乱下标，还要再映射回去；面试默认讲哈希。
+排序双指针也能找值，但会打乱下标，还要再映射回去；白板默认讲哈希。
 
 ## 参考代码
 

@@ -14,7 +14,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Neural Machine Translation of Rare Words with Subword Units (BPE)
     url: https://arxiv.org/abs/1508.07909
@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-陷阱是把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
+这块容易把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
 
 ## 四种东西各管什么
 
@@ -32,7 +32,7 @@ BPE：从字符（或字节）出发，反复合并语料里出现最频繁的�
 
 Byte-level BPE（GPT-2 系）从 $256$ 个 byte 起步，任意 Unicode 都能落到 byte，几乎无 OOV。代价是某些语言、特殊符号、带调字符会拆得更碎，同样一句话 $T$ 更长。
 
-## 为什么 LLM 面试要管 tokenizer
+## 为什么还要管 tokenizer
 
 $T$ 直接乘进注意力 $O(T^2 d)$ 和 KV cache。中文词表过碎，同样 8k 上下文装下的「话」更少；过粗则稀有实体、代码、数字粘在一起，编辑距离式纠错和 MoE 路由都会变难。训推必须用同一套 tokenizer：多一个 BOS、空格规范化不同，RoPE 位置 $m$ 会整体错位，$\langle R_m q,R_n k\rangle$ 对的就不是同一相对距离。
 

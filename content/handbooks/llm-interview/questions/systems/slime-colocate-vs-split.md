@@ -16,14 +16,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime 使用文档
     url: https://thudm.github.io/slime/zh/get_started/usage.html
     type: primary
 ---
 
-陷阱是说「slime 也有 HybridEngine」。HybridEngine 追求 **同卡、同进程、换布局、少一份整模**。slime `--colocate` 追求 **同卡、两进程、offload 轮流上班**。分离时 slime 更像 OpenRLHF 的分池，再用 NCCL / 磁盘 / delta 同步。说成一回事会被拆穿，见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。面试官若追问「那为什么还叫训推一体」，答：一体指的是 **放置**（同一批 GPU 时分复用），不是 **运行时融合**。进程边界、CUDA context、通信组都还是两套。资源账本先写启动参数：分离是加法，一体是时分复用加 offload 税。profile 拷贝气泡，若已经接近 generate，省卡是假省。
+这块容易说「slime 也有 HybridEngine」。HybridEngine 追求 **同卡、同进程、换布局、少一份整模**。slime `--colocate` 追求 **同卡、两进程、offload 轮流上班**。分离时 slime 更像 OpenRLHF 的分池，再用 NCCL / 磁盘 / delta 同步。说成一回事会被拆穿，见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。面试官若追问「那为什么还叫训推一体」，我会答：一体指的是 **放置**（同一批 GPU 时分复用），不是 **运行时融合**。进程边界、CUDA context、通信组都还是两套。资源账本先写启动参数：分离是加法，一体是时分复用加 offload 税。profile 拷贝气泡，若已经接近 generate，省卡是假省。
 
 ## 分离怎么配
 
@@ -55,11 +55,11 @@ sources:
 | 切换 | 改 layout / 通信组 | 把对方整段 offload 再 load |
 | 失败模式 | shard 与推理 TP 对不齐 | offload 没配对、`mem-fraction` 太大 |
 
-面试收束：HybridEngine 卖「少一份整模」；colocate 卖「少一套卡、进程边界仍在」。70B 同构卡紧、能接受 reshard 复杂度，偏 veRL；已经绑定 Megatron + SGLang、要 router / PD / 自定义 generate，偏 slime。分离部署时 `--actor-num-gpus-per-node` 和 `--rollout-num-gpus` 是加法，账本上要能说出「训练 64 卡 + 推理 32 卡」而不是含糊的「用了 96 卡」。`--rollout-num-gpus-per-engine` 填错成单机 tp，多机 router 会把请求打到错误的世界大小，表现为部分 engine 空转、部分 OOM。外部 engine（`--rollout-num-gpus 0`）把同步协议彻底外置，版本和 KV flush 仍要你自己保证，一体/分离开关管不到那套卡。把放置、offload、同步画成三列，比把 `--colocate` 当成布尔更快让面试官信你跑过。
+最后我会补一句：HybridEngine 卖「少一份整模」；colocate 卖「少一套卡、进程边界仍在」。70B 同构卡紧、能接受 reshard 复杂度，偏 veRL；已经绑定 Megatron + SGLang、要 router / PD / 自定义 generate，偏 slime。分离部署时 `--actor-num-gpus-per-node` 和 `--rollout-num-gpus` 是加法，账本上要能说出「训练 64 卡 + 推理 32 卡」而不是含糊的「用了 96 卡」。`--rollout-num-gpus-per-engine` 填错成单机 tp，多机 router 会把请求打到错误的世界大小，表现为部分 engine 空转、部分 OOM。外部 engine（`--rollout-num-gpus 0`）把同步协议彻底外置，版本和 KV flush 仍要你自己保证，一体/分离开关管不到那套卡。把放置、offload、同步画成三列，比把 `--colocate` 当成布尔更快让面试官信你跑过。
 
 ## 选型时怎么讲资源账
 
-先画卡：分离是加法，一体是时分复用。再画显存：分离两份权常驻；一体靠 `--offload-train` / `--offload-rollout` 互斥，切换走 PCIe。最后画时间：一体默认串行，分卡才叠得开 `train_async.py`。70B 同构、卡不够再买一份：colocate 或 HybridEngine。已经有 SGLang 推理池：分离 + `--rollout-num-gpus 0` 接外部 engine。中等规模、想少运维：`--colocate` 加双边 offload，把 `--sglang-mem-fraction-static` 降到 0.8。千万不要说「slime 的一体就是 HybridEngine」——进程数、是否原地 reshard、失败模式都不同。`--rollout-num-gpus-per-engine` 填的是 engine 世界卡数，多机 serving 填总卡。账本讲顺之后，flag 只是把这张图写进命令行。profile 时单独计 offload 拷贝，若拷贝已经接近 generate，一体比分卡更慢，这时省卡是假省。
+先画卡：分离是加法，一体是时分复用。再画显存：分离两份权常驻；一体靠 `--offload-train` / `--offload-rollout` 互斥，切换走 PCIe。最后画时间：一体默认串行，分卡才叠得开 `train_async.py`。70B 同构、卡不够再买一份：colocate 或 HybridEngine。已经有 SGLang 推理池：分离 + `--rollout-num-gpus 0` 接外部 engine。中等规模、想少运维：`--colocate` 加双边 offload，把 `--sglang-mem-fraction-static` 降到 0.8。千万不要说「slime 的一体就是 HybridEngine」，进程数、是否原地 reshard、失败模式都不同。`--rollout-num-gpus-per-engine` 填的是 engine 世界卡数，多机 serving 填总卡。账本讲顺之后，flag 只是把这张图写进命令行。profile 时单独计 offload 拷贝，若拷贝已经接近 generate，一体比分卡更慢，这时省卡是假省。
 
 一体卖的是少一套卡，税是 offload 拷贝和一步串行；分离卖的是生成池可独立扩，税是第二份权和 `update_weights`。`--colocate` 默认打开双边 offload，手动拆开关必须按阶段互斥，否则切换瞬间两套权叠爆。`--rollout-num-gpus-per-engine` 填世界卡数，`--rollout-num-gpus 0` 接外部 engine 已不是一体。和 HybridEngine 的差别用「进程数、是否原地 reshard」两句话就能拆穿冒充。profile 拷贝，气泡接近 generate 时一体比分卡更慢。
 

@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 427. 建立四叉树
     url: https://leetcode.cn/problems/construct-quad-tree/
@@ -125,4 +125,3 @@ def constructPrefix(grid):
 
     return build(0, 0, n)
 ```
-

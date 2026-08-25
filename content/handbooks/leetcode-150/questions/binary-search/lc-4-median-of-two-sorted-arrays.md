@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 4. 寻找两个正序数组的中位数
     url: https://leetcode.cn/problems/median-of-two-sorted-arrays/
@@ -140,4 +140,3 @@ def median_unsorted(a, b):
         return float(select(0, n - 1, k))
     return (select(0, n - 1, n // 2 - 1) + select(0, n - 1, n // 2)) / 2.0
 ```
-

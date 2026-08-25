@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 54. 螺旋矩阵
     url: https://leetcode.cn/problems/spiral-matrix/
@@ -32,7 +32,7 @@ $m\times n$ 矩阵，按顺时针螺旋顺序返回所有元素。
 
 四边界夹住未遍历区域。先走顶行并 `top+=1`，再走右列并 `right-=1`；若仍有行，走底行并 `bottom-=1`；若仍有列，走左列并 `left+=1`。单行或单列时，后两段要用 `top <= bottom`、`left <= right` 挡住，避免重复。
 
-方向数组 + 碰壁转向也可以。面试用边界收缩更不容易写乱。
+方向数组 + 碰壁转向也可以。白板我用边界收缩更不容易写乱。
 
 ## 参考代码
 

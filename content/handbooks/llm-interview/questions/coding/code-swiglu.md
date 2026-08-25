@@ -14,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: GLU Variants Improve Transformer
     url: https://arxiv.org/abs/2002.05202
     type: primary
 ---
 
-架构直觉见 `arch-swiglu`、美团口述见 `meituan-swiglu`。本题要能写前向、报形状、并推出为什么中间维不是 $4d$。陷阱是写成两矩阵 GELU FFN，或三矩阵仍用 $4d$ 把层做贵 1.5 倍。
+架构直觉见 `arch-swiglu`、美团口述见 `meituan-swiglu`。本题要能写前向、报形状、并推出为什么中间维不是 $4d$。这块容易写成两矩阵 GELU FFN，或三矩阵仍用 $4d$ 把层做贵 1.5 倍。
 
 ## 公式与形状
 
@@ -48,9 +48,9 @@ $$
 3d\cdot d_{\mathrm{ff}}=8d^{2}\implies d_{\mathrm{ff}}=\frac{8}{3}d.
 $$
 
-再按 128 / 256 对齐 Tensor Core，所以代码里看到的是「约 $8d/3$」不是精确分数。若仍用 $4d$，参数和 FLOPs 约为旧 FFN 的 $3/2$，层明显更贵；这不是「SwiGLU 更强」的公平对比。PaLM / LLaMA 把这一条写进默认宽度，面试要能从 $8d^{2}$ 推回来。
+再按 128 / 256 对齐 Tensor Core，所以代码里看到的是「约 $8d/3$」不是精确分数。若仍用 $4d$，参数和 FLOPs 约为旧 FFN 的 $3/2$，层明显更贵；这不是「SwiGLU 更强」的公平对比。PaLM / LLaMA 把这一条写进默认宽度，我会从 $8d^{2}$ 推回来。
 
-门控的好处是通道可关可放，SiLU 在负半轴仍有梯度。没有定理保证处处优于 GELU；是对齐算力之后的经验选择。MoE 专家内部仍可以是同一套 SwiGLU，宽度公式按 **单个专家** 的 $d_{\mathrm{ff}}$ 算。
+门控的好处是通道可关可放，SiLU 在负半轴仍有梯度。没有定理保证处处优于 GELU；是对齐算力之后的经验选择。MoE 专家内部仍可以是同一套 SwiGLU，宽度公式按单个专家的 $d_{\mathrm{ff}}$ 算。
 
 现场给个数：$d=4096$ 时 $8d/3\approx 10923$，对齐 128 后常见 11008（LLaMA-7B 就是这个宽度）。参数约 $3\times 4096\times 11008$，不要再乘一个 $4d$。激活显存会多一份 $[\ldots,d_{\mathrm{ff}}]$ 的门控张量，这是三路投影相对两路 FFN 多付的带宽，不是免费的。
 

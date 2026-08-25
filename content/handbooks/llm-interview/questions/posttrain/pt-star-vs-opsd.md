@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: STaR — Self-Taught Reasoner
     url: https://arxiv.org/abs/2203.14465
@@ -50,7 +50,7 @@ $$
 r_n=\log p_T(\hat{y}_n\mid x,y^\star,\hat{y}_{\lt n})-\log p_S(\hat{y}_n\mid x,\hat{y}_{\lt n}),
 $$
 
-stop-gradient 之后就是 token 级政策梯度。$\hat{y}$ 终局错了，$r_n$ 仍可非零：教师在「已经知道答案」的条件下，会压低学生正在走的坏 token、抬高更像正解的分叉。这就是「错解还能提供梯度」——信号在 **前缀的下一 token**，不在终局指示函数。
+stop-gradient 之后就是 token 级政策梯度。$\hat{y}$ 终局错了，$r_n$ 仍可非零：教师在「已经知道答案」的条件下，会压低学生正在走的坏 token、抬高更像正解的分叉。这就是「错解还能提供梯度」，信号在 **前缀的下一 token**，不在终局指示函数。
 
 仓库里 `--use_tinker_loss` 走的是这条采样 token 的 PG，省全词表；默认则是全词表 $D(p_T\|p_S)$。面试被问实现时：全词表 covering 更稳、更吃显存；采样 token 更像反向 KL 的 PG，风格 token 不 clip 更容易炸。
 
@@ -63,7 +63,7 @@ stop-gradient 之后就是 token 级政策梯度。$\hat{y}$ 终局错了，$r_n
 | GRPO | 无教师 | 组内有方差才有 | 序列 $A$ 摊到整段 |
 | OPSD | 只前向，不生成 | 学生轨迹，对错都算 | 稠密分布 / $r_n$ |
 
-口诀：**STaR 把错的扔掉；OPSD 把错的当成要纠正的前缀。** 题太难、教师看了 $y^\star$ 也不会 rationalize 时，OPSD 的 $r_n$ 是噪声，并不比丢掉错解更聪明，见 `pt-opsd` 容量限制。
+我会说：**STaR 把错的扔掉；OPSD 把错的当成要纠正的前缀。** 题太难、教师看了 $y^\star$ 也不会 rationalize 时，OPSD 的 $r_n$ 是噪声，并不比丢掉错解更聪明，见 `pt-opsd` 容量限制。
 
 ## 追问
 

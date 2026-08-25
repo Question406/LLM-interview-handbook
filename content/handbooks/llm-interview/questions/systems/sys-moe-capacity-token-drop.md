@@ -6,7 +6,7 @@ level: S
 title: Capacity Factor 与 Token Drop 如何影响质量与吞吐？怎么选型？
 quick: >-
   每个 expert 每步最多接 $\mathrm{CF}\cdot T/N$ 量级的 token（再乘 top-$k$）。CF 过大浪费显存和算力，过小则
-  drop / 溢出，被丢掉的 token 等于这一层没走 MoE。用丢弃率、负载直方图和下游损失一起选，不要只看吞吐。
+  drop / 溢出，被丢掉的 token 等于这一层没走 MoE。我会用丢弃率、负载直方图和下游损失一起选，不会只看吞吐。
 tags:
   - MoE
   - Capacity Factor
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Switch Transformers
     url: https://arxiv.org/abs/2101.03961
@@ -42,7 +42,7 @@ Aux loss / expert bias 把负载推均匀，才能把 CF 降下来。均衡没�
 
 ## 选型
 
-先盯 **dropped token rate**（按层、按 expert），目标训练期 $\lt 1\%$。再看 expert 频率的 CV、以及 drop 开关对 held-out loss 的敏感性。推理单独设 CF，并在金标集上回归。
+我先盯 **dropped token rate**（按层、按 expert），目标训练期 $\lt 1\%$。再看 expert 频率的 CV、以及 drop 开关对 held-out loss 的敏感性。推理单独设 CF，并在金标集上回归。
 
 ## 追问
 

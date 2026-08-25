@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: 拼多多 - 大模型算法 秋招一面
     url: https://www.nowcoder.com/discuss/906953010406772736
@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-网上对得上的高频问法已经拆成独立卡。点击下面每条即可跳到对应题。
+网上对得上的高频问法已经拆成独立卡。点下面每条就能跳到对应题。
 
 ## 先把定义写会
 
@@ -70,4 +70,4 @@ sources:
 - 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
 - GRPO 的 KL 和 PPO 的 KL 是一模一样的吗？
 
-口诀：方向看采样分布；Trust-Region 对 $\pi_{\mathrm{old}}$，Drift 对 $\pi_{\mathrm{ref}}$；外部 OPD 学生采样常是反向 KL；OPSD 还要再问下一 token 公式写的是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。
+我会这么串：方向看采样分布；Trust-Region 对 $\pi_{\mathrm{old}}$，Drift 对 $\pi_{\mathrm{ref}}$；外部 OPD 学生采样常是反向 KL；OPSD 还要再问下一 token 公式写的是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。

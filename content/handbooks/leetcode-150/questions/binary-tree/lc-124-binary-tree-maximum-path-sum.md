@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 124. 二叉树中的最大路径和
     url: https://leetcode.cn/problems/binary-tree-maximum-path-sum/
@@ -32,7 +32,7 @@ sources:
 
 每个节点做两件事。返回给父节点的是单边：根值加上左右里非负的较大贡献，因为父路径不能同时走左右。对本节点，可以左右都接上，用「左贡献 $+$ 右贡献 $+$ 根」更新全局。
 
-负贡献当 $0$，等于不走那条边。全负时答案是最大的那个节点值。面试先讲清「返回单边、全局看两边」。
+负贡献当 $0$，等于不走那条边。全负时答案是最大的那个节点值。白板我会先讲清「返回单边、全局看两边」。
 
 ## 参考代码
 

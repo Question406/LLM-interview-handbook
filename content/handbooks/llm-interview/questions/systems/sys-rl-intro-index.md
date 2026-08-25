@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-23
 sources:
   - title: 美团大模型研发二面-日常实习
     url: https://www.nowcoder.com/feed/main/detail/23e19d8300c54f2eb9ed9933aeaa5129
@@ -42,7 +42,7 @@ sources:
 - 组大小 $n$ 为什么必须 $\gt 1$：`sys-rl-group-n`。$n=1$ 不是方差大一点，是优势未定义。
 - 为什么 RL 之后回答越来越长：`sys-rl-longer-after-rl`。奖励形状和长度偏置，不是「模型更会思考」这么顺。
 
-口令：采样是推理、更新是训练、KL 看 Ref、分看 Reward。中间差一本账（logprob / 权重版本），不要把引擎打出来的数直接当 $\pi_{\mathrm{old}}$。三个 $\pi$ 必须分开：old 进 ratio，ref 进 KL，$\theta$ 在训练图上更新。漏掉「只训 response」或「组内才有优势」，后面每张专题卡都会穿。
+我会说：采样是推理、更新是训练、KL 看 Ref、分看 Reward。中间差一本账（logprob / 权重版本），不要把引擎打出来的数直接当 $\pi_{\mathrm{old}}$。三个 $\pi$ 必须分开：old 进 ratio，ref 进 KL，$\theta$ 在训练图上更新。漏掉「只训 response」或「组内才有优势」，后面每张专题卡都会穿。
 
 ## 接着会被追的
 
@@ -55,14 +55,17 @@ sources:
 - 美团：7B GRPO 显存花在哪：`meituan-grpo-7b-mem`，总账 `sys-rl-memory`；clip 为什么存在：`meituan-grpo-why-clip`
 - 为什么 RL Systems 比 SFT 复杂：`sys-rl-infra`；权重怎么同步到引擎：`infra-rl-weight-sync`
 - HybridEngine 解决什么：`sys-verl-hybridengine`。先讲放置，再讲 reshard，不要一上来背这个词。
+- 2026 社区 35 题（算法 + Infra）对照：`pt-rl-algo-infra-bench-index`
 
 蚂蚁会把 rollout / update batch 拧在一起问，见 `ant-verl-rollout-batch-accounting`。动态 batch 见 `sys-verl-dynamic-bsz`。这些已经偏工程会计，入门过关后再看。
 
 ## 这张卡怎么用
 
-面试 15 分钟能把「先会画」那一圈讲顺，入门就算过关。「接着会被追」按对方公司抽一张深讲，不要把地图上的每条都展开成小论文。算法岗很少下到集合通信；一上来讲 PP bubble，方向就偏了。准备时建议三步：先能默画角色和时间轴；再能解释「为什么不用训练图 generate、为什么还要重算 logp」这一对；最后按面经补 $n$、mask、显存、指标。框架对照、slime 字段、FSDP vs Megatron 全部推到 `sys-llm-rl-framework-index`。本卡不替代专题，只告诉你下一张该翻哪一个 id。把入门圈和框架圈、显存圈搅在一起，15 分钟会散掉。三种串台最常见：一是被问「讲一下 GRPO」时开始讲 HybridEngine 的 reshard，角色还没画完；二是被问「为什么用 vLLM」时答「因为 logprob 准」，和重算 logp 那张卡直接打架；三是被问 $n$ 时把它说成 global batch。地图的用法是先定位对方问的是哪一圈，再跳对应 id。角色圈五张；吞吐与数值是一对；优势圈是 $n$、全对全错、组内均值；显存圈是 7B GRPO 和总账；框架圈整张推走。面试官从美团二面来，优先准备重算 logp 和阶段耗时；从滴滴来，准备指标；从字节来，准备零梯度。不要用同一段标准答案应付所有公司。口令再练一遍就能开场：采样是推理，更新是训练，三个 $\pi$ 分开，只训 response，组内才有优势，引擎 logp 不能直接当 $\pi_{\mathrm{old}}$。
+面试 15 分钟能把「先会画」那一圈讲顺，入门就算过关。「接着会被追」按对方公司抽一张深讲，不要把地图上的每条都展开成小论文。算法岗很少下到集合通信；一上来讲 PP bubble，方向就偏了。准备时我会分三步：先能默画角色和时间轴；再能解释「为什么不用训练图 generate、为什么还要重算 logp」这一对；最后按面经补 $n$、mask、显存、指标。框架对照、slime 字段、FSDP vs Megatron 全部推到 `sys-llm-rl-framework-index`。本卡不替代专题，只告诉你下一张该翻哪一个 id。
 
-角色圈五张必须能闭着眼画出时间轴：采样、打分、算优势、Ref 前向、Actor 更新。吞吐圈两张成对出现，把「快」和「准」拆开承诺。优势圈三张共用同一句话：没有组内对照就没有 GRPO。显存圈两张只在被问「7B 怎么放」时展开，不要主动滑到 72B 和 ZeRO-3。框架圈整张留给另一张导航卡。按这个分区复习，比按公司名刷题更不容易漏。开场 15 分钟用角色圈就够；对方拿出 veRL 配置再进会计和 HybridEngine。口令不熟就不要往下翻框架字段，否则会把入门答成运维手册。
+三种串台最常见：一是被问「讲一下 GRPO」时开始讲 HybridEngine 的 reshard，角色还没画完；二是被问「为什么用 vLLM」时答「因为 logprob 准」，和重算 logp 那张卡直接打架；三是被问 $n$ 时把它说成 global batch。先定位对方问的是哪一圈，再跳对应 id。角色圈五张；吞吐与数值是一对；优势圈是 $n$、全对全错、组内均值；显存圈是 7B GRPO 和总账；框架圈整张推走。面试官从美团二面来，优先准备重算 logp 和阶段耗时；从滴滴来，准备指标；从字节来，准备零梯度。不要用同一段标准答案应付所有公司。
+
+角色圈五张必须能画出时间轴：采样、打分、算优势、Ref 前向、Actor 更新。吞吐圈两张成对出现，把「快」和「准」拆开承诺。优势圈三张共用同一句话：没有组内对照就没有 GRPO。显存圈两张只在被问「7B 怎么放」时展开，不要主动滑到 72B 和 ZeRO-3。框架圈整张留给另一张导航卡。开场 15 分钟用角色圈就够；对方拿出 veRL 配置再进会计和 HybridEngine。口令不熟就不要往下翻框架字段，否则会把入门答成运维手册。
 
 ## 追问
 
@@ -72,6 +75,4 @@ sources:
 - **算法岗会不会问 ZeRO-3？** 会问显存花在哪（`meituan-grpo-7b-mem` / `sys-rl-memory`），很少下到 all-gather 细节。显存答完就停，别自己滑到混元那张 72B 估算，除非对方是 Infra / 训练系统岗。
 - **口令再收一次？** 采样推理、更新训练、三个 $\pi$ 分开、只训 response、组内才有优势。中间差一本账：引擎 logp 不能直接当 $\pi_{\mathrm{old}}$。
 - **clip fraction 一直是 0 看哪张？** `sys-rl-fw-clip-zero`。那已经不是入门闭环，是训练没在走的诊断。
-
 - **被问「讲一下 GRPO」先翻哪张？** 先 `sys-rl-grpo-loop-roles`，不要先背 loss，也不要先讲 HybridEngine。角色画完再允许被追公式和放置。
-这张卡用完就停，不要在导航里写论文。

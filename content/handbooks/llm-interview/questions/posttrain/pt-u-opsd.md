@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: On-Policy Self-Distillation without Any Supervision
     url: https://arxiv.org/abs/2608.06296

@@ -13,20 +13,20 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Direct Preference Optimization
     url: https://arxiv.org/abs/2305.18290
     type: primary
 ---
 
-陷阱是把 tie / 「不确定」当成脏数据丢掉，或强制标注员选边再送进 DPO。两个回答都可接受或都差时，强制胜负等于注入随机噪声；全部丢光则模型缺少「别为微小风格差拉大 logit」的监督，容易放大长度和文风。DPO 的 Bradley-Terry 假设是严格序
+这块容易把 tie / 「不确定」当成脏数据丢掉，或强制标注员选边再送进 DPO。两个回答都可接受或都差时，强制胜负等于注入随机噪声；全部丢光则模型缺少「别为微小风格差拉大 logit」的监督，容易放大长度和文风。DPO 的 Bradley-Terry 假设是严格序
 
 $$
 p(y_w \succ y_l)=\sigma\Big(\beta\log\frac{\pi_\theta(y_w)}{\pi_{\mathrm{ref}}(y_w)}-\beta\log\frac{\pi_\theta(y_l)}{\pi_{\mathrm{ref}}(y_l)}\Big),
 $$
 
-tie 并不满足该式。正确做法是把无差异当成第三类，而不是假装总有赢家。这和 `data-annotator-agreement` 同一诊断：先分清任务本身难分、rubric 打架，还是真随机噪声。
+tie 并不满足该式。正确做法是把无差异当成第三类，不要假装总有赢家。这和 `data-annotator-agreement` 同一诊断：先分清任务本身难分、rubric 打架，还是真随机噪声。
 
 ## Tie 是难度信号，先分层再入 loss
 
@@ -40,13 +40,13 @@ tie 并不满足该式。正确做法是把无差异当成第三类，而不是�
 
 ## 和 BT / DPO 怎么接
 
-标准 DPO 对 tie 没有项：硬塞随机赢家会让 $\pi_\theta$ 拟合噪声。工程上最小改动是 mask 掉 tie pair，另加相等损失；或对 $\{y_w,y_l,\mathrm{tie}\}$ 做三路分类。List-wise / 排序学习天然允许并列名次，比把所有 pair 二值化更诚实。报告必须含 tie 率、分层 IAA、以及「去掉 tie 后 win-rate 还剩多少」——tie 率 $30\%$ 却宣称 $70\%$ 一致，数字是假的。
+标准 DPO 对 tie 没有项：硬塞随机赢家会让 $\pi_\theta$ 拟合噪声。工程上最小改动是 mask 掉 tie pair，另加相等损失；或对 $\{y_w,y_l,\mathrm{tie}\}$ 做三路分类。List-wise / 排序学习天然允许并列名次，比把所有 pair 二值化更诚实。报告必须含 tie 率、分层 IAA、以及「去掉 tie 后 win-rate 还剩多少」。tie 率 $30\%$ 却宣称 $70\%$ 一致，数字是假的。
 
 强制选边还会污染 judge 蒸馏：教师被逼投票，学生学会在无差异区仍给出极端分，阈值门禁会抖。产品 persona 没写清时（要短还是要全），tie 其实是目标冲突，应改 rubric，而不是加 loss 权重。
 
-## 面试收口
+## 无差异标签怎么写进 loss
 
-保留 soft / tie，让模型学会「不必区分」；硬偏好只吃高一致严格序。丢掉全部 tie 会失去边界；强制拆边是在教噪声。和分歧题的分工：`data-annotator-agreement` 决定谁该进硬监督；本题决定无差异标签在 loss 里怎么写。发布前单独报 tie 切片上的 RM 准确率——那里「很准」往往是过拟合强制投票。标注界面把「略好」默认成必须二选一会系统性压低 tie 率，看起来 IAA 变高，实际是在制造假序；应允许并列并事后抽检默认项是否被滥用。风格类 tie 多，说明 persona 没写进指南，先改目标再改 loss。
+保留 soft / tie，让模型学会「不必区分」；硬偏好只吃高一致严格序。丢掉全部 tie 会失去边界；强制拆边是在教噪声。和分歧题的分工：`data-annotator-agreement` 决定谁该进硬监督；本题决定无差异标签在 loss 里怎么写。发布前单独报 tie 切片上的 RM 准确率，那里「很准」往往是过拟合强制投票。标注界面把「略好」默认成必须二选一会系统性压低 tie 率，看起来 IAA 变高，实际是在制造假序；应允许并列并事后抽检默认项是否被滥用。风格类 tie 多，说明 persona 没写进指南，先改目标再改 loss。
 
 ## 追问
 

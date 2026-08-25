@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰大模型算法实习面经
     url: https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3
@@ -34,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GRPO的优势值是什么？怎么算？baseline是什么？”**
 
-没有 critic 不等于没有 baseline。GRPO 的 baseline 就是**同一 prompt 下这组 rollout 的经验均值**，优势是相对它的标准化残差。别答「优势就是奖励」——全组奖励相同则优势为 0，这正是后续「on-policy 采不出正确答案」类题的根源。也不要把 GSPO 的序列级 ratio 和优势定义混为一谈。
+没有 critic 不等于没有 baseline。GRPO 的 baseline 就是**同一 prompt 下这组 rollout 的经验均值**，优势是相对它的标准化残差。别答「优势就是奖励」，全组奖励相同则优势为 0，这正是后续「on-policy 采不出正确答案」类题的根源。也不要把 GSPO 的序列级 ratio 和优势定义混为一谈。
 
 ## 公式：组均值作 baseline，再除标准差
 
@@ -48,7 +48,7 @@ $$
 
 ## 全同组：零梯度，不是实现 bug
 
-全对或全错时 $r_i$ 相同，$\hat A_i=0$，这步没有方向。这是组内相对优势的结构性质。难题上策略几乎采不到对的，就会长期零梯度——要靠冷启动 SFT、降难度、加大 $n$ 或动态采样，而不是再降 lr。对比 RLOO：leave-one-out 同样在全同时为零，但 $n$ 较小时「是否含自身」会让数值略有不同。
+全对或全错时 $r_i$ 相同，$\hat A_i=0$，这步没有方向。这是组内相对优势的结构性质。难题上策略几乎采不到对的，就会长期零梯度，要靠冷启动 SFT、降难度、加大 $n$ 或动态采样，而不是再降 lr。对比 RLOO：leave-one-out 同样在全同时为零，但 $n$ 较小时「是否含自身」会让数值略有不同。
 
 ## 对比 GAE：跨状态价值 vs 同题对照
 

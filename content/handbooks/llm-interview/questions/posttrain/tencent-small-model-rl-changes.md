@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯WXG暑期实习面经-大模型算法（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/7a83aaa9a03e497ba925f86c9dfc5d53?sourceSSR=post
@@ -24,6 +24,7 @@ sources:
     url: https://arxiv.org/abs/2402.03300
     type: primary-paper
 ---
+
 ## 真题记录
 
 - 公司：腾讯
@@ -33,11 +34,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、团队、岗位、轮次明确；届别和面试日期未披露）
 - 原始措辞：**“和使用强化学习训练大模型相比，使用强化学习训练小模型需要做出哪些改变”**
 
-腾讯 WXG 三面这题，最容易答成「小模型显存不够，换成 ZeRO-3 / LoRA」或「把 70B 的 GRPO 超参原样缩小」。面试要听的是：小模型的首要瓶颈往往是 rollout 几乎采不到正确轨迹，组内奖励方差塌成零，而不是卡放不下。大模型 recipe 里「稀疏可验证奖励 + 长链探索」默认存在足够 pass@$k$；小模型没有这个前提。
+腾讯 WXG 三面这题，这块容易答成「小模型显存不够，换成 ZeRO-3 / LoRA」或「把 70B 的 GRPO 超参原样缩小」。我会讲：小模型的首要瓶颈往往是 rollout 几乎采不到正确轨迹，组内奖励方差塌成零，而不是卡放不下。大模型 recipe 里「稀疏可验证奖励 + 长链探索」默认存在足够 pass@$k$；小模型没有这个前提。
 
 ## 先测可学习起点，再决定冷启动
 
-上 RL 前先测 base 的 pass@$k$、有效 reward group 比例（组内不全对/全错）、格式合规率和长度分布。若 pass@$8$ 接近 0，直接稀疏 RL 会全零优势，梯度没有方向。此时优先高质量 cold-start SFT、teacher 蒸馏 / rejection sampling、短到长 curriculum，或把任务拆成可验证子目标。数据不要用超过 capacity 的竞赛长链充量——那是在加大模型，不是在训小模型。DeepSeek-R1 也把冷启动当作小模型能跟上 RL 的前置，而不是可选项。
+上 RL 前先测 base 的 pass@$k$、有效 reward group 比例（组内不全对/全错）、格式合规率和长度分布。若 pass@$8$ 接近 0，直接稀疏 RL 会全零优势，梯度没有方向。此时优先高质量 cold-start SFT、teacher 蒸馏 / rejection sampling、短到长 curriculum，或把任务拆成可验证子目标。数据不要用超过 capacity 的竞赛长链充量，那是在加大模型，不是在训小模型。DeepSeek-R1 也把冷启动当作小模型能跟上 RL 的前置，而不是可选项。
 
 ## 更新更保守，奖励更干净
 

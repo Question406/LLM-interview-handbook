@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 50. Pow(x, n)
     url: https://leetcode.cn/problems/powx-n/
@@ -29,7 +29,7 @@ sources:
 
 ## 思路
 
-快速幂：把 $n$ 看成二进制。当前位是 $1$ 就乘上此刻的底；底每次平方，指数右移。$O(\log |n|)$ 次乘法，不要连乘 $n$ 次。
+快速幂：把 $n$ 看成二进制。当前位是 $1$ 就乘上此刻的底；底每次平方，指数右移。$O(\log |n|)$ 次乘法，别连乘 $n$ 次。
 
 $n\lt 0$ 变成 $(1/x)^{-n}$。32 位里 $n=-2^{31}$ 时 `-n` 溢出，先把指数收到长整型，或先处理一位再取负。Python 整数不溢出，面试仍要主动提这点。
 

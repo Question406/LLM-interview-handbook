@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰agent算法面经分享
     url: https://www.nowcoder.com/feed/main/detail/d01a17cf25344f4bb73eff2dbbaf6eee
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“训练agent调用工具，以react框架为例，plan是什么，提示怎么设计，Obersevation是什么？Action是什么？每一块的输入输出都是什么？长什么样的？”**
 
-原帖把 Observation 拼成了 Obersevation，按 ReAct 的 Thought / Action / Observation 答。这题最怕空谈「模型自己想想」。阶跃要听 **每块的输入、输出、落盘形状**。用一次「调用搜索」写具体。训练闭环见同面 `stepfun-agent-tool-training`。
+原帖把 Observation 拼成了 Obersevation，按 ReAct 的 Thought / Action / Observation 答。这题最怕空谈「模型自己想想」。阶跃要听每块的输入、输出、落盘形状。用一次「调用搜索」写具体。训练闭环见同面 `stepfun-agent-tool-training`。
 
 ## 三块的合同
 
@@ -56,7 +56,7 @@ sources:
 
 每条轨迹按 Plan / Action / Observation / 环境版本落盘。SFT 模仿合法转移；RL 只在可执行环境给分，Plan 不单独奖文笔。Action 失败时 Observation 必须带错误类型，训练才能学 recovery。评测回放时用同一 schema 重跑，而不是让模型重新「讲故事」。和 `byte-react-tool-select` 比，本题更抠 I/O 形状，而不是路由策略。
 
-面试收口：Plan 吃任务与历史、输出意图；Action 是合法 schema 调用；Observation 是环境回包并写回上下文。没有固定日志字段，就没有可训练的 Agent。
+最后我会补一句：Plan 吃任务与历史、输出意图；Action 是合法 schema 调用；Observation 是环境回包并写回上下文。没有固定日志字段，就没有可训练的 Agent。
 
 ## 追问
 

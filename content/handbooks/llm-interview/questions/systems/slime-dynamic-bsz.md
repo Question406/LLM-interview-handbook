@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime Arguments
     url: https://thudm-slime.mintlify.app/api/arguments
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-陷阱是把动态 batch 说成「把 `--micro-batch-size` 改大一点」。开关打开后条数不再是常数，拼的是**每卡 token 预算**；只改训练帽、忘了 logp 帽，会在重算 $\log\pi$ 时 OOM。更大的坑是 `--balance-data`：它为了匀负载，可能把同一 prompt 的 $n$ 条 response 拆进不同 training step，GRPO 组内相对优势直接坏掉。
+这块容易把动态 batch 说成「把 `--micro-batch-size` 改大一点」。开关打开后条数不再是常数，拼的是**每卡 token 预算**；只改训练帽、忘了 logp 帽，会在重算 $\log\pi$ 时 OOM。更大的坑是 `--balance-data`：它为了匀负载，可能把同一 prompt 的 $n$ 条 response 拆进不同 training step，GRPO 组内相对优势直接坏掉。
 
 ## 按 token 拼，不按条数
 

@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 108. 将有序数组转换为二叉搜索树
     url: https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **链表版（LC 109）？** 链表不能 $O(1)$ 取中点。切中点递归：快慢指针找中点、断开左半，根是中点，左右再递归，时间 $O(n\log n)$（每层找中点 $O(n)$、$\log n$ 层）。要 $O(n)$：先数长度 $n$，再按中序建树——递归先建左子树，当前链表头就是中序下一个结点，读值后指针右移，再建成右子树。长度保证平衡，栈 $O(\log n)$。独立卡见 `lc-109`。
+- **链表版（LC 109）？** 链表不能 $O(1)$ 取中点。切中点递归：快慢指针找中点、断开左半，根是中点，左右再递归，时间 $O(n\log n)$（每层找中点 $O(n)$、$\log n$ 层）。要 $O(n)$：先数长度 $n$，再按中序建树。递归先建左子树，当前链表头就是中序下一个结点，读值后指针右移，再建成右子树。长度保证平衡，栈 $O(\log n)$。独立卡见 `lc-109`。
 
 ```python
 def sortedListToBST(head):
@@ -113,4 +113,4 @@ def sortedListToBST(head):
     return build(0, length(head) - 1)
 ```
 
-- **不必平衡？** 任意元素当根、其余按大小分到左右，仍是 BST，但每次取端点会退化成链，高度 $O(n)$。本题明确要求高度差 $\le 1$，必须取区间中点。转成链表后再平衡是 AVL/红黑那套，面试到这就停。
+- **不必平衡？** 任意元素当根、其余按大小分到左右，仍是 BST，但每次取端点会退化成链，高度 $O(n)$。本题明确要求高度差 $\le 1$，必须取区间中点。转成链表后再平衡是 AVL/红黑那套，白板到这就停。

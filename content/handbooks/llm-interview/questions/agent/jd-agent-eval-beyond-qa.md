@@ -5,14 +5,14 @@ order: 144
 level: A
 title: 京东：Agent 为什么不能只看问答准确率，还要评什么？
 quick: >-
-  Agent 还会选工具、填参、决定继续或拒答。除了最终答案，还要评路由、工具选择、参数合法、无效调用、恢复成功和高风险保守性。答对但乱调工具的系统工程上不合格。
+  Agent 还会选工具、填参、决定继续或拒答。除了最终答案，还要评路由、工具选择、参数合法、无效调用、恢复成功和高风险保守性。答对但乱调工具的系统，工程上不合格。
 tags:
   - JD
   - Agent Evaluation
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 京东 AI Agent开发 一面
     url: https://www.nowcoder.com/discuss/875130786821767168
@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位与轮次明确）
 - 原始措辞：**“模型效果评估为什么不能只看问答准确率，Agent 系统至少还要评什么”**
 
-陷阱是把轨迹压成「最后一句对不对」。Agent 还会选工具、填参、决定继续或拒答；答对但乱调工具、越权、成本爆炸，工程上不合格。问答准确率掩盖了这些失败。京东这面要最低评测集覆盖轨迹，而不是一个总分。维度对照见 `kuaishou-agent-eval-dims`；评完怎么修见 `jd-agent-reflection-error-attribution`。
+这块容易直接答成把轨迹压成「最后一句对不对」。Agent 还会选工具、填参、决定继续或拒答；答对但乱调工具、越权、成本爆炸，工程上不合格。问答准确率掩盖了这些失败。京东这面要最低评测集覆盖轨迹，而不是一个总分。维度对照见 `kuaishou-agent-eval-dims`；评完怎么修见 `jd-agent-reflection-error-attribution`。
 
 ## 最低要覆盖的轨迹指标
 

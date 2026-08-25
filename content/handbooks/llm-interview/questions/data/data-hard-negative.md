@@ -5,8 +5,7 @@ order: 2
 level: S
 title: Preference Data 怎么构造 Hard Negative？
 quick: >-
-  高价值 rejected 应该 plausible but wrong，而不是“我不知道”。最好只在一个关键维度上比 chosen 差，让模型学真正
-  decision boundary，同时控制长度、风格等 confound。
+  高价值 rejected 应该 plausible but wrong，别拿「我不知道」凑数。最好只在一个关键维度上比 chosen 差，让模型学真正 decision boundary，同时控制长度、风格等 confound。
 tags:
   - Preference Data
   - Hard Negative
@@ -14,14 +13,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Training a Helpful and Harmless Assistant with RLHF
     url: 'https://arxiv.org/abs/2204.05862'
     type: primary
 ---
 
-最容易的 negative 是 chosen 完整正确、rejected 写「我不知道」。这种 pair 只教模型少说废话，学不到 correctness 边界。Hard negative 必须 **plausible but wrong**：看起来像样，只在一个关键维度上比 chosen 差。陷阱是堆「一眼假」的 rejected，DPO/RM 表面 loss 很好，线上仍分不清细错。Anthropic HH 的价值也在「有帮助但略越界 / 无害但没用」这类近边界对比，而不是正确 vs 胡话。
+最容易的 negative 是 chosen 完整正确、rejected 写「我不知道」。这种 pair 只教模型少说废话，学不到 correctness 边界。Hard negative 必须 **plausible but wrong**：看起来像样，只在一个关键维度上比 chosen 差。这块容易栽在堆「一眼假」的 rejected，DPO/RM 表面 loss 很好，线上仍分不清细错。Anthropic HH 的价值也在「有帮助但略越界 / 无害但没用」这类近边界对比，正确 vs 胡话不够。
 
 ## 只动一个关键维度
 
@@ -31,11 +30,11 @@ Easy negative 仍有用：少量「别胡说」能稳住底线。配比上先 ea
 
 ## 控制 confound，保留标不准的不确定性
 
-若所有 chosen 更长、更客气，梯度会走 nuisance。做法：长度匹配、对调风格的 counterexample pair、分维度打分后再合成偏好。Annotator 对极难 pair 分歧大时，不要强行二值化：保留 tie、软概率，或降权。Hard 过了头、人类和 judge 都抖，就是 label noise，会毒 RM。同时看 pair margin、annotator agreement、verifier confidence——三者都低，这条不该进硬偏好。见 `data-annotator-agreement`。
+若所有 chosen 更长、更客气，梯度会走 nuisance。做法：长度匹配、对调风格的 counterexample pair、分维度打分后再合成偏好。Annotator 对极难 pair 分歧大时，不要强行二值化：保留 tie、软概率，或降权。Hard 过了头、人类和 judge 都抖，就是 label noise，会毒 RM。同时看 pair margin、annotator agreement、verifier confidence。三者都低，这条不该进硬偏好。见 `data-annotator-agreement`。
 
 ## Agent 轨迹上的 hard negative
 
-从成功轨迹复制，只替换一个关键 action（错 repo 文件、错 tool 参数、过早结束），再在真实环境跑出后续失败，使 credit 集中。不要整条随机打乱——那会变成「轨迹不像」而不是「决策错」。失败后缀一般不当正 SFT：错误步做 rejected，若有 recovery 则 recovery 做正例。这和 `arl-trajectories` 是同一思想在 pair 构造上的落地。
+从成功轨迹复制，只替换一个关键 action（错 repo 文件、错 tool 参数、过早结束），再在真实环境跑出后续失败，使 credit 集中。不要整条随机打乱，那会变成「轨迹不像」而不是「决策错」。失败后缀一般不当正 SFT：错误步做 rejected，若有 recovery 则 recovery 做正例。这和 `arl-trajectories` 是同一思想在 pair 构造上的落地。
 
 挖掘来源不要只会手写：线上错误、judge 与 human 不一致的 pair、模型高置信但 verifier 失败的样本，都是现成 hard negative 矿。过滤仍按「只差一维、长度风格匹配、人能稳定分」三关。数量上 hard 应逐渐占偏好集的主体，但每桶都留一点 easy，防止模型忘了「胡话也是错」。发布时按难度分桶报 win-rate，只报总体赢面会掩盖「细错仍不会抓」。
 

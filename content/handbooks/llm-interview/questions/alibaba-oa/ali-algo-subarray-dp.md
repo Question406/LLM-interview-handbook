@@ -5,14 +5,14 @@ order: 36
 level: A
 title: 阿里手撕：最大子数组、买卖股票、接雨水、最长回文怎么收口？
 quick: >-
-  53 是 Kadane。121 是最低前缀买。42 是左右最高矮的那边减高度。5 是中心扩展或 DP。先定义「以 i 结尾」再转移。
+  53 是 Kadane。121 是最低前缀买。42 是左右最高矮的那边减高度。5 是中心扩展或 DP。我会先定义「以 i 结尾」再转移。
 tags:
   - Alibaba
   - DP
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 最大子数组和
     url: https://leetcode.cn/problems/maximum-subarray/
@@ -26,7 +26,7 @@ sources:
 
 - 对应：LeetCode 53 / 121 / 42 / 5
 
-四道题都先定义「以 $i$ 结尾 / 经过 $i$」再转移，不要一上来枚举区间。Kadane、一次买卖、接雨水、中心扩展回文，是阿里手撕里最常串着问的一维 DP / 双指针族。
+四道题我都会先定义「以 $i$ 结尾 / 经过 $i$」再转移，不要一上来枚举区间。Kadane、一次买卖、接雨水、中心扩展回文，是阿里手撕里最常串着问的一维 DP / 双指针族。
 
 ## 思路
 

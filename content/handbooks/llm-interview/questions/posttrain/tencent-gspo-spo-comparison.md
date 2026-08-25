@@ -16,7 +16,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 秋招面经-腾讯WXG NLP算法一面（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/0bdb10f282b541bda9ae11db203a40eb
@@ -42,7 +42,7 @@ sources:
 
 ## GSPO：序列级 ratio，稳住长生成 / MoE
 
-GSPO 保留 group-relative advantage，但把 token likelihood ratio 的优化单位提升为完整 sequence，在 sequence 级做 ratio、clipping 与优化。针对的是 token-level $\rho_t$ 在长生成、混合精度或 MoE routing 下连乘 / 逐步不稳定：个别 token 的极端比会主导梯度。它并不等价于「没有 KL 或不需要监控 policy drift」——正则仍看 $\pi$ vs $\pi_{\mathrm{ref}}$，只是信任域作用在整段轨迹的重要性权重上。
+GSPO 保留 group-relative advantage，但把 token likelihood ratio 的优化单位提升为完整 sequence，在 sequence 级做 ratio、clipping 与优化。针对的是 token-level $\rho_t$ 在长生成、混合精度或 MoE routing 下连乘 / 逐步不稳定：个别 token 的极端比会主导梯度。它并不等价于「没有 KL 或不需要监控 policy drift」，正则仍看 $\pi$ vs $\pi_{\mathrm{ref}}$，只是信任域作用在整段轨迹的重要性权重上。
 
 和「序列级 KL」也要分开：那是 drift 正则的 reduction；GSPO 是 $\pi$ vs $\pi_{\mathrm{old}}$ 的 clip 粒度。
 

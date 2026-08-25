@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 101. 对称二叉树
     url: https://leetcode.cn/problems/symmetric-tree/
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **改成迭代？** 队列里成对放「应对称」的两个节点。弹出 `(a, b)`：都空跳过；一个空或值不同则否；否则按镜像顺序入队——外侧对外侧 `(a.left, b.right)`，内侧对内侧 `(a.right, b.left)`。层序或随便的队列都行，关键是配对顺序交叉。时间 $O(n)$，额外空间 $O(w)$。
+- **改成迭代？** 队列里成对放「应对称」的两个节点。弹出 `(a, b)`：都空跳过；一个空或值不同则否；否则按镜像顺序入队，外侧对外侧 `(a.left, b.right)`，内侧对内侧 `(a.right, b.left)`。层序或随便的队列都行，关键是配对顺序交叉。时间 $O(n)$，额外空间 $O(w)$。
 
 ```python
 from collections import deque

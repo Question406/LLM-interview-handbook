@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰大模型算法实习一面
     url: https://www.nowcoder.com/feed/main/detail/5cb1ebe809fd402d844cce47380a926f
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“如何进行混合加训”**；**“混合加训和 continue sft 你觉得哪个效果好，为什么？”**
 
-没有绝对赢家。Continue 快、混合稳，选择看领域偏移和必须保住的 holdout。原帖还问 SFT loss 起点——混合因数据更杂，起步 CE 常更高，不能据此判失败。更糟的答法是「混合一定更好」却说不出锚点从哪来：没有可复现的 replay 池，所谓混合就是随机掺点旧数据，配比实验做不成。
+没有绝对赢家。Continue 快、混合稳，选择看领域偏移和必须保住的 holdout。原帖还问 SFT loss 起点，混合因数据更杂，起步 CE 常更高，不能据此判失败。更糟的答法是「混合一定更好」却说不出锚点从哪来：没有可复现的 replay 池，所谓混合就是随机掺点旧数据，配比实验做不成。
 
 ## Continue SFT：适配快，容易忘
 
@@ -40,7 +40,7 @@ Continue SFT 在已有指令模型上只继续吃新任务 / 新领域数据。�
 
 ## 混合加训：锚点拉住梯度
 
-混合加训（replay / mixture）把新数据与通用指令、旧业务锚点、少量预训练或高质量公开指令按**有效 token** 配比同训。新能力仍能学，但每步梯度被锚点拉住。代价是数据工程更重：要维护可复现的 replay 池、配比扫描和两边 holdout。起步 loss 常因数据更杂而更高，平台期也可能高于单域 continue——应以锚点 holdout 和新任务成功一起看，而不是只追新数据 CE。
+混合加训（replay / mixture）把新数据与通用指令、旧业务锚点、少量预训练或高质量公开指令按**有效 token** 配比同训。新能力仍能学，但每步梯度被锚点拉住。代价是数据工程更重：要维护可复现的 replay 池、配比扫描和两边 holdout。起步 loss 常因数据更杂而更高，平台期也可能高于单域 continue，应以锚点 holdout 和新任务成功一起看，而不是只追新数据 CE。
 
 配比按有效 token 而不是按条数：新域样本若更长，条数 1:1 实际已经偏新域。
 

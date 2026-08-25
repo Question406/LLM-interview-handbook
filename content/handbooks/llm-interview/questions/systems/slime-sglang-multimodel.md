@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime 使用文档
     url: https://thudm.github.io/slime/zh/get_started/usage.html
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-陷阱是把「训练图里的 ref」和「采样期当 judge 的冻住模型」写成同一份，并让 SGLang 跟着 actor 热更新。结果是 KL / 过滤用的其实是新权，$\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$ 接近 0，约束 silently 消失。两套 ref 不要混，卡账也不要只报 actor。
+这块容易把「训练图里的 ref」和「采样期当 judge 的冻住模型」写成同一份，并让 SGLang 跟着 actor 热更新。结果是 KL / 过滤用的其实是新权，$\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$ 接近 0，约束 silently 消失。两套 ref 不要混，卡账也不要只报 actor。
 
 ## 两套 ref，两条路径
 

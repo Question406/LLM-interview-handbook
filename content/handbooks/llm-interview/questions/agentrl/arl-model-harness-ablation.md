@@ -15,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: SWE-bench
     url: 'https://arxiv.org/abs/2310.06770'
     type: primary
 ---
 
-换了更强搜索、更多 retry、更长 context、更多子 Agent，分数涨了，不能写成「模型变强」。这些都是 test-time compute 和脚手架。声称 model gain 时必须 **冻结工具集与预算**。陷阱是拿 B+贵 harness 对比 A+穷 harness，把差值全记在模型头上。SWE-bench 一类榜已经说明：分数是系统属性，提交若各带私有脚手架，横向比的是产品不是权重。
+换了更强搜索、更多 retry、更长 context、更多子 Agent，分数涨了，不能写成「模型变强」。这些都是 test-time compute 和脚手架。声称 model gain 时必须冻结工具集与预算。这块容易直接答成拿 B+贵 harness 对比 A+穷 harness，把差值全记在模型头上。SWE-bench 一类榜已经说明：分数是系统属性，提交若各带私有脚手架，横向比的是产品不是权重。
 
 ## 交叉矩阵，而不是单点对比
 
@@ -32,11 +32,11 @@ Skill 与 router 也是 harness（见 `agent-skill-eval`、`agent-tool-routing`�
 
 ## 先写清：评模型还是评系统
 
-评 **intrinsic model**：用标准化 harness（固定工具、固定步数/超时、固定提示骨架），只换权重。评 **产品系统**：可以全栈优化，但结论写 system improves，不写 model improves。Harness 若也要训（router、retriever），做联合消融或冻住一侧，并报训练数据与 compute，测 cross-model / cross-harness 迁移——只在自家脚手架上好的模型，泛化陈述要收。Leaderboard 常答不了「模型能力」，正因为提交之间 scaffold、tool budget、retry、prompt、并行都不同。
+评 intrinsic model：用标准化 harness（固定工具、固定步数/超时、固定提示骨架），只换权重。评产品系统：可以全栈优化，但结论写 system improves，不写 model improves。Harness 若也要训（router、retriever），做联合消融或冻住一侧，并报训练数据与 compute，测 cross-model / cross-harness 迁移。只在自家脚手架上好的模型，泛化陈述要收。Leaderboard 常答不了「模型能力」，正因为提交之间 scaffold、tool budget、retry、prompt、并行都不同。
 
 内部实验也一样：发版纪要里写「换模型 +8 分」必须附带「工具与步数未变」；变了就拆开两行。
 
-最小报告模板：模型版本、工具列表哈希、步数/token 上限、retry 策略、是否加载 Skill。缺一项就不能声称消融干净。交互显著时（只在某套脚手架上赢）要如实写，不要平均掉。评测预算本身也是变量：多给三倍步数涨的分，应记在 compute 账上，不记在权重账上。面试收口：声称 model gain 必须冻工具和预算；做 $2\times 2$ 交叉。只报 B+贵脚手架对 A+穷脚手架，是在偷换自变量。Pareto 上同一预算才可比；多出来的步数记在 compute，不记在模型。工具列表要哈希进实验记录，缺一项就不算干净消融。
+最小报告模板：模型版本、工具列表哈希、步数/token 上限、retry 策略、是否加载 Skill。缺一项就不能声称消融干净。交互显著时（只在某套脚手架上赢）要如实写，不要平均掉。评测预算本身也是变量：多给三倍步数涨的分，应记在 compute 账上，不记在权重账上。最后我会补一句：声称 model gain 必须冻工具和预算；做 $2\times 2$ 交叉。只报 B+贵脚手架对 A+穷脚手架，是在偷换自变量。Pareto 上同一预算才可比；多出来的步数记在 compute，不记在模型。工具列表要哈希进实验记录，缺一项就不算干净消融。
 
 ## 追问
 

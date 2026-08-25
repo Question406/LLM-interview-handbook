@@ -15,14 +15,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 阿里 AI 应用开发面经 MCP
     url: 'https://www.nowcoder.com/discuss/877584799056023552'
     type: legacy-reference
 ---
 
-陷阱是把 MCP 说成「更好的 Function Calling」，或反过来觉得有了 FC 就不需要协议。FC 是**模型侧**的接口形态：应用把 tools schema 塞进请求，模型返回结构化调用，执行仍在宿主。MCP 是**连接协议**：把能力抽象为可发现的 tools / resources / prompts，统一 schema、传输与会话，让多个 Agent、IDE、模型复用同一套服务。生产要的是协议层与业务层解耦，而不是每个业务手写一份工具描述。边界见 `jd-mcp-protocol`、`mcp-tool-catalog-trust`。
+这块容易直接答成 MCP 是「更好的 Function Calling」，或反过来觉得有了 FC 就不需要协议。FC 是模型侧的接口形态：应用把 tools schema 塞进请求，模型返回结构化调用，执行仍在宿主。MCP 是连接协议：把能力抽象为可发现的 tools / resources / prompts，统一 schema、传输与会话，让多个 Agent、IDE、模型复用同一套服务。生产要的是协议层与业务层解耦，每个业务手写一份工具描述撑不久。边界见 `jd-mcp-protocol`、`mcp-tool-catalog-trust`。
 
 ## FC 是模型侧接口，MCP 是连接协议
 
@@ -32,11 +32,11 @@ Function Calling 解决「模型怎么表达我要调哪个函数、参数是什
 
 ## 生产为什么不能只靠 FC
 
-只靠 FC 时，每个业务在自己的 prompt 里复制一份工具描述，权限难管、日志不统一、难以跨团队复用。淘天 / 阿里应用开发面常追问的是：工具一多，schema 分裂、版本对不齐、审计对不上人。大厂更在意协议层：同一支付工具既能给客服 Agent 用，也能给 IDE Agent 用，白名单和审计挂在网关，而不是散落在各模型请求里。Skill 是「这类任务怎么做」，MCP 是「能力怎么连」——不要把操作手册塞进 RAG 就当有协议，见 `ali-skill-memory-rag`。
+只靠 FC 时，每个业务在自己的 prompt 里复制一份工具描述，权限难管、日志不统一、难以跨团队复用。淘天 / 阿里应用开发面常追问的是：工具一多，schema 分裂、版本对不齐、审计对不上人。大厂更在意协议层：同一支付工具既能给客服 Agent 用，也能给 IDE Agent 用，白名单和审计挂在网关，而不是散落在各模型请求里。Skill 是「这类任务怎么做」，MCP 是「能力怎么连」。不要把操作手册塞进 RAG 就当有协议，见 `ali-skill-memory-rag`。
 
 ## 协议层不等于权限层
 
-MCP 统一怎么连、怎么发现，**不自动授权**。Server 自称只读不能当授权；执行前仍要在 Host 做身份、参数和副作用校验。高风险工具的确认、金额上限、SQL 约束仍在策略引擎，见 `ali-guardrail`。把 MCP 当成安全方案，是面试里最常见的越级。
+MCP 统一怎么连、怎么发现，不自动授权。Server 自称只读不能当授权；执行前仍要在 Host 做身份、参数和副作用校验。高风险工具的确认、金额上限、SQL 约束仍在策略引擎，见 `ali-guardrail`。把 MCP 当成安全方案，是面试里最常见的越级。
 
 ## 追问
 

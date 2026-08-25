@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 918. 环形子数组的最大和
     url: https://leetcode.cn/problems/maximum-sum-circular-subarray/
@@ -31,9 +31,9 @@ sources:
 
 不跨界：普通最大子数组和。跨界：等价于「总和减去中间被丢掉的那段」，丢掉的应是最小子数组。两边各跑一遍 Kadane。
 
-全负时最小子数组就是整个数组，`total - min` 变成 $0$，对应空段，本题不允许。用「普通最大 $< 0$」判断，直接返回普通最大。
+全负时最小子数组就是整个数组，`total - min` 变成 $0$，对应空段，这题不允许。用「普通最大 $< 0$」判断，直接返回普通最大。
 
-不要拆成两段再拼，容易漏边界。
+别拆成两段再拼，容易漏边界。
 
 ## 参考代码
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **非环（LC 53）？** 不允许跨接缝，只跑最大结尾和即可：`cur = max(x, cur + x)`，同步维护 `best`。不要再算 `total - min`，否则会把「丢掉中间」的跨界段算进来。本题相对线性版多的就是最小子数组和与全负特判。独立卡见 `lc-53-maximum-subarray`。
+- **非环（LC 53）？** 不允许跨接缝，只跑最大结尾和即可：`cur = max(x, cur + x)`，同步维护 `best`。别再算 `total - min`，否则会把「丢掉中间」的跨界段算进来。这题相对线性版多的就是最小子数组和与全负特判。独立卡见 `lc-53-maximum-subarray`。
 
 ```python
 def maxSubArray(nums):
@@ -104,4 +104,3 @@ def maxSubarraySumLenAtMostK(nums, k):
         dq.append(j)
     return ans
 ```
-

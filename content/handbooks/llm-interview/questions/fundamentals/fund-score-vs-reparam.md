@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Auto-Encoding Variational Bayes
     url: https://arxiv.org/abs/1312.6114
@@ -29,7 +29,7 @@ sources:
     type: secondary
 ---
 
-陷阱是「策略梯度方差大，换成 VAE 那种 reparam 就好了」。两条是不同的随机计算图，不是同一估计器的两个超参。LLM 的动作是离散 token，环境（verifier、用户、工具）对 token 序列不可微，只能走 score-function。
+这块容易直接答成「策略梯度方差大，换成 VAE 那种 reparam 就好了」。两条是不同的随机计算图，不是同一估计器的两个超参。LLM 的动作是离散 token，环境（verifier、用户、工具）对 token 序列不可微，只能走 score-function。
 
 ## 两条梯度
 
@@ -49,7 +49,7 @@ $$
 \nabla_\theta\mathbb{E}_\varepsilon[f(g(\theta,\varepsilon))]=\mathbb{E}_\varepsilon\big[\nabla_a f\cdot\nabla_\theta g\big].
 $$
 
-梯度穿过 $f$。$f$ 平滑时，这通常比 score-function 方差小一个数量级——VAE 的编码器走这条。要求：$g$ 对 $\theta$ 可微，且你能把采样写成这种噪声注入。
+梯度穿过 $f$。$f$ 平滑时，这通常比 score-function 方差小一个数量级，VAE 的编码器走这条。要求：$g$ 对 $\theta$ 可微，且你能把采样写成这种噪声注入。
 
 ## 为什么 token 走不了低方差那条
 

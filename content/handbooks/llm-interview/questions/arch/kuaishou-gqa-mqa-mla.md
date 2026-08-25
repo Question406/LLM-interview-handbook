@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手日常实习大模型算法面经
     url: https://www.nowcoder.com/feed/main/detail/9d24592752804d2790557f81230df62d
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“问kv cache相关”**；**“decoder的 qkv输入分别来自哪”**；**“除了MHA还知道哪些(GQA MQA MLA)讲原理”**
 
-陷阱是把 GQA / MQA / MLA 都说成「少算一点 attention」。Decode 往往受 **KV 带宽**限制，不是受 $T^2$ 训练 FLOPs 限制。先说清 QKV 从哪来，再谈压缩轴。
+这块容易把 GQA / MQA / MLA 都说成「少算一点 attention」。Decode 往往受 KV 带宽限制，不是受 $T^2$ 训练 FLOPs 限制。先说清 QKV 从哪来，再谈压缩轴。
 
 ## Decoder 的 Q、K、V
 
@@ -38,7 +38,7 @@ sources:
 
 ## 三种省 cache 的切法
 
-MHA：每头独立 KV，每 token 约 $2 n_h d_h$，质量最好、cache 最大。MQA：所有 Q 头共享一对 KV，$n_{\mathrm{kv}}=1$，cache 最小，头间独立性最差。GQA： $1\lt n_{\mathrm{kv}}\lt n_h$，若干 Q 头共享一组 KV，LLaMA / Qwen 常用中间点。
+MHA：每头独立 KV，每 token 约 $2 n_h d_h$，质量最好、cache 最大。MQA：所有 Q 头共享一对 KV，$n_{\mathrm{kv}}=1$，cache 最小，头间独立性最差。GQA：$1\lt n_{\mathrm{kv}}\lt n_h$，若干 Q 头共享一组 KV，LLaMA / Qwen 常用中间点。
 
 MLA（DeepSeek）：沿表示维压，不（只）砍头数。隐状态先到低维 $c_t^{KV}=W^{DKV}h_t$，$d_c\ll n_h d_h$，RoPE 再拆出短的 $k^R$。推理用矩阵吸收，不必还原全长 K/V。这和 GQA 的压缩轴不同，见 `arch-mla`。
 

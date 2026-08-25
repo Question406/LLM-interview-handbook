@@ -6,14 +6,14 @@ level: A
 title: LC 172 · 阶乘后的零
 quick: >-
   尾零来自因子 $10=2\times 5$，$2$ 永远比 $5$ 多，数 $5$ 的个数即可。$n/5 + n/25 +
-  n/125+\cdots$。不要真去算 $n!$。
+  n/125+\cdots$。别真去算 $n!$。
 tags:
   - Math
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 172. 阶乘后的零
     url: https://leetcode.cn/problems/factorial-trailing-zeroes/
@@ -31,7 +31,7 @@ sources:
 
 尾零等于因子 $10$ 的个数，$10=2\times 5$。$[1,n]$ 里因子 $2$ 远多于 $5$，答案就是 $5$ 的指数和：$\lfloor n/5\rfloor + \lfloor n/25\rfloor + \lfloor n/125\rfloor+\cdots$。
 
-循环 `n //= 5`，累加即可。不要先算阶乘再数零：溢出且慢。$25$、$125$ 要多计，因为各自多带一个 $5$。
+循环 `n //= 5`，累加即可。别先算阶乘再数零：溢出且慢。$25$、$125$ 要多计，因为各自多带一个 $5$。
 
 ## 参考代码
 

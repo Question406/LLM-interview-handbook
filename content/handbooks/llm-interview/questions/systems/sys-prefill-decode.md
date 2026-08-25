@@ -5,8 +5,8 @@ order: 7
 level: S
 title: Prefill 为什么更 Compute-Bound，Decode 为什么更 Memory-Bound？
 quick: >-
-  Prefill 一次处理很多 tokens，形成大 GEMM、算术强度高；Decode 每 step 每 sequence 只新增 1
-  token，却要读取大量模型权重和历史 KV，矩阵瘦、算术强度低，因此常受显存带宽限制。
+  Prefill 一次处理很多 tokens，GEMM 大、算术强度高。Decode 每 step 每 sequence 只新增 1 个
+  token，却要读大量模型权重和历史 KV，矩阵瘦、算术强度低，所以常被显存带宽卡住。
 tags:
   - Serving
   - Inference
@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 'DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving'
     url: https://arxiv.org/abs/2401.09670
     type: primary
 ---
 
-陷阱是背一句「prefill 算力、decode 带宽」却画不出矩阵形状。Roofline 看的是**算术强度**（FLOPs / 字节），不是「有没有 attention」。同一套权重，prompt 阶段和生成阶段落在曲线两边。
+这块容易背一句「prefill 算力、decode 带宽」却画不出矩阵形状。Roofline 看的是**算术强度**（FLOPs / 字节），不是「有没有 attention」。同一套权重，prompt 阶段和生成阶段落在曲线两边。
 
 ## 1. 把 GEMM 形状写出来
 
@@ -36,7 +36,7 @@ Attention 同理。Prefill 的 $QK^\top$ 是 $[T,d]\times[d,T]$，有 $T^2$ 项�
 
 设 $d=4096$，权重一份约 $2d^2$ FLOPs（乘加），读 BF16 权重约 $2d^2$ 字节。Prefill $T=2048$ 时，线性层强度大约再乘 $T$，远高于 GPU 的「算力/带宽」拐点；decode $B=8$ 时强度只有个位数到几十，典型 GPU 拐点在几百，于是停在 HBM。
 
-这不是绝对定理：极大 `batch`、极短 context、权重量化到极低 bit，decode 也可能被算力或调度卡住。面试要说**默认长上下文、中小 batch 的 serving** 才是这条判断。
+这不是绝对定理：极大 `batch`、极短 context、权重量化到极低 bit，decode 也可能被算力或调度卡住。我会说**默认长上下文、中小 batch 的 serving** 才是这条判断。
 
 同一 GPU 上混跑时，一条 $T=8\mathrm{k}$ 的 prefill 会占满 SM 几十毫秒到数百毫秒，正在进行的 decode batch 被打断，TPOT 出现尖刺。这就是「算力型作业饿死带宽型作业」：不是 decode 突然变 compute-bound，而是调度把带宽流水拆碎了。
 

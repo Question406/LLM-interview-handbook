@@ -5,7 +5,7 @@ order: 4
 level: S
 title: LC 295 · 数据流的中位数
 quick: >-
-  对顶堆：大根堆 `lo` 存较小的一半，小根堆 `hi` 存较大的一半，平衡
+  对顶堆：大根堆 `lo` 存较小的一半，小根堆 `hi` 存较大的一半，我保持
   $|lo|-|hi|\in\{0,1\}$。奇数取 `lo` 顶，偶数取两顶平均。
 tags:
   - Heap
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 295. 数据流的中位数
     url: https://leetcode.cn/problems/find-median-from-data-stream/
@@ -30,9 +30,9 @@ sources:
 
 ## 思路
 
-对顶堆。新数先丢进 `lo`（Python 用负数模拟大根堆），再把 `lo` 顶移到 `hi`，若 `hi` 更长再移回。这样 `lo` 的个数等于 `hi` 或比它多 $1$，且 `lo` 顶 $\le$ `hi` 顶。
+对顶堆。新数我先丢进 `lo`（Python 用负数模拟大根堆），再把 `lo` 顶移到 `hi`，若 `hi` 更长再移回。这样 `lo` 的个数等于 `hi` 或比它多 $1$，并且 `lo` 顶 $\le$ `hi` 顶。
 
-排序每次插入 $O(n)$，或用有序数组二分插入，都偏慢。面试要讲清「左半最大、右半最小」。
+排序每次插入 $O(n)$，或者用有序数组二分插入，都偏慢。白板要把「左半最大、右半最小」讲清楚。
 
 ## 参考代码
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **滑动窗口中位数（LC 480）？** 窗口大小 $k$ 固定，每次进一个、出一个。堆不能直接删堆顶以外的元素，用懒删除：出窗数字在哈希表记一次「待删」，真正弹出堆顶时若已过期就丢掉再弹。有效个数仍保持 `lo` 比 `hi` 多 $0$ 或 $1$。也可用 `SortedList` 维护窗口，删旧插新都 $O(\log k)$。独立卡见 `lc-480`。
+- **滑动窗口中位数（LC 480）？** 窗口大小 $k$ 固定，每次进一个、出一个。堆不能直接删堆顶以外的元素，我会用懒删除：出窗数字在哈希表记一次「待删」，真正弹出堆顶时若已过期就丢掉再弹。有效个数仍保持 `lo` 比 `hi` 多 $0$ 或 $1$。也可以用 `SortedList` 维护窗口，删旧插新都 $O(\log k)$。独立卡见 `lc-480`。
 
 ```python
 from sortedcontainers import SortedList
@@ -159,7 +159,7 @@ def medianSlidingWindowLazy(nums, k):
     return ans
 ```
 
-- **第 $k$ 大数据流（LC 703）？** 中位数是动态的「中间」，要两堆。只要第 $k$ 大：一个容量 $k$ 的小根堆即可，多出来的一律弹掉，堆顶就是答案。`add` 为 $O(\log k)$。独立卡见 `lc-703`。
+- **第 $k$ 大数据流（LC 703）？** 中位数是动态的「中间」，要两堆。只要第 $k$ 大：一个容量 $k$ 的小根堆就够，多出来的一律弹掉，堆顶就是答案。`add` 是 $O(\log k)$。独立卡见 `lc-703`。
 
 ```python
 class KthLargest:
@@ -175,4 +175,3 @@ class KthLargest:
             heapq.heappop(self.heap)
         return self.heap[0]
 ```
-

@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 34. 在排序数组中查找元素的第一个和最后一个位置
     url: https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/
@@ -129,4 +129,3 @@ def searchRangeRotated(nums, target):
         return [left, right]
     return left or right or [-1, -1]
 ```
-

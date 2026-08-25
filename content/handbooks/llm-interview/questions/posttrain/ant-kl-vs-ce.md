@@ -16,7 +16,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 蚂蚁大模型一面（被问懵版）
     url: https://www.nowcoder.com/feed/main/detail/1a1a229b1d9f4a5bbfcb6ea6c9857339
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“PPO的kl散度可以改成交叉熵吗？”**（同场还有 GRPO vs PPO KL、K1/K2/K3）
 
-陷阱是觉得「KL 和交叉熵只差一个与策略无关的熵，换成 CE 梯度一样」。差的不是常数，是 **谁采样、哪一侧对数会爆炸**。白板定义见 `fund-kl-directions`。PPO 的 drift 要的是反向 $D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})$，token 从当前策略来；对参考做 CE 得到的是正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，token 从参考来。护栏会从「不许跑出参考支撑」变成「必须盖住 SFT 的每个峰」，对齐要的收窄被抵消。同场常连问 K1/K2/K3，那些估计器估的仍是反向，不能拿 CE 冒充。
+这块容易觉得「KL 和交叉熵只差一个与策略无关的熵，换成 CE 梯度一样」。差的不是常数，是谁采样、哪一侧对数会爆炸。白板定义见 `fund-kl-directions`。PPO 的 drift 要的是反向 $D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})$，token 从当前策略来；对参考做 CE 得到的是正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，token 从参考来。护栏会从「不许跑出参考支撑」变成「必须盖住 SFT 的每个峰」，对齐要的收窄被抵消。同场常连问 K1/K2/K3，那些估计器估的仍是反向，不能拿 CE 冒充。
 
 ## 先把 CE 拆开，左右不要凭记忆
 
@@ -43,7 +43,7 @@ H(p,q)&=-\mathbb{E}_{x\sim p}[\log q(x)]\\
 \end{aligned}
 $$
 
-令 $p=\pi_{\mathrm{ref}}$、$q=\pi$，得到 **正向** $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，期望在参考策略上取。$H(\pi_{\mathrm{ref}})$ 对 $\pi$ 的梯度为零，看起来像「只差常数」，但散度的左右已经反了。正向是 mode-covering：只要 $\pi_{\mathrm{ref}}(x)\gt 0$，哪怕是示范里的有害峰或啰嗦峰，若 $\pi(x)\approx 0$，则 $\log(\pi_{\mathrm{ref}}/\pi)$ 爆炸。策略不敢忘掉 SFT 里出现过的说法，宁可把质量摊糊。这正好和聊天对齐想做的事相反。
+令 $p=\pi_{\mathrm{ref}}$、$q=\pi$，得到正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，期望在参考策略上取。$H(\pi_{\mathrm{ref}})$ 对 $\pi$ 的梯度为零，看起来像「只差常数」，但散度的左右已经反了。正向是 mode-covering：只要 $\pi_{\mathrm{ref}}(x)\gt 0$，哪怕是示范里的有害峰或啰嗦峰，若 $\pi(x)\approx 0$，则 $\log(\pi_{\mathrm{ref}}/\pi)$ 爆炸。策略不敢忘掉 SFT 里出现过的说法，宁可把质量摊糊。这正好和聊天对齐想做的事相反。
 
 ## PPO 要的是反向，连 rollout 分布都反了
 
@@ -53,9 +53,9 @@ $$
 D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})=\mathbb{E}_{x\sim\pi}\big[\log\pi(x)-\log\pi_{\mathrm{ref}}(x)\big].
 $$
 
-期望在 **当前策略** 上取，mode-seeking：参考有、策略不去的峰根本不进期望，可以丢掉；策略跑到 $\pi_{\mathrm{ref}}\approx 0$ 处，对数会炸，所以不敢发明参考几乎不会说的续写。两边连采样分布都反了，不是减掉 $H(\pi_{\mathrm{ref}})$ 就能换。硬换的后果有两层：目标从 seeking 变成 covering，有害峰被逼着留下；梯度尺度被那项常数熵和错误方向一起搅乱，clip fraction 与熵曲线都会失真。
+期望在当前策略上取，mode-seeking：参考有、策略不去的峰根本不进期望，可以丢掉；策略跑到 $\pi_{\mathrm{ref}}\approx 0$ 处，对数会炸，所以不敢发明参考几乎不会说的续写。两边连采样分布都反了，不是减掉 $H(\pi_{\mathrm{ref}})$ 就能换。硬换的后果有两层：目标从 seeking 变成 covering，有害峰被逼着留下；梯度尺度被那项常数熵和错误方向一起搅乱，clip fraction 与熵曲线都会失真。
 
-分类任务的 CE 是对标签分布，和「策略相对参考的正则」不是同一件事。蒸馏 / SFT 本来就在做正向 CE，那是另一道目标，用来铺格式和技能，见 `pt-sft-fwd-kl-vs-rlhf-rev-kl`。可以说的例外只有：你明确要再做一次 SFT 或教师采样蒸馏——那就承认「换目标」，不要说「等价替换 KL」。K1/K3 估的仍是反向，见 `ant-grpo-kl-vs-ppo`。组采样 RL 的优势定义和这道题正交，但方向写反之后，GRPO 的 KL 项一样会变成 covering，见 `sys-rl-group-n`。
+分类任务的 CE 是对标签分布，和「策略相对参考的正则」不是同一件事。蒸馏 / SFT 本来就在做正向 CE，那是另一道目标，用来铺格式和技能，见 `pt-sft-fwd-kl-vs-rlhf-rev-kl`。可以说的例外只有：你明确要再做一次 SFT 或教师采样蒸馏，那就承认「换目标」，不要说「等价替换 KL」。K1/K3 估的仍是反向，见 `ant-grpo-kl-vs-ppo`。组采样 RL 的优势定义和这道题正交，但方向写反之后，GRPO 的 KL 项一样会变成 covering，见 `sys-rl-group-n`。
 
 ## 追问
 

@@ -5,8 +5,7 @@ order: 120
 level: A
 title: 美团：字段提取业务应设计哪些维度的 Reward？如何识别 Reward Hacking？
 quick: >-
-  拆成字段级正确、类型 / 范围合法、必填完整性、冲突一致性、格式可解析，以及过度编造惩罚。Hacking
-  表现为刷某一维分但业务失败——用反例集、维度相关性与人工审计抓。
+  拆成字段级正确、类型 / 范围合法、必填完整性、冲突一致性、格式可解析，以及过度编造惩罚。Hacking 表现为刷某一维分但业务失败。用反例集、维度相关性和人工审计抓。
 tags:
   - Meituan
   - Reward
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 美团大模型算法岗完整面经（一面+二面）
     url: https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981
@@ -31,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“针对字段提取业务，需要设计哪些维度的 Reward？”**；**“是否遇到过 Reward Hacking，如何识别与解决？”**
 
-字段抽取的 reward 必须可执行，不要让同一个 LLM 给 JSON「打漂亮分」。二面要拆成可单独监控的硬规则，并以入单成功 / 人工改写率做门禁，而不是只看加权总分。标注质量（`meituan-label-quality`）不过关，reward 再细也是在拟合脏标签。这题后半问 hacking 才是区分点：会背六维但说不出「哪一维在涨、业务没动」的探针，等于没做过 RL。把可解析、可默认、可复制 prompt 当成成功，是字段业务里最常见的 shortcut。
+字段抽取的 reward 必须可执行，不要让同一个 LLM 给 JSON「打漂亮分」。二面要拆成可单独监控的硬规则，并以入单成功 / 人工改写率做门禁，别只看加权总分。标注质量（`meituan-label-quality`）不过关，reward 再细也是在拟合脏标签。这题后半问 hacking 才是区分点：会背六维但说不出「哪一维在涨、业务没动」的探针，等于没做过 RL。把可解析、可默认、可复制 prompt 当成成功，是字段业务里最常见的 shortcut。
 
 ## 六维硬规则，维维可监控
 

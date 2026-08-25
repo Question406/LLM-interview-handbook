@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 208. 实现 Trie (前缀树)
     url: https://leetcode.cn/problems/implement-trie-prefix-tree/
@@ -32,7 +32,7 @@ sources:
 
 每个节点挂一排孩子（数组 $26$ 或哈希）和布尔 `is_end`。插入：沿字符走，缺了就新建，最后一个节点 `is_end=True`。查找整词：走完且 `is_end`。查前缀：走完即可，不必是词尾。
 
-`app` 与 `apple` 共存靠 `is_end` 区分，不要把「走到空孩子」和「不是词尾」混为一谈。面试先画一条链，再讲分叉。
+`app` 与 `apple` 共存靠 `is_end` 区分，别把「走到空孩子」和「不是词尾」混为一谈。白板我会先画一条链，再讲分叉。
 
 ## 参考代码
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 - 空前缀：`_walk("")` 停在根，`startsWith` 为真（任何词都以空串为前缀）。
 - 短词是长词前缀：只插了 `"apple"` 时 `search("app")` 为假，`startsWith("app")` 为真；再 `insert("app")` 后短词 `is_end` 才变真。
-- 只插入过前缀、未插入短词：靠 `is_end` 区分，不要用「有无孩子」当词尾。
+- 只插入过前缀、未插入短词：靠 `is_end` 区分，别用「有无孩子」当词尾。
 
 ## 追问
 

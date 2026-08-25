@@ -6,8 +6,8 @@ level: A
 title: 字节 Seed：Post-Training / Agent 岗重点是什么？
 quick: >-
   重点是 Reasoning RL、Agent RL、Harness / Spec、Memory 与 Context Engineering、Agent
-  Eval 和 RL 系统。算法岗会追 MoE 路由、rollout 长尾与过程奖励；Agent 岗会追压缩校验、记忆污染和错误
-  patch 回滚。
+  Eval 和 RL 系统。算法岗会追 MoE 路由、rollout 长尾和过程奖励；Agent 岗会追压缩有没有校验、记忆污染和错误
+  patch 怎么回滚。
 tags:
   - ByteDance
   - Seed
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: Seed 2027 大模型人才校招
     url: https://seed.bytedance.com/zh/seedearlycareer
@@ -34,7 +34,7 @@ sources:
     type: candidate-first-hand
 ---
 
-不要把 Agent 理解成「会 LangGraph」。公开面经已经问到 Harness、Spec、压缩有没有破坏任务、错误记忆如何纠错。算法岗则把 GRPO 问到 MoE 路由和 rollout 工程。
+别把 Agent 理解成「会 LangGraph」。公开面经已经问到 Harness、Spec、压缩有没有破坏任务、错误记忆怎么纠错。算法岗会把 GRPO 问到 MoE 路由和 rollout 工程。
 
 ## 准备主线
 

@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: 拼多多 - 大模型算法 秋招一面
     url: https://www.nowcoder.com/discuss/906953010406772736
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“OPD算法中的 正向KL/反向KL 的区别”**
 
-陷阱是按「谁减谁」判断方向，而不是按**期望在谁的分布下取**。原帖问的是 OPD（On-Policy Distillation），不是抽象散度课。说错采样方，后面 mode-covering / mode-seeking 会全反。
+这块容易按「谁减谁」判断方向，而不是按**期望在谁的分布下取**。原帖问的是 OPD（On-Policy Distillation），不是抽象散度课。说错采样方，后面 mode-covering / mode-seeking 会全反。
 
 ## 两个 KL 的定义与几何
 
@@ -44,21 +44,21 @@ $$
 
 ## OPD / SFT / PPO 分别压哪一边
 
-判断口诀：看 token **从谁采样**，不是看 loss 里谁减谁。
+判断看 token **从谁采样**，不是看 loss 里谁减谁。
 
 - **SFT / 标准 KD**：样本来自数据或教师，最小化 $D_{\mathrm{KL}}(\pi_T\|\pi_S)$，正向、mode-covering。
 - **OPD**：学生自己 rollout，教师只对学生走到的状态给逐步 $\log\pi$。期望在 $\pi_S$ 下取，压的是反向 $D_{\mathrm{KL}}(\pi_S\|\pi_T)$，少在教师认为不可能的地方瞎说。实现上常见 `teacher_lp - student_lp` 当 advantage，期望上就是这条反向 KL。
 - **PPO / RLHF 对 $\pi_{\mathrm{ref}}$ 的惩罚**：样本来自当前策略，同属反向 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，mode-seeking，防止漂到参考认为不可能的区域。
 
-方向写反的典型后果：把 OPD 说成「向教师看齐所以是正向」，或把 PPO 的 ref KL 说成「覆盖参考分布」。面试收口：先钉采样分布，再报 KL 方向。
+方向写反的典型后果：把 OPD 说成「向教师看齐所以是正向」，或把 PPO 的 ref KL 说成「覆盖参考分布」。我会先钉采样分布，再报 KL 方向。
 
 几何上可以用两峰教师来讲。教师 $p$ 在 A、B 两个词上都有质量。正向 $D_{\mathrm{KL}}(p\|q)$ 要求学生在 A 和 B 都给概率，否则 $p\gt 0,q\approx 0$ 的点会让 $\log(p/q)$ 爆掉，于是学生变糊，两个峰都盖住。反向 $D_{\mathrm{KL}}(q\|p)$ 只惩罚学生自己采样到的点：学生锁住 A、几乎不去 B，只要不去 $p\approx 0$ 的区域就安全，于是更尖。OPD 选反向，是因为学生已经在自己的错误前缀上，教师只纠正「你现在走到的这一步」，不必强迫覆盖教师轨迹上从未被学生访问的状态。这和 exposure bias 是同一句话：监督要落在学生会走到的分布上。
 
-和交叉熵不要搅。SFT 的 $\mathrm{CE}(p,q)$ 期望在数据（近似 $p$）上取，等价正向 KL。有人把「$-\log q$」都叫 CE，再把 OPD 的 `teacher_lp - student_lp` 也叫 CE，方向就丢了。白板先写期望的下标 $x\sim ?$，再写 KL 符号。RLHF 的 drift KL 同样是 $x\sim\pi_\theta$，所以是反向；PPO clip 相对的是 $\pi_{\mathrm{old}}$，那是信任域，不是这条蒸馏 KL。三套东西可以同时出现在一个训练脚本里，面试要能拆开。
+和交叉熵不要搅。SFT 的 $\mathrm{CE}(p,q)$ 期望在数据（近似 $p$）上取，等价正向 KL。有人把「$-\log q$」都叫 CE，再把 OPD 的 `teacher_lp - student_lp` 也叫 CE，方向就丢了。白板先写期望的下标 $x\sim ?$，再写 KL 符号。RLHF 的 drift KL 同样是 $x\sim\pi_\theta$，所以是反向；PPO clip 相对的是 $\pi_{\mathrm{old}}$，那是信任域，不是这条蒸馏 KL。三套东西可以同时出现在一个训练脚本里，要能拆开。
 
-## 面试收口：先写期望下标
+## 先写期望下标
 
-拼多多这题挂在 OPD 上，不要先背教材定义再对不上项目。开口先写 $D_{\mathrm{KL}}(a\|b)=\mathbb{E}_{x\sim a}[\log a-\log b]$，问 $a$ 是谁。学生采样就是反向、mode-seeking；教师或数据采样就是正向、mode-covering。OPD、PPO 的 ref 惩罚属于前者，SFT / 标准 KD 属于后者。交叉两个峰的教师分布画一次，糊和尖就不用再解释。脚本里若同时出现 clip、ref KL 和蒸馏 KL，分别说锚点是 $\pi_{\mathrm{old}}$、$\pi_{\mathrm{ref}}$ 还是 $\pi_{\mathrm{teacher}}$，避免把所有叫 KL 的系数调成同一个 $\beta$。方向说反的人，后面 mode 形容词会全错，面试官一追采样就穿帮。收口就一句：谁采样，KL 就以谁为期望，形容词跟着期望走。
+拼多多这题挂在 OPD 上，不要先背教材定义再对不上项目。开口先写 $D_{\mathrm{KL}}(a\|b)=\mathbb{E}_{x\sim a}[\log a-\log b]$，问 $a$ 是谁。学生采样就是反向、mode-seeking；教师或数据采样就是正向、mode-covering。OPD、PPO 的 ref 惩罚属于前者，SFT / 标准 KD 属于后者。交叉两个峰的教师分布画一次，糊和尖就不用再解释。脚本里若同时出现 clip、ref KL 和蒸馏 KL，分别说锚点是 $\pi_{\mathrm{old}}$、$\pi_{\mathrm{ref}}$ 还是 $\pi_{\mathrm{teacher}}$，避免把所有叫 KL 的系数调成同一个 $\beta$。方向说反的人，后面 mode 形容词会全错，面试官一追采样就穿帮。谁采样，KL 就以谁为期望，形容词跟着期望走。
 
 ## 追问
 

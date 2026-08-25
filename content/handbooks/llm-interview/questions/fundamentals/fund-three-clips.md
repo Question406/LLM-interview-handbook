@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Proximal Policy Optimization Algorithms
     url: https://arxiv.org/abs/1707.06347
@@ -29,11 +29,11 @@ sources:
     type: secondary
 ---
 
-陷阱是把 `clip_grad_norm_`、`adv.clamp`、PPO 的 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$ 说成同一种「为了稳定」。稳定都有，但 **无偏性掉在不同层**。PPO 目标本身见 `pt-ppo-clip`；本题只做对照表。
+这块容易把 `clip_grad_norm_`、`adv.clamp`、PPO 的 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$ 说成同一种「为了稳定」。稳定都有，但 **无偏性掉在不同层**。PPO 目标本身见 `pt-ppo-clip`；本题只做对照表。
 
 ## 截的是谁
 
-**Gradient clip。** 反传之后若 $\|\hat g\|\gt \tau$，缩放到 $\tau$。$\hat g$ 作为 $\nabla J$ 的估计，在 clip **之前** 可以仍无偏；clip 之后这一 **步更新** 不再是那个无偏方向上的任意步长。它不改 $\hat A$，也不改 $\rho$。RNN / 大模型防爆炸的工程件，见 `fund-gradclip`。不要说「所以策略梯度有偏」——有偏的是被截断后的一步 $\Delta\theta$，不是你在用的 advantage 公式。
+**Gradient clip。** 反传之后若 $\|\hat g\|\gt \tau$，缩放到 $\tau$。$\hat g$ 作为 $\nabla J$ 的估计，在 clip **之前** 可以仍无偏；clip 之后这一 **步更新** 不再是那个无偏方向上的任意步长。它不改 $\hat A$，也不改 $\rho$。RNN / 大模型防爆炸的工程件，见 `fund-gradclip`。不要说「所以策略梯度有偏」，有偏的是被截断后的一步 $\Delta\theta$，不是你在用的 advantage 公式。
 
 **Advantage / return / reward clip。** 如 $\hat A\leftarrow\mathrm{clip}(\hat A,-c,c)$，或把 RM 分打到 $[-1,1]$。这直接改乘在 $\nabla\log\pi$ 上的系数，期望变成 $\mathbb{E}[\nabla\log\pi\cdot\mathrm{clip}(A)]$，相对原 $J$ **有偏**。换来的是不被极端轨迹主导。Reward normalization / 除 $\sigma$ 是同一族的「改系数」，见 `fund-adv-norm-bias`。
 

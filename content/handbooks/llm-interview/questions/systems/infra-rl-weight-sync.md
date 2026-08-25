@@ -16,7 +16,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: AI infra实习面经（小厂）
     url: https://www.nowcoder.com/feed/main/detail/166e576d5afa4a298cf9492ed51bed04
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-这是 AI Infra 实习真题。陷阱是答「存个 checkpoint 再 `load`」。训练后端是 FSDP / Megatron 分片，推理要的是 vLLM / SGLang 的 TP 布局，「同步」= **收集 + 换布局 + 装进引擎 + 清 KV + 记版本**。漏后两步，下一轮 rollout 会用旧 KV 配新权，或轨迹对不上 $\theta$。这和「为什么重算 logp」是两件事：一个管 **权重版本**，一个管 **数值图**。把三件事画成三步：HybridEngine 管布局，本问答管版本怎么送到引擎，重算 logp 管 ratio 用哪张计算图。缺一都会在 $\rho$ 上出无声的偏。
+这是 AI Infra 实习真题。这块容易直接答成「存个 checkpoint 再 `load`」。训练后端是 FSDP / Megatron 分片，推理要的是 vLLM / SGLang 的 TP 布局，「同步」= **收集 + 换布局 + 装进引擎 + 清 KV + 记版本**。漏后两步，下一轮 rollout 会用旧 KV 配新权，或轨迹对不上 $\theta$。这和「为什么重算 logp」是两件事：一个管 **权重版本**，一个管 **数值图**。我会把三件事画成三步：HybridEngine 管布局，本问答管版本怎么送到引擎，重算 logp 管 ratio 用哪张计算图。缺一都会在 $\rho$ 上出无声的偏。
 
 ## 为什么必须换布局
 

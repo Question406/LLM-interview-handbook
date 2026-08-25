@@ -5,8 +5,8 @@ order: 15
 level: A
 title: Prefix Cache 的命中条件和风险？
 quick: >-
-  只有 tokenized prefix、模型权重/adapter、position/attention semantics 等一致时才能安全复用
-  KV；字符串看起来相同但 tokenizer/template/LoRA 不同可能不能命中。
+  只有 tokenized prefix、模型权重/adapter、position/attention semantics 都一致时，才能安全复用
+  KV。字符串看起来相同，但 tokenizer、template、LoRA 不同，就不该命中。
 tags:
   - Serving
   - Cache
@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: vLLM PagedAttention
     url: https://arxiv.org/abs/2309.06180
     type: primary
 ---
 
-陷阱是「字符串看起来一样就能复用 KV」。Prefix cache 复用的是**已经算好的 K/V 页**，命中条件是 token 序列和计算语义一致，不是 UTF-8 一致。system prompt 改一个空格、chat template 不同、LoRA 不同，都应当 miss。错命中比 miss 更危险：静默用错前缀，输出错、还难查。实现上这些页通常挂在 PagedAttention 的 block table 上，见 `sys-pagedattention`。
+这块容易答「字符串看起来一样就能复用 KV」。Prefix cache 复用的是**已经算好的 K/V 页**，命中条件是 token 序列和计算语义一致，不是 UTF-8 一致。system prompt 改一个空格、chat template 不同、LoRA 不同，都应当 miss。错命中比 miss 更危险：静默用错前缀，输出错、还难查。实现上这些页通常挂在 PagedAttention 的 block table 上，见 `sys-pagedattention`。
 
 ## 命中要对齐什么
 

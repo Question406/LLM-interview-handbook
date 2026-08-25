@@ -6,7 +6,7 @@ level: S
 title: 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
 quick: >-
   PPO 常把 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 加进奖励或当惩罚；GRPO 论文用无偏估计直接估
-  token 级 KL，也可以减弱 / 去掉。K1/K2/K3 是不同偏差—方差的 KL 估计器，不能混用符号。
+  token 级 KL，也可以减弱 / 去掉。K1/K2/K3 是同一条反向 KL 的不同估计器，偏差和方差不一样，符号不能混着用。
 tags:
   - Ant Group
   - GRPO
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 蚂蚁大模型一面（被问懵版）
     url: https://www.nowcoder.com/feed/main/detail/1a1a229b1d9f4a5bbfcb6ea6c9857339
@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GRPO的kl散度和PPO的kl散度区别？K1 K2 K3估计区别？”**；**“PPO的kl散度可以改成交叉熵吗？”**
 
-陷阱是把「KL 加在奖励里还是损失上」和「估的是哪个方向」混成一件事。PPO 与 GRPO 约束的都是 **反向** $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，期望在当前策略的 rollout 上取，属于 mode-seeking，见 `fund-kl-directions`。差别在工程位置：PPO 常先把 KL 减进 reward，再送进 GAE；GRPO 把组相对优势当主信号，KL 变成可选的 token 级正则，甚至可以被动态采样和 clip 替代。K1/K2/K3 是同一条反向 KL 的不同估计器，不是三种散度，更不是三种算法。方向写反或把 CE 当替换，整道题就穿了。
+这块容易把「KL 加在奖励里还是损失上」和「估的是哪个方向」混成一件事。PPO 与 GRPO 约束的都是反向 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，期望在当前策略的 rollout 上取，属于 mode-seeking，见 `fund-kl-directions`。差别在工程位置：PPO 常先把 KL 减进 reward，再送进 GAE；GRPO 把组相对优势当主信号，KL 变成可选的 token 级正则，甚至可以被动态采样和 clip 替代。K1/K2/K3 是同一条反向 KL 的不同估计器，不是三种散度，更不是三种算法。方向写反或把 CE 当替换，整道题就穿了。
 
 ## 加在奖励里，还是加在损失上
 
@@ -53,7 +53,7 @@ k_3&=(\rho-1)-\log\rho.
 \end{aligned}
 $$
 
-$k_1$ 就是 $\mathbb{E}_{\pi}[\log\pi-\log\pi_{\mathrm{ref}}]$，对反向 KL 无偏，但方差大。$k_3$ 多一项 $\rho-1$，在 $\pi$ 上取期望时 $\mathbb{E}[\pi_{\mathrm{ref}}/\pi-1]=0$，所以与 $k_1$ 同期望、通常更稳，GRPO 论文默认它。$k_2$ 是平方近似，有偏，不能和 $k_3$ 混着报数。面试写清「对谁采样、估哪个 KL」，比背编号重要：同一组公式，若样本改成来自 ref，估的就变成另一侧。不能把 KL 换成交叉熵——CE 展开是正向 KL 加一项与 $\pi$ 无关的熵，采样也跑到 ref 上，见 `ant-kl-vs-ce`。CISPO 的 clip 管的是 IS 权重，不是这组估计器，见 `pt-cispo`。
+$k_1$ 就是 $\mathbb{E}_{\pi}[\log\pi-\log\pi_{\mathrm{ref}}]$，对反向 KL 无偏，但方差大。$k_3$ 多一项 $\rho-1$，在 $\pi$ 上取期望时 $\mathbb{E}[\pi_{\mathrm{ref}}/\pi-1]=0$，所以与 $k_1$ 同期望、通常更稳，GRPO 论文默认它。$k_2$ 是平方近似，有偏，不能和 $k_3$ 混着报数。面试写清「对谁采样、估哪个 KL」，比背编号重要：同一组公式，若样本改成来自 ref，估的就变成另一侧。不能把 KL 换成交叉熵，CE 展开是正向 KL 加一项与 $\pi$ 无关的熵，采样也跑到 ref 上，见 `ant-kl-vs-ce`。CISPO 的 clip 管的是 IS 权重，不是这组估计器，见 `pt-cispo`。
 
 ## 追问
 

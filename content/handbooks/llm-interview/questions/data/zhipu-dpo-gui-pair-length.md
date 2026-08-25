@@ -5,8 +5,7 @@ order: 105
 level: S
 title: 智谱 Agent 算法：GUI 长轨迹 DPO 正负样本长度不一有什么影响？
 quick: >-
-  sequence log-prob 是 token 和，长短 pair 会把长度、EOS 与无关 token 数混进 preference margin，模型可能只学“更短”或“更长”。需在
-  pair 构造、长度归一化 / 目标定义、终止 token 与 per-slice eval 上显式控制，不能靠删长轨迹解决。
+  sequence log-prob 是 token 和，长短 pair 会把长度、EOS 与无关 token 数混进 preference margin，模型可能只学「更短」或「更长」。需在 pair 构造、长度归一化 / 目标定义、终止 token 与 per-slice eval 上显式控制，不能靠删长轨迹解决。
 tags:
   - Zhipu
   - GUI Agent
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 智谱大模型agent算法面经 好细啊（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/24952c828c59435abd3c302c97fa358d
@@ -64,14 +63,14 @@ $\log\pi(y\mid x)$ 是 token 条件对数概率之和。$y$ 多一个 token，�
 
 优先构造 **同任务、相近 state、只在关键 action 或 recovery 处分歧** 的 counterfactual pair，并记录原因标签（点错坐标、选错控件、该停不停）。对无效 observation / 截图描述做 mask，让 loss 主要落在 action 与终止格式上。终止 token 的监督要两边一致，避免一边学到规范 EOS、另一边学到截断。Counterfactual 的意思是：尽量共享同一前缀，只在决策点分叉，这样长度差来自那几步 recovery，而不是整段 DOM 是否被序列化。原因标签事后还能做切片：若只有「失败更长」的循环类 pair 在拉动 loss，说明你在惩罚探索而不是惩罚点错。GUI 数据少、长轨迹贵，pair 质量比数量更重要；用整段成功 vs 整段失败硬配，是最容易把长度当标签的写法。
 
-## 用切片 eval 抓 length hacking，而不是凭感觉删数据
+## 用切片 eval 抓 length hacking，别凭感觉删数据
 
 按 chosen / rejected 长度差 $\Delta |y|$ 分桶，看 success、step count、premature stop 与 endless-action rate。若只在 $\Delta |y|$ 很大的桶上「DPO 很有效」，而长度接近的桶上成功率不动，就是在学长度。还要看：
 
 - 平均步数是否单调变短或变长，而任务成功率不升；
 - 同一初始 state 的对照 pair（长度接近、只改一个 action）上胜率是否也升。
 
-对比 sum 与 length-normalized log-prob、SimPO 一类平均对数概率目标时，把 GUI 成功当金标，不要只看偏好 acc。不能靠过滤长轨迹解决问题：真实 GUI 任务就是长的；该做的是 pair 对齐、mask、终止格式控制，以及把长度当切片而不是当删除条件。汇报时建议同时给出：总体成功率、按 $\Delta |y|$ 分桶的成功率、早停率、平均步数。四条里只有总体成功率很好看，就要怀疑 length hacking。面试收束成一句原因：**sequence-level 目标把 token 数写进 margin，而 GUI 正负样本的 token 数往往与对错共线。** 影响是模型学到长度策略；对策是构造局部反事实 pair、mask 观察串、用任务切片而不是用删数据来「解决」长轨迹。
+对比 sum 与 length-normalized log-prob、SimPO 一类平均对数概率目标时，把 GUI 成功当金标，不要只看偏好 acc。不能靠过滤长轨迹解决问题：真实 GUI 任务就是长的；该做的是 pair 对齐、mask、终止格式控制，以及把长度当切片而不是当删除条件。汇报时建议同时给出：总体成功率、按 $\Delta |y|$ 分桶的成功率、早停率、平均步数。四条里只有总体成功率很好看，就要怀疑 length hacking。原因可以收成一句：**sequence-level 目标把 token 数写进 margin，而 GUI 正负样本的 token 数往往与对错共线。** 影响是模型学到长度策略；对策是构造局部反事实 pair、mask 观察串、用任务切片而不是用删数据来「解决」长轨迹。
 
 智谱这问要的是因果：不是「长样本不好」，而是 log-prob 求和让长度成为假标签。把 GUI 特有的 observation 膨胀和早停 / 死循环评测带上，才像做过 agent 数据，而不是把普通 DPO 长度偏差复读一遍。GUI 长轨迹里 observation、重复点击和终止格式都会按 token 数进入 sequence log-prob，正负样本长度一旦与成败共线，DPO 就会学到「更短」或「更长」而不是正确点击。对策是局部反事实 pair、对观察串 mask、统一终止协议，并按长度差分桶看成功率、早停和死循环。删掉长轨迹只会让模型没见过真实任务，不能当解。
 

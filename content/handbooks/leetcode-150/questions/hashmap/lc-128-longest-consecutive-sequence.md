@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 128. 最长连续序列
     url: https://leetcode.cn/problems/longest-consecutive-sequence/
@@ -86,7 +86,7 @@ def longestConsecutiveSeq(nums):
     return list(range(best_start, best_start + best_len))
 ```
 
-- **并查集怎么做？** 每个数先自成连通块，若 $x-1$ 或 $x+1$ 已出现就把相邻值 `union`，根上维护块大小，答案取最大 `size`。时间仍摊还 $O(n)$，但要写 `find`/`union`，常数和代码量都更大。易错点是重复数字不要二次 `union`，否则 size 会翻倍。面试优先讲哈希集合从左端点延伸；并查集当「换一种连通块建模」的加分项。
+- **并查集怎么做？** 每个数先自成连通块，若 $x-1$ 或 $x+1$ 已出现就把相邻值 `union`，根上维护块大小，答案取最大 `size`。时间仍摊还 $O(n)$，但要写 `find`/`union`，常数和代码量都更大。易错点是重复数字不要二次 `union`，否则 size 会翻倍。白板我优先讲哈希集合从左端点延伸；并查集当「换一种连通块建模」的加分项。
 
 ```python
 def longestConsecutiveUF(nums):

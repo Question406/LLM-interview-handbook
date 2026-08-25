@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 大模型算法 美团面经分享（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/c6573225622842c290a00496c58db386
@@ -30,11 +30,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位与发帖时间明确，届别和轮次未披露）
 - 原始措辞：**“RL 过程中 reward 或者 loss 震荡严重，怎么办？”**
 
-陷阱是只对曲线做滑动平均，或盲目把学习率砍半。先明确震荡的是 reward 还是 loss，以及它是否伤害最终 success。很多「震荡」来自组间难度不齐或 parser 偶发，平滑会把坏问题盖住。GRPO 里优势要除以组内 $\sigma$，loss 比 reward 更抖是预期，要用 holdout success 判决，不要用 $L$ 判决。这题考排查纪律：分层监控、单变量复现，而不是背「把 lr 改小」。
+这块容易只对曲线做滑动平均，或盲目把学习率砍半。先明确震荡的是 reward 还是 loss，以及它是否伤害最终 success。很多「震荡」来自组间难度不齐或 parser 偶发，平滑会把坏问题盖住。GRPO 里优势要除以组内 $\sigma$，loss 比 reward 更抖是预期，要用 holdout success 判决，不要用 $L$ 判决。这题考排查纪律：分层监控、单变量复现，而不是背「把 lr 改小」。
 
 ## 1. 四层监控，先定位哪一层在跳
 
-按 rollout 版本、任务桶和长度记录：reward 均值 / 方差、有效组比例、pass@k、KL、entropy、clip fraction、advantage 标准差、梯度范数、NaN / overflow、actor–rollout policy lag、有效 token 数。缺一项就不要声称「已经排查过」。
+按 rollout 版本、任务桶和长度记录：reward 均值 / 方差、有效组比例、pass@k、KL、entropy、clip fraction、advantage 标准差、梯度范数、NaN / overflow、actor-rollout policy lag、有效 token 数。缺一项就不能说「已经排查过」。
 
 - **Reward 跳**：parser / verifier 不稳定（同一轨迹重打分不一致）、数据混入、长度分布变、偶发全对全错组让 $\sigma$ 起伏；
 - **Loss 跳**：reward 尺度没对齐、长尾 token、学习率、batch 过小、分布式 all-reduce 数值问题、$\rho$ 极端、advantage whitening 在小 $G$ 上很噪。
@@ -55,7 +55,7 @@ $$
 
 ## 3. 什么时候震荡可以接受
 
-组难度 mixed、每批有效组比例在变，训练 reward 本来就会抖。可接受的判据是 holdout success 单调或缓慢升、格式和安全不掉、NaN 为零、clip fraction 不长期打满、熵不崩、lag 不持续增大。仅移动平均会掩盖后者。把「可接受的抖」和「要停的崩」写成门禁，比追求光滑曲线更像做过训练。
+组难度 mixed、每批有效组比例在变，训练 reward 本来就会抖。可接受的判据是 holdout success 单调或缓慢升、格式和安全不掉、NaN 为零、clip fraction 不长期打满、熵不崩、lag 不持续增大。仅移动平均会掩盖后者。我会把「可接受的抖」和「要停的崩」写成门禁，不追求光滑曲线。
 
 ## 追问
 

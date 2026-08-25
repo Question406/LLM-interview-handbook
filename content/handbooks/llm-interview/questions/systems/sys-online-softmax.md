@@ -6,7 +6,7 @@ level: S
 title: FlashAttention 的 Online Softmax 怎么在分块后仍保持精确？
 quick: >-
   每一行维护当前最大值 $m$ 和归一化和 $\ell$。读到新 block 后更新 $m'=\max(m,m_{\mathrm{block}})$，并把旧分子/分母按
-  $\exp(m-m')$ 重标定，再累加新 block；因此无需 materialize 全部 attention matrix。
+  $\exp(m-m')$ 重标定，再累加新 block。因此不必 materialize 全部 attention matrix，结果仍和整行一次算完等价。
 tags:
   - FlashAttention
   - Softmax
@@ -15,7 +15,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 2025 美团大模型面经
     url: 'https://www.nowcoder.com/feed/main/detail/b87b9794a2114f7c818b40a3be51c4f0'
@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是把 FlashAttention 说成「近似 attention」或「丢精度换速度」。目标仍是
+这块容易把 FlashAttention 说成「近似 attention」或「丢精度换速度」。目标仍是
 
 $$
 \mathrm{softmax}(QK^\top/\sqrt{d})\,V,

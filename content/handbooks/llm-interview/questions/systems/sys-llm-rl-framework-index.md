@@ -5,9 +5,9 @@ order: 229
 level: A
 title: 现在做 LLM RL，面试会问哪些训练框架题？
 quick: >-
-  公开面经点名 veRL / TRL / OpenRLHF / Ray。你若用过 veRL 和 slime，还要能对打：HybridEngine
-  vs `--colocate`+offload、Hydra YAML vs Megatron/SGLang 透传、Reward Manager vs
-  Data Buffer。不要只报「都用过」。
+  公开面经会点名 veRL / TRL / OpenRLHF / Ray。你若用过 veRL 和 slime，还要对打：HybridEngine vs
+  `--colocate`+offload、Hydra YAML vs Megatron/SGLang 透传、Reward Manager vs Data
+  Buffer。同步等长尾再对比 AReaL；单机省显存才轮到 Unsloth。报「都用过」不够。
 tags:
   - VeRL
   - slime
@@ -17,7 +17,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-24
 sources:
   - title: 字节大模型agent算法一面分享
     url: https://www.nowcoder.com/feed/main/detail/f6e62eddaae1460fa80c0a0052f3267a
@@ -82,5 +82,10 @@ sources:
 - slime 怎么同时 serve actor 和冻住的 ref / reward？
 - 多轮 Agent 在 slime 里为什么要把 router 改成 session affinity？
 - slime 的 `--use-dynamic-batch-size` 和 veRL `use_dynamic_bsz` 怎么对？
+- AReaL 和 slime 对 rollout bottleneck 的理解差在哪？
+- partial / 异步 rollout 能不能把旧 policy 的 KV cache 接着用？
+- RL 训练开 continuous batching，会破坏 on-policy 边界吗？
+- 什么时候用 Unsloth 做 LLM RL？为什么进不了和 veRL / slime 同一张选型表？
+- 2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？
 
-选型口诀：原型 TRL；Ray 异构生成池用 OpenRLHF；FSDP / vLLM / DAPO 复现用 veRL；Megatron 透传 + SGLang router / PD / FP8 / 自定义 generate 用 slime。Ray 仍是调度层。
+我会按场景选：原型用 TRL 或 Unsloth；Ray 异构生成池用 OpenRLHF；FSDP / vLLM / DAPO 复现用 veRL；Megatron 透传 + SGLang router / PD / FP8 / 自定义 generate 用 slime；同步等长尾、要 fully async 再评估 AReaL。Ray 仍是调度层。Unsloth 为什么进不了多机控制面比较，见「什么时候用 Unsloth 做 LLM RL？为什么进不了和 veRL / slime 同一张选型表？」。

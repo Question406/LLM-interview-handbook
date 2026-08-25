@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯-混元大模型面经
     url: https://www.nowcoder.com/feed/main/detail/19561cb3bcbf4a519766f61d6414a44c
@@ -30,7 +30,7 @@ sources:
 - 公司：腾讯 · 混元
 - 原始措辞：**“知道 LoRA 的原理吗，A 和 B 两个矩阵怎么初始化，有了解过其他的初始化方法吗”**
 
-陷阱是两边都全零（适配器冻死）或两边都随机（第一步就扰动基座）。LoRA 要的是 **零起步残差**：$\Delta W$ 初始为 0，前向等于预训练，同时至少一侧非零才能把梯度送进另一侧。挂载点见 `sensetime-lora-where`、`meituan-lora-not-after-ln`；本题聚焦初始化。快手同构题见 `kuaishou-lora-ab-init`。
+这块容易两边都全零（适配器冻死）或两边都随机（第一步就扰动基座）。LoRA 要的是零起步残差：$\Delta W$ 初始为 0，前向等于预训练，同时至少一侧非零才能把梯度送进另一侧。挂载点见 `sensetime-lora-where`、`meituan-lora-not-after-ln`；本题聚焦初始化。快手同构题见 `kuaishou-lora-ab-init`。
 
 ## 标准：$A$ 随机、$B$ 全零
 
@@ -40,7 +40,7 @@ $$
 
 常见实现：$A$ 高斯或 Kaiming，$B$ 全零（PEFT 默认）。则 $BA=0$，起步不改输出。梯度 $\partial L/\partial B \propto (\partial L/\partial\Delta W)A^\top$，$A$ 非零所以 $B$ 能被拉离原点；之后 $\Delta W$ 才非零。对调「$B$ 随机 $A$ 全零」在乘积为零的意义上也可，但梯度路径对偶，框架里不常见。$\alpha/r$ 是有效步长，改 $r$ 时要一起说 $\alpha$，见 `arch-lora`。
 
-**两边都全零**：$BA=0$ 且 $\partial L/\partial A$、$\partial L/\partial B$ 都乘到零侧，适配器学不到东西。**两边都随机**：第一步就改变基座行为，loss 尖刺，破坏「从原模型出发」的假设。这不是风格问题，是残差分支的可启动性。
+两边都全零：$BA=0$ 且 $\partial L/\partial A$、$\partial L/\partial B$ 都乘到零侧，适配器学不到东西。两边都随机：第一步就改变基座行为，loss 尖刺，破坏「从原模型出发」的假设。这不是风格问题，是残差分支的可启动性。
 
 ## 其他初始化：了解即可，稳定优先
 

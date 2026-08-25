@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯-26校招-大模型算法二面 1h（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/905343c9a3834f8d9d9bdc3790a59687
@@ -49,7 +49,7 @@ sources:
 
 ## 追问
 
-- **有没有标准 $G$？** 没有。看有效组比例和成本，常见从 4–16 扫起，但不要背成唯一答案。
+- **有没有标准 $G$？** 没有。看有效组比例和成本，常见从 4-16 扫起，但不要背成唯一答案。
 - **连续 RM 怎样才敢用？** 先校准、看长度偏置、冻结评测对照；漂移就回退到 oracle。
 - **全连续、无 verifier？** 可以跑，但更像 RM-RLHF，hack 风险回到 PPO 那一套。
 - **和「为什么选 GRPO」怎么衔接？** 有可验证标量、能成组采样才是主因；连续与否是奖励设计，不是算法门槛。

@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 104. 二叉树的最大深度
     url: https://leetcode.cn/problems/maximum-depth-of-binary-tree/
@@ -32,7 +32,7 @@ sources:
 
 后序 DFS：先求左右子树深度，当前深度是 $1$ 加上较大者。空节点返回 $0$，叶节点返回 $1$。
 
-层序 BFS 数层数也能做。面试先写递归，再补一句栈深最坏 $O(n)$。
+层序 BFS 数层数也能做。白板我一般先写递归，再补一句栈深最坏 $O(n)$。
 
 ## 参考代码
 

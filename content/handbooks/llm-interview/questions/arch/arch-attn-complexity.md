@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Attention Is All You Need
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
 
-陷阱是只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
+这块容易只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
 
 ## 时间：两段不要混
 

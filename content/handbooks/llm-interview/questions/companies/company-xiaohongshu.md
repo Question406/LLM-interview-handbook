@@ -5,7 +5,7 @@ order: 14
 level: A
 title: 小红书：后训练 / Agent / 全栈应重点准备什么？
 quick: >-
-  后训练岗追 MCP vs Skill、GRPO 去 KL、Agentic RL 差异、两阶段后训练与 DAPO；全栈岗追超时熔断是硬规则还是动态降级。
+  后训练岗会追 MCP vs Skill、GRPO 去 KL、Agentic RL 差异、两阶段后训练和 DAPO；全栈岗会追超时熔断是硬规则还是动态降级。
   社区生态方向还要能讲审核、价值观对齐和业务评估。
 tags:
   - Xiaohongshu
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 小红书 大模型后训练一面
     url: https://www.nowcoder.com/discuss/872533899736334336
@@ -30,14 +30,14 @@ sources:
     type: candidate-first-hand
 ---
 
-小红书公开面经同时覆盖社区 Agent、后训练算法和全栈稳定性。准备时把「Skill 省 token」和「GRPO 为何能弱化 KL」都讲到失败模式，不要只报定义。
+小红书公开面经同时覆盖社区 Agent、后训练算法和全栈稳定性。准备时我会把「Skill 省 token」和「GRPO 为什么能弱化 KL」都讲到失败模式，不会只报定义。
 
 ## 准备主线
 
-1. **Agent 协议**：MCP 是连接协议，Skill 是可按需展开的程序知识；省 token 来自渐进披露。
-2. **Reasoning RL**：GRPO 原理、去 KL 的条件与风险；DAPO 相对 GRPO 改了什么。
-3. **Agentic vs 普通 RL**：动作含工具副作用、观测噪声、稀疏奖励与不可逆操作。
-4. **系统护栏**：复杂任务链超时熔断应硬预算 + 预算内动态降级。
+1. **Agent 协议**：MCP 是连接协议，Skill 是可按需展开的程序知识。省 token 来自渐进披露。
+2. **Reasoning RL**：GRPO 原理、去 KL 的条件和风险；DAPO 相对 GRPO 改了什么。
+3. **Agentic vs 普通 RL**：动作含工具副作用、观测噪声、稀疏奖励和不可逆操作。
+4. **系统护栏**：复杂任务链超时熔断应硬预算，再加预算内动态降级。
 5. **后训练链路**：两阶段目标、多轮数据拆分、训推一致。
 
 ## 本手册真题卡

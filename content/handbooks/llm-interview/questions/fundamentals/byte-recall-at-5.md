@@ -5,8 +5,8 @@ order: 180
 level: A
 title: 字节实习一面：Recall@5 怎么算，评测过拟合怎么防？
 quick: >-
-  Recall@5 = 命中相关文档的 query 比例（或相关文档被召回的比例，先对齐定义）。过拟合：固定 dev、盲测
-  holdout、定期换 query、看负例与位置偏差，不要只刷榜上那 200 条。
+  Recall@5 = 命中相关文档的 query 比例，或者相关文档被召回的比例，先对齐定义再用。过拟合这边：固定
+  dev、盲测 holdout、定期换 query，看负例和位置偏差，不要只刷榜上那 200 条。
 tags:
   - ByteDance
   - Eval
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节实习 agent开发一面
     url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
@@ -28,11 +28,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“Recall@5 怎么计算？评测集刷高了怎么判断是过拟合？”**
 
-陷阱是不先对齐定义就报一个数，或把整个库塞进 top-5 把召回刷到 $1$。$\mathrm{Recall}@5$ 只在 **相关文档有标注** 的离线集上有意义；没有金标、只有点击时会被位置偏差污染。适用场景是 RAG / 搜索召回（`fund-rag`），不是生成质量。Agent 还要补「召回对了但生成没用」的忠实度。pass@$k$ 是生成侧多次采样，不要和 Recall@$k$ 混名（`fund-passk`）。
+这块容易栽在没对齐定义就报一个数，或者把整个库塞进 top-5 把召回刷到 $1$。$\mathrm{Recall}@5$ 只在 **相关文档有标注** 的离线集上有意义；没有金标、只有点击时会被位置偏差污染。适用场景是 RAG / 搜索召回（`fund-rag`），不是生成质量。Agent 还要补「召回对了但生成没用」的忠实度。pass@$k$ 是生成侧多次采样，不要和 Recall@$k$ 混名（`fund-passk`）。
 
 ## 两种定义，先问再用
 
-**Query 级：** 一条 query 的 top-5 是否命中至少一条相关文档，再对 query 取平均。**文档级：** 相关文档里有多少被召回到 top-5（可再对 query macro）。例：100 条 query，80 条在 top-5 里至少命中一篇，则 query 级 $\mathrm{Recall}@5=0.8$。若某 query 有 3 篇相关、只召回 1 篇，query 级仍算命中，文档级只有 $1/3$。面试主动问用哪一种。多路召回场景见 `baichuan-three-path-recall`。
+**Query 级：** 一条 query 的 top-5 是否命中至少一条相关文档，再对 query 取平均。**文档级：** 相关文档里有多少被召回到 top-5（可再对 query macro）。例：100 条 query，80 条在 top-5 里至少命中一篇，则 query 级 $\mathrm{Recall}@5=0.8$。若某 query 有 3 篇相关、只召回 1 篇，query 级仍算命中，文档级只有 $1/3$。我会主动问用哪一种。多路召回场景见 `baichuan-three-path-recall`。
 
 必须同时看 $\mathrm{Precision}@5$：只优化召回可以把噪声文档堆满。nDCG 才惩罚相关文档排太低；Recall@$k$ 不关心排序位置。
 
@@ -62,4 +62,4 @@ $$
 - **没有金标怎么办？** 先抽样人标再算；弱监督要点击位置纠偏，不能直接当 Recall。
 - **Agent 只看 Recall 够吗？** 不够。还要忠实度与任务成功，召回只是上游。
 - **如何证明没过拟合？** 盲测新 query + 与线上投诉同向；只有 dev 涨不够。
-- **把 $k$ 开到 $100$ 刷 Recall 算优化吗？** 不算。必须看 Precision、延迟和生成噪声。拐点在 Recall–延迟曲线上。
+- **把 $k$ 开到 $100$ 刷 Recall 算优化吗？** 不算。必须看 Precision、延迟和生成噪声。拐点在 Recall 和延迟的曲线上。

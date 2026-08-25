@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 105. 从前序与中序遍历序列构造二叉树
     url: https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/
@@ -32,7 +32,7 @@ sources:
 
 前序第一个是根。中序里根左边是左子树，右边是右子树。左子树大小为 $k$，则前序下一段 $k$ 个是左子树，再往后是右子树。递归构造。
 
-中序下标预处理成哈希，每次 $O(1)$ 定位根。面试先画「`pre[0]` 定根、中序分左右」，再写下标区间。
+中序下标预处理成哈希，每次 $O(1)$ 定位根。白板我会先画「`pre[0]` 定根、中序分左右」，再写下标区间。
 
 ## 参考代码
 

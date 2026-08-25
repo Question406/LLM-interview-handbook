@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeekMath / GRPO
     url: https://arxiv.org/abs/2402.03300
@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-面试官说「讲一下 GRPO 训练」时，陷阱是先背 loss。按时间轴画五个角色，公式是最后补上的。GRPO 没有 Critic；只有 Actor 的权重在动。把 Reward Model 和 Critic 说成同一个东西，下一问 PPO 就会穿。veRL 把 Actor / Rollout / Ref 配在同一组 Hydra 下，容易让人以为它们是同一个模块；它们是 **同一份策略的三个视图**：推理采样、冻结参考、可训更新。时间上串行，权重点上只有 Actor 在写。讲角色时同时讲放置和三个 $\pi$，面试官才知道你跑过完整一步，而不是背了 DeepSeekMath 的公式。
+面试官说「讲一下 GRPO 训练」时，这块容易先背 loss。我会按时间轴画五个角色，公式最后补。GRPO 没有 Critic；只有 Actor 的权重在动。把 Reward Model 和 Critic 说成同一个东西，下一问 PPO 就会穿。veRL 把 Actor / Rollout / Ref 配在同一组 Hydra 下，容易让人以为它们是同一个模块；它们是 **同一份策略的三个视图**：推理采样、冻结参考、可训更新。时间上串行，权重点上只有 Actor 在写。讲角色时同时讲放置和三个 $\pi$，才像跑过完整一步，而不是背了 DeepSeekMath 的公式。
 
 ## 一步按时间轴
 
@@ -41,7 +41,7 @@ $$
 \mathcal{L}(\theta) = \mathbb{E}\Big[\min\big(\rho\hat A,\;\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)\hat A\big) - \beta\,\mathrm{KL}(\pi_\theta\Vert\pi_{\mathrm{ref}})\Big],
 $$
 
-其中 $\rho=\pi_\theta/\pi_{\mathrm{old}}$。面试先讲清谁产生 $\rho$、谁产生 $\hat A$、谁产生 KL，再写这一行。三个 $\pi$ 最容易混：$\pi_{\mathrm{old}}$ 是采样那一版，进 ratio；$\pi_\theta$ 是正在更新的 Actor，训练图重算；$\pi_{\mathrm{ref}}$ 是冻结 SFT，只进 KL。把 ref 当成 old，clip 的对象就错了。Rollout 引擎里的 logp 既不是 $\pi_\theta$ 也不可靠当 $\pi_{\mathrm{old}}$ 的数值来源，所以要重算。Reward 发生在优势之前：没有标量分就没有组内均值，后面的 clip 再精致也没有方向。$n\gt 1$ 是优势可定义的前提，见 `sys-rl-group-n`。
+其中 $\rho=\pi_\theta/\pi_{\mathrm{old}}$。我会先讲清谁产生 $\rho$、谁产生 $\hat A$、谁产生 KL，再写这一行。三个 $\pi$ 最容易混：$\pi_{\mathrm{old}}$ 是采样那一版，进 ratio；$\pi_\theta$ 是正在更新的 Actor，训练图重算；$\pi_{\mathrm{ref}}$ 是冻结 SFT，只进 KL。把 ref 当成 old，clip 的对象就错了。Rollout 引擎里的 logp 既不是 $\pi_\theta$ 也不可靠当 $\pi_{\mathrm{old}}$ 的数值来源，所以要重算。Reward 发生在优势之前：没有标量分就没有组内均值，后面的 clip 再精致也没有方向。$n\gt 1$ 是优势可定义的前提，见 `sys-rl-group-n`。
 
 ## 谁训练、谁冻结
 
@@ -59,13 +59,11 @@ $$
 
 veRL 把 Actor / Rollout / Ref 配在 `actor_rollout_ref` 下一组，是因为它们常常共享同一套 GPU、轮流占显存：先推理采样，卸 KV，再训练更新。这是 HybridEngine 的放置，不是「三个模块融合成一个算子」，见 `sys-verl-hybridengine`。OpenRLHF 则常把 vLLM 单独拉一套卡。slime 默认 Megatron + SGLang，`--colocate` 时两进程 offload 轮转，见 `slime-colocate-vs-split`。
 
-追问「哪些要训练」时按表回答：Actor 要；Ref 冻；Reward 在 RLVR 里常常是规则；PPO 才多一个要训的 Critic。同卡方案下五段是抢显存的：KV 最大的是 Rollout，优化器状态最大的是 Actor，Ref 再 forward 一次也不便宜。所以会看到「先采样、卸 KV、再 ref、再 backward」的调度，而不是五个进程同时占着。分卡则 Rollout 常驻，Actor/Ref 在训练池，同步走 `update_weights`。Agent 任务再多一个环境角色：sandbox 的延迟往往超过 decode，一步墙钟不再能用 MFU 解释，见 `sys-rl-infra`。面试能按时间轴把角色、是否训练、占哪张卡讲顺，比把 GRPO loss 默写出来更像做过 LLM RL。不要在同一句里承诺「Rollout 又快又数值对齐」——快来自引擎，对齐来自训练图，两件事正好拆开。
+追问「哪些要训练」时按表回答：Actor 要；Ref 冻；Reward 在 RLVR 里常常是规则；PPO 才多一个要训的 Critic。同卡方案下五段是抢显存的：KV 最大的是 Rollout，优化器状态最大的是 Actor，Ref 再 forward 一次也不便宜。所以会看到「先采样、卸 KV、再 ref、再 backward」的调度，而不是五个进程同时占着。分卡则 Rollout 常驻，Actor/Ref 在训练池，同步走 `update_weights`。Agent 任务再多一个环境角色：sandbox 的延迟往往超过 decode，一步墙钟不再能用 MFU 解释，见 `sys-rl-infra`。我会按时间轴把角色、是否训练、占哪张卡讲顺，不默写 GRPO loss。不要在同一句里承诺「Rollout 又快又数值对齐」。快来自引擎，对齐来自训练图，两件事正好拆开。
 
 ## 容易混的三个 $\pi$
 
-$\pi_{\mathrm{old}}$、$\pi_\theta$、$\pi_{\mathrm{ref}}$ 必须分开。采样时引擎里的是 old 的推理视图；更新时训练图上的是 $\theta$；KL 用的是冻结 ref。Reward 不是 $\pi$，是标量打分，常常是规则。Critic 在 GRPO 里不存在，不要为了「RL 都有 value」硬编一个。一步墙钟按角色拆：Rollout 最长，Ref 一次前向中等，Actor backward 短但吃优化器显存。同卡就轮流占；分卡就同步权。讲角色时同时讲放置，面试官才知道你跑的是 HybridEngine 还是 OpenRLHF 还是 slime colocate。漏掉「只有 Actor 写权重」，后面问「Ref 要不要学习率」就会答错。把时间轴、训练与否、占卡画成一张表，比默写 loss 更像做过。公式最后补，$\rho$ 的分子分母来自训练图而不是引擎，这句话要主动说。
-
-按时间轴讲完角色，再补公式，三个 $\pi$ 分开：old 进 ratio，ref 进 KL，$\theta$ 在训练图上更新。只有 Actor 写权重；Rollout 是推理视图；Reward 在 RLVR 里常是规则；GRPO 没有 Critic。同卡就轮流占显存，分卡就同步权。漏掉「采样 logp 必须重算」，下一问会把数值和吞吐缠在一起。把时间轴、是否训练、占哪张卡画成一张表，比默写 loss 更像做过完整一步。
+$\pi_{\mathrm{old}}$、$\pi_\theta$、$\pi_{\mathrm{ref}}$ 必须分开。采样时引擎里的是 old 的推理视图；更新时训练图上的是 $\theta$；KL 用的是冻结 ref。Reward 不是 $\pi$，是标量打分，常常是规则。Critic 在 GRPO 里不存在，不要为了「RL 都有 value」硬编一个。一步墙钟按角色拆：Rollout 最长，Ref 一次前向中等，Actor backward 短但吃优化器显存。同卡就轮流占；分卡就同步权。漏掉「只有 Actor 写权重」，后面问「Ref 要不要学习率」就会答错。公式最后补，$\rho$ 的分子分母来自训练图而不是引擎，这句话要主动说。
 
 ## 追问
 
@@ -75,6 +73,6 @@ $\pi_{\mathrm{old}}$、$\pi_\theta$、$\pi_{\mathrm{ref}}$ 必须分开。采样
 - **少了重算 logp 会怎样？** ratio 进的是引擎数值，clip 区间可能被噪声打穿，见美团那题。PagedAttention、量化、不同 TP 都会造出能进 $\rho$ 的误差。
 - **哪些权重在动？** 只有 Actor。Rollout 是 Actor 的推理视图，Ref 冻，GRPO 没有 Critic。把 RM 和 Critic 说成同一个东西，下一问 PPO 会穿。
 - **veRL 为什么配在 `actor_rollout_ref` 一组？** 它们常共享 GPU、轮流占显存：先采、卸 KV、再 ref、再 backward。这是放置，不是三个模块融合成一个算子。
-- **没有 Ref 能不能训 GRPO？** 能，等于关掉 KL，策略容易漂。短实验可以，长训或高学习率时 holdout 会垮。面试要说清你关的是正则，不是「GRPO 不需要 ref」。
+- **没有 Ref 能不能训 GRPO？** 能，等于关掉 KL，策略容易漂。短实验可以，长训或高学习率时 holdout 会垮。要说清你关的是正则，不是「GRPO 不需要 ref」。
 - **Reward 是网络时谁在更新？** RLHF 的 RM 通常冻结当打分器；要训 RM 是另一阶段。不要把「有 RM」说成这一步有两个可训网络。Critic 仍是 PPO 才有。
 - **一步里谁产生 $\rho$、$\hat A$、KL？** $\rho$ 来自训练图上的 $\pi_\theta$ 对 $\pi_{\mathrm{old}}$；$\hat A$ 来自组内奖励减均值；KL 来自冻结 ref。引擎 logp 不进这三项的可靠数值。只有 Actor 写权。Rollout 是推理视图，GRPO 没有 Critic，不要把 RM 和 Critic 说成同一个东西。

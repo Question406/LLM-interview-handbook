@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 月之暗面 Desktop 研发工程师面经（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/09158c1da13b420bbe00ba1751177efb?urlSource=sitemap
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位、轮次与面试日期明确，届别未披露）
 - 原始措辞：**“桌面 AI 产品接入本地文件和目录时，前端如何设计权限提示？”**
 
-陷阱是首次选文件时弹一个「允许访问磁盘」就结束。桌面 Agent 的权限提示是授权 UX，不是系统对话框复读。月之暗面一面要前端在模型发起具体工具调用前，讲清范围、动作、副作用和有效期。选择文件 $\neq$ 授权 Agent 递归读取、上传云端或删除。运行时必须用 capability 校验，System Prompt「请不要乱删」不是权限系统。通用工具权限见 `agent-tool-permissions`。
+这块容易直接答成：首次选文件时弹一个「允许访问磁盘」就结束。桌面 Agent 的权限提示是授权 UX，不是系统对话框复读。月之暗面一面要前端在模型发起具体工具调用前，讲清范围、动作、副作用和有效期。选择文件 $\neq$ 授权 Agent 递归读取、上传云端或删除。运行时必须用 capability 校验，System Prompt「请不要乱删」不是权限系统。通用工具权限见 `agent-tool-permissions`。
 
 ## 授权对象拆开：主体、资源、动作、时效
 
@@ -43,7 +43,7 @@ sources:
 
 执行端用 allowlist 实施：路径前缀、操作动词、是否允许网络。模型请求超出授权直接拒，并回写给任务中心，而不是改 prompt 再试。每次访问记可回看审计：时间、路径、动作、是否经用户确认。任务中途可撤销余下权限，重试或分支不得悄悄扩大访问面。任务对象模型见 `moonshot-desktop-task-center`。
 
-多模态里截图和网页另算资源，不能因为用户贴了一张图就默认可读整个桌面，见 `moonshot-desktop-multimodal-context`。恶意文件内容仍可能 prompt injection，权限再小也要隔离工具描述与不可信文本，见 `agent-prompt-injection`、`agent-skill-security`。面试收束：提示是授权协商，校验在运行时，审计可撤销。前端文案要避免系统权限那套「允许访问文件」——用户听不懂 Agent 接下来会读几层目录、会不会上传。改用任务语言：「为了写周报，将读取你选中的 3 个 Markdown，不会上传，不会修改」。若模型中途要扩大范围，弹出的是增量授权，而不是再来一次全盘允许。Desktop 产品的信任建立在可预期的访问面上，提示失败等于权限模型失败。
+多模态里截图和网页另算资源，不能因为用户贴了一张图就默认可读整个桌面，见 `moonshot-desktop-multimodal-context`。恶意文件内容仍可能 prompt injection，权限再小也要隔离工具描述与不可信文本，见 `agent-prompt-injection`、`agent-skill-security`。最后我会补一句：提示是授权协商，校验在运行时，审计可撤销。前端文案要避免系统权限那套「允许访问文件」，用户听不懂 Agent 接下来会读几层目录、会不会上传。改用任务语言：「为了写周报，将读取你选中的 3 个 Markdown，不会上传，不会修改」。若模型中途要扩大范围，弹出的是增量授权，而不是再来一次全盘允许。Desktop 产品的信任建立在可预期的访问面上，提示失败等于权限模型失败。
 
 ## 追问
 

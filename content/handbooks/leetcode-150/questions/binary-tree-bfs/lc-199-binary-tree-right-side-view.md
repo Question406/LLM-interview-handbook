@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 199. 二叉树的右视图
     url: https://leetcode.cn/problems/binary-tree-right-side-view/
@@ -32,7 +32,7 @@ sources:
 
 标准层序：每轮先记下 `size`，弹出正好一层。该层最后一个就是右视图。
 
-DFS 也可以：先递归右再左，每个深度第一次见到的即右侧。面试优先 BFS，和 102 / 103 同一骨架。
+DFS 也可以：先递归右再左，每个深度第一次见到的即右侧。白板我优先写 BFS，和 102 / 103 同一骨架。
 
 ## 参考代码
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **左视图？** 同一层序骨架，每层取**第一个**（或先右后左入队则取每层末尾）。DFS：先左后右，每个深度第一次见到的即左侧。时间 $O(n)$。
+- **左视图？** 同一层序骨架，每层取第一个（或先右后左入队则取每层末尾）。DFS：先左后右，每个深度第一次见到的即左侧。时间 $O(n)$。
 
 ```python
 from collections import deque
@@ -117,7 +117,7 @@ def leftSideView(root):
     return ans
 ```
 
-- **锯齿 / 层均值？** 切层 BFS 骨架不变，只换层内收集。锯齿：已有奇数层则当前层 `reverse`（或双端 `appendleft`），独立卡见 `lc-103-binary-tree-zigzag-level-order-traversal`。均值：求和再除以本层个数，独立卡见 `lc-637-average-of-levels-in-binary-tree`。右视图是「每层最后一个」，三者常串着考。
+- **锯齿 / 层均值？** 切层 BFS 骨架不变，只换层内收集。锯齿：已有奇数层则当前层 `reverse`（或双端 `appendleft`），独立卡见 `lc-103-binary-tree-zigzag-level-order-traversal`。均值：求和再除以本层个数，独立卡见 `lc-637-average-of-levels-in-binary-tree`。右视图是「每层最后一个」，这三题常串着考。
 
 ```python
 from collections import deque

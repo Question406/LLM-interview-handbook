@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 209. 长度最小的子数组
     url: https://leetcode.cn/problems/minimum-size-subarray-sum/
@@ -31,7 +31,7 @@ sources:
 
 元素全正，窗口和随右扩单调增、随左缩单调减，才能滑窗。`right` 一直加；当 `acc >= target` 时，用 `right-left+1` 更新答案，再减掉 `nums[left]` 并左移，直到和不够。
 
-前缀和 + 二分也是 $O(n\log n)$。面试先确认「全是正数」再写滑窗。
+前缀和 + 二分也是 $O(n\log n)$。白板我会先确认「全是正数」再写滑窗。
 
 ## 参考代码
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **数组含负数怎么办？** 全正才能「右扩单调增、左缩单调减」，有负数滑窗会漏。改前缀和：`pref[j] - pref[i] \ge target` 且 $j-i$ 最短。单调队列维护「前缀递增」的下标：队头一旦满足差值 $\ge$ `target` 就弹出并更新答案，队尾丢掉不小于当前前缀的旧值。时间 $O(n)$，空间 $O(n)$。这是 LC 862 的模板；找不到返回 $-1$ 还是 $0$ 要跟题面走。不要再对每个右端二分乱跳，有负数前缀不单调，普通二分会错。
+- **数组含负数怎么办？** 全正才能「右扩单调增、左缩单调减」，有负数滑窗会漏。改前缀和：`pref[j] - pref[i] \ge target` 且 $j-i$ 最短。单调队列维护「前缀递增」的下标：队头一旦满足差值 $\ge$ `target` 就弹出并更新答案，队尾丢掉不小于当前前缀的旧值。时间 $O(n)$，空间 $O(n)$。这是 LC 862 的模板；找不到返回 $-1$ 还是 $0$ 要跟题面走。别再对每个右端二分乱跳，有负数前缀不单调，普通二分会错。
 
 ```python
 from collections import deque
@@ -92,7 +92,7 @@ def shortestSubarray(nums, target):
     return 0 if ans == n + 1 else ans
 ```
 
-- **乘积小于 $k$ 的子数组个数（LC 713）？** 元素同样为正，窗口乘积随右扩变大、左缩变小。`right` 乘上当前数，当 `prod \ge k` 时除以左端并左移。此时以 `right` 结尾、起点在 $[left, right]$ 的子数组乘积都 $\lt k$，答案加上 $right-left+1$。$k \le 1$ 时正整数乘积不可能小于 $k$，直接返回 $0$。时间 $O(n)$，空间 $O(1)$。易错：用 `+= 1` 只数了最短窗口，漏掉更短左端以外的那些子数组。
+- **乘积小于 $k$ 的子数组个数（LC 713）？** 元素同样为正，窗口乘积随右扩变大、左缩变小。`right` 乘上当前数，当 `prod \ge k` 时除以左端并左移。此时以 `right` 结尾、起点在 $[left, right]$ 的子数组乘积都 $\lt k$，答案加上 $right-left+1$。$k \le 1$ 时正整数乘积不可能小于 $k$，直接返回 $0$。时间 $O(n)$，空间 $O(1)$。这块容易栽：用 `+= 1` 只数了最短窗口，漏掉更短左端以外的那些子数组。
 
 ```python
 def numSubarrayProductLessThanK(nums, k):

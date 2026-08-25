@@ -5,8 +5,7 @@ order: 100
 level: S
 title: 字节 AI 数据技术：Agent 后训练的 SFT / RL 数据怎么设计，何时切 RL？
 quick: >-
-  SFT 先覆盖可执行 schema、工具选择 / 参数、状态跟踪、失败恢复与安全边界；RL 再针对模型已有但不稳定的可验证能力做探索。
-  切换依据应是 held-out trajectory success、格式合规、reward 可区分度和探索覆盖，而非固定 epoch 或 loss 数字。
+  SFT 先覆盖可执行 schema、工具选择 / 参数、状态跟踪、失败恢复与安全边界；RL 再针对模型已有但不稳定的可验证能力做探索。切换看 held-out trajectory success、格式合规、reward 可区分度和探索覆盖，不要看固定 epoch 或 loss 数字。
 tags:
   - ByteDance
   - Agent Post-training
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 4.28 字节 AI数据技术一面（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/8e812a2e2b824779bea596a90d7603e0?sourceSSR=enterprise
@@ -31,19 +30,19 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（岗位、轮次与题单明确；届别、面试日期未披露）
 - 原始措辞：**“如果让你做Agent方向的后训练，SFT数据怎么设计？RL数据怎么设计？SFT做到什么程度可以开始做RL？”**
 
-陷阱是按固定 epoch 或「loss 够低了」切 RL，以及 SFT 只放最终正确答案。Agent SFT 要覆盖可执行格式，RL 要覆盖**已会但不稳**的可验证探索。切分看 held-out 轨迹成功、格式合规、reward 能否区分好坏组，而不是步数。
+这块容易直接答成按固定 epoch 或「loss 够低了」切 RL，以及 SFT 只放最终正确答案。Agent SFT 要覆盖可执行格式，RL 要覆盖**已会但不稳**的可验证探索。切分看 held-out 轨迹成功、格式合规、reward 能否区分好坏组，不要看步数。
 
-## SFT：分层覆盖，而不是堆成功调用
+## SFT：分层覆盖，别只堆成功调用
 
-SFT 集需要：任务意图、可调用工具集合、合法 JSON / 参数、observation grounding、多步 state、拒绝与澄清、timeout / tool error recovery、安全终止。按任务、工具、失败类型、轨迹长度、风险等级分层，防止最多的简单 tool call 主导 loss。环境 token 做 mask（见 `pt-tool-mask`）。实验：去掉「失败恢复」桶再训，held-out 超时任务应掉——这才证明该桶有边际。
+SFT 集需要：任务意图、可调用工具集合、合法 JSON / 参数、observation grounding、多步 state、拒绝与澄清、timeout / tool error recovery、安全终止。按任务、工具、失败类型、轨迹长度、风险等级分层，防止最多的简单 tool call 主导 loss。环境 token 做 mask（见 `pt-tool-mask`）。实验：去掉「失败恢复」桶再训，held-out 超时任务应掉。这才证明该桶有边际。
 
 ## RL：fresh rollout，先看组是否可分
 
-RL 数据来自当前策略在可复现环境中的 fresh rollout，保留成功、近成功、有诊断价值的失败。开始 RL 的门禁建议同时满足：
+RL 数据来自当前策略在可复现环境中的 fresh rollout，保留成功、近成功、有诊断价值的失败。开始 RL 的门禁我一般要求同时满足：
 
 - 格式合法率高于阈值（否则 reward 全打在 parse 失败上）；
 - held-out 基础任务显著高于随机探索；
-- 同一 prompt 的组内对错混合，优势 $\hat A_i$ 非常数；若绝大多数组全对或全错，先改难度 / SFT 覆盖 / reward，而不是加大 RL 步数。
+- 同一 prompt 的组内对错混合，优势 $\hat A_i$ 非常数；若绝大多数组全对或全错，先改难度 / SFT 覆盖 / reward，不要加大 RL 步数。
 
 对照：只加 SFT 步数 vs 达门禁后开 RL，报告格式率、任务成功、reward hacking 率。
 

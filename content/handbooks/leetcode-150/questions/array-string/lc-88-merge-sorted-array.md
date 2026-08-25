@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 88. 合并两个有序数组
     url: https://leetcode.cn/problems/merge-sorted-array/
@@ -32,7 +32,7 @@ sources:
 
 从尾巴填。`i=m-1`、`j=n-1`、`k=m+n-1`。比较 `nums1[i]` 与 `nums2[j]`，较大的写入 `nums1[k]`，对应指针减一。`j` 耗尽即可停：`nums1` 前缀已经就位。`i` 先耗尽则把 `nums2` 剩余段拷进去。
 
-从左往右会覆盖 `nums1` 里还没比较的数。面试先讲清「空位在尾部」再写指针。
+从左往右会覆盖 `nums1` 里还没比较的数。白板我会先讲清「空位在尾部」再写指针。
 
 ## 参考代码
 

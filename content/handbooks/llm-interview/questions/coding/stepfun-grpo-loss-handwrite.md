@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰大模型算法实习一面
     url: https://www.nowcoder.com/feed/main/detail/5cb1ebe809fd402d844cce47380a926f
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：手撕 **“top-p sampling、grpo”**
 
-陷阱是把 GRPO 写成带 critic 的 PPO，或 `std=0` 时只加 `eps`。GRPO **不训 value**，baseline 是组内均值；完整采样见 `code-sampling`，组优势边角见 `code-grpo`、`stepfun-grpo-group-advantage`。同面先写优势张量，再写 `ratio.clamp` 与 `min`。MoE+RL 见 `stepfun-rl-moe-gspo`，不要和 loss 公式混在一起。
+这块容易把 GRPO 写成带 critic 的 PPO，或 `std=0` 时只加 `eps`。GRPO 不训 value，baseline 是组内均值；完整采样见 `code-sampling`，组优势边角见 `code-grpo`、`stepfun-grpo-group-advantage`。同面先写优势张量，再写 `ratio.clamp` 与 `min`。MoE+RL 见 `stepfun-rl-moe-gspo`，不要和 loss 公式混在一起。
 
 ## 优势：在 $G$ 维标准化
 
@@ -41,7 +41,7 @@ $$
 A_i=\frac{r_i-\mathrm{mean}(r)}{\mathrm{std}(r)+\varepsilon}.
 $$
 
-`std` 用 population（`unbiased=False`），与论文/框架对齐。全对/全错则分子为 0，$A=0$，这一 step 无效——记录并动态换题，见 `byte-grpo-all-same-zero-adv`。
+`std` 用 population（`unbiased=False`），与论文/框架对齐。全对/全错则分子为 0，$A=0$，这一 step 无效，记录并动态换题，见 `byte-grpo-all-same-zero-adv`。
 
 ## Loss：clipped surrogate，无 critic
 

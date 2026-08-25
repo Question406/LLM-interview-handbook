@@ -5,7 +5,7 @@ order: 1
 level: S
 title: LC 53 · 最大子数组和
 quick: >-
-  Kadane：`dp = max(x, dp + x)`，即当前数单开一段还是接上一段。同步维护全局最大。时间
+  Kadane：`dp = max(x, dp + x)`，当前数单开一段还是接上一段。同步维护全局最大。时间
   $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 53. 最大子数组和
     url: https://leetcode.cn/problems/maximum-subarray/
@@ -32,7 +32,7 @@ sources:
 
 `dp` 表示以当前元素结尾的最大和：前面那段是正的就接上，否则从自己重新开。全局答案是所有 `dp` 的最大。
 
-这就是 Kadane。分治也能做：跨中点的最大和 = 左向最大后缀 + 右向最大前缀，再和左右递归比，时间 $O(n\log n)$，面试当备选。
+这就是 Kadane。分治也能做：跨中点的最大和 = 左向最大后缀 + 右向最大前缀，再和左右递归比，时间 $O(n\log n)$，白板当备选。
 
 ## 参考代码
 
@@ -61,13 +61,13 @@ if __name__ == "__main__":
 
 ## 边界
 
-- 全负：`cur` 每次都从自己重开，`best` 是最大的那个负数。空子数组和为 $0$ 本题不允许，不能返回 $0$。
+- 全负：`cur` 每次都从自己重开，`best` 是最大的那个负数。空子数组和为 $0$ 这题不允许，不能返回 $0$。
 - 单元素：循环不进，返回它自己。
 - 全正：整段相加就是答案。
 
 ## 追问
 
-- **还要下标？** `cur` 从 `x` 重开时记下起点 `s`；`cur` 刷新 `best` 时记下 `[s, i]`。不要在 `cur + x == x` 时随便改起点，否则全 $0$ 会把区间拆碎。返回和与闭区间。
+- **还要下标？** `cur` 从 `x` 重开时记下起点 `s`；`cur` 刷新 `best` 时记下 `[s, i]`。别在 `cur + x == x` 时随便改起点，否则全 $0$ 会把区间拆碎。返回和与闭区间。
 
 ```python
 def maxSubArrayRange(nums):
@@ -84,7 +84,7 @@ def maxSubArrayRange(nums):
     return best, start, end
 ```
 
-- **环形数组（LC 918）？** 线性 Kadane 只覆盖不跨界的段。跨界最大和 $=$ 总和 $-$ 最小子数组和（中间丢掉的是「最负」的一段）。两边各跑一遍。全负时最小子数组是整个数组，`total - min` 变成 $0$（空段），本题与 LC 918 都不允许，用「普通最大 $\lt 0$」特判，直接返回普通最大。独立卡见 `lc-918-maximum-sum-circular-subarray`。
+- **环形数组（LC 918）？** 线性 Kadane 只覆盖不跨界的段。跨界最大和 $=$ 总和 $-$ 最小子数组和（中间丢掉的是「最负」的一段）。两边各跑一遍。全负时最小子数组是整个数组，`total - min` 变成 $0$（空段），这题与 LC 918 都不允许，用「普通最大 $\lt 0$」特判，直接返回普通最大。独立卡见 `lc-918-maximum-sum-circular-subarray`。
 
 ```python
 def maxSubarraySumCircular(nums):
@@ -100,4 +100,3 @@ def maxSubarraySumCircular(nums):
         return max_sum
     return max(max_sum, total - min_sum)
 ```
-

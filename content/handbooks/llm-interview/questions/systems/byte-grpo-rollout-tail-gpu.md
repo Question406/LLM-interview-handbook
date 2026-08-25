@@ -5,8 +5,8 @@ order: 100
 level: S
 title: 字节 27 暑期：GRPO rollout 长尾拖低 GPU 利用率，工程上怎么解？
 quick: >-
-  把问题拆成生成、调度和训练三段：连续 / 动态 batching、长度感知分桶、每组完成即送训、截断与预算控制、异步 actor-learner
-  解耦；但要监控 policy freshness，不能只靠堆并发掩盖 off-policy。
+  我会把问题拆成生成、调度和训练三段：连续 / 动态 batching、长度感知分桶、每组完成即送训、截断与预算控制、异步 actor-learner
+  解耦。但要盯 policy freshness，不能只靠堆并发把 off-policy 盖住。
 tags:
   - ByteDance
   - 2027 Summer Intern
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节27暑期 大模型算法一面凉经分享（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/28b254940eb940189188d795f4606c52?urlSource=home-api
@@ -33,15 +33,15 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GRPO中roll out过程的长尾问题，导致GPU使用率低，有什么工程上的解决方案”**
 
-字节 27 暑期一面这题，最容易答成「加大并发」或「把 max_len 砍短」。GRPO 一个 group 要等最慢那条样本，generation worker 空转、padding 变厚、learner 出现 bubble。要先分清是 decode 长尾还是工具 I/O 长尾，再动调度；异步化会引入 off-policy，必须管 freshness。相关卡：`infra-rl-rollout-optimize`、`slime-dynamic-partial`、`sys-cont-batch`。
+字节 27 暑期一面这题，这块容易直接答成「加大并发」或「把 max_len 砍短」。GRPO 一个 group 要等最慢那条样本，generation worker 空转、padding 变厚、learner 出现 bubble。要先分清是 decode 长尾还是工具 I/O 长尾，再动调度；异步化会引入 off-policy，必须管 freshness。相关卡：`infra-rl-rollout-optimize`、`slime-dynamic-partial`、`sys-cont-batch`。
 
 ## 先测量尾部是谁
 
-收集生成长度分布、工具等待时间、拒答 / retry 比例和 per-GPU idle。模型 decode 长尾：少数超长 CoT 拖住整组。环境长尾：搜索 / 沙箱超时。两者药方不同——前者分桶、预算、连续 batch；后者并发可交换 action、超时与缓存。不要在没直方图时直接改 `max_new_tokens`。
+收集生成长度分布、工具等待时间、拒答 / retry 比例和 per-GPU idle。模型 decode 长尾：少数超长 CoT 拖住整组。环境长尾：搜索 / 沙箱超时。两者药方不同。前者分桶、预算、连续 batch；后者并发可交换 action、超时与缓存。不要在没直方图时直接改 `max_new_tokens`。
 
 ## 调度：分桶、连续 batch、组完成即送训
 
-长度感知 packing / 分桶，减少为一条长样本 pad 整组。推理引擎侧用连续 batching，结束的请求立刻让位。token 或时间预算 + 可审计截断，避免无限想。已完成的 group 尽早后处理、算优势、进 learner，不必等全局 step 里最慢的 bucket。工具型任务对幂等查询缓存，对可交换工具并行。这些都能抬 GPU 有效 token，但截断会改奖励分布，要在日志里打标。
+长度感知 packing / 分桶，减少为一条长样本 pad 整组。推理引擎侧用连续 batching，结束的请求立刻让位。token 或时间预算加可审计截断，避免无限想。已完成的 group 尽早后处理、算优势、进 learner，不必等全局 step 里最慢的 bucket。工具型任务对幂等查询缓存，对可交换工具并行。这些都能抬 GPU 有效 token，但截断会改奖励分布，要在日志里打标。
 
 ## 异步的代价是旧策略
 

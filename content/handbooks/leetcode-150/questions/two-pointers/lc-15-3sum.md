@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 15. 三数之和
     url: https://leetcode.cn/problems/3sum/
@@ -31,7 +31,7 @@ sources:
 
 排序后枚举 `i`，在它右侧对撞。和小于 $0$ 则 `l` 右移，大于 $0$ 则 `r` 左移，命中就收入并同时收缩。`nums[i] == nums[i-1]` 时跳过；命中后 `l`、`r` 也跳过相同值。`nums[i]` $\gt 0$ 可提前停：后面全正，加不出 $0$。
 
-哈希去重难写且更慢。面试把「跳过重复」讲清楚再写循环。
+哈希去重难写且更慢。白板我会把「跳过重复」讲清楚再写循环。
 
 ## 参考代码
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **最接近 `target` 的三数和（LC 16）？** 同样排序 + 枚举 `i` + 对撞。不收集全部三元组，只维护一个 `best`：每次用当前和与 `target` 的绝对差去更新。和偏小 `l` 右移，偏大 `r` 左移，相等直接返回 `target`。时间 $O(n^2)$，空间 $O(1)$。不必跳过重复也能过，因为只关心值；跳过可以少几次循环。易错：用「是否更接近」比较时写成 `s - target` 没加绝对值，或初始化 `best` 用 $0$ 而不是前三个数的和。
+- **最接近 `target` 的三数和（LC 16）？** 同样排序 + 枚举 `i` + 对撞。不收集全部三元组，只维护一个 `best`：每次用当前和与 `target` 的绝对差去更新。和偏小 `l` 右移，偏大 `r` 左移，相等直接返回 `target`。时间 $O(n^2)$，空间 $O(1)$。不必跳过重复也能过，因为只关心值；跳过可以少几次循环。这块容易栽：用「是否更接近」比较时写成 `s - target` 没加绝对值，或初始化 `best` 用 $0$ 而不是前三个数的和。
 
 ```python
 def threeSumClosest(nums, target):
@@ -107,7 +107,7 @@ def threeSumClosest(nums, target):
     return best
 ```
 
-- **四数之和（LC 18）？** 再套一层：排序后枚举 `i`、`j`，在 $j$ 右侧对撞找 `target - nums[i] - nums[j]`。`i`、`j`、`l`、`r` 都要跳过与前一个相同的值。时间 $O(n^3)$，空间 $O(1)$。可用提前剪枝：当前最小四数之和已经 $\gt$ `target` 就 `break`，最大四数之和 $\lt$ `target` 就 `continue`。不要写成四重循环 $O(n^4)$。$k$ 数之和就是外层 $k-2$ 重枚举 + 最内层对撞，复杂度 $O(n^{k-1})$。
+- **四数之和（LC 18）？** 再套一层：排序后枚举 `i`、`j`，在 $j$ 右侧对撞找 `target - nums[i] - nums[j]`。`i`、`j`、`l`、`r` 都要跳过与前一个相同的值。时间 $O(n^3)$，空间 $O(1)$。可用提前剪枝：当前最小四数之和已经 $\gt$ `target` 就 `break`，最大四数之和 $\lt$ `target` 就 `continue`。别写成四重循环 $O(n^4)$。$k$ 数之和就是外层 $k-2$ 重枚举 + 最内层对撞，复杂度 $O(n^{k-1})$。
 
 ```python
 def fourSum(nums, target):

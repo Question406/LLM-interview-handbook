@@ -1,0 +1,71 @@
+---
+id: openai-speculative-decoding
+section: openai
+order: 8
+level: A
+title: OpenAI：投机解码拒绝草稿时为什么要 rollback KV
+quick: >-
+  草稿 token 会先写入 target 的 KV。验证只接受一个前缀，拒绝点之后的 $K,V$ 对应的是从未采用的文本，必须
+  截断到接受长度。只改输出字符串、不回滚 cache，后续注意力会盯着一段幽灵前缀。
+tags:
+  - OpenAI
+  - Speculative Decoding
+  - KV Cache
+  - Inference
+realInterview: false
+status: published
+format: markdown
+updatedAt: 2026-08-23
+sources:
+  - title: Fast Inference from Transformers via Speculative Decoding
+    url: https://arxiv.org/abs/2211.15661
+    type: primary
+  - title: OpenAI Research Engineer Interview Guide
+    url: https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
+    type: secondary
+---
+
+## 题怎么来的
+
+不是我能指到的某一份公开「原题 PDF」。OpenAI 推理 / RE 轮在 KV cache 之后常追：加速 decode 时草稿和验证怎么共享状态。论文是 Leviathan 等人的 speculative decoding。我会把它当成 `openai-kv-cache-impl` 的正确性延申来答，而不是背一个加速比。
+
+## 算法我先讲清楚，再碰 cache
+
+小草稿模型 $q$ 一次提出 $\gamma$ 个 token $x_{t+1},\ldots,x_{t+\gamma}$。目标模型 $p$ 用 **一次平行前向**（这段很像短 prefill）算出这 $\gamma$ 个位置的 logits。然后从左到右接受：以 $\min(1, p(x)/q(x))$ 的概率留下草稿 token，直到第一次拒绝。拒绝处从修正分布再抽一个真正的 token。期望接受长度大于 1 时，target 的前向次数就少了。
+
+关键：这一次平行前向已经把草稿位置的 $K,V$ 算出来并 append 进 target cache。接受 $k$ 个、拒绝第 $k+1$ 个，意味着序列里 **没有** 第 $k+1$ 个草稿 token，但它的 KV 已经躺在 cache 末尾。
+
+所以 rollback 是：
+
+- target cache 从 $S+\gamma$ 截回 $S+k$（再写入拒绝处新采样的那个 token 的 KV）。
+- draft cache 同样截。两条 cache 的长度必须等于已提交文本的长度。
+- 下一步 RoPE 的 offset 是新的 `cache_len`，见 `openai-rope-offset`。
+
+只 `pop` 输出 token、不截 KV，后面每一步 $q_t$ 都会点积到那段幽灵 key。生成会 silently 偏，和「位置从 0 旋」同属对齐失败，不是随机噪声。
+
+拒绝处的那一个 token 不是草稿里的下一个，而是从修正分布抽的。论文写法是把 $p$ 里被 $q$ 多给的质量削掉再归一。实现上我先 `resize` cache 到 $S+k$，再把这个新 token 当普通 decode 一步写进去。顺序反了会把拒绝草稿的 KV 留在 $S+k$ 这个槽里。
+
+```python
+k_cache = k_cache[:, :, : S + n_accept, :]
+v_cache = v_cache[:, :, : S + n_accept, :]
+# 再 append 拒绝处新采样 token 的 k_t, v_t
+```
+
+## 实现取舍我会主动讲
+
+验证那一步是 compute-bound 的小 prefill，草稿模型本身仍是 decode。加速比取决于 $q$ 有多接近 $p$、$\gamma$ 取多大。$\gamma$ 太大，拒绝来得早，白写的 KV 和白算的草稿变多。$\gamma$ 太小，一次前向摊不回。
+
+和 continuous batching 叠的时候更烦：每个请求的接受长度不同，不能假设 batch 里每条都 append $\gamma$ 再一起 truncate。按请求维护 cache 指针，拒绝就 `resize` 时间维。paged KV 把「截断」变成还 page，而不是大块 `cat` 再拷，见 `openai-continuous-batching`。
+
+数值：greedy 投机（草稿和目标都 argmax）时，接受规则退化成「前缀必须逐 token 相同」，rollback 仍然要做——相同前缀之后第一条分歧仍会多写 KV。
+
+验收和 `openai-kv-cache-impl` 同一把尺子：固定 greedy，投机路径（$\gamma>1$）和逐步 decode 必须逐 token 相同。对不上先查 rollback 有没有漏层，再查 RoPE offset。
+
+时间不够就画：文本指针和 KV 指针是同一个长度。任何让两者分叉的优化都要在拒绝时把它们焊回去。
+
+## 追问
+
+- **不 rollback 能靠 mask 挡掉幽灵 token 吗？** 能硬挡，但长度、位置、page 表全要记一份额外状态，还容易漏一层。截断更干净。
+- **草稿模型要不要和 target 共享 tokenizer？** 要，否则接受规则没有同一 $x$ 可比。
+- **和 Medusa / 多头草稿？** 草稿来源变了，rollback 不变量不变：未提交的位置不准留在 cache 里。
+- **拒绝后要不要重算 prefill？** 不要。接受前缀的 KV 是合法的，只丢拒绝点及其后。

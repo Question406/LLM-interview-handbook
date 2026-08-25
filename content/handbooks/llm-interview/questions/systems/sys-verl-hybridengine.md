@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: HybridFlow
     url: https://arxiv.org/abs/2409.19256
@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-别背「veRL 更快」。面试要说清的是 **同卡换布局 vs 分卡扩容**：RL 一步里 Actor 既要 backward，又要高吞吐 decode，两套并行布局本来就不同。选错放置，显存和通信会先爆，而不是算法不收敛。生成为什么必须用推理引擎，见 `sys-rl-why-vllm-rollout`。HybridEngine 的名字容易让人以为「训练和推理融合进一个更快的算子」；它做的是 **同一份权重在两种并行方案之间 reshard**，一步内仍然串行。先把「少存一份整模」和「一步能否重叠」分开，再比较 OpenRLHF / slime。
+别背「veRL 更快」。要说清的是 **同卡换布局 vs 分卡扩容**：RL 一步里 Actor 既要 backward，又要高吞吐 decode，两套并行布局本来就不同。选错放置，显存和通信会先爆，而不是算法不收敛。生成为什么必须用推理引擎，见 `sys-rl-why-vllm-rollout`。HybridEngine 的名字容易让人以为「训练和推理融合进一个更快的算子」；它做的是 **同一份权重在两种并行方案之间 reshard**，一步内仍然串行。我先把「少存一份整模」和「一步能否重叠」分开，再比较 OpenRLHF / slime。
 
 ## HybridEngine 在省什么
 
@@ -39,13 +39,13 @@ HybridFlow / veRL 的 3D-HybridEngine 把生成并行组排成和训练分片 **
 
 代价要主动讲：一步之内训练与生成默认 **串行**。同一张卡不能边 backward 边 decode；采样完卸 KV、reshard 回训练布局，再做更新。Fully async 是后加的另一条路径，会引入 policy staleness，和 `sys-rl-infra` 里的 freshness 是同一笔账，不是 HybridEngine 的默认免费午餐。串行气泡在长 rollout 时尤其明显：生成占满墙钟，训练 GPU 空转。这时同卡省显存的收益还在，但利用率故事要改口；若业务要叠采样与更新，就该评估分卡或 async，而不是继续吹 HybridEngine「更快」。
 
-Reshard 解决的是 **权重布局**；采样 logp 仍要在训练图上重算，见 `meituan-verl-recompute-logprob`。不要把「省显存的换布局」说成「省掉 recompute」。HybridEngine 换完布局，引擎里的 $\theta$ 已经是新的，但数值图仍是 vLLM/SGLang 的。面试把 HybridEngine、weight sync、recompute 画成三步，比把它们说成一个开关清楚得多。第一步布局，第二步版本，第三步训练图 logp，缺一都会在 ratio 上出无声的偏。
+Reshard 解决的是 **权重布局**；采样 logp 仍要在训练图上重算，见 `meituan-verl-recompute-logprob`。不要把「省显存的换布局」说成「省掉 recompute」。HybridEngine 换完布局，引擎里的 $\theta$ 已经是新的，但数值图仍是 vLLM/SGLang 的。我会把 HybridEngine、weight sync、recompute 画成三步：第一步布局，第二步版本，第三步训练图 logp。缺一都会在 ratio 上出无声的偏。
 
 ## 和 OpenRLHF 分卡怎么选
 
 OpenRLHF 把 vLLM 放成独立 Ray actor：训练走 DeepSpeed ZeRO，生成走另一组 GPU。好处是生成节点规格可以和训练不同（更吃显存带宽的卡专做 decode、训练卡专做 ZeRO），生成池可以按 rollout 瓶颈单独扩。坏处是 **多一份模型驻留**，每步要做跨进程 / 跨机权重同步，并 flush KV、记版本，见 `infra-rl-weight-sync`。
 
-口诀：
+我会这样选：
 
 - **同构、卡紧、大模型：偏 HybridEngine。** 不想为 rollout 再备一套 70B。
 - **生成与训练异构、要独立扩容、能接受同步延迟：偏 OpenRLHF 式分池。**
@@ -60,7 +60,7 @@ slime 的 `--colocate` 是同卡、 **两套进程**（Megatron trainer + SGLang
 
 同卡方案要同时装：训练分片（含优化器状态）、生成所需的 KV、以及 reshard 时的短暂缓冲。HybridEngine 的卖点是权重不双份；KV 和优化器仍然在。所以「省了一份整模」不等于「可以随便开很大的 `rollout.n`」。长 CoT 的 KV 才是下一步瓶颈，要用动态 batch、限制 inflight 序列，见 `sys-verl-dynamic-bsz`。
 
-OpenRLHF 分卡把 KV 放到生成池、优化器放到训练池，账本隔离，同步成本换成网络。面试被问「你当时为什么选」时，先报模型规模、是否同构、一步能否接受串行，再报框架名。先报名字再补理由，像在背文档。同构 8 卡训 70B，优先讲 HybridEngine 如何少一份整模；已经有独立推理池，优先讲同步协议和 stale。两种答案都对，取决于你的拓扑，不存在永远更快的那个框架。被追问 benchmark 数字时，诚实说取决于模型宽度、TP 对齐和是否 async，不要编造加速比。把「同卡换布局」和「分卡扩容」画在白板上，比报一个百分比更像做过选型。HybridEngine 的正确一句收束是：同一批 GPU、少一份整模、一步串行；OpenRLHF 的收束是：两份权、可异构、要同步。对上这两句，细节 flag 可以再补。选完之后把一步墙钟拆成 generate / reshard / backward，用数据而不是口号证明选型。追问「峰值显存」时，分别报训练分片、KV、reshard 缓冲，不要只报一个 max allocated。HybridEngine 省的是权重副本，KV 仍随 `rollout.n` 和长度走，账本拆开才答得完。
+OpenRLHF 分卡把 KV 放到生成池、优化器放到训练池，账本隔离，同步成本换成网络。被问「你当时为什么选」时，我先报模型规模、是否同构、一步能否接受串行，再报框架名。同构 8 卡训 70B，优先讲 HybridEngine 如何少一份整模；已经有独立推理池，优先讲同步协议和 stale。两种答案都对，取决于拓扑，不存在永远更快的那个框架。被追问 benchmark 数字时，诚实说取决于模型宽度、TP 对齐和是否 async，不要编造加速比。选完之后把一步墙钟拆成 generate / reshard / backward。追问「峰值显存」时，分别报训练分片、KV、reshard 缓冲。HybridEngine 省的是权重副本，KV 仍随 `rollout.n` 和长度走。
 
 ## 追问
 

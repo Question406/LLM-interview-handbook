@@ -15,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Evaluating Large Language Models Trained on Code
     url: https://arxiv.org/abs/2107.03374
     type: primary
 ---
 
-陷阱有两个：把「$n$ 次里出现过一次正确」当成 $\mathrm{pass@}k$（那是 $\mathrm{pass@}n$）；以及用 $1-(1-\hat p)^k$ 当无偏估计。HumanEval / Codex 用的是 **无放回组合估计**：从已采的 $n$ 条里随机抽 $k$ 条、至少一条正确的概率。
+这块容易栽两处：把「$n$ 次里出现过一次正确」当成 $\mathrm{pass@}k$（那是 $\mathrm{pass@}n$）；以及用 $1-(1-\hat p)^k$ 当无偏估计。HumanEval / Codex 用的是 **无放回组合估计**：从已采的 $n$ 条里随机抽 $k$ 条、至少一条正确的概率。
 
 ## 无偏公式
 
@@ -42,7 +42,7 @@ $n=c=k=1$ 时就是普通准确率。$c=0$ 时恒为 $0$。
 
 ## 为什么不用「前 $k$ 次成功」的均值
 
-只看每题前 $k$ 个样本有没有对，也是无偏的 Bernoulli，但 **方差更大**：你丢掉了后 $n-k$ 条信息。组合估计把 $n$ 条全用上，同一计算预算下更稳。这就是「不能直接看 $k$ 次中至少一次成功的样本均值」——可以看，只是浪费样本。
+只看每题前 $k$ 个样本有没有对，也是无偏的 Bernoulli，但 **方差更大**：你丢掉了后 $n-k$ 条信息。组合估计把 $n$ 条全用上，同一计算预算下更稳。这就是「不能直接看 $k$ 次中至少一次成功的样本均值」，可以看，只是浪费样本。
 
 有放回近似 $1-(1-c/n)^k$ 在 $n$ 不大、$k$ 相对 $n$ 不小时会偏高：它允许重复抽到同一条正确解。白板先写无放回，再提这个近似只在 $n\gg k$ 时接近。
 
@@ -58,5 +58,5 @@ GRPO 进场前看 $\mathrm{pass@}k-\mathrm{pass@}1$：缺口还在，组内才�
 
 - **$n\lt k$ 怎么办？** 定义要求 $n\ge k$。采不够就不要报那个 $k$，或继续采满。
 - **和 avg@32？** avg@32 是 32 次独立作答的平均准确率，近似 $\mathrm{pass@}1$ 的低方差估计，不是 $\mathrm{pass@}32$。DAPO 在 AIME 上用 avg@32，口径不要混。
-- **无偏相对什么？** 相对「从这 $n$ 条有限样本里再抽 $k$ 条」的成功概率，不是相对真实生成分布的 $k$ 次独立试验——后者还依赖温度是否与训练一致。
+- **无偏相对什么？** 相对「从这 $n$ 条有限样本里再抽 $k$ 条」的成功概率，不是相对真实生成分布的 $k$ 次独立试验，后者还依赖温度是否与训练一致。
 - **代码题 $c$ 怎么数？** 以单元测试 / 官方 checker 为准，不要用 LLM judge 冒充 $c$，否则 $\mathrm{pass@}k$ 量的是「像对」，见 `fund-judge`。

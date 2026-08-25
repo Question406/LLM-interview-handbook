@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 289. 生命游戏
     url: https://leetcode.cn/problems/game-of-life/
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **无限棋盘或稀疏活细胞？** 不要存整盘。用集合记下当前活细胞坐标。每个活细胞给 $8$ 邻居 $+1$。下一轮：计数为 $3$ 的格子变活，计数为 $2$ 且当前是活的保持活。时间与活细胞数成正比。
+- **无限棋盘或稀疏活细胞？** 别存整盘。用集合记下当前活细胞坐标。每个活细胞给 $8$ 邻居 $+1$。下一轮：计数为 $3$ 的格子变活，计数为 $2$ 且当前是活的保持活。时间与活细胞数成正比。
 
 ```python
 def gameOfLifeSparse(live):

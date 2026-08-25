@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手大模型LLM二面分享-日常实习
     url: https://www.nowcoder.com/feed/main/detail/058475a3d9204493bc145510c72e10f1
@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“如何构建评估体系来验证一个RAG系统是否真正Work？”**；校招帖：**“你们在 RAG 应用中是如何做效果评估的？具体用了哪些指标？”**
 
-陷阱是只报一个 RAGAS 总分或开放域聊天分。快手二面问「是否真正 work」，校招一面还问具体指标和「检索还是生成」归因——评估体系必须能支撑那种实验，见 `kuaishou-rag-retrieve-vs-generate`。没有无答案题和时间切分，模型靠参数知识「答对」会虚高。域内生成模型和基座对比时，维还应含拒答和引用，而不是闲聊偏好。
+这块容易直接答成只报一个 RAGAS 总分或开放域聊天分。快手二面问「是否真正 work」，校招一面还问具体指标和「检索还是生成」归因，评估体系必须能支撑那种实验，见 `kuaishou-rag-retrieve-vs-generate`。没有无答案题和时间切分，模型靠参数知识「答对」会虚高。域内生成模型和基座对比时，维还应含拒答和引用，别拿闲聊偏好当 work。
 
 ## Work 的定义对应三层指标
 

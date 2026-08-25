@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰agent算法面经分享 攒人品中（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/d01a17cf25344f4bb73eff2dbbaf6eee
@@ -30,11 +30,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“针对具体业务场景，怎么训练agent调用工具，奖励函数怎么设计和优化的”**
 
-阶跃这问要的是一条可复现的业务闭环，不是「上 GRPO」。先把任务、工具契约、可执行环境和成功 oracle 钉死，再谈 SFT / RL。日志字段怎么切见同面的 `stepfun-react-io-blocks`。陷阱是只报最终成功率，却说不清 reward、数据配比和环境版本。
+阶跃这问要的是一条可复现的业务闭环，不是「上 GRPO」。先把任务、工具契约、可执行环境和成功 oracle 钉死，再谈 SFT / RL。日志字段怎么切见同面的 `stepfun-react-io-blocks`。这块容易直接答成只报最终成功率，却说不清 reward、数据配比和环境版本。
 
 ## 先写合同，再采轨迹
 
-我会用一个具体业务（例如查单后退款）把 contract 写全：输入 state、可见工具与 JSON schema、权限、environment transition、成功 oracle、不可逆 action。没有 oracle 就不要做 RL，先把任务改到能自动判定。SFT 覆盖：工具发现、参数 grounding、使用 observation、失败 recovery、该停时终止。数据不能只有成功演示，否则不会修，见 `arl-trajectories`。随后在 **版本固定** 的 sandbox 里采 fresh trajectory，工具 / 页面 / 权限变了要重采，不能把旧日志当 on-policy，见 `arl-offpolicy-reuse`。业务场景要把不可逆动作单独标出来：退款、发券、改库存不能在探索里打到生产。
+我会用一个具体业务（例如查单后退款）把 contract 写全：输入 state、可见工具与 JSON schema、权限、environment transition、成功 oracle、不可逆 action。没有 oracle 就不要做 RL，先把任务改到能自动判定。SFT 覆盖：工具发现、参数 grounding、使用 observation、失败 recovery、该停时终止。数据不能只有成功演示，否则不会修，见 `arl-trajectories`。随后在版本固定的 sandbox 里采 fresh trajectory，工具 / 页面 / 权限变了要重采，不能把旧日志当 on-policy，见 `arl-offpolicy-reuse`。业务场景要把不可逆动作单独标出来：退款、发券、改库存不能在探索里打到生产。
 
 ## 奖励：硬门 + 终局 + 可验证过程 + 成本
 
@@ -47,7 +47,7 @@ Reward 分解成四层，对应 `arl-reward`：
 
 诊断按桶：tool selection、arguments、execution、observation use、plan、environment。每桶看 reward 分布、有效 group、KL、成功率与错误率。数据配比保留难例、失败例和长尾工具，避免简单任务和高频工具把策略拉向投机捷径。优化时先盯 gate 通过率和 oracle 相关；相关掉了先关 shaping。上线前用错误 tool / 错误参数注入，确认过程项会掉、等价 JSON 不会掉，避免训成 formatter。
 
-面试收口：合同和环境版本先于算法；SFT 打合法调用和恢复；RL 只用可验证成功、安全门和成本。配比要留长尾与失败，报告不能只有成功率。
+最后我会补一句：合同和环境版本先于算法；SFT 打合法调用和恢复；RL 只用可验证成功、安全门和成本。配比要留长尾与失败，报告不能只有成功率。
 
 ## 追问
 

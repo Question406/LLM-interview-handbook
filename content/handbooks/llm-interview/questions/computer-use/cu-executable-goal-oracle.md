@@ -4,7 +4,7 @@ section: computer-use
 order: 1
 level: S
 title: 开放式 Computer-use 任务，怎样写 Goal-state 的可执行 Oracle，而不是指定唯一 trajectory 或只让 LLM 当裁判？
-quick: 把正确性写成初始状态、允许的终态和副作用断言，而不是点击序列。Oracle 要允许多条正确路径，同时检查关键数据、权限、外部写入与禁止状态；再用覆盖和误判测试验证 oracle 本身。
+quick: 正确性我会写成初始状态、允许的终态和副作用断言，不会写成点击序列。Oracle 允许多条正确路径，同时检查关键数据、权限、外部写入和禁止状态；再用覆盖和误判测试验证 oracle 本身。
 tags:
   - Computer-use
   - Evaluation
@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: OSWorld
     url: https://arxiv.org/abs/2404.07972
     type: primary
 ---
 
-开放式 GUI 任务若指定唯一点击序列，会把合理捷径判失败；若只让 LLM 看截图或自然语言总结当裁判，会被措辞、截图不全和「看起来做完了」骗过。面试官要听的是可执行 oracle：正确性写在环境状态上，而不是写在 trajectory 上。OSWorld 一类评测的核心也是终态脚本，而不是逐步像素匹配。LLM judge 最多做辅助信号，不能当唯一 verdict。
+开放式 GUI 任务若指定唯一点击序列，会把合理捷径判失败；若只让 LLM 看截图或自然语言总结当裁判，会被措辞、截图不全和「看起来做完了」骗过。我会讲可执行 oracle：正确性写在环境状态上，不是写在 trajectory 上。OSWorld 一类评测的核心也是终态脚本，不是逐步像素匹配。LLM judge 最多做辅助信号，不能当唯一 verdict。
 
 ## 把目标写成状态合同
 
@@ -31,11 +31,11 @@ Oracle 读最终文件、数据库行、浏览器 cookie / URL、邮件桩、下
 
 ## Oracle 自己也会错
 
-维护三类样本：人工确认的正例（含多条合理路径）、near-miss 负例（金额差一元、提交了但选错项目）、以及环境噪声。报告 oracle 的 false accept / false reject，而不是把评测脚本当天然真值。可被刷的点：只检查页面出现「成功」文案、不检查重复提交、忽略禁止状态、让模型写一段「我已完成」给另一个模型打分。面试口径：任务成功 = 全部 must-hold ∧ 没有任何 must-not-hold；轨迹只用于归因，不用于打分。写 oracle 时先列「业务上怎样算办成」，再翻译成可读状态，最后才考虑 UI。若某条断言只能靠看截图，说明它还不是可执行合同，应改 fixture 或 mock，而不是加一个 LLM 裁判补洞。写任务时同步写负例：少填一个必填项、金额差最小货币单位、重复提交一次，oracle 必须判失败。没有负例的 oracle 几乎一定 false accept。
+维护三类样本：人工确认的正例（含多条合理路径）、near-miss 负例（金额差一元、提交了但选错项目）、以及环境噪声。报告 oracle 的 false accept / false reject，而不是把评测脚本当天然真值。评测上能刷的是：只检查页面出现「成功」文案、不检查重复提交、忽略禁止状态、让模型写一段「我已完成」给另一个模型打分。任务成功 = 全部 must-hold ∧ 没有任何 must-not-hold；轨迹只用于归因，不用于打分。写 oracle 时先列「业务上怎样算办成」，再翻译成可读状态，最后才考虑 UI。若某条断言只能靠看截图，说明它还不是可执行合同，应改 fixture 或 mock，而不是加一个 LLM 裁判补洞。写任务时同步写负例：少填一个必填项、金额差最小货币单位、重复提交一次，oracle 必须判失败。没有负例的 oracle 几乎一定 false accept。
 
 每个任务附一份 oracle 说明书：must-hold、must-not-hold、如何读取状态、已知误判。新任务先用人工走两条不同路径验证正例，再用 near-miss 验证负例，通过后才进正式集。
 
-面试官要听：正确性在状态里，不在点击序列里，也不在 LLM 观感里。能把报销任务的 must-hold / must-not-hold 当场列出来，比背 OSWorld 设定更像做过评测。
+正确性在状态里，不在点击序列里，也不在 LLM 观感里。我会把报销任务的 must-hold / must-not-hold 当场列出来，不背 OSWorld 设定。
 
 ## 追问
 

@@ -1,0 +1,57 @@
+---
+id: sys-rl-multinode-bwd
+section: systems
+order: 279
+level: A
+title: 多机多卡 RL 训练时反向传播是怎么走的？
+quick: >-
+  Rollout 引擎不反传。只有 Actor 训练图对 response token 做 backward。Ref / RM 冻结，没有梯度。多卡仍是
+  FSDP / ZeRO 的 reduce-scatter 或 Megatron 的 TP/PP 梯度通信，和 SFT 同一套集合通信。RL 特有的坑是：对
+  loss 标量再 AllReduce、把 logging tensor 接回计算图、以及 token-mean 和样本等权搞混。
+tags:
+  - Distributed Training
+  - GRPO
+  - Collectives
+realInterview: false
+status: published
+format: markdown
+updatedAt: 2026-08-23
+sources:
+  - title: ZeRO
+    url: https://arxiv.org/abs/1910.02054
+    type: primary
+  - title: HybridFlow / verl
+    url: https://arxiv.org/abs/2409.19256
+    type: primary
+  - title: PyTorch Distributed
+    url: https://pytorch.org/docs/stable/distributed.html
+    type: primary
+---
+
+算法岗听到「多机反传」容易开始讲 NCCL 算法。先画 **谁在反传**：采样卡跑 generate，训练卡（或同一组卡 reshard 之后）跑 $\log\pi_\theta$，loss 只落在 response mask 上，见 `sys-rl-response-mask`、`sys-rl-grpo-loop-roles`。集合通信细节见 `sys-collectives`、`sys-parallel`。
+
+## 一步里的梯度从哪来
+
+1. 引擎吐 token，不建训练图。
+2. Trainer 用当前 $\theta$ 重算 $\log\pi$（必要时也算 ref logp）。old logprob / reward / advantage **detach**。
+3. Policy loss（PPO / GRPO clip、可选 KL）只对 Actor 参数 `backward()`。
+4. 数据并行：梯度 reduce-scatter / all-reduce，和 SFT 一样。FSDP 往往停在 shard，不必把整份梯度 all-gather 到每张卡。
+5. TP / PP / EP 仍按训练后端的切分传激活和梯度。DualPipe 叠的是 PP 气泡和 EP，见 `sys-dualpipe`。这与 rollout 的 KV 传输无关，见 `sys-kv-cache-transfer`。
+
+Ref 只前向。RM / verifier 在奖励进程里，更不会进 Actor 的 autograd。把「GRPO 显存里有几份模型」和「几份在反传」分开：驻留可以有 Actor + Ref + 引擎副本，反传通常只有 Actor，见 `sys-rl-memory`。
+
+## RL 比 SFT 多踩的坑
+
+- **对标量 loss 再 AllReduce。** 各 rank 已经在 micro-batch 上平均过，SUM 且没除 $n$ 等于学习率乘 world size。日志用的全局 loss 必须 `detach`。这是原帖算法题那条「多 AllReduce 几次 loss」，见 `sys-allreduce-loss-scale`。
+- **归约粒度。** 先各卡对序列平均再 AVG，长回复被摊薄；先对有效 token 求和再除总 token，才是 token-mean。DAPO / 百度那问见 `baidu-grpo-loss-agg`。
+- **动态 batch。** 各 rank 有效 token 数不同，必须按 token 计数同步，不能假定每卡 $B$ 相同，见 `sys-verl-dynamic-bsz`。
+
+HybridEngine / slime colocate 改变的是 **同一组卡在 generate 和 train 之间 reshard**，不是发明一种新的 backward。权重推回引擎是参数广播或 delta，见 `infra-rl-weight-sync`，也不走 backward 图。
+
+现场口令：反传只发生在 Actor 训练图上；通信仍是 DP/TP/PP/EP 那张表；多出来的全是 loss 怎么平均、哪些 tensor 不许进图。
+
+## 追问
+
+- **PP 的 backward 和 rollout 能重叠吗？** 异步系统里可以：一池 generate，一池 train。那是流水线，不是 DualPipe。样本会 stale，见 `sys-areal-vs-slime`。
+- **LoRA 只反传 adapter？** 是。基座冻住则梯度通信体积按 adapter 算，但 rollout 仍要完整 KV。
+- **为什么有人说 RL 反传比 SFT 轻？** 去掉 Critic 少一份大网络的 backward；但 $G$ 条长回复的激活可能更重。比较要锁序列长和 $G$，不要只锁「有没有 Critic」。

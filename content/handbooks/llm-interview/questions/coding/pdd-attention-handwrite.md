@@ -6,7 +6,7 @@ level: A
 title: 拼多多应用开发：手写 Attention 时要写出哪些形状和 Mask？
 quick: >-
   投影 $Q,K,V$，reshape 成 $[B,H,T,d_h]$，算 $QK^\top/\sqrt{d_h}$，softmax 前加因果 /
-  padding mask，再乘 $V$ 拼头。面试要口述 broadcast 形状，不能只写 `nn.MultiheadAttention`。
+  padding mask，再乘 $V$ 拼头。我会口述 broadcast 形状，不能只写 `nn.MultiheadAttention`。
 tags:
   - PDD
   - Attention
@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 拼多多大模型应用开发一面凉经
     url: https://www.nowcoder.com/feed/main/detail/f87fcee060ea404ba99a20245f746e60
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写attention”**
 
-陷阱是只写 `nn.MultiheadAttention`，或因果 / padding 的 True-False 反了。同面还可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状与 `deepseek-mha-handwrite` 同构，拼多多要的是 **口述 broadcast**。
+这块容易只写 `nn.MultiheadAttention`，或因果 / padding 的 True-False 反了。同面还可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状与 `deepseek-mha-handwrite` 同构，拼多多要的是口述 broadcast。
 
 ## 白板顺序与形状
 

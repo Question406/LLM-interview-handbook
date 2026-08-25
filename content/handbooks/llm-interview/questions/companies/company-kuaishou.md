@@ -5,8 +5,8 @@ order: 13
 level: A
 title: 快手：大模型算法 / 应用开发应重点准备什么？
 quick: >-
-  应用侧追意图识别、工具超时空返回与用户反馈；算法侧追 RAG 检索 vs 生成归因、SFT 多源配比、LoRA A/B
-  初始化。多模态岗还会问动态分辨率与直播带货时延。
+  应用侧会追意图识别、工具超时后空返回、用户反馈；算法侧会追 RAG 检索 vs 生成归因、SFT 多源配比、LoRA A/B
+  初始化。多模态岗还会问动态分辨率和直播带货时延。
 tags:
   - Kuaishou
   - 真题导航
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手大模型应用开发算法岗三面面经
     url: https://www.nowcoder.com/feed/main/detail/4ff132d0d0fb450398341f4ec9828def
@@ -30,12 +30,12 @@ sources:
     type: candidate-first-hand
 ---
 
-快手题覆盖「能上线的 Agent」和「能讲清后训练」。陷阱是背一串模型名，却说不清短视频 / 直播里**时延、空结果、错误归因**怎么做对照实验。应用岗把空工具结果编成事实会直接挂；算法岗把 RAG 错全推给生成、SFT 配比拍成 1:1:1，同样过不了追问。
+快手题覆盖「能上线的 Agent」和「能讲清后训练」。这块容易直接答成背一串模型名，却说不清短视频、直播里时延、空结果、错误归因怎么做对照实验。应用岗把空工具结果编成事实会直接挂；算法岗把 RAG 错全推给生成、SFT 配比拍成 1:1:1，同样过不了追问。
 
 ## 准备主线
 
 1. **Agent 生产**：意图按 taxonomy 拆（`kuaishou-agent-intent-recovery`）；超时 / 空返回分类错误码（`kuaishou-tool-timeout-empty-result`）；注入与工具权限（`kuaishou-prompt-injection`）；多步规划（`kuaishou-modular-planning`）。
-2. **RAG 归因与评估**：先替换实验区分检索 vs 生成（`kuaishou-rag-retrieve-vs-generate`），再证明系统真 work（`kuaishou-rag-eval-build`）。规划与幻觉率量化见 `kuaishou-agent-eval-dims`。
+2. **RAG 归因与评估**：先替换实验区分检索 vs 生成（`kuaishou-rag-retrieve-vs-generate`），再证明系统真 work（`kuaishou-rag-eval-build`）。规划和幻觉率量化见 `kuaishou-agent-eval-dims`。
 3. **后训练**：多源配比（`kuaishou-sft-source-mix`）；SFT 之后还有什么（`kuaishou-posttrain-after-sft`）；DPO vs RM 训练（`kuaishou-dpo-vs-rm-train`）、DPO 注意点（`kuaishou-dpo-cautions`）。
 4. **系统与多模态**：LoRA A/B 初始化（`kuaishou-lora-ab-init`）；GQA/MQA/MLA（`kuaishou-gqa-mqa-mla`）；三工具高 QPS（`kuaishou-tool-chain-latency`）；动态分辨率（`kuaishou-dynamic-res`）；直播带货时延（`kuaishou-live-commerce-latency`）；V3 vs R1（`kuaishou-v3-vs-r1`）。
 
@@ -51,6 +51,6 @@ sources:
 
 ## 追问
 
-- **空结果为什么不能当「没找到」直接生成？** 超时与空库语义不同；编造是幻觉。先错误码，再决定重试 / 澄清 / 拒答。
-- **SFT 配比怎么定？** 按覆盖与 holdout 难度，做只改一类比例的对照，看锚点是否掉。不是 1:1:1。
-- **直播带货时延先砍哪？** 先测商品检索与多图分辨率，再谈模型。按 id 准备替换实验。
+- **空结果为什么不能当「没找到」直接生成？** 超时和空库语义不同，编造是幻觉。先错误码，再决定重试、澄清还是拒答。
+- **SFT 配比怎么定？** 按覆盖和 holdout 难度，做只改一类比例的对照，看锚点是否掉。不是 1:1:1。
+- **直播带货时延先砍哪？** 先测商品检索和多图分辨率，再谈模型。按 id 准备替换实验。

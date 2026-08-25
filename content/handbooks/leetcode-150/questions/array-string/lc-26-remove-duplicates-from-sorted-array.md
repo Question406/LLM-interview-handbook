@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 26. 删除有序数组中的重复项
     url: https://leetcode.cn/problems/remove-duplicates-from-sorted-array/
@@ -32,7 +32,7 @@ sources:
 
 有序保证重复段连续。慢指针 `slow` 指向下一个可写位置；`fast` 扫全数组。若 `nums[fast] != nums[slow-1]`，写入并推进 `slow`。第一个元素必保留，从下标 $1$ 开始比即可。
 
-哈希去重要 $O(n)$ 空间，且打乱顺序。面试强调「有序才能 $O(1)$ 原地」。
+哈希去重要 $O(n)$ 空间，且打乱顺序。白板我会强调：有序才能 $O(1)$ 原地。
 
 ## 参考代码
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **每个值最多保留两次（LC 80）？** 仍是慢指针原地写。`slow` 表示下一个可写位置；当前值与 `nums[slow - 2]` 不同才写入（前两个名额还没占满时 `slow < 2` 也写）。有序保证相同值相邻，所以跟倒数第 $2$ 个比就知道这个值已经留了几次。时间 $O(n)$，额外空间 $O(1)$。易错点是写成 `slow - 1` 会退化成本题只留一次。独立卡见 `lc-80-remove-duplicates-from-sorted-array-ii`。
+- **每个值最多保留两次（LC 80）？** 仍是慢指针原地写。`slow` 表示下一个可写位置；当前值与 `nums[slow - 2]` 不同才写入（前两个名额还没占满时 `slow < 2` 也写）。有序保证相同值相邻，所以跟倒数第 $2$ 个比就知道这个值已经留了几次。时间 $O(n)$，额外空间 $O(1)$。写成 `slow - 1` 会退化成本题只留一次。独立卡见 `lc-80-remove-duplicates-from-sorted-array-ii`。
 
 ```python
 def removeDuplicates_at_most_two(nums):
@@ -86,4 +86,3 @@ def removeDuplicates_at_most_two(nums):
 ```
 
 - **数组无序？** 有序是 $O(1)$ 原地的前提。无序要去重且保相对顺序：用哈希记录出现过的值，慢指针写第一次出现的，时间 $O(n)$，额外空间 $O(n)$。若允许打乱顺序：先排序再走本题指针，时间 $O(n\log n)$，额外空间 $O(1)$。不要无序还硬套 `nums[slow - 1]`，不相邻的重复会漏。
-

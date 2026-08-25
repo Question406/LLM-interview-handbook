@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: MiniMax-M1 (CISPO)
     url: https://arxiv.org/abs/2506.13585
@@ -32,7 +32,7 @@ $$
 \min\big(\rho_t A_t,\;\mathrm{clip}(\rho_t,1-\varepsilon,1+\varepsilon)A_t\big).
 $$
 
-$\rho_t$ 一旦越出区间且处在「有利方向」，该项对 $\theta$ 的梯度为 0：**这个 token 本轮被扔掉**。长 CoT、多轮 off-policy reuse 时，低概率但关键的推理 token 更容易被 clip 掉，熵和探索会塌。
+$\rho_t$ 一旦越出区间且处在「有利方向」，该项对 $\theta$ 的梯度为 0：这个 token 本轮被扔掉。长 CoT、多轮 off-policy reuse 时，低概率但关键的推理 token 更容易被 clip 掉，熵和探索会塌。
 
 CISPO 回到带 IS 校正的 REINFORCE，只截断权重：
 
@@ -56,10 +56,11 @@ $\mathrm{sg}(\cdot)$ 让 $\hat r$ 当常数。梯度始终走 $\log\pi$，所有
 | GSPO | sequence likelihood ratio | 序列 | 局部 token 噪声被几何平均压掉 |
 | CISPO | IS 权重 $\rho$，且 detach | token | 只封顶系数，梯度仍在 |
 
-现场口诀：GSPO 换 **ratio 的粒度**；CISPO 换 **clip 的对象**。slime 里 `--advantage-estimator cispo` 只是同一套 rollout 换 loss，不是另一套采样。
+现场口诀：GSPO 换 ratio 的粒度；CISPO 换 clip 的对象。slime 里 `--advantage-estimator cispo` 只是同一套 rollout 换 loss，不是另一套采样。
 
 ## 追问
 
 - **有偏吗？** 有。权重被截断后期望不再严格等于 on-policy 梯度，换稳定性和「不丢 token」。
 - **$\varepsilon_{\mathrm{high}}$ 为什么比 PPO 的 $0.2$ 大？** 系数封顶可以更松；PPO 的 $\varepsilon$ 直接决定要不要梯度。实现里常见把 ratio clamp 到 $[0, 1+\varepsilon_{\mathrm{high}}]$。
 - **手写？** `w = (pi_logp - old_logp).exp().clamp(max=1+eps).detach()`，再 `-w * A * pi_logp`，乘 response mask 后按 token 平均。
+- **和异步 TIS？** CISPO 修 clip 形状，分母是 $\pi_{\mathrm{old}}$。TIS 修行为策略 $\mu$，见 `pt-tis-async`。不要答成同一个开关。

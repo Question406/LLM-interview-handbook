@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 106. 从中序与后序遍历序列构造二叉树
     url: https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/
@@ -32,7 +32,7 @@ sources:
 
 后序最后一个是根。中序里根左边是左子树，右边是右子树。右子树大小为 $k$，则后序倒数第 $2$ 到倒数第 $k+1$ 是右子树，更前面是左子树。
 
-和 LC 105 对称：前序根在头，后序根在尾。面试先点出 `post[-1]`，再写区间。
+和 LC 105 对称：前序根在头，后序根在尾。白板我会先点出 `post[-1]`，再写区间。
 
 ## 参考代码
 

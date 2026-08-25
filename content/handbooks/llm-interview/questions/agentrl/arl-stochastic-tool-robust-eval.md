@@ -12,20 +12,20 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: SWE-bench
     url: https://arxiv.org/abs/2310.06770
     type: primary
 ---
 
-陷阱是一次 rollout 定胜负：这次搜索排到了关键文档、这次测试没 flaky，就宣布模型赢了两个点。工具链上的随机来自检索排序、限流、验证码、非确定性编译与测试、页面动画。SWE-bench 一类任务已经说明：环境隔离和测试稳定性决定数字能不能比；计算机使用还要冻 fixture，见 `cu-reproducible-benchmark-run`。评测协议必须把「策略脆弱」和「环境噪声」拆开。单次碰巧变绿，其实并不能告诉你 P10 会不会在限流的那一天翻车。
+这块容易直接答成一次 rollout 定胜负：这次搜索排到了关键文档、这次测试没 flaky，就宣布模型赢了两个点。工具链上的随机来自检索排序、限流、验证码、非确定性编译与测试、页面动画。SWE-bench 一类任务已经说明：环境隔离和测试稳定性决定数字能不能比；计算机使用还要冻 fixture，见 `cu-reproducible-benchmark-run`。评测协议必须把「策略脆弱」和「环境噪声」拆开。单次碰巧变绿，其实并不能告诉你 P10 会不会在限流的那一天翻车。
 
 ## 两套集：确定性回放 + 随机压力
 
 **Frozen replay：** 固定 seed、mock 工具层、录像式 observation。测的是决策逻辑和 schema 遵守，方差应接近 $0$。数字抖动首先查 harness，而不是调模型。**Stochastic stress：** 对每题多次试运行，允许真实或受控随机。报告均值、P10 / P50、超时率、flaky 率（同一策略同一题既有成功也有失败的比例）。禁止把单次百分点写进发布说明。
 
-用 mock 注入受控故障（空结果、超时、`429`、部分写成功）测恢复，而不是只看 happy path。区分：同一 seed 下必失败 → 策略/契约问题；仅随机集上失败 → 缺重试与查状态，见 `arl-retry`。发布门禁用 P10 成功率，不只看均值——均值会被少量幸运 run 拉高。
+用 mock 注入受控故障（空结果、超时、`429`、部分写成功）测恢复，而不是只看 happy path。区分：同一 seed 下必失败 → 策略/契约问题；仅随机集上失败 → 缺重试与查状态，见 `arl-retry`。发布门禁用 P10 成功率，不只看均值。均值会被少量幸运 run 拉高。
 
 $$
 \mathrm{flaky}(i)=\mathbf{1}\big[\hat p_i\gt 0\big]\cdot\mathbf{1}\big[\hat p_i \lt 1\big]
@@ -37,7 +37,7 @@ $$
 
 同一 frozen seed 必失败，先查 schema、权限、计划，而不是加 rollout 次数。仅 stress 集失败，才谈重试与鲁棒。比较两个模型必须同 $n$、同故障注入清单、同预算；一方多试三次不算赢。SWE-bench 要把测试隔离在干净环境，否则 flaky 测试会变成模型分数。GUI / 网页还要分 frozen 与 live，见 `cu-reproducible-benchmark-run`。发布说明同时给均值、P10、flaky 率、超时率；缺 P10 就当没做完稳健评测。随机工具还要记录每次失败的错误码直方图，才能看出是偶发 `429` 还是策略根本不会退避。
 
-面试收口：确定性集看逻辑，随机集看分布；报分位数和 flaky，不报单次。P10 过门，均值才能拿来讲故事。
+最后我会补一句：确定性集看逻辑，随机集看分布；报分位数和 flaky，不报单次。P10 过门，均值才能拿来讲故事。
 
 ## 追问
 

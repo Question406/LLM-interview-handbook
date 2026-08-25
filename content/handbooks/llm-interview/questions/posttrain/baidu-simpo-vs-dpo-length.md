@@ -6,7 +6,7 @@ level: A
 title: 百度文心：SimPO 原理是什么？如何缓解 DPO 微调序列过长？
 quick: >-
   SimPO 用平均 log-prob（长度归一）直接作为隐式奖励，并设目标 margin，不再依赖单独
-  $\pi_{\mathrm{ref}}$ 比值形式的长度放大。对“刷长度抬高总 logp”更不敏感，但仍需用长度统计与人工抽检验证。
+  $\pi_{\mathrm{ref}}$ 比值形式的长度放大。对「刷长度抬高总 logp」更不敏感，但仍需用长度统计与人工抽检验证。
 tags:
   - Baidu
   - SimPO
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯/百度/minimax 大模型算法面经总结帖
     url: https://www.nowcoder.com/feed/main/detail/8cab51ef9458459595cf81fda43da279
@@ -30,7 +30,7 @@ sources:
 - 公司：百度 · 文心一言（总结帖收录）
 - 原始措辞：**“说一下 simpo 的原理，它是怎么解决 dpo 微调序列过长的问题的”**；另有 **“DPO 如何解决回答过长的问题”**
 
-陷阱是声称「SimPO 彻底解决了 DPO 微调过长」。DPO 用序列 **总** log 概率差时，更长回答更容易堆出更大的绝对间隔，模型学会「啰嗦但偏好赢」。SimPO 把激励改成 **单位长度质量**，对刷长度抬总 logp 明显不敏感，但平均长度、重复 n-gram 和人工抽检仍要做。它还去掉了显式 $\pi_{\mathrm{ref}}$，不是「DPO 换个 $\beta$」。chosen 的绝对 logp 仍可能下降，只要间隔在涨，见 `baidu-dpo-chosen-curve`。现场按「问题 → SimPO 改了什么 → 仍要监控什么 → 何时还用 DPO」答，不要只报一个公式。
+这块容易声称「SimPO 彻底解决了 DPO 微调过长」。DPO 用序列总 log 概率差时，更长回答更容易堆出更大的绝对间隔，模型学会「啰嗦但偏好赢」。SimPO 把激励改成单位长度质量，对刷长度抬总 logp 明显不敏感，但平均长度、重复 n-gram 和人工抽检仍要做。它还去掉了显式 $\pi_{\mathrm{ref}}$，不是「DPO 换个 $\beta$」。chosen 的绝对 logp 仍可能下降，只要间隔在涨，见 `baidu-dpo-chosen-curve`。现场按「问题 → SimPO 改了什么 → 仍要监控什么 → 何时还用 DPO」答，不要只报一个公式。
 
 ## DPO 的长度放大从哪来
 

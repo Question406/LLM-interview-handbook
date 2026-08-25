@@ -5,8 +5,8 @@ order: 9
 level: S
 title: 怎么评估一个 Agent Skill 写得好不好？
 quick: >-
-  不要只看 Skill 内容是否“合理”。做 no-skill / metadata-only / full-skill / optimized-skill
-  ablation，测 task success、tokens、tool calls、latency、robustness 与 interference。
+  别只看 Skill 内容是否「合理」。做 no-skill / metadata-only / full-skill / optimized-skill
+  ablation，测 task success、tokens、tool calls、latency、robustness 和 interference。
 tags:
   - Skill
   - Eval
@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Equipping agents for the real world with Agent Skills
     url: 'https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills'
     type: primary
 ---
 
-Skill 读着「很合理」不等于上线有增益。它可能泄漏了评测答案、只对某一模型有效，或误触发伤害相邻任务。评的是 **同一模型、同一 harness 下只改 Skill 条件** 的因果效应，不是文笔。陷阱是开卷改完 Skill 就宣布「Agent 更强了」。Anthropic 把 Skill 写成可加载的程序性说明书，价值应落在「少走弯路」，而不是把题解写进文档。
+Skill 读着「很合理」不等于上线有增益。它可能泄漏了评测答案、只对某一模型有效，或误触发伤害相邻任务。评的是 **同一模型、同一 harness 下只改 Skill 条件** 的因果效应，不是文笔。这块容易直接答成开卷改完 Skill 就宣布「Agent 更强了」。Anthropic 把 Skill 写成可加载的程序性说明书，价值应落在「少走弯路」，而不是把题解写进文档。
 
 ## 对照实验：只改 Skill
 
@@ -39,7 +39,7 @@ Skill 读着「很合理」不等于上线有增益。它可能泄漏了评测�
 
 Skill 应写 procedure（先查再改、失败怎么停、何时问用户），不是 benchmark 的标准答案或隐藏数字。用 held-out 实例、参数化任务、藏答案、换域变体；若拿掉数字答案成功率崩盘，这是作弊不是 Skill。不同模型对同一篇自然语言 Skill 理解差很大，应把它当 model-conditioned artifact：要么分模型变体，要么写更结构化、可执行的步骤，降低「会不会读长文」的差异。评测集要和 Skill 作者隔离，避免边看失败 case 边把答案写进下一版。
 
-发布门禁：相对 no-skill 的成功增益、token 不涨或涨幅可解释、distractor 条件下误触发低于阈值、held-out 变体不崩。过不了就当文档，不当默认加载。Skill 仓库要有版本和回归集，和代码一样审——「写得清楚」不是合并条件，「对照实验有增益且无负迁移」才是。面试收口：Skill 用 ablation 评，不靠读文档；防泄漏、防负迁移、冻预算，才能说这篇 Skill 写得好。作者边看失败边改 Skill，评测必须 held-out，否则增益只是把答案写进了说明书。
+发布门禁：相对 no-skill 的成功增益、token 不涨或涨幅可解释、distractor 条件下误触发低于阈值、held-out 变体不崩。过不了就当文档，不当默认加载。Skill 仓库要有版本和回归集，和代码一样审。「写得清楚」不是合并条件，「对照实验有增益且无负迁移」才是。Skill 用 ablation 评，不靠读文档；防泄漏、防负迁移、冻预算，才能说这篇 Skill 写得好。作者边看失败边改 Skill，评测必须 held-out，否则增益只是把答案写进了说明书。
 
 ## 追问
 

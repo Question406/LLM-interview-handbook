@@ -15,14 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime 使用文档
     url: https://thudm.github.io/slime/zh/get_started/usage.html
     type: primary
 ---
 
-陷阱是从 veRL-FSDP 过来，直接 `from_pretrained` 喂 slime。veRL 常吃 HF；slime 的训练图是 Megatron，要自己的层名、TP/PP/EP 切分和 `--num-layers` 等结构参数（可复用 pretrain 脚本）。HF 必须先转成 Megatron ckpt。说「slime 读 HF 训」会当场穿帮。
+这块容易从 veRL-FSDP 过来，直接 `from_pretrained` 喂 slime。veRL 常吃 HF；slime 的训练图是 Megatron，要自己的层名、TP/PP/EP 切分和 `--num-layers` 等结构参数（可复用 pretrain 脚本）。HF 必须先转成 Megatron ckpt。说「slime 读 HF 训」会当场穿帮。
 
 ## 为什么必须转 Megatron
 

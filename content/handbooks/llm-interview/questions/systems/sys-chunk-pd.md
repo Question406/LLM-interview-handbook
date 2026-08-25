@@ -5,9 +5,8 @@ order: 10
 level: A
 title: Chunked Prefill 与 Prefill–Decode Disaggregation 在解决什么？
 quick: >-
-  大 prefill 会长时间占 GPU、阻塞 latency-sensitive decode。Chunked prefill 把长 prompt 分块与
-  decode 混排；P/D disaggregation 则把 compute-heavy prefill 与 bandwidth-sensitive
-  decode 分到不同资源池。
+  大 prefill 会长时间占 GPU，把对延迟敏感的 decode 堵住。Chunked prefill 把长 prompt 分块，跟
+  decode 混排；P/D 分离则把偏算力的 prefill 和偏带宽的 decode 放到不同资源池。两层可以叠，短单轮我一般不上 PD。
 tags:
   - Serving
   - Prefill
@@ -16,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DistServe
     url: https://arxiv.org/abs/2401.09670
@@ -26,7 +25,7 @@ sources:
     type: primary
 ---
 
-陷阱是把两者说成一回事，或以为上了 PD 就不需要切块。它们打的是同一类伤害——大 prefill 占满 SM、饿死 decode、TPOT 出尖刺——但一层在**同卡调度**，一层在**跨池放置**。核心指标是 throughput、TTFT、TPOT、KV transfer cost 和利用率，不是「拆没拆」。见 `sys-prefill-decode`。
+这块容易把两者说成一回事，或者以为上了 PD 就不需要切块。它们打的是同一类伤害：大 prefill 占满 SM、饿死 decode、TPOT 出尖刺。一层在**同卡调度**，一层在**跨池放置**。我看的是 throughput、TTFT、TPOT、KV transfer cost 和利用率，不会只报「拆没拆」。见 `sys-prefill-decode`。
 
 ## Chunked prefill：同卡切块混排
 
@@ -42,7 +41,7 @@ Prefill 算术强度高、偏 compute；decode 每步读整份权和历史 KV，
 
 ## 怎么选
 
-短单轮、卡少：先 chunked prefill。长多轮、prefill/decode 要不同 TP 或不同机型：再 PD。两者可以叠：prefill 池内部仍可切块，避免一条超长 prompt 独占 prefill 机。不要为了「架构完整」在 GSM8K 一类短单轮上拆 PD。验收画两条曲线：TTFT 是否因切块变差、TPOT P99 是否因混排变好；PD 再加一条 KV 传输占比，超过算子时间就要先优网络而不是再加卡。
+短单轮、卡少：我先 chunked prefill。长多轮、prefill/decode 要不同 TP 或不同机型：再 PD。两者可以叠：prefill 池内部仍可切块，避免一条超长 prompt 独占 prefill 机。不要为了「架构完整」在 GSM8K 一类短单轮上拆 PD。验收画两条曲线：TTFT 是否因切块变差、TPOT P99 是否因混排变好；PD 再加一条 KV 传输占比，超过算子时间就要先优网络而不是再加卡。
 
 ## 追问
 

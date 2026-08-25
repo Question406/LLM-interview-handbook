@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 74. 搜索二维矩阵
     url: https://leetcode.cn/problems/search-a-2d-matrix/
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **LC 240（行、列各自有序，行首不必大于上一行尾）？** 不能再压成一维。从右上角 $(0, n-1)$ 走阶梯：当前值等于 `target` 则命中；当前值更大则整列下方都更大、只能左移；当前值更小则整行左侧都更小、只能下移。每次丢掉一行或一列，时间 $O(m+n)$，额外空间 $O(1)$。左下角对称。不要对每行单独二分再 $O(m\log n)$——能过但不是目标写法。独立卡见 `lc-240`。
+- **LC 240（行、列各自有序，行首不必大于上一行尾）？** 不能再压成一维。从右上角 $(0, n-1)$ 走阶梯：当前值等于 `target` 则命中；当前值更大则整列下方都更大、只能左移；当前值更小则整行左侧都更小、只能下移。每次丢掉一行或一列，时间 $O(m+n)$，额外空间 $O(1)$。左下角对称。不要对每行单独二分再 $O(m\log n)$，能过但不是目标写法。独立卡见 `lc-240`。
 
 ```python
 def searchMatrixII(matrix, target):
@@ -92,7 +92,7 @@ def searchMatrixII(matrix, target):
     return False
 ```
 
-- **空矩阵 / 空行？** 先判 `not matrix or not matrix[0]`，否则 `n = len(matrix[0])` 会越界。本题约束通常 $m,n \ge 1$，面试仍要开口提一句。空表直接 `False`。
+- **空矩阵 / 空行？** 先判 `not matrix or not matrix[0]`，否则 `n = len(matrix[0])` 会越界。本题约束通常 $m,n \ge 1$，白板仍要开口提一句。空表直接 `False`。
 
 ```python
 def searchMatrixSafe(matrix, target):
@@ -111,4 +111,3 @@ def searchMatrixSafe(matrix, target):
             hi = mid - 1
     return False
 ```
-

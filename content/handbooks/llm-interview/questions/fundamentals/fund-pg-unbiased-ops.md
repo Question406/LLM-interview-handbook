@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning (REINFORCE)
     url: https://link.springer.com/article/10.1007/BF00992696
@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-陷阱是把「无偏」当成道德词：好像 MC 一定比 GAE 高级，clip 一定是作弊。面试要先钉死 **无偏相对哪条期望**，再把操作分成两类。相对的是 on-policy 策略梯度
+这块容易把「无偏」当成道德词：好像 MC 一定比 GAE 高级，clip 一定是作弊。我会先钉死 **无偏相对哪条期望**，再把操作分成两类。相对的是 on-policy 策略梯度
 
 $$
 \nabla_\theta J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}\Big[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t\Big],
@@ -62,7 +62,7 @@ $$
 
 GAE 的偏差来自 **bootstrap**，不是来自「减了 $V$」。把 $G_t-V$ 和 $\sum(\gamma\lambda)^l\delta_{t+l}$ 说成同一件事，下一问会拆穿。clip 也不是无偏的方差公式，见 `pt-cispo`、`fund-vtrace`。除标准差、长度归约是在定义隐式目标，见 `fund-adv-norm-bias`、`pt-drgrpo`。
 
-## 面试怎么收口
+## 怎么收
 
 先写目标 $\nabla J$，再指着配方说：哪几步还在无偏族，哪几步已经换目标。可验证短答案可以偏左（MC、大 $\lambda$、少 clip）；开放生成 + 噪 RM 必须偏右，再用金标看有没有优化到长度或套话。不要声称某一个 $\lambda$ 或 $\varepsilon$ 普遍最优。
 

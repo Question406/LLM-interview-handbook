@@ -13,14 +13,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 开发技术面
     url: 'https://www.nowcoder.com/feed/main/detail/4c8da8a740e64eb5827fb1b962928eda'
     type: legacy-reference
 ---
 
-陷阱是「换成多模态大模型就能以图找同款」。后端要新增视觉特征服务、图搜索引、工具 schema，以及编排上的「图 → 候选 → 确认」状态；同时评估延迟、成本和审核，避免把整条客服链路拖进视觉推理。图质量差、无版权、或只要文本 SKU 查询时，不要硬上。状态机与确认闸门见 `ali-modular-agent-plan`、`ali-guardrail`。
+这块容易直接答成「换成多模态大模型就能以图找同款」。后端要新增视觉特征服务、图搜索引、工具 schema，以及编排上的「图 → 候选 → 确认」状态；同时评估延迟、成本和审核，避免把整条客服链路拖进视觉推理。图质量差、无版权、或只要文本 SKU 查询时，不要硬上。状态机与确认闸门见 `ali-modular-agent-plan`、`ali-guardrail`。
 
 ## 不是换一个多模态模型
 

@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: RLVR Implicitly Incentivizes Correct Reasoning
     url: https://arxiv.org/abs/2506.14245
@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-RLVR 用可执行或形式化奖励优化最终答案，评测却常只报 `pass@1` / `pass@k`。`pass@k` 问的是「$K$ 条独立样本里是否出现过正确最终答案」，它把生成器覆盖率、选择器是否用上、轨迹本身是否合理三件事揉在一起。面试陷阱是：看到 RL 后 `pass@1` 升、`pass@k` 不动，就断言「只是压缩多样性」；或把 `pass@k` 上涨说成「推理变强」。两者都可能，单指标无法区分。这和 `pt-rlvr-discovery-vs-reweighting`、`pt-best-of-n-decomposition` 要拆的是同一类问题。
+RLVR 用可执行或形式化奖励优化最终答案，评测却常只报 `pass@1` / `pass@k`。`pass@k` 问的是「$K$ 条独立样本里是否出现过正确最终答案」，它把生成器覆盖率、选择器是否用上、轨迹本身是否合理三件事揉在一起。这块容易直接答成：看到 RL 后 `pass@1` 升、`pass@k` 不动，就断言「只是压缩多样性」；或把 `pass@k` 上涨说成「推理变强」。两者都可能，单指标无法区分。这和 `pt-rlvr-discovery-vs-reweighting`、`pt-best-of-n-decomposition` 要拆的是同一类问题。
 
 ## 指标各在量什么
 
@@ -42,7 +42,7 @@ RLVR 用可执行或形式化奖励优化最终答案，评测却常只报 `pass
 
 ## 怎么评「推理本身」
 
-对能检查的任务（数学、代码、形式证明），每条 trace 至少标三件事：最终正确性、关键中间断言正确性、是否存在无效跳步或与答案矛盾的步骤。过程标签不要和训练 reward 共用同一套 checker——同一漏洞会被训练和评测同时吃掉，看起来「过程也更好了」。独立 audit 的抽样要按「最终对 / 最终错 / 高 reward」分层，否则只会看到已经过训练 checker 的漂亮子集。
+对能检查的任务（数学、代码、形式证明），每条 trace 至少标三件事：最终正确性、关键中间断言正确性、是否存在无效跳步或与答案矛盾的步骤。过程标签不要和训练 reward 共用同一套 checker，同一漏洞会被训练和评测同时吃掉，看起来「过程也更好了」。独立 audit 的抽样要按「最终对 / 最终错 / 高 reward」分层，否则只会看到已经过训练 checker 的漂亮子集。
 
 对不可完全形式化的任务，用独立 judge 加人工抽检，并固定 rubric：是否引用不存在的引理、是否事后编造理由（先有答案再补步骤）、工具输出是否被诚实转述。报告 trace-level 指标时写清：oracle 是谁、是否看过最终答案、是否允许工具、一次看多少 token。`pt-cot-monitorability-regression` 关心监控器能不能抓风险；本题关心能力评测会不会把「碰巧答对」当成推理进步。两者都怕 unfaithful CoT，但标签不同：一个是风险漏检，一个是能力虚高。
 
@@ -56,11 +56,11 @@ RLVR 用可执行或形式化奖励优化最终答案，评测却常只报 `pass
 
 ## 白板小例子
 
-一道竞赛题，base 在较大 $K$ 时偶尔写出正确解但 `pass@1` 很低；RL 后 greedy 常对、`pass@k` 几乎不动。这可能是 reweighting，也可能是多样性塌缩。补两刀就能分开：看成功轨迹是否已被 base 的大 $K$ rollout 覆盖（见 `pt-rlvr-discovery-vs-reweighting`）；再抽最终正确的样本做过程 audit——若大量「答案对、关键不等式跳步」，`pass@*` 在夸大推理质量。
+一道竞赛题，base 在较大 $K$ 时偶尔写出正确解但 `pass@1` 很低；RL 后 greedy 常对、`pass@k` 几乎不动。这可能是 reweighting，也可能是多样性塌缩。补两刀就能分开：看成功轨迹是否已被 base 的大 $K$ rollout 覆盖（见 `pt-rlvr-discovery-vs-reweighting`）；再抽最终正确的样本做过程 audit，若大量「答案对、关键不等式跳步」，`pass@*` 在夸大推理质量。
 
 另一类反例：`pass@k` 涨了，但正确轨迹率下降。模型学会多写几种能碰对最终数字的捷径，覆盖变宽、推理变差。这时若只报 `pass@k`，会被解读成「RL 发现了更多解法」。白板结论应写成：覆盖、选择、过程正确，三列数字缺一就无法定性。
 
-面试收尾时把三列数字写在同一张表：覆盖（`pass@k`）、默认命中（`pass@1`）、过程正确（正确轨迹率）。缺一列就拒绝下结论。
+最后我会把三列数字写在同一张表：覆盖（`pass@k`）、默认命中（`pass@1`）、过程正确（正确轨迹率）。缺一列就拒绝下结论。
 
 ## 追问
 

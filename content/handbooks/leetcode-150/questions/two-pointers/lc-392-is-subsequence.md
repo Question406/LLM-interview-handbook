@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 392. 判断子序列
     url: https://leetcode.cn/problems/is-subsequence/
@@ -83,7 +83,7 @@ def isSubsequence(s, nxt, n):
     return True
 ```
 
-- **最长公共子序列（LC 1143）？** 子序列判断是「`s` 能否整段嵌进 `t`」；LCS 是两边都可删，求最长公共长度。$dp[i][j]$：`a` 前 $i$ 与 `b` 前 $j$ 的 LCS。相等则 $dp[i-1][j-1]+1$，否则取 $\max(dp[i-1][j], dp[i][j-1])$。时间 $O(mn)$，空间可滚成 $O(\min(m,n))$。`s` 是 `t` 的子序列当且仅当 $\mathrm{LCS}(s,t)=|s|$，但 DP 比双指针慢，判断题不要上 DP。本题贪心用最早匹配；LCS 没有「最早一定最优」的单指针结论。
+- **最长公共子序列（LC 1143）？** 子序列判断是「`s` 能否整段嵌进 `t`」；LCS 是两边都可删，求最长公共长度。$dp[i][j]$：`a` 前 $i$ 与 `b` 前 $j$ 的 LCS。相等则 $dp[i-1][j-1]+1$，否则取 $\max(dp[i-1][j], dp[i][j-1])$。时间 $O(mn)$，空间可滚成 $O(\min(m,n))$。`s` 是 `t` 的子序列当且仅当 $\mathrm{LCS}(s,t)=|s|$，但 DP 比双指针慢，判断题不要上 DP。这题贪心用最早匹配；LCS 没有「最早一定最优」的单指针结论。
 
 ```python
 def longestCommonSubsequence(a, b):

@@ -5,7 +5,7 @@ order: 208
 level: A
 title: 字节实习一面：ReAct 里怎么选工具，选错了怎么纠？
 quick: >-
-  先把用户目标拆成可验证子目标，再按 schema + 当前观察选最少工具。选错就用工具返回当观察，不要硬编下一跳。候选工具多时做检索或分级披露，避免全量塞进 prompt。
+  先把用户目标拆成可验证子目标，再按 schema 和当前观察选最少工具。选错就用工具返回当观察，别硬编下一跳。候选工具多时做检索或分级披露，避免全量塞进 prompt。
 tags:
   - ByteDance
   - ReAct
@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 字节实习 agent开发一面
     url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
@@ -27,7 +27,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“ReAct 框架下，Agent 如何选择工具？选错了怎么纠正？”**
 
-陷阱是「看到工具名字就调」，或选错之后在 Thought 里假装成功。ReAct（Yao 等，先推理再行动）里选工具是：Thought 写清当前缺口，Action 按 schema 和 Observation 选最少、最贴缺口的工具，Observation 用来校验成败。纠正信号来自环境，不是模型补一段「已经查到了」。结构总览见 `xiaohongshu-react-structure`。
+这块容易直接答成「看到工具名字就调」，或选错之后在 Thought 里假装成功。ReAct（Yao 等，先推理再行动）里选工具是：Thought 写清当前缺口，Action 按 schema 和 Observation 选最少、最贴缺口的工具，Observation 用来校验成败。纠正信号来自环境，不是模型补一段「已经查到了」。结构总览见 `xiaohongshu-react-structure`。
 
 ## 按缺口选，不按名字选
 
@@ -35,7 +35,7 @@ Thought 要回答两件事：缺什么信息、要改变什么世界状态。缺
 
 适用条件：工具有明确 schema、返回可判定成败（错误码、空结果、校验失败）。工具高度同质、返回都是自然语言、或一次调用不可逆（删库、对外发信）时，要先检索/分级披露，并在执行层加确认，而不是靠 Thought 自律。权限确认见 `byte-team-agent-security`。
 
-例如用户问「这个 PR 为什么 CI 红了」。正确路径：Thought「需要失败日志」→ `get_ci_log(run_id)` → Observation 指出单测文件 → 再 `read_file`。选成 `search_code("timeout")` 会捞到一堆无关命中——缺口是「这次 run 的失败栈」，不是仓库里所有 timeout 字符串。
+例如用户问「这个 PR 为什么 CI 红了」。正确路径：Thought「需要失败日志」→ `get_ci_log(run_id)` → Observation 指出单测文件 → 再 `read_file`。选成 `search_code("timeout")` 会捞到一堆无关命中。缺口是「这次 run 的失败栈」，不是仓库里所有 timeout 字符串。
 
 ## 选错了：把 Observation 写回，禁止臆造
 

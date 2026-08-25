@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
     url: https://www.nowcoder.com/discuss/866741961221292032
@@ -25,7 +25,7 @@ sources:
 - 公司 / 场次：阿里 AI 研发 2026.03.25 选择（约 20 题，一半 AI）
 - 公开出现过：teacher forcing 训推差异；MHA/MQA/GQA；LangChain vs LangGraph；ReAct 边界；单 Agent vs multi-agent；长期记忆；tool 参数排错；多任务混合 RL；提示词注入；MCP tool vs resource。
 
-这类题靠项目口吻选，不靠背框架官网标题。下面四条按「可选题干 + 正确口径」展开，口述时同样走定义 → 对比 → 场景 → 追问。
+这类题我靠项目口吻选，不靠背框架官网标题。下面四条按「可选题干 + 正确口径」展开，口述同样走定义 → 对比 → 场景 → 追问。
 
 ## Teacher forcing
 

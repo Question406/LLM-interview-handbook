@@ -6,7 +6,7 @@ level: A
 title: On-policy vs Off-policy；PPO/GRPO 为什么强调 Fresh Rollout？
 quick: >-
   On-policy 用当前 policy 数据估当前 policy gradient；off-policy 用其他 behavior policy
-  数据，需要 correction。LLM sequence distribution 维度极高，旧 trajectory 的 importance
+  数据，需要 correction。LLM 序列分布维度极高，旧 trajectory 的 importance
   ratio 很快高方差。
 tags:
   - RL
@@ -15,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Proximal Policy Optimization Algorithms
     url: https://arxiv.org/abs/1707.06347
@@ -25,7 +25,7 @@ sources:
     type: secondary
 ---
 
-陷阱是把 PPO/GRPO 说成「完全不能复用旧数据」，或把 off-policy 说成「有 replay 就更先进」。核心是：**你要估的是当前 $\pi_\theta$ 的梯度，数据却来自谁**。On-policy：行为策略就是当前策略（或只差几次更新）。Off-policy：数据来自旧策略、人类、或别的模型，必须做分布修正，否则梯度是错的。重要性采样见 `fund-is`、`ali-importance-sampling`；算法谱系见 `fund-pg-ppo-grpo-index`、`pt-pg-to-ppo-to-grpo`。
+这块容易直接答成 PPO/GRPO「完全不能复用旧数据」，或者 off-policy「有 replay 就更先进」。核心是：**你要估的是当前 $\pi_\theta$ 的梯度，数据却来自谁**。On-policy：行为策略就是当前策略（或只差几次更新）。Off-policy：数据来自旧策略、人类、或别的模型，必须做分布修正，否则梯度是错的。重要性采样见 `fund-is`、`ali-importance-sampling`；算法谱系见 `fund-pg-ppo-grpo-index`、`pt-pg-to-ppo-to-grpo`。
 
 ## 为什么 token 序列特别怕旧轨迹
 
@@ -47,7 +47,7 @@ Replay 提高 sample efficiency，但要解决：ratio 修正、value 外推、�
 
 PPO 论文允许在同一批 rollout 上做多个 epoch，这是有意的轻度 off-policy：$\pi_{\mathrm{old}}$ 与 $\pi_\theta$ 很近，clip 把过大的 $\rho$ 截断。实践里「够新鲜」看的是 clip fraction、approx KL、有效样本 ESS，而不是看你主观上「刚采过」。这些指标坏了，优先减 epoch、更勤同步权重、换新 rollout（`fund-pg-ppo-grpo-index`）。GRPO 没有 critic，组内排序对过期政策更敏感：旧组里的相对好坏，换了新 $\pi$ 可能颠倒。Agent 还多一个环境非平稳：页面、库存、API 变了，旧 observation 对应的最优动作已经变，ratio 修的是策略差，修不了环境差。
 
-Off-policy 方法（replay、离线 RL、用人类轨迹）不是不能做，但必须显式修正或承认偏差。重要性采样见 `fund-is`。序列上 $\rho$ 连乘，截断 IS 或 V-trace 一类方法才会出现。DPO 用静态偏好对，是另一条 off-policy 路，没有 online rollout，不要和 PPO 的 fresh 要求混为一谈。面试一句话：估当前梯度就尽量用当前数据；用别人的数据就要付方差或偏差的税。
+Off-policy 方法（replay、离线 RL、用人类轨迹）不是不能做，但必须显式修正或承认偏差。重要性采样见 `fund-is`。序列上 $\rho$ 连乘，截断 IS 或 V-trace 一类方法才会出现。DPO 用静态偏好对，是另一条 off-policy 路，没有 online rollout，不要和 PPO 的 fresh 要求混为一谈。估当前梯度就尽量用当前数据；用别人的数据就要付方差或偏差的税。
 
 LLM 的 $T$ 可达数百到数千，比经典控制里的短轨迹苛刻得多，所以「fresh rollout」从可选工程技巧变成默认纪律。
 

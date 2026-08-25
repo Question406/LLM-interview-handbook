@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 162. 寻找峰值
     url: https://leetcode.cn/problems/find-peak-element/
@@ -110,4 +110,3 @@ def findPeakWithPlateau(nums):
                 hi = mid
     return lo
 ```
-

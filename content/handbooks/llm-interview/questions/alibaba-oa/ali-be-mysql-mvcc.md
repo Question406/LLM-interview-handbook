@@ -12,7 +12,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 2026 校招高频题总览
     url: https://www.cnblogs.com/autodriver/p/19829365
@@ -28,7 +28,7 @@ sources:
 
 ## 定义
 
-InnoDB 用 MVCC 让读大多不加锁。每行藏着 `trx_id`（最后改它的事务）和 `roll_ptr`（指向 undo 里的上一个版本）。读的时候构造 Read View：里面记着「当前活跃事务 ID 集合」和上下水印。可见性规则口述成三句：自己的改动可见；未提交的别人不可见；在 Read View 建立之后才提交的事务，在 RR 下也不可见。于是同一行可以同时存在多个历史版本，读走 undo 链，写才加锁。
+InnoDB 用 MVCC 让读大多不加锁。每行藏着 `trx_id`（最后改它的事务）和 `roll_ptr`（指向 undo 里的上一个版本）。读的时候构造 Read View：里面记着「当前活跃事务 ID 集合」和上下水印。可见性规则我口述成三句：自己的改动可见；未提交的别人不可见；在 Read View 建立之后才提交的事务，在 RR 下也不可见。于是同一行可以同时存在多个历史版本，读走 undo 链，写才加锁。
 
 三条日志分工不同。redo 是物理日志，记下页被怎么改，crash 后重放，保证已提交事务不丢。undo 是逻辑日志，既能回滚未提交事务，又是 MVCC 的版本链。binlog 是 Server 层逻辑日志，给主从复制和备份用，InnoDB 自己恢复不靠它。事务提交时 InnoDB 内部先写 redo，再和 binlog 做内部两阶段提交，避免「binlog 有、引擎没有」或反过来，否则主从会分叉。
 
@@ -41,7 +41,7 @@ InnoDB 用 MVCC 让读大多不加锁。每行藏着 `trx_id`（最后改它的�
 | 形态 | 物理页改动 | 逻辑反向操作 | 逻辑行 / 语句 |
 | 丢了会怎样 | 提交成功也可能丢（看刷盘） | 长事务 / 读旧版本失败 | 主从断层 |
 
-隔离级别分层：RC 每条语句新建 Read View，所以能看到语句开始前已提交的更新，仍有不可重复读。RR 在事务第一次读时建 View，之后保持，配合 MVCC 解决大部分不可重复读。幻读在 RR 下靠 **next-key 锁**（记录锁 + 间隙锁）堵写入，不是单靠 MVCC。很多人把「RR 防幻读」全算到 MVCC 头上，这是扣分点。
+隔离级别分层：RC 每条语句新建 Read View，所以能看到语句开始前已提交的更新，仍有不可重复读。RR 在事务第一次读时建 View，之后保持，配合 MVCC 解决大部分不可重复读。幻读在 RR 下靠 **next-key 锁**（记录锁 + 间隙锁）堵写入，不是单靠 MVCC。这块容易直接答成「RR 防幻读全靠 MVCC」，会扣分。
 
 刷盘分层：`innodb_flush_log_at_trx_commit=1` 每次提交刷 redo，`sync_binlog=1` 每次提交刷 binlog，双 $1$ 最安全、最慢。双十一有人会改成 $2$ 换吞吐，接受宕机丢最后一秒。口述必须把「性能」和「丢多少」一起说。
 

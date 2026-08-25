@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手大模型算法二面-实习面经
     url: https://www.nowcoder.com/feed/main/detail/ca3fe5949e0b4ddbb7807e43380ab7a6
@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“场景题：目前有一个带货的直播间，设计一个方案，商品比较多怎么降低时延”**
 
-陷阱是「商品多所以换更大模型 / 更长窗口」。商品多是检索问题，不是 context 问题。直播带货的 SLA 在秒级首包：弹幕/话术要对上讲解中的 SKU，不能把全店目录塞进 prompt，更不能对每个商品跑一遍 VLM。先把链路拆成召回 / 缓存 / 生成，再谈 serving（连续 batch、前缀缓存、视觉 token）。指标报首 token、整轮 p95、以及「推荐错品」护栏，而不是只报吞吐。错品比慢更伤转化。
+这块容易答成「商品多所以换更大模型 / 更长窗口」。商品多是检索问题，不是 context 问题。直播带货的 SLA 在秒级首包：弹幕/话术要对上讲解中的 SKU，不能把全店目录塞进 prompt，更不能对每个商品跑一遍 VLM。我会先把链路拆成召回 / 缓存 / 生成，再谈 serving（连续 batch、前缀缓存、视觉 token）。指标报首 token、整轮 p95、以及「推荐错品」护栏，而不是只报吞吐。错品比慢更伤转化。
 
 ## 检索把「看全目录」拿掉
 

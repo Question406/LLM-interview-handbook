@@ -4,7 +4,9 @@ section: systems
 order: 24
 level: A
 title: 动态长度、多分支 sampling 的 KV Cache 如何分配，为什么要有 block / page、copy-on-write 和 preemption 策略？
-quick: 连续预留会碎片化且无法高效共享 prefix。块级 page 分配允许动态增长、共享前缀和分支 copy-on-write；容量不足时在 recompute、swap、preempt 间权衡，并观测 KV OOM、尾延迟、被抢占率和吞吐。
+quick: >-
+  连续预留会碎片化，prefix 也没法高效共享。我会按块做 page 分配，动态增长、共享前缀、分支 copy-on-write。容量不够时在
+  recompute、swap、preempt 之间权衡，并看 KV OOM、尾延迟、被抢占率和吞吐。
 tags:
   - KV Cache
   - PagedAttention
@@ -12,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
     url: https://arxiv.org/abs/2309.06180
     type: primary
 ---
 
-陷阱是按 `max_seq_len` 给每条请求预留一段连续 KV。生成长度事先不知道，beam / Best-of-N / 树采样还会分叉：短请求浪费，长请求在碎片缝里分配失败，共享的 prompt 前缀被复制多份。Serving 的 KV 管理更像操作系统的虚拟内存，而不是「一张大 tensor 切条」。
+这块容易按 `max_seq_len` 给每条请求预留一段连续 KV。生成长度事先不知道，beam / Best-of-N / 树采样还会分叉：短请求浪费，长请求在碎片缝里分配失败，共享的 prompt 前缀被复制多份。Serving 的 KV 管理更像操作系统的虚拟内存，而不是「一张大 tensor 切条」。
 
 ## 1. 为什么要 page / block
 

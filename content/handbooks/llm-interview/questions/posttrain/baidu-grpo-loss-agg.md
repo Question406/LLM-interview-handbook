@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百度 大模型后训练 一面
     url: https://www.nowcoder.com/discuss/863890669662674944
@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“GRPO的损失计算，在序列级别的损失上，损失如何给到每一个token上？序列级别平均 或 批次级别平均”**
 
-陷阱是把「优势怎么来」和「损失怎么加」拧成一个旋钮。同一组 $\hat A_i$ 广播到该回复的每一个 response token 之后，**reduction 决定谁主导梯度**。组大小必须 $n\gt 1$ 才能定义 $\hat A$，见 `sys-rl-group-n`；这题问的是广播之后求和符号写在哪。面试先写 token 级 $\ell_{i,t}$，再写三种平均，最后报你配的 `loss_agg_mode`。只背「按序列平均」或「按 batch 平均」而不写分母，两种模式会被说成同一句话。
+这块容易把「优势怎么来」和「损失怎么加」拧成一个旋钮。同一组 $\hat A_i$ 广播到该回复的每一个 response token 之后，reduction 决定谁主导梯度。组大小必须 $n\gt 1$ 才能定义 $\hat A$，见 `sys-rl-group-n`；这题问的是广播之后求和符号写在哪。面试先写 token 级 $\ell_{i,t}$，再写三种平均，最后报你配的 `loss_agg_mode`。只背「按序列平均」或「按 batch 平均」而不写分母，两种模式会被说成同一句话。
 
 ## 三种 reduction，长度权重不同
 
@@ -50,7 +50,7 @@ seq-mean-token-mean：每条回复权重相同，长文的单个 token 权更小
 
 ## 不要和 KL / GSPO / CISPO 混
 
-KL 按 token 还是按序列，是 **正则 reduction**，不是 policy gradient reduction。GSPO 把 likelihood ratio 提到序列级，clip 的粒度变了；CISPO 仍是 token 级损失，但 clip 的是 detach 后的 IS 权重，梯度始终走 $\log\pi$，见 `pt-cispo`。三套旋钮要拆开：优势怎么来（组相对）、ratio 在哪一级、loss 怎么平均。反向 KL 的方向仍见 `fund-kl-directions`，和这道平均题无关。现场若被追「论文和代码哪个对」，答：复现论文改回 seq-mean-token-mean；跑长 CoT 生产更常留 token-mean，并在日志里盯长度与梯度范数。
+KL 按 token 还是按序列，是正则 reduction，不是 policy gradient reduction。GSPO 把 likelihood ratio 提到序列级，clip 的粒度变了；CISPO 仍是 token 级损失，但 clip 的是 detach 后的 IS 权重，梯度始终走 $\log\pi$，见 `pt-cispo`。三套旋钮要拆开：优势怎么来（组相对）、ratio 在哪一级、loss 怎么平均。反向 KL 的方向仍见 `fund-kl-directions`，和这道平均题无关。现场若被追「论文和代码哪个对」，答：复现论文改回 seq-mean-token-mean；跑长 CoT 生产更常留 token-mean，并在日志里盯长度与梯度范数。
 
 ## 追问
 

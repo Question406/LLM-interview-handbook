@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 拼多多暑期实习二面
     url: https://www.nowcoder.com/feed/main/detail/6052afa2fbd54b0f997385e8e0ae4dcc
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“算法题：模拟BPE的实现。追问有没有优化的方法（我写的太暴力了）。”**
 
-陷阱是把 BPE 讲成语言学切词，或每轮对整语料 $O(n)$ 扫却说不出优化。BPE 是 **数据驱动的相邻合并**：训练产出有序 merge 表，编码时套同一张表。中英混合先走 byte 级，避免未知字符把序列打散。原帖明确追问暴力之后怎么快。
+这块容易把 BPE 讲成语言学切词，或每轮对整语料 $O(n)$ 扫却说不出优化。BPE 是数据驱动的相邻合并：训练产出有序 merge 表，编码时套同一张表。中英混合先走 byte 级，避免未知字符把序列打散。原帖明确追问暴力之后怎么快。
 
 ## 暴力训练：统计 pair → 合并最高频
 
@@ -65,7 +65,7 @@ def bpe_train(words, num_merges):
     return merges
 ```
 
-编码：对输入按 merge **学到的顺序** 反复合并，直到不能再合。不要每步重新数全局频次——那是训练，不是 encode。复杂度训练约 $O(\text{rounds}\times\text{tokens})$。
+编码：对输入按 merge 学到的顺序反复合并，直到不能再合。不要每步重新数全局频次，那是训练，不是 encode。复杂度训练约 $O(\text{rounds}\times\text{tokens})$。
 
 ## 优化：堆、局部更新、rank 扫描
 

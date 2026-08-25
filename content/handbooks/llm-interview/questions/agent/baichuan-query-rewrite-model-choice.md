@@ -5,8 +5,8 @@ order: 112
 level: A
 title: 百川智能：Query 改写用了什么模型，为什么不用大模型？
 quick: >-
-  先把 rewrite 目标量化为检索/任务增益，而不是追求更像人；小模型通常在延迟、成本、稳定输出和私有部署上更合适。
-  用 router 把歧义、复杂多跳或低置信 query 升级给 LLM，并用 retrieval gain、p95 和失败率验证分流收益。
+  先把 rewrite 目标量化成检索或任务增益，别追求更像人。小模型通常在延迟、成本、稳定输出和私有部署上更合适。用
+  router 把歧义、复杂多跳或低置信 query 升级给 LLM，再用 retrieval gain、p95 和失败率验证分流收益。
 tags:
   - Baichuan
   - RAG
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、实习性质、轮次与发帖时间明确，届别和面试日期未披露）
 - 原始措辞：**“query改写用了什么模型 为什么不用大模型”**
 
-这题不要编「我们用了某 7B」。原帖没给出项目模型名。面试要听的是：rewrite 的目标是检索/任务增益，不是更像人；默认小模型，难例再升级 LLM。全量 LLM 改写会引入延迟、隐私和 query drift。接三路召回见 `baichuan-three-path-recall`，混合权重见 `ant-bm25-hybrid`。
+这题不要编「我们用了某 7B」。原帖没给出项目模型名。rewrite 的目标是检索/任务增益，不是更像人；默认小模型，难例再升级 LLM。全量 LLM 改写会引入延迟、隐私和 query drift。接三路召回见 `baichuan-three-path-recall`，混合权重见 `ant-bm25-hybrid`。
 
 ## Rewrite 优化什么
 

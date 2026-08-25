@@ -5,9 +5,8 @@ order: 271
 level: A
 title: DualPipe 如何压 PP bubble？和 1F1B 差在哪？
 quick: >-
-  气泡来自 PP 依赖：后排等前排的激活，前排等后排的梯度。1F1B 用交替
-  F/B 压激活峰值，warmup / cooldown 仍空。DualPipe 从两端对向灌 microbatch，并把
-  PP 通信、EP all-to-all 叠进对面的 GEMM。不要只报名字。
+  气泡来自 PP 依赖：后排等前排的激活，前排等后排的梯度。1F1B 用交替 F/B 压激活峰值，warmup / cooldown 仍空。DualPipe
+  从两端对向灌 microbatch，并把 PP 通信、EP all-to-all 叠进对面的 GEMM。我会先画空格子，不会只报名。
 tags:
   - Pipeline Parallelism
   - DualPipe
@@ -15,14 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeek-V3 Technical Report
     url: https://arxiv.org/abs/2412.19437
     type: primary
 ---
 
-`sys-parallel` 的追问只点到「加 microbatch、1F1B」。本题要能**画出空等从哪来**，再说 DualPipe 填的是哪一段。陷阱是背「DeepSeek 用 DualPipe」却说不清气泡。
+`sys-parallel` 的追问只点到「加 microbatch、1F1B」。本题要能**画出空等从哪来**，再说 DualPipe 填的是哪一段。这块容易背「DeepSeek 用 DualPipe」却说不清气泡。
 
 ## 气泡从哪来
 
@@ -34,7 +33,7 @@ $$
 \frac{P-1}{M+P-1}.
 $$
 
-$M\gg P$ 时比例变小，但激活要存更多份前向，显存先爆。把 $P=4$ 画成时间表：第 0 拍只有 stage 0 在 F，第 1 拍 stage 0 和 1，直到第 $P-1$ 拍才全员有活——前面那些空格子就是气泡。面试先画这条依赖，再谈调度；先报产品名等于没答。
+$M\gg P$ 时比例变小，但激活要存更多份前向，显存先爆。把 $P=4$ 画成时间表：第 0 拍只有 stage 0 在 F，第 1 拍 stage 0 和 1，直到第 $P-1$ 拍才全员有活。前面那些空格子就是气泡。我会先画这条依赖，再谈调度；先报产品名等于没答。
 
 ## 1F1B 填了什么
 
@@ -50,9 +49,9 @@ DeepSeek-V3 的 DualPipe 做两件事，不要并成一句「更好的 1F1B」�
 
 **把通信藏进对面的计算。** V3 把一层拆成 Attention GEMM、EP dispatch、专家 MLP、EP combine，以及 PP 的 send/recv。调度上让**这一条的 GEMM 覆盖另一条的 PP 通信和 all-to-all**。单向 1F1B 很难同时藏住两种通信；对向之后，两条管道的计算与通信相位错开，才有可重叠的窗口。MoE 通信如何与计算叠，见 `sys-moe-alltoall-overlap`。
 
-代价是在途激活更多：两条方向都要留中间结果，显存高于同 $M$ 的 1F1B，常要重计算或更细的切块来换。EP 负载不均时，对向也藏不住热点卡的尾部等待——那是路由均衡问题，不是再换一个 schedule 名字就能消失。
+代价是在途激活更多：两条方向都要留中间结果，显存高于同 $M$ 的 1F1B，常要重计算或更细的切块来换。EP 负载不均时，对向也藏不住热点卡的尾部等待。那是路由均衡问题，再换一个 schedule 名字也消不掉。
 
-口诀：1F1B 换的是**激活生命周期**；DualPipe 换的是**方向 + 通信相位**。先画 $P$ 段依赖，再画两端对向灌入，最后说 overlap。缺第一张图，DualPipe 只是标签。
+说白了：1F1B 换的是**激活生命周期**；DualPipe 换的是**方向 + 通信相位**。先画 $P$ 段依赖，再画两端对向灌入，最后说 overlap。缺第一张图，DualPipe 只是标签。
 
 ## 追问
 

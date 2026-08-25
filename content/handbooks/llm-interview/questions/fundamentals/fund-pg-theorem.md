@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning (REINFORCE)
     url: https://link.springer.com/article/10.1007/BF00992696
@@ -75,7 +75,7 @@ $$
 
 这就是 **REINFORCE**。采样一条轨迹，每个 token / action 的梯度是 $\nabla\log\pi$ 乘「从这里往后看起来有多好」。
 
-## 面试要主动补的三句
+## 我会主动补的三句
 
 - **无偏、高方差。** $G_t$ 是一条样本路径，不是期望。这是后面要减 baseline、上 Critic、上 group 相对优势的原因。
 - **只对动作的 log 概率求导。** Prompt、环境转移、别人已经吐出的 token 都不是当前 $\pi_\theta$ 的 action。LLM 里损失只加在 response token 上，就是这条。

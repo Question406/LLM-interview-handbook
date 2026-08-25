@@ -13,14 +13,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 阿里国际大模型算法一面
     url: 'https://www.nowcoder.com/feed/main/detail/27a27fc44b8a4613ae790ba27add8850'
     type: legacy-reference
 ---
 
-陷阱是按「谁更新」站队：GRPO 更新、SFT 落伍。阿里国际算法面开场常问技术选型：**看信号类型**。SFT 适合教格式与示范轨迹；蒸馏适合逼近 teacher 分布；GRPO 适合有可验证/可打分目标、需要探索与相对优势时。没有 verifier 硬上 GRPO，空组和 hacking 会一起出现。流水线背景见 `ali-sft-then-posttrain`，三者对比见 `ali-ppo-dpo-grpo-ask`。
+这块容易按「谁更新」站队：GRPO 更新、SFT 落伍。阿里国际算法面开场常问技术选型：看信号类型。SFT 适合教格式与示范轨迹；蒸馏适合逼近 teacher 分布；GRPO 适合有可验证/可打分目标、需要探索与相对优势时。没有 verifier 硬上 GRPO，空组和 hacking 会一起出现。流水线背景见 `ali-sft-then-posttrain`，三者对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## 三种信号，三种算法
 

@@ -5,8 +5,7 @@ order: 14
 level: S
 title: Reward Model / Judge 的 rank accuracy 高，为什么还要看 calibration？
 quick: >-
-  排序对不等于分数可信。accuracy 只问“谁更高”，calibration 还问“0.9 的置信度是否真的约有 90%
-  正确”；一旦分数被用于阈值、拒答、采样或 RL，错误尺度会直接改变决策。
+  排序对不等于分数可信。accuracy 只问「谁更高」，calibration 还问「0.9 的置信度是否真的约有 90% 正确」。分数一旦用于阈值、拒答、采样或 RL，错误尺度会直接改变决策。
 tags:
   - Reward Model
   - Calibration
@@ -14,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: RewardBench
     url: https://arxiv.org/abs/2403.13787
@@ -34,7 +33,7 @@ Rank accuracy / pairwise acc 问的是 $s(y_w)\gt s(y_l)$ 的频率。对 BT 模
 - 分数对长度、列表体、礼貌词过度敏感，序对了但边际被风格占满；
 - 不同域的分数不可比，却被拼进同一个 RL 奖励。
 
-Calibration 问的是：把预测置信度分桶后，桶内预测概率是否接近真实偏好频率。Brier / log loss 会惩罚「很自信但常错」。Accuracy 可以很高而 log loss 很差——那正是「序对、尺度不可用」。RewardBench 一类榜单主打 pairwise 能力，并不自动保证你拿来当阈值的绝对分可靠。
+Calibration 问的是：把预测置信度分桶后，桶内预测概率是否接近真实偏好频率。Brier / log loss 会惩罚「很自信但常错」。Accuracy 可以很高而 log loss 很差，那正是「序对、尺度不可用」。RewardBench 一类榜单主打 pairwise 能力，并不自动保证你拿来当阈值的绝对分可靠。
 
 若 reward 只当 pairwise filter，校准可以稍后做。一旦出现「分数 $\gt\tau$ 才入库」「$r$ 直接进 PPO」，校准就变成正确性问题，不是锦上添花。BT 模型把胜率写成 $\sigma(s_w-s_l)$，这对差的校准要求的是「差对应真实胜率」，不是每个绝对分单独有物理含义。但阈值和 RL 用的是绝对分或对 batch 标准化后的分：过自信会把 $\sigma$ 推到 0/1，梯度消失或过滤过头。Reliability diagram 比单报 ECE 更好讲：横轴预测置信度、纵轴经验频率，点落在对角线上才说明 0.9 真有约九成把握。RewardBench 很高只能说明静态 pair 上排序强，不能代替这张图，更不能代替当前策略样本上的图。
 
@@ -52,9 +51,9 @@ Calibration 问的是：把预测置信度分桶后，桶内预测概率是否�
 
 校准必须按长度、语言、领域、格式、对抗样本和 policy 版本切片。全局 ECE 好看，长回答桶或新策略桶可能已经崩。高分回答要抽样人工审计：这是唯一能发现「高分套话」的办法。
 
-后校准（temperature scaling、isotonic）可以修验证集上的尺度，但校准集必须独立，且与部署分布相近。切到新域就应重做，不能把旧温度当常数。若 reward 只在训练分布可靠，就不应把它当无边界的 RL oracle：要设 KL 护栏、周期性人评、以及「proxy 涨、人评不动则停」的硬规则。Calibration 解决的是「分意味什么」；OOD 失效要另修数据与模型，见 `pt-reward-ood-failure`。切片清单建议至少包括长度、语言、是否含列表、是否拒答、以及 policy 版本。高分桶人工审计要看的不是「排序像不像」，而是「高分回答是不是真想要」——套话、谄媚、注水经常排序正确但绝对分虚高。把校准只交给一个全局温度，等于假设所有切片的过自信程度相同，这在 LLM judge 上几乎从不成立。
+后校准（temperature scaling、isotonic）可以修验证集上的尺度，但校准集必须独立，且与部署分布相近。切到新域就应重做，不能把旧温度当常数。若 reward 只在训练分布可靠，就不应把它当无边界的 RL oracle：要设 KL 护栏、周期性人评、以及「proxy 涨、人评不动则停」的硬规则。Calibration 解决的是「分意味什么」；OOD 失效要另修数据与模型，见 `pt-reward-ood-failure`。切片清单建议至少包括长度、语言、是否含列表、是否拒答、以及 policy 版本。高分桶人工审计要看的不是「排序像不像」，而是「高分回答是不是真想要」。套话、谄媚、注水经常排序正确但绝对分虚高。把校准只交给一个全局温度，等于假设所有切片的过自信程度相同，这在 LLM judge 上几乎从不成立。
 
-面试一句话：rank accuracy 保证序，calibration 保证「分意味什么」；用途一旦离开纯二选一，后者就变成正确性。把 RewardBench 分数直接当成可以上 RL 的通行证，是这题最常见的跳步。排序正确只说明谁更高，不说明 0.9 的分数对应约九成把握，更不说明换了策略分布后仍然如此。阈值、best-of-N、数据权重和 PPO 奖励都在用绝对尺度做决策，尺度错了动作就错。所以 rank accuracy 高仍要看分桶校准、切片和当前策略样本上的人评相关，否则 RM 只是一个会排序的噪声源。排序对不等于分可信，离开二选一就要看校准。
+最后我会补一句：rank accuracy 保证序，calibration 保证「分意味什么」；用途一旦离开纯二选一，后者就变成正确性。把 RewardBench 分数直接当成可以上 RL 的通行证，是这题最常见的跳步。排序正确只说明谁更高，不说明 0.9 的分数对应约九成把握，更不说明换了策略分布后仍然如此。阈值、best-of-N、数据权重和 PPO 奖励都在用绝对尺度做决策，尺度错了动作就错。所以 rank accuracy 高仍要看分桶校准、切片和当前策略样本上的人评相关，否则 RM 只是一个会排序的噪声源。
 
 ## 追问
 

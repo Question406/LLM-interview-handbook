@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning (REINFORCE)
     url: https://link.springer.com/article/10.1007/BF00992696
@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-陷阱是把 reward-to-go 说成「有偏的因果近似」，或反过来以为它已经把方差降到能训 LLM。它只是 **因果性允许的无偏收缩**：过去的奖励与当前 $\nabla\log\pi$ 不相关，乘进去期望仍对，但多乘了一截噪声。完整目标见 `fund-pg-theorem`。
+这块容易直接答成 reward-to-go 是「有偏的因果近似」，或反过来以为它已经把方差降到能训 LLM。它只是 **因果性允许的无偏收缩**：过去的奖励与当前 $\nabla\log\pi$ 不相关，乘进去期望仍对，但多乘了一截噪声。完整目标见 `fund-pg-theorem`。
 
 ## 过去的 $r$ 对当前 score 的贡献期望是 0
 

@@ -5,8 +5,7 @@ order: 108
 level: S
 title: 百度文心一言：Agent 如何处理前后指令冲突？
 quick: >-
-  先按权限层级和 scope 解析：system / policy 优先于 developer、user 和不可信网页/工具内容；同层以更具体、
-  更新且不违背上层约束者为准。冲突不能安全消解时，保留硬约束、拒绝危险分支并向用户澄清。
+  先按权限层级和 scope 解析：system / policy 优先于 developer、user 和不可信网页或工具内容。同层以更具体、更新且不违背上层约束者为准。冲突不能安全消解时，保留硬约束、拒绝危险分支并向用户澄清。
 tags:
   - Baidu
   - Agent
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百度文心一言面试（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/681c33aafac84af0a70b6fd5e663a04c
@@ -34,7 +33,7 @@ sources:
 
 ## 先标 authority，再比具体性
 
-每条指令标 authority、scope、时效、可信来源。安全 policy 与 system 约束不可被后续用户、网页、检索内容或 tool output 覆盖。同一 authority 下，针对当前资源更具体且更新的约束通常优先——「只改当前目录」覆盖同层更早的「改这些文件」，但不能覆盖「禁止删除」。Retrieved text 默认是 data 不是 instruction；只有经过显式转换与授权才影响计划。
+每条指令标 authority、scope、时效、可信来源。安全 policy 与 system 约束不可被后续用户、网页、检索内容或 tool output 覆盖。同一 authority 下，针对当前资源更具体且更新的约束通常优先。「只改当前目录」覆盖同层更早的「改这些文件」，但不能覆盖「禁止删除」。Retrieved text 默认是 data 不是 instruction；只有经过显式转换与授权才影响计划。
 
 ## 实现要落在 planner 和网关
 

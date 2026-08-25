@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 5. 最长回文子串
     url: https://leetcode.cn/problems/longest-palindromic-substring/
@@ -32,7 +32,7 @@ sources:
 
 中心扩展：回文由中心对称。枚举 $n$ 个奇数中心与 $n-1$ 个偶数中心（相邻两字符），向两侧扩到不能扩，更新最长区间。实现短、常数好。
 
-DP：$dp[l][r]$ 表示 $s[l..r]$ 是否回文。转移是两端相等且内部是回文（长度为 $1$ 或 $2$ 单独初始化）。按长度递增填表。Manacher 是 $O(n)$，面试提到即可。
+DP：$dp[l][r]$ 表示 $s[l..r]$ 是否回文。转移是两端相等且内部是回文（长度为 $1$ 或 $2$ 单独初始化）。按长度递增填表。Manacher 是 $O(n)$，白板提到即可。
 
 `babad` 的官方答案可以是 `bab` 或 `aba`。
 

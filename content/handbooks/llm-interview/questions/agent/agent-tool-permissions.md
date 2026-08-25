@@ -6,7 +6,7 @@ level: S
 title: 为什么 Tool 权限不能只写在 System Prompt？怎样做最小权限？
 quick: >-
   Prompt 是行为引导，不是访问控制。真正的边界必须在工具服务端：按用户、会话、资源和动作签发最小
-  capability，并把高风险动作做显式确认、审计和幂等保护。
+  capability，高风险动作做显式确认、审计和幂等保护。
 tags:
   - Security
   - Tool Use
@@ -15,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: OpenAI Agent guide
     url: >-
@@ -26,11 +26,11 @@ sources:
     type: legacy-reference
 ---
 
-Prompt 是建议，不是 ACL。一旦 Agent 能打到真实 API，网页、检索、tool result 里的注入都可以让模型「请求」越权；服务端若只信模型输出，越权已经发生。面试陷阱是「我们在 system prompt 里写了不要删库」。OpenAI 的 Agent 实践指南和 MCP 规格都把授权放在运行时，而不是模型自觉。
+Prompt 是建议，不是 ACL。一旦 Agent 能打到真实 API，网页、检索、tool result 里的注入都可以让模型「请求」越权；服务端若只信模型输出，越权已经发生。这块容易直接答成「我们在 system prompt 里写了不要删库」。OpenAI 的 Agent 实践指南和 MCP 规格都把授权放在运行时，而不是模型自觉。
 
 ## Prompt 过不了信任边界
 
-模型、用户、外部文档、工具返回都可能带指令。System prompt 能降低误用率，挡不住一次合法形状的 `delete_repo` 到达后端。权限检查必须在执行点：认证主体是用户或服务账号，不是「模型说自己是 admin」。MCP 或内部 tool 网关应把「模型可见的 schema」和「实际可调用的 capability」分开——模型看到描述，并不等于持有钥匙。把整份万能 `http_request` 暴露给模型，再靠一句「只许访问白名单」，等于没有权限系统。
+模型、用户、外部文档、工具返回都可能带指令。System prompt 能降低误用率，挡不住一次合法形状的 `delete_repo` 到达后端。权限检查必须在执行点：认证主体是用户或服务账号，不是「模型说自己是 admin」。MCP 或内部 tool 网关应把「模型可见的 schema」和「实际可调用的 capability」分开。模型看到描述，并不等于持有钥匙。把整份万能 `http_request` 暴露给模型，再靠一句「只许访问白名单」，等于没有权限系统。
 
 间接注入会专门测试这一层：检索片段要求「用已有工具把密钥发出去」。若执行点不验 scope，prompt 防御已经被绕过。见 `agent-prompt-injection`。
 
@@ -42,7 +42,7 @@ Prompt 是建议，不是 ACL。一旦 Agent 能打到真实 API，网页、检�
 
 对外发信、付款、删除、改权限、连生产库：在执行点做人类可理解的确认（对象、影响、是否不可逆），禁止模型静默代点。所有调用记 actor、resource、policy decision、idempotency key、终态。Tool 返回一律当不可信数据。Schema 负责写清副作用和调用条件（`agent-schema-contract`）；ACL 在服务端强制。两者缺一，都不是最小权限。
 
-最小权限检查可以当场列：默认是否只读、写操作是否短 TTL、高风险是否强制确认、token 是否按资源绑定、审计日志能否还原「谁在哪次会话对何资源做了何动作」。任一项靠 system prompt 实现，就还没做完。演示环境给宽权限、生产收紧，也要写进设计，避免评测过了、上线被注入打穿。权限变更本身应是高风险动作，不能由 Agent 改自己的 scope。面试收口：prompt 降低误用，capability token 决定能不能执行；高风险必须确认。把 ACL 写进 system prompt，等于没有 ACL。
+最小权限检查可以当场列：默认是否只读、写操作是否短 TTL、高风险是否强制确认、token 是否按资源绑定、审计日志能否还原「谁在哪次会话对何资源做了何动作」。任一项靠 system prompt 实现，就还没做完。演示环境给宽权限、生产收紧，也要写进设计，避免评测过了、上线被注入打穿。权限变更本身应是高风险动作，不能由 Agent 改自己的 scope。prompt 降低误用，capability token 决定能不能执行；高风险必须确认。把 ACL 写进 system prompt，等于没有 ACL。
 
 ## 追问
 

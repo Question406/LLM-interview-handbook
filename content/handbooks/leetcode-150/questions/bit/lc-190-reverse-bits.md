@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 190. 颠倒二进制位
     url: https://leetcode.cn/problems/reverse-bits/
@@ -31,7 +31,7 @@ sources:
 
 从低到高吐位、从高到低装填。每次 `ans = (ans << 1) | (n & 1)`，然后 `n >>= 1`，固定做 $32$ 轮。不要按「有效比特」提前停，否则高位的 $0$ 丢了。
 
-分治交换（16、8、4、2、1 位成对换）也能 $O(1)$，常数更小，面试提一句即可。
+分治交换（16、8、4、2、1 位成对换）也能 $O(1)$，常数更小，白板提一句即可。
 
 ## 参考代码
 

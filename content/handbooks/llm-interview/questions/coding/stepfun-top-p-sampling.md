@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 阶跃星辰大模型算法实习一面
     url: https://www.nowcoder.com/feed/main/detail/5cb1ebe809fd402d844cce47380a926f
@@ -45,7 +45,7 @@ $$
 
 ## 边界与短实现
 
-空词表或全体被 mask 时，softmax 全是 `NaN`，必须 `raise`，不能静默抽。bf16 / fp16 的 softmax 升到 fp32（或减 max 的 logsumexp）。累计必须在**概率序**上做，而不是 logit 序：温度或重复惩罚会改相对大小。截尾后若不重归一化就 `choice`，概率和 $\lt 1$，实现未定义。
+空词表或全体被 mask 时，softmax 全是 `NaN`，必须 `raise`，不能静默抽。bf16 / fp16 的 softmax 升到 fp32（或减 max 的 logsumexp）。累计必须在概率序上做，而不是 logit 序：温度或重复惩罚会改相对大小。截尾后若不重归一化就 `choice`，概率和 $\lt 1$，实现未定义。
 
 ```python
 import numpy as np

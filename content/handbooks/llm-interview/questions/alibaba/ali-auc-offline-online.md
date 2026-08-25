@@ -5,7 +5,7 @@ order: 32
 level: A
 title: AI Coding 压轴：离线 AUC 高、上线暴跌，如何从数据/标签/serving 归因？
 quick: >-
-  优先查 train-serving skew、样本分布偏移、特征泄露、标签口径/延迟、标注噪声、模型与 feature schema
+  我会先查 train-serving skew、样本分布偏移、特征泄露、标签口径/延迟、标注噪声、模型与 feature schema
   不一致、在线缺失填充与精度差异。
 tags:
   - Alibaba
@@ -15,14 +15,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘宝闪购 Agent 算法一面
     url: 'https://www.nowcoder.com/discuss/879393838081597440'
     type: legacy-reference
 ---
 
-陷阱是一上来说「过拟合」或「换个模型」。闪购 AI Coding 压轴要按数据/标签/serving 归因：离线 AUC 高、上线暴跌，常见根因是 train-serving skew、样本分布偏移、特征泄露、标签口径或延迟、标注噪声、模型与 feature schema 不一致、在线缺失填充与精度差异。用日志回放、特征监控、切片评估验证，而不是只猜。纯生成式 Agent 没有 AUC，不要硬套；但「离线集好看、线上掉」的思路仍然适用（对照 `data-offline-online-metric-gap`）。
+这块容易直接答成「过拟合」或「换个模型」。闪购 AI Coding 压轴要按数据/标签/serving 归因：离线 AUC 高、上线暴跌，常见根因是 train-serving skew、样本分布偏移、特征泄露、标签口径或延迟、标注噪声、模型与 feature schema 不一致、在线缺失填充与精度差异。用日志回放、特征监控、切片评估验证，而不是只猜。纯生成式 Agent 没有 AUC，不要硬套；但「离线集好看、线上掉」的思路仍然适用（对照 `data-offline-online-metric-gap`）。
 
 ## 先对齐特征和口径，再谈模型
 
@@ -41,7 +41,7 @@ sources:
 
 ## 怎么证明是 skew，而不是「感觉分布变了」
 
-对同一 `request_id` 对齐特征，算 PSI / JS 散度；再做对照实验：**用在线特征重打离线分**。若离线重打也掉，是 serving 特征变了；若离线重打仍高、线上低，才更像样本选择或标签口径。只看总体 AUC 会漏新用户/大促切片。线上用点击、离线用成交，口径根本不是同一个任务——先统一 $y$ 的定义。Agent 场景的「离线好看」常是固定评测集过拟合，线上工具超时和用户话术没覆盖，归因同构：分布、泄漏、口径（`ali-agent-eval-dims`、`ali-rag-eval`）。
+对同一 `request_id` 对齐特征，算 PSI / JS 散度；再做对照实验：用在线特征重打离线分。若离线重打也掉，是 serving 特征变了；若离线重打仍高、线上低，才更像样本选择或标签口径。只看总体 AUC 会漏新用户/大促切片。线上用点击、离线用成交，口径根本不是同一个任务。先统一 $y$ 的定义。Agent 场景的「离线好看」常是固定评测集过拟合，线上工具超时和用户话术没覆盖，归因同构：分布、泄漏、口径（`ali-agent-eval-dims`、`ali-rag-eval`）。
 
 ## 标签延迟与噪声会放大一切
 
@@ -51,4 +51,4 @@ Label delay：训练用 T+7 成交，线上用实时点击代理，优化的不�
 
 - **PSI 多少算异常？** 没有普适阈值。看头部特征的相对变化，并结合「在线特征重打离线」对照，不要背 0.2。
 - **没有 request_id 怎么办？** 先补日志对齐，否则无法证伪 skew，只能猜。
-- **Agent 没有 AUC 怎么答？** 换成任务成功率 / 忠实度的离线–线上差，归因顺序不变：分布、泄漏、口径、延迟。
+- **Agent 没有 AUC 怎么答？** 换成任务成功率 / 忠实度的离线/线上差，归因顺序不变：分布、泄漏、口径、延迟。

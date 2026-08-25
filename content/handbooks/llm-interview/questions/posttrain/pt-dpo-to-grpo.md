@@ -15,7 +15,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 2026 淘天 Agent 面经
     url: 'https://www.nowcoder.com/discuss/909920471301226496'
@@ -28,7 +28,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是两句口号：「DPO 之后熵一定崩，不能接 GRPO」或「DPO 是更好的初始化，直接上就行」。DPO 可以当 warm start，把策略推进偏好更好的区域；GRPO 再靠**当前策略的在线组采样**挖相对优势。接不接得上，看的不是「DPO 三个字母」，而是同题 $G$ 条候选是否还存在**可被 verifier 分开的差异**。
+这块容易两句口号：「DPO 之后熵一定崩，不能接 GRPO」或「DPO 是更好的初始化，直接上就行」。DPO 可以当 warm start，把策略推进偏好更好的区域；GRPO 再靠当前策略的在线组采样挖相对优势。接不接得上，看的不是「DPO 三个字母」，而是同题 $G$ 条候选是否还存在可被 verifier 分开的差异。
 
 ## 1. GRPO 吃的是组内方差
 
@@ -38,7 +38,7 @@ $$
 \hat{A}_i=\frac{r_i-\mu}{\sigma+\epsilon},\qquad \mu=\frac1G\sum_j r_j.
 $$
 
-若 DPO 后温度采样几乎字面相同，或一组全对 / 全错，则 $\sigma\approx 0$，$\hat{A}\approx 0$，这一批是空梯度。DPO 的 Bradley-Terry 目标会压低 rejected、抬高 chosen，**有可能**把分布变尖，但这既不是定理也不是总发生：数据覆盖、$\beta$、过拟合程度都会改熵。真正要量的是 rollout，不是臆测熵。
+若 DPO 后温度采样几乎字面相同，或一组全对 / 全错，则 $\sigma\approx 0$，$\hat{A}\approx 0$，这一批是空梯度。DPO 的 Bradley-Terry 目标会压低 rejected、抬高 chosen，有可能把分布变尖，但这既不是定理也不是总发生：数据覆盖、$\beta$、过拟合程度都会改熵。真正要量的是 rollout，不是臆测熵。
 
 建议先看：组内 reward std、unique response 比例、`pass@k` 与 `pass@1` 的缺口、token 熵、以及 DPO 的 chosen/rejected log-margin。`pass@k` 仍明显高于 `pass@1`，说明搜索空间里还有被漏掉的成功轨迹，GRPO 才有东西 amplify。
 
@@ -59,7 +59,7 @@ Reference 锚点要显式选：
 
 Reward 上涨可能来自长度、格式 hack 或组内对照变弱（大家都变好之后 std 又塌）。并行看组方差、回复长度、KL 到锚、以及独立 held-out（尤其 DPO 偏好集与 RL verifier 分布不一致的集合）。能力漂移比「接不接得上」更常见：数学涨了，指令遵循掉了。
 
-淘天面经问这条，考的是你知不知道 **GRPO 的信号来自相对而不是绝对**：尖分布不是禁令，零方差才是。接得上的判据可以写成一句话：DPO 之后 `pass@k - pass@1` 仍明显大于 $0$，并且组内 $r_i$ 不是常数。满足再上 GRPO；不满足先改题难度或采样，而不是加大学习率硬推。
+淘天面经问这条，考的是你知不知道 GRPO 的信号来自相对而不是绝对：尖分布不是禁令，零方差才是。接得上的判据可以写成一句话：DPO 之后 `pass@k - pass@1` 仍明显大于 $0$，并且组内 $r_i$ 不是常数。满足再上 GRPO；不满足先改题难度或采样，而不是加大学习率硬推。
 
 ## 追问
 

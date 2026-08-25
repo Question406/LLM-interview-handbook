@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手大模型LLM二面分享-日常实习
     url: https://www.nowcoder.com/feed/main/detail/058475a3d9204493bc145510c72e10f1
@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“在进行DPO训练时，通常有哪些关键的注意事项？是否了解过GRPO”**
 
-陷阱是把 DPO 当成「更先进的 PPO」或「丢进去就能对齐」。DPO 在静态偏好对上直接改政策，数据一脏就学反；它也探索不了没见过的工具轨迹。注意事项全是在管 **对比是否干净、分布别漂、chosen 别塌**。同帖还问 GRPO，要主动对比：有 verifier 就上组采样 RL，DPO 管不了没见过的成功路径。不要说 DPO 替代了在线探索。
+这块容易把 DPO 当成「更先进的 PPO」或「丢进去就能对齐」。DPO 在静态偏好对上直接改政策，数据一脏就学反；它也探索不了没见过的工具轨迹。注意事项全是在管对比是否干净、分布别漂、chosen 别塌。同帖还问 GRPO，要主动对比：有 verifier 就上组采样 RL，DPO 管不了没见过的成功路径。不要说 DPO 替代了在线探索。
 
 ## 1. 数据：对比要单因素，长度和标注是第一杀手
 
@@ -45,7 +45,7 @@ $$
 
 ## 2. 优化：盯 chosen 曲线，$\beta$ 和学习率联动
 
-训练中同时画 chosen / rejected 的 logprob，以及隐式奖励间隔。Chosen 往下掉是常见病：$\beta$ 过小、学习率过大、或对在「拉开差距」而不是「抬高 chosen」——rejected 掉得比 chosen 更快，loss 很好，生成质量变差。$\beta$ 过小则相对 ref 的约束弱，政策漂；过大则几乎不更新。不要用训练 loss 单独早停。
+训练中同时画 chosen / rejected 的 logprob，以及隐式奖励间隔。Chosen 往下掉是常见病：$\beta$ 过小、学习率过大、或对在「拉开差距」而不是「抬高 chosen」，rejected 掉得比 chosen 更快，loss 很好，生成质量变差。$\beta$ 过小则相对 ref 的约束弱，政策漂；过大则几乎不更新。不要用训练 loss 单独早停。
 
 失败模式还包括语言漂移、拒答过猛、越说越长、通用能力掉。Holdout 偏好准确率、盲评 win-rate、长度、安全题要一起看。DPO 过拟合没有一张可审计的 RM 曲线，更要靠生成门禁。参考模型中途更换等于改坐标系，旧 margin 不可比，一般冻结 SFT 当 $\pi_{\mathrm{ref}}$。
 

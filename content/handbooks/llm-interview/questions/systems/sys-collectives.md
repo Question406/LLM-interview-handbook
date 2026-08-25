@@ -5,8 +5,8 @@ order: 13
 level: A
 title: Ring AllReduce、ReduceScatter + AllGather 有什么关系？
 quick: >-
-  Ring AllReduce 通常可分解为 reduce-scatter + all-gather 两个阶段：先每个 rank
-  得到一片完整规约结果，再把所有片广播拼回完整 tensor。
+  Ring AllReduce 通常就是 reduce-scatter 再 all-gather：先让每个 rank 拿到自己那一片的完整规约，再把各片
+  广播拼回完整 tensor。ZeRO/FSDP 常做到 reduce-scatter 就停，因为每个 rank 只要自己的 gradient shard。
 tags:
   - NCCL
   - Distributed
@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ZeRO
     url: https://arxiv.org/abs/1910.02054
     type: primary
 ---
 
-陷阱是把 AllReduce 和 ReduceScatter + AllGather 说成两个算法家族。Ring AllReduce **就是** 这两段：先让每个 rank 拿到自己那一片的完整规约，再把各片 gather 回全量。ZeRO/FSDP 常做到 reduce-scatter 就停，因为每个 rank 只需自己的 gradient shard。见 `sys-zero`。
+这块容易把 AllReduce 和 ReduceScatter + AllGather 说成两个算法家族。Ring AllReduce **就是** 这两段：先让每个 rank 拿到自己那一片的完整规约，再把各片 gather 回全量。ZeRO/FSDP 常做到 reduce-scatter 就停，因为每个 rank 只需自己的 gradient shard。见 `sys-zero`。
 
 ## Ring 怎么拆成两段
 
@@ -38,7 +38,7 @@ $N$ 个 rank 把 tensor 切成 $N$ chunks，沿环每次传一块：
 
 ## 瓶颈常在拓扑，不在公式
 
-NCCL 慢可能来自 PCIe / NVLink / IB 拓扑不匹配、跨 NUMA、message 太小、通信与计算 overlap 不足。死锁则是有的 rank 没进同一 collective，见 `stepfun-gpu-deadlock`。面试先画两段，再画「谁需要全量」：需要全量就做完 AG；只需要 shard 就停在 RS。把 Ring AllReduce 说成「和 RS+AG 无关的第三种算法」，下一问画 $2(N-1)$ 步就会穿帮。
+NCCL 慢可能来自 PCIe / NVLink / IB 拓扑不匹配、跨 NUMA、message 太小、通信与计算 overlap 不足。死锁则是有的 rank 没进同一 collective，见 `stepfun-gpu-deadlock`。我会先画两段，再画「谁需要全量」：需要全量就做完 AG；只需要 shard 就停在 RS。把 Ring AllReduce 说成「和 RS+AG 无关的第三种算法」，下一问画 $2(N-1)$ 步就会穿帮。
 
 ## 追问
 

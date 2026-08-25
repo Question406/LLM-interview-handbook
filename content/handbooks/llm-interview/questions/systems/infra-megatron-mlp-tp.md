@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: AI infra实习面经（小厂）
     url: https://www.nowcoder.com/feed/main/detail/166e576d5afa4a298cf9492ed51bed04
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“Megatron，tp是怎么切分的，mlp中第一个矩阵和第二个矩阵分别是行切还是列切，通信分别是什么算子”**
 
-AI Infra 实习这题，最容易把行切列切说反，或每层都报一次 all-gather。Megatron MLP 的关键是列切再行切，让中间激活沿隐层切开、两层之间不必 gather 完整 $h'$，一套前向通常只需一次跨 TP 归约。面试先把这一层讲清，再提 veRL 里训练 TP 与 vLLM TP 可以不同。相关卡：`sys-parallel`、`baichuan-pretrain-parallel`、`sys-verl-hybridengine`。
+AI Infra 实习这题，这块容易把行切列切说反，或每层都报一次 all-gather。Megatron MLP 的关键是列切再行切，让中间激活沿隐层切开、两层之间不必 gather 完整 $h'$，一套前向通常只需一次跨 TP 归约。我会先把这一层讲清，再提 veRL 里训练 TP 与 vLLM TP 可以不同。相关卡：`sys-parallel`、`baichuan-pretrain-parallel`、`sys-verl-hybridengine`。
 
 ## 记两个矩阵：$W_1$ 列切，$W_2$ 行切
 
@@ -39,7 +39,7 @@ AI Infra 实习这题，最容易把行切列切说反，或每层都报一次 a
 
 ## 通信次数与 Attention 同构
 
-一套 MLP 前向通常一次跨 TP 通信（输出上的 reduce），不是每个 GEMM 都 all-gather。Attention 是同一套路：$QKV$ 列切、$O$ 行切，输出再 reduce。面试若被追 SwiGLU：gate 与 up 都列切，SiLU 在分片隐层上局部做，再点乘，然后进行切的 down。不要把 ZeRO 的参数 gather 说成 TP 通信——那是另一套。veRL 用 Megatron 当 actor 时，**训练 TP** 和 **vLLM TP** 不必相等，差集靠 HybridEngine reshard；先讲清 MLP 前向，再提 reshard，不要一上来画 3D 并行。把「列切 / 行切」画成 $x$ 完整、$h'$ 分片、$y$ 再还原，比背算子名更不容易说反。
+一套 MLP 前向通常一次跨 TP 通信（输出上的 reduce），不是每个 GEMM 都 all-gather。Attention 是同一套路：$QKV$ 列切、$O$ 行切，输出再 reduce。面试若被追 SwiGLU：gate 与 up 都列切，SiLU 在分片隐层上局部做，再点乘，然后进行切的 down。不要把 ZeRO 的参数 gather 说成 TP 通信，那是另一套。veRL 用 Megatron 当 actor 时，**训练 TP** 和 **vLLM TP** 不必相等，差集靠 HybridEngine reshard；先讲清 MLP 前向，再提 reshard，不要一上来画 3D 并行。把「列切 / 行切」画成 $x$ 完整、$h'$ 分片、$y$ 再还原，比背算子名更不容易说反。
 
 ## 追问
 

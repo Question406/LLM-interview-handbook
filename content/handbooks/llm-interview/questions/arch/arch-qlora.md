@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ QLoRA
     url: 'https://arxiv.org/abs/2305.14314'
     type: legacy-reference
 ---
 
-陷阱是把 QLoRA 说成「整个训练都是 INT4 算术」或「和 GPTQ 一样是推理量化」。核心节省来自冻结基座用 4-bit 存、不为 full base 保存 Adam 状态；前向通常仍把量化权重解到更高精度再乘激活。LoRA 更新仍是 $\Delta W=\frac{\alpha}{r}BA$，只是 $W$ 以 NF4 驻留。
+这块容易把 QLoRA 说成「整个训练都是 INT4 算术」或「和 GPTQ 一样是推理量化」。核心节省来自冻结基座用 4-bit 存、不为 full base 保存 Adam 状态；前向通常仍把量化权重解到更高精度再乘激活。LoRA 更新仍是 $\Delta W=\frac{\alpha}{r}BA$，只是 $W$ 以 NF4 驻留。
 
 ## NF4：按正态分位数摆 levels
 

@@ -4,7 +4,7 @@ section: alibaba
 order: 26
 level: S
 title: 淘天场景：把 Agent Demo 改造成支撑“双十一”级流量，最大挑战是什么？
-quick: 不是换更大模型，而是：限流与降级、缓存高频路径、异步化与削峰、状态外置、可观测与熔断、成本预算。先保证正确的关键路径可降级存活。
+quick: 不是换更大模型。我会先谈限流与降级、缓存高频路径、异步化与削峰、状态外置、可观测与熔断、成本预算。先保证正确的关键路径可降级存活。
 tags:
   - Alibaba
   - Agent
@@ -13,14 +13,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天 Agent 开发技术面
     url: 'https://www.nowcoder.com/feed/main/detail/4c8da8a740e64eb5827fb1b962928eda'
     type: legacy-reference
 ---
 
-陷阱是答「换更大模型 / 加更多 GPU」。把 Agent Demo 改造成双十一级流量，最大挑战是限流与降级、缓存高频路径、异步化与削峰、状态外置、可观测与熔断、成本预算。先保证正确的关键路径可降级存活。面试官听的是：你懂电商大流量下 AI 系统的工程约束。编排框架选型见 `ali-framework-choice`，工具链延迟见 `ali-latency-3tools`。
+这块容易直接答成「换更大模型 / 加更多 GPU」。把 Agent Demo 改造成双十一级流量，最大挑战是限流与降级、缓存高频路径、异步化与削峰、状态外置、可观测与熔断、成本预算。先保证正确的关键路径可降级存活。面试官听的是：你懂电商大流量下 AI 系统的工程约束。编排框架选型见 `ali-framework-choice`，工具链延迟见 `ali-latency-3tools`。
 
 ## 峰值约束：QPS、热点、下游抖动
 

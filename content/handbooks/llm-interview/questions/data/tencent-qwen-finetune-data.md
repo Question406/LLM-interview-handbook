@@ -5,8 +5,7 @@ order: 211
 level: A
 title: 腾讯混元：微调 Qwen 时数据怎么构造、清洗和配比？
 quick: >-
-  先定目标行为再采数据：指令、拒绝、工具、领域各一桶。清洗去重、去模板水、去泄漏评测。配比用小规模扫，看目标任务升的同时通用能力不塌。不要把爬来的对话原样当
-  SFT。
+  先定目标行为再采数据：指令、拒绝、工具、领域各一桶。清洗去重、去模板水、去泄漏评测。配比用小规模扫，看目标任务升的同时通用能力不塌。不要把爬来的对话原样当 SFT。
 tags:
   - Tencent
   - Hunyuan
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯-混元大模型面经-华5硕
     url: https://www.nowcoder.com/feed/main/detail/692fed73109e4d31915e46d34d27c762
@@ -28,7 +27,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“Qwen 微调的数据怎么构造、怎么清洗、怎么配比？”**
 
-陷阱是把爬来的对话原样当 SFT，或拍脑袋 $1:1$ 配比。先定 **目标行为**（领域问答、工具调用、拒答口径），再采数据；已经对齐得很好、只差检索的任务，先 RAG 不要先 SFT。流水线骨架见 `data-sft-pipeline`；SFT 之后为何接 RLHF 见 `tencent-hunyuan-why-sft-then-rlhf`。SFT 与 RL 不要混成同一份 jsonl。
+这块容易把爬来的对话原样当 SFT，或拍脑袋 $1:1$ 配比。先定 **目标行为**（领域问答、工具调用、拒答口径），再采数据；已经对齐得很好、只差检索的任务，先 RAG 不要先 SFT。流水线骨架见 `data-sft-pipeline`；SFT 之后为何接 RLHF 见 `tencent-hunyuan-why-sft-then-rlhf`。SFT 与 RL 不要混成同一份 jsonl。
 
 ## 构造与清洗
 

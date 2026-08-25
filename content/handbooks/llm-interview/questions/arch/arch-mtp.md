@@ -15,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeek-V3 / MTP
     url: 'https://arxiv.org/abs/2412.19437'
@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是把 MTP 说成「训练时一次看未来 $k$ 个 token，推理就自然一次吐 $k$ 个」。标准 next-token loss 只直接监督 $t+1$。MTP 增加多个未来位置的预测目标，让 hidden state 被要求携带更长程的可预测信息；其价值首先是训练信号，不是魔法式地改变自回归语义。推理若要用额外头当 draft，必须走 speculative verification，否则分布就变了。
+这块容易把 MTP 说成「训练时一次看未来 $k$ 个 token，推理就自然一次吐 $k$ 个」。标准 next-token loss 只直接监督 $t+1$。MTP 增加多个未来位置的预测目标，让 hidden state 被要求携带更长程的可预测信息；其价值首先是训练信号，不是魔法式地改变自回归语义。推理若要用额外头当 draft，必须走 speculative verification，否则分布就变了。
 
 ## 训练：多偏移监督，防泄漏
 
@@ -37,7 +37,7 @@ $$
 
 必须划清 teacher forcing 边界：未来 label 不能泄漏进主干输入。位置编码仍按真实下标走 RoPE，$R_m^\top R_n=R_{n-m}$，多头预测的是不同偏移，不是改相对位置定义。骨干可以是 MoE + SwiGLU，MTP 头通常更轻，避免把 $k$ 倍算力全压在主路径。
 
-## 推理：draft $\neq$ 直接采纳
+## 推理：draft 不能直接采纳
 
 若把 MTP 头当 draft，一次提出多个候选 token，再用目标模型并行验证：接受前缀直到第一次拒绝，拒绝处按目标分布重采样。目标分布由验证规则保证，不是「多吐几个就算加速」。系统收益取决于 draft 成本、acceptance rate、KV / 调度开销。候选差则只增加工作量。这和独立小模型做 speculative decoding 同一套验收，只是 draft 来自同源多头。
 

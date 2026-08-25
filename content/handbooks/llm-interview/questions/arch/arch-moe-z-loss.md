@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: ST-MoE
     url: https://arxiv.org/abs/2202.08906
@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-陷阱是把 z-loss 说成「又一种负载均衡」。面试官若追问「那和 $N\sum_i f_i P_i$ 有何不同」，答成同一件事就漏了。ST-MoE 把 **logits 幅度** 单独正则掉，因为 MoE 训练后期 router 分数容易涨到极大，softmax 变成 one-hot，FP16 下还溢出。
+这块容易把 z-loss 说成「又一种负载均衡」。面试官若追问「那和 $N\sum_i f_i P_i$ 有何不同」，答成同一件事就漏了。ST-MoE 把 logits 幅度单独正则掉，因为 MoE 训练后期 router 分数容易涨到极大，softmax 变成 one-hot，FP16 下还溢出。
 
 ## 公式
 
@@ -42,7 +42,7 @@ $$
 \mathcal{L}=\mathcal{L}_{\mathrm{LM}}+\lambda\mathcal{L}_{\mathrm{aux}}+\alpha_z\mathcal{L}_z.
 $$
 
-Sigmoid 门控没有单一的 $N$ 类分母，但仍可对 affinity logits 做幅度惩罚，或直接惩罚 $\|z\|_2^2$。V3 的无辅助方案管的是 **谁进 Top-$k$**，不替代 z-loss 的数值动机；两条可以同时不存在——Mixtral 粗粒度时两者都不开。
+Sigmoid 门控没有单一的 $N$ 类分母，但仍可对 affinity logits 做幅度惩罚，或直接惩罚 $\|z\|_2^2$。V3 的无辅助方案管的是谁进 Top-$k$，不替代 z-loss 的数值动机；两条可以同时不存在，Mixtral 粗粒度时两者都不开。
 
 ## 和 aux 拆开
 

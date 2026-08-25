@@ -13,14 +13,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
     type: legacy-reference
 ---
 
-陷阱是只报端到端「答得像」，或把 RAG 说成换 embedding 就能消幻觉。RAG 用检索证据约束生成，降低过时与幻觉；生成器要在证据上综合，无证据则拒答。评估必须拆开检索、生成、端到端，并做失败归因。知识过期快、必须可引用时，RAG 比继续 SFT 更合适；常识闲聊上 RAG 只增加延迟。和微调怎么选见 `fund-rag-ft`，和 Skill / Memory 别混库见 `ali-skill-memory-rag`。
+这块容易直接答成只报端到端「答得像」，或把 RAG 说成换 embedding 就能消幻觉。RAG 用检索证据约束生成，降低过时与幻觉；生成器要在证据上综合，无证据则拒答。评估必须拆开检索、生成、端到端，并做失败归因。知识过期快、必须可引用时，RAG 比继续 SFT 更合适；常识闲聊上 RAG 只增加延迟。和微调怎么选见 `fund-rag-ft`，和 Skill / Memory 别混库见 `ali-skill-memory-rag`。
 
 ## RAG 约束的是证据，不是文采
 

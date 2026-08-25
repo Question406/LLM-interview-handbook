@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Approximating KL Divergence
     url: http://joschu.net/blog/kl-approx.html
@@ -28,7 +28,7 @@ sources:
     type: secondary
 ---
 
-蚂蚁一面原话：**「GRPO 的 KL 和 PPO 的 KL 区别？K1 K2 K3 估计区别？」** 先把符号钉死，再把「无偏」两个字拆开。估的是反向
+蚂蚁一面原话：**「GRPO 的 KL 和 PPO 的 KL 区别？K1 K2 K3 估计区别？」** 我会先把符号钉死，再把「无偏」两个字拆开。估的是反向
 
 $$
 D_{\mathrm{KL}}(q\|p)=\mathbb{E}_{x\sim q}\Big[\log\frac{q(x)}{p(x)}\Big],
@@ -68,7 +68,7 @@ $$
 
 GRPO 论文把 $\beta k_3$ **当成 loss 一项**加在策略目标上。$k_3$ 作为 **标量** 仍无偏估计 KL，日志比 $k_1$ 稳。但 $r=\pi_{\mathrm{ref}}/\pi_\theta$ 依赖 $\theta$：若对 $k_3(\theta)$ 直接反传，链式法则多出 $\partial k_3/\partial r\cdot\partial r/\partial\theta$，这条梯度 **一般不是**「$\nabla_\theta D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 的 score-function 形式」。Off-policy 复用旧轨迹时，若再不乘 $\pi_\theta/\pi_{\mathrm{old}}$，连期望都偏。
 
-因此面试说「$k_3$ 无偏所以一定对」会被追问：无偏的是 **标量估计**，不是 **参数梯度**。要梯度对齐反向 KL，应 stop-grad 估计量、把它当 reward shaping，或显式写出 $\mathbb{E}_q[\nabla\log\pi\,(\log q-\log p)]$ 并配 IS。要的是稳的监控数字，用 $k_3$ 或 $k_2$ 记录即可，不必反传。
+因此说「$k_3$ 无偏所以一定对」会被追问：无偏的是 **标量估计**，不是 **参数梯度**。要梯度对齐反向 KL，应 stop-grad 估计量、把它当 reward shaping，或显式写出 $\mathbb{E}_q[\nabla\log\pi\,(\log q-\log p)]$ 并配 IS。要的是稳的监控数字，用 $k_3$ 或 $k_2$ 记录即可，不必反传。
 
 ## 3. 和「两种 KL」不要搅在一起
 

@@ -13,14 +13,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘宝闪购 Agent 算法一面
     url: 'https://www.nowcoder.com/discuss/879393838081597440'
     type: legacy-reference
 ---
 
-陷阱是把 STOP_CONDITION 只写在 prompt，用户一催，模型就直接调不可逆 API。闪购履约、改地址、取消订单、赔付等错了有资损的动作，Human-in-the-Loop 必须在编排层强制。关键 tool 前插入确认；低置信暂停；工具分级加熔断；沙箱与生产隔离；结构化审计。指令里写清停止条件，并在代码层执行。权限分级总则见 `ali-guardrail`。
+这块容易直接答成把 STOP_CONDITION 只写在 prompt。用户一催，模型就直接调不可逆 API。闪购履约、改地址、取消订单、赔付等错了有资损的动作，Human-in-the-Loop 必须在编排层强制。关键 tool 前插入确认；低置信暂停；工具分级加熔断；沙箱与生产隔离；结构化审计。指令里写清停止条件，并在代码层执行。权限分级总则见 `ali-guardrail`。
 
 ## 三级权限 + 熔断，确认不能被注入跳过
 

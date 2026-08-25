@@ -5,8 +5,7 @@ order: 104
 level: A
 title: 拼多多大模型算法：SFT 数据怎样避免模板化，并做 train / test 去重？
 quick: >-
-  先按意图、约束、领域、表达方式和答案策略控制采样，不把同一模板的改写当多样性；去重同时做 lexical、semantic 和 split
-  leakage 检查，并人工核验“相似但需要保留”的 hard case。最终看 held-out 业务任务，不只看去重率。
+  先按意图、约束、领域、表达方式和答案策略控制采样，不把同一模板的改写当多样性；去重同时做 lexical、semantic 和 split leakage 检查，并人工核验「相似但需要保留」的 hard case。最终看 held-out 业务任务，不只看去重率。
 tags:
   - PDD
   - SFT Data
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 拼多多日常实习 大模型算法一面分享（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/ba50ad3b3777443da540fcd9cfaf7377
@@ -43,7 +42,7 @@ split 前做 exact / normalized match、n-gram / MinHash（`data-minhash`），�
 
 对照：未去重、只 lexical、lexical+semantic、再加人工 hard case。看 holdout、换模板鲁棒、新 query slice。只去重率升、新鲜 slice 不升，说明你在删多样性或评测仍泄漏。
 
-避免模板化要在采样时就卡配额：每个 intent × 输出 schema 设上限，超额的改写进「表达池」而不是「新样本池」。业务贴近看的是真实日志里的约束和失败修复，不是把后台字段名换成人话重复一百遍。train/test 去重报告给面试官看两张图就够：跨 split 最近邻相似度直方图，以及按模板族的 holdout——某族接近满分、换皮为零，就是泄漏或背模板。一面两问的收口：多样性来自决策路径覆盖，评测可信来自跨 split 指纹；去重率只是过程指标。
+避免模板化要在采样时就卡配额：每个 intent × 输出 schema 设上限，超额的改写进「表达池」而不是「新样本池」。业务贴近看的是真实日志里的约束和失败修复，不是把后台字段名换成人话重复一百遍。train/test 去重报告给面试官看两张图就够：跨 split 最近邻相似度直方图，以及按模板族的 holdout。某族接近满分、换皮为零，就是泄漏或背模板。一面两问我会这样收：多样性来自决策路径覆盖，评测可信来自跨 split 指纹；去重率只是过程指标。
 
 ## 追问
 

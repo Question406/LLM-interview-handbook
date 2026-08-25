@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 腾讯-混元大模型面经-华5硕
     url: https://www.nowcoder.com/feed/main/detail/692fed73109e4d31915e46d34d27c762
@@ -34,7 +34,7 @@ LeetCode 3。和通用卡重复度高，但这是混元原帖原题，准备时�
 
 右指针 $R$ 从头扫到尾。用哈希记下每个字符上次出现的下标。若 `s[R]` 上次出现位置 $\ge L$，说明当前窗口里撞车，把 $L$ 收到 `last[s[R]]+1`。然后更新 `last` 和答案 `R-L+1`。
 
-不要每次发现重复就从 $L$ 一位一位挪并删哈希——能过，但要讲清「直接跳」仍然正确：被跳过的字符即使还留在哈希里，也会因为下标 $\lt L$ 被忽略。
+不要每次发现重复就从 $L$ 一位一位挪并删哈希，能过，但要讲清「直接跳」仍然正确：被跳过的字符即使还留在哈希里，也会因为下标 $\lt L$ 被忽略。
 
 ## 参考代码
 

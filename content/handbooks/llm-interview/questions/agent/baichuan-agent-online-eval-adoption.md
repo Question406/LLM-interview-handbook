@@ -5,8 +5,8 @@ order: 114
 level: A
 title: 百川智能：Agent 上线后如何评估，使用量应怎样解读？
 quick: >-
-  将线上评估拆成用户价值、任务可靠性、成本/性能和风险：按 cohort 测 task success、用户接受/改写、留存、
-  tool error、latency、token 与安全事件。使用量只是一项 adoption 信号，必须与分母、任务结构和实验组比较，不能把请求数当效果。
+  线上评估拆成用户价值、任务可靠性、成本性能和风险：按 cohort 测 task success、用户接受或改写、留存、tool
+  error、latency、token 与安全事件。使用量只是一项 adoption 信号，必须跟分母、任务结构和实验组一起比，别把请求数当效果。
 tags:
   - Baichuan
   - Agent Evaluation
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川智能大模型实习一面 压力好大（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530

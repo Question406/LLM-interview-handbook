@@ -5,8 +5,7 @@ order: 101
 level: S
 title: 字节 AI 数据技术：Function Call 有标准答案，为什么还要 Reward Model？
 quick: >-
-  能由 schema、执行结果或 business oracle 精确验证的部分优先用 rule-based reward：便宜、可审计、低噪声。Reward Model
-  只补规则覆盖不到的歧义、多目标质量与偏好；两者应分项组合，不能用 RM 替代本可验证的正确性。
+  schema、执行结果或 business oracle 能精确验证的部分，我优先用 rule-based reward：便宜、可审计、噪声低。Reward Model 只补规则盖不住的歧义、多目标质量和偏好。两者分项组合，不能用 RM 替代本可验证的正确性。
 tags:
   - ByteDance
   - Function Calling
@@ -15,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 4.28 字节 AI数据技术一面（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/8e812a2e2b824779bea596a90d7603e0?sourceSSR=enterprise
@@ -43,7 +42,7 @@ $$
 
 $\alpha$ 要小，且 $R_{\mathrm{RM}}$ 经校准（见 `data-reward-calibration`）。每项独立上报：规则分涨、RM 分涨、人评是否动。若 RM 与人工在边界 case 上不一致，回 rubric / 数据 / oracle，不把 RM 当真相。
 
-## 实验：消融 RM，而不是口号「都要」
+## 实验：消融 RM，别只说「都要」
 
 对照四条：仅规则；规则+未校准 RM；规则+校准 RM；仅 RM。预期：仅 RM 会在 schema 错误上给高分（hacking）；仅规则在「都对但啰嗦」上分不开；组合后 holdout 人评最好。报告 hacking 率（对规则失败却高 RM 分的比例）。Function Call 的封闭部分没有理由交给神经网络打分。
 

@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 148. 排序链表
     url: https://leetcode.cn/problems/sort-list/
@@ -34,7 +34,7 @@ sources:
 
 `slow` 走一步、`fast` 走两步；`fast` 从 `head.next` 出发，断开后左段更短或等长。空表或单结点直接返回。
 
-自底向上按 $1,2,4,\ldots$ 段长两两合并，可把递归栈去掉。面试先写自顶向下。
+自底向上按 $1,2,4,\ldots$ 段长两两合并，可把递归栈去掉。白板我先写自顶向下。
 
 ## 参考代码
 

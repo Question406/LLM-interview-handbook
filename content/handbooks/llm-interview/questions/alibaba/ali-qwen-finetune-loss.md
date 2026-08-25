@@ -15,7 +15,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-陷阱是「直接上 DPO / GRPO 微调 Qwen」或对整段对话算 CE。先定目标：指令遵循与工具协议用 SFT（只对 assistant / action token 计 loss）；偏好用 DPO；可验证目标用 GRPO / GSPO。阶段不要跳，数据与 mask 必须匹配部署时的 chat template 和 tool schema。阶段分工见 `ali-sft-then-posttrain`，对齐算法对比见 `ali-ppo-dpo-grpo-ask`。
+这块容易直接答成「直接上 DPO / GRPO 微调 Qwen」，或对整段对话算 CE。先定目标：指令遵循与工具协议用 SFT（只对 assistant / action token 计 loss）；偏好用 DPO；可验证目标用 GRPO / GSPO。阶段不要跳，数据与 mask 必须匹配部署时的 chat template 和 tool schema。阶段分工见 `ali-sft-then-posttrain`，对齐算法对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## 先定目标再选阶段
 

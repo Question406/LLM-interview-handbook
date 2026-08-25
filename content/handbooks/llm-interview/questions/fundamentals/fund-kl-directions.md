@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Kullback–Leibler divergence
     url: https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
@@ -41,7 +41,7 @@ $$
 - **正向。** 积分 / 求和跟着 $p$ 走。只要 $p(x)\gt 0$，哪怕只是一个小峰，若 $q(x)\approx 0$，则 $\log(p/q)\to+\infty$。模型不敢漏掉 $p$ 的任何 mode，宁可把质量摊开、变「糊」。这叫 mode-covering。SFT / 标准 KD 属于这类。
 - **反向。** 积分跟着 $q$ 走。$p$ 有、但 $q$ 根本不去的那些峰，**根本不进期望**。模型可以锁住一个主峰。但若 $q$ 跑到 $p\approx 0$ 的地方，$\log(q/p)$ 一样炸。这叫 mode-seeking。RLHF 对 $\pi_{\mathrm{ref}}$ 的惩罚、OPD（学生自己采样）属于这类。
 
-口诀：**看 token 从谁采样，不是看公式里谁写在左边。**
+我会记一句：看 token 从谁采样，不是看公式里谁写在左边。
 
 ## 三格数值（建议白板算一遍）
 

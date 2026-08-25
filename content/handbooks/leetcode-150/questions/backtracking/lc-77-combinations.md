@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 77. 组合
     url: https://leetcode.cn/problems/combinations/
@@ -31,7 +31,7 @@ sources:
 
 回溯维护起点 `start`：本层枚举 $i\in[start,n]$，选 $i$ 后下一层从 $i+1$ 开始，天然升序、不重复。路径长度到 $k$ 就收。
 
-剪枝：还要 $need$ 个数，则 $i$ 最大只能到 $n-need+1$，后面凑不齐。不要用全排列再排序去重。面试对比 46：「组合下标只往前，排列用 `used`」。
+剪枝：还要 $need$ 个数，则 $i$ 最大只能到 $n-need+1$，后面凑不齐。不要用全排列再排序去重。白板我会对比 46：组合下标只往前，排列用 `used`。
 
 ## 参考代码
 

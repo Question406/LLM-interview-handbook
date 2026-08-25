@@ -15,14 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: slime PD 分离
     url: https://thudm.github.io/slime/zh/advanced/pd-disaggregation.html
     type: primary
 ---
 
-陷阱是短 GSM8K、卡很少也上 PD，或把 PD 说成 Megatron 训练环的功能。PD 改的是 **SGLang rollout 池**：prefill 吃吞吐、decode 吃 KV / 低 TP。训练图不动。短单轮、colocate 已经在抢显存时，拆开会多一份 KV 传输和调度税，墙钟更差。见 `sys-chunk-pd`、`sys-prefill-decode`。
+这块容易短 GSM8K、卡很少也上 PD，或把 PD 说成 Megatron 训练环的功能。PD 改的是 **SGLang rollout 池**：prefill 吃吞吐、decode 吃 KV / 低 TP。训练图不动。短单轮、colocate 已经在抢显存时，拆开会多一份 KV 传输和调度税，墙钟更差。见 `sys-chunk-pd`、`sys-prefill-decode`。
 
 ## 什么时候才拆
 

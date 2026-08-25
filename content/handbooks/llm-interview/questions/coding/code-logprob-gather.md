@@ -16,7 +16,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: TRL SFT Trainer
     url: https://huggingface.co/docs/trl/en/sft_trainer
@@ -26,11 +26,11 @@ sources:
     type: primary
 ---
 
-DPO 要 sequence logp，GRPO / PPO 要 token logp 再乘优势，SFT 的 token CE 是同一条索引链。本题把原语写对；完整 DPO 见 `code-dpo`，组优势见 `code-grpo`，mask 语义见 `sys-rl-response-mask`。采样引擎上的 logp 不能直接进 ratio，见 `meituan-verl-recompute-logprob`。陷阱有两处：**不 shift**（用 $t$ 的 logits 去打 $t$ 自己），以及 **prompt 没 mask 掉**。
+DPO 要 sequence logp，GRPO / PPO 要 token logp 再乘优势，SFT 的 token CE 是同一条索引链。本题把原语写对；完整 DPO 见 `code-dpo`，组优势见 `code-grpo`，mask 语义见 `sys-rl-response-mask`。采样引擎上的 logp 不能直接进 ratio，见 `meituan-verl-recompute-logprob`。这块容易栽在两处：不 shift（用 $t$ 的 logits 去打 $t$ 自己），以及 prompt 没 mask 掉。
 
 ## 对齐：shift 和 mask
 
-自回归约定：位置 $t$ 的隐状态只看见 $1,\ldots,t$，logits 预测的是 **下一个** token。因此
+自回归约定：位置 $t$ 的隐状态只看见 $1,\ldots,t$，logits 预测的是下一个 token。因此
 
 $$
 \log\pi(a_{t+1}\mid x_{\le t})=\mathrm{logsoftmax}(\ell_t)_{a_{t+1}}.
@@ -38,7 +38,7 @@ $$
 
 实现上取 `logits[:, :-1]` 对 `token_ids[:, 1:]`。两边都 shift 才对齐；只 shift 一边会把监督挪错一格，看起来 loss 在降，学的是「预测当前已经看见的 token」。
 
-`response_mask` 与 shift 后的序列同形：prompt 位 $0$，模型写出的 completion（含作为停止动作的 EOS）为 $1$，EOS 之后的 pad 为 $0$。Agent 里 Thought / Action 为 $1$，工具返回为 $0$。attention mask 必须看见 prompt，**loss mask 不能更新 prompt**，两套从「哪一格开始为 1」分开。用 attention mask 直接当 loss mask，是把题干当动作训。
+`response_mask` 与 shift 后的序列同形：prompt 位 $0$，模型写出的 completion（含作为停止动作的 EOS）为 $1$，EOS 之后的 pad 为 $0$。Agent 里 Thought / Action 为 $1$，工具返回为 $0$。attention mask 必须看见 prompt，loss mask 不能更新 prompt，两套从「哪一格开始为 1」分开。用 attention mask 直接当 loss mask，是把题干当动作训。
 
 数值用 `log_softmax`，不要 `log(softmax(...))`。FP16 / BF16 下先 `float()` 再 softmax 更稳，logp 仍可乘回原 dtype。
 
@@ -60,7 +60,7 @@ def token_logprobs(logits, token_ids, response_mask):
     return tok * mask
 ```
 
-`gather` 的 `index` 必须和 `logp` 同维数：在 vocab 维上取出目标 id 的那一条，不要写成 `logp[:, :, token_ids]` 这类广播。返回值 `[B, T-1]`，prompt 位已经是 $0$。序列 logp 为 `tok.sum(-1)`（DPO 经典）；token-mean 则先 `tok.sum() / mask.sum().clamp_min(1)`（GRPO 常见）。平均方式见损失聚合卡，**先保证 mask 对**。
+`gather` 的 `index` 必须和 `logp` 同维数：在 vocab 维上取出目标 id 的那一条，不要写成 `logp[:, :, token_ids]` 这类广播。返回值 `[B, T-1]`，prompt 位已经是 $0$。序列 logp 为 `tok.sum(-1)`（DPO 经典）；token-mean 则先 `tok.sum() / mask.sum().clamp_min(1)`（GRPO 常见）。平均方式见损失聚合卡，先保证 mask 对。
 
 ## 接到 DPO / GRPO
 
@@ -72,7 +72,7 @@ $$
 
 GRPO 把 `token_logprobs` 当 $\log\pi_\theta$，与 `old` 相减得 ratio，再乘组优势和同一 mask。old / new / ref 都必须是训练图上的 gather 结果，不要混进 vLLM 采样 logp。
 
-现场自检：decode `mask==1` 的片段，人眼应是助手回复；`mask.sum()` 应等于 response 长度（shift 后差 1 要心里有数）。对不上先修数据，再调 $\beta$。HF CausalLM 的 `logits` 与 `input_ids` 同长，**不会在模型内部替你乘 response mask**；`labels` 里的 `-100` 只影响框架自带的 CE，自己写 DPO / GRPO 必须显式 gather。chat template 的 special token 算谁的：系统 / 用户轮次是 prompt，模型这一轮发出的才是 response。
+现场自检：decode `mask==1` 的片段，人眼应是助手回复；`mask.sum()` 应等于 response 长度（shift 后差 1 要心里有数）。对不上先修数据，再调 $\beta$。HF CausalLM 的 `logits` 与 `input_ids` 同长，不会在模型内部替你乘 response mask；`labels` 里的 `-100` 只影响框架自带的 CE，自己写 DPO / GRPO 必须显式 gather。chat template 的 special token 算谁的：系统 / 用户轮次是 prompt，模型这一轮发出的才是 response。
 
 ## 追问
 

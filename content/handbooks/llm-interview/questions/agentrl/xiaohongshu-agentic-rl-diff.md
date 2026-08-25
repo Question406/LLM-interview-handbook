@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 小红书大模型实习一面
     url: https://www.nowcoder.com/feed/main/detail/3f96f6fe7ed44c3b8c49cea3455d38a4
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“agentic RL 和普通的 RL 比最大的不同在哪里？”**
 
-若「普通 RL」指当前常见的 LLM outcome RL（对一条 completion 给最终分），最大不同不是「多了几个 function call」，而是状态与动作不再只是文本前缀和下一个 token，而是 **带副作用的环境交互**。陷阱是把「给 chatbot 加了工具再跑 GRPO」直接叫 Agentic RL。小红书这面要听环境转移与轨迹级优化。同面 credit 见 `xiaohongshu-credit-assignment`。
+若「普通 RL」指当前常见的 LLM outcome RL（对一条 completion 给最终分），最大不同不是「多了几个 function call」，而是状态与动作不再只是文本前缀和下一个 token，而是带副作用的环境交互。这块容易直接答成把「给 chatbot 加了工具再跑 GRPO」直接叫 Agentic RL。小红书这面要听环境转移与轨迹级优化。同面 credit 见 `xiaohongshu-credit-assignment`。
 
 ## 状态、动作、奖励都换了定义
 
@@ -46,13 +46,13 @@ sources:
 
 ## 算法后果：信用、非平稳、off-policy
 
-普通 LLM RL 的方差已经不小；Agent 还要把一个滞后 $R$ 分到几十步工具上，还要处理工具版本和页面漂移。On-policy 假设 $p(s_0)$ 固定，环境不 reset 就破，见 `arl-environment-reset`。旧轨迹的网页可能已经变了，不能当当前策略梯度，见 `arl-offpolicy-reuse`。所以 Agentic RL 的「难」一半在算法、一半在环境工程——这正是和数学 outcome RL 的分界。数学题的世界是表达式，换一条题面就独立；Agent 的世界会留下订单和权限，reset 与 checkpoint 都成为算法假设。
+普通 LLM RL 的方差已经不小；Agent 还要把一个滞后 $R$ 分到几十步工具上，还要处理工具版本和页面漂移。On-policy 假设 $p(s_0)$ 固定，环境不 reset 就破，见 `arl-environment-reset`。旧轨迹的网页可能已经变了，不能当当前策略梯度，见 `arl-offpolicy-reuse`。所以 Agentic RL 的「难」一半在算法、一半在环境工程。这正是和数学 outcome RL 的分界。数学题的世界是表达式，换一条题面就独立；Agent 的世界会留下订单和权限，reset 与 checkpoint 都成为算法假设。
 
-面试收口：普通 LLM RL 优化单轮 token 序列；Agentic RL 优化带副作用的交互轨迹。核心难点是部分可观测、稀疏滞后奖励、不可逆探索和可回放环境，而不是多包一层 function calling。
+最后我会补一句：普通 LLM RL 优化单轮 token 序列；Agentic RL 优化带副作用的交互轨迹。核心难点是部分可观测、稀疏滞后奖励、不可逆探索和可回放环境，而不是多包一层 function calling。
 
 ## 追问
 
 - **有 function calling 就是 Agentic RL 吗？** 不是。关键是环境转移与轨迹级优化。单轮选一个 tool 再生成答案，仍更接近文本 RL。
 - **和传统控制 RL？** 公式同类，但动作是语言 + 工具，观测是文本 / 多模态，转移常不可微、不可逆。工程假设更脆。
-- **为什么 credit 更难？** 终局 $0/1$ 要分到多步、多人、多次通信。见 `xiaohongshu-credit-assignment`、`arl-multi-credit`。
+- **为什么 credit 更难？** 终局 $0/1$ 要分到多步、多人、多次通信。见 `xiaohongshu-credit-assignment`、`arl-multi-credit`。过程奖励和 GiGPO 怎么选，见 `arl-process-vs-gigpo`。
 - **评测为什么不能沿用单轮？** 单轮正确率看不见越权、空转和不可恢复失败。必须报轨迹质量与安全。

@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 快手大模型算法二面-实习面经
     url: https://www.nowcoder.com/feed/main/detail/ca3fe5949e0b4ddbb7807e43380ab7a6
@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“讲一下 LoRA ，两个权重矩阵一般怎么初始化，能都全0吗”**
 
-陷阱是只记得「一边随机一边为零」，说不清为什么两边不能都零、也不能都随机。LoRA 把更新写成
+这块容易只记得「一边随机一边为零」，说不清为什么两边不能都零、也不能都随机。LoRA 把更新写成
 
 $$
 W'=W+\frac{\alpha}{r}BA,
@@ -49,7 +49,7 @@ $$
 
 ## 为什么不能都全零
 
-$B=0,A=0$ 时前向是 $0$。链式法则里 $\partial\mathcal{L}/\partial A$ 含 $B$ 的因子，$\partial\mathcal{L}/\partial B$ 含 $A$ 的因子，两侧都零则梯度也常为零，适配器冻死，等于没训。这不是「实现 bug」，是乘积结构的死区。少数变体用正交或谱初始化，但仍会保证起步 $\Delta W\approx 0$。
+$B=0,A=0$ 时前向是 $0$。链式法则里 $\partial\mathcal{L}/\partial A$ 含 $B$ 的因子，$\partial\mathcal{L}/\partial B$ 含 $A$ 的因子，两侧都零则梯度也常为零，适配器冻死，等于没训。这不是实现 bug，是乘积结构的死区。少数变体用正交或谱初始化，但仍会保证起步 $\Delta W\approx 0$。
 
 合并权重后应做一次和未合并推理的数值对齐；$\alpha/r$、重复 merge、dtype 是合并爆炸的常见原因，见 `meituan-lora-not-after-ln`。
 

@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Direct Preference Optimization
     url: https://arxiv.org/abs/2305.18290
@@ -38,7 +38,7 @@ $$
 D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})=\mathbb{E}_{y\sim\pi_\theta}\big[\log\pi_\theta(y)-\log\pi_{\mathrm{ref}}(y)\big].
 $$
 
-$\pi_\theta$ 在 $\pi_{\mathrm{ref}}\approx 0$ 处放质量，$\log(\pi_\theta/\pi_{\mathrm{ref}})$ 爆炸。这正是防胡话、防 reward hacking 的护栏：参考几乎不会说的续写，代价极高。反过来，$\pi_{\mathrm{ref}}$ 有、$\pi_\theta$ 不去的峰几乎不进期望，所以 **允许遗忘**——SFT 里残留的有害或啰嗦模式可以丢掉。这是 mode-seeking，不是 bug。Reward hacking 经常表现为跑到参考低概率、proxy 高分的区域；反向 KL 正好打在这条路上。正向 KL 打的是「漏掉参考的峰」，对 hacking 几乎不构成直接惩罚。
+$\pi_\theta$ 在 $\pi_{\mathrm{ref}}\approx 0$ 处放质量，$\log(\pi_\theta/\pi_{\mathrm{ref}})$ 爆炸。这正是防胡话、防 reward hacking 的护栏：参考几乎不会说的续写，代价极高。反过来，$\pi_{\mathrm{ref}}$ 有、$\pi_\theta$ 不去的峰几乎不进期望，所以 **允许遗忘**，SFT 里残留的有害或啰嗦模式可以丢掉。这是 mode-seeking，不是 bug。Reward hacking 经常表现为跑到参考低概率、proxy 高分的区域；反向 KL 正好打在这条路上。正向 KL 打的是「漏掉参考的峰」，对 hacking 几乎不构成直接惩罚。
 
 InstructGPT / PPO-RLHF 的目标可以写成最大化
 
@@ -68,13 +68,13 @@ $$
 \pi_\theta(y\mid x)\propto\pi_{\mathrm{ref}}(y\mid x)\exp\big(r(x,y)/\beta\big),
 $$
 
-于是隐式奖励 $r=\beta\log(\pi_\theta/\pi_{\mathrm{ref}})+Z(x)$。偏好的 Bradley–Terry 模型代入后，$Z$ 消掉，得到 $\sigma$ 间隔里的 $\beta\log(\pi_\theta/\pi_{\mathrm{ref}})$。把 KL 方向写反，最优策略的闭式不再是「参考乘上 exp 奖励」，后面整段换元都对不上，见 `pt-dpo-derive`。现场若只能背 DPO loss、说不清这一步比例关系，方向问题其实没答完。
+于是隐式奖励 $r=\beta\log(\pi_\theta/\pi_{\mathrm{ref}})+Z(x)$。偏好的 Bradley-Terry 模型代入后，$Z$ 消掉，得到 $\sigma$ 间隔里的 $\beta\log(\pi_\theta/\pi_{\mathrm{ref}})$。把 KL 方向写反，最优策略的闭式不再是「参考乘上 exp 奖励」，后面整段换元都对不上，见 `pt-dpo-derive`。现场若只能背 DPO loss、说不清这一步比例关系，方向问题其实没答完。
 
 同一方向在探索场景里会变成缺点：稀有可验证正确路径若落在 $\pi_{\mathrm{ref}}$ 长尾，reverse KL 可能把它们当离群点掐掉，见 `pt-kl-direction-and-exploration`。对齐选反向是因为我们 **更怕跑出参考支撑**，不是因为反向在一切任务上都优于正向。
 
 ## 用两个峰把方向讲死
 
-假设参考在「有用回答」和「有害但 SFT 里见过」两个峰上都有质量。对齐希望 $\pi_\theta$ 只留有用峰。反向 KL 允许不覆盖有害峰——那些样本不从 $\pi_\theta$ 里抽出来，就不进期望。正向 KL 会因为漏掉有害峰而被罚，策略只好继续生成它们。这就是「收窄 vs 覆盖」在对齐里的具体含义。白板上一张三格表就够：完美拟合、只锁有用峰、摊均匀。只锁有用峰时反向 KL 较小、正向 KL 很大；摊均匀则反过来。和 `fund-kl-directions` 那张表同一套直觉，只是把 $p$ 换成 $\pi_{\mathrm{ref}}$、$q$ 换成 $\pi_\theta$。面试官若追问「那探索怎么办」，承认反向 KL 与长尾成功路径冲突，转到 `pt-kl-direction-and-exploration`，不要临时把方向改口。
+假设参考在「有用回答」和「有害但 SFT 里见过」两个峰上都有质量。对齐希望 $\pi_\theta$ 只留有用峰。反向 KL 允许不覆盖有害峰，那些样本不从 $\pi_\theta$ 里抽出来，就不进期望。正向 KL 会因为漏掉有害峰而被罚，策略只好继续生成它们。这就是「收窄 vs 覆盖」在对齐里的具体含义。白板上一张三格表就够：完美拟合、只锁有用峰、摊均匀。只锁有用峰时反向 KL 较小、正向 KL 很大；摊均匀则反过来。和 `fund-kl-directions` 那张表同一套直觉，只是把 $p$ 换成 $\pi_{\mathrm{ref}}$、$q$ 换成 $\pi_\theta$。面试官若追问「那探索怎么办」，承认反向 KL 与长尾成功路径冲突，转到 `pt-kl-direction-and-exploration`，不要临时把方向改口。
 
 工程上还有一条：PPO / GRPO 的 rollout 本来就从 $\pi_\theta$ 采样，反向 KL 的蒙特卡洛估计是零额外采样；正向 KL 要另从 $\pi_{\mathrm{ref}}$ 采样，管道要加一条参考生成，和现有 on-policy 循环不合。所以「为什么用反向」同时有 **目标** 和 **实现** 两个理由，缺一个都答不完。实现上 token 级 KL 常用 $\log\pi_\theta-\log\pi_{\mathrm{ref}}$ 在响应 mask 上平均，和 DPO 的 $\beta\log(\pi_\theta/\pi_{\mathrm{ref}})$ 是同一块积木。Mask 必须只盖生成段：把 prompt 算进 KL，会把「读懂问题」当偏离来罚，格式和对齐都会被带偏。这和 `sys-rl-response-mask` 是同一类账本问题。
 

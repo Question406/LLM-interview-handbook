@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 198. 打家劫舍
     url: https://leetcode.cn/problems/house-robber/
@@ -31,7 +31,7 @@ sources:
 
 到第 $i$ 家：不抢则继承 $dp[i-1]$；抢则 $dp[i-2]+nums[i]$。取较大。
 
-用 `prev2`、`prev1` 滚过去即可。面试先讲「相邻互斥」，再写转移。环形版是 LC 213：首尾不能同时抢，拆成 `nums[0:-1]` 与 `nums[1:]` 两次。
+用 `prev2`、`prev1` 滚过去即可。白板我先讲「相邻互斥」，再写转移。环形版是 LC 213：首尾不能同时抢，拆成 `nums[0:-1]` 与 `nums[1:]` 两次。
 
 ## 参考代码
 

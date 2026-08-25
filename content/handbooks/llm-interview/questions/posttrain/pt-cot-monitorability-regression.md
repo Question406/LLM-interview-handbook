@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: OpenAI — Evaluating Chain-of-Thought Monitorability
     url: https://openai.com/index/evaluating-chain-of-thought-monitorability/
@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-可监控性（monitorability）不是「CoT 看起来像人话」，而是：外部监控器看了思考过程之后，比只看最终答案 / 工具动作，能多抓到多少真实风险。强化学习 reasoning 之后，主任务准确率常涨，但 CoT 可能变短、编码化、与最终 action 脱钩，甚至学会对监控器说一套、做事另一套。面试陷阱是把「更会推理」直接等同于「更好审计」。应把它做成和 `pt-safety-capability-regression` 并列的发布门槛，而不是上线后的解释。
+可监控性（monitorability）不是「CoT 看起来像人话」，而是：外部监控器看了思考过程之后，比只看最终答案 / 工具动作，能多抓到多少真实风险。强化学习 reasoning 之后，主任务准确率常涨，但 CoT 可能变短、编码化、与最终 action 脱钩，甚至学会对监控器说一套、做事另一套。这块容易把「更会推理」直接等同于「更好审计」。应把它做成和 `pt-safety-capability-regression` 并列的发布门槛，而不是上线后的解释。
 
 ## 先定义任务，再定义监控器
 
@@ -46,17 +46,17 @@ $$
 
 只凭「看起来有解释」会把 unfaithful CoT 判成透明。对抗集要随 post-training 配方一起回归，而不是一次性定性研究。还要测「监控器只看前 $B$ token」：强化学习后模型若把关键意图往后挪，固定预算下的 $\Delta_{\mathrm{mon}}$ 会假跌或假涨。
 
-具体任务示例：reward hacking 题里，模型在 CoT 里写「按评分标准诚实作答」，实际输出刷分格式；工具题里，CoT 说「只读文件」，函数调用却带了写路径。outcome monitor 可能漏，CoT monitor 理应能抓——若 post-training 后反而抓不住，就是回归。
+具体任务示例：reward hacking 题里，模型在 CoT 里写「按评分标准诚实作答」，实际输出刷分格式；工具题里，CoT 说「只读文件」，函数调用却带了写路径。outcome monitor 可能漏，CoT monitor 理应能抓。若 post-training 后反而抓不住，就是回归。
 
 ## 发布门槛怎么设
 
-比较的是同一监控预算下的 $\Delta_{\mathrm{mon}}$、漏检的高严重度 case 数、以及 CoT–action 一致性（计划中的工具与真实调用是否相符）。若主任务质量上升而 CoT 对 monitor 的边际信息下降，应停发：重做数据、reward 或工具权限，而不是事后写「模型更强所以更难监督」。必要时限制 hidden reasoning、强制把关键决策写进可检查字段，或把高风险工具从「想完再调」改成「先申报再执行」。
+比较的是同一监控预算下的 $\Delta_{\mathrm{mon}}$、漏检的高严重度 case 数、以及 CoT-action 一致性（计划中的工具与真实调用是否相符）。若主任务质量上升而 CoT 对 monitor 的边际信息下降，应停发：重做数据、reward 或工具权限，而不是事后写「模型更强所以更难监督」。必要时限制 hidden reasoning、强制把关键决策写进可检查字段，或把高风险工具从「想完再调」改成「先申报再执行」。
 
 这和 `pt-reasoning-token-cost-frontier` 不同：那边惩罚无效 thinking 是为了省 token；这边即使 CoT 变短、变「干净」，只要监控器更盲，也算失败。和 `pt-safety-capability-regression` 一起看：安全分不掉但 monitorability 掉，仍是发布失败，因为事故将无法事后审计。
 
 白板结论：monitorability 是差分量，不是「CoT 好不好看」。没有 outcome 对照、没有对抗集、没有预算锁，都不能叫评测。
 
-白板最小实验：同一风险标签集、同一监控预算，报 $\Delta_{\mathrm{mon}}$、高严重度漏检、CoT–action 不一致率；主任务分只作对照，不作放行条件。
+白板最小实验：同一风险标签集、同一监控预算，报 $\Delta_{\mathrm{mon}}$、高严重度漏检、CoT-action 不一致率；主任务分只作对照，不作放行条件。
 
 ## 追问
 

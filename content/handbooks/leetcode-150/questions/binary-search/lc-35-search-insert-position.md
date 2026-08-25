@@ -13,7 +13,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 35. 搜索插入位置
     url: https://leetcode.cn/problems/search-insert-position/
@@ -31,7 +31,7 @@ sources:
 
 下界二分。`lo, hi = 0, n`，半开区间。`nums[mid] < target` 时 `lo = mid + 1`，否则 `hi = mid`。结束时 `lo` 就是第一个不小于 `target` 的下标。
 
-写成闭区间也行，但插入位置在尾部时要单独处理 `hi` 出界。面试固定一种区间约定，不要混。
+写成闭区间也行，但插入位置在尾部时要单独处理 `hi` 出界。白板我会固定一种区间约定，不要混。
 
 ## 参考代码
 
@@ -97,4 +97,3 @@ def upper_bound(nums, target):
             hi = mid
     return lo
 ```
-

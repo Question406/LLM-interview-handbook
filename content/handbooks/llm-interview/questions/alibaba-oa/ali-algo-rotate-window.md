@@ -5,7 +5,7 @@ order: 39
 level: A
 title: 阿里手撕：旋转数组查找和滑窗最大值各用什么结构？
 quick: >-
-  33 在有序的那一半上二分。239 用单调双端队列存下标，队头过期、队尾比当前小的弹出。
+  33 我会在有序的那一半上二分。239 用单调双端队列存下标，队头过期、队尾比当前小的弹出。
 tags:
   - Alibaba
   - 二分
@@ -13,7 +13,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 搜索旋转排序数组
     url: https://leetcode.cn/problems/search-in-rotated-sorted-array/

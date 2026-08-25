@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: Google SRE Workbook — Canarying Releases
     url: https://sre.google/workbook/canarying-releases/
     type: primary
 ---
 
-陷阱是只记录 model ID，把一次「模型升级」当成单变量发布。Agent 线上同时改 prompt、tool schema、retrieval index、policy 和 evaluator。回归时无法回答「是模型坏了还是 index 坏了」。每个组件要有不可变版本，请求和 trace 携带**组合版本**。回滚必须整组还原，而不是只把模型指针拨回去。
+这块容易只记录 model ID，把一次「模型升级」当成单变量发布。Agent 线上同时改 prompt、tool schema、retrieval index、policy 和 evaluator。回归时无法回答「是模型坏了还是 index 坏了」。每个组件要有不可变版本，请求和 trace 携带**组合版本**。回滚必须整组还原，而不是只把模型指针拨回去。
 
 ## 先版本化，再谈流量
 

@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-20
+updatedAt: 2026-08-21
 sources:
   - title: High-Dimensional Continuous Control Using Generalized Advantage Estimation
     url: https://arxiv.org/abs/1506.02438
@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-陷阱是把框架里的 `done` 一律当「没有下一状态」。很多实现一个 `done` 既表示任务成功/失败，又表示打到 `max_tokens`。两者对 $V(s')$ 的处理相反。手写递推见 `code-gae`；本题只钉 **偏倚方向**。
+这块容易把框架里的 `done` 一律当「没有下一状态」。很多实现一个 `done` 既表示任务成功/失败，又表示打到 `max_tokens`。两者对 $V(s')$ 的处理相反。手写递推见 `code-gae`；本题只钉 **偏倚方向**。
 
 ## Terminal：未来是 0，再 bootstrap 是正的幻觉
 
@@ -44,7 +44,7 @@ $$
 \hat G_t=\sum_{k=0}^{T-t-1}\gamma^k r_{t+k}
 $$
 
-缺少 $\gamma^{T-t}V(s_T)$，对仍有正期望回报的状态是 **系统性低估**（负偏）。长而尚未写完的正确推理会被当成「到这里为止就这点分」，策略更爱短答。这不是无偏 MC——无偏 MC 要求轨迹按任务定义走完，而不是按计算预算走完。
+缺少 $\gamma^{T-t}V(s_T)$，对仍有正期望回报的状态是 **系统性低估**（负偏）。长而尚未写完的正确推理会被当成「到这里为止就这点分」，策略更爱短答。这不是无偏 MC，无偏 MC 要求轨迹按任务定义走完，而不是按计算预算走完。
 
 正确做法：truncation 处仍
 

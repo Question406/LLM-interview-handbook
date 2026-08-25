@@ -5,8 +5,8 @@ order: 8
 level: A
 title: PagedAttention 为什么像虚拟内存？
 quick: >-
-  把 KV Cache 切成固定-size blocks/pages，逻辑 sequence 的 KV 不必物理连续；block table 负责
-  logical→physical 映射，减少碎片并支持动态增长/共享。
+  把 KV Cache 切成固定 size 的 block/page，逻辑 sequence 的 KV 不必物理连续。Block table 做
+  logical 到 physical 的映射，碎片少了，还能动态增长和共享。注意力公式没变。
 tags:
   - vLLM
   - KV Cache
@@ -14,14 +14,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: ↗ vLLM
     url: 'https://arxiv.org/abs/2309.06180'
     type: legacy-reference
 ---
 
-陷阱是说 PagedAttention 改了注意力公式，或把它和 FlashAttention 当成同一层。它改的是 **KV 怎么分配和查找**，像 OS 虚拟内存：逻辑地址连续，物理页可以散落。Attention 数学仍是 $QK^\top$ + softmax + $V$。加速来自少碎片、高并发，不是近似 softmax。见 `ant-vllm-paged`。
+这块容易说 PagedAttention 改了注意力公式，或把它和 FlashAttention 当成同一层。它改的是 **KV 怎么分配和查找**，像 OS 虚拟内存：逻辑地址连续，物理页可以散落。Attention 数学仍是 $QK^\top$ + softmax + $V$。加速来自少碎片、高并发，不是近似 softmax。见 `ant-vllm-paged`。
 
 ## 为什么像虚拟内存
 
@@ -33,7 +33,7 @@ sources:
 
 相同 prefix 的请求可以 copy-on-write / share 同一批物理页；beam 的共同前缀也可复用。新 token 写时再拆页，避免改共享前缀。这和 `sys-prefix-cache` 配套：命中的是物理页，不是字符串。
 
-动态增长：不必一开始按 `max_len` 占满。回收：请求结束页回池，连续 batching 才能立刻插入新请求。没有 paging，预留策略要么浪费，要么 OOM。并发从几十涨到上百时，碎片差的是整机 KV 容量，不是单条速度；面试把「更高并发」和「单步更快」分开说。
+动态增长：不必一开始按 `max_len` 占满。回收：请求结束页回池，连续 batching 才能立刻插入新请求。没有 paging，预留策略要么浪费，要么 OOM。并发从几十涨到上百时，碎片差的是整机 KV 容量，不是单条速度；我会把「更高并发」和「单步更快」分开说。
 
 ## 和 FlashAttention、量化分层
 

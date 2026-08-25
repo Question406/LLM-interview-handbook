@@ -8,31 +8,32 @@ edition: V2
 audience: 中国大陆头部科技公司 · 2027 校招
 description: >-
   重点覆盖 Post-Training 算法与数据、Reasoning RL、Agent / Skill / Harness、Agent RL，并含阿里
-  LLM 人才计划公开真题与校招笔试 / 研发面；同时系统补齐架构、系统、数学、RAG 与手撕代码。
+  LLM 人才计划公开真题与校招笔试 / 研发面；同时系统补齐架构、系统、数学、RAG 与手撕代码。美国 OpenAI / Anthropic /
+  Google / Meta / NVIDIA 等公开真题见独立手册「美国 Tech 真题」。
 sections:
   - id: posttrain
     title: 01 · Post-Training 核心算法
-    description: SFT、RLHF、PPO、GAE、DPO、GRPO、DAPO、GSPO、OPD / OPSD、正向/反向 KL 与 reasoning RL
+    description: SFT、RLHF、PPO、GAE、DPO、GRPO、DAPO、GSPO、CISPO、SAPO、DPPO、SimKO、GFPO、ProRL、OPD / OPSD、Routing Replay、TIS、正向/反向 KL 与 reasoning RL
   - id: data
     title: 02 · Post-Training Data / Reward / Eval
-    description: SFT 数据、Preference 数据、RLVR、Verifier、Reward hacking 与训练诊断
+    description: SFT 数据、Preference 数据、RLVR、Verifier、Reward hacking、熵塌诊断与修复顺序
   - id: agent
     title: 03 · Agent / Skill / Memory / Context
     description: Harness、Tool、MCP、Skill routing、Memory、Context Engineering 与安全
   - id: agentrl
     title: 04 · Agent Data / Agent RL
     description: >-
-      Trajectory、Action granularity、Credit Assignment、Multi-Agent、Eval 与 failure
+      Trajectory、Action granularity、Credit Assignment、GiGPO、过程奖励选型、Multi-Agent、Eval 与 failure
       recovery
   - id: arch
     title: 05 · LLM Architecture
     description: Transformer、Attention、RoPE、GQA、MoE、MLA、LoRA、Tokenizer 与 sizing
   - id: systems
     title: 06 · Training & Inference Systems
-    description: Parallelism、ZeRO/FSDP、FlashAttention、vLLM、veRL / slime / OpenRLHF / TRL 与 RL Infra
+    description: Parallelism、ZeRO/FSDP、FlashAttention、vLLM、veRL / slime / AReaL / TRL / Unsloth、batch invariance 与 RL Infra
   - id: fundamentals
     title: 07 · 数学 / ML / RL / RAG 八股
-    description: 熵 / 交叉熵 / KL 推导、正向/反向 KL、JS、$k_1/k_2/k_3$、Importance Sampling、Policy Gradient、Optimizer、Retrieval 与 LLM Eval
+    description: 熵 / 交叉熵 / KL 推导、正向/反向 KL、JS、$k_1/k_2/k_3$、Importance Sampling、Actor-Critic vs 纯 Critic、Policy Gradient、Optimizer、Retrieval 与 LLM Eval
   - id: coding
     title: 08 · Coding / Whiteboard
     description: Attention、RoPE、GAE、DPO、GRPO、Agent parser、Retry 与参数显存计算

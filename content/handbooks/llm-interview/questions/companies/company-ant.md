@@ -5,8 +5,8 @@ order: 9
 level: A
 title: 蚂蚁集团：大模型 / 智能体优化应重点准备什么？
 quick: >-
-  把 DPO/PPO/GRPO 选型、VeRL rollout 账本、SFT→RL 两阶段、金融场景数据与安全讲成一条链；手撕可能要求
-  Beam Search 或基础网络，不能只会 AI 补全。公开面经还会追信贷意见/额度这类开放系统设计。
+  我会把 DPO、PPO、GRPO 怎么选，VeRL 的 rollout 账本，SFT 再切 RL，以及金融数据跟安全，串成一条链来讲。手撕可能是
+  Beam Search 或者基础网络，光会 AI 补全不够。公开面经里还会追信贷意见、额度这类开放系统设计。
 tags:
   - Ant Group
   - 真题导航
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-18
+updatedAt: 2026-08-21
 sources:
   - title: 26秋招蚂蚁金服大模型算法一面（候选人原帖）
     url: https://www.nowcoder.com/feed/main/detail/e2585943c7874b3081b0878b646b6f01
@@ -27,13 +27,13 @@ sources:
     type: candidate-first-hand
 ---
 
-蚂蚁题常把算法与平台工程绑在一起：你会训练，也要能说清编排、账本和数据如何服务信贷 / 风控类任务。
+蚂蚁这边算法和平台工程会绑着问。我会训练，也得说清编排、账本、数据怎么服务信贷、风控这类任务。
 
 ## 准备主线
 
-1. **算法选型**：同一岗位会连续问 DPO、PPO、GRPO；要按「有无成对偏好 / 有无 verifier / 卡时预算」选型，而不是背三份公式。
-2. **RL 基建**：VeRL 的 `rollout.n`、global / micro batch 如何决定每卡样本与 token 数；FlashAttention、ms-swift / Dify 准备一句话原理。
-3. **数据与业务**：SFT 与 RL 两阶段各自解决什么；公开面经出现过「输入个人信息，输出信贷意见和额度」这类开放题，必须讲清数据、拆分、安全和可解释 reward。
+1. **算法选型**：同一岗位会连着问 DPO、PPO、GRPO。我会按有没有成对偏好、有没有 verifier、卡时预算来选，不会去背三份公式。
+2. **RL 基建**：VeRL 的 `rollout.n`、global / micro batch 怎么决定每卡样本和 token 数。FlashAttention、ms-swift、Dify 我各准备一句话原理。
+3. **数据与业务**：SFT 和 RL 两阶段各自解决什么。公开面经出现过「输入个人信息，输出信贷意见和额度」这类开放题，必须讲清数据、拆分、安全和可解释 reward。
 4. **手撕**：Beam Search 树、基础 PyTorch 网络、Hot100 中等题都出现过。
 
 ## 本手册真题卡

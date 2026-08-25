@@ -12,7 +12,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 191. 位1的个数
     url: https://leetcode.cn/problems/number-of-1-bits/
@@ -30,7 +30,7 @@ sources:
 
 `n & (n - 1)` 会把最低置位的 $1$ 清掉，其余位不变。循环到 $0$，循环次数等于 $1$ 的个数。
 
-逐位右移也可以，固定 $32$ 次。面试优先讲清位运算技巧。Python 的 `n.bit_count()` 能过，但要会手写。
+逐位右移也可以，固定 $32$ 次。白板我优先讲清这个位运算。Python 的 `n.bit_count()` 能过，但要会手写。
 
 ## 参考代码
 

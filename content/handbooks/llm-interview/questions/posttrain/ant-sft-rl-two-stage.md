@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 蚂蚁大模型llm算法日常实习面经
     url: https://www.nowcoder.com/feed/main/detail/c6aadaf60f9c431bbe0738e0c802dfd7
@@ -31,11 +31,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“SFT和RL两阶段的意义”**
 
-陷阱是把两阶段说成「先拟合再拟合」，或说「RL 就是继续做 SFT，只是换了损失」。方向从一开始就不同。SFT 最小化正向 $D_{\mathrm{KL}}(p_{\mathrm{data}}\|\pi)$，mode-covering，数据里出现过的写法都得给质量；RL 在当前策略上最大化奖励，并加反向 $D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})$，mode-seeking，见 `fund-kl-directions`。跳过 SFT 直接组采样，有效组常为零——格式全错，奖励全相同；只用 SFT 则停在示范分布，示范里的坏峰压不掉，示范外的更好路径也找不到。蚂蚁金融场景还要把合规拒答同时写进两阶段，不能指望第二阶段自己长出来。
+这块容易直接答成「先拟合再拟合」，或者说「RL 就是继续做 SFT，只是换了损失」。方向从一开始就不同。SFT 最小化正向 $D_{\mathrm{KL}}(p_{\mathrm{data}}\|\pi)$，mode-covering，数据里出现过的写法都得给质量；RL 在当前策略上最大化奖励，并加反向 $D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})$，mode-seeking，见 `fund-kl-directions`。跳过 SFT 直接组采样，有效组常为零，格式全错，奖励全相同；只用 SFT 则停在示范分布，示范里的坏峰压不掉，示范外的更好路径也找不到。蚂蚁金融场景还要把合规拒答同时写进两阶段，不能指望第二阶段自己长出来。
 
 ## SFT：把格式铺上，降低无效探索
 
-目标是把基座变成「会做这道题的格式」：指令遵循、领域术语、工具 schema、可解析思维链和基本正确率。指标应看格式通过率、基础任务成功和 holdout 不崩，不是只看 CE loss 下降。没有这一步，GRPO 对同一题采 $n$ 条，几乎全是乱码或解析失败，组内 $\mathrm{std}(r)=0$，优势恒零，见 `sys-rl-group-n`。PPO 同样会拿到全是零的终局奖，GAE 没有可传的信号。SFT 的几何代价也要说：它不敢丢掉数据里出现过的峰，有害或啰嗦模式只要在示范里，就会被覆盖。清洗能减少坏峰，但不能把正向 KL 变成 seeking——只要坏峰还在经验分布里，MLE 就得给质量。
+目标是把基座变成「会做这道题的格式」：指令遵循、领域术语、工具 schema、可解析思维链和基本正确率。指标应看格式通过率、基础任务成功和 holdout 不崩，不是只看 CE loss 下降。没有这一步，GRPO 对同一题采 $n$ 条，几乎全是乱码或解析失败，组内 $\mathrm{std}(r)=0$，优势恒零，见 `sys-rl-group-n`。PPO 同样会拿到全是零的终局奖，GAE 没有可传的信号。SFT 的几何代价也要说：它不敢丢掉数据里出现过的峰，有害或啰嗦模式只要在示范里，就会被覆盖。清洗能减少坏峰，但不能把正向 KL 变成 seeking，只要坏峰还在经验分布里，MLE 就得给质量。
 
 冷启动还可以穿插拒绝采样：用规则滤出合法轨迹再克隆。那仍是 SFT 族，不是 RL。门禁没过就切第二阶段，后面所有「算法选型」都在浪费 rollout。
 

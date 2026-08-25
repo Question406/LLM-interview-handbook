@@ -6,7 +6,7 @@ level: A
 title: KL 按 token 平均还是按整段序列加总？两种写法差在哪？
 quick: >-
   序列 KL 是轨迹联合分布上的 $D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})$，自回归下等于逐步 KL
-  的和。按长度平均会压长短文的惩罚；直接加总会让长回答更挨罚。面试要说清 reduction，并和 GSPO
+  的和。按长度平均会压长短文的惩罚；直接加总会让长回答更挨罚。我会说清 reduction，并和 GSPO
   的序列级 ratio 分开：一个是正则，一个是重要性权重。
 tags:
   - KL
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: DeepSeekMath
     url: https://arxiv.org/abs/2402.03300
@@ -49,7 +49,7 @@ GSPO 把 **importance ratio / clip** 提到序列级，解决的是长序列 tok
 
 ## 追问
 
-- **哪一种「更正确」？** 定义上求和才是联合 KL；工程上平均更稳。说清 reduction 比站队重要。怕变长就求和或加长度项，怕短样本被主导就平均。
+- **哪一种「更正确」？** 定义上求和才是联合 KL；工程上平均更稳。关键是说清 reduction，不站队。怕变长就求和或加长度项，怕短样本被主导就平均。
 - **平均会不会让长文 hacking？** 会。逐步偏离被长度除掉，空话便宜。要配长度惩罚或求和 KL，并单独画长度曲线。
 - **和 token 级 PPO ratio 是一回事吗？** 不是。ratio 是重要性采样，KL 是正则。GSPO 改的是前者。对象分别是 $\pi_{\mathrm{old}}$ 与 $\pi_{\mathrm{ref}}$。
 - **监控该看哪个？** 同时看 sum 与 mean，再看长度分桶。只看一个会被 reduction 骗。自适应 $\beta$ 必须和监控用同一 reduction，否则钉错带。

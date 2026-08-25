@@ -14,7 +14,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-19
+updatedAt: 2026-08-21
 sources:
   - title: 百川大模型算法二面-日常实习
     url: https://www.nowcoder.com/feed/main/detail/326e80fe4eb14fd58e9712ca2852ec1a
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写多头注意力机制”**；同面还有 **“手写一下 dpo和ppo”**、**“手写梯度下降法的二分”**
 
-陷阱是写成 `nn.MultiheadAttention` 一行，或 reshape 时把 $[B,T,H,d_h]$ 和 $[B,H,T,d_h]$ 搞反。骨架与 `deepseek-mha-handwrite`、`pdd-attention-handwrite` 相同；百川二面差在 **紧接着 GQA、DPO/PPO、二分求根**（见 `baichuan-sqrt-binary-search`、`baichuan-grpo-ppo-dpo`）。先画形状再写公式，避免卡在 `view`。
+这块容易写成 `nn.MultiheadAttention` 一行，或 reshape 时把 $[B,T,H,d_h]$ 和 $[B,H,T,d_h]$ 搞反。骨架与 `deepseek-mha-handwrite`、`pdd-attention-handwrite` 相同；百川二面差在紧接着 GQA、DPO/PPO、二分求根（见 `baichuan-sqrt-binary-search`、`baichuan-grpo-ppo-dpo`）。先画形状再写公式，避免卡在 `view`。
 
 ## 形状清单：拆头、缩放、mask、拼回
 
@@ -57,7 +57,7 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
     return out @ wo
 ```
 
-GQA：把 $K,V$ 头数降到 $H_{\mathrm{kv}}$，对 $Q$ 做 `repeat_interleave`，**softmax 公式不变**。不要改缩放或拆两次 `d_h`。
+GQA：把 $K,V$ 头数降到 $H_{\mathrm{kv}}$，对 $Q$ 做 `repeat_interleave`，softmax 公式不变。不要改缩放或拆两次 `d_h`。
 
 ## 同面连问：先形状，再 DPO/PPO
 
