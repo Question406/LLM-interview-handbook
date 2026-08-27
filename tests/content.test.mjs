@@ -242,6 +242,10 @@ test("internal question links survive sanitizer; javascript hrefs do not", () =>
   const html = renderMarkdown("[下一题](?section=fundamentals&question=fund-kl-directions)");
   assert.match(html, /class="question-link"/);
   assert.match(html, /data-question-id="fund-kl-directions"/);
+  const withBook = renderMarkdown("[下一题](?book=llm-interview&section=fundamentals&question=fund-kl-directions)");
+  assert.match(withBook, /class="question-link"/);
+  assert.match(withBook, /data-question-id="fund-kl-directions"/);
+  assert.match(withBook, /book=llm-interview/);
   const blocked = renderMarkdown("[x](javascript:alert(1))");
   assert.match(blocked, /href="#"/);
   assert.doesNotMatch(blocked, /javascript:/);

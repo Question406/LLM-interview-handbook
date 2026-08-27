@@ -55,15 +55,17 @@ function safeUrl(value) {
 }
 
 function isInternalQuestionHref(href) {
-  return /^\?section=[a-z0-9-]+&question=[a-z0-9-]+$/.test(href.replace(/&amp;/g, "&"));
+  return /^\?(?:book=[a-z0-9-]+&)?section=[a-z0-9-]+&question=[a-z0-9-]+$/.test(href.replace(/&amp;/g, "&"));
 }
 
 function isAllowedHref(href) {
   return safeUrl(href) || isInternalQuestionHref(href);
 }
 
-function questionHref(question) {
-  return `?section=${question.sectionId}&question=${question.id}`;
+function questionHref(question, book) {
+  return book
+    ? `?book=${book}&section=${question.sectionId}&question=${question.id}`
+    : `?section=${question.sectionId}&question=${question.id}`;
 }
 
 function escapeMarkdownLinkLabel(label) {
@@ -78,8 +80,8 @@ function escapeMarkdownLinkLabel(label) {
   return output + label.slice(cursor).replace(/]/g, "\\]");
 }
 
-function questionMarkdownLink(question, label) {
-  return `[${escapeMarkdownLinkLabel(label)}](${questionHref(question)})`;
+function questionMarkdownLink(question, label, book) {
+  return `[${escapeMarkdownLinkLabel(label)}](${questionHref(question, book)})`;
 }
 
 function catalogQuestions(catalog) {
@@ -222,7 +224,7 @@ function alreadyLinked(text) {
   return /CONTENTQREF\d+TOKEN/.test(text) || /\]\([^)]*\)/.test(text);
 }
 
-export function linkQuestionRefs(markdown, catalog, currentId) {
+export function linkQuestionRefs(markdown, catalog, currentId, book) {
   const questions = catalogQuestions(catalog);
   const byId = new Map(questions.map((question) => [question.id, question]));
   const refs = [];
@@ -294,7 +296,7 @@ export function linkQuestionRefs(markdown, catalog, currentId) {
   }).join("\n");
 
   source = fenced.restore(source);
-  for (const ref of refs) source = source.replaceAll(ref.token, questionMarkdownLink(ref.question, ref.text));
+  for (const ref of refs) source = source.replaceAll(ref.token, questionMarkdownLink(ref.question, ref.text, book));
   return source;
 }
 
@@ -438,7 +440,7 @@ export function renderMarkdown(markdown) {
     .replace(/\s(?:on[a-z]+|style)=("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/href="([^"]*)"/gi, (_match, href) => (isAllowedHref(href) ? `href="${href}"` : "href=\"#\""))
     .replace(
-      /<a href="(\?section=[a-z0-9-]+(?:&amp;|&)question=([a-z0-9-]+))"/gi,
+      /<a href="(\?(?:book=[a-z0-9-]+(?:&amp;|&))?section=[a-z0-9-]+(?:&amp;|&)question=([a-z0-9-]+))"/gi,
       '<a class="question-link" href="$1" data-question-id="$2"',
     );
   for (const replacement of replacements) {
@@ -466,33 +468,33 @@ function decorateQuestionLinks(html, catalog) {
   );
 }
 
-function linkQuestionIdsInHtml(html, catalog, currentId) {
+function linkQuestionIdsInHtml(html, catalog, currentId, book) {
   const byId = new Map(catalogQuestions(catalog).map((question) => [question.id, question]));
   const skip = /<pre\b[\s\S]*?<\/pre>|<a\b[\s\S]*?<\/a>/gi;
   let output = "";
   let cursor = 0;
   for (const match of html.matchAll(skip)) {
-    output += linkBareQuestionCodes(html.slice(cursor, match.index), byId, currentId);
+    output += linkBareQuestionCodes(html.slice(cursor, match.index), byId, currentId, book);
     output += match[0];
     cursor = match.index + match[0].length;
   }
-  return output + linkBareQuestionCodes(html.slice(cursor), byId, currentId);
+  return output + linkBareQuestionCodes(html.slice(cursor), byId, currentId, book);
 }
 
-function linkBareQuestionCodes(html, byId, currentId) {
+function linkBareQuestionCodes(html, byId, currentId, book) {
   return html.replace(/<code>([a-z0-9][a-z0-9-]*)<\/code>/g, (match, id) => {
     if (id === currentId) return match;
     const question = byId.get(id);
     if (!question) return match;
-    return `<a class="question-link" href="${questionHref(question)}" data-question-id="${question.id}">${match}</a>`;
+    return `<a class="question-link" href="${questionHref(question, book)}" data-question-id="${question.id}">${match}</a>`;
   });
 }
 
-function renderAnswer(question, catalog) {
+function renderAnswer(question, catalog, book) {
   try {
     const answerBody = question.format === "legacy-html"
-      ? decorateQuestionLinks(linkQuestionIdsInHtml(highlightCodeBlocks(renderMathInHtml(question.body)), catalog, question.id), catalog)
-      : decorateQuestionLinks(renderMarkdown(linkQuestionRefs(question.body, catalog, question.id)), catalog);
+      ? decorateQuestionLinks(linkQuestionIdsInHtml(highlightCodeBlocks(renderMathInHtml(question.body)), catalog, question.id, book), catalog)
+      : decorateQuestionLinks(renderMarkdown(linkQuestionRefs(question.body, catalog, question.id, book)), catalog);
     return `<div class="full-answer"><div class="mini-title">完整答案</div>${answerBody}${sourceHtml(question.sources)}</div>`;
   } catch (error) {
     error.message = `${question.id}: ${error.message}`;
@@ -647,7 +649,7 @@ function buildHandbook(handbookFile, { write = true } = {}) {
     if (!sectionQuestions.length) fail(handbook.filePath, `section ${section.id} has no published questions`);
     const answerPath = `/content/${handbook.id}/${section.id}.json`;
     const cardsPath = `/content/${handbook.id}/${section.id}.cards.json`;
-    answerChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, renderAnswer(question, catalog)]));
+    answerChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, renderAnswer(question, catalog, handbook.slug)]));
     cardChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, {
       titleHtml: renderMathInText(question.title),
       quickHtml: renderMathInText(question.quick),

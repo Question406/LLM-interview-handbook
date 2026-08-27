@@ -180,6 +180,9 @@ kbd { border: 1px solid var(--line); background: var(--card); border-radius: 5px
 .question-sections { display: grid; }
 .question-section { padding-top: 8px; }
 .question-list { display: grid; gap: 12px; }
+.question-list-windowed { gap: 0; }
+.question-list-items { display: grid; gap: 12px; }
+.question-list-spacer { pointer-events: none; }
 
 .section-intro, .search-results-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 28px 0 18px; }
 .section-intro h2, .search-results-intro h2 { margin: 8px 0 6px; font: 600 clamp(26px, 3.6vw, 36px)/1.2 var(--hb-serif); letter-spacing: -.03em; }
