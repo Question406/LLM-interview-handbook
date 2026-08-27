@@ -94,9 +94,9 @@ function QuestionCard({
   onFocus: () => void;
 }) {
   return (
-    <article className={`question-card${isOpen ? " open" : ""}${isKeyboardActive ? " keyboard-active" : ""}`} id={question.id}>
+    <article className={`question-card${isOpen ? " open" : ""}${isKeyboardActive ? " keyboard-active" : ""}${isMastered ? " mastered" : ""}`} id={question.id}>
       <div className="question-meta">
-        <span className={`level-badge level-${question.level}`}>{question.level} · {question.level === "S" ? "MUST KNOW" : "CORE"}</span>
+        <span className={`level-badge level-${question.level}`}>{question.level} · {question.level === "S" ? "必会" : "核心"}</span>
         {question.isRealInterview && <span className="real-badge">真实面经</span>}
         {question.tags.map((tag) => <span className="topic-badge" key={tag}>{tag}</span>)}
       </div>
@@ -117,16 +117,16 @@ function QuestionCard({
             aria-label="复制题目，去问其他模型"
             title="复制题目，去问其他模型"
           >
-            {copiedKind === "prompt" ? "已复制 ✓" : "复制题目"}
+            {copiedKind === "prompt" ? "已复制" : "复制题目"}
           </button>
           <button type="button" className="expand-icon" onClick={onToggleOpen} aria-hidden="true" tabIndex={-1}>
-            {isOpen ? "↑" : "↘"}
+            {isOpen ? "−" : "+"}
           </button>
         </div>
       </div>
-      {!isOpen && question.quick && (
-        <div className="quick-answer compact">
-          <span>30 秒回答</span>
+      {question.quick && (
+        <div className={`quick-answer${isOpen ? "" : " compact"}`}>
+          <span className="quick-kicker">30 秒口播</span>
           {card?.quickHtml
             ? <p dangerouslySetInnerHTML={{ __html: card.quickHtml }} />
             : <p>{displayPlain(question.quick)}</p>}
@@ -155,7 +155,7 @@ function QuestionCard({
           <input type="checkbox" checked={isMastered} onChange={onToggleMastered} />
           <span>{isMastered ? "已掌握" : "标记为已掌握"}</span>
         </label>
-        <button type="button" onClick={onCopyLink}>{copiedKind === "link" ? "链接已复制 ✓" : "复制链接 #"}</button>
+        <button type="button" onClick={onCopyLink}>{copiedKind === "link" ? "链接已复制" : "复制链接"}</button>
       </footer>
     </article>
   );
@@ -535,7 +535,7 @@ function HandbookWorkspace({
       <aside className={`rail${mobileNavOpen ? " mobile-open" : ""}`}>
         <div className="rail-head">
           <button className="wordmark" type="button" onClick={openOverview}>
-            <span className="wordmark-mark">IA</span><span>Interview Atlas</span>
+            <span className="wordmark-mark">面</span><span>面试题库</span>
           </button>
           <button className="mobile-close" type="button" onClick={() => setMobileNavOpen(false)} aria-label="关闭导航">×</button>
         </div>
@@ -574,7 +574,7 @@ function HandbookWorkspace({
       {shortcutsOpen && <div className="shortcut-layer" role="presentation">
         <button className="shortcut-backdrop" type="button" onClick={() => setShortcutsOpen(false)} aria-label="关闭快捷键说明" />
         <section className="shortcut-dialog" role="dialog" aria-modal="true" aria-labelledby="shortcut-title">
-          <header><div><div className="eyebrow"><span /> KEYBOARD</div><h2 id="shortcut-title">键盘快捷键</h2></div><button type="button" onClick={() => setShortcutsOpen(false)} aria-label="关闭快捷键说明">×</button></header>
+          <header><div><div className="eyebrow"><span /> 快捷键</div><h2 id="shortcut-title">键盘操作</h2></div><button type="button" onClick={() => setShortcutsOpen(false)} aria-label="关闭快捷键说明">×</button></header>
           <dl>
             <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>上一题 / 下一题</dd></div>
             <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>上一个 / 下一个模块</dd></div>
@@ -601,21 +601,44 @@ function HandbookWorkspace({
           {indexError && <div className="empty-state"><b>手册加载失败</b><p>{indexError}</p></div>}
           {!isContentView && !guideOpen && <section className="hero">
             <div className="hero-copy">
-              <div className="eyebrow"><span /> {handbook.edition} · INTERVIEW HANDBOOK</div>
-              <h1>把知识点，<br />变成你的<span>面试反射</span>。</h1>
+              <div className="eyebrow"><span /> {handbook.shortTitle} · {handbook.edition}</div>
+              <h1>把知识点，变成你的面试反射。</h1>
               <p>{handbook.description}</p>
               <div className="audience-line">{handbook.audience}</div>
               <div className="hero-actions">
-                <button type="button" className="primary-action" onClick={() => openSection(handbook.sections[0].id)}>继续复习 <span>→</span></button>
+                <button type="button" className="primary-action" onClick={() => openSection(handbook.sections[0].id)}>从第一章开始</button>
                 <button type="button" className="secondary-action" onClick={randomQuestion}>随机抽一题</button>
               </div>
             </div>
-            <div className="hero-card" aria-label="手册数据摘要">
-              <div className="orbit orbit-one" /><div className="orbit orbit-two" />
-              <div className="score-disc"><b>{handbook.stats.questions}</b><span>题库</span></div>
-              <div className="metric metric-a"><b>{handbook.stats.mustKnow}</b><span>S 级核心题</span></div>
-              <div className="metric metric-b"><b>{handbook.sections.length}</b><span>知识模块</span></div>
-              <div className="metric metric-c"><b>{handbook.stats.sources}</b><span>原始来源</span></div>
+            <dl className="hero-stats" aria-label="手册数据摘要">
+              <div><dt>题目</dt><dd>{handbook.stats.questions}</dd></div>
+              <div><dt>S 级必会</dt><dd>{handbook.stats.mustKnow}</dd></div>
+              <div><dt>模块</dt><dd>{handbook.sections.length}</dd></div>
+              <div><dt>已掌握</dt><dd>{masteredCount}</dd></div>
+            </dl>
+          </section>}
+
+          {!isContentView && !guideOpen && <section className="chapter-index" aria-label="知识模块">
+            <header className="chapter-index-head">
+              <h2>按模块开始</h2>
+              <p>先看高亮的 30 秒口播，再展开完整推导。</p>
+            </header>
+            <div className="chapter-grid">
+              {handbook.sections.map((section, index) => {
+                const done = section.questions.filter((question) => mastered.has(qualifiedId(handbook.id, question.id))).length;
+                const percent = section.questions.length ? (done / section.questions.length) * 100 : 0;
+                return (
+                  <button type="button" className="chapter-card" key={section.id} onClick={() => openSection(section.id)}>
+                    <span className="chapter-kicker">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="chapter-title">{section.title.replace(/^\d+\s*·\s*/, "")}</span>
+                    <span className="chapter-desc">{section.description}</span>
+                    <span className="chapter-foot">
+                      <span>{done} / {section.questions.length}</span>
+                      <span className="chapter-bar"><span style={{ width: `${percent}%` }} /></span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </section>}
 
@@ -632,12 +655,12 @@ function HandbookWorkspace({
           </section>}
 
           {isContentView && <div className="question-sections">
-            {isSearching && <header className="search-results-intro"><div><div className="eyebrow"><span /> SEARCH RESULTS</div><h2>“{query.trim()}” 的检索结果</h2></div><div className="section-count">{visibleQuestions.length} 题</div></header>}
+            {isSearching && <header className="search-results-intro"><div><div className="eyebrow"><span /> 检索</div><h2>“{query.trim()}”</h2></div><div className="section-count">{visibleQuestions.length} 题</div></header>}
             {visibleSections.map((section) => (
               <section className="question-section" key={section.id}>
                 <header className="section-intro">
                   <div>
-                    <div className="eyebrow"><span /> MODULE {String(handbook.sections.findIndex((candidate) => candidate.id === section.id) + 1).padStart(2, "0")}</div>
+                    <div className="eyebrow"><span /> {String(handbook.sections.findIndex((candidate) => candidate.id === section.id) + 1).padStart(2, "0")}</div>
                     <h2>{section.title}</h2>
                     <p>{section.description}</p>
                   </div>
@@ -671,7 +694,7 @@ function HandbookWorkspace({
 
           {!isContentView && guideOpen && <section className="content-guide">
             <div className="guide-number">+N</div>
-            <div><div className="eyebrow"><span /> CONTENT FIRST</div><h2>新资料只需要进内容层。</h2></div>
+            <div><div className="eyebrow"><span /> 内容层</div><h2>新资料只需要进内容层。</h2></div>
             <p>页面、搜索、筛选、复习进度都由通用组件负责。以后每新增一题，只需要放入一个独立 Markdown 文件；构建器会自动汇总、校验并生成资料库。</p>
             <button type="button" onClick={openOverview}>回到首页 ↑</button>
           </section>}
