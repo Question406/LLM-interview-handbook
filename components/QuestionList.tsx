@@ -127,7 +127,7 @@ function WindowedQuestionList(props: QuestionListProps) {
 
   return (
     <div className="question-list question-list-windowed" ref={listRef}>
-      {padTop > 0 && <div className="question-list-spacer" style={{ height: padTop }} aria-hidden="true" />}
+      <div className="question-list-spacer" style={{ height: padTop }} aria-hidden="true" />
       <div className="question-list-items">
         {visible.map((item) => (
           <MeasuredQuestion
@@ -139,7 +139,7 @@ function WindowedQuestionList(props: QuestionListProps) {
           />
         ))}
       </div>
-      {padBottom > 0 && <div className="question-list-spacer" style={{ height: padBottom }} aria-hidden="true" />}
+      <div className="question-list-spacer" style={{ height: padBottom }} aria-hidden="true" />
     </div>
   );
 }

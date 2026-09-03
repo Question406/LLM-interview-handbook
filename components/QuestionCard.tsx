@@ -1,10 +1,80 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useLayoutEffect, useRef } from "react";
 import type { HandbookQuestion, QuestionCardHtml } from "@/content/types";
 import { displayPlain } from "@/lib/handbook";
 
 export type CopiedKind = "link" | "prompt";
+
+const openFollowups = new Map<string, Set<string>>();
+
+function followupKey(details: HTMLDetailsElement) {
+  return details.querySelector("summary")?.textContent?.trim() ?? "";
+}
+
+function AnswerContent({
+  html,
+  questionId,
+  onOpenQuestion,
+}: {
+  html: string;
+  questionId: string;
+  onOpenQuestion: (questionId: string, book?: string | null) => void;
+}) {
+  const hostRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const node = hostRef.current;
+    if (!node) return;
+
+    const saved = openFollowups.get(questionId);
+    if (saved) {
+      for (const details of node.querySelectorAll<HTMLDetailsElement>("details.followup")) {
+        const key = followupKey(details);
+        if (key && saved.has(key)) details.open = true;
+      }
+    }
+
+    const onToggle = (event: Event) => {
+      const details = event.target;
+      if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("followup")) return;
+      const key = followupKey(details);
+      if (!key) return;
+      const next = openFollowups.get(questionId) ?? new Set<string>();
+      if (details.open) next.add(key);
+      else next.delete(key);
+      openFollowups.set(questionId, next);
+    };
+
+    node.addEventListener("toggle", onToggle, true);
+    return () => node.removeEventListener("toggle", onToggle, true);
+  }, [html, questionId]);
+
+  return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- delegated <a class="question-link">
+    <div
+      ref={hostRef}
+      className="answer-content"
+      dangerouslySetInnerHTML={{ __html: html }}
+      onClick={(event) => {
+        const node = event.target;
+        const el = node instanceof Element ? node : node instanceof Node ? node.parentElement : null;
+        const link = el?.closest("a.question-link");
+        if (!(link instanceof HTMLAnchorElement)) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        const nextId = link.dataset.questionId;
+        if (!nextId) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const href = link.getAttribute("href") ?? "";
+        const search = href.startsWith("?") ? href.slice(1) : href;
+        onOpenQuestion(nextId, new URLSearchParams(search).get("book"));
+      }}
+    />
+  );
+}
+
+const MemoAnswerContent = memo(AnswerContent);
 
 function QuestionCardView({
   question,
@@ -77,24 +147,7 @@ function QuestionCardView({
         </div>
       )}
       {isOpen && answer && (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- delegated <a class="question-link">
-        <div
-          className="answer-content"
-          dangerouslySetInnerHTML={{ __html: answer }}
-          onClick={(event) => {
-            const node = event.target;
-            const el = node instanceof Element ? node : node instanceof Node ? node.parentElement : null;
-            const link = el?.closest("a.question-link");
-            if (!(link instanceof HTMLAnchorElement)) return;
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-            const nextId = link.dataset.questionId;
-            if (!nextId) return;
-            event.preventDefault();
-            const href = link.getAttribute("href") ?? "";
-            const search = href.startsWith("?") ? href.slice(1) : href;
-            onOpenQuestion(nextId, new URLSearchParams(search).get("book"));
-          }}
-        />
+        <MemoAnswerContent html={answer} questionId={question.id} onOpenQuestion={onOpenQuestion} />
       )}
       {isOpen && !answer && <div className="answer-loading"><span />正在加载完整答案…</div>}
       <footer className="question-footer">
