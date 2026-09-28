@@ -570,11 +570,17 @@ function loadHandbook(handbookFile) {
   return { ...data, sections, sectionIds, root: dirname(handbookFile), filePath: handbookFile };
 }
 
+// A gitignored _handbook.local.md replaces _handbook.md so local-only sections never reach the repo.
+function handbookFileIn(directory) {
+  const local = join(directory, "_handbook.local.md");
+  return existsSync(local) ? local : join(directory, "_handbook.md");
+}
+
 function findHandbookFiles() {
   if (!existsSync(handbooksRoot)) return [];
   return readdirSync(handbooksRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(handbooksRoot, entry.name, "_handbook.md")))
-    .map((entry) => join(handbooksRoot, entry.name, "_handbook.md"))
+    .map((entry) => handbookFileIn(join(handbooksRoot, entry.name)))
     .sort();
 }
 

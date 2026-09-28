@@ -61,7 +61,7 @@ sections:
     title: 15 · 公司与原始材料索引
     description: 阿里/Qwen、字节 Seed、腾讯混元、百度 AIDU、智谱、Moonshot、MiniMax、蚂蚁、美团、拼多多、京东、快手、小红书、百川、阶跃、商汤、DeepSeek、高德
   - id: alibaba-oa
-    title: 17 · 阿里校招笔试与研发面
+    title: 16 · 阿里校招笔试与研发面
     description: >-
       近年淘天 / 国际 / AI 研发公开笔试编程真题与选择题，以及校招技术面高频手撕、Java / Redis / MQ / MySQL
       与系统设计。LLM 人才计划算法题仍看第 14 章。

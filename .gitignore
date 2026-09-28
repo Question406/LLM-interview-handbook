@@ -42,3 +42,7 @@ yarn-error.log*
 /outputs/
 /work/
 *.tsbuildinfo
+
+# local-only content (personal paper deep-dives)
+/content/handbooks/*/_handbook.local.md
+/content/handbooks/llm-interview/questions/papers/

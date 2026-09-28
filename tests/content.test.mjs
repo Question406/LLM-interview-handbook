@@ -16,7 +16,7 @@ function markdownFiles(directory) {
 test("the generated handbook has stable, complete metadata", () => {
   const questions = handbook.sections.flatMap((section) => section.questions);
   const files = markdownFiles(new URL("../content/handbooks/llm-interview/questions/", import.meta.url));
-  assert.equal(handbook.sections.length, 17);
+  assert.equal(handbook.sections.length, new Set(questions.map((question) => question.sectionId)).size);
   assert.equal(questions.length, files.length);
   assert.equal(new Set(questions.map((question) => question.id)).size, files.length);
   assert.equal(handbook.stats.questions, files.length);
