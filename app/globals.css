@@ -189,7 +189,9 @@ kbd { border: 1px solid var(--line); background: var(--card); border-radius: 5px
 .section-intro p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 46em; }
 .section-count { flex: 0 0 auto; align-self: center; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; color: var(--muted); font: 12px var(--hb-mono); }
 
-.question-card { scroll-margin-top: 128px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
+.question-card { scroll-margin-top: 128px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; cursor: pointer; }
+.question-card .answer-content,
+.question-card .answer-loading { cursor: auto; }
 .question-card:hover { border-color: color-mix(in srgb, var(--ink) 28%, var(--line)); }
 .question-card.open { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent); }
 .question-card.keyboard-active { box-shadow: inset 3px 0 0 var(--accent); }

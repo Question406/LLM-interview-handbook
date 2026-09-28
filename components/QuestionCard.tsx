@@ -76,6 +76,12 @@ function AnswerContent({
 
 const MemoAnswerContent = memo(AnswerContent);
 
+function clickTogglesCard(target: EventTarget | null) {
+  const el = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+  if (!el) return false;
+  return !el.closest("button, a, input, label, textarea, select, summary, .answer-content, .answer-loading");
+}
+
 function QuestionCardView({
   question,
   index,
@@ -108,7 +114,16 @@ function QuestionCardView({
   onFocus: () => void;
 }) {
   return (
-    <article className={`question-card${isOpen ? " open" : ""}${isKeyboardActive ? " keyboard-active" : ""}${isMastered ? " mastered" : ""}`} id={question.id}>
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- heading button stays the keyboard control
+    <article
+      className={`question-card${isOpen ? " open" : ""}${isKeyboardActive ? " keyboard-active" : ""}${isMastered ? " mastered" : ""}`}
+      id={question.id}
+      onClick={(event) => {
+        if (!clickTogglesCard(event.target)) return;
+        if (window.getSelection()?.toString()) return;
+        onToggleOpen();
+      }}
+    >
       <div className="question-meta">
         <span className={`level-badge level-${question.level}`}>{question.level} · {question.level === "S" ? "必会" : "核心"}</span>
         {question.isRealInterview && <span className="real-badge">真实面经</span>}

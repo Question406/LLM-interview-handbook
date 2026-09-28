@@ -211,6 +211,15 @@ export function HandbookWorkspace({
     });
   }, []);
 
+  const collapseOpenFromGutter = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    if (event.button !== 0 || event.target !== event.currentTarget) return;
+    const wrap = event.currentTarget.querySelector(".page-wrap");
+    if (!(wrap instanceof HTMLElement)) return;
+    const { left, right } = wrap.getBoundingClientRect();
+    if (event.clientX >= left && event.clientX <= right) return;
+    setOpenQuestions((current) => (current.size === 0 ? current : new Set()));
+  }, []);
+
   const copyQuestionLink = useCallback(async (questionId: string) => {
     const found = findQuestionInHandbook(handbook, questionId);
     if (!found) return;
@@ -348,7 +357,7 @@ export function HandbookWorkspace({
       {mobileNavOpen && <button className="nav-backdrop" type="button" onClick={() => setMobileNavOpen(false)} aria-label="关闭导航" />}
       {shortcutsOpen && <ShortcutDialog onClose={() => setShortcutsOpen(false)} />}
 
-      <section className="workspace" id="top">
+      <section className="workspace" id="top" onMouseDown={collapseOpenFromGutter}>
         <Topbar
           query={query}
           resultLabel={resultLabel}
