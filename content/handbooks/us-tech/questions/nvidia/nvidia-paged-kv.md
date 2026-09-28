@@ -41,7 +41,7 @@ $$
 \mathrm{bytes}\approx 2\cdot L\cdot T\cdot H_{\mathrm{kv}}\cdot d_h\cdot \mathrm{elem\_size}.
 $$
 
-朴素实现：每条请求进来就按 `max_seq_len` 预留连续缓冲。实际长度 200、槽位 4096，中间那一截永远空着——这是内部浪费。请求走了，留下的空洞又对不齐下一条更长的序列——外部碎片。结果是 GPU 还有空显存，allocator 却说 OOM，batch 上不去。In-flight batching 把短、长请求混在一起，这个问题更狠。
+朴素实现：每条请求进来就按 `max_seq_len` 预留连续缓冲。实际长度 200、槽位 4096，中间那一截永远空着，这是内部浪费。请求走了，留下的空洞又对不齐下一条更长的序列，这是外部碎片。结果是 GPU 还有空显存，allocator 却说 OOM，batch 上不去。In-flight batching 把短、长请求混在一起，这个问题更狠。
 
 ## Block table
 
@@ -53,7 +53,7 @@ $$
 
 - 内部：只有最后一块平均空 $B/2$ 个 token。$B=16$ 时浪费可忽略；$B=256$ 时短请求开始肉疼。
 - 外部：页大小一致，几乎没有。这是分页的本意。
-- kernel 效率：$B$ 太小，gather 不规则，Tensor Core tile 不饱；$B$ 太大，内部碎片涨。16–64 是常见折中，要用 Nsight 看注意力 kernel 的 HBM 吞吐，不要拍脑袋。
+- kernel 效率：$B$ 太小，gather 不规则，Tensor Core tile 不饱；$B$ 太大，内部碎片涨。16-64 是常见折中，要用 Nsight 看注意力 kernel 的 HBM 吞吐，不要拍脑袋。
 
 FlashAttention 在 paged 布局上仍能做，只是 $K/V$ tile 要从非连续页装进 SRAM，实现更烦，IO 分析见 `nvidia-flash-attn`。Decode 依旧是读 KV 的带宽墙。
 

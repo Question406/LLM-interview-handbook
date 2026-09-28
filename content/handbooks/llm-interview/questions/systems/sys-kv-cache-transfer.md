@@ -43,9 +43,9 @@ Serving 的 PD / chunked prefill 见 `sys-chunk-pd`、`sys-prefill-decode`。本
 - **命中：** 同 prompt 的 GRPO 组应打满 prefix cache，见 `sys-rl-engine-kv-util`。命中了就不用传。
 - **拓扑：** 机内 NVLink / NVSwitch；跨机 RDMA。把 PD 的 KV 走 TCP 再谈优化，是在交税。
 
-RL rollout 里还有第四条：`update_weights` 之后 **旧 KV 作废**，见 `sys-partial-kv-policy`。那不是「传 KV」，是「不许用」。
+RL rollout 里还有第四条：`update_weights` 之后旧 KV 作废，见 `sys-partial-kv-policy`。那是禁止复用，不是又一次 KV 传输。
 
-现场先画：TP 是层内集合通信，PD 是角色间点对点，权重是参数广播。三本账别加在同一个 AllReduce 里。
+面试时先画：TP 是层内集合通信，PD 是角色间点对点，权重是参数广播。三本账别加在同一个 AllReduce 里。
 
 ## 追问
 

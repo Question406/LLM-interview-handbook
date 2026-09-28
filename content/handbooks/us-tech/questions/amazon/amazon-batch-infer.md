@@ -32,7 +32,7 @@ sources:
     type: primary
 ---
 
-平台岗把「能不能全部走实时」问成成本和配额题。Bedrock 文档：batch 把多条 prompt 异步跑完，结果写 S3；输入按 `InvokeModel` 或 `Converse` 的 JSONL 格式。**不支持 Provisioned Throughput，不支持 tool calling / `response_format`。** 每条记录独立，没有多轮。公开价通常按需折扣（量级是一半，具体看当时价目表，不要背美元）。不是某次逐字真题。实时尾巴怎么拆见 `amazon-p99-stream`。
+平台岗把「能不能全部走实时」问成成本和配额题。Bedrock 文档：batch 把多条 prompt 异步跑完，结果写 S3；输入按 `InvokeModel` 或 `Converse` 的 JSONL 格式。**不支持 Provisioned Throughput，不支持 tool calling / `response_format`。** 每条记录独立，没有多轮。公开价通常按需折扣（量级是一半，具体看当时价目表，不要背美元）。实时尾巴怎么拆见 `amazon-p99-stream`。
 
 ## 两套时钟，两套瓶颈
 

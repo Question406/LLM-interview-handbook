@@ -33,13 +33,13 @@ sources:
 
 ## 题怎么来的
 
-Microsoft DeepSpeed 训超长序列、和 Megatron 混部的岗，会把三个都叫 sequence parallel 的东西丢过来。我会先画三张布局，再让评委挑要哪张：Megatron SP（`sys-seq-parallel`）、Ulysses、context parallel / ring（`sys-context-parallel`）。Ulysses 论文的卖点是：$N$ 和设备数 $P$ 同比拉长时，每条链路上的通信体积保持常数，不像某些环/gather 方案随 $N$ 涨。
+Microsoft DeepSpeed 训超长序列、和 Megatron 混部的岗，会把三个都叫 sequence parallel 的东西丢过来。先画三张布局，再让评委挑要哪张：Megatron SP（`sys-seq-parallel`）、Ulysses、context parallel / ring（`sys-context-parallel`）。Ulysses 论文的卖点是：$N$ 和设备数 $P$ 同比拉长时，每条链路上的通信体积保持常数，不像某些环/gather 方案随 $N$ 涨。
 
 GQA 把 KV 头砍得很小之后，这套 all-to-all 会先碰到整除墙，面试要主动说，不要等评委问。
 
 ## 布局拧两次：序列切 $\leftrightarrow$ 头切
 
-输入按序列维切开，每卡 $[B, T/P, h]$。MLP、LN 都在这段局部序列上算，激活随 $P$ 降。注意力是 token 间算子，局部 $T/P$ 不够。Ulysses 的修法不是把 KV 沿环传，而是 **all-to-all 换轴**：
+输入按序列维切开，每卡 $[B, T/P, h]$。MLP、LN 都在这段局部序列上算，激活随 $P$ 降。注意力是 token 间算子，局部 $T/P$ 不够。Ulysses 用 **all-to-all 换轴**，不环传 KV：
 
 1. 对 Q/K/V 做 all-to-all：每卡从「一段序列、全部头」变成「完整 $T$、大约 $H/P$ 个头」。
 2. 本地对这子集头做完整序列的注意力（可接 FlashAttention）。
@@ -51,7 +51,7 @@ GQA 把 KV 头砍得很小之后，这套 all-to-all 会先碰到整除墙，面
 
 ## 和 Megatron SP 不要并成一个开关
 
-Megatron SP 绑死 TP 组：LN / dropout 按 $T/\mathrm{TP}$ 存，列并行前 all-gather 完整 $T$，行并行后 reduce-scatter。注意力在 TP rank 上仍是 **完整序列、本地那几头**——这已经是「头并行」，并不是 Ulysses 那种先把序列拼齐。SP 解决的是 TP 复制激活，见 `sys-seq-parallel`。Ulysses 解决的是 **整网沿 $T$ 分片**，注意力用 all-to-all 临时换成头并行。
+Megatron SP 绑死 TP 组：LN / dropout 按 $T/\mathrm{TP}$ 存，列并行前 all-gather 完整 $T$，行并行后 reduce-scatter。注意力在 TP rank 上仍是 **完整序列、本地那几头**（已经是头并行），并不是 Ulysses 那种先把序列拼齐。SP 解决的是 TP 复制激活，见 `sys-seq-parallel`。Ulysses 解决的是 **整网沿 $T$ 分片**，注意力用 all-to-all 临时换成头并行。
 
 可以叠：节点内 TP + SP 走 Megatron 布局，另一组做 Ulysses 或 CP。不要对同一组又 SP 又 Ulysses 还以为通信会抵消。ZeRO 切的是 DP 维状态，碰不到这条序列轴，见 `sys-zero-stages`。
 

@@ -58,9 +58,9 @@ $$
 \theta\leftarrow\theta-\eta\,\hat m/(\sqrt{\hat v}+\varepsilon)-\eta\lambda\theta.
 $$
 
-第二项不进 $m,v$。每个参数按同一 $\lambda$ 朝 0 拉，和 SGD weight decay 同义。论文还观察到 $\eta$ 与 $\lambda$ 的最优区变得可分，这才是「为什么拆」的工程理由，不只是公式美观。
+第二项不进 $m,v$。每个参数按同一 $\lambda$ 朝 0 拉，和 SGD weight decay 同义。论文还观察到 $\eta$ 与 $\lambda$ 的最优区变得可分，这是「为什么拆」的工程理由，不只是公式好看。
 
-白板我会写两行伪代码，标出 `wd` 加在 `grad` 上还是加在 `param` 上。PyTorch 的 `Adam` 带 `weight_decay` 曾经是 $L_2$ 进梯度；`AdamW` 才是 decoupled。面试说错 API 比说错论文更致命。
+我会写两行伪代码，标出 `wd` 加在 `grad` 上还是加在 `param` 上。PyTorch 的 `Adam` 带 `weight_decay` 曾经是 $L_2$ 进梯度；`AdamW` 才是 decoupled。说错 API 比说错论文更糟。
 
 ## LLM 训练里我会补的细节
 

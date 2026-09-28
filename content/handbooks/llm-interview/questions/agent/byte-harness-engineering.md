@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“什么是Harness Engineering”**；**“Harness的五个核心模块”**；**“你对 Agent Harness 怎么理解？它和单纯调用 LLM API 的区别是什么？”**
 
-把 Harness 讲成「更好的 system prompt」或「SDK 再包一层 chat API」，这面会立刻觉得没做过。模型只产出意图文本；复杂任务能跑完，是因为每一步被约束、可观测、失败可回放。同一权重换一套工具错误码和重试策略，成功率可以差一截。测的是 model + harness，不是「模型更会聊天」。概念总览见 `agent-harness`。
+错法：把 Harness 讲成「更好的 system prompt」或「SDK 再包一层 chat API」。模型只产出意图文本；复杂任务能跑完，是因为每一步被约束、可观测、失败可回放。同一权重换一套工具错误码和重试策略，成功率可以差一截。测的是 model + harness，不是「模型更会聊天」。概念总览见 `agent-harness`。
 
 ## 五个控制面怎么切
 
@@ -52,7 +52,7 @@ Coding Agent 里「只有 shell」和「repo 检索 + 测试 + patch 回滚 + �
 
 ## Spec 是校验器，不是又一段 prompt
 
-规格、单测、禁止改的路径是判定「这一步对不对」的预言机。Harness 负责跑测试、比 diff、失败按策略重试或升级。Spec 解决可判定，Harness 解决判定之后谁执行，二者配合见 `byte-spec-sdd-openspec`。没有规格时 Agent 只能靠观感，这正是只调 API 做不了长任务的原因。
+规格、单测、禁止改的路径是判定「这一步对不对」的预言机。Harness 负责跑测试、比 diff、失败按策略重试或升级。Spec 解决可判定，Harness 解决判定之后谁执行，二者配合见 `byte-spec-sdd-openspec`。没有规格时 Agent 只能靠观感，只调 API 也做不了长任务。
 
 ## 追问
 

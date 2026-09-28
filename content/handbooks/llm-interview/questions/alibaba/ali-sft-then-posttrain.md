@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易把 SFT / DPO / PPO / GRPO 堆成 buzzword，或跳过 SFT 直接 RL。它们针对不同监督信号。SFT：定任务分布 → 采 / 合成指令数据 → 清洗配比 → 监督学习。其后 DPO 解决偏好排序；PPO / RLHF 拟合更复杂的主观目标；GRPO 等 RL 解决可验证 / 探索目标。Qwen 上的 mask 与阶段见 `ali-qwen-finetune-loss`，算法对比见 `ali-ppo-dpo-grpo-ask`。
+错法：把 SFT / DPO / PPO / GRPO 堆成 buzzword，或跳过 SFT 直接 RL。它们针对不同监督信号。SFT：定任务分布 → 采 / 合成指令数据 → 清洗配比 → 监督学习。其后 DPO 解决偏好排序；PPO / RLHF 拟合更复杂的主观目标；GRPO 等 RL 解决可验证 / 探索目标。Qwen 上的 mask 与阶段见 `ali-qwen-finetune-loss`，算法对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## SFT 解决的是分布与格式
 
@@ -34,7 +34,7 @@ sources:
 - **RLHF / PPO：** RM + 强化学习，能加权多目标，但 RM hacking、四模型复杂。
 - **GRPO 等：** 可验证奖励或 group 相对优化，强化推理 / 工具成功率，吃采样多样性。
 
-不是「越后面越高级」。分类、口径、安全偏好常常 DPO 更稳；数学、代码、工具成功更配 GRPO。多负 DPO 后再接 GRPO 的条件见 `ali-multineg-then-grpo`。每一步都要能回答：新的监督信号是什么、旧阶段没解决什么。
+选型看监督信号。分类、口径、安全偏好常常 DPO 更稳；数学、代码、工具成功更配 GRPO。多负 DPO 后再接 GRPO 的条件见 `ali-multineg-then-grpo`。每一步都要能回答：新的监督信号是什么、旧阶段没解决什么。
 
 ## 不要跳阶段
 

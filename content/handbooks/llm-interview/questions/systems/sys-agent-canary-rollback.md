@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-这块容易只记录 model ID，把一次「模型升级」当成单变量发布。Agent 线上同时改 prompt、tool schema、retrieval index、policy 和 evaluator。回归时无法回答「是模型坏了还是 index 坏了」。每个组件要有不可变版本，请求和 trace 携带**组合版本**。回滚必须整组还原，而不是只把模型指针拨回去。
+错法：只记录 model ID，把一次「模型升级」当成单变量发布。Agent 线上同时改 prompt、tool schema、retrieval index、policy 和 evaluator。回归时无法回答「是模型坏了还是 index 坏了」。每个组件要有不可变版本，请求和 trace 携带组合版本。回滚必须整组还原，而不是只把模型指针拨回去。
 
 ## 先版本化，再谈流量
 
@@ -31,7 +31,7 @@ sources:
 
 顺序：离线 golden 与安全对抗集 → shadow replay（不对外生效）→ 小流量 canary → 逐步扩大。gate 同时比：task completion、格式/工具错误、安全拒绝、人工升级率、P95 latency、每任务成本。只看平均 win rate 会漏掉「更会答但更会乱调工具、更贵、更不安全」。
 
-阈值要预设回滚线，而不是上线后再投票。SRE canary 的核心是**自动比较 + 自动停**，不是人工盯盘。流量要从 1% 扩到 10% 再扩全量，每档都复用同一组 gate；中途某一档破线就停，不要「再观察一下」把坏组合放更大。
+阈值要预设回滚线，而不是上线后再投票。SRE canary 的核心是自动比较 + 自动停，不是人工盯盘。流量要从 1% 扩到 10% 再扩全量，每档都复用同一组 gate；中途某一档破线就停，不要「再观察一下」把坏组合放更大。
 
 ## 一键回滚与副作用
 

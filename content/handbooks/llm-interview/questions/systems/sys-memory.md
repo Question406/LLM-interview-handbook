@@ -64,7 +64,7 @@ ZeRO 针对的是上一节的参数 / 梯度 / optimizer，不是 activation：
 
 $7\mathrm{B}$ 在 8 卡 ZeRO-3 上，参数状态可落到十几 GB/卡量级，**activation 仍按本地 micro-batch 全量存在**。所以还要叠 TP（切隐层矩阵）、PP（切层）、CP（切序列）和 checkpoint。
 
-我会收口成：**14GB 是权重；112GB 是未分片 Adam 状态；真正 OOM 经常是 activation 或通信缓冲。**
+我会收口成：14GB 是权重；112GB 是未分片 Adam 状态；OOM 经常是 activation 或通信缓冲。
 
 ## 追问
 

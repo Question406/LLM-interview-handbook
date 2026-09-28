@@ -20,7 +20,7 @@ sources:
     type: primary
 ---
 
-最容易的 negative 是 chosen 完整正确、rejected 写「我不知道」。这种 pair 只教模型少说废话，学不到 correctness 边界。Hard negative 必须 **plausible but wrong**：看起来像样，只在一个关键维度上比 chosen 差。这块容易栽在堆「一眼假」的 rejected，DPO/RM 表面 loss 很好，线上仍分不清细错。Anthropic HH 的价值也在「有帮助但略越界 / 无害但没用」这类近边界对比，正确 vs 胡话不够。
+最容易的 negative 是 chosen 完整正确、rejected 写「我不知道」。这种 pair 只教模型少说废话，学不到 correctness 边界。Hard negative 必须 plausible but wrong：看起来像样，只在一个关键维度上比 chosen 差。错法：堆「一眼假」的 rejected，DPO/RM 表面 loss 很好，线上仍分不清细错。Anthropic HH 的价值也在「有帮助但略越界 / 无害但没用」这类近边界对比，正确 vs 胡话不够。
 
 ## 只动一个关键维度
 

@@ -27,7 +27,7 @@ sources:
 
 ## 题怎么来的
 
-旋转公式见 `coding-rope`。这题是工程：cos/sin 表怎么建、decode 下标怎么取。OpenAI Transformer debug 的经典植入是 `pos = arange(q_len)`——decode 时 $q_{\mathrm{len}}=1$，永远旋位置 $0$，和 full attention greedy 对不齐，还不报错。查法见 `openai-rope-offset`。Meta / Apple 手写 MHA 会跟一句「cache 里的 $K$ 还要不要再转」。
+旋转公式见 `coding-rope`。这题是工程：cos/sin 表怎么建、decode 下标怎么取。OpenAI Transformer debug 的经典植入是 `pos = arange(q_len)`：decode 时 $q_{\mathrm{len}}=1$，永远旋位置 $0$，和 full attention greedy 对不齐，还不报错。查法见 `openai-rope-offset`。Meta / Apple 手写 MHA 会跟一句「cache 里的 $K$ 还要不要再转」。
 
 ## 表：按位置预计算
 
@@ -37,7 +37,7 @@ $$
 \mathrm{cos}[t,i]=\cos(t\theta_i),\quad \mathrm{sin}[t,i]=\sin(t\theta_i).
 $$
 
-形状 `[max_seq, D/2]`，register buffer，不进优化器。Apply 时按偶奇对（或 Llama 的 half-rotate）broadcast 到 `[B, H, T, D/2]`。**索引键是位置，不是「当前这段的局部 0..L」**。有 KV cache 时局部 arange 和绝对位置不是一回事。
+形状 `[max_seq, D/2]`，register buffer，不进优化器。Apply 时按偶奇对（或 Llama 的 half-rotate）broadcast 到 `[B, H, T, D/2]`。索引键是位置，不是「当前这段的局部 0..L」。有 KV cache 时局部 arange 和绝对位置不是一回事。
 
 ```python
 import torch
@@ -57,13 +57,11 @@ class RopeCache(nn.Module):
         # position_ids: [B, T] 或 [T]
         return self.cos[position_ids], self.sin[position_ids]
 
-
 def position_ids_for(cache_len, q_len, batch, device=None):
     # prefill: cache_len=0, q_len=T -> 0..T-1
     # decode:  cache_len=S, q_len=1 -> [S]
     pos = torch.arange(cache_len, cache_len + q_len, device=device)
     return pos.unsqueeze(0).expand(batch, -1)
-
 
 def apply_rope(x, cos, sin):
     # x: [B, H, T, D]; cos/sin: [T, D/2] 或 [B, T, D/2]
@@ -77,7 +75,7 @@ def apply_rope(x, cos, sin):
     return torch.stack((ye, yo), dim=-1).flatten(-2)
 ```
 
-Prefill：`cache_len=0`，整段 $Q,K$ 用 $0..T-1$ 旋转后，$K,V$ 写入 cache。Decode：`position_ids = cache_len`（或 left pad / packed 的真实下标），只旋当前长度 $1$ 的 $q,k$。历史 $K$ **已经在写入时旋过**，不要对 cache 里的 $K$ 再 apply 一遍，否则角度变成 $2t\theta$。
+Prefill：`cache_len=0`，整段 $Q,K$ 用 $0..T-1$ 旋转后，$K,V$ 写入 cache。Decode：`position_ids = cache_len`（或 left pad / packed 的真实下标），只旋当前长度 $1$ 的 $q,k$。历史 $K$ 已经在写入时旋过，不要对 cache 里的 $K$ 再 apply 一遍，否则角度变成 $2t\theta$。
 
 ## packed 和越界
 

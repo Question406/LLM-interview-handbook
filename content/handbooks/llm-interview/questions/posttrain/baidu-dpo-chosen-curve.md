@@ -41,7 +41,7 @@ $$
 
 损失 $\mathcal{L}=-\log\sigma(\Delta)$。梯度鼓励拉大 $\Delta$，不保证 $\pi(y_w)$ 上升，更不保证它相对 SFT 上升。常见健康现象：chosen 与 rejected 的绝对 log-prob 双降，但 $\Delta$ 升、离线胜率升、对 ref 的反向 KL 缓升。这是 mode-seeking：两边都让出一点质量，间隔拉开，比「正例越来越像 SFT」更常见。$\beta$ 大则 $\Delta$ 难拉开、更贴 ref；$\beta$ 小则间隔涨得快，KL 也涨得快。
 
-病态曲线要对照着讲。只压 $y_l$、不抬 $y_w$ 的质量，间隔被刷大，用户侧观感不变。靠拉长堆总 logp，长度和 $\Delta$ 一起涨，这是长度 bias。过拟合偏好噪声：offline 胜率漂亮，online 或 holdout 崩。三者都不是「正例概率没升」这一条能概括的。
+病态曲线要对照着讲。只压 $y_l$、不抬 $y_w$ 的质量，间隔被刷大，用户侧观感不变。靠拉长堆总 logp，长度和 $\Delta$ 一起涨，这是长度 bias。过拟合偏好噪声：offline 胜率漂亮，online 或 holdout 崩。三者都不是「正例概率没升」能概括的。
 
 ## 监控清单与长度
 

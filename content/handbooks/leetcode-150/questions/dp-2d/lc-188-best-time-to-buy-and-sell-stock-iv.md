@@ -32,7 +32,7 @@ LC 123 的推广。`buy[t]`、`sell[t]` 分别是完成第 $t$ 笔买入后的�
 
 `buy[t] = min(buy[t], p - sell[t-1])`，`sell[t] = max(sell[t], p - buy[t])`。
 
-$k$ 很大时（$k \ge n/2$），限制不再起作用：任意上涨都可以单独成交，退化成无限次，累加 `max(prices[i]-prices[i-1], 0)`。否则 DP 是 $O(nk)$，不剪会超时。
+$k$ 很大时（$k \ge n/2$），限制不再起作用：任意上涨都可以单独成交，退化成无限次，累加 `max(prices[i]-prices[i-1], 0)`。否则 DP 是 $O(nk)$，不剪枝会超时。
 
 ## 参考代码
 

@@ -36,7 +36,7 @@ $$
 
 $\lambda=1$ 靠近 MC（低 bias、高 var），$\lambda\to 0$ 靠近一步 TD（高 bias、低 var）。GAE 就是把这条轴暴露成可调旋钮。Value 函数错了，bias 会系统性抬高或压低某类状态的优势，例如总是低估长思维链的中间步。方差下来了，目标已经不是原来的策略梯度。
 
-LLM RL 里组内归一化（GRPO 对同 prompt 的一组分数减均值）同样：减去的 baseline 降低方差，但若一组全对或全错，优势变 0，梯度消失，等于把「这道题的绝对难度」从目标里抹掉。这是 bias（改目标）换方差（组内可比）。Value 网络本身也是偏倚源：拟合差的 $V$ 会让 GAE 的 $\delta_t$ 系统性歪。MC 不依赖 $V$，但长 CoT 上一条轨迹的回报方差可以大到让 PPO 学不动。所以「要不要 critic」不是身份问题，是这条 bias-variance 轴上的位置问题。现场应能指出：降低 $\lambda$、加 critic、组内减均值、clip 权重，都是往右走（更稳、更偏）；加大组大小、用更准的 $V$、减少 clip，是在同一轴上往回挪。
+LLM RL 里组内归一化（GRPO 对同 prompt 的一组分数减均值）同样：减去的 baseline 降低方差，但若一组全对或全错，优势变 0，梯度消失，等于把「这道题的绝对难度」从目标里抹掉。这是 bias（改目标）换方差（组内可比）。Value 网络本身也是偏倚源：拟合差的 $V$ 会让 GAE 的 $\delta_t$ 系统性歪。MC 不依赖 $V$，但长 CoT 上一条轨迹的回报方差可以大到让 PPO 学不动。「要不要 critic」落在这条 bias-variance 轴上的哪个位置。现场应能指出：降低 $\lambda$、加 critic、组内减均值、clip 权重，都是往右走（更稳、更偏）；加大组大小、用更准的 $V$、减少 clip，是在同一轴上往回挪。
 
 ## 重要性权重、clip、归一化：稳的是梯度，歪的是目标
 
@@ -48,7 +48,7 @@ Reward normalization、advantage standardization、长度归一化同理：
 - 按长度除奖励，会削弱「长而对」相对「短而对」的权重，可能鼓励早停或鼓励注水，取决于符号；
 - KL 系数过大则几乎不更新（极低方差、极高 bias 到 $\pi_{\mathrm{ref}}$）。
 
-每一项都要能回答：「我牺牲了哪一部分无偏性，换来哪一种可训练性？」说不出牺牲了什么，就只是在堆 trick。例如 reward 按 batch 标准化：同一条高分回答在「全是高分的 batch」里优势变小，目标变成相对该 batch 的排序，而不是绝对回报。这对稳定有用，也让你无法比较跨实验的 reward 曲线绝对值。Clip fraction 很高时，大量 token 已经不提供真实策略梯度，有效目标更偏。把这些说成「都是为了稳定」，不够；要说稳定换走了哪一块目标。
+每一项都要能回答：「我牺牲了哪一部分无偏性，换来哪一种可训练性？」说不出牺牲了什么，就只是在堆 trick。例如 reward 按 batch 标准化：同一条高分回答在「全是高分的 batch」里优势变小，目标变成相对该 batch 的排序，而不是绝对回报。这对稳定有用，也让你无法比较跨实验的 reward 曲线绝对值。Clip fraction 很高时，大量 token 已经不提供真实策略梯度，有效目标更偏。只说「为了稳定」不够，要说稳定换走了哪一块目标。
 
 ## 怎么选，而不是背名词
 
@@ -59,6 +59,6 @@ Reward normalization、advantage standardization、长度归一化同理：
 ## 追问
 
 - **Unbiased 是否总更好？** 否。方差过大时有效更新接近噪声。工程上可用的有偏估计常常赢。先问能不能训，再问偏了什么。训不动的无偏梯度，没有决策价值。
-- **GAE 的 $\lambda$ 在干什么？** 在 TD 与 MC 之间插值：降 $\lambda$ 降方差、增 bootstrap bias。见 `baidu-gae-lambda`。$\lambda=1$ 不是道德上更正确，只是更接近 MC。长思维链上通常不会把 $\lambda$ 钉在 1。
+- **GAE 的 $\lambda$ 在干什么？** 在 TD 与 MC 之间插值：降 $\lambda$ 降方差、增 bootstrap bias。见 `baidu-gae-lambda`。$\lambda=1$ 只是更接近 MC，不是更「正确」。长思维链上通常不会把 $\lambda$ 钉在 1。
 - **Group normalization 的 bias 是什么？** 抹掉 prompt 间的绝对回报差；全对组零优势。稳的是组内排序，丢的是「这题该不该再加强」。加大组大小往往比把 $\lambda$ 拧到 0 更干净。
 - **Clip 是 variance reduction 吗？** 主要是限制过大权重、近似 trust-region。它降低的是危险更新，同时把目标改掉；不要说成无偏的方差公式。Clip fraction 高说明有效目标已经很偏。稳是用偏差换来的，要能说出换走了哪一块。

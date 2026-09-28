@@ -40,7 +40,7 @@ Apple Siri、Amazon Bedrock、Microsoft Copilot、部分 Meta 应用团队：模
 
 ## 交叉地带
 
-NVIDIA 的解法岗更像 RE + 系统：并行策略、kernel、精度。Tesla 更像 Applied + 数据引擎。不要用一套「大模型八股」打所有 JD。
+NVIDIA 的解法岗更像 RE + 系统：并行策略、kernel、精度。Tesla 更像 Applied + 数据引擎。别用一套「大模型八股」打所有 JD。
 
 ## 追问
 

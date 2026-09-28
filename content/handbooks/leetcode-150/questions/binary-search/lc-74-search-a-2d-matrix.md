@@ -31,7 +31,7 @@ $m\times n$ 矩阵：每行从左到右升序，每行第一个数大于上一�
 
 整表可以看成长度为 $mn$ 的有序数组。对 $[0, mn)$ 二分，`mid` 对应 `matrix[mid // n][mid % n]`。
 
-也可以先按行首二分定位行，再在该行二分，两次 $\log$。第一种更干净。不要和 LC 240 搞混：那题只保证行、列各自有序，不能压成一维。
+也可以先按行首二分定位行，再在该行二分，两次 $\log$。第一种更干净。别和 LC 240 搞混：那题只保证行、列各自有序，不能压成一维。
 
 ## 参考代码
 
@@ -92,7 +92,7 @@ def searchMatrixII(matrix, target):
     return False
 ```
 
-- **空矩阵 / 空行？** 先判 `not matrix or not matrix[0]`，否则 `n = len(matrix[0])` 会越界。本题约束通常 $m,n \ge 1$，白板仍要开口提一句。空表直接 `False`。
+- **空矩阵 / 空行？** 先判 `not matrix or not matrix[0]`，否则 `n = len(matrix[0])` 会越界。本题约束通常 $m,n \ge 1$，开口仍要提一句。空表直接 `False`。
 
 ```python
 def searchMatrixSafe(matrix, target):

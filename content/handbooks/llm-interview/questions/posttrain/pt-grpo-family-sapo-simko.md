@@ -53,7 +53,7 @@ f(x)=\sigma\big(\tau(x-1)\big)\cdot\frac{4}{\tau},\qquad
 \tau=\begin{cases}\tau_{\mathrm{pos}} & \hat A\gt 0\\ \tau_{\mathrm{neg}} & \text{otherwise}\end{cases}.
 $$
 
-$r\approx 1$ 时梯度几乎全留；偏离时平滑衰减，而不是像 PPO $\min(\rho A,\mathrm{clip}(\rho)A)$ 那样直接打成 0。论文强调两件事：序列上平均门会接近 GSPO 那种序列级信任域；个别 token 特别 off-policy 时，只打这些 token，不把整句梯度扔掉。负优势用更小温度，负更新衰减更快——往下压一个 token 会把概率摊到很多不该涨的词上，比正向更新更不稳。
+$r\approx 1$ 时梯度几乎全留；偏离时平滑衰减，而不是像 PPO $\min(\rho A,\mathrm{clip}(\rho)A)$ 那样直接打成 0。论文强调两件事：序列上平均门会接近 GSPO 那种序列级信任域；个别 token 特别 off-policy 时，只打这些 token，不把整句梯度扔掉。负优势用更小温度，负更新衰减更快：往下压一个 token 会把概率摊到很多不该涨的词上，比正向更新更不稳。
 
 代价是 $\tau_{\mathrm{pos}}/\tau_{\mathrm{neg}}$ 新超参。公开实践仍新，不要吹成已经取代 GSPO。
 

@@ -28,7 +28,7 @@ sources:
 
 ## 题怎么来的
 
-InstructGPT / PPO 式 RLHF 在奖励里减 $\beta\,\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$。OpenAI / Anthropic 白板要的是 **token 级怎么落、pad 进不进分母、方向哪边是 $\pi$**。方向和为什么用反向 KL 见 `align-rlhf-kl`、`openai-instructgpt-kl`。本题把公式写成可跑的 reduction。评委常见植入：`F.kl_div` 参数对调、`mean` 除掉词表维、pad 当有效 token。
+InstructGPT / PPO 式 RLHF 在奖励里减 $\beta\,\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$。OpenAI / Anthropic 白板要写清：token 级怎么落、pad 进不进分母、方向哪边是 $\pi$。方向和为什么用反向 KL 见 `align-rlhf-kl`、`openai-instructgpt-kl`。本题把公式写成可跑的 reduction。常见植入：`F.kl_div` 参数对调、`mean` 除掉词表维、pad 当有效 token。
 
 ## 全词表 KL 和采样路径
 
@@ -41,7 +41,7 @@ $$
 
 这是非负标量，形状从 `[B, T, V]` 收到 `[B, T]`。序列级再对 mask 平均：分母是有效 token 数，不是 $B\cdot T$。one-hot 标签时这条 KL 不是 CE；CE 是 $-\log\pi(y)$，关系见 `coding-cross-entropy`、`coding-logsumexp`。
 
-PPO 里更常见的是 **沿采样 token 的 MC**：$\log\pi_\theta(y_t)-\log\pi_{\mathrm{ref}}(y_t)$。$y\sim\pi_\theta$ 时，它对词表 KL 无偏。不要把 MC 项再乘一遍 $\pi(y_t)$。teacher-forcing 的全词表 KL 和 rollout 的 MC 不是同一个数，监控时别混着画。
+PPO 里更常见的是沿采样 token 的 MC：$\log\pi_\theta(y_t)-\log\pi_{\mathrm{ref}}(y_t)$。$y\sim\pi_\theta$ 时，它对词表 KL 无偏。不要把 MC 项再乘一遍 $\pi(y_t)$。teacher-forcing 的全词表 KL 和 rollout 的 MC 不是同一个数，监控时别混着画。
 
 ```python
 import torch
@@ -54,11 +54,9 @@ def token_kl_full(logits, logits_ref, mask):
     kl = (log_pi.exp() * (log_pi - log_ref)).sum(dim=-1)
     return kl[mask].mean()
 
-
 def token_kl_sampled(logp, logp_ref, mask):
     # 采样路径；logp*: [B, T]
     return ((logp - logp_ref).float())[mask].mean()
-
 
 def kl_div_footgun(log_pi, log_ref):
     # [N, V]；要对 KL(pi || ref) 用 batchmean，且 input 是 log ref

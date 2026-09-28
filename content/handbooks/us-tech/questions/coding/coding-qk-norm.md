@@ -30,9 +30,9 @@ sources:
 
 ## 题怎么来的
 
-Henry et al. 把 QK 归一化当训练稳定手段；Gemma 2 / Qwen3 写进了公开架构。Qwen3 明确：**去掉 QKV bias，加上
-QK-Norm**，并且 HuggingFace 实现是 RMSNorm 后再 RoPE。部分 Llama 变体（社区里常提到 Llama 4 一类）可能把
-norm 放在 RoPE **之后**，和 Qwen 不是同一张计算图。Meta / 跨境 Qwen 岗白板要你写出顺序、轴、以及 $H_q\ne H_{\mathrm{kv}}$ 时有几份 $\gamma$。层输入那份 RMSNorm 仍在，见
+Henry et al. 把 QK 归一化当训练稳定手段；Gemma 2 / Qwen3 写进了公开架构。Qwen3 明确：去掉 QKV bias，加上
+QK-Norm，并且 HuggingFace 实现是 RMSNorm 后再 RoPE。部分 Llama 变体（社区里常提到 Llama 4 一类）可能把
+norm 放在 RoPE 之后，和 Qwen 不是同一张计算图。Meta / 跨境 Qwen 岗白板要你写出顺序、轴、以及 $H_q\ne H_{\mathrm{kv}}$ 时有几份 $\gamma$。层输入那份 RMSNorm 仍在，见
 `coding-rmsnorm`；本题是注意力内部多出来的两份。
 
 ## 沿 head dim 归一，再旋转
@@ -46,7 +46,7 @@ $$
 $$
 
 $\gamma_q\in\mathbb{R}^{D}$ 广播到所有 query head（有的实现做成 `[H_q, D]` per-head
-参数，Qwen3 常用一份 $D$）。**没有** bias $\beta$。$V$ 不做。然后
+参数，Qwen3 常用一份 $D$）。没有 bias $\beta$。$V$ 不做。然后
 
 $$
 q',k'=\mathrm{RoPE}(\hat q,\hat k).
@@ -65,14 +65,12 @@ def rmsnorm_last(x, weight, eps=1e-6):
     y = (z * inv).to(x.dtype)
     return y * weight if weight is not None else y
 
-
 def apply_rope(x, cos, sin):
     xe, xo = x[..., 0::2], x[..., 1::2]
     c, s = cos[None, None, :, :], sin[None, None, :, :]
     ye = xe * c - xo * s
     yo = xe * s + xo * c
     return torch.stack((ye, yo), dim=-1).flatten(-2)
-
 
 def qk_norm_then_rope(q, k, w_q, w_k, cos, sin):
     q = rmsnorm_last(q, w_q)
@@ -82,7 +80,7 @@ def qk_norm_then_rope(q, k, w_q, w_k, cos, sin):
 
 GQA：`k` 不要先 `repeat_kv` 再 norm，否则 $H_{\mathrm{kv}}$ 份参数被复制成 $H_q$ 份，和训练时的
 `k_norm` 对不上。正确顺序是 norm $K$（$H_{\mathrm{kv}}$）→ RoPE → 需要时再 repeat，见
-`coding-gqa-repeat`。Cache 里写 **已经 norm+RoPE** 的 $K$，decode 不要对历史 $K$ 再 norm
+`coding-gqa-repeat`。Cache 里写已经 norm+RoPE 的 $K$，decode 不要对历史 $K$ 再 norm
 一遍。
 
 ## 为什么要它，和层 RMSNorm 别并成一个

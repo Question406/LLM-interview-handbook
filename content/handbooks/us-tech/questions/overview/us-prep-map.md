@@ -58,7 +58,7 @@ sources:
 
 先把 attention 和 KV cache 写到能闭卷改 shape。再做一次「给一份错的 attention，列出因果 mask / softmax 维 / 缩放 / 位置编码」的自检。OpenAI 统计轮补一点信息论：重复码、Chernoff、量化位数 $\log(\mathrm{range}/\varepsilon)$。NVIDIA 补 Megatron 三维并行和 Nsight 看利用率。Apple / Amazon 准备一个端到端 grounded 生成设计，指标不要只报 BLEU。
 
-不要把本章当「美国版八股索引」。每张卡对应一条公开面经或官方流程描述；细节被论坛藏了的，我按能公开复述的题面写，不编造没出现过的 follow-up。
+每张卡对应一条公开面经或官方流程描述；细节被论坛藏了的，我按能公开复述的题面写，不编造没出现过的 follow-up。
 
 ## 追问
 

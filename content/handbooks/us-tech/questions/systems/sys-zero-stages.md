@@ -46,9 +46,9 @@ Adam 下每参数大约：BF16 权重 $2$ + BF16 梯度 $2$ + FP32 master 与一
 | ZeRO-2 | 复制 | 分片 | 分片 | $2 + 14/N$ | 梯度 reduce-scatter |
 | ZeRO-3 / FSDP | 分片 | 分片 | 分片 | $16/N$ | 每层参数 all-gather |
 
-激活、通信 buffer、碎片都不在这张表里。ZeRO **不分激活**，长序列该 checkpoint / 序列并行，见 `sys-act-checkpoint`。
+激活、通信 buffer、碎片都不在这张表里。ZeRO 不分激活，长序列该 checkpoint / 序列并行，见 `sys-act-checkpoint`。
 
-FSDP 和 ZeRO-3 同构：前向 all-gather 当前包装模块的完整权重，算完丢掉；反向再 gather，梯度 reduce-scatter 回本卡切片。差别在工程：FSDP 按模块 wrap（通常一个 Transformer block），有 prefetch、混合精度；DeepSpeed 按 stage 和 bucket。Meta 训 Llama 走 FSDP；微软生态走 ZeRO。面试说「FSDP 约等于 ZeRO-3」就够，别把 API 名背成原理。
+FSDP 和 ZeRO-3 同构：前向 all-gather 当前包装模块的完整权重，算完丢掉；反向再 gather，梯度 reduce-scatter 回本卡切片。差别在工程：FSDP 按模块 wrap（通常一个 Transformer block），有 prefetch、混合精度；DeepSpeed 按 stage 和 bucket。Meta 训 Llama 走 FSDP；微软生态走 ZeRO。面试说「FSDP 约等于 ZeRO-3」就够，原理比 API 名重要。
 
 ## 通信换显存，峰值不是稳态
 
@@ -64,7 +64,7 @@ ZeRO-Offload 的第一刀是优化器状态进 CPU DRAM，GPU 上只留权重和
 
 第二刀是参数也 offload。每层 forward 从 CPU 拉权重，等于把 NVLink 级的 all-gather 换成 PCIe。只有在「没有更多 GPU 可 shard、再减 batch 会让 GEMM 瘦死」时才考虑。已经有空闲 GPU，先加 DP/FSDP 分片，别先 offload。
 
-经验法则：闲着的卡优先 shard；offload 是单机、卡不够时的退路。Optimizer-only offload 常见且可 overlap；parameter offload 要 profile PCIe，别假设开了就更快。NVIDIA 岗用 Nsight 看 H2D 是不是把 kernel 空出来了——空了就是不值。
+闲着的卡优先 shard；offload 是单机、卡不够时的退路。Optimizer-only offload 常见且可 overlap；parameter offload 要 profile PCIe，别假设开了就更快。NVIDIA 岗用 Nsight 看 H2D：kernel 被空出来就不值。
 
 ## 追问
 

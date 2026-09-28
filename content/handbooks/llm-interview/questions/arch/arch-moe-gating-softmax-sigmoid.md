@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-这块容易把「softmax 路由」写成先对 $N$ 个专家 softmax、再取 Top-$k$ 当权重。那 $k$ 个门控之和小于 $1$，未选中专家仍分走了概率质量，combine 等于把一层 MoE 乘了一个小于 $1$ 的系数。实现上要分清：用什么分数做离散选择，用什么分数做加权，这两步可以不是同一张表。
+错法：把「softmax 路由」写成先对 $N$ 个专家 softmax、再取 Top-$k$ 当权重。那 $k$ 个门控之和小于 $1$，未选中专家仍分走了概率质量，combine 等于把一层 MoE 乘了一个小于 $1$ 的系数。实现上要分清：用什么分数做离散选择，用什么分数做加权，这两步可以不是同一张表。
 
 ## Mixtral：先截断，再在 $k$ 个上 softmax
 
@@ -52,7 +52,7 @@ $$
 
 选谁：看 $s_{i,t}+b_i$ 的 Top-$k$（$b_i$ 是无辅助负载的 bias，不进反传）。加权：只在选中的 $k$ 个上用未加 $b_i$ 的 $s_{i,t}$ 归一。Bias 只改集合，不改「选中之后贡献多大」，见 `arch-moe-noaux`。
 
-和 Mixtral 的差别不在「一个用 softmax、一个用 sigmoid」这句话本身，而在专家之间是否被当成互斥类别。Softmax 强制 $N$ 个分数抢同一份质量；sigmoid 允许多个专家同时高分，细粒度 $N=256$、$k=8$ 时更自然。Shared expert 在这两套门控之外常开，不进 Top-$k$，见 `arch-shared-expert`。
+和 Mixtral 的差别不在「一个用 softmax、一个用 sigmoid」这句口号，而在专家之间是否被当成互斥类别。Softmax 强制 $N$ 个分数抢同一份质量；sigmoid 允许多个专家同时高分，细粒度 $N=256$、$k=8$ 时更自然。Shared expert 在这两套门控之外常开，不进 Top-$k$，见 `arch-shared-expert`。
 
 ## Switch 那条「先 softmax 再 Top-$1$」
 

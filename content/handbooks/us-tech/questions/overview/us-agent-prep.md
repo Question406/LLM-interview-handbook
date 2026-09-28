@@ -30,7 +30,7 @@ sources:
 
 投 OpenAI / Anthropic / Microsoft Copilot / Amazon Bedrock Agents，agent 轮经常混在系统设计或对齐里，很少是「请默写 Thought-Action-Observation」。ReAct 只是日志格式。评委要看你能不能把循环放在宿主：schema、权限、预算、确认、trace。岗位分界见 `us-research-vs-applied`；轮次形态见 `us-loop-types`。
 
-## 不要只背名词，要能画一条轨迹
+## 轨迹怎么记
 
 准备时自己写 30 行伪代码：模型出结构化调用 → 宿主校验 schema 与权限 → 执行 → 截断结果当 data → 再进模型。超时、幂等、不可逆确认，见 `design-tool-prod`、`design-agent-harness`。浏览器再加选择器脆弱和沙箱，见 `design-browser-agent`。语音再加打断和 ASR 传播，见 `design-voice-agent`。预算见底降级到无工具，见 `design-agent-budget`。
 
@@ -42,7 +42,7 @@ sources:
 
 稀疏终局 0/1、组相对 baseline、过程奖会刷调用次数，这三句要比「我们用 PPO」先说，见 `align-grpo`、`align-tool-rl`、`align-process-reward`。OpenAI RFT / RLVR：grader 可验证、eval 先于训练、验收 grader 分开，见 `align-rft`。RM 当工具好坏的打分器，会走 Gao 的过优化曲线，见 `align-overopt-rm`。隐藏思考不要当标签，见 `align-cot-leak`。
 
-可扩展监督如果被问到：weak-to-strong 是弱老师强学生；debate 是弱裁判看质询；CAI 是原则替代逐条 harmless 标注。能用三句话分开，见 `align-weak-strong`、`align-debate`、`align-cai`。不要宣称生产已靠辩论对齐。
+可扩展监督如果被问到：weak-to-strong 是弱老师强学生；debate 是弱裁判看质询；CAI 是原则替代逐条 harmless 标注。能用三句话分开，见 `align-weak-strong`、`align-debate`、`align-cai`。别宣称生产已靠辩论对齐。
 
 ## 评测：功能成功，环境要冻
 
@@ -54,7 +54,7 @@ WebArena 的教训是：真实网页、功能谓词、一次 rollout 不可比�
 
 工作日清单：今天写了 charge / 确认 / 截断里的哪一段；今天把哪条轨迹字段补进 trace；今天用冻结夹具重放了一次失败。错法：把 ReAct 当算法；把多 agent 当架构；把温度 0 当可复现；把训练 RM 当工具是否成功的金标。材料包四样：一段工具循环、一张预算状态机、一页稀疏奖励、一份任务图评测。每天只推进一样。
 
-Onsite 45 分钟设计：先钉不可逆动作和预算数字，再画循环，最后才谈「要不要多 agent」。评测问法是「环境 sha 钉在哪」。对齐问法是「$r$ 来自终局还是调用次数」。三句都能答，这一轮不容易空。简历项目准备 8 分钟：哪次工具环死循环、你怎么加熔断、哪张表证明没把模拟器过拟合进分数。
+Onsite 45 分钟设计：先钉不可逆动作和预算数字，再画循环，最后才谈「要不要多 agent」。评测问「环境 sha 钉在哪」；对齐问「$r$ 来自终局还是调用次数」。三句都能答，这一轮不容易空。简历项目准备 8 分钟：哪次工具环死循环、你怎么加熔断、哪张表证明没把模拟器过拟合进分数。
 
 和六周计划的关系：第 4 周对齐加上 RFT / 稀疏信用，第 5 周设计改成工具环而不是只做 RAG。NVIDIA 岗可以少花时间在 agent，把预算留给并行；Anthropic / OpenAI applied 岗反过来。不要用 agent 周替代 Transformer debug，见 `us-debug-vs-leetcode`。
 

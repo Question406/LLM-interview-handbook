@@ -31,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA / OpenAI 的 kernel 白板不让你背 fused kernel 名字，要你把 softmax 的归约拆开。Dao et al. 的 FlashAttention 把 Milakov 的 online softmax 嵌进 SRAM tiling：分数 `[T, S]` 从不写回 HBM。IO 账见 `nvidia-flash-attn`。稳定但物化全表的写法见 `coding-softmax-stable`。评委听的是：**为什么不能对每个 K 块单独 softmax**，以及 running max 变了以后旧输出怎么乘回去。
+NVIDIA / OpenAI 的 kernel 白板不让你背 fused kernel 名字，要你把 softmax 的归约拆开。Dao et al. 的 FlashAttention 把 Milakov 的 online softmax 嵌进 SRAM tiling：分数 `[T, S]` 从不写回 HBM。IO 账见 `nvidia-flash-attn`。稳定但物化全表的写法见 `coding-softmax-stable`。要说清：为什么不能对每个 K 块单独 softmax，以及 running max 变了以后旧输出怎么乘回去。
 
 ## 三遍、两遍、online
 
@@ -63,10 +63,8 @@ def online_stats(x):
         m = m2
     return m, ell
 
-
 def softmax_from_stats(x, m, ell):
     return np.exp(np.asarray(x, dtype=np.float64) - m) / ell
-
 
 def online_attn_row(q, k, v, scale, tile=16):
     # q: [D], k,v: [S, D]；按 K 块扫，O 在线 rescale

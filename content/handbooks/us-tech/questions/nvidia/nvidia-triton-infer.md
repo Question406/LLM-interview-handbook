@@ -31,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 推理 / 系统面常问「模型怎么在 GPU 上跑起来」，不是再写一遍 attention。我会先把 Triton 说成多模型网关：动态 batch、版本、ensemble、TensorRT / TensorRT-LLM 后端。评委要听调度和共享，不接受「我们用 FastAPI 包一层」。LLM 的连续批处理见 `nvidia-paged-kv`，那是另一条调度轴，先分清。
+NVIDIA 推理 / 系统面常问「模型怎么在 GPU 上跑起来」，不是再写一遍 attention。我会先把 Triton 说成多模型网关：动态 batch、版本、ensemble、TensorRT / TensorRT-LLM 后端。要讲调度和共享，别答「我们用 FastAPI 包一层」。LLM 的连续批处理见 `nvidia-paged-kv`，那是另一条调度轴，先分清。
 
 ## 动态 batch 在干什么
 
@@ -45,7 +45,7 @@ NVIDIA 推理 / 系统面常问「模型怎么在 GPU 上跑起来」，不是�
 
 一个 model repository 里可以挂很多模型、每个模型多个 version。`instance_group` 决定副本数和绑哪张卡。默认同一张 GPU 上 Triton 可以 concurrent model execution：两个模型的 kernel 交错，前提是显存都放得下、而且没有自己把设备占死。
 
-共享的三个档次，面试要分开：
+共享分三档，面试要分开：
 
 1. 时间片 / 并发 kernel：最便宜，抢 SM 和 HBM。一个大模型 prefill 能把另一个的 p99 打穿。
 2. CUDA MPS：多个上下文在同一 SM 调度，隔离弱于 MIG，好于完全裸奔。

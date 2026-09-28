@@ -28,17 +28,17 @@ sources:
     type: secondary
 ---
 
-OpenAI 推理、Anthropic 限流、NVIDIA 推理栈都会问「怎么撑住对话产品」。vLLM / Orca 给的是分页 KV 和 iteration 级调度。白板要排队、优先级、前缀缓存、限流四件套，不是画一个负载均衡就停。不是某次现场逐字题。连续批处理见 `openai-continuous-batching`；prefill/decode 拆分见 `openai-prefill-decode`；KV 页见 `sys-paged-attn`。工具对话的产品约束见 `design-chat-tools`。
+OpenAI 推理、Anthropic 限流、NVIDIA 推理栈都会问「怎么撑住对话产品」。vLLM / Orca 给的是分页 KV 和 iteration 级调度。白板要排队、优先级、前缀缓存、限流，不是画一个负载均衡就停。不是某次现场逐字题。连续批处理见 `openai-continuous-batching`；prefill/decode 拆分见 `openai-prefill-decode`；KV 页见 `sys-paged-attn`。工具对话的产品约束见 `design-chat-tools`。
 
 ## 请求进门：限流和队列
 
 我会先问：是否流式、首 token SLO、上下文上限、是否共享系统提示、付费档 vs 免费档（不谈单价）、是否允许离线批。然后把入口写成：
 
-- **鉴权 + 配额。** 每用户 / 每 API key 的 RPM、TPM、并发。令牌桶：突发可借，长期速率封顶。Anthropic 式的按档限流见 `anthropic-rate-limit`；内存实现见 `xai-rate-limiter`。超限返回明确 retry，不要默默排队到超时。
-- **准入。** KV 水位高于阈值就拒绝或降级，不要接进来再 OOM。分页 KV 让水位可算：每条请求预估 `pages ≈ prompt_tokens + max_new`，见 `sys-paged-attn`、`nvidia-paged-kv`。
-- **队列。** 交互、续写（已有前缀）、批处理三条。交互保 p95 首 token；续写优先命中前缀缓存；批处理填空泡。加权公平：免费档不饿死，但交互不被长批处理堵住。队头阻塞来自请求级 batch，必须 iteration 级调度，见 `openai-continuous-batching`。
+- 鉴权 + 配额。 每用户 / 每 API key 的 RPM、TPM、并发。令牌桶：突发可借，长期速率封顶。Anthropic 式的按档限流见 `anthropic-rate-limit`；内存实现见 `xai-rate-limiter`。超限返回明确 retry，不要默默排队到超时。
+- 准入。 KV 水位高于阈值就拒绝或降级，不要接进来再 OOM。分页 KV 让水位可算：每条请求预估 `pages ≈ prompt_tokens + max_new`，见 `sys-paged-attn`、`nvidia-paged-kv`。
+- 队列。 交互、续写（已有前缀）、批处理三条。交互保 p95 首 token；续写优先命中前缀缓存；批处理填空泡。加权公平：免费档不饿死，但交互不被长批处理堵住。队头阻塞来自请求级 batch，必须 iteration 级调度，见 `openai-continuous-batching`。
 
-优先级不是「谁付钱谁插队」一句话。我会写：同优先级 FIFO；交互 > 批；已占用大量 KV 的长生成可降优先级防止占满。饥饿用 aging。取消要能从队列和 running batch 摘掉并释放页。
+优先级不是「谁付钱谁插队」一句话。同优先级 FIFO；交互 > 批；已占用大量 KV 的长生成可降优先级防止占满。饥饿用 aging。取消要能从队列和 running batch 摘掉并释放页。
 
 ## 前缀缓存：复用的是 KV 页
 
@@ -52,9 +52,9 @@ OpenAI 推理、Anthropic 限流、NVIDIA 推理栈都会问「怎么撑住对�
 
 首 token 被 prefill 绑住，decode 绑住 slot。混在同一池，长 prefill 会戳穿交互 p95。拆池或分优先级：prefill 有并发上限；decode 连续批。更大流量可以把 prefill 和 decode 拆到不同机器，见 `sys-prefill-decode-disagg`。NVIDIA 侧看 kernel 占用和 KV bandwidth，不是只看 FLOPs。流式先把已生成 token 推出去；引用校验仍按句，不要先输出再删，见 `design-prod-rag`。
 
-取消必须能从队列和 running batch 摘掉并释放页。否则用户刷新会留下幽灵 decode 占满水位。重试带幂等键，尤其工具调用，见 `design-tool-prod`。
+否则用户刷新会留下幽灵 decode 占满水位。重试带幂等键，尤其工具调用，见 `design-tool-prod`。
 
-失败：限流不明显导致客户端空转；无准入控制导致 KV 碎裂；前缀键漏了 LoRA id 导致串话；批处理饿死交互；重试没有幂等把工具副作用打两次，见 `design-tool-prod`。
+失败：限流不明显导致客户端空转；无准入控制导致 KV 碎裂；前缀键漏了 LoRA id 导致串话；批处理饿死交互；重试没有幂等把工具副作用打两次。
 
 ## 指标和发版
 

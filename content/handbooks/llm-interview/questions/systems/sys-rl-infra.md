@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易把 RL 训练画成「换一个 loss 的 SFT」。SFT 的数据在磁盘上已经写死，一步就是取 batch、前向、反向。On-policy RL 的数据是**当前策略刚生成的轨迹**，还要打分、对齐版本、再写回推理引擎。系统多出来的不是一行公式，而是一条带状态的环。
+这块容易把 RL 训练画成「换一个 loss 的 SFT」。SFT 的数据在磁盘上已经写死，一步就是取 batch、前向、反向。On-policy RL 的数据是**当前策略刚生成的轨迹**，还要打分、对齐版本、再写回推理引擎。系统多出来的是一条带状态的环，而不只是一行公式。
 
 ## 1. 典型 loop 比 SFT 多四类组件
 
@@ -37,9 +37,9 @@ $$
 | 模型角色 | 一份可训权重 | policy + 冻结 reference（+ 可选 critic / RM） |
 | 版本 | checkpoint 即可 | rollout 必须知道自己在用哪一版 $\theta$ |
 
-HybridFlow（veRL）把这套拆成可组合的 dataflow：generation、reward、advantage、update 可以换引擎、换并行，而不把「算法公式」和「谁占哪张卡」焊死。我会讲清 **multi-controller + 混合部署**，不必背框架 API。
+HybridFlow（veRL）把这套拆成可组合的 dataflow：generation、reward、advantage、update 可以换引擎、换并行，而不把「算法公式」和「谁占哪张卡」焊死。讲清 multi-controller + 混合部署即可，不必背框架 API。
 
-Agent RL 再叠加 sandbox / browser / 搜索 API：一步动作的延迟从毫秒变成秒，失败要重试，episode 远长于单轮 chat。此时 rollout 才是真正的吞吐瓶颈。
+Agent RL 再叠加 sandbox / browser / 搜索 API：一步动作的延迟从毫秒变成秒，失败要重试，episode 远长于单轮 chat。此时 rollout 往往才是吞吐瓶颈。
 
 ## 2. 墙钟往往卡在 generation，不是 backward
 

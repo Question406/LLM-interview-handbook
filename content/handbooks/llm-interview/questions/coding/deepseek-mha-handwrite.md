@@ -29,7 +29,7 @@ sources:
 
 来源为公开练习向整理帖（非严格候选人逐字实录），按 DeepSeek 系算法岗高频手撕准备；`realInterview: false`。
 
-这块容易公式能背、形状写错，或把 GQA/MLA 说成改了 softmax。数学骨架不变：缩放点积 + mask + 加权 $V$。MLA 是另一压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
+错法：公式能背、形状写错，或把 GQA/MLA 说成改了 softmax。数学骨架不变：缩放点积 + mask + 加权 $V$。MLA 是另一压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
 
 ## 公式与白板检查清单
 
@@ -58,7 +58,7 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
 
 形状口播：$x[B,T,C]$ → 投影仍 $[B,T,C]$ → `view` $[B,T,H,d_h]$ → `transpose` $[B,H,T,d_h]$ → scores $[B,H,T,T]$ → 加权 $V$ 后拼回 $[B,T,C]$。
 
-## GQA / MLA：只改组织，不改 softmax
+## GQA / MLA：压缩轴不同，softmax 不变
 
 GQA：$H_{\mathrm{kv}}\lt H$，K/V 少头，Q 做 `repeat_interleave`。KV cache 从 $O(H d_h)$ 降到 $O(H_{\mathrm{kv}} d_h)$。MLA：沿表示维压 latent，RoPE 拆开，推理吸收矩阵，见 `arch-mla`。面试一句话：二者都为 decode 带宽，压缩轴不同。不要在 MHA 代码里假装写了 MLA。
 

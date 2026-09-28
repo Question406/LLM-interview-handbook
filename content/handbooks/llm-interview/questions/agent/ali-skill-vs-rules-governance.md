@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位、轮次与发帖时间明确，届别和面试日期未披露）
 - 原始措辞：**“skills和rules的区别？”**
 
-这题别答成「都是 prompt 里的说明」。阿里云 Agent 平台一面要听的是治理边界：Skill 是能力包，Rule 是强制约束。我会先说一句：Rule 决定能不能做，Skill 指导怎么做。再讲生命周期和冲突裁决必须落在 runtime，不是模型自觉。和 `ant-skills-vs-harness`、`agent-skill-eval` 同一套分层。
+错法：「都是 prompt 里的说明」。阿里云 Agent 平台一面要听的是治理边界：Skill 是能力包，Rule 是强制约束。Rule 决定能不能做，Skill 指导怎么做。再讲生命周期和冲突裁决必须落在 runtime，不是模型自觉。和 `ant-skills-vs-harness`、`agent-skill-eval` 同一套分层。
 
 ## Skill 是按需加载的程序知识
 

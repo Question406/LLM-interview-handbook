@@ -86,10 +86,10 @@ class LRUCache:
 
 和 `xai-kv-txn` 衔接是这轮加分：
 
-1. **缓存里只放已提交版本。** 事务写缓冲在 commit 成功前不要 `put` 进共享 LRU，否则别的读会看到脏数据，快照隔离碎了。
-2. **commit 后按版本号 put。** 迟到的旧 commit 不能覆盖新版本：`if incoming.ver < cached.ver: ignore`。
-3. **逐出不等于 abort。** LRU 丢掉的是副本，源 KV 还在。但若你把 LRU 当主存（面试常这样简化），逐出就是删 key，要和事务的写集核对：未提交 key 被逐出，commit 时还得能写回去，或者禁止逐出「有活跃写锁」的节点。
-4. **读快照。** 事务 begin 时记下版本，`get` 走缓存若 `cached.ver > begin.ver` 要回源到旧版本，或直接 miss 回主结构。缓存命中不是「最新就好」。
+1. 缓存里只放已提交版本。事务写缓冲在 commit 成功前不要 `put` 进共享 LRU，否则别的读会看到脏数据，快照隔离碎了。
+2. commit 后按版本号 put。迟到的旧 commit 不能覆盖新版本：`if incoming.ver < cached.ver: ignore`。
+3. 逐出不等于 abort。LRU 丢掉的是副本，源 KV 还在。但若你把 LRU 当主存（面试常这样简化），逐出就是删 key，要和事务的写集核对：未提交 key 被逐出，commit 时还得能写回去，或者禁止逐出「有活跃写锁」的节点。
+4. 读快照。事务 begin 时记下版本，`get` 走缓存若 `cached.ver > begin.ver` 要回源到旧版本，或直接 miss 回主结构。缓存命中不是「最新就好」。
 
 TTL 当 follow-up：过期和 LRU 是两条轴，惰性删（get 时看 `expire_at`）加容量逐出。不要和 `xai-rate-limiter` 的时间窗搅成一个桶——限流是配额，缓存是副本。
 

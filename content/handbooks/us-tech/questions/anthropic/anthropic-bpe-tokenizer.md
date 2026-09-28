@@ -35,7 +35,7 @@ sources:
 - 岗位：SWE 编码题库中的 Tokenizer 题（公开复盘把其列为题库第六题）
 - 来源：LinkJob 对近两年面经的汇总；实现细节以 Sennrich BPE 和字节级 BPE 为准
 
-Tokenizer 容易答成「用 HuggingFace」。Anthropic 要的是 merge 表怎么用、空格和字节怎么处理、encode 是否稳定。
+Anthropic 要的是 merge 表怎么用、空格和字节怎么处理、encode 是否稳定，不是调库。
 
 ## 训练：pair 计数 + 有序列表
 

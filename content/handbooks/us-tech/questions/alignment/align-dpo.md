@@ -72,7 +72,7 @@ $\beta$ 不是学习率。LR 太大是优化器问题；$\beta$ 太大是目标�
 
 ## 和 PPO 比，面试怎么收
 
-DPO 不 rollout、不训单独 RM，离线偏好就能训。代价是数据覆盖当前策略：off-policy 偏好过旧，隐式 RM 会过拟合那批 pair。PPO 在线、贵，但能边采边更新。资源紧、有现成 HH 式 pair，DPO 合理；要持续打新能力、奖励会漂，PPO / GRPO 更合适。不是「DPO 淘汰了 RLHF」。
+DPO 不 rollout、不训单独 RM，离线偏好就能训。代价是数据覆盖当前策略：off-policy 偏好过旧，隐式 RM 会过拟合那批 pair。PPO 在线、贵，但能边采边更新。资源紧、有现成 HH 式 pair，DPO 合理；要持续打新能力、奖励会漂，PPO / GRPO 更合适。DPO 没有淘汰 RLHF。
 
 ## 追问
 

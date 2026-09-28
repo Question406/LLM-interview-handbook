@@ -49,7 +49,7 @@ batch 里各序列长度不同，再加上 **chunked prefill**：微批一切，
 
 ## 和 Dense 比墙钟
 
-同激活 FLOPs 的 MoE 在 **大 prefill、大 batch** 时更快或接近；在 **小 batch decode** 时经常更慢，因为多读了 $k$ 套专家权重和一次不规则通信。面试报「671B 激活 37B 所以 decode 像 37B」是算力账，不是延迟账。延迟账看：权重字节 / HBM 带宽、EP hop、kernel 次数。
+同激活 FLOPs 的 MoE 在 **大 prefill、大 batch** 时更快或接近；在 **小 batch decode** 时经常更慢，因为多读了 $k$ 套专家权重和一次不规则通信。面试报「671B 激活 37B 所以 decode 像 37B」是算力账，不是延迟账。延迟看：权重字节 / HBM 带宽、EP hop、kernel 次数。
 
 评测拆开：prefill tokens/s、decode tokens/s、TPOT P99、每层专家命中直方图。只报平均 tokens/s 会把一个超长 prefill 的好数字盖住 decode 的差数字。
 

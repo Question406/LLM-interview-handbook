@@ -32,11 +32,11 @@ sources:
     type: primary
 ---
 
-Bedrock / AGI 训练岗会问「为什么不直接上 A100」。公开层答案是：Trainium 是 AWS 自研训练加速器，软件栈叫 Neuron，不是 CUDA 的换皮。AWS 博客写过用 Trn1 集群做端到端 LLM 预训练：激活重计算、张量 / 流水 / 序列 / 数据并行、BF16 加随机舍入。不是某次逐字真题。Leadership Principles 落点是成本、可复现和失败可诊断，见 `amazon-lp-ml`。
+Bedrock / AGI 训练岗会问「为什么不直接上 A100」。公开层答案是：Trainium 是 AWS 自研训练加速器，软件栈叫 Neuron，不是 CUDA 的换皮。AWS 博客写过用 Trn1 集群做端到端 LLM 预训练：激活重计算、张量 / 流水 / 序列 / 数据并行、BF16 加随机舍入。Leadership Principles 落点是成本、可复现和失败可诊断，见 `amazon-lp-ml`。
 
 ## 三块不一样：编译、通信、内核
 
-我会先画三层，避免一上来比 FLOPS。
+先画三层，避免一上来比 FLOPS。
 
 1. **编译。** GPU 训练常是 eager：PyTorch 立刻跑 CUDA kernel。Neuron 历史上是图编译（XLA / `neuronx-cc`）：先追完整段图，再生成在 NeuronCore 上跑的指令。形状一变就要再编译，动态 `seq_len`、动态 MoE 路由、数据依赖的控制流都痛。公开 LLM 配方会开 `--model-type=transformer`、`--distribution-strategy=llm-training` 一类开关，让编译器按「参数 / 梯度 / 优化器状态被切过」来做。新一点的 Native PyTorch / `torch.compile` 把迭代变快，但高性能路径仍要过编译器，不是「有 CUDA 就行」。
 2. **集合通信。** GPU 默认 NCCL。Trainium 走 Neuron collectives 库：单机 NeuronLink、跨机 EFA。编译器先把 all-reduce 收成占位，runtime 再按拓扑填。文档强调 **通信有专用硬件，不和计算抢同一套执行资源**，所以可以一边算下一层梯度一边 all-reduce 上一层。这是公开的重叠故事，不要讲成「我们手写了 NCCL」。测连通用 `nccom-test`，不是 `nccl-tests`。
@@ -48,7 +48,7 @@ Bedrock / AGI 训练岗会问「为什么不直接上 A100」。公开层答案�
 
 ## 现场怎么讲迁移，不讲内部微架构
 
-错法：宣称「Neuron 是 CUDA drop-in」。对的说法是：HuggingFace Optimum Neuron、NeuronX Distributed、部分 TorchTitan 路径能少改模型代码；**手写 attention、fused cross-entropy、自定义量化核要重写**。另一错法：把 Inferentia 说成训练芯片。Inferentia 偏推理，Trainium 偏训练；Neuron SDK 两者都管，实例家族不要混。
+Neuron 不是 CUDA drop-in。更接近事实的说法：HuggingFace Optimum Neuron、NeuronX Distributed、部分 TorchTitan 路径能少改模型代码；**手写 attention、fused cross-entropy、自定义量化核要重写**。另一错法：把 Inferentia 说成训练芯片。Inferentia 偏推理，Trainium 偏训练；Neuron SDK 两者都管，实例家族不要混。
 
 稳定训练的公开清单，我会当门禁：
 

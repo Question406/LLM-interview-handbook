@@ -52,7 +52,7 @@ LLM 样本高度相关，这条公式是上界不是实测。$N$ 加大后边际
 
 训练把 $p$ 本身抬高，同样的 $N$ 更值钱；测试把已经学到的分布采得更满。只堆 test-time 而 $p$ 极低，是在用墙钟补一个不会的模型。只堆 RL 而部署仍要很大 $N$，说明默认解码还没对准，或者多样性塌了、选择器在捡同一条链。
 
-面试把一句话说死：training explore 改 $\pi$，test-time explore 搜 $\pi$。比较两者时锁总 token / 墙钟 / verifier 成本，不要锁「都采了 8 次」。
+training explore 改 $\pi$，test-time explore 搜 $\pi$。比较两者时锁总 token / 墙钟 / verifier 成本，不要锁「都采了 8 次」。
 
 ## 追问
 

@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「就是 reward」或「就是 PPO 的 GAE」。GRPO 用同一 prompt 的一组样本做相对标准化，代替 critic 的 $V(s)$。直接用 raw reward：尺度不稳、不同题不可比，也分不清「都还行」和「明显更好」。白板先写公式，再讲为何不用绝对分。完整 loss 见 `ali-grpo-loss`，空组见 `ali-dapo-allcorrect`。
+错法：「就是 reward」或「就是 PPO 的 GAE」。GRPO 用同一 prompt 的一组样本做相对标准化，代替 critic 的 $V(s)$。直接用 raw reward：尺度不稳、不同题不可比，也分不清「都还行」和「明显更好」。白板先写公式，再讲为何不用绝对分。完整 loss 见 `ali-grpo-loss`，空组见 `ali-dapo-allcorrect`。
 
 ## 组内标准化
 

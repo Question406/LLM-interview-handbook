@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“如果 Agent 在执行代码修改时生成了错误 patch，你怎么做回滚、验证和再尝试？”**；**“如果让你把这个本地 Coding Agent 做成团队内部工具，你会怎么处理权限、安全和审计？比如文件读写、命令执行、敏感信息泄露。”**
 
-字节 Agent 开发一面这题，这块容易答成「让模型再生成一次」或「system prompt 里写不要改错文件」。我会讲 harness：每次尝试钉在明确基准 commit 上，失败就丢掉脏树，再带失败日志重规划。做成内部工具时，权限、沙箱和审计是运行时策略，不是 prompt。模型不能直接拿生产凭据。相关卡：`byte-tool-fail-retry`、`moonshot-desktop-local-file-permission`。
+错法：「让模型再生成一次」或「system prompt 里写不要改错文件」。harness 才是答案：每次尝试钉在明确基准 commit 上，失败就丢掉脏树，再带失败日志重规划。做成内部工具时，权限、沙箱和审计是运行时策略，不是 prompt。模型不能直接拿生产凭据。相关卡：`byte-tool-fail-retry`、`moonshot-desktop-local-file-permission`。
 
 ## 回滚与再试：脏树上禁止叠幻觉
 

@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GRPO中roll out过程的长尾问题，导致GPU使用率低，有什么工程上的解决方案”**
 
-字节 27 暑期一面这题，这块容易直接答成「加大并发」或「把 max_len 砍短」。GRPO 一个 group 要等最慢那条样本，generation worker 空转、padding 变厚、learner 出现 bubble。要先分清是 decode 长尾还是工具 I/O 长尾，再动调度；异步化会引入 off-policy，必须管 freshness。相关卡：`infra-rl-rollout-optimize`、`slime-dynamic-partial`、`sys-cont-batch`。
+错法：「加大并发」或「把 max_len 砍短」。GRPO 一个 group 要等最慢那条样本，generation worker 空转、padding 变厚、learner 出现 bubble。要先分清是 decode 长尾还是工具 I/O 长尾，再动调度；异步化会引入 off-policy，必须管 freshness。相关卡：`infra-rl-rollout-optimize`、`slime-dynamic-partial`、`sys-cont-batch`。
 
 ## 先测量尾部是谁
 

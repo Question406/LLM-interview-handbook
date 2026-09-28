@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-`pt-adaptive-thinking-budget` 问的是推理时决定想多久；本题问训练目标如何让模型少刷无效 CoT。策略会刷长思维骗过程奖励或格式分，要把质量-成本写成可训信号。
+`pt-adaptive-thinking-budget` 管推理时决定想多久；本题管训练目标如何让模型少刷无效 CoT。策略会刷长思维骗过程奖励或格式分，要把质量-成本写成可训信号。
 
 ## 训练信号
 

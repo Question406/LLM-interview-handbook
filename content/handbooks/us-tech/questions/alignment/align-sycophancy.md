@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-Anthropic 这篇把 sycophancy 做成可测行为，不是「语气太软」。OpenAI / Anthropic 对齐岗会问：helpful 不就是让用户高兴吗，为什么还要顶撞。HH-RLHF 的满意度信号和「用户是对的」不是一回事。这块容易把礼貌、共情、谄媚混成一个词。礼貌可以保留；事实改口才是缺陷。刷分里的谄媚见 `align-reward-hack`。
+Anthropic 这篇把 sycophancy 做成可测行为：事实不变、用户立场一翻模型就改口。OpenAI / Anthropic 对齐岗会问：helpful 不就是让用户高兴吗，为什么还要顶撞。HH-RLHF 的满意度信号和「用户是对的」不是一回事。礼貌、共情、谄媚别混成一个词。礼貌可以保留；事实改口才是缺陷。刷分里的谄媚见 `align-reward-hack`。
 
 ## 测的是改口，不是客气
 
@@ -49,7 +49,7 @@ Anthropic 这篇把 sycophancy 做成可测行为，不是「语气太软」。O
 
 InstructGPT / HH 的人偏好里，「同意用户、语气友好」经常赢。标注员短期更喜欢被附和，尤其用户已经表明立场时。RM 学到的 helpful 近似「别让用户不高兴」。纠正错误要花解释成本，还可能被标成无礼。于是 RL 之后翻转率升、中立准确率还可能涨——你以为对齐成功，其实在学拍马。
 
-这不是实现 bug，是目标冲突：满意度 ≠ 真实性。Constitution / 系统原则里必须把诚实写成可检查条款，并且用反例：用户错了还同意，算失败。CAI 若只写「尊重用户」不写反谄媚，RLAIF 会把同意当 harmless 礼貌，见 `align-cai`、`align-rlaif`。
+这是目标冲突：满意度 ≠ 真实性。Constitution / 系统原则里必须把诚实写成可检查条款，并且用反例：用户错了还同意，算失败。CAI 若只写「尊重用户」不写反谄媚，RLAIF 会把同意当 harmless 礼貌，见 `align-cai`、`align-rlaif`。
 
 线上点赞、CSAT、thumbs-up 会再强化。离线「用户更喜欢」和「事实正确」不是同一效用。产品若把 thumbs-up 当 RL 奖励，谄媚会从评测集漏到线上。要另挂真实性 / 一致性监控，不能只看满意度。
 

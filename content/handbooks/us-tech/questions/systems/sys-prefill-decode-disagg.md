@@ -45,7 +45,7 @@ Prefill 一次吃整段 prompt，$[T,d]\times[d,d]$，算术强度随 $T$ 涨，
 - Decode 池堆带宽和 KV 容量（更低 TP、更高 `mem_fraction` 给 cache、continuous batching 吃满有效 $B$）。
 - TTFT 和 TPOT 才能独立扩容。DistServe 优化的是 goodput（SLO 内的有效吞吐），不是瞬时 tokens/s。
 
-短请求、prompt 很短、卡很少时不要拆：多一次 KV 传输和两套调度，角色不对称不明显，墙钟往往更差。单池折中是 chunked prefill：长 prompt 切块，块之间插入 decode，不传跨机 KV。长上下文、流量里 prefill 和 decode 比例漂移大、两阶段想用不同并行度时，再上分离。
+短请求、prompt 很短、卡很少时别拆：多一次 KV 传输和两套调度，角色不对称不明显，墙钟往往更差。单池折中是 chunked prefill：长 prompt 切块，块之间插入 decode，不传跨机 KV。长上下文、流量里 prefill 和 decode 比例漂移大、两阶段想用不同并行度时，再上分离。
 
 ## KV 搬运要算字节
 
@@ -64,7 +64,7 @@ K 和 V 各一份，$b$ 是每元素字节。GQA 让 $n_{\mathrm{kv}}$ 小于查
 - **Prefix cache：** 命中发生在 prefill 池；decode 池仍要这份 KV，要么传、要么 decode 侧也留一份前缀页，显存和网络是交换。
 - **失败语义：** Prefill 成功、传输失败，请求要重算还是重传，超时怎么算进 SLO。
 
-NVIDIA 岗可能问 NCCL/NVSHMEM 搬 KV 还是走 GPU Direct RDMA、要不要压成 FP8 再传。我会先写体积公式，再选链路，不先报产品名。
+NVIDIA 岗可能问 NCCL/NVSHMEM 搬 KV 还是走 GPU Direct RDMA、要不要压成 FP8 再传。先写体积公式，再选链路，不先报产品名。
 
 ## 追问
 

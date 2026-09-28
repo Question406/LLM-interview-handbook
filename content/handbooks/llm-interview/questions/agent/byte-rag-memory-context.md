@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“你怎么看 RAG、Memory 和 Context Engineering？这三者分别解决什么问题？在你的 Coding Agent 里是怎么配合的？”**
 
-这块容易直接答成把三者塞进同一个向量库，或者把对话摘要既当检索证据又当长期事实。RAG、Memory、Context Engineering 解决的问题不同：外部只读知识、跨任务可写状态、当前窗口的预算与选择。混用后污染无法归因，分不清是索引脏、记忆写错，还是窗口塞错了。概念对照也可看 `meituan-memory-vs-rag`；Agent 与 RAG 的原理差见 `jd-agent-vs-rag`。
+错法：把三者塞进同一个向量库，或者把对话摘要既当检索证据又当长期事实。RAG、Memory、Context Engineering 解决的问题不同：外部只读知识、跨任务可写状态、当前窗口的预算与选择。混用后污染无法归因，分不清是索引脏、记忆写错，还是窗口塞错了。概念对照也可看 `meituan-memory-vs-rag`；Agent 与 RAG 的原理差见 `jd-agent-vs-rag`。
 
 ## 三者分别解决什么
 
@@ -40,7 +40,7 @@ sources:
 
 **Context Engineering**：在有限窗口里决定放什么：当前失败测试、相关文件切片、规格、刚拿到的工具观察。它不生产新知识，只做选择、排序、压缩与隔离。压缩策略见 `byte-three-level-compress`。
 
-一句话：RAG 回答「去哪读」，Memory 回答「什么必须记住」，Context 回答「这一步窗口里放得下什么」。
+RAG 回答「去哪读」，Memory 回答「什么必须记住」，Context 回答「这一步窗口里放得下什么」。
 
 ## Coding Agent 里怎么配合
 
@@ -52,7 +52,7 @@ sources:
 
 典型病：把对话摘要当 RAG 证据（摘要没有行号，无法跳转）；把检索到的 README 当长期记忆（文档改了摘要不过期）；把整个检索结果当 Context（噪声挤掉当前 diff）。污染纠错见 `byte-memory-pollution`。
 
-评测必须分开：检索看命中率与证据 ID；Memory 看约束是否在后续任务仍被遵守、过期是否失效；Context 看窗口 token、硬约束是否还在、无关文件占比。合成一个「问答准确率」会把三种失败糊在一起。我会主动说「分三条曲线看」，不拿向量库当主答案。
+评测必须分开：检索看命中率与证据 ID；Memory 看约束是否在后续任务仍被遵守、过期是否失效；Context 看窗口 token、硬约束是否还在、无关文件占比。合成一个「问答准确率」会把三种失败糊在一起。评测分三条曲线看，不拿向量库当主答案。
 
 ## 追问
 

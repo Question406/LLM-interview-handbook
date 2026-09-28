@@ -66,7 +66,7 @@ Encoder 偏 compute、形状乱；LLM decode 偏带宽、要稳定的瘦 GEMM。
 
 Prefix / radix：文本系统提示可以命中；图的 KV 只有 LLM 算过之后才有。EC 命中不等于 KV 命中。图变一个像素，视觉 token 变，从占位符起整段 LLM 前缀都要重算，见 `sys-prefix-cache`、`sys-radix-tree`。
 
-错误说法：一张图等于一个 token；encoder TP 一定比 DP 好；chunked prefill 可以从一张图中间切开；多模态 batch 就是把 pixel 和 text 拼成一个稠密 `[B, T, d]`。
+错误说法：一张图等于一个 token；encoder TP 一定比 DP 好；chunked prefill 可以从一张图中间切开；多模态 batch 就是把 pixel 和 text 拼成一个稠密 `[B, T, d]`。前两条把形状说错了，后两条把调度和正确性搞混了。
 
 监控：encoder 时间、LLM prefill 时间、视觉 token 直方图、$T_{\mathrm{vis}}$ 对 TTFT 的贡献、EC hit。只报 tokens/s 会把「图很贵」藏进平均。
 

@@ -28,7 +28,7 @@ sources:
     type: secondary
 ---
 
-广告 / 推荐 / RecSys MLE 在 Meta 几乎都会碰到「稀疏表 + 小 MLP」。DLRM 是 2019 年的公开骨架，不是今天线上的全部，但面试要用它把并行切分讲清楚。Feed 排序的级联和多目标见 `meta-newsfeed-rank`，本题只收模型怎么切。
+广告 / 推荐 / RecSys MLE 在 Meta 几乎都会碰到「稀疏表 + 小 MLP」。DLRM 是 2019 年的公开骨架，线上还会叠很多东西；面试用它把并行切分讲清楚就够。Feed 排序的级联和多目标见 `meta-newsfeed-rank`，本题只收模型怎么切。
 
 ## 模型四段，别画成纯 Transformer
 
@@ -51,15 +51,15 @@ MLP 参数相对小，**数据并行**（每卡一份 MLP，样本切 $B/N$）�
 - **Row-wise（按行切）：** 一张大表按 id 段切到多卡。负载更匀，一次 lookup 可能要跨卡。
 - 列切 / 把 $d$ 切开比较少见，交互和 pooling 会变烦。
 
-训练一步的通信是 **all-to-all**，不是 Transformer 那种层内 all-reduce。直觉：我这张卡负责若干部表，但 mini-batch 里每条样本的 id 落在所有表上。各卡先按自己管的表做 lookup，再 all-to-all，让第 $i$ 张卡凑齐它那份样本的全部 embedding，才能做 interaction + top MLP。反向把梯度 all-to-all 回去，更新本地表。
+训练一步的通信是 all-to-all，跟 Transformer 层内 all-reduce 不是一路。直觉：我这张卡负责若干部表，但 mini-batch 里每条样本的 id 落在所有表上。各卡先按自己管的表做 lookup，再 all-to-all，让第 $i$ 张卡凑齐它那份样本的全部 embedding，才能做 interaction + top MLP。反向把梯度 all-to-all 回去，更新本地表。
 
-和 FSDP 的对比（`meta-fsdp2`）：FSDP 切的是**同一套 dense 权重的副本**；DLRM 切的是**不同特征的表**。两套可以叠（大 MLP 再 FSDP），但面试先把 all-to-all 说完，不要用 ZeRO-3 替代 embedding 并行。
+和 FSDP 比（`meta-fsdp2`）：FSDP 切同一套 dense 权重的副本；DLRM 切不同特征的表。两套可以叠（大 MLP 再 FSDP），但面试先把 all-to-all 说完，别用 ZeRO-3 顶替 embedding 并行。
 
 ## 面试要能点的坑
 
 Embedding 是 **随机写入 + 极不均衡**。Hot id 的行被所有 batch 碰到，Adam 的 fp32 状态也随行走，热行又慢又费。常见工程：频率分表（热表小、驻 GPU；冷表 CPU / 多卡）、hash 碰撞换容量、AdaGrad / Row-wise 优化器减少状态。
 
-All-to-all 的字节数大约是 $B \cdot F \cdot d \cdot \mathrm{bytes}$ 量级（再乘一次反向）。$d$ 和 $F$ 变大，网络先于 GEMM 饱和。这就是为什么推荐训练常谈 RDMA / 拓扑，而不是 FlashAttention。`torch.compile` 在这种动态下标 + 集合通信上很容易 graph break，见 `meta-pytorch-compile`。
+All-to-all 的字节数大约是 $B \cdot F \cdot d \cdot \mathrm{bytes}$ 量级（再乘一次反向）。$d$ 和 $F$ 变大，网络先于 GEMM 饱和，所以推荐训练常谈 RDMA / 拓扑，FlashAttention 帮不上忙。`torch.compile` 在这种动态下标 + 集合通信上很容易 graph break，见 `meta-pytorch-compile`。
 
 评估不要只报 AUC。广告出价吃的是校准过的概率，见 `meta-ads-calibration`。DLRM 论文本身是系统+模型基线，线上还有级联、延迟预算、特征新鲜度。
 

@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Recs / 风控 / 搜索精排岗把这题当 ML 系统常识。SageMaker Feature Store 公开文档把训练-服务偏移写成它要解决的问题：online 低延迟最新值，offline S3 追加历史，两边一起开才会同步。Amazon 面试要你讲清仍会偏的地方：点时间、窗口、双写。不是「我们用了 Feature Store」就能过。Leadership Principles 落点是 Dive Deep 和 Ownership：偏移是事故，不是调参。门禁见 `amazon-lp-ml`。
+Recs / 风控 / 搜索精排岗把这题当 ML 系统常识。SageMaker Feature Store 公开文档把训练-服务偏移写成它要解决的问题：online 低延迟最新值，offline S3 追加历史，两边一起开才会同步。Amazon 面试要你讲清仍会偏的地方：点时间、窗口、双写。用了 Feature Store 不等于对齐完成。Leadership Principles 落点是 Dive Deep 和 Ownership：特征偏移是事故。门禁见 `amazon-lp-ml`。
 
 ## 两种时间，两种读法
 

@@ -26,7 +26,7 @@ sources:
     type: secondary
 ---
 
-原帖 35 题没把 LLM RL 和 Agentic RL 拆开，但同一问在 Agent 上答案会变。普通 GRPO 把结局奖励广播到所有 action token，50 步工具轨迹上这就是粗信用，见 `arl-credit`、`arl-vs-reasoning`。GiGPO（`2505.10978`）要在 **不训 Critic、不多采一套 rollout** 的前提下，给逐步相对优势。
+原帖 35 题没把 LLM RL 和 Agentic RL 拆开，但同一问在 Agent 上答案会变。普通 GRPO 把结局奖励广播到所有 action token，50 步工具轨迹上这就是粗信用，见 `arl-credit`、`arl-vs-reasoning`。GiGPO（`2505.10978`）要在不训 Critic、不多采一套 rollout 的前提下，给逐步相对优势。
 
 ## 两层组
 
@@ -46,9 +46,9 @@ $\omega$ 管逐步信号有多响。$\gamma$ 仍是逐步折扣，不要和外�
 
 论文在 ALFWorld、WebShop、搜索增强 QA 上有效，因为这些环境有可重复的锚点（房间、模板页、可哈希检索状态）。完全开放、每次 DOM 都不同的网页，内层组是空的，GiGPO 退回普通 GRPO。状态哈希若把无关 UI 噪声算进去，会把不该一组的动作捆在一起。
 
-PRM / 逐步规则分是另一条 dense 路，见 `pt-prm-orm-critic`、`byte-agentic-rl-process-reward`。GiGPO 不训练打分头，用的是 **组内对照**。过程奖励会 hacking；锚点哈希会错组。和过程分怎么选，见 `arl-process-vs-gigpo`。
+PRM / 逐步规则分是另一条 dense 路，见 `pt-prm-orm-critic`、`byte-agentic-rl-process-reward`。GiGPO 不训练打分头，用的是组内对照。过程奖励会 hacking；锚点哈希会错组。和过程分怎么选，见 `arl-process-vs-gigpo`。
 
-现场口令：外层比轨迹，内层比「同一状态下换一个动作」。没有重复状态，就没有内层。
+外层比轨迹，内层比「同一状态下换一个动作」。没有重复状态，就没有内层。
 
 ## 追问
 

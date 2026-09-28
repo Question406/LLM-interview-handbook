@@ -37,7 +37,7 @@ sources:
 
 ## 三层各自干什么
 
-我会先写体积：一份 KV 大约 $2\cdot L\cdot n_{\mathrm{kv}}\cdot d_h\cdot T\cdot b$ 字节。Decode 每步都要把历史 K/V 从 HBM 读进 SM，强度低，走带宽墙。所以分层只能是：
+我会先写体积：一份 KV 大约 $2\cdot L\cdot n_{\mathrm{kv}}\cdot d_h\cdot T\cdot b$ 字节。Decode 每步都要把历史 K/V 从 HBM 读进 SM，强度低，走带宽墙。分层只能是：
 
 - **HBM（热）：** 在飞 decode 的页、马上要用的公共前缀。这一层的容量决定 `max_num_seqs`。
 - **CPU pinned（温）：** 已完成的前缀块、暂停请求、刚结束但可能被下一轮命中的页。vLLM 用异步 DMA 和计算重叠，把写完的 GPU 块拷到 host。

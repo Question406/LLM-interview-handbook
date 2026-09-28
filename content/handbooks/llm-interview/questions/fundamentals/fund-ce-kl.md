@@ -71,4 +71,4 @@ $$
 
 ## 不要和反向 KL 混
 
-PPO / RLHF 的 drift 项是 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，期望在 **当前策略** 上取，那是反向。交叉熵 $H(\pi_{\mathrm{ref}},\pi_\theta)$ 展开后是正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi_\theta)$ 加一项常数。蚂蚁会问「PPO 的 KL 能不能改成 CE」：不能直接换，换了就改方向。推导见那张真题卡。
+PPO / RLHF 的 drift 项是 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，期望在当前策略上取，那是反向。交叉熵 $H(\pi_{\mathrm{ref}},\pi_\theta)$ 展开后是正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi_\theta)$ 加一项常数。蚂蚁会问「PPO 的 KL 能不能改成 CE」：不能直接换，换了就改方向。推导见那张真题卡。

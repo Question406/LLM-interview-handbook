@@ -47,11 +47,11 @@ RL 里还有一次「假 checkpoint」：rollout 的 KV 不能靠重算随便扔
 
 ## 和重算 logp 不是一件事
 
-HybridEngine / 采样后再用训练图算 $\log\pi_\theta$，是为了数值对齐，不是为了省激活显存。我会把 activation checkpoint、weight offload、recompute logp 画成三件：一件管训练激活、一件管参数驻留、一件管 ratio 的图。混成「都是 recompute」会被追问拆穿。ZeRO-3 / FSDP 已经在反向前后 gather/scatter 参数，再叠 full activation recompute，墙钟税是相加的，MFU 看起来会很差。这时要问：显存是被激活卡住还是被优化器状态卡住。前者才值得加 checkpoint；后者应上 ZeRO 分片或 offload，见 ZeRO 论文。两味药对两类病，不要因为「都和内存有关」就一起加到最大。
+HybridEngine / 采样后再用训练图算 $\log\pi_\theta$，是为了数值对齐，不是为了省激活显存。我会把 activation checkpoint、weight offload、recompute logp 画成三件：一件管训练激活、一件管参数驻留、一件管 ratio 的图。混成「都是 recompute」会被追问拆穿。ZeRO-3 / FSDP 已经在反向前后 gather/scatter 参数，再叠 full activation recompute，墙钟税是相加的，MFU 看起来会很差。这时要问：显存是被激活卡住还是被优化器状态卡住。前者才值得加 checkpoint；后者应上 ZeRO 分片或 offload，见 ZeRO 论文。别因为「都和内存有关」就把两边开到最大。
 
 ## 先诊断卡住的是哪类内存
 
-显存账本拆成参数、梯度、优化器状态、激活、KV。Activation checkpoint 只打激活这一项。优化器太大应对 ZeRO/FSDP 分片或 offload；KV 太大应对 paging、更小的 `rollout.n`、更短的生成。用错药会把 FLOPs 税加在已经 compute-bound 的模型上，MFU 更差、峰值却没下来。选边界按 block，目标是「刚好放下目标 $B\times T$」，不是越大越好。和通信重叠：FSDP all-gather 与重放叠在同一段会制造新峰值，要错开 prefetch。长上下文几乎必开；短序列喂满 Tensor Core 时可以少开。我会报「为了放下多大的 $B\times T$、付了多少额外 forward」，不会报「我们开了 checkpoint」。
+显存账本拆成参数、梯度、优化器状态、激活、KV。Activation checkpoint 只打激活。优化器太大用 ZeRO/FSDP 或 offload；KV 太大用 paging、更小的 `rollout.n`、更短生成。用错会把 FLOPs 税加在已经 compute-bound 的模型上。选边界按 block，目标是刚好放下 $B\times T$。FSDP all-gather 与重放叠在同一段会造新峰值，要错开 prefetch。我会报「为了放下多大的 $B\times T$、付了多少额外 forward」，不会报「我们开了 checkpoint」。
 
 ## 追问
 

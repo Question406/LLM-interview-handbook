@@ -61,7 +61,7 @@ Meta Guard 3 Vision 论文写图像会 rescale 成 **$4$ 块 $560\times 560$**�
 
 Serving 账三列：encoder 时延、视觉 KV 字节、对 TPOT 的 cross-attn 增量。图不变应缓存视觉 $K/V$；用户只追加一句文本，不要重跑 ViT。Batch 里不同图 $K$ 不同，要 pad 到 `max_num_tiles` 再用 mask，否则 $2\times2$ 和 $1\times1$ 不能拼 batch。分页 KV 管的是 **文本自注意力** 的 cache，见 `sys-paged-attn`；视觉旁路要单独算，不要假定 vLLM 一开 PagedAttention 图就不占显存，见 `meta-vllm`。
 
-错法：所有图都 pad 成正方形再缩到 $224$——字和 UI 没了。错法二：把 $K$ 开到 $6\times6$ 还不改位置编码和训练分布，推理切块训练没见过，OCR 会花。错法三：用 haystack 文本长度证明「视觉长上下文」，测的不是读图。
+错法：所有图都 pad 成正方形再缩到 $224$，字和 UI 没了。错法二：把 $K$ 开到 $6\times6$ 还不改位置编码和训练分布，推理切块训练没见过，OCR 会花。错法三：用 haystack 文本长度证明「视觉长上下文」，测的不是读图。
 
 ## 追问
 
@@ -70,4 +70,3 @@ Serving 账三列：encoder 时延、视觉 KV 字节、对 TPOT 的 cross-attn 
 - **竖图 / 横图质量差？** 往往是网格选错或 pad 没 mask。先报选了哪个 $(r,c)$，再谈模型。
 - **多图对话？** Mllama 按图 pad 到 batch 内最大图数；Guard 3 Vision 公开只保证 **每条一条图**。多图安全见 `meta-mm-safety`，别默认 Guard 能吃图集。
 - **和 NaViT 呢？** NaViT 是可变分辨率 pack 进同一 ViT batch。AnyRes / 3.2 tile 是推理时选离散网格。面试抓住「谁吃 LM 窗」即可。
----

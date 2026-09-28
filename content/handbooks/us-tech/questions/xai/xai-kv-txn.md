@@ -31,7 +31,7 @@ sources:
 - 来源：一亩三分地 xAI 题库（2026-08 更新）列出 in-memory KV with transactions、BankAccount race 的 15 分钟视频面；AceOffer 汇总 80+ 份报告，KV+事务和 race 都是高频
 - 口味：短、贴系统、要你当场改对。算法花样不是重点
 
-和 Anthropic 内存库 (`anthropic-inmemory-db`) 亲戚，但 xAI 更抠 **并发正确性**。TTL 不是主线，事务和 race 才是。
+和 Anthropic 内存库 (`anthropic-inmemory-db`) 亲戚，但 xAI 更抠并发正确性。TTL 不是主线，事务和 race 才是。
 
 ## KV + 事务
 

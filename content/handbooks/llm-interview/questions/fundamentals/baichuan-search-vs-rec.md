@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“了解搜索推荐相关内容吗”**
 
-这块容易直接答成「都是召回加排序」，或者把推荐点击直接当 RAG 正负例。二者目标函数不同：搜索有明确 query，优化相关性和准召；推荐常无 query，优化下一曝光与消费。本面后面的 Query 改写、三路召回、例子库都是搜索组件，不要用推荐口吻回答。改写见 `baichuan-query-rewrite-model-choice`，三路召回见 `baichuan-three-path-recall`，例子库见 `baichuan-case-library-construction`。RAG 管线见 `fund-rag`，评测见 `baichuan-ragas-eval`。
+错法：「都是召回加排序」，或者把推荐点击直接当 RAG 正负例。二者目标函数不同：搜索有明确 query，优化相关性和准召；推荐常无 query，优化下一曝光与消费。本面后面的 Query 改写、三路召回、例子库都是搜索组件，不要用推荐口吻回答。改写见 `baichuan-query-rewrite-model-choice`，三路召回见 `baichuan-three-path-recall`，例子库见 `baichuan-case-library-construction`。RAG 管线见 `fund-rag`，评测见 `baichuan-ragas-eval`。
 
 ## 目标、样本与偏差
 
@@ -50,7 +50,7 @@ RAG 检索更像搜索：有当前问题当 query，要的是能支撑回答的�
 
 若简历只有推荐：主动说清曝光偏差、样本选择偏差，以及为什么隐式反馈不能当 RAG 正负例。可以迁移的是排序与融合经验（学习 to rank、校准），不能迁移的是「无 query 猜下一曝光」。权限是另一条硬边界：推荐里「看过类似笔记的人还看了」不能突破文档 ACL；RAG 必须按当前用户可见性过滤，否则准确率再高也是事故。
 
-指标对照：搜索离线用 Recall@$k$ / nDCG，在线用点击后是否解决问题；推荐离线用 AUC / NDCG on impressions，在线用消费。RAG 在线应对「是否引用正确、是否少追问」，不是下一篇停留时长。权限过滤发生在召回之后、生成之前：不可见文档进了 contexts，忠实度指标仍可能很高，但这是安全事故不是检索成功。例子库还要按租户隔离，不能把 A 客户工单检索给 B 客户当 few-shot。若只做过推荐，面试用「有 query vs 无 query」画边界，再主动接上改写和三路召回，表明你知道后续题怎么落。隐式反馈最多当弱监督候选，必须去偏再进人标。
+指标对照：搜索离线用 Recall@$k$ / nDCG，在线用点击后是否解决问题；推荐离线用 AUC / NDCG on impressions，在线用消费。RAG 在线应对「是否引用正确、是否少追问」，不是下一篇停留时长。权限过滤发生在召回之后、生成之前：不可见文档进了 contexts，忠实度指标仍可能很高，但这是安全事故不是检索成功。例子库还要按租户隔离，不能把 A 客户工单检索给 B 客户当 few-shot。若只做过推荐，面试用「有 query vs 无 query」画边界，再主动接上改写和三路召回。隐式反馈最多当弱监督候选，必须去偏再进人标。
 
 ## 追问
 

@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“讲一下 LoRA ，两个权重矩阵一般怎么初始化，能都全0吗”**
 
-这块容易只记得「一边随机一边为零」，说不清为什么两边不能都零、也不能都随机。LoRA 把更新写成
+错法：只记得「一边随机一边为零」，说不清为什么两边不能都零、也不能都随机。LoRA 把更新写成
 
 $$
 W'=W+\frac{\alpha}{r}BA,
@@ -46,10 +46,9 @@ $$
 常见实现：$A\in\mathbb{R}^{r\times k}$ 用高斯 / Kaiming，$B\in\mathbb{R}^{d\times r}$ 全零（或反过来保持乘积为零）。前向 $\Delta W=0$，但对非零侧的梯度可以从 loss 回传，$B$ 被拉离零点后 $\Delta W$ 才非零。$\alpha/r$ 相当于步长缩放，$r$ 过小欠拟合、过大接近全参扰动。
 
 两边都随机：第一步就改变基座行为，开头 loss 可能尖刺，也破坏「从原模型出发」的假设。对已经校准过的 RMSNorm 后激活尤其危险。
-
 ## 为什么不能都全零
 
-$B=0,A=0$ 时前向是 $0$。链式法则里 $\partial\mathcal{L}/\partial A$ 含 $B$ 的因子，$\partial\mathcal{L}/\partial B$ 含 $A$ 的因子，两侧都零则梯度也常为零，适配器冻死，等于没训。这不是实现 bug，是乘积结构的死区。少数变体用正交或谱初始化，但仍会保证起步 $\Delta W\approx 0$。
+$B=0,A=0$ 时前向是 $0$。链式法则里 $\partial\mathcal{L}/\partial A$ 含 $B$ 的因子，$\partial\mathcal{L}/\partial B$ 含 $A$ 的因子，两侧都零则梯度也常为零，适配器冻死，等于没训。这是乘积结构的死区，不是实现 bug。少数变体用正交或谱初始化，但仍会保证起步 $\Delta W\approx 0$。
 
 合并权重后应做一次和未合并推理的数值对齐；$\alpha/r$、重复 merge、dtype 是合并爆炸的常见原因，见 `meituan-lora-not-after-ln`。
 

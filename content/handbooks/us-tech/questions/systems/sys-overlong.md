@@ -40,7 +40,7 @@ NVIDIA 长上下文预训练、Microsoft Ulysses、Anthropic / Google 的 100k+ 
 
 不 checkpoint 时，残差和 MLP 中间结果跟 $B\cdot T\cdot L\cdot h$ 走。ZeRO 再怎么切状态也碰不到它。FlashAttention 已经不把 $[B,H,T,T]$ 分数写回 HBM，所以「注意力矩阵爆显存」经常是过时说法；真正还在涨的是每层激活和 KV 工作区。Selective checkpoint 把便宜算子重算，大 GEMM 能存就存，见 `sys-act-checkpoint`。
 
-墙钟另一侧：朴素注意力 $O(T^2 d)$。$T$ 从 4k 到 128k 是 32 倍长度、大约 1000 倍注意力 FLOPs。Flash 改善 HBM 流量，**不改变** FLOPs 的 $T^2$。MLP 是 $O(T d^2)$，足够长之后注意力重新主导 step time。面试要分开说：显存账和算力账不是同一张图。
+墙钟另一侧：朴素注意力 $O(T^2 d)$。$T$ 从 4k 到 128k 是 32 倍长度、大约 1000 倍注意力 FLOPs。Flash 改善 HBM 流量，不改变 FLOPs 的 $T^2$。MLP 是 $O(T d^2)$，足够长之后注意力重新主导 step time。面试要分开说：显存账和算力账不是同一张图。
 
 数量级：$h=4096$，$L=32$，$B=1$，$T=128\mathrm{k}$，BF16 残差流大约 $2\cdot T\cdot L\cdot h$ 已是数十 GB 级，还没算 MLP 的 $4h$ 中间项。单卡放不下是正常的，不是实现没写好。
 

@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-公开汇总里这题以 coding 和 design 两种形态出现：先实现单 URL / 单 key 的限流，再加复合规则、按 payload 计费、多租户配额。Exponent 把 rate limiter 和 KV 事务并列成 xAI 高频应用题；AceOffer 写过 **lazy-refill token bucket**。不是某一场能引用 experience id 的逐字题，按「能跑的类 + 公平和突发说得清」准备。和 `xai-kv-txn` 同一口味：共享状态、时钟、并发，不是 LeetCode 花样。
+公开汇总里这题以 coding 和 design 两种形态出现：先实现单 URL / 单 key 的限流，再加复合规则、按 payload 计费、多租户配额。Exponent 把 rate limiter 和 KV 事务并列成 xAI 高频应用题；AceOffer 写过 lazy-refill token bucket。不是某一场能引用 experience id 的逐字题，按「能跑的类 + 公平和突发说得清」准备。和 `xai-kv-txn` 同一口味：共享状态、时钟、并发，不是 LeetCode 花样。
 
 ## 先写懒填充桶，再谈分布式
 
@@ -71,9 +71,9 @@ API 网关常见两层：平台总 QPS，以及每个 consumer / API key 的配�
 
 公平不是平均。大客户权重大，但不允许它把小客户的突发窗口吃光。我会讲：
 
-- **加权公平：** 每个租户一个桶，全局还有一个令牌或队列。权重 $w_i$ 决定借还速度，不是决定 burst 无限。
-- **突发：** burst 只覆盖短尖峰（重试风暴、页面刷新）。稳态仍是 $r$。把 burst 设成「一分钟配额」等于没限流。
-- **排队 vs 拒绝：** 同步 API 通常 429 加 `Retry-After`；内部推理网关可以对可延迟请求排队，但对齐的是租户权重，不是 FIFO 让大象流堵死。
+- 加权公平：每个租户一个桶，全局还有一个令牌或队列。权重 $w_i$ 决定借还速度，不是决定 burst 无限。
+- 突发：burst 只覆盖短尖峰（重试风暴、页面刷新）。稳态仍是 $r$。把 burst 设成「一分钟配额」等于没限流。
+- 排队 vs 拒绝：同步 API 通常 429 加 `Retry-After`；内部推理网关可以对可延迟请求排队，但对齐的是租户权重，不是 FIFO 让大象流堵死。
 
 并发：单机用 per-key 锁或把 key 哈希到 shard；多机把桶放缓存，用事务做「读-补-扣」原子。不要先 get 再 set，那是 lost update，和 BankAccount race 同构。分布式时钟用逻辑时间或接受略松，强同步时钟不是这轮重点。
 

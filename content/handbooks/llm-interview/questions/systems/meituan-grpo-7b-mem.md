@@ -33,11 +33,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“7B规模模型使用GRPO训练时的显存占用开销及优化方式”**
 
-这块容易报一个脱离配置的「大概 40G」。7B bf16 权重大约 14GB 只是起点；我会拆账：参数、梯度、优化器、reference、rollout KV、logits / 激活。GRPO 虽无 critic，仍常驻 ref 做 KL，且同 prompt 生成 $n$ 条长 completion，KV 峰值往往压过参数本身。先问清：全参还是 LoRA、是否挂 ref、最大长度、`rollout.n` / `--n-samples-per-prompt`、rollout 是否与 trainer 同卡。同场阶段瓶颈卡讲墙钟，本题讲显存。
+错法：报一个脱离配置的「大概 40G」。7B bf16 权重大约 14GB 只是起点；我会拆账：参数、梯度、优化器、reference、rollout KV、logits / 激活。GRPO 虽无 critic，仍常驻 ref 做 KL，且同 prompt 生成 $n$ 条长 completion，KV 峰值往往压过参数本身。先问清：全参还是 LoRA、是否挂 ref、最大长度、`rollout.n` / `--n-samples-per-prompt`、rollout 是否与 trainer 同卡。同场阶段瓶颈卡讲墙钟，本题讲显存。
 
 ## 先拆账再优化
 
-7B bf16 权重 $\approx 14\,\mathrm{GB}$。全参 Adam 再加两倍状态（m/v），梯度一份，轻松到 $14\times(1+1+2)$ 量级，还没算激活。FSDP/ZeRO-2 切优化器，ZeRO-3 再切参数，换来 all-gather。GRPO 的 $n$ 条 rollout：每条 KV $\propto$ layers $\times$ kv_heads $\times$ dim $\times$ seq。$n=8$、4k 长度时，采样侧 KV 经常大于 14GB 权重。vLLM/SGLang 的 PagedAttention 减少碎片，但 **总 token 数** 仍在。logits 若物化 vocab 维，峰值再加一截。packing / 动态 batch 提高有效 token，但会改变每卡样本数，需和会计账一起核对，见 `sys-verl-dynamic-bsz`、`slime-dynamic-bsz`。
+7B bf16 权重 $\approx 14\,\mathrm{GB}$。全参 Adam 再加两倍状态（m/v），梯度一份，轻松到 $14\times(1+1+2)$ 量级，还没算激活。FSDP/ZeRO-2 切优化器，ZeRO-3 再切参数，换来 all-gather。GRPO 的 $n$ 条 rollout：每条 KV $\propto$ layers $\times$ kv_heads $\times$ dim $\times$ seq。$n=8$、4k 长度时，采样侧 KV 经常大于 14GB 权重。vLLM/SGLang 的 PagedAttention 减少碎片，但 总 token 数 仍在。logits 若物化 vocab 维，峰值再加一截。packing / 动态 batch 提高有效 token，但会改变每卡样本数，需和会计账一起核对，见 `sys-verl-dynamic-bsz`、`slime-dynamic-bsz`。
 
 ref 前向：KL 要冻住的 $\pi_{\mathrm{ref}}$。同卡就再驻一份或 offload 轮转；分卡就多一份副本。阶段性减弱 KL 能省前向，但要监控崩坏。不要说「GRPO 没 critic 所以显存只有一份 7B」。
 
@@ -50,12 +50,6 @@ ref 前向：KL 要冻住的 $\pi_{\mathrm{ref}}$。同卡就再驻一份或 off
 ## 面试怎么报数字
 
 开口先报配置：7B 全参 vs LoRA、$n$、max len、是否 ref、是否同卡。再报峰值发生在哪一段（采样 KV vs 反向激活 vs 优化器）。优化顺序：减 $n$ 和长度 → 采样卸载 / 量化 KV → checkpoint / ZeRO / LoRA。给固定 GB 而不问配置，会被追问拆穿。slime 对账：`--n-samples-per-prompt`、`--max-tokens-per-gpu`、`--colocate`。veRL 对账：`actor_rollout_ref.rollout.n`、`ppo_micro_batch_size_per_gpu`、`use_dynamic_bsz`。
-
-开口不要给固定 GB。先写五项：权重、梯度、Adam、ref、rollout KV。7B 全参 bf16 权重约 14GB，Adam 再乘二，KV 随 $n\times L$ 走，峰值常常在采样而不在参数。LoRA 只缩小优化器那一项，底模和 KV 还在。同卡 HybridEngine 省的是第二份整模，不是 KV；slime `--colocate` 靠 `--offload-train` / `--offload-rollout` 互斥，切换有 PCIe 税。优化按收益：先减 `--n-samples-per-prompt` / `rollout.n` 和 `max_response_len`，再把采样卸载到 vLLM/SGLang 并考虑 KV 量化，然后才是 activation checkpoint、ZeRO、LoRA。反向优化（先 ZeRO-3 再减 $n$）会把通信税加在已经 generation-bound 的一步上。动态 batch 用 `--max-tokens-per-gpu` 卡住每卡 token，但可能拆 GRPO 组，要和 `--balance-data` 一起说。被追问「你当时多少 G」时，把配置和峰值发生在哪一段一起报，才像跑过。
-
-## 怎么报峰值
-
-不要给脱离配置的 GB。先报全参还是 LoRA、是否挂 ref、$n$、最大长度、是否同卡，再报峰值发生在采样 KV、反向激活还是优化器。7B 权重约 14GB 只是起点。减 $n$ 和长度通常比先开 ZeRO-3 更划算。动态 batch 卡住每卡 token，但可能拆组。同卡省的是第二份整模或靠 offload 互斥，KV 仍在。
 
 ## 追问
 

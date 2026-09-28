@@ -24,7 +24,7 @@ sources:
     type: candidate-first-hand
 ---
 
-OpenAI 电面给一份约 300 行的 Transformer、四个标注区间各藏一个 bug，改完再加 KV cache，几乎是公开面经里最能说明「美国 lab 在考什么」的一张快照。见 `openai-transformer-debug`。
+OpenAI 电面给一份约 300 行的 Transformer、四个标注区间各藏一个 bug，改完再加 KV cache。公开面经里，这张快照最能说明美国 lab 在考什么。见 `openai-transformer-debug`。
 
 ## 这轮测的能力
 
@@ -32,7 +32,7 @@ OpenAI 电面给一份约 300 行的 Transformer、四个标注区间各藏一�
 2. **按契约查，不按感觉改。** mask 必须在 softmax 前打 $-\infty$；softmax 沿 key 长；缩放是 $\sqrt{d_k}$；decode 位置是 `cache_len`。
 3. **加功能时不破坏旧不变量。** 有 cache 和没 cache，同一前缀 greedy 必须逐 token 相同。
 
-这些和「最长回文子串」不是同一块肌肉。可以并行刷题，但权重别倒过来。
+这些和「最长回文子串」练的不是同一块。可以并行刷题，但权重别倒过来。
 
 ## 和 Anthropic OA 的差别
 

@@ -36,7 +36,7 @@ sources:
 
 OpenAI / NVIDIA 训大模型的 debug 轮，loss 突然跳十倍再掉回来，或者直接 NaN。公式和优化器那一侧我放到 `openai-loss-spike`。本题按系统清单答：千卡作业上，spike 经常是 **某 rank 看见了别人没看见的东西**，或 **通信/精度把一次更新写脏了**。看起来像 NCCL 的 hang 走 `sys-straggler`；这里默认作业还在跑、曲线难看。
 
-开口顺序比背名词重要：先对齐 collective 和 skip，再复放 sample id。一上来改 LR，评委会觉得你在猜。
+开口先对齐 collective 和 skip，再复放 sample id。一上来改 LR，评委会觉得你在猜。
 
 ## 先固定「这一 step 大家是否一致」
 

@@ -34,7 +34,7 @@ sources:
 
 ## 朴素 PPO 里 clip 何时才非零
 
-标准循环：用 $\pi_{\mathrm{old}}$ rollout → 冻结 old logp → 按 mini-batch 对 **同一批轨迹** 做多次梯度步。第一次 step 时 $\rho\approx 1$；之后 $\theta$ 动了，同一条 token 的 $\rho$ 开始偏离 1，越界的那一侧才会被 $\min(\rho A,\mathrm{clip}(\rho)A)$ 掐掉梯度。`ppo_epochs`、mini-batch 次数，本质是在买 **可控的 off-policy 复用**。推导链见 `pt-pg-to-ppo-to-grpo`。LLM 上复用格外贵：多 epoch 意味着同一批长 CoT 被反复 backward，显存和墙钟都会涨。所以默认被配成单步，不是框架「忘了实现 clip」，而是生成成本逼着人放弃论文里的多 epoch。你可以选择单步，但不能再把 clip 当稳定性主叙事。
+标准循环：用 $\pi_{\mathrm{old}}$ rollout → 冻结 old logp → 按 mini-batch 对 **同一批轨迹** 做多次梯度步。第一次 step 时 $\rho\approx 1$；之后 $\theta$ 动了，同一条 token 的 $\rho$ 开始偏离 1，越界的那一侧才会被 $\min(\rho A,\mathrm{clip}(\rho)A)$ 掐掉梯度。`ppo_epochs`、mini-batch 次数，是在买可控的 off-policy 复用。推导链见 `pt-pg-to-ppo-to-grpo`。LLM 上复用格外贵：多 epoch 意味着同一批长 CoT 被反复 backward，显存和墙钟都会涨。所以默认被配成单步，不是框架「忘了实现 clip」，而是生成成本逼着人放弃论文里的多 epoch。你可以选择单步，但不能再把 clip 当稳定性主叙事。
 
 LLM 框架把「生成」和「step」缠在同一条 Ray / Trainer 循环里之后，很容易配成 **每包数据只更新一次**：生成完立刻 `step`，下一包又是新 rollout。口头上的 PPO 还在，代码已经退化成带 KL 的 REINFORCE。这在算力上往往是有意的：长 CoT 生成太贵，人们不愿对同一批轨迹做多 epoch。可以这么配，但要把稳定性故事改成 KL / 组 baseline / 学习率，而不是继续写「PPO clip 防止更新过大」。配置和论文叙事必须一致。
 
@@ -58,7 +58,7 @@ CISPO 把 clip 对象换成 IS 权重并 detach，梯度仍走 $\log\pi$，见 `
 
 同一批轨迹上：step 0 的 $\rho$ 在 1 附近，clip fraction $\approx 0$；后续 mini-batch / epoch，$\theta$ 离开 old，ratio 分布变宽，越出 $\varepsilon$ 的比例上升。若你的曲线从第一步到最后一步都贴零，说明中间没有对这批数据做第二次真正的 `step`，或 old logp 每步都在用「当前 $\theta$」重算导致 $\rho$ 被重置为 1。后一种是日志口径错误：old 必须冻结在采样时（或采样后那一次训练图 forward），不能跟 new 用同一份即时 logp。
 
-监控要和 KL（对 $\pi_{\mathrm{ref}}$）、熵一起看。Clip 为 0 且 KL 也几乎为 0：可能更新太弱。Clip 为 0 但 KL 在涨：单步 on-policy 仍在离开参考，护栏来自 KL 不是 clip。不要只盯一个标量。Ratio 直方图比单一 clip fraction 更有用：全部贴在 1 上，就是没发生第二次更新；已经散开却分数仍为 0，才去查 $\varepsilon$ 是否过大或统计 mask 是否把越界 token 排除了。日志口径和算法口径必须分开查。统计时还要注意 response mask：把 prompt token 算进 clip fraction，会把大量 $\rho=1$ 的前缀灌进均值，分数被稀释成假零。只在生成段上统计，才和 PPO 论文里的 action 一致，见 `sys-rl-response-mask`。排查时把「更新次数、old 是否冻结、mask 是否只盖 response」写成检查清单。单步 run 就把 clip 面板摘掉，避免假零消耗值班注意力。若必须留着面板，把「本 batch 的 optimizer.step 次数」做成并列指标，次数为 1 时 clip=0 标成预期而不是红色告警。值班手册里单步与多 epoch 要分成两种正常形态，避免同一条告警规则两套配方互打。
+监控要和 KL（对 $\pi_{\mathrm{ref}}$）、熵一起看。Clip 为 0 且 KL 也几乎为 0：可能更新太弱。Clip 为 0 但 KL 在涨：单步 on-policy 仍在离开参考，护栏来自 KL 不是 clip。不要只盯一个标量。Ratio 直方图比单一 clip fraction 更有用：全部贴在 1 上，就是没发生第二次更新；已经散开却分数仍为 0，才去查 $\varepsilon$ 是否过大或统计 mask 是否把越界 token 排除了。日志口径和算法口径必须分开查。统计时还要注意 response mask：把 prompt token 算进 clip fraction，会把大量 $\rho=1$ 的前缀灌进均值，分数被稀释成假零。只在生成段上统计，才和 PPO 论文里的 action 一致，见 `sys-rl-response-mask`。排查时把「更新次数、old 是否冻结、mask 是否只盖 response」写成检查清单。单步 run 就把 clip 面板摘掉，避免假零消耗值班注意力。若必须留着面板，把「本 batch 的 optimizer.step 次数」做成并列指标，次数为 1 时 clip=0 标成预期而不是红色告警。
 
 ## 追问
 

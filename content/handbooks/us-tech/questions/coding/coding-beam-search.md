@@ -29,9 +29,9 @@ sources:
 
 解码三件套：greedy、beam、sampling。Anthropic / Apple 会让你对比，而不是默写 `generate` 参数。翻译、代码补全常 beam；聊天常用温度 + nucleus，见 `coding-topk-nucleus`。长度惩罚来自 GNMT（Wu et al.）：不惩罚的话短句横扫。
 
-## 三条路差在决策，不差在模型
+## greedy / beam / sampling
 
-Greedy：每步取当前条件概率最大的 token。$k=1$ 的 beam。快，容易死循环、重复。
+Greedy：每步取当前条件概率最大的 token，也就是 $k=1$ 的 beam。快，容易死循环、重复。
 
 Sampling：从 $\pi_T$ 或 nucleus 里抽。多样，无搜索保证。温度、top-k、top-p 改的是每步分布，不是搜索宽度。
 
@@ -41,7 +41,7 @@ $$
 s(y_{1:t})=s(y_{1:t-1})+\log\pi(y_t\mid y_{1:t-1}),
 $$
 
-在 $k\cdot V$ 个候选里取 top-$k$。分数必须在 **log 域加**，概率连乘会下溢。EOS 进 finished，不再扩展；没写 EOS 的留在活跃集。最终先比 finished；全部顶到 `max_len` 仍无 EOS 才回退活跃 beam。
+在 $k\cdot V$ 个候选里取 top-$k$。分数必须在 log 域加，概率连乘会下溢。EOS 进 finished，不再扩展；没写 EOS 的留在活跃集。最终先比 finished；全部顶到 `max_len` 仍无 EOS 才回退活跃 beam。
 
 ```python
 import torch
@@ -56,12 +56,10 @@ def beam_expand(logp, scores, k, eos_id):
     done = token == eos_id
     return parent, token, topv, done
 
-
 def length_penalty(logp_sum, length, alpha=0.6):
     # GNMT: ((5 + len) / 6) ** alpha
     lp = ((5.0 + length) / 6.0) ** alpha
     return logp_sum / lp
-
 
 def pick_finished(finished, alpha=0.6):
     if not finished:

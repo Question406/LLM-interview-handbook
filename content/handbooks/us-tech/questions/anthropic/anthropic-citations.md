@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-企业检索岗会问：怎么让 Claude 的答案能点回原文，而不是 prompt 里求「请列出出处」然后自己编页码。官方 Citations：在 document 块上开 `citations.enabled`，模型在文本块上附 span。Cookbook 写过：API 不会返回指向未提供文档的引用；`cited_text` 不计入输出 token。题是产品接地，不是隐藏面经。
+企业检索岗会问：怎么让 Claude 的答案能点回原文，而不是 prompt 里求「请列出出处」然后自己编页码。官方 Citations：在 document 块上开 `citations.enabled`，模型在文本块上附 span。Cookbook 写过：API 不会返回指向未提供文档的引用；`cited_text` 不计入输出 token。题是产品接地。
 
 ## 块和 span 是什么
 
@@ -61,9 +61,7 @@ Prompt 求引用的老办法：模型会编页码、把两段拼成一句假引�
 
 错法：只开 citations 却把无引句子原样给用户；用 `context` 塞进真正要引的条款（引不到）；扫描件 PDF 无文本还指望页码引用。
 
-官方博文给过内部评测：内置 citations 比多数自建 prompt 引用召回更高，且摘录文本不计输出价。这仍不是「论断为真」的证明。合规场景我会加一层：无 citation 的事实句丢掉或改写成「文档未覆盖」。
-
-官方博文给过内部评测：内置 citations 比多数自建 prompt 引用召回更高，且 `cited_text` 不计输出价。这仍不是「论断为真」的证明。合规场景我会加一层：无 citation 的事实句直接丢掉或改写为「文档未覆盖」。
+官方博文给过内部评测：内置 citations 比多数自建 prompt 引用召回更高，且 `cited_text` 不计输出价。这仍不是「论断为真」的证明。合规场景我会加一层：无 citation 的事实句丢掉或改写成「文档未覆盖」。
 
 ## 追问
 

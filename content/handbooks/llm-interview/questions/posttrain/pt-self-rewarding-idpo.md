@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-Self-rewarding / Iterative DPO 用同一模型家族当 judge，给自己的候选打偏好，再做 DPO（或同类目标）更新 policy，从而扩大标注供给。Self-Rewarding Language Models 展示了这条回路可行，但没有自动保证 judge 是真值。这块容易直接答成把「本轮 self-judge win rate 上涨」当成对齐成功。judge、数据生成器和被训 policy 若同步更新，模型会强化自己的措辞、长度和立场，形成自证循环。这和 `pt-online-preference-loop` 的在线偏好闭环同类，只是反馈源更不安全。
+Self-rewarding / Iterative DPO 用同一模型家族当 judge，给自己的候选打偏好，再做 DPO（或同类目标）更新 policy，从而扩大标注供给。Self-Rewarding Language Models 展示了这条回路可行，但没有自动保证 judge 是真值。错法：把「本轮 self-judge win rate 上涨」当成对齐成功。judge、数据生成器和被训 policy 若同步更新，模型会强化自己的措辞、长度和立场，形成自证循环。这和 `pt-online-preference-loop` 的在线偏好闭环同类，只是反馈源更不安全。
 
 ## 先隔离版本，再量偏差
 
@@ -47,7 +47,7 @@ Regression gate 必须是未参与偏好生成的集合：外部质量集、对�
 
 若必须继续迭代，交替插入外部金标或可执行奖励，把 self-judge 限制在低风险、易验证的子集上。能走 `pt-r1zero` 可执行奖励的任务，不要降级成自我打分。Self-rewarding 的正当用途是扩大「尚无金标、但有清晰 rubric」的偏好供给，不是替代真值。
 
-每轮放行条件写成三道门：位置 / 长度偏差在阈值内、外部集不降、高风险 pair 有锚点。少一门就停迭代。
+每轮放行：位置 / 长度偏差在阈值内、外部集不降、高风险 pair 有锚点。少一项就停迭代。
 
 ## 追问
 

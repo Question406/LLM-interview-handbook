@@ -31,7 +31,7 @@ sources:
     type: secondary
 ---
 
-Seller Support、内部运维助手、Bedrock Agents 岗会把评测问成所有权：谁证明它办成了，谁证明它没越权。公开层有模型 / RAG 评估，以及 AgentCore Evaluations（轨迹、内置 evaluator、LLM-as-judge）。底座仍是 `amazon-titan-eval` 的「别只报 BLEU」；本题把对象换成 **带工具的 agent**。不是逐字真题。
+Seller Support、内部运维助手、Bedrock Agents 岗会把评测问成所有权：谁证明它办成了，谁证明它没越权。公开层有模型 / RAG 评估，以及 AgentCore Evaluations（轨迹、内置 evaluator、LLM-as-judge）。底座仍是 `amazon-titan-eval` 的「别只报 BLEU」；本题把对象换成带工具的 agent。
 
 ## 三件事分开计，不要合成一个「智能分」
 
@@ -56,12 +56,6 @@ LLM-as-judge 适合：口头是否礼貌、摘要是否完整、是否答非所�
 Complementary 幻觉（两个步骤互相证明对方成功）在多工具轨迹里很常见：检索说「找到了」，生成就引用一个不存在的条款。评测要交叉：引用 id 必须出现在该步的 $E$ 里。
 
 离线集要带金标工具轨迹和终态；线上用关单率、升级工单、越权告警、引用点击。两套分布会漂：线下全是礼貌 FAQ，线上全是生气的退货。换 Nova 档位时契约不动，见 `amazon-nova`。把失败轨迹写回评测，比换更大模型更像 Ownership。门禁三票分开过：任务成功、零越权、引用可点。合成一个「智能分」发版，Bar Raiser 会追问事故归属。
-
-门禁三票分开过：任务成功、零越权、引用可点。合成一个「智能分」发版，Bar Raiser 会追问事故归属。
-
-面试收尾主动报失败模式和评测切片，不要停在架构名词。
-
-收尾把失败案例写进评测集，不要只改 prompt。
 
 ## 追问
 

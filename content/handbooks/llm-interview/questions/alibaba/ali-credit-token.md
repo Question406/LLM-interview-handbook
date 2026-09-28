@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「GRPO 已经做了 credit assignment」。组内标准化只解决同题多条回复谁更好，不解决一条回复里哪个 token 有功。阿里国际算法面常追到这里：序列级 $R$ 怎么落到 token。最常见实现是把序列 advantage 广播到所有生成 token；粗广播能训，但关键错误步与废话会被同等强化。组内 $A$ 的算法见 `ali-grpo-advantage`，loss 见 `ali-grpo-loss`。
+错法：「GRPO 已经做了 credit assignment」。组内标准化只解决同题多条回复谁更好，不解决一条回复里哪个 token 有功。阿里国际算法面常追到这里：序列级 $R$ 怎么落到 token。最常见实现是把序列 advantage 广播到所有生成 token；粗广播能训，但关键错误步与废话会被同等强化。组内 $A$ 的算法见 `ali-grpo-advantage`，loss 见 `ali-grpo-loss`。
 
 ## 默认：整段共享同一个 $A$
 

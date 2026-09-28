@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-`swe-trace-replay` 回答「失败时要记哪些字段才能归因」；本题回答「环境怎样才能让逐步 I/O 对得上」。只把 chat 日志重放一遍，工具一打真网、时钟一跳、沙箱里多一个文件，轨迹立刻分叉。这块容易直接答成把 trace 当 replay：字段齐全仍可能不可复现。确定性 replay 需要种子、工具夹具与仓库快照，并默认断网。SWE-bench 能比较 patch，是因为容器与测试命令被冻住；Playwright 一类 trace viewer 能逐步对齐，是因为副作用被录成夹具。Harness 变更的回归，靠的是这条环境合同，而不是再看一遍模型文案。
+`swe-trace-replay` 回答「失败时要记哪些字段才能归因」；本题回答「环境怎样才能让逐步 I/O 对得上」。只把 chat 日志重放一遍，工具一打真网、时钟一跳、沙箱里多一个文件，轨迹立刻分叉。错法：把 trace 当 replay——字段齐全仍可能不可复现。确定性 replay 需要种子、工具夹具与仓库快照，并默认断网。SWE-bench 能比较 patch，是因为容器与测试命令被冻住；Playwright 一类 trace viewer 能逐步对齐，是因为副作用被录成夹具。Harness 变更的回归，靠的是这条环境合同，而不是再看一遍模型文案。
 
 ## 冻什么：seed、mock、snapshot
 
@@ -39,6 +39,6 @@ trace 是日志合同，replay 是环境合同。两者缺一，失败不可运�
 ## 追问
 
 - **和 `swe-trace-replay` 怎么分？** 那题是记哪些字段；本题是让环境（seed / mock / snapshot）逐步可对齐。
-- **和 `swe-sandbox-threat-model`？** 断网与隔离既是威胁模型，也是 replay 能确定性的条件；真网一开，两条都破。
+- **和 `swe-sandbox-threat-model`？** 断网与隔离既是威胁模型，也是 replay 能成立的条件；真网一开，两条都破。
 - **为什么要比对逐步 I/O 而不是最终 patch？** 最终 patch 相同可能中途走了不同工具；harness bug 会出现在中间步。
 - **模型必须 greedy 吗？** 不必须，但随机策略要把 seed 写入夹具；否则只能做分布对比，不能逐步对齐。

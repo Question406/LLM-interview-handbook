@@ -36,7 +36,7 @@ sources:
 
 ## Adapter 在 Apple 公开叙述里是什么
 
-端侧约 3B 底模量化后冻结。LoRA 打在注意力投影和 FFN 上，公开常用 **rank 16**，adapter 参数 16-bit，一份大约几十 MB，可动态加载、缓存、换掉。先训 accuracy-recovery adapter 把 palettization 掉的分捞回来，产品 adapter 从它初始化，再为邮件摘要、信息摘要、通知摘要各做一份——因为产品对「好摘要」的定义不一样。量化底见 `apple-ondevice-quant`。
+端侧约 3B 底模量化后冻结。LoRA 打在注意力投影和 FFN 上，公开常用 rank 16，adapter 参数 16-bit，一份大约几十 MB，可动态加载、缓存、换掉。先训 accuracy-recovery adapter 把 palettization 掉的分捞回来，产品 adapter 从它初始化，再为邮件摘要、信息摘要、通知摘要各做一份——因为产品对「好摘要」的定义不一样。量化底见 `apple-ondevice-quant`。
 
 这是按功能特化，不是按用户特化。同一份邮件 adapter 服务所有人，个性化来自这一刻塞进上下文的本地证据，不是每人一份上传的权重。热插拔的好处：底模驻留 ANE，换任务只换几十 MB，符合 `apple-ane` 的静态底图加外置权重。
 

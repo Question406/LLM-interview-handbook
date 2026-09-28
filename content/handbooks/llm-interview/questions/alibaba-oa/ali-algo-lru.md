@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
 ## 复杂度
 
-`get` / `put` 均摊 $O(1)$，空间 $O(\mathrm{capacity})$。不要用 `OrderedDict` 充数却讲不清搬节点。
+`get` / `put` 均摊 $O(1)$，空间 $O(\mathrm{capacity})$。用 `OrderedDict` 也要讲清搬节点，否则等于没答。
 
 ## 边界与追问
 

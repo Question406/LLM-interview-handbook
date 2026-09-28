@@ -20,13 +20,13 @@ sources:
     type: legacy-reference
 ---
 
-这块容易按「谁更新」站队：GRPO 更新、SFT 落伍。阿里国际算法面开场常问技术选型：看信号类型。SFT 适合教格式与示范轨迹；蒸馏适合逼近 teacher 分布；GRPO 适合有可验证/可打分目标、需要探索与相对优势时。没有 verifier 硬上 GRPO，空组和 hacking 会一起出现。流水线背景见 `ali-sft-then-posttrain`，三者对比见 `ali-ppo-dpo-grpo-ask`。
+错法：按「谁更新」站队，GRPO 更新、SFT 落伍。阿里国际算法面开场常问技术选型：看信号类型。SFT 适合教格式与示范轨迹；蒸馏适合逼近 teacher 分布；GRPO 适合有可验证/可打分目标、需要探索与相对优势时。没有 verifier 硬上 GRPO，空组和 hacking 会一起出现。流水线背景见 `ali-sft-then-posttrain`，三者对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## 三种信号，三种算法
 
-- **继续 SFT：** 有高质量示范、格式/工具协议要稳定、需要快速对齐行为分布时优先。局限是缺乏探索，容易模仿 teacher 的平均行为，难突破上限。工具调用不正确时，有干净轨迹应先 SFT（`ali-tool-call-error-sft-rl`）。
-- **蒸馏：** 有强 teacher、希望小模型逼近其输出分布；仍是监督学习，突破 teacher 上限更难。常用正向 KL 去拟合 teacher，和 RLHF 的反向 KL 不是同一个方向。
-- **GRPO：** 同 prompt 多样本、组内相对优势，适合数学/代码/可验证任务，或有明确 reward/verifier 的 Agent 场景；能做 on-policy 探索。代价是 rollout 贵、空 group、credit 粗。
+- 继续 SFT：有高质量示范、格式/工具协议要稳定、需要快速对齐行为分布时优先。局限是缺乏探索，容易模仿 teacher 的平均行为，难突破上限。工具调用不正确时，有干净轨迹应先 SFT（`ali-tool-call-error-sft-rl`）。
+- 蒸馏：有强 teacher、希望小模型逼近其输出分布；仍是监督学习，突破 teacher 上限更难。常用正向 KL 去拟合 teacher，和 RLHF 的反向 KL 不是同一个方向。
+- GRPO：同 prompt 多样本、组内相对优势，适合数学/代码/可验证任务，或有明确 reward/verifier 的 Agent 场景；能做 on-policy 探索。代价是 rollout 贵、空 group、credit 粗。
 
 面试先问：奖励是否可验证、数据是否成对 preference、是否需要探索；再落到项目里为何选这条线。只有偏好对、没有环境奖励，DPO 往往更稳（`ali-multineg-then-grpo`）。
 

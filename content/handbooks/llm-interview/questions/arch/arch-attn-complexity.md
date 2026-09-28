@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
+错法：只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
 
 ## 时间：两段不要混
 
@@ -33,7 +33,7 @@ $$
 
 各是 $O(T^2 d)$（按头维乘完再拼）。因此总 FLOPs 约 $O(Td^2+T^2 d)$。当 $T\ll d$ 时第一项更大；当 $T$ 到 8k、32k，$T^2 d$ 压过投影。多头不改变渐近，只把 $d$ 拆成 $n_h\cdot d_h$。
 
-FFN / SwiGLU 是另一笔 $O(Td\cdot d_{\mathrm{ff}})$，和注意力二次项独立。MoE 只稀疏化 FFN，**不改变** dense attention 的 $T^2$。RoPE 是 $O(Td)$ 的旋转，可忽略。
+FFN / SwiGLU 是另一笔 $O(Td\cdot d_{\mathrm{ff}})$，和注意力二次项独立。MoE 只稀疏化 FFN，不改变 dense attention 的 $T^2$。RoPE 是 $O(Td)$ 的旋转，可忽略。
 
 ## 显存：物化 $T\times T$ 才是痛点
 

@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-InstructGPT 的 PPO 是对着 **一段 completion** 优化 RM，动作粒度是 token。WebGPT 已经把同一套 BC → RM → PPO 接到 **文本浏览器** 上：搜索、点击、引用，回合结束才打分。现在的工具循环更长、观察更脏。对齐岗会问：轨迹怎么存、梯度打在谁身上、环境怎么重置。Clip 和 KL 锚见 `openai-ppo-clip`、`openai-instructgpt-kl`。运行时怎么塞观察见 `openai-tool-loop`，本题只收 **训练**。
+InstructGPT 的 PPO 是对着一段 completion 优化 RM，动作粒度是 token。WebGPT 已经把同一套 BC → RM → PPO 接到文本浏览器上：搜索、点击、引用，回合结束才打分。现在的工具循环更长、观察更脏。对齐岗会问：轨迹怎么存、梯度打在谁身上、环境怎么重置。Clip 和 KL 锚见 `openai-ppo-clip`、`openai-instructgpt-kl`。运行时怎么塞观察见 `openai-tool-loop`，本题只收训练。
 
 不编未公开的内部 agent 算法。公开对照就是 InstructGPT + WebGPT。
 
@@ -47,7 +47,7 @@ $$
 \tau=(s_0,a_0,o_1,a_1,o_2,\ldots,a_{K-1},o_K,y).
 $$
 
-$a_k$ 是模型一次输出：自然语言、或一次 / 一组 `tool_calls`。$o_{k+1}$ 是宿主执行后的观察（JSON、网页、报错），**不是** $\pi_\theta$ 采样出来的。最终可能还有给用户的 $y$。奖励可以是任务成功、单测通过、或回合结束的 RM，往往稀疏。
+$a_k$ 是模型一次输出：自然语言、或一次 / 一组 `tool_calls`。$o_{k+1}$ 是宿主执行后的观察（JSON、网页、报错），不是 $\pi_\theta$ 采样出来的。最终可能还有给用户的 $y$。奖励可以是任务成功、单测通过、或回合结束的 RM，往往稀疏。
 
 关键差三条：
 
@@ -55,17 +55,17 @@ $a_k$ 是模型一次输出：自然语言、或一次 / 一组 `tool_calls`。$
 2. **哪些 token 有梯度。** 只在 assistant 自己生成的 token 上算 policy loss。把 $o_k$ 当模型输出反传，等于让模型去拟合搜索引擎。实现上 observation 段 `loss_mask=0`。Value 可以看全上下文，policy 不能对观察 token 更新。
 3. **部分可观。** WebGPT 每步甚至换一份状态摘要，记忆只留在摘要里。现代 chat 把全程塞回上下文，见 `openai-tool-loop`。无论哪种，$o$ 是环境，不是策略。
 
-WebGPT 的公开做法我会主动提：先行为克隆人的浏览轨迹，再对回合结束的 RM 做 PPO，每 token 加相对 BC 模型的 KL；他们还插了一批「只回答、不再逛」的 episode 提高样本效率。并行很多环境收 rollout。这就是工具 RL 的最小完备故事。
+WebGPT 的公开做法我会主动提：先行为克隆人的浏览轨迹，再对回合结束的 RM 做 PPO，每 token 加相对 BC 模型的 KL；他们还插了一批「只回答、不再逛」的 episode 提高样本效率。并行很多环境收 rollout。这是工具 RL 的最小故事。
 
 ## Credit 和环境重置
 
 稀疏奖励：$r$ 在第 $K$ 步才到，前面全 0。GAE 仍沿 token 回传，但跨了若干次工具，早期 search query 的优势估计方差很大。缓解：
 
-- 过程奖励 / 单测：编译过、检索命中、中间 assertion。Let's Verify 是数学步骤，不是工具，但「不要只给终局」同一逻辑。
+- 过程奖励 / 单测：编译过、检索命中、中间 assertion。Let's Verify 是数学步骤，不是工具，但「不要只给终局」是同一逻辑。
 - 缩短回合：最大工具步、重复调用熔断。无限步的 agent 把 credit 稀释到噪声。
 - 奖励塑形要声明：塑形错了会教模型刷中间指标（疯狂 search）。
 
-重置：每个 rollout 必须从干净沙箱开始。没重置的失败模式很具体——上一个 episode 写过 `out.txt`，这一个不调工具也能「读到答案」，RM 给高分，策略学会躺赢。浏览器 cookie、账号额度、GPU 上的临时包，都是泄漏。WebGPT 用受限搜索 API，仍要假定查询有副作用；生产工具更甚。并行环境数不够时，PPO 的 batch 全是高度相关的轨迹，clip 看着稳，一换种子就崩。
+重置：每个 rollout 必须从干净沙箱开始。没重置的失败模式很具体：上一个 episode 写过 `out.txt`，这一个不调工具也能「读到答案」，RM 给高分，策略学会躺赢。浏览器 cookie、账号额度、GPU 上的临时包，都是泄漏。WebGPT 用受限搜索 API，仍要假定查询有副作用；生产工具更甚。并行环境数不够时，PPO 的 batch 全是高度相关的轨迹，clip 看着稳，一换种子就崩。
 
 KL 锚仍是冻结 SFT / BC，不是「对工具输出的 KL」。工具文本分布会变（网页改版），对观察做 KL 没有意义。Hacking：模型发明不存在的 tool 名、对同一 URL 死循环、把观察里的提示词当系统指令。这些要环境拒绝 + 负奖励，不能指望 clip 解决，见 `openai-instructgpt-kl`。
 

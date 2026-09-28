@@ -27,7 +27,7 @@ sources:
 
 ## 题怎么来的
 
-研究岗 / MLE 白板的默认损失。OpenAI 给带 bug 的训练 loop 时，常见植入就是 `F.softmax` 再 `log` 再 NLL，fp16 下一训就 NaN。Apple 电面手写 attention 之后也会跟一句「训练时 logits 怎么接 CE」。PyTorch 的 `cross_entropy` 内部是 log-softmax + NLL，白板要对齐这个契约，不要自己造一条会下溢的路径。稳定 softmax 见 `coding-softmax-stable`。
+研究岗 / MLE 白板的默认损失。OpenAI 给带 bug 的训练 loop 时，常见植入就是 `F.softmax` 再 `log` 再 NLL，fp16 下一训就 NaN。Apple 电面手写 attention 之后也会跟一句「训练时 logits 怎么接 CE」。PyTorch 的 `cross_entropy` 内部是 log-softmax + NLL，白板对齐这个契约，别自己造一条会下溢的路径。稳定 softmax 见 `coding-softmax-stable`。
 
 ## 公式：NLL 在 log 域一次做完
 
@@ -56,7 +56,6 @@ def cross_entropy_logits(logits, target, ignore_index=-100):
     mask = target != ignore_index
     return nll[mask].mean()
 
-
 def lm_ce(logits, labels, ignore_index=-100):
     # logits, labels: [B, T, V] / [B, T]; causal LM 只 shift 一次
     return cross_entropy_logits(
@@ -70,7 +69,7 @@ def lm_ce(logits, labels, ignore_index=-100):
 
 ## 序列：shift、ignore、分母
 
-Causal LM：`logits[:, :-1]` 对 `labels[:, 1:]`。HuggingFace 传入 `labels=` 时内部会 shift，手写只做一次。评委要听你说 **分母是有效 token**，不是 batch 里所有格子；pad 多的 batch 否则 loss 被人为缩小。
+Causal LM：`logits[:, :-1]` 对 `labels[:, 1:]`。HuggingFace 传入 `labels=` 时内部会 shift，手写只做一次。评委要听你说分母是有效 token，不是 batch 里所有格子；pad 多的 batch 否则 loss 被人为缩小。
 
 fp16 下即使减了 max，极端值仍可能溢，这一步升 fp32 成本可忽略。OpenAI debug 口味：先固定 greedy + `eval()`，再看 CE 是不是 NaN，不要同时开 dropout 和采样。见 `openai-transformer-debug`。
 

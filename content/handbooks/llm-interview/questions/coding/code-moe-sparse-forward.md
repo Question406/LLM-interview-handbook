@@ -23,7 +23,7 @@ sources:
     type: primary
 ---
 
-把 `arch-moe-gating-softmax-sigmoid` 和 `code-moe-permute-combine` 收成一层可运行前向。白板要能从 $x$ 写到 $y$，中间不跳形状。专家内部用线性代替完整 SwiGLU 即可，面试口头补「生产是 `silu(xW1)*xW2` 再 down」，见 `code-swiglu`。
+把 `arch-moe-gating-softmax-sigmoid` 和 `code-moe-permute-combine` 收成一层可运行前向。白板要能从 $x$ 写到 $y$，中间不跳形状。专家内部用线性代替完整 SwiGLU 即可，口头补「生产是 `silu(xW1)*xW2` 再 down」，见 `code-swiglu`。
 
 ## 一层前向
 
@@ -85,7 +85,7 @@ class SparseMoE(nn.Module):
 
 ## 和 DeepSeek 路径差三行
 
-V3：`scores = sigmoid(x @ E.T)`，`idx = topk(scores + bias)`，`gates = normalize(scores.gather(..., idx))`。不要把 bias 加进 `gates`。Shared 则 `y = y + shared(x)`。面试能改这三行，说明门控和 permute 已经拆开。
+V3：`scores = sigmoid(x @ E.T)`，`idx = topk(scores + bias)`，`gates = normalize(scores.gather(..., idx))`。不要把 bias 加进 `gates`。Shared 则 `y = y + shared(x)`。能改这三行，说明门控和 permute 已经拆开。
 
 ## 追问
 

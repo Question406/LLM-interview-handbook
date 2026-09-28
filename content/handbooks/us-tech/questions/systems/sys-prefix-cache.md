@@ -39,7 +39,7 @@ Chat 产品几乎都有一条很长的系统提示，成千上万用户共用。
 
 Prefix cache 复用的是已经算好的 K/V 块。Cache key 至少要包括：token ID 序列（不是原文）、模型版本、LoRA / adapter、注意力配置（sliding window、位置编码）。字符串看起来一样但 tokenizer 或 chat template 不同，token 就不同，应当 miss。System prompt 改一个空格，从第一个不同 token 断开，整段旧 KV 不能用。
 
-位置要从当时计算的绝对位置对上。把一段 KV 接到另一条长度不同的请求后面、RoPE 起点错了，数值是错的。LoRA 一切，有效权重变了，base 模型的 prefix 也不能复用。错命中比 miss 更危险：输出 silently 错，还难查。
+位置要从当时计算的绝对位置对上。把一段 KV 接到另一条长度不同的请求后面、RoPE 起点错了，数值是错的。LoRA 一切，有效权重变了，base 模型的 prefix 也不能复用。错命中比 miss 更贵：输出 silently 错，还难查。
 
 实现上有两条常见索引：
 

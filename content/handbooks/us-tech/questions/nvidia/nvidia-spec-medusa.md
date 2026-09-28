@@ -40,11 +40,11 @@ TensorRT-LLM 文档把草稿来源写成两类：独立 draft 模型，以及 Me
 
 Leviathan / Chen：草稿模型 $q$ 自回归写出 $x_1,\ldots,x_\gamma$，目标 $p$ 一次前向得到这 $\gamma$ 个位置的 logits。位置 $i$ 抽 $u\sim U[0,1]$，若 $u \lt p(x_i)/q(x_i)$ 则接受，否则从修正分布再抽一个并截断后面。期望接受长度决定加速比，不是草稿 FLOPs。GPU 小 batch 时 decode 吃不满，一次验证摊掉 $\gamma$ 步的权重读取，这才是投机的 roofline，见 `nvidia-flash-decode`。
 
-代价：再驻留一个模型，两套 KV，两套调度。草稿太强则自身也慢；太弱则 $\gamma$ 全拒，验证白做。拒绝后 **target 和 draft 的 KV 都要截回接受前缀**，否则注意力盯幽灵 token。Paged 上就是把多出来的页 refcount 减掉，见 `nvidia-paged-kv`。
+代价：再驻留一个模型，两套 KV，两套调度。草稿太强则自身也慢；太弱则 $\gamma$ 全拒，验证白做。拒绝后 target 和 draft 的 KV 都要截回接受前缀，否则注意力盯幽灵 token。Paged 上就是把多出来的页 refcount 减掉，见 `nvidia-paged-kv`。
 
 ## Medusa：同一隐状态上的独立头
 
-Medusa（Cai et al.）不另训小 Transformer。骨干最后一层隐状态 $h_t$ 上挂 $K$ 个头：头 $k$ 直接预测 $t+k$ 的 token，头与头之间 **不互为条件**。一次骨干前向得到 $K$ 个候选位置，再靠 top-$s$ 叉出一棵树，用树状注意力一次验证多条路径。接受的是树上的一条前缀。
+Medusa（Cai et al.）不另训小 Transformer。骨干最后一层隐状态 $h_t$ 上挂 $K$ 个头：头 $k$ 直接预测 $t+k$ 的 token，头与头之间不互为条件。一次骨干前向得到 $K$ 个候选位置，再靠 top-$s$ 叉出一棵树，用树状注意力一次验证多条路径。接受的是树上的一条前缀。
 
 和经典的差：
 
@@ -59,7 +59,7 @@ Medusa（Cai et al.）不另训小 Transformer。骨干最后一层隐状态 $h_
 
 EAGLE 观察：在倒数第二层特征上做自回归，比在 token 上更容易；但特征有不确定性，需要把 **已经采样的 token 前移一位** 拼进草稿模块，消掉「当前特征还不知道自己变成了哪个 token」。草稿模块很小：一层 decoder + 投影，embedding 和 LM head 借用目标模型。
 
-于是草稿是短自回归，但每步是特征而不是再跑 $L$ 层。接受率通常高于独立 Medusa 头，仍走同一套拒绝采样 / 树验证。EAGLE-2 按置信度动态长树；EAGLE-3 改成更靠多层特征、token 侧预测。面试抓一句就够：**Medusa 是并行多头；EAGLE 是浅层自回归特征草稿**。两者都是自投机（self-speculative），不是第二份独立 LLM。
+于是草稿是短自回归，但每步是特征而不是再跑 $L$ 层。接受率通常高于独立 Medusa 头，仍走同一套拒绝采样 / 树验证。EAGLE-2 按置信度动态长树；EAGLE-3 改成更靠多层特征、token 侧预测。面试抓一句就够：Medusa 是并行多头；EAGLE 是浅层自回归特征草稿。两者都是自投机（self-speculative），不是第二份独立 LLM。
 
 采样核可以交给 FlashInfer 的 chain / tree speculative sampling，见 `nvidia-flashinfer`。那只负责 $p,q$ 怎么拒绝，不负责头怎么训。
 

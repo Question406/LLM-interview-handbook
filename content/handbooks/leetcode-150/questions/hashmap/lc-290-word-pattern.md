@@ -31,7 +31,7 @@ sources:
 
 先 `words = s.split()`。长度与 `pattern` 不等直接否。随后与 LC 205 同一套路：维护 `pattern -> word` 与 `word -> pattern`。`abba` 对 `dog cat cat dog` 真；对 `dog cat cat fish` 假；`jquery` 对 `jquery` 是一个单词对多个字符，也假。
 
-不要用 `s.split(" ")` 依赖连续空格；题目保证单词由单个空格分隔。
+别用 `s.split(" ")`：连续空格会拆出空串。题目保证单词由单个空格分隔，用默认 `split()` 即可。
 
 ## 参考代码
 

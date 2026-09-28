@@ -33,11 +33,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“deepspeed了解么如何做的”**
 
-百川实习一面这题，这块容易背 ZeRO-1/2/3 名词却说不清「你这次为什么选这个 stage」，或者把 DeepSpeed 和 vLLM 混成一个框架。我会讲：ZeRO 用分片换单卡显存，通信变多；怎么做取决于哪块先爆，优化器状态、激活还是参数本身。先 2 再 3，不要一上来 CPU offload。相关卡：`sys-zero`、`tencent-zero-123`。最后我会补一句：显存账 → 选 stage → 再决定要不要 offload，别把 DeepSpeed 说成另一种并行算法。
+错法：背 ZeRO-1/2/3 名词却说不清「你这次为什么选这个 stage」，或者把 DeepSpeed 和 vLLM 混成一个框架。ZeRO 用分片换单卡显存，通信变多；怎么做取决于哪块先爆——优化器状态、激活还是参数本身。先 2 再 3，不要一上来 CPU offload。相关卡：`sys-zero`、`tencent-zero-123`。答法：显存账 → 选 stage → 再决定要不要 offload，别把 DeepSpeed 说成另一种并行算法。
 
 ## ZeRO 三档分别切什么
 
-数据并行每卡仍算自己的 batch，但状态分片：ZeRO-1 分优化器状态（Adam 的一阶二阶约占参数的 8 字节量级，往往最先爆）；ZeRO-2 再分梯度；ZeRO-3 连参数也分片，前向/反向按需 all-gather 再丢。通信体积随 stage 上升，换的是可训模型规模。CPU / NVMe offload 继续拿时间换显存，适合撑过峰值，不当默认吞吐方案。激活检查点是另一条轴，和 ZeRO 正交：长序列激活爆了要 checkpoint，不是盲目升到 3。我会先报哪一块显存不够，再选 stage。DeepSpeed 还包了通信重叠和一些 fused kernel，但这题关键在 ZeRO 分片，别跑去讲 pipeline 引擎。
+数据并行每卡仍算自己的 batch，但状态分片：ZeRO-1 分优化器状态（Adam 的一阶二阶约占参数的 8 字节量级，往往最先爆）；ZeRO-2 再分梯度；ZeRO-3 连参数也分片，前向/反向按需 all-gather 再丢。通信体积随 stage 上升，换的是可训模型规模。CPU / NVMe offload 继续拿时间换显存，适合撑过峰值，不当默认吞吐方案。激活检查点是另一条轴，和 ZeRO 正交：长序列激活爆了要 checkpoint，不是盲目升到 3。先报哪一块显存不够，再选 stage。DeepSpeed 还包了通信重叠和一些 fused kernel，但这题关键在 ZeRO 分片，别跑去讲 pipeline 引擎。
 
 ## 「怎么做」要对上模型规模
 

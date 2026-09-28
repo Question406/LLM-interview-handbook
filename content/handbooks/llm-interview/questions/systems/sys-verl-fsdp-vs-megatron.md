@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-这块容易答「大项目都该 Megatron」，或「FSDP 不是正经训练」。veRL 把训练后端当成可换件：FSDP/FSDP2 和 Megatron 都能进 HybridEngine，再接到 vLLM / SGLang。差别在 **分片形状、MoE、落地速度**，不在「会不会 GRPO」。还没 OOM、没有专家并行需求时上 Megatron，是给自己买一套 ckpt 与并行参数的税。选型第一句我先报：模型多大、有没有 MoE、手里是 HF 还是 Megatron ckpt、集群同不同构。框架跟在这四句话后面。校招实习项目绝大多停在 FSDP 就能把 DAPO 跑通；真正逼你换的是 all-gather 之后仍放不下，或专家数已经需要 EP，或预训练栈就是 Megatron、转换本身更贵。没有这些信号，提前上 TP/PP 会把调试面扩大到算法和并行分不清。
+这块容易答「大项目都该 Megatron」，或「FSDP 不是正经训练」。veRL 把训练后端当成可换件：FSDP/FSDP2 和 Megatron 都能进 HybridEngine，再接到 vLLM / SGLang。差别在分片形状、MoE、落地速度，不在「会不会 GRPO」。还没 OOM、没有专家并行需求时上 Megatron，是给自己买一套 ckpt 与并行参数的税。选型第一句我先报：模型多大、有没有 MoE、手里是 HF 还是 Megatron ckpt、集群同不同构。校招实习项目绝大多停在 FSDP 就能把 DAPO 跑通；真正逼你换的是 all-gather 之后仍放不下，或专家数已经需要 EP，或预训练栈就是 Megatron、转换本身更贵。没有这些信号，提前上 TP/PP 会把调试面扩大到算法和并行分不清。
 
 ## FSDP 适合什么
 
@@ -56,4 +56,4 @@ veRL 已支持 Megatron-FSDP 混合：不是「两个后端各跑各的」就结
 - **Megatron-FSDP 混合是什么？** veRL 支持部分模块走 Megatron、其余 FSDP wrap。提到即可，说清你有没有真跑过边界，不要把路线图当生产。
 - **LoRA 该选哪边？** FSDP + HF 权重点齐，wrap 和 `use_orig_params` 坑更少，实习项目优先。Megatron 上 LoRA 要自己对接并行切分，除非主干已经是 Megatron。
 - **reshard 对不齐会怎样？** HybridEngine 退回几乎全量 gather，少一份整模的故事破产，峰值显存和通信都回到朴素路径。并行表是一等公民，不是调完算法再填的附录。
-- **一句话怎么选？** 7B 到 30B、HF ckpt、要快落地用 FSDP；70B+ 或 MoE 要 EP 用 Megatron。还没 OOM 不要上 Megatron。HybridEngine 两种都能接 vLLM，改的是 shard 形状。slime 默认 Megatron，从 FSDP 迁过去要先付 ckpt 转换；OpenRLHF 默认 ZeRO。先报规模、有无 MoE、ckpt 格式。
+- **怎么收束？** 7B 到 30B、HF ckpt、要快落地用 FSDP；70B+ 或 MoE 要 EP 用 Megatron。还没 OOM 不要上 Megatron。HybridEngine 两种都能接 vLLM，改的是 shard 形状。slime 默认 Megatron，从 FSDP 迁过去要先付 ckpt 转换；OpenRLHF 默认 ZeRO。先报规模、有无 MoE、ckpt 格式。

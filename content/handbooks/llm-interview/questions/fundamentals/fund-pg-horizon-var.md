@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-这块容易把「方差大」全部推给 off-policy 的 $\rho$。Fresh、on-policy 的 REINFORCE 照样可以训不动：一条长 CoT 只在句末给 $0/1$，前面几百个 $\nabla\log\pi$ 乘的是同一个伯努利噪声。IS 连乘见 `fund-token-is-var`；本题是 **回报估计自己的方差**。
+错法：把「方差大」全部推给 off-policy 的 $\rho$。Fresh、on-policy 的 REINFORCE 照样可以训不动：一条长 CoT 只在句末给 $0/1$，前面几百个 $\nabla\log\pi$ 乘的是同一个伯努利噪声。IS 连乘见 `fund-token-is-var`；本题是回报估计自己的方差。
 
 ## 稀疏终局：同一个 $r_T$ 被复制到每个 token
 
@@ -49,7 +49,7 @@ $\gamma\lt 1$ 会把终局奖在早期 token 上打折，早期方差下来，�
 
 把学习率加大，三根轴一起更吵。监控应对着看：回报标准差和成功轨迹占比（本题）；$\rho$ 分位数 / ESS / clip fraction（IS）；零方差组比例（GRPO）。只盯平均 reward，会把「偶然全对的长回复」当成能力。
 
-过程奖励、GAE 把 $r_T$ 沿 $(\gamma\lambda)^l$ 往回涂，是在 **摊信用**，同时引入 bootstrap 偏差。组相对不摊到逐步 state，只减「这道题的平均分」，对稀疏 $0/1$ 有效的前提是组里既有 0 又有 1。探索温度能提高撞到成功的概率，但不降低成功之后那条噪声的幅度，见 `fund-entropy-temp`、`arl-sparse-reward-exploration`。
+过程奖励、GAE 把 $r_T$ 沿 $(\gamma\lambda)^l$ 往回涂，是在 摊信用，同时引入 bootstrap 偏差。组相对不摊到逐步 state，只减「这道题的平均分」，对稀疏 $0/1$ 有效的前提是组里既有 0 又有 1。探索温度能提高撞到成功的概率，但不降低成功之后那条噪声的幅度，见 `fund-entropy-temp`、`arl-sparse-reward-exploration`。
 
 ## 追问
 

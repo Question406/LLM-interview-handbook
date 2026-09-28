@@ -31,7 +31,7 @@ sources:
     type: secondary
 ---
 
-2024 的 AFM 概述写：iPhone 15 Pro 上约 30 token/s，**在采用 token speculation 之前**。所以这题不是「苹果有没有投机」，是「端上这套 Leviathan 式草稿加验证还回不回本」。算法正确性（拒绝后 rollback KV）和 `openai-speculative-decoding` 同一不变量；约束换成 ANE 静态 shape、功耗、以及语音不能读未验证前缀，见 `apple-ane`、`apple-siri-latency`。不是某次逐字真题。
+2024 的 AFM 概述写：iPhone 15 Pro 上约 30 token/s，在采用 token speculation 之前。所以这题问的是端上这套 Leviathan 式草稿加验证还回不回本，而不是苹果有没有投机。算法正确性（拒绝后 rollback KV）和 `openai-speculative-decoding` 同一不变量；约束换成 ANE 静态 shape、功耗、以及语音不能读未验证前缀，见 `apple-ane`、`apple-siri-latency`。
 
 ## 回本公式，不要只报「平均加速 2 倍」
 
@@ -43,7 +43,7 @@ $$
 
 $\tau$ 上不去，$c$ 又不小，加速小于 1，还多烧电。端上 $c$ 来自：第二份权重是否常驻、是否掉出 ANE、是否多一次 DRAM 往返。云端可以把草稿塞进空闲 SM；手机上第二份模型会和 3B 目标抢 SRAM 和内存带宽。
 
-接受率跟任务走。低温度、小 $k$、格式固定的摘要，草稿和目标更容易一致，见 `apple-topk-sample`。高温度闲聊、代码、开放知识，$\tau$ 掉下来，投机变亏。所以 **按 adapter / 功能开关**，不要全局开。
+接受率跟任务走。低温度、小 $k$、格式固定的摘要，草稿和目标更容易一致，见 `apple-topk-sample`。高温度闲聊、代码、开放知识，$\tau$ 掉下来，投机变亏。所以按 adapter / 功能开关，不要全局开。
 
 验证必须保持目标分布：草稿只是提议，最终 token 仍来自目标模型的拒绝采样 / 给定前缀的条件分布。质量门禁是 greedy 或固定种子下，和不开投机逐 token 对齐（允许实现定义的等价采样）。对不齐先查 KV 回滚，再查 RoPE 偏移。
 
@@ -51,14 +51,14 @@ $\tau$ 上不去，$c$ 又不小，加速小于 1，还多烧电。端上 $c$ �
 
 我会按代价排选项：
 
-1. **自投机 / 多 token 头。** 目标自己出草稿（浅层、共享骨干、或 Medusa 式额外头）。不驻留第二份 3B，ANE 上更像多一个静态出口。训练要加这些头；拒绝仍要截断 cache。
-2. **蒸馏小草稿，和目标同设备。** 例如很小的 palettized 网，只编同一词表。必须和目标同一 tokenizer、同一 $S_{\max}$ 档位。两张图都要能留在 ANE，或接受草稿走 GPU、目标走 ANE——拷贝可能把 $c$ 吃掉。
-3. **层跳跃。** 用目标的前几层当草稿，类似 self-spec。和 2025 的 KV sharing 有亲缘：都是「后段依赖前段状态」，但投机是时间维提议，sharing 是深度维省 cache，见 `apple-ondevice-kv`。
-4. **不要。** 云端草稿 + 端侧验证：RTT 远大于一次本地 decode。端侧草稿 + PCC 目标：同样被网络打死。PCC 内部可以做投机，那是 server 模型的事，不要和 iPhone 30 token/s 混报。
+1. 自投机 / 多 token 头。目标自己出草稿（浅层、共享骨干、或 Medusa 式额外头）。不驻留第二份 3B，ANE 上更像多一个静态出口。训练要加这些头；拒绝仍要截断 cache。
+2. 蒸馏小草稿，和目标同设备。例如很小的 palettized 网，只编同一词表。必须和目标同一 tokenizer、同一 $S_{\max}$ 档位。两张图都要能留在 ANE，或接受草稿走 GPU、目标走 ANE；拷贝可能把 $c$ 吃掉。
+3. 层跳跃。用目标的前几层当草稿，类似 self-spec。和 2025 的 KV sharing 有亲缘：都是后段依赖前段状态，但投机是时间维提议，sharing 是深度维省 cache，见 `apple-ondevice-kv`。
+4. 不要。云端草稿 + 端侧验证：RTT 远大于一次本地 decode。端侧草稿 + PCC 目标：同样被网络打死。PCC 内部可以做投机，那是 server 模型的事，不要和 iPhone 30 token/s 混报。
 
 ANE：$\gamma$ 要编进静态 shape。$\gamma=4$ 就导出 $\gamma=4$ 的验证图，不要运行时改。拒绝后 KV 回到接受前缀长度，position 用新的 `cache_len`，不要从 0 再转 RoPE。Paged KV 不是端上主路径；预分配槽位上做截断即可。
 
-语音：TTS 只能吃 **已提交、已验证** 的词。草稿若已被喇叭读出，拒绝就要停播或补丁，体验比屏上删字差一个数量级。`apple-siri-latency` 的口径是语音通路默认不用未验证草稿。屏幕上的输入法 / 改写可以更激进。
+语音：TTS 只能吃已提交、已验证的词。草稿若已被喇叭读出，拒绝就要停播或补丁，体验比屏上删字差一个数量级。`apple-siri-latency` 的口径是语音通路默认不用未验证草稿。屏幕上的输入法 / 改写可以更激进。
 
 ## 评测和错法
 

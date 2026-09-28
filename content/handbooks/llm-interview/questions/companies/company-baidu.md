@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-百度公开面经很少停在「DPO 是什么」。这块容易直接答成背公式，却说不清 chosen 概率是不是一定升、length issue、SimPO 相对 DPO 改了哪一项、Base 模型怎么增强 reasoning。我准备的单位是追问树，不是词条：推导 → $\beta$ → chosen/rejected likelihood → 长度偏置 → hard negatives → SimPO/KTO → offline vs online RL。Agent 岗另加指令冲突和代码 verifier，不会用「会调工具」收尾。
+百度公开面经很少停在「DPO 是什么」。错法：背公式，却说不清 chosen 概率是不是一定升、length issue、SimPO 相对 DPO 改了哪一项、Base 模型怎么增强 reasoning。我准备的单位是追问树，不是词条：推导 → $\beta$ → chosen/rejected likelihood → 长度偏置 → hard negatives → SimPO/KTO → offline vs online RL。Agent 岗另加指令冲突和代码 verifier，不会用「会调工具」收尾。
 
 ## 准备主线
 
@@ -54,4 +54,4 @@ sources:
 
 - **chosen 概率一定升吗？** 不一定。相对 rejected 的间隔可以升，绝对 $p(y_w)$ 仍可能降。把曲线画出来。
 - **为什么还要 SimPO？** DPO 的 implicit reward 和长度共线时会写长。SimPO 用长度归一和目标间隔，见对应卡。
-- **Agent 岗少准备什么会挂？** 只背 post-training，说不清冲突指令和可执行校验。按上面 id 刷追问树，不要背招聘 JD。
+- **Agent 岗少准备什么会挂？** 只背 post-training，说不清冲突指令和可执行校验。按上面 id 刷追问树。

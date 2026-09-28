@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易直接答成把 Memory 当成普通 RAG，只报 Recall@$K$。Memory 至少有 write policy、storage/compaction、retrieval、usage 四步；评测必须拆开读写，并问「召回了不该召的」会不会伤任务。LoCoMo 把长对话记忆评成跨会话事实一致性，不是单轮检索命中。分类与冲突处理见 `agent-memory`。
+错法：把 Memory 当成普通 RAG，只报 Recall@$K$。Memory 至少有 write policy、storage/compaction、retrieval、usage 四步；评测必须拆开读写，并问「召回了不该召的」会不会伤任务。LoCoMo 把长对话记忆评成跨会话事实一致性，不是单轮检索命中。分类与冲突处理见 `agent-memory`。
 
 ## 拆成 read / write 两个子问题
 
@@ -35,7 +35,9 @@ Write：该不该写入、字段是否带 timestamp / source / confidence / scop
 
 ## 评测协议
 
-固定模型与 harness，只改 memory 模块。时间切分：写入发生在 $t_0$，查询在 $t_1$，中间插入冲突更新或用户更正。Poisoning：把 tool / RAG 输出里的指令写入后，新会话是否执行高风险动作。还要测 compaction：摘要是否丢掉关键约束、是否把低置信推断写成事实。没有 write 评测的 retrieval 数字，不能说明系统可上线。Memory 评测是因果问题，不是检索排行榜。先固定模型和 harness，只改 memory 模块；同时报「该不该写」「该不该召」「召了之后任务变好还是变坏」。Recall@$K$ 只是 read 子问题的一个切片。把无关历史塞满窗口的系统，即使 recall 好看，也会在 distractor 和过期事实上输给「少而准」的记忆。
+固定模型与 harness，只改 memory 模块。时间切分：写入发生在 $t_0$，查询在 $t_1$，中间插入冲突更新或用户更正。Poisoning：把 tool / RAG 输出里的指令写入后，新会话是否执行高风险动作。还要测 compaction：摘要是否丢掉关键约束、是否把低置信推断写成事实。没有 write 评测的 retrieval 数字，不能说明系统可上线。
+
+同时报「该不该写」「该不该召」「召了之后任务变好还是变坏」。Recall@$K$ 只是 read 子问题的一个切片。把无关历史塞满窗口的系统，即使 recall 好看，也会在 distractor 和过期事实上输给「少而准」的记忆。
 
 ## 追问
 

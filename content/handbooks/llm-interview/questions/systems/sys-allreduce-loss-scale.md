@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易答成「AllReduce 多次会数值错乱」。先问两个问题：这次 reduce 是 SUM 还是 AVG？这个 tensor `requires_grad` 吗？FSDP / ZeRO 的梯度通信是另一条路径，见 `sys-collectives`；本题说的是 **loss 标量被误 reduce**。
+错法：答成「AllReduce 多次会数值错乱」。先问两个问题：这次 reduce 是 SUM 还是 AVG？这个 tensor `requires_grad` 吗？FSDP / ZeRO 的梯度通信是另一条路径，见 `sys-collectives`；本题说的是 loss 标量被误 reduce。
 
 ## 正确平均
 

@@ -43,7 +43,7 @@ vLLM 的 SOSP'23 论文、Hugging Face TGI、NVIDIA TensorRT-LLM 都把 KV 做�
 
 页大小是权衡：太小，表项和间接访问多，kernel 难向量化；太大，块内内部碎片回来，接近连续预留。实现里常见十几到几十 token 一页。TGI 直接用了 vLLM 的 CUDA kernel；TensorRT-LLM 自己做 paged KV，语义同一套。
 
-一般不把 KV 换出到 CPU 当「缺页」——PCIe 太慢，decode 走带宽墙。分配失败通常是抢占：把某条请求的 KV 踢回 CPU 或直接暂停，不是去盘上取。类比操作系统到映射和碎片为止，别讲成真的 swap。
+一般不把 KV 换出到 CPU 当「缺页」。PCIe 太慢，decode 走带宽墙。分配失败通常是抢占：把某条请求的 KV 踢回 CPU 或直接暂停，不是去盘上取。类比操作系统到映射和碎片为止，别讲成真的 swap。
 
 ## 复制和前缀共享
 
@@ -53,7 +53,7 @@ vLLM 的 SOSP'23 论文、Hugging Face TGI、NVIDIA TensorRT-LLM 都把 KV 做�
 
 举个形状：16 token 一页、上下文 2k、实际生成 200。连续预留浪费约 1800 token 的槽；分页只多浪费最后一页里未写满的那几格。八路并行采样共享同一 prompt 前缀时，那 2k 只占一份物理页，直到各路开始写自己的 token 才 CoW 拆页。
 
-Kernel 侧不要忽略 gather 成本：block table 在 GPU 上，按页间接访问 K/V。页太碎，L2 命中差；页太大，内部碎片回来。这是「虚拟内存类比」停在映射、不到 swap 的原因——decode 走 HBM 墙，PCIe 换页会把 TPOT 打穿。
+Kernel 侧不要忽略 gather 成本：block table 在 GPU 上，按页间接访问 K/V。页太碎，L2 命中差；页太大，内部碎片回来。虚拟内存类比停在映射、不到 swap，因为 decode 走 HBM 墙，PCIe 换页会把 TPOT 打穿。
 
 和 FlashAttention、KV 量化分层：Flash 减单步 HBM I/O；分页减分配碎片；量化让每页更窄。页里可以是 FP8 KV，算子仍按表 gather。不要说「vLLM 等于 PagedAttention」，它还叠了 continuous batching 和调度。前缀跨请求的缓存策略见 `sys-prefix-cache`。
 

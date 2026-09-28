@@ -44,7 +44,7 @@ GRPO 的 $\hat A_i=(R_i-\mu_G)/(\sigma_G+\epsilon)$。$G$ 大，$\mu,\sigma$ 稳
 
 ## 一起看的验收
 
-有效组比例、clip fraction、策略熵、平均长度、holdout pass@1。$G$ 加大而有效组不涨，是难度错了。长度涨、reward 涨、holdout 不涨，是长度 hack。四个旋钮我对的口令：稀疏就加 $G$ 或动态采样；ratio 飘就减 $\eta$ 或 $E$；截断假标签就加长并配软惩罚；墙钟被长尾钉死就分桶 / partial / 异步，而不是再加 $G$。
+有效组比例、clip fraction、策略熵、平均长度、holdout pass@1。$G$ 加大而有效组不涨，是难度错了。长度涨、reward 涨、holdout 不涨，是长度 hack。稀疏就加 $G$ 或动态采样；ratio 飘就减 $\eta$ 或 $E$；截断假标签就加长并配软惩罚；墙钟被长尾钉死就分桶 / partial / 异步，而不是再加 $G$。
 
 ## 追问
 

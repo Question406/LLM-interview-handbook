@@ -35,13 +35,13 @@ sources:
 
 Research Engineer 在 OpenAI 的日常不是调一个更好的注意力变体，是半夜 loss 从 2.1 跳到 20 或直接 NaN。公开 debug 轮爱考 Transformer 实现，见 `openai-transformer-debug`；训练岗会把同一套「先固定观测再分层」用到集群 run。没有单独的候选人报告写「loss spike」这五个字，我会按混合精度论文、Wortsman 的不稳定代理、以及 GPT-3 用的 clip / Adam 设定来答。
 
-两件事先分开：**spike** 是有限大数，下一步往往掉回来；**NaN / Inf** 是 IEEE 毒，Adam 的 $m,v$ 一旦吃进去，后面每步都是脏的。前者可以跳过坏 batch；后者通常要回到上一个干净 checkpoint，不能靠再跑一步「很小的 lr」。
+两件事先分开：spike 是有限大数，下一步往往掉回来；NaN / Inf 是 IEEE 毒，Adam 的 $m,v$ 一旦吃进去，后面每步都是脏的。前者可以跳过坏 batch；后者通常要回到上一个干净 checkpoint，不能靠再跑一步「很小的 lr」。
 
 ## 先钉现场，再按五层查
 
 打开这次 step 的 rank 日志，不要看平滑后的 dashboard。问四件事：所有 rank 一起炸还是一张卡先 Inf？是第一个 microbatch 还是累加到第 $k$ 个？grad norm 先爆还是 loss 先爆？fp16 的 inf 标志是否亮了（动态缩放见 `nvidia-loss-scale`）。
 
-**1. 数据。** dump 该 step 的 token id：是否越出词表、是否整段 ignore index、是否出现超长 HTML / 乱码重复字符把某个 embedding 打满。packing 把两篇文档拼在一起且没文档 mask 时，偶发会出现「目标全是特殊符」的退化序列。标签若是 $-100$ 以外的负数，CE 会在 gather 时读到垃圾。坏 shard 的签名是：**复现同一个 data index 必炸，换一条就不炸**。
+**1. 数据。** dump 该 step 的 token id：是否越出词表、是否整段 ignore index、是否出现超长 HTML / 乱码重复字符把某个 embedding 打满。packing 把两篇文档拼在一起且没文档 mask 时，偶发会出现「目标全是特殊符」的退化序列。标签若是 $-100$ 以外的负数，CE 会在 gather 时读到垃圾。坏 shard 的签名是：复现同一个 data index 必炸，换一条就不炸。
 
 **2. 学习率。** warmup 还没结束就按大 batch 线性外推后的峰值；cosine 已经到底又被 resume 成初始 lr；或者只对一部分参数组设了 lr。GPT-3 公开用 clip，grad 范数先看一眼：clip 之前已经 Inf，clip 救不了。和 `openai-adamw` 缠在一起的错法：把 $L_2$ 耦合进 Adam 后再把 lr 加大一档，个别坐标步长离谱。
 
@@ -61,7 +61,7 @@ def step_is_poison(loss, params):
     return False
 ```
 
-白板收尾：skip 只丢这一拍梯度，权重和 Adam 状态保持上一份干净值；NaN 已经进 $m,v$ 就 rewind。不要在脏状态上把 lr 乘 $0.1$ 假装还能救。激活重计算应和第一次前向一致，不一致是实现 bug，见 `openai-grad-checkpoint`。
+skip 只丢这一拍梯度，权重和 Adam 状态保持上一份干净值；NaN 已经进 $m,v$ 就 rewind。不要在脏状态上把 lr 乘 $0.1$ 假装还能救。激活重计算应和第一次前向一致，不一致是实现 bug，见 `openai-grad-checkpoint`。
 
 ## 追问
 

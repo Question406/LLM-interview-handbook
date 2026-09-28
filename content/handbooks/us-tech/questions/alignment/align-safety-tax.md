@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-OpenAI / Anthropic 对齐岗会问「安全训完 MMLU 掉了算不算成功」。InstructGPT 已经写过 RLHF 会改能力剖面；XSTest 专门打过度拒绝；Safety-Tuned LLaMAs 记录安全 SFT 伤有用性。不是某次现场逐字题。过度拒绝专卡见 `align-over-refuse`；红队见 `align-red-team`。本题收怎么 **测税**，不要只讲原则。
+OpenAI / Anthropic 对齐岗会问「安全训完 MMLU 掉了算不算成功」。InstructGPT 已经写过 RLHF 会改能力剖面；XSTest 专门打过度拒绝；Safety-Tuned LLaMAs 记录安全 SFT 伤有用性。过度拒绝专卡见 `align-over-refuse`；红队见 `align-red-team`。本题讲怎么测税。
 
 ## 税是 Pareto，不是一个数
 

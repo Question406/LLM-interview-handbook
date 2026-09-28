@@ -42,7 +42,7 @@ $$
 \max_\pi\ \mathbb{E}_{y\sim\pi}[r(x,y)]-\beta D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}}).
 $$
 
-最优策略满足 $r(x,y)=\beta\log(\pi^*(y\mid x)/\pi_{\mathrm{ref}}(y\mid x))+Z(x)$。DPO 把这个 $r$ **反代回** Bradley-Terry：
+最优策略满足 $r(x,y)=\beta\log(\pi^*(y\mid x)/\pi_{\mathrm{ref}}(y\mid x))+Z(x)$。DPO 把这个 $r$ 反代回 Bradley-Terry：
 
 $$
 p(y_w\succ y_l\mid x)=\sigma\big(r(x,y_w)-r(x,y_l)\big),
@@ -54,7 +54,7 @@ $$
 \mathcal{L}_{\mathrm{DPO}}=-\log\sigma\Big(\beta\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\beta\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}\Big).
 $$
 
-所以相对 PPO **少了**：显式 RM、on-policy 采样循环、value / GAE、PPO clip。 **没少：** 偏好对、冻结的 $\pi_{\mathrm{ref}}$、$\beta$ 这颗温度。说「DPO 没有 KL」是错的；KL 进了最优策略的解析式，代码里变成对 ref 的 log 比。
+所以相对 PPO 少了：显式 RM、on-policy 采样循环、value / GAE、PPO clip。没少：偏好对、冻结的 $\pi_{\mathrm{ref}}$、$\beta$ 这颗温度。说「DPO 没有 KL」是错的；KL 进了最优策略的解析式，代码里变成对 ref 的 log 比。
 
 隐式奖励怎么说：不是又训了一个打分头。它是「当前策略相对 SFT 愿意把多少 log-mass 分给这句话」。$\beta$ 大，策略不敢离开 ref；$\beta$ 小，偏好对的间隔被放大，容易过拟合那批 chosen/rejected。
 

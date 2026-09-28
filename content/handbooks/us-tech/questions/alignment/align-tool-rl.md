@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-OpenAI function calling、Anthropic 的工具循环、Microsoft Copilot 都会把「工具 RL 奖什么」问出来。Let's Verify 讲的是数学步骤；工具环同构：终局 0/1 太稀，中间分太密就换目标。不是某次现场逐字题。过程监督总论见 `align-process-reward`；稀疏信用见 `align-agent-rl`。生产执行契约见 `design-tool-prod`，本题只谈**训练信号**。
+OpenAI function calling、Anthropic 的工具循环、Microsoft Copilot 都会把「工具 RL 奖什么」问出来。Let's Verify 讲的是数学步骤；工具环同构：终局 0/1 太稀，中间分太密就换目标。过程监督总论见 `align-process-reward`；稀疏信用见 `align-agent-rl`。生产执行契约见 `design-tool-prod`，本题只谈**训练信号**。
 
 ## 两种奖，优化的不是同一件事
 
@@ -40,7 +40,7 @@ $$
 r=r^{\mathrm{out}}+\lambda\sum_k s_k,
 $$
 
-$\lambda$ 一大，策略会最大化 $\sum s_k$：无必要调用、重复查询、把同一 API 拆成十次。$r^{\mathrm{out}}$ 变成装饰。面试先说：**过程奖是 shaping，不能替代任务成功。**
+$\lambda$ 一大，策略会最大化 $\sum s_k$：无必要调用、重复查询、把同一 API 拆成十次。$r^{\mathrm{out}}$ 变成装饰。面试先说：过程奖是 shaping，不能替代任务成功。
 
 更阴的一种：奖「调用了工具」而不是「调用对了」。trace 里出现 tool 块就加分，模型学会每轮都调，观察当噪音读。正确的过程事件是环境可观测的：返回码、单测断言、是否改到了目标文件。人读 CoT 打的「这一步有用吗」噪声大，且不可复现。
 
@@ -53,7 +53,7 @@ def tool_reward(task_ok, events, lam=0.05):
 
 $\lambda$ 从小扫。曲线要同时看任务成功率、平均调用次数、无调用成功率。调用次数涨、任务不动，就是在刷 $s_k$。
 
-## 怎么选，才不像空话
+## 怎么选
 
 能规则核验的中间态优先规则，不要训一个工具 PRM。开放网页没有 oracle，过程分更容易变成「像会用浏览器」。搜索时可用过程分做启发式、outcome 做终局门禁，比把过程分直接加成奖励安全，和数学 PRM 同一句。
 

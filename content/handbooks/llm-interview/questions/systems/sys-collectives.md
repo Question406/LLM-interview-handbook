@@ -38,7 +38,7 @@ $N$ 个 rank 把 tensor 切成 $N$ chunks，沿环每次传一块：
 
 ## 瓶颈常在拓扑，不在公式
 
-NCCL 慢可能来自 PCIe / NVLink / IB 拓扑不匹配、跨 NUMA、message 太小、通信与计算 overlap 不足。死锁则是有的 rank 没进同一 collective，见 `stepfun-gpu-deadlock`。我会先画两段，再画「谁需要全量」：需要全量就做完 AG；只需要 shard 就停在 RS。把 Ring AllReduce 说成「和 RS+AG 无关的第三种算法」，下一问画 $2(N-1)$ 步就会穿帮。
+NCCL 慢可能来自 PCIe / NVLink / IB 拓扑不匹配、跨 NUMA、message 太小、通信与计算 overlap 不足。死锁则是有的 rank 没进同一 collective，见 `stepfun-gpu-deadlock`。我会先画两段，再画「谁需要全量」：需要全量就做完 AG；只需要 shard 就停在 RS。若把 Ring AllReduce 说成「和 RS+AG 无关的第三种算法」，下一问画 $2(N-1)$ 步就会穿帮。
 
 ## 追问
 

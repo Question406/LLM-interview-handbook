@@ -34,7 +34,7 @@ sources:
 - 来源：Exponent 2025 报告
 - 题面大意：实现多节点 all_gather；通信有噪声时，推导达到目标精度需要多少轮；再改进，因为 naive 上界太慢。关键观察是在传 float，不是任意实数。
 
-这块容易写成「再 all_gather 一次就行」或直接背集合通信复杂度 $2(N-1)M/N$。OpenAI 把集合通信当载体，真正考的是噪声信道上你要传多少信息。提示很少，需要自己把问题收成信息论。
+这块容易写成「再 all_gather 一次就行」或直接背集合通信复杂度 $2(N-1)M/N$。OpenAI 把集合通信当载体，考的是噪声信道上你要传多少信息。提示很少，需要自己把问题收成信息论。
 
 ## 第一部分：先写对无噪声 all_gather
 
@@ -56,7 +56,7 @@ $$
 
 ## 第三部分：利用 float
 
-IEEE-754 二进制32 只有 32 bit，其中有效精度大约 24 bit mantissa。你要的也不是 bit-exact 拷贝，而是 $| \hat x - x | < \varepsilon$。把值域量化成 $K \approx \mathrm{range}/\varepsilon$ 个箱子，只需传 $\lceil \log_2 K \rceil$ bit。$\varepsilon=10^{-3}$、值域 $[0,1]$ 大约 10 bit，不是 32 bit 全可靠恢复。
+IEEE-754 二进制32 只有 32 bit，其中有效精度大约 24 bit mantissa。目标是 $| \hat x - x | < \varepsilon$，不是 bit-exact 拷贝。把值域量化成 $K \approx \mathrm{range}/\varepsilon$ 个箱子，只需传 $\lceil \log_2 K \rceil$ bit。$\varepsilon=10^{-3}$、值域 $[0,1]$ 大约 10 bit，不是 32 bit 全可靠恢复。
 
 更好的算法：
 
@@ -64,7 +64,7 @@ IEEE-754 二进制32 只有 32 bit，其中有效精度大约 24 bit mantissa。
 - 或者当成模拟值：重复观测做平均，方差按 $1/R$ 降，轮数跟 $\sigma^2/\varepsilon^2$ 走，仍然远小于「无限精度纠错」。
 - 若噪声是加性高斯而不是 bit flip，直接量化 + 容量公式 $C=\frac12\log(1+\mathrm{SNR})$ 估最少传输次数。
 
-面试收尾一句话：集合通信的步数是拓扑决定的；每步要重复多少次是信道容量和精度 $\varepsilon$ 决定的。把 float 当成任意实数，会把第二项高估一个数量级。
+集合通信的步数由拓扑决定；每步要重复多少次由信道容量和精度 $\varepsilon$ 决定。把 float 当成任意实数，会把第二项高估一个数量级。
 
 ## 追问
 

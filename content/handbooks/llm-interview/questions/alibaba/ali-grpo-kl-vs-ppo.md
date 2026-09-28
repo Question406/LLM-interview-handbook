@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成所有叫 KL 的项都是同一个 $\beta$。目标都是约束 $\pi$ 别跑飞，但锚定对象、方向、作用位置经常不同：$\pi_{\mathrm{ref}}$ vs $\pi_{\mathrm{old}}$、token vs sequence、进 loss vs early-stop。我会说清自己用的实现。两套 KL 的系统拆分见 `pt-trust-region-vs-drift-kl`；GRPO loss 骨架见 `ali-grpo-loss`。
+错法：所有叫 KL 的项都是同一个 $\beta$。目标都是约束 $\pi$ 别跑飞，但锚定对象、方向、作用位置经常不同：$\pi_{\mathrm{ref}}$ vs $\pi_{\mathrm{old}}$、token vs sequence、进 loss vs early-stop。我会说清自己用的实现。两套 KL 的系统拆分见 `pt-trust-region-vs-drift-kl`；GRPO loss 骨架见 `ali-grpo-loss`。
 
 ## 相似点：防更新过猛和奖励劫持
 
@@ -30,9 +30,9 @@ PPO clip 近似相对 $\pi_{\mathrm{old}}$ 的信任域：本步 $\rho=\pi_\thet
 
 ## 常见实现差异
 
-- **参考谁：** 对齐阶段常用冻结 SFT 作 $\pi_{\mathrm{ref}}$；PPO 实现里也常见相对 $\pi_{\mathrm{old}}$ 的近似 KL。两者同时出现时，clip/信任域管本步，ref KL 管长期漂离。
-- **怎么估：** token-level 平均 KL、序列级 KL、或 $k_1/k_2/k_3$ 近似；系数 $\beta$ 调度也不同。
-- **作用方式：** 有的进 loss，有的做 target/阈值 early-stop，有的自适应调 $\beta$。DAPO 一类甚至去掉 KL penalty，改靠 clip 与动态采样。
+- 参考谁：对齐阶段常用冻结 SFT 作 $\pi_{\mathrm{ref}}$；PPO 实现里也常见相对 $\pi_{\mathrm{old}}$ 的近似 KL。两者同时出现时，clip/信任域管本步，ref KL 管长期漂离。
+- 怎么估：token-level 平均 KL、序列级 KL、或 $k_1/k_2/k_3$ 近似；系数 $\beta$ 调度也不同。
+- 作用方式：有的进 loss，有的做 target/阈值 early-stop，有的自适应调 $\beta$。DAPO 一类甚至去掉 KL penalty，改靠 clip 与动态采样。
 
 阿里面经喜欢追：你监控哪些指标（KL、entropy、reward、崩坏率）来判断 KL 项是否过强/过弱。KL 过大：不学习、reward 不动。过小：长度爆炸、格式崩、reward hacking（`ali-reward-hacking`）。重要性比 $\rho$ 爆炸是另一条线，见 `ali-importance-sampling`。
 

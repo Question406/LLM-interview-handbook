@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-这块容易背「$72\mathrm{B}\times 2$ 字节 $=144\,\mathrm{GB}$」当单卡占用，或反过来以为 ZeRO-3 后每卡只剩 $144/D$、激活忽略。我会做**分项估算 + 假设**，不报虚假精确的 37.2GB。先声明：全参还是 LoRA、$D$ 卡、seq、micro-batch、是否 checkpoint。分片表见 `tencent-zero-123`，bytes/param 见 `sys-memory`。我会报完公式再代入，不先甩一个 GB。利用率口径见 `tencent-sft-parameter-gpu-utilization`，不要把占用率和 MFU 混在这道估算题里。
+这块容易背「$72\mathrm{B}\times 2$ 字节 $=144\,\mathrm{GB}$」当单卡占用，或反过来以为 ZeRO-3 后每卡只剩 $144/D$、激活忽略。我会做分项估算 + 假设，不报虚假精确的 37.2GB。先声明：全参还是 LoRA、$D$ 卡、seq、micro-batch、是否 checkpoint。分片表见 `tencent-zero-123`，bytes/param 见 `sys-memory`。我会报完公式再代入，不先甩一个 GB。利用率口径见 `tencent-sft-parameter-gpu-utilization`，不要把占用率和 MFU 混在这道估算题里。
 
 ## 真题记录
 
@@ -43,7 +43,7 @@ Activation $\propto B\cdot T\cdot L\cdot d$，和 $D$ 无关（本地 micro-batc
 
 白板我建议写三行再求和，不要口算一个总数：第一行参数状态 $16N/D$；第二行激活，给 $B,T$ 和是否 checkpoint 的倍数（常见是不开 checkpoint 时激活可以大过第一行）；第三行 15% 碎片和通信缓冲。三行都依赖你声明的假设，换 $D$ 或改 LoRA 只动第一行，换序列长度只动第二行。假设改了，我要能当场改对应那一行，而不是把整个 GB 数重编。全参 $D=8$ 第一行已经约 144GB，结论是「这张卡放不下，要更大 $D$、TP 或 LoRA」。
 
-全参和 LoRA 必须准备两套数。全参：$16N/D$ 加激活。LoRA：adapter 的 Adam 按可训参数计，底座权重按 $2N/D$ 或 offload 掉，激活仍按全图前向计。LoRA 省的是优化器，不一定省激活，长序列照样要 checkpoint。有人把 LoRA 说成「72B 变几百万参数所以显存忽略」，漏了底座前向和激活，这是最常见的低估。报数时把「优化器项」和「底座前向项」分成两行。Qwen2-72B 的词表和层数都会把 logits 与激活抬上去，不要用通用 7B 的直觉硬套。给数量级、给假设、拒绝假精确。
+全参和 LoRA 必须准备两套数。全参：$16N/D$ 加激活。LoRA：adapter 的 Adam 按可训参数计，底座权重按 $2N/D$ 或 offload 掉，激活仍按全图前向计。LoRA 省的是优化器，不一定省激活，长序列照样要 checkpoint。有人把 LoRA 说成「72B 变几百万参数所以显存忽略」，漏了底座前向和激活，这是最常见的低估。报数时把「优化器项」和「底座前向项」分成两行。Qwen2-72B 的词表和层数都会把 logits 与激活抬上去，不要用通用 7B 的直觉硬套。给数量级、给假设，不报假精确的 GB。
 
 ## 追问
 

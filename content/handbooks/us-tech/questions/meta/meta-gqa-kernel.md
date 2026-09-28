@@ -68,7 +68,7 @@ RoPE 只转 $Q,K$，在 repeat **之前**按 $H_{\mathrm{kv}}$ 转 K。先 repea
 
 ## 训练侧别踩的坑
 
-Llama 2/3 是**训练时就是 GQA**，K/V 投影输出就是 $H_{\mathrm{kv}}$ 组。不要训成 MHA 再在推理 repeat——那是 GQA 论文的 upcycle，有转换误差。训练 prefill 用融合 kernel 即可，不必为了「和 decode 一致」去物化 repeat。
+Llama 2/3 是**训练时就是 GQA**，K/V 投影输出就是 $H_{\mathrm{kv}}$ 组。不要训成 MHA 再在推理 repeat：那是 GQA 论文的 upcycle，有转换误差。训练 prefill 用融合 kernel 即可，不必为了「和 decode 一致」去物化 repeat。
 
 `torch.compile` 可能把 `expand + reshape` 融掉，也可能 graph break 后留下一次拷贝。和 FSDP 一样，用 break 日志说话，见 `meta-pytorch-compile`。不要保证 compile 之后 naive repeat 就免费。
 

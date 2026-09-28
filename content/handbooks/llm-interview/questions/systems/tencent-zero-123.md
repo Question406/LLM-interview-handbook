@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-这块容易把 ZeRO 说成「越高级越省、所以上 3」。ZeRO 切的是**参数 / 梯度 / 优化器状态**，不是 activation；升一级就多一类集体通信。能放下就停在 1/2。和「72B 单卡估算」连问时，先画分片表再代入 $N$，不要先报一个 GB。FSDP 的 `fully_shard` 对应的是 ZeRO-3 这一档，不要把名字换了就当另一种算法。bytes/param 总账见 `sys-memory`，代入 72B 见 `tencent-zero3-qwen72b-mem`，DeepSpeed 之外的手段见 `tencent-beyond-deepspeed`。
+这块容易把 ZeRO 说成「越高级越省、所以上 3」。ZeRO 切的是参数 / 梯度 / 优化器状态，不是 activation；升一级就多一类集体通信。能放下就停在 1/2。和「72B 单卡估算」连问时，先画分片表再代入 $N$，不要先报一个 GB。FSDP 的 `fully_shard` 对应的是 ZeRO-3 这一档，不要把名字换了就当另一种算法。bytes/param 总账见 `sys-memory`，代入 72B 见 `tencent-zero3-qwen72b-mem`，DeepSpeed 之外的手段见 `tencent-beyond-deepspeed`。
 
 ## 真题记录
 
@@ -41,7 +41,7 @@ sources:
 | ZeRO-2 | 复制 | 分片 | 分片 |
 | ZeRO-3 | 分片 | 分片 | 分片 |
 
-Adam 状态通常是大头（FP32 $m/v$ + master，约 $12$ bytes/param），所以 ZeRO-1 往往就能把单卡从「Adam 爆」救回来，参数仍复制、前向通信少。ZeRO-2 在反向做 reduce-scatter，梯度不再每卡一份，反向峰值下降。ZeRO-3 前向按层 all-gather 参数、用完丢掉，反向再 gather 一次并 reduce-scatter 梯度。单卡参数占用约 $/D$，但每层都有通信与气泡。Activation、临时 buffer **都不在这张表里**，长序列 OOM 升 3 没用，要 checkpoint / SP / 减 $T$。我会把「稳态占用」和「all-gather 峰值」分开说：ZeRO-3 的 `nvidia-smi` 对不上 $16N/D$ 是正常的。小模型、小 batch 时计算喂不饱，升 3 会让 MFU 掉，看起来像「优化了反而慢」。
+Adam 状态通常是大头（FP32 $m/v$ + master，约 $12$ bytes/param），所以 ZeRO-1 往往就能把单卡从「Adam 爆」救回来，参数仍复制、前向通信少。ZeRO-2 在反向做 reduce-scatter，梯度不再每卡一份，反向峰值下降。ZeRO-3 前向按层 all-gather 参数、用完丢掉，反向再 gather 一次并 reduce-scatter 梯度。单卡参数占用约 $/D$，但每层都有通信与气泡。Activation、临时 buffer 都不在这张表里，长序列 OOM 升 3 没用，要 checkpoint / SP / 减 $T$。我会把「稳态占用」和「all-gather 峰值」分开说：ZeRO-3 的 `nvidia-smi` 对不上 $16N/D$ 是正常的。小模型、小 batch 时计算喂不饱，升 3 会让 MFU 掉，看起来像「优化了反而慢」。
 
 ## 什么时候升到 3
 
@@ -49,7 +49,7 @@ Adam 状态通常是大头（FP32 $m/v$ + master，约 $12$ bytes/param），所
 
 口诀可以记成：1 救 Adam，2 再削梯度峰值，3 才动参数、开始按层通信。不要跳级。7B 全参在 8×80GB 上经常 1 就够；13B 到 32B 看序列和 batch，2 往往是甜点；72B 全参几乎必然要 3 或把 $N$ 切开。被追「为什么不直接 3」时，答通信：每层 all-gather 在小 batch、小模型上会比计算还贵。被追「为什么升 3 还 OOM」时，答激活：表上三列都不含 $B\cdot T$，8k SFT 要 checkpoint 或 SP。和「除了 DeepSpeed」连问时，升 3 只是内存层的一档，不是训练优化的全集。
 
-把表讲给人听时，用手指出「刚被切开的那一列」：从 DP 到 1 切的是优化器，从 1 到 2 切的是梯度，从 2 到 3 切的是参数。每一刀都换一类通信，所以不是免费的。被追「最佳实践」时我拒绝给唯一答案，改口「取决于哪一列还在爆」。爆 Adam 升 1，爆梯度峰值升 2，单卡放不下权重才升 3，爆激活则不要升 ZeRO。FlashAttention、checkpoint、序列并行、LoRA 都不在三列里。把表外的手段说成 ZeRO-4，当场穿帮。
+把表讲给人听时，用手指出「刚被切开的那一列」：从 DP 到 1 切的是优化器，从 1 到 2 切的是梯度，从 2 到 3 切的是参数。每一刀都换一类通信，所以不是免费的。被追「最佳实践」时我拒绝给唯一答案，改口「取决于哪一列还在爆」。爆 Adam 升 1，爆梯度峰值升 2，单卡放不下权重才升 3，爆激活则不要升 ZeRO。FlashAttention、checkpoint、序列并行、LoRA 都不在三列里。
 
 ## 追问
 

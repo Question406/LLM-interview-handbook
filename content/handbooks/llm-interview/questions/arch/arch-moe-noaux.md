@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-Aux loss 把「专家要平均」写进可反传的惩罚项，和 next-token loss 抢同一套 router 参数。DeepSeek-V3 的做法是：均衡控制挪到路由决策的外部偏置上，主损失尽量只做语言建模。
+Aux loss 把「专家要平均」写进可反传的惩罚项，和 next-token loss 抢同一套 router 参数。DeepSeek-V3 把均衡控制挪到路由决策的外部偏置上，主损失尽量只做语言建模。
 
 ## 机制
 
@@ -39,7 +39,7 @@ $b_i$ 按 batch 负载做符号更新：expert $i$ 的 token 份额高于均值�
 
 Switch Transformer 一类 aux loss 近似 $N\sum_i f_i P_i$（实际频率 $\times$ 平均门控概率）。$\lambda$ 太小热点仍在，$\lambda$ 太大 router 为了平均而牺牲语义匹配。无辅助方案把这个折中从 loss 里拿掉：主梯度不再被「必须均匀」污染。
 
-V3 仍保留一个极小的 sequence-wise complementary aux loss（论文量级 $\alpha=10^{-4}$），用来压极端不平衡，不是把均衡重新交给主损失。面试别说成「完全没有任何均衡项」。
+V3 仍保留一个极小的 sequence-wise complementary aux loss（论文量级 $\alpha=10^{-4}$），用来压极端不平衡，均衡没有完全交给主损失。面试别说成「完全没有任何均衡项」。
 
 ## 例子
 

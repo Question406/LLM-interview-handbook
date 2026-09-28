@@ -31,7 +31,7 @@ sources:
     type: primary
 ---
 
-HHH 里 honesty 是第三轴，但 HH-RLHF 没有单独采诚实偏好，常并进 helpful 的「别瞎编」。对齐岗会问：那你怎么评？和 helpful / harmless 打架时怎么办？我会先拆开「答对了」和「没撒谎」，再谈冲突。公开 constitution 把诚实抬得很高：连社交白谎都不该说；口头置信要校准。这不是某一场隐藏真题。
+HHH 里 honesty 是第三轴，但 HH-RLHF 没有单独采诚实偏好，常并进 helpful 的「别瞎编」。对齐岗会问：那你怎么评？和 helpful / harmless 打架时怎么办？我会先拆开「答对了」和「没撒谎」，再谈冲突。公开 constitution 把诚实抬得很高：连社交白谎都不该说；口头置信要校准。
 
 ## 先把诚实从准确率里拆出来
 

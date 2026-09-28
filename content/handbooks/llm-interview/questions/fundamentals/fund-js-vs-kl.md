@@ -24,7 +24,7 @@ sources:
     type: secondary
 ---
 
-这块容易直接答成 JS 是「更好的 KL」，或者说「LLM 对齐应该用 JS」。KL 度量「用 $q$ 编码 $p$ 多付的码长」，$D_{\mathrm{KL}}(p\|q)\neq D_{\mathrm{KL}}(q\|p)$，所以不是距离。方向性见 `fund-kl-directions`、`pdd-forward-reverse-kl`；非负性见 `fund-kl-nonneg`。SFT 正向 KL、RLHF 反向 KL 见 `pt-sft-fwd-kl-vs-rlhf-rev-kl`。我会先写 KL 定义，再写混合分布 $m$，最后说：对齐先问方向，不先问对称。
+错法：JS 是「更好的 KL」，或者说「LLM 对齐应该用 JS」。KL 度量「用 $q$ 编码 $p$ 多付的码长」，$D_{\mathrm{KL}}(p\|q)\neq D_{\mathrm{KL}}(q\|p)$，所以不是距离。方向性见 `fund-kl-directions`、`pdd-forward-reverse-kl`；非负性见 `fund-kl-nonneg`。SFT 正向 KL、RLHF 反向 KL 见 `pt-sft-fwd-kl-vs-rlhf-rev-kl`。我会先写 KL 定义，再写混合分布 $m$，最后说：对齐先问方向，不先问对称。
 
 ## 定义与有界性
 
@@ -43,7 +43,7 @@ $$
 
 ## 为什么 GAN 早期提它
 
-原始 GAN（Goodfellow et al., 2014）在判别器最优时，生成器目标等价于最小化 $p_{\mathrm{data}}$ 与 $p_g$ 的 JS。两个分布支撑几乎不交时（高维图很常见），JS 已经饱和在上界附近，梯度消失，生成器学不动。后来才有 WGAN 等用别的 divergence / IPM。这是生成模型史，**不是**「LLM 对齐应该用 JS」。
+原始 GAN（Goodfellow et al., 2014）在判别器最优时，生成器目标等价于最小化 $p_{\mathrm{data}}$ 与 $p_g$ 的 JS。两个分布支撑几乎不交时（高维图很常见），JS 已经饱和在上界附近，梯度消失，生成器学不动。后来才有 WGAN 等用别的 divergence / IPM。这是生成模型史，不是「LLM 对齐应该用 JS」。
 
 ## 接到后训练
 
@@ -53,11 +53,11 @@ $$
 
 ## 方向性才是后训练要的性质
 
-SFT 最小化的是正向 KL / CE：$\mathbb{E}_{p_{\mathrm{data}}}[\log\pi]$，模式覆盖，容易把多峰数据抹成平均答案。RLHF 常用反向 KL 把 $\pi$ 拉向高奖励且靠近 $\pi_{\mathrm{ref}}$ 的峰，模式寻求，容易尖。JS 把两个方向各接一半到 $m$ 上，对称、有界，于是既不特别覆盖也不特别寻求。蒸馏里有人用 JS 当折中（避免 student 过于 smear 或过于 collapse），那是 **拟合 teacher 分布** 的损失设计，不是 PPO 的约束项。对齐若被追问「为什么不用对称散度」，答：要对齐的是相对参考策略的单向惩罚，对称会把「不许偏离」和「必须覆盖」混在一个标量里，调 $\beta$ 时不知道在压哪一侧。
+SFT 最小化的是正向 KL / CE：$\mathbb{E}_{p_{\mathrm{data}}}[\log\pi]$，模式覆盖，容易把多峰数据抹成平均答案。RLHF 常用反向 KL 把 $\pi$ 拉向高奖励且靠近 $\pi_{\mathrm{ref}}$ 的峰，模式寻求，容易尖。JS 把两个方向各接一半到 $m$ 上，对称、有界，于是既不特别覆盖也不特别寻求。蒸馏里有人用 JS 当折中（避免 student 过于 smear 或过于 collapse），那是拟合 teacher 分布的损失设计，不是 PPO 的约束项。对齐若被追问「为什么不用对称散度」，答：要对齐的是相对参考策略的单向惩罚，对称会把「不许偏离」和「必须覆盖」混在一个标量里，调 $\beta$ 时不知道在压哪一侧。
 
 GAN 故事的要点是支撑不交导致 JS 饱和、梯度消失，所以后来才有 Wasserstein 等。LLM token 分布在词表上几乎处处有质量，支撑不交不是主矛盾；主矛盾是正向 / 反向 KL 的覆盖 vs 寻求。不要把 2014 生成模型的药方直接开给 2025 的 GRPO。
 
-白板顺序：KL 定义与非负性 → $D_{\mathrm{KL}}(p\|q)\neq D_{\mathrm{KL}}(q\|p)$ → 写出 $m$ 与 JS → 上界 $\log 2$ → 「对齐先问方向」。
+白板顺序：KL 定义与非负性 → $D_{\mathrm{KL}}(p\|q)\neq D_{\mathrm{KL}}(q\|p)$ → 写出 $m$ 与 JS → 上界 $\log 2$ → 对齐先问方向。
 
 ## 追问
 

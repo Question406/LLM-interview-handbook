@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-直接 jailbreak 改用户消息只是一层。更危险的是间接注入：恶意指令藏在网页、PDF、工单、检索片段或 tool observation 里，被 RAG/工具当「事实」拼进 context，模型当成更高优先级控制信息去调发送、上传、改权限。这块容易直接答成「我们告诉模型忽略恶意指令」。Greshake et al. 把这条路径写清楚了：攻击者不必和控制面对话，只要污染 Agent 会读的数据。
+直接 jailbreak 改用户消息只是一层。更危险的是间接注入：恶意指令藏在网页、PDF、工单、检索片段或 tool observation 里，被 RAG/工具当「事实」拼进 context，模型当成更高优先级控制信息去调发送、上传、改权限。错法：「我们告诉模型忽略恶意指令」。Greshake et al. 把这条路径写清楚了：攻击者不必和控制面对话，只要污染 Agent 会读的数据。
 
 ## 攻击怎么穿过 RAG 和工具
 
@@ -40,7 +40,7 @@ Harness 显式标注来源与 taint：external content 不得升级权限、不�
 
 「Ignore previous instructions」能挡一部分直球，挡不住改写、多语言、藏在表格或 Base64 里的指令。最后边界是 runtime authorization 与最小 capability，不是更长的 system prompt。没有 ACL，模型「听话」不是安全属性。
 
-红队至少覆盖三条：检索命中带「转发上下文」的文档、工具返回里夹带新系统提示、把注入写进 memory 后再开新会话。通过标准是高风险工具未被调用，而不是模型在思维链里骂了攻击者一句。产品上把 tool observation 用明确分隔符标成 data，并切断「数据 → 新工具授权」这条边。能读网页的 Agent 若同时持有外发 capability，就是在邀请间接注入。最后我会补一句：tool/RAG/memory 输出是 data 不是 authority；最小权限切断「读到指令就能外发」。
+红队至少覆盖三条：检索命中带「转发上下文」的文档、工具返回里夹带新系统提示、把注入写进 memory 后再开新会话。通过标准是高风险工具未被调用，而不是模型在思维链里骂了攻击者一句。产品上把 tool observation 用明确分隔符标成 data，并切断「数据 → 新工具授权」这条边。能读网页的 Agent 若同时持有外发 capability，就是在邀请间接注入。
 
 ## 追问
 

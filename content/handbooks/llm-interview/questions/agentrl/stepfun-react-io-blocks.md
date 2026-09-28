@@ -35,19 +35,19 @@ sources:
 
 ## 三块的合同
 
-**Plan（Thought）**  
-- 输入：用户任务、已有轨迹、工具目录短描述、剩余步数 / 预算。  
-- 输出：下一步意图，例如「需要官方文档里的 API 限制，准备搜索」。可以是自然语言或短 JSON。  
+Plan（Thought）
+- 输入：用户任务、已有轨迹、工具目录短描述、剩余步数 / 预算。
+- 输出：下一步意图，例如「需要官方文档里的 API 限制，准备搜索」。可以是自然语言或短 JSON。
 - Prompt 约束：禁止编造尚未观察到的事实；可以声明终止条件。Plan 不必对用户可见。
 
-**Action**  
-- 输入：Plan + 工具 JSON schema。  
-- 输出：可被 parser 校验的调用，如 `search(query="rate limit", k=5)`。  
+Action
+- 输入：Plan + 工具 JSON schema。
+- 输出：可被 parser 校验的调用，如 `search(query="rate limit", k=5)`。
 - 形状：单行 JSON / XML 标签，不是散文。非法字段应在 harness 层失败，不要靠模型「差不多」。对照 `agent-schema-contract`。
 
-**Observation**  
-- 输入：执行器对 Action 的返回（命中列表、错误码、超时）。  
-- 输出：写回上下文的文本或结构化摘要，带来源 ID；超长则抽字段、留句柄。  
+Observation
+- 输入：执行器对 Action 的返回（命中列表、错误码、超时）。
+- 输出：写回上下文的文本或结构化摘要，带来源 ID；超长则抽字段、留句柄。
 - 形状：`{"ok": true, "results": [...], "error": null}`。必须区分空结果、超时、权限失败，否则模型会学坏，见 `arl-retry`。
 
 三者串起来：Plan 决定意图，Action 落地为环境转移，Observation 成为下一步的 $s_{t+1}$。缺固定字段就无法 SFT 合法转移，也无法 RL 回放。
@@ -55,8 +55,6 @@ sources:
 ## 训练与回放只认这些字段
 
 每条轨迹按 Plan / Action / Observation / 环境版本落盘。SFT 模仿合法转移；RL 只在可执行环境给分，Plan 不单独奖文笔。Action 失败时 Observation 必须带错误类型，训练才能学 recovery。评测回放时用同一 schema 重跑，而不是让模型重新「讲故事」。和 `byte-react-tool-select` 比，本题更抠 I/O 形状，而不是路由策略。
-
-最后我会补一句：Plan 吃任务与历史、输出意图；Action 是合法 schema 调用；Observation 是环境回包并写回上下文。没有固定日志字段，就没有可训练的 Agent。
 
 ## 追问
 

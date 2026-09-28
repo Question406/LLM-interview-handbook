@@ -29,11 +29,11 @@ sources:
     type: primary
 ---
 
-veRL 和 slime 的放置对照见 `sys-verl-vs-slime`。那张卡几乎不谈 AReaL。面试若问「同步 RL 慢在哪、异步怎么解」，AReaL 论文把系统病写得很干净；slime 则假设你已经接受 Megatron + SGLang 这条生产路径。
+错法：把 AReaL 和 slime 说成同一套 async 实现。veRL / slime 放置对照见 `sys-verl-vs-slime`，那张卡几乎不谈 AReaL。面试若问「同步 RL 慢在哪、异步怎么解」，AReaL 把系统病写得很干净；slime 则假设你已经接受 Megatron + SGLang 这条生产路径。
 
-## AReaL：瓶颈是等待，药是解耦
+## AReaL：瓶颈是等待
 
-同步 RL 交替做 generate 和 train。生成必须等 batch 内最长输出，推理卡空转；训练时推理卡再空，训练时生成卡也空。加卡并不能线性涨 decode 吞吐，因为每卡 batch 变小，更容易掉进 memory-IO-bound。AReaL 的回答是：
+同步 RL 交替做 generate 和 train。生成必须等 batch 内最长输出，推理卡空转；训练时推理卡再空，训练时生成卡也空。加卡并不能线性涨 decode 吞吐，因为每卡 batch 变小，更容易掉进 memory-IO-bound。AReaL 的解法是解耦：
 
 - rollout worker 流式生成，不等全局 batch 结束；
 - trainer 凑够 batch 就更新；

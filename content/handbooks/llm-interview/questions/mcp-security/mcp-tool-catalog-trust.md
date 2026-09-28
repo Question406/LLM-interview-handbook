@@ -31,7 +31,7 @@ sources:
 
 ## 怎么测、哪里会被刷
 
-评测应包含：良性 annotation 但实现有副作用；热更新 description 做注入；把已授权 tool 改成破坏性参数。记录：是否 pin、是否弹出 diff、是否拒绝、模型上下文里出现了哪一版描述。评测上能刷的是：只在连接时审一次、相信 `readOnly`、catalog 变更不弹窗。Catalog 变更就是权限变更；annotation 是提示，pin + policy 才是授权。落地最小集：server 身份 pin、schema hash、description hash、diff 弹窗、未知 tool 默认拒绝、调用审计。缺 hash 比对，热更新注入无法被看见。现场不要说「我们信任官方 MCP」；要说「我们 pin 了哪一版、变更时谁确认」。把 catalog 当不可信输入，还能挡住通过「新工具描述」做的 prompt injection。审批记录要能回放到具体 schema hash，而不是「用户曾经允许过这个域名」。
+评测应包含：良性 annotation 但实现有副作用；热更新 description 做注入；把已授权 tool 改成破坏性参数。记录：是否 pin、是否弹出 diff、是否拒绝、模型上下文里出现了哪一版描述。能刷的点：只在连接时审一次、相信 `readOnly`、catalog 变更不弹窗。落地最小集：server 身份 pin、schema hash、description hash、diff 弹窗、未知 tool 默认拒绝、调用审计。缺 hash 比对，热更新注入无法被看见。审批记录要能回放到具体 schema hash，而不是「用户曾经允许过这个域名」。
 
 把 schema/description hash 写入每次 tool call 的审计行，事后能证明当时执行的是用户批准的那一版。未 pin 的 server 只能只读演示，不能碰副作用工具。这是 host 的责任，不是模型的责任。
 

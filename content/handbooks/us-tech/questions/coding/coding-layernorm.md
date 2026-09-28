@@ -27,7 +27,7 @@ sources:
 
 ## 题怎么来的
 
-Ba et al. 2016 的 LayerNorm 是 Transformer 的默认前置件。Apple 手写 MHA 前后会要你接 LN；OpenAI debug 会把 `eps` 写成 $0$ 或把轴收到时间维。评委要听的不是「做了归一化」，而是 **沿哪一维、和 BatchNorm 差在哪、仿射参数 shape 是什么**。Llama 把 LN 换成 RMSNorm，对照见 `coding-rmsnorm`。
+Ba et al. 2016 的 LayerNorm 是 Transformer 的默认前置件。Apple 手写 MHA 前后会要你接 LN；OpenAI debug 会把 `eps` 写成 $0$ 或把轴收到时间维。要说清：沿哪一维、和 BatchNorm 差在哪、仿射参数 shape 是什么。Llama 把 LN 换成 RMSNorm，对照见 `coding-rmsnorm`。
 
 ## 公式：每个 token 沿 $D$ 标准化
 
@@ -40,7 +40,7 @@ $$
 y=\gamma\odot\hat x+\beta.
 $$
 
-$\gamma,\beta\in\mathbb{R}^{D}$，跟 $D$ 广播，**不**跟 $T$ 走。这就是「在 feature 维上的标准化」：同一条样本、同一个位置，自己的 $D$ 个通道均值为 0、方差为 1。不同 token 互不看；不同 batch 行互不看。所以 LN 在小 batch、decode 一步 $T=1$ 时行为不变，端侧和训练对齐，Apple 爱听这句。
+$\gamma,\beta\in\mathbb{R}^{D}$，跟 $D$ 广播，不跟 $T$ 走。这就是「在 feature 维上的标准化」：同一条样本、同一个位置，自己的 $D$ 个通道均值为 0、方差为 1。不同 token 互不看；不同 batch 行互不看。所以 LN 在小 batch、decode 一步 $T=1$ 时行为不变，端侧和训练对齐，Apple 爱听这句。
 
 BatchNorm 是沿 $B$（再加空间维）对每个通道估 $\mu,\sigma$，推理要 running stats。LN 没有 running stats，训练/推理同一份代码。
 
@@ -63,7 +63,6 @@ class LayerNorm(nn.Module):
         y = (x32 - mu) * torch.rsqrt(var + self.eps)
         return (self.gamma * y + self.beta).to(x.dtype)
 
-
 def check():
     ln = LayerNorm(4)
     x = torch.randn(2, 3, 4)
@@ -72,7 +71,7 @@ def check():
     assert torch.allclose(y.float().mean(-1), torch.zeros(2, 3), atol=1e-5)
 ```
 
-方差用 **有偏** $1/D$（`unbiased=False`），对齐论文和 `nn.LayerNorm`。用 $1/(D-1)$ 会对不上海外实现。reduction 放 fp32：低精度下平方和更容易 underflow。
+方差用有偏 $1/D$（`unbiased=False`），对齐论文和 `nn.LayerNorm`。用 $1/(D-1)$ 会对不上海外实现。reduction 放 fp32：低精度下平方和更容易 underflow。
 
 ## $\varepsilon$ 和仿射不要省略
 

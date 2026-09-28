@@ -36,7 +36,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“vLLM框架是怎么做推理加速的？”**；**“vLLM 中使用的技术是否熟悉（如 Paged Attention、KV Cache）?”**
 
-蚂蚁这题，这块容易直接答成「用了 FlashAttention」或「改了注意力公式」。加速来自 KV 显存怎么管、请求怎么连续 batch，softmax 没换成近似。FlashAttention 解决单步算子 I/O，PagedAttention 解决 cache 预留碎片，两层别混。相关卡：`sys-pagedattention`、`sys-cont-batch`、`ant-flash-attention`。被问「加速」时我先说吞吐（同显存更高并发），再补一句单请求延迟不一定下降。
+错法：「用了 FlashAttention」或「改了注意力公式」。加速来自 KV 显存怎么管、请求怎么连续 batch，softmax 没换成近似。FlashAttention 解决单步算子 I/O，PagedAttention 解决 cache 预留碎片，两层别混。相关卡：`sys-pagedattention`、`sys-cont-batch`、`ant-flash-attention`。被问「加速」时先说吞吐（同显存更高并发），再补一句单请求延迟不一定下降。
 
 ## KV cache 为什么会先爆
 
@@ -48,7 +48,7 @@ sources:
 
 ## 加速从哪来、边界在哪
 
-收益来自更高有效 batch 和更少浪费显存，从而 tokens/s 上升；单请求延迟不一定成比例下降。页过小则页表密、过则碎片回升。和训练 ZeRO 不是一回事：ZeRO 切参数，paging 切 KV。prefill 仍可能是大块连续写，decode 才真正吃到分页与连续 batch 的好处；混合流量要分开看 TTFT 和 TPOT。最后我会补一句：KV 按页，少碎片，连续 batch 喂满 GPU。
+收益来自更高有效 batch 和更少浪费显存，从而 tokens/s 上升；单请求延迟不一定成比例下降。页过小则页表密、过则碎片回升。和训练 ZeRO 不是一回事：ZeRO 切参数，paging 切 KV。prefill 仍可能是大块连续写，decode 才真正吃到分页与连续 batch 的好处；混合流量要分开看 TTFT 和 TPOT。记住：KV 按页，少碎片，连续 batch 喂满 GPU。
 
 ## 追问
 

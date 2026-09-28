@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易把三者背成互不相关的名词，或宣称「DPO 已经替代 PPO」。差别在监督信号与是否 on-policy。DPO 用偏好对直接优化策略，无显式 RM / RL loop；PPO 先训 RM 再 on-policy 优化，表达力强但复杂；GRPO 用同题组内相对奖励做 on-policy 更新，省掉 critic。白板推导见 `pt-pg-to-ppo-to-grpo`，DPO 后再接 GRPO 见 `ali-multineg-then-grpo`。
+错法：把三者背成互不相关的名词，或宣称「DPO 已经替代 PPO」。差别在监督信号与是否 on-policy。DPO 用偏好对直接优化策略，无显式 RM / RL loop；PPO 先训 RM 再 on-policy 优化，表达力强但复杂；GRPO 用同题组内相对奖励做 on-policy 更新，省掉 critic。白板推导见 `pt-pg-to-ppo-to-grpo`，DPO 后再接 GRPO 见 `ali-multineg-then-grpo`。
 
 ## 三条路差在监督信号
 
@@ -40,11 +40,11 @@ DPO 把 Bradley-Terry 偏好写成对 $\pi_\theta$ 与 $\pi_{\mathrm{ref}}$ 的�
 
 ## GRPO 补的是探索
 
-「用过 GRPO 吗」不要只复述公式。讲：同题采 $G$ 条，组内标准化 advantage，无 value model；空 group（全对 / 全错）梯度为 0；可验证任务比纯 RM 更合适。DPO 缺探索、PPO 重、GRPO 在中间。按信号选型，不是按论文新旧堆 buzzword。阶段仍建议 SFT → 偏好 → 可验证 RL，见 `ali-sft-then-posttrain`。
+「用过 GRPO 吗」不要只复述公式。讲：同题采 $G$ 条，组内标准化 advantage，无 value model；空 group（全对 / 全错）梯度为 0；可验证任务比纯 RM 更合适。DPO 缺探索、PPO 重、GRPO 在中间。按信号选型，别按论文新旧堆 buzzword。阶段仍建议 SFT → 偏好 → 可验证 RL，见 `ali-sft-then-posttrain`。
 
 ## 追问
 
 - **没有 RM 的 DPO 更安全吗？** 偏好噪声会直接进策略；没有 RM 不等于没有 hacking，只是 hacking 发生在标注与长度上。
 - **GRPO 能替代 PPO 吗？** 在 LLM 可验证奖励、组采样便宜时常常更简单；需要逐步 credit 或稠密过程分时，critic / PPO 仍有位置。
-- **$\beta$ 怎么调？** 看 chosen/rejected margin、熵、下游任务，而不是固定抄 0.1。
+- **$\beta$ 怎么调？** 看 chosen/rejected margin、熵、下游任务，别固定抄 0.1。
 - **为何先 DPO 再 GRPO？** 先用离线偏好压住格式与安全，再在 verifier 上探索；反过来 DPO 可能拉回旧分布。

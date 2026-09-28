@@ -28,9 +28,9 @@ sources:
     type: primary
 ---
 
-Wei et al. 的 CoT 和 Wang et al. 的 self-consistency 都是 Google 的工作；PaLM 540B 把「规模上来之后 CoT 才明显」写进报告。Gemini 岗问这题，要听你能不能把推理讲成计算，而不是人格。学术榜上 CoT 怎么抬 MMLU 见 `google-eval-mmlu`。别把后来的「思考模型」说成不可分析的魔法。
+Wei et al. 的 CoT 和 Wang et al. 的 self-consistency 都是 Google 的工作；PaLM 540B 把「规模上来之后 CoT 才明显」写进报告。Gemini 岗问这题，要把推理讲成计算，别讲成人格。学术榜上 CoT 怎么抬 MMLU 见 `google-eval-mmlu`。别把「思考模型」说成不可分析的魔法。
 
-## CoT 是额外 token，不是第二套脑
+## CoT 是额外 token
 
 普通解码：条件 $x$，直接抽答案 $y$。CoT：先抽中间 token $z$，再抽 $y$，即 $p(z,y\mid x)$。训练或 prompt 让 $z$ 看起来像步骤。机制上就是自回归多走了 $|z|$ 步，每步一次前向。
 
@@ -52,9 +52,9 @@ Self-consistency：同一 prompt 采 $N$ 条 CoT，对最终答案多数票。Pa
 
 ## 怎么讲才不像神化
 
-我会主动设边界：
+边界：
 
-- 多出来的是 token 和 FLOPs，不是意识。
+- 多出来的是 token 和 FLOPs。
 - 有的题 CoT 有害：分类、短事实、格式敏感的抽取，中间步骤引入噪声。
 - 温度和 $N$ 是超参。$N$ 增大收益饱和，P99 延迟线性涨。
 - 数学竞赛和日常助手不是同一条曲线。GSM8K 上 self-consistency 很香，不等于客服对话该默认 $N=32$。

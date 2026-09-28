@@ -31,15 +31,15 @@ sources:
     type: primary
 ---
 
-Apple Intelligence / 框架岗会问「端上能不能当 agent」。公开层 2025 把 Foundation Models 框架做成 Swift API：约 3B 端侧模型、guided generation、`Tool` 协议。WWDC 写明模型可以自主决定调你在 App 里实现的工具，框架处理串并行调用图。系统级跨 App 仍走 App Intent，不是把 MCP 接到 Siri。端侧模型公开 **不是开放世界 chatbot**，见 `apple-foundation-models`。不是逐字真题。
+Apple Intelligence / 框架岗会问「端上能不能当 agent」。公开层 2025 把 Foundation Models 框架做成 Swift API：约 3B 端侧模型、guided generation、`Tool` 协议。WWDC 写明模型可以自主决定调你在 App 里实现的工具，框架处理串并行调用图。系统级跨 App 仍走 App Intent，不是把 MCP 接到 Siri。端侧模型公开不是开放世界 chatbot，见 `apple-foundation-models`。
 
 ## 执行域：本地、确认、可离线
 
 我会先画三列，避免答成云端 Bedrock Agents：
 
-1. **谁执行。** 自定义 `Tool` 在本进程跑：查本地数据库、MapKit、当前 App 状态。系统能力走 App Intent。模型不出网替你打 HTTP，除非工具自己请求网络。PCC 是更大语言模型，不是默认工具运行时。
-2. **副作用。** 只读（搜本地邮件、列日历）可自动。发消息、删文件、付款、改系统设置必须确认或系统权限框。确认是 UI 契约，不是 prompt 里写「请谨慎」。这和 `apple-siri-grounded` 同一句：状态以系统记录为准。
-3. **离线。** 没网时工具列表要裁成本地子集。天气、网页、PCC 从 schema 里拿掉，而不是调失败后再让模型编。公开叙事里端侧就要能在私有上下文上工作。
+1. 谁执行。自定义 `Tool` 在本进程跑：查本地数据库、MapKit、当前 App 状态。系统能力走 App Intent。模型不出网替你打 HTTP，除非工具自己请求网络。PCC 是更大语言模型，不是默认工具运行时。
+2. 副作用。只读（搜本地邮件、列日历）可自动。发消息、删文件、付款、改系统设置必须确认或系统权限框。确认是 UI 契约，不是 prompt 里写「请谨慎」。这和 `apple-siri-grounded` 同一句：状态以系统记录为准。
+3. 离线。没网时工具列表要裁成本地子集。天气、网页、PCC 从 schema 里拿掉，而不是调失败后再让模型编。公开叙事里端侧就要能在私有上下文上工作。
 
 预算写在宿主，不写在 system prompt：
 

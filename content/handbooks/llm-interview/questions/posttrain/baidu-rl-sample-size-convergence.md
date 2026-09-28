@@ -5,8 +5,8 @@ order: 104
 level: S
 title: 百度实习：RL 样本量如何影响收敛速度，应怎样选择？
 quick: >-
-  样本更多通常降低梯度估计方差，却增加 rollout 成本和 policy staleness。关键不是「条数」，而是有效 token、有效
-  group、任务覆盖与 reward 信噪比。我会用固定计算预算比较 learning curve、success、方差和 wall-clock，再调 group size、batch、更新频率与课程。
+  样本更多通常降低梯度估计方差，却增加 rollout 成本和 policy staleness。看的是有效 token、有效
+  group、任务覆盖与 reward 信噪比，不是名义条数。我会用固定计算预算比较 learning curve、success、方差和 wall-clock，再调 group size、batch、更新频率与课程。
 tags:
   - Baidu
   - RL Training

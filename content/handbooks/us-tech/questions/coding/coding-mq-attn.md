@@ -27,7 +27,7 @@ sources:
 
 ## 题怎么来的
 
-Shazeer 2019 的 Multi-Query Attention：很多 query head，**一组** $K,V$。Google 推理岗和 Apple 端侧都会问，因为 decode 带宽跟 $H_{\mathrm{kv}}$ 走，MQA 把 cache 降到 MHA 的 $1/H$。和 GQA 的谱系见 `google-gqa-mqa`。白板要你写 broadcast，不要把 MQA 讲成「少几个 head 的 MHA」。GQA 的 repeat 实现见 `coding-gqa-repeat`。
+Shazeer 2019 的 Multi-Query Attention：很多 query head，一组 $K,V$。Google 推理岗和 Apple 端侧都会问，因为 decode 带宽跟 $H_{\mathrm{kv}}$ 走，MQA 把 cache 降到 MHA 的 $1/H$。和 GQA 的谱系见 `google-gqa-mqa`。白板写 broadcast，别把 MQA 讲成「少几个 head 的 MHA」。GQA 的 repeat 实现见 `coding-gqa-repeat`。
 
 ## 形状：一头 KV，多头 Q
 
@@ -37,7 +37,7 @@ $$
 S_{\mathrm{scores}}[b,h,t,s]=\frac{Q[b,h,t,:]\cdot K[b,0,s,:]}{\sqrt{D}}.
 $$
 
-$K$ 没有 $h$ 下标，所有 query head 点同一组 key。softmax 仍沿 $s$（key 长）。再和同一组 $V$ 乘：`[B, H, T, S] @ [B, 1, S, D] -> [B, H, T, D]`。广播发生在 **计算**，cache 只存 `[B, 1, S, D]`。`repeat` 成 `[B, H, S, D]` 再缓存，MQA 的省显存就没了。
+$K$ 没有 $h$ 下标，所有 query head 点同一组 key。softmax 仍沿 $s$（key 长）。再和同一组 $V$ 乘：`[B, H, T, S] @ [B, 1, S, D] -> [B, H, T, D]`。广播发生在计算，cache 只存 `[B, 1, S, D]`。`repeat` 成 `[B, H, S, D]` 再缓存，MQA 的省显存就没了。
 
 $W_Q$ 出 `H * D`，$W_K,W_V$ 出 `D`（再 view 成一个 head）。RoPE 对这一个 KV head 转一次，对 $H$ 个 $Q$ 各转；不要给 $K$ 伪造 $H$ 套角度。
 
@@ -56,7 +56,6 @@ def mqa(q, k, v, attn_bias=None):
         attn = attn + attn_bias
     p = torch.softmax(attn.float(), dim=-1).to(q.dtype)
     return torch.matmul(p, v)
-
 
 def mqa_projections(x, wq, wk, wv, n_heads):
     # x: [B, T, D]; wk,wv: [D, D]
@@ -81,5 +80,5 @@ Decode 一步 $T=1$，GEMM 很小，时间在读历史 KV。MQA 读带宽约 $\t
 
 - **broadcast 和 repeat 哪个对？** 数值都能对，若 repeat 只发生在算子里。Cache 布局必须以 $H_{\mathrm{kv}}=1$ 为准。
 - **head dim 还是 $D/H$ 吗？** 是。$Q$ 仍按 $H$ 个头切；$K$ 只有一个头，维同样是 $d_h$，不是整条 $D$。
-- **能 $K$ 用 $d_h$、$V$ 用别的宽吗？** 标准 MQA 不这样。GQA/MQA 改的是 **头数**，不是头维。
+- **能 $K$ 用 $d_h$、$V$ 用别的宽吗？** 标准 MQA 不这样。GQA/MQA 改的是头数，不是头维。
 - **softmax 轴？** 仍是 key 长。沿 $H$ 做 softmax 是 `openai-transformer-debug` 那类轴错误，MQA 里更隐蔽，因为 $K$ 没有 $H$。

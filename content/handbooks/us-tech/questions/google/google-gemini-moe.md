@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Gemini 1.5 技术报告只确认 Pro 是稀疏 MoE Transformer，并回溯 Google 从 Shazeer 2017 到 Switch / GShard / GLaM 的线。**专家个数、$k$、容量系数没有公开成可背的超参。** 现场用 Switch 的语言讲机制，声明「Gemini 具体 $E,k$ 我不知道」，比编一个 $k=2$ 安全。注意力侧的 KV 另一题，见 `google-gqa-mqa`。
+Gemini 1.5 技术报告只确认 Pro 是稀疏 MoE Transformer，并回溯 Google 从 Shazeer 2017 到 Switch / GShard / GLaM 的线。专家个数、$k$、容量系数没有公开成可背的超参。 现场用 Switch 的语言讲机制，声明「Gemini 具体 $E,k$ 我不知道」，比编一个 $k=2$ 安全。注意力侧的 KV 另一题，见 `google-gqa-mqa`。
 
 ## 路由：每个 token 一张小票
 
@@ -50,9 +50,9 @@ $$
 C=\left\lceil \gamma\cdot n / E\right\rceil
 $$
 
-$\gamma$ 是 capacity factor，常见 $1.0$–$1.25$。路由器按分数往专家里塞，塞满就 **drop**：这个 token 的 MoE 输出走残差 / 零，等于这层 FFN 没算。$\gamma$ 太小，掉 token 伤害质量；太大，专家 padding 变多，all-to-all 体积涨，稀疏的吞吐红利没了。
+$\gamma$ 是 capacity factor，常见 $1.0$：$1.25$。路由器按分数往专家里塞，塞满就 drop：这个 token 的 MoE 输出走残差 / 零，等于这层 FFN 没算。$\gamma$ 太小，掉 token 伤害质量；太大，专家 padding 变多，all-to-all 体积涨，稀疏的吞吐红利没了。
 
-训练 batch 大，$n/E$ 还能填满专家。**Decode 一步 $n$ 很小**：$B$ 是并发请求数，每步 $T=1$。此时 $C$ 按公式会小到可笑，实现上会给最小容量、或者改成「有请求就调用被点名的专家」。面试要自己切场景：prefill 像训练，decode 不像。
+训练 batch 大，$n/E$ 还能填满专家。Decode 一步 $n$ 很小：$B$ 是并发请求数，每步 $T=1$。此时 $C$ 按公式会小到可笑，实现上会给最小容量、或者改成「有请求就调用被点名的专家」。面试要自己切场景：prefill 像训练，decode 不像。
 
 All-to-all：token 按专家编号 gather 到持有那份权重的芯片，算完 scatter 回来。Shape 从 `[B, T, D]` 变成「每个专家一段变长」。变长 + padding 是 TPU 上 MoE 变慢的常见原因，和 mesh 切分绑在一起，见 `google-tpu-mesh`。
 
@@ -62,12 +62,12 @@ All-to-all：token 按专家编号 gather 到持有那份权重的芯片，算�
 
 Decode：
 
-- **权重运动。** 被点名的专家要从 HBM 读进计算单元。并发低时，你付的是「读很大一块 FFN」的带宽，不是 $k/E$ 的 FLOPs 故事。专家并行把不同专家放不同芯片，单 token 还可能跨芯片取专家，延迟比稠密 FFN 更差。
-- **路由本身很便宜**，别把它说成瓶颈。瓶颈是 dispatch 和专家 GEMM 的启动开销。
-- **小 batch 不均衡。** 16 个并发请求可能 12 个进同一专家，芯片间打满 / 空转并存。容量和 load balance 是训练概念，serving 要看专家热度。
-- **和 GQA 叠加。** MoE 砍的是 FFN 计算；decode 墙钟经常仍在读 KV。长上下文先砍 $H_{\mathrm{kv}}$，见 `google-gqa-mqa`，再谈专家并行。
+- 权重运动。 被点名的专家要从 HBM 读进计算单元。并发低时，你付的是「读很大一块 FFN」的带宽，不是 $k/E$ 的 FLOPs 故事。专家并行把不同专家放不同芯片，单 token 还可能跨芯片取专家，延迟比稠密 FFN 更差。
+- 路由本身很便宜，别把它说成瓶颈。瓶颈是 dispatch 和专家 GEMM 的启动开销。
+- 小 batch 不均衡。 16 个并发请求可能 12 个进同一专家，芯片间打满 / 空转并存。容量和 load balance 是训练概念，serving 要看专家热度。
+- 和 GQA 叠加。 MoE 砍的是 FFN 计算；decode 墙钟经常仍在读 KV。长上下文先砍 $H_{\mathrm{kv}}$，见 `google-gqa-mqa`，再谈专家并行。
 
-我会主动说：总参数用来讲记忆容量和磁盘；**延迟要用激活参数 + 通信拓扑 + 并发**。有人把「Gemini 很大所以 MoE」当原因，因果反了：是要用给定激活预算换更大容量，才上 MoE。
+总参数用来讲记忆容量和磁盘；延迟要用激活参数 + 通信拓扑 + 并发。「Gemini 很大所以 MoE」因果反了：是要用给定激活预算换更大容量，才上 MoE。
 
 ## 追问
 

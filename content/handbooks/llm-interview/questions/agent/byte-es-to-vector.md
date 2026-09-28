@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“为什么选择用ElasticSearch”**；**“如果从ES切换向向量检索，哪些能力会下降，哪些能力会提升？”**
 
-字节 Agent 实习一面连问「为什么用 ES」和「切到向量升什么降什么」。这块容易直接答成把切换讲成全面升级。正确结构：升 / 降各举一例 → 混合检索 → 用 Recall@$K$ 与精确命中率分别验收。混合细节见 `ant-bm25-hybrid`、`baichuan-three-path-recall`，ES 用法也可对照 `jd-es-vector-usage`。
+字节 Agent 实习一面连问「为什么用 ES」和「切到向量升什么降什么」。错法：把切换讲成全面升级。正确结构：升 / 降各举一例 → 混合检索 → 用 Recall@$K$ 与精确命中率分别验收。混合细节见 `ant-bm25-hybrid`、`baichuan-three-path-recall`，ES 用法也可对照 `jd-es-vector-usage`。
 
 ## 为什么先用 ES
 

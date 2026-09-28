@@ -45,9 +45,7 @@ Verifier 要写清边界：查哪些局部事实、能否调用工具 / 计算�
 
 必须同时报：correctness、verifier acceptance、人工可审计性、adversarial persuasion gap（错解被弱 verifier 接受的比例）。Acceptance 升而 correctness 降，说明 reward 已被说服技巧劫持，应立刻停。人工抽检应尝试「只根据写出的证据、不靠对 prover 的信任」能否复现结论。还要报「局部可检查步的比例」：通篇只有一头一尾能核，中间是叙事，不算可读。
 
-这和 `pt-prm-orm-critic` 的关系：PRM / ORM 是打分器；legibility 要求分数来自可检查证据，而不是来自文风。和 `pt-cot-monitorability-regression` 一起：即使 CoT 对监控器有用，若用户或弱审核员读不懂，产品仍不可审计。生产上，弱 verifier 可以是用户、审核员或小模型，因此可读性是安全接口，不是文案需求。
-
-放行看四数：正确性不降、弱 verifier 对正确解的接受升、人工可复现升、错解被说服的 gap 不升。后一项单独红就停。
+这和 `pt-prm-orm-critic` 的关系：PRM / ORM 是打分器；legibility 要求分数来自可检查证据，而不是来自文风。和 `pt-cot-monitorability-regression` 一起：即使 CoT 对监控器有用，若用户或弱审核员读不懂，产品仍不可审计。生产上，弱 verifier 可以是用户、审核员或小模型，因此可读性是安全接口，不是文案需求。放行时一起看：正确性不降、弱 verifier 对正确解的接受升、人工可复现升、错解被说服的 gap 不升；后一项单独红就停。
 
 ## 追问
 

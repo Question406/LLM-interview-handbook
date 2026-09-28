@@ -28,13 +28,13 @@ sources:
     type: secondary
 ---
 
-Flamingo 是 DeepMind 2022 的公开概念：少样本看图说话，不靠把整图 patch 全塞进 LM。Google / Gemini 岗拿它当对照，问你 **视觉信息在哪一层被压扁、LM 权重要不要动。** 原生拼接见 `google-gemini-mm`；patch 数怎么爆见 `google-vit-patch`。不是某次逐字真题，别编内部连接器超参。
+Flamingo 是 DeepMind 2022 的公开概念：少样本看图说话，不靠把整图 patch 全塞进 LM。Google / Gemini 岗拿它当对照，问视觉信息在哪一层被压扁、LM 权重要不要动。 原生拼接见 `google-gemini-mm`；patch 数怎么爆见 `google-vit-patch`。别编内部连接器超参。
 
 ## Perceiver resampler：变长视觉进固定 latent
 
-视觉编码器（论文用冻的 NFNet 一类）吐出网格特征，长度跟分辨率走，形状大约 $[N_{\mathrm{vis}}, D_{\mathrm{vis}}]$。$N_{\mathrm{vis}}$ 可以是几百到几千，见 `google-vit-patch`。Resampler 学一组 latent 查询 $L$，形状 $[N_{\mathrm{lat}}, D]$，对视觉特征做交叉注意（可叠加 latent 自注意），输出仍是 $[N_{\mathrm{lat}}, D]$。$N_{\mathrm{lat}}$ 论文量级是几十，比如 64，**不随 $H,W$ 涨**。
+视觉编码器（论文用冻的 NFNet 一类）吐出网格特征，长度跟分辨率走，形状大约 $[N_{\mathrm{vis}}, D_{\mathrm{vis}}]$。$N_{\mathrm{vis}}$ 可以是几百到几千，见 `google-vit-patch`。Resampler 学一组 latent 查询 $L$，形状 $[N_{\mathrm{lat}}, D]$，对视觉特征做交叉注意（可叠加 latent 自注意），输出仍是 $[N_{\mathrm{lat}}, D]$。$N_{\mathrm{lat}}$ 论文量级是几十，比如 64，不随 $H,W$ 涨。
 
-这是带宽和窗口的交易：LM 侧注意力从看 $T_{\mathrm{txt}}+N_{\mathrm{vis}}$ 变成看 $T_{\mathrm{txt}}+N_{\mathrm{lat}}$，外加一次 $N_{\mathrm{lat}}\times N_{\mathrm{vis}}$ 的交叉注意。高分辨率、多目标、小字，信息有可能在这一步就被平均掉。面试不要说「压缩所以无损」。要说：caption、场景问答题，固定 latent 很香；读表、UI 状态、密集 OCR，你得加 $N_{\mathrm{lat}}$、加切块，或改走 Gemini 那种少压缩拼接。
+这是带宽和窗口的交易：LM 侧注意力从看 $T_{\mathrm{txt}}+N_{\mathrm{vis}}$ 变成看 $T_{\mathrm{txt}}+N_{\mathrm{lat}}$，外加一次 $N_{\mathrm{lat}}\times N_{\mathrm{vis}}$ 的交叉注意。高分辨率、多目标、小字，信息有可能在这一步就被平均掉。压缩不是无损。caption、场景问答题，固定 latent 很香；读表、UI 状态、密集 OCR，你得加 $N_{\mathrm{lat}}$、加切块，或改走 Gemini 那种少压缩拼接。
 
 视频：每帧（或每管）先 resample 成 $N_{\mathrm{lat}}$，再沿时间拼。帧数 $F$ 仍线性涨 token，只是空间维被掐死。和时间采样抢预算见 `google-video-token`。
 
@@ -50,9 +50,9 @@ $\alpha$ 初始化成 0 附近，训练初期残差几乎是 0，冻好的语言
 
 对照只抓三列，别背成一种 kernel：
 
-- **谁更新。** Flamingo：视觉塔和 LM 冻，训 resampler 和门控层。连接器微调：冻视觉，训投影和（部分）LM。Gemini 公开叙事：早期就把交错多模态混进预训练，视觉表示可以跟着 LM 损失长。
-- **视觉占多少 $T$。** Flamingo 近似常数 $N_{\mathrm{lat}}$；拼接派跟分辨率走。
-- **能力形态。** Flamingo 主叙事是交错图文上的 few-shot in-context；PaLI 是多任务前缀生成，见 `google-pali`；Gemini 产品是对话加工具，见 `google-gemini-agent`。
+- 谁更新。 Flamingo：视觉塔和 LM 冻，训 resampler 和门控层。连接器微调：冻视觉，训投影和（部分）LM。Gemini 公开叙事：早期就把交错多模态混进预训练，视觉表示可以跟着 LM 损失长。
+- 视觉占多少 $T$。 Flamingo 近似常数 $N_{\mathrm{lat}}$；拼接派跟分辨率走。
+- 能力形态。 Flamingo 主叙事是交错图文上的 few-shot in-context；PaLI 是多任务前缀生成，见 `google-pali`；Gemini 产品是对话加工具，见 `google-gemini-agent`。
 
 错法：把 CLIP 双塔点积说成 Flamingo；把「交叉注意」说成一定优于自注意拼接。交叉注意省的是 LM 窗口，付的是压缩和模块缝。
 

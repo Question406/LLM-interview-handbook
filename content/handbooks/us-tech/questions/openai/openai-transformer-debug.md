@@ -43,11 +43,11 @@ sources:
 
 打开 `eval()`，greedy / argmax，关掉 dropout。训练态和采样态混在一起，你改对了也看不出来。然后对每个标注块问：
 
-1. **因果 mask：** `masked_fill` 必须在 softmax 之前，非法位置是 $-\infty$ 不是 $0$。用 $0$ 乘权重，softmax 仍会分质量给未来 token。
-2. **softmax 轴：** 必须沿 key 长度。`dim=0` 或沿 head 维是公开复述里很常见的植入 bug。
-3. **缩放：** $QK^\top/\sqrt{d_k}$。漏了之后 fp16 很容易 overflow，loss 变 NaN。
-4. **位置：** 绝对位置编码在 decode 时必须用 `cache_len` 当 offset，不能每步都写位置 0。RoPE 同理，旋转的是 cache 对齐后的下标。
-5. **训练对齐：** next-token 要 shift；logits 上不能先 softmax 再喂 CE。
+1. 因果 mask： `masked_fill` 必须在 softmax 之前，非法位置是 $-\infty$ 不是 $0$。用 $0$ 乘权重，softmax 仍会分质量给未来 token。
+2. softmax 轴： 必须沿 key 长度。`dim=0` 或沿 head 维是公开复述里很常见的植入 bug。
+3. 缩放： $QK^\top/\sqrt{d_k}$。漏了之后 fp16 很容易 overflow，loss 变 NaN。
+4. 位置： 绝对位置编码在 decode 时必须用 `cache_len` 当 offset，不能每步都写位置 0。RoPE 同理，旋转的是 cache 对齐后的下标。
+5. 训练对齐： next-token 要 shift；logits 上不能先 softmax 再喂 CE。
 
 Shape 断言比读代码快：`q` 是 `[B,H,1,D]`，`k` 是 `[B,H,S,D]`，`scores` 是 `[B,H,1,S]`。head 维和时间维交换是另一类高发 bug。完整手写见 `code-attention`。
 
@@ -57,11 +57,11 @@ Shape 断言比读代码快：`q` 是 `[B,H,1,D]`，`k` 是 `[B,H,S,D]`，`score
 
 Prefill 一次写下整段 $K,V$。Decode 只算当前 $q_t,k_t,v_t$，沿时间维 concat，再 $q_t$ 对全部 past keys 做点积。单步从 $O(t^2 d)$ 变成 $O(t d)$。张量步骤见 `code-kv-cache-step`，显存公式见 `arch-kv-cache`。
 
-面试里我主动报不变量：**同一前缀、greedy，有 cache 和没 cache 必须逐 token 相同。** 写错最常见的是位置：新 token 用 `cache_len`，不是 0。cache 非空且一次只 decode 1 个 token 时，没有「未来位置」要 mask；chunked decode（一次多个新 token）仍要一块相对 cache 的因果 mask。
+面试里主动报不变量：同一前缀、greedy，有 cache 和没 cache 必须逐 token 相同。 写错最常见的是位置：新 token 用 `cache_len`，不是 0。cache 非空且一次只 decode 1 个 token 时，没有「未来位置」要 mask；chunked decode（一次多个新 token）仍要一块相对 cache 的因果 mask。
 
 Cache 要穿过每一层，不能只改最外层 attention。GQA 时 cache 的 head 维是 $H_{\mathrm{kv}}$ 不是 $H_q$，repeat/broadcast 发生在注意力计算里。
 
-时间不够就先保证正确性，再提 MQA/GQA、paged attention、量化 cache。评委追优化时再讲带宽：decode 是读历史 KV，和训练时的 $O(T^2)$ 不是同一件事。
+先保证正确性，再提 MQA/GQA、paged attention、量化 cache。评委追优化时再讲带宽：decode 是读历史 KV，和训练时的 $O(T^2)$ 不是同一件事。
 
 ## 追问
 

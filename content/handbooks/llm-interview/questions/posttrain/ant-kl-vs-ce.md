@@ -32,7 +32,7 @@ sources:
 
 这块容易觉得「KL 和交叉熵只差一个与策略无关的熵，换成 CE 梯度一样」。差的不是常数，是谁采样、哪一侧对数会爆炸。白板定义见 `fund-kl-directions`。PPO 的 drift 要的是反向 $D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}})$，token 从当前策略来；对参考做 CE 得到的是正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，token 从参考来。护栏会从「不许跑出参考支撑」变成「必须盖住 SFT 的每个峰」，对齐要的收窄被抵消。同场常连问 K1/K2/K3，那些估计器估的仍是反向，不能拿 CE 冒充。
 
-## 先把 CE 拆开，左右不要凭记忆
+## 先把 CE 拆开
 
 交叉熵按第一项分布取样，这步必须写：
 
@@ -43,7 +43,7 @@ H(p,q)&=-\mathbb{E}_{x\sim p}[\log q(x)]\\
 \end{aligned}
 $$
 
-令 $p=\pi_{\mathrm{ref}}$、$q=\pi$，得到正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，期望在参考策略上取。$H(\pi_{\mathrm{ref}})$ 对 $\pi$ 的梯度为零，看起来像「只差常数」，但散度的左右已经反了。正向是 mode-covering：只要 $\pi_{\mathrm{ref}}(x)\gt 0$，哪怕是示范里的有害峰或啰嗦峰，若 $\pi(x)\approx 0$，则 $\log(\pi_{\mathrm{ref}}/\pi)$ 爆炸。策略不敢忘掉 SFT 里出现过的说法，宁可把质量摊糊。这正好和聊天对齐想做的事相反。
+令 $p=\pi_{\mathrm{ref}}$、$q=\pi$，得到正向 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi)$，期望在参考策略上取。$H(\pi_{\mathrm{ref}})$ 对 $\pi$ 的梯度为零，看起来像「只差常数」，但散度的左右已经反了。正向是 mode-covering：只要 $\pi_{\mathrm{ref}}(x)\gt 0$，哪怕是示范里的有害峰或啰嗦峰，若 $\pi(x)\approx 0$，则 $\log(\pi_{\mathrm{ref}}/\pi)$ 爆炸。策略不敢忘掉 SFT 里出现过的说法，宁可把质量摊糊。这和聊天对齐想做的事相反。
 
 ## PPO 要的是反向，连 rollout 分布都反了
 

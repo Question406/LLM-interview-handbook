@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“在使用 GRPO 提升大模型的Function Calling能力时，除了结果奖励（outcome reward），还可以如何设计过程奖励（process reward）？”**
 
-这块容易直接答成把「JSON 漂亮、多调几次工具、CoT 写得长」当成过程分。阿里这面要听的是：终局仍由可执行业务 oracle 判定，过程分只打可自动验证的事件，并且这些事件必须提高到达正确终局的概率。只靠 outcome 的长工具链，关键错参和正确前缀会被同一条 $0/1$ 糊在一起，见 `arl-credit`、`ali-agent-final-reward`。
+错法：把「JSON 漂亮、多调几次工具、CoT 写得长」当成过程分。阿里这面要听的是：终局仍由可执行业务 oracle 判定，过程分只打可自动验证的事件，并且这些事件必须提高到达正确终局的概率。只靠 outcome 的长工具链，关键错参和正确前缀会被同一条 $0/1$ 糊在一起，见 `arl-credit`、`ali-agent-final-reward`。
 
 ## 过程分只打可验证事件
 
@@ -49,9 +49,7 @@ sources:
 
 GRPO 吃的是同一 prompt 下多条 rollout 的相对优势。Verifier 要对等价参数、可交换的独立调用、外部抖动鲁棒，否则组内 $A_i$ 比较的是「环境今天是否抖」而不是策略。同一任务的 group 应共享工具版本、权限集和 oracle；环境污染会破坏组相对，见 `arl-environment-reset`。
 
-上线前三组反事实：注入错误 tool / 错误参数，过程分必须掉；把合法调用改成字段顺序不同的等价 JSON，过程分不能变；加无意义的重复查询，成本项应惩罚、outcome 不应涨。若过程分与终局成功相关掉了，先关 shaping 再查 oracle。Token 级怎么落到可训练 token，对照 `byte-agent-token-credit`。
-
-最后我会补一句：outcome 锚定业务结果；过程分只覆盖选 tool、schema、权限、grounding 和成本；GRPO 要求 verifier 对等价轨迹稳定，并用注入测试确认没有在刷 formatter。
+上线前三组反事实：注入错误 tool / 错误参数，过程分必须掉；把合法调用改成字段顺序不同的等价 JSON，过程分不能变；加无意义的重复查询，成本项应惩罚、outcome 不应涨。若过程分与终局成功相关掉了，先关 shaping 再查 oracle。Token 级怎么落到可训练 token，对照 `byte-agent-token-credit`。Outcome 锚定业务结果；过程分只覆盖选 tool、schema、权限、grounding 和成本。GRPO 还要求 verifier 对等价轨迹稳定，并用注入测试确认没有在刷 formatter。
 
 ## 追问
 

@@ -32,7 +32,7 @@ sources:
 - 来源：IGotAnOffer 汇总的高频题；OA 拆解文把「Memory Database（TTL + backup/restore）」和「Bank System」列为分层解锁题
 - 形态：90 分钟、4 层，前一层单测不过后一层不开放
 
-这题难在层数和时钟，不在单层算法。第一层把 `get/set` 写成无时间参数的 dict，第三层 TTL 就只能推倒重来。
+难在层数和时钟，不在单层算法。第一层把 `get/set` 写成无时间参数的 dict，第三层 TTL 就只能推倒重来。
 
 ## 第一层：接口先带时间
 

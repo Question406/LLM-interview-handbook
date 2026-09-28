@@ -40,7 +40,7 @@ $$
 y=\gamma\odot\frac{x}{\mathrm{RMS}(x)}.
 $$
 
-没有 $\mu$，因此 **不把均值打成 0**；均值那一分量留在残差里。论文论证：LN 里真正起作用的多半是缩放，centering 可以省。Llama 的 $\gamma$ 仍在，**没有 bias $\beta$**。输入仍是 `[B, T, D]`，reduction 只沿 $D$。
+没有 $\mu$，因此不把均值打成 0；均值那一分量留在残差里。论文论证：LN 里真正起作用的多半是缩放，centering 可以省。Llama 的 $\gamma$ 仍在，没有 bias $\beta$。输入仍是 `[B, T, D]`，reduction 只沿 $D$。
 
 ```python
 import torch
@@ -58,7 +58,6 @@ class RMSNorm(nn.Module):
         inv = torch.rsqrt(z.pow(2).mean(dim=-1, keepdim=True) + self.eps)
         return (z * inv).to(x.dtype) * self.weight
 
-
 def vs_layernorm(x, eps=1e-6):
     mu = x.mean(-1, keepdim=True)
     ln = (x - mu) * torch.rsqrt(x.var(-1, keepdim=True, unbiased=False) + eps)
@@ -70,7 +69,7 @@ def vs_layernorm(x, eps=1e-6):
 
 ## Llama 为什么换
 
-不是因为 RMSNorm 和 LN 等价。公开理由是：**少一次 mean、少一套 $\beta$、kernel 更简单**，在 7B–70B 上质量不掉。GQA、RoPE、SwiGLU 是同一套 Llama 积木，RMSNorm 是其中最便宜的一块，见 `meta-llama-gqa`。不要答「RMSNorm 一定更准」。
+不是因为 RMSNorm 和 LN 等价。公开理由是少一次 mean、少一套 $\beta$、kernel 更简单，在 7B-70B 上质量不掉。GQA、RoPE、SwiGLU 是同一套 Llama 积木，RMSNorm 是其中最便宜的一块，见 `meta-llama-gqa`。不要答「RMSNorm 一定更准」。
 
 Pre-norm：每个 attention / FFN 子层入口做 RMSNorm，残差在外面加。Decode $T=1$ 和训练 $T$ 长时统计量仍是沿 $D$，逐步生成不漂移。NVIDIA 追问：RMS 是一次 reduction + rsqrt，比 LN 少一次减均值的读写，带宽敏感的 decode 有点用，但不是主要的显存账。
 

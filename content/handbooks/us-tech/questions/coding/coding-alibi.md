@@ -47,9 +47,9 @@ $j-i\le 0$，所以偏置非正：越远的 key 越被压。几何斜率：head 
 
 偏置形状要对 scores `[B, H, T, S]` 广播。Prefill：`[1, H, T, S]`，其中 $T=S$，$i,j$ 都是
 `arange`。Decode：$T=1$，$i=$ 当前 cache 下标（长度 $S$ 时 $i=S-1$ 若 $S$ 已含新
-token），$j=0..S-1$，bias `[1, H, 1, S]`。**不要**用 $i=0$ 去减 $j$，那样最近的 key 反而最负。
+token），$j=0..S-1$，bias `[1, H, 1, S]`。不要用 $i=0$ 去减 $j$，那样最近的 key 反而最负。
 
-ALiBi 加在 **scores**，softmax 之前。不改 $q,k$ 的内容，不碰 $V$。未来位置仍要
+ALiBi 加在 scores，softmax 之前。不改 $q,k$ 的内容，不碰 $V$。未来位置仍要
 $-\infty$，否则线性偏置只是让未来「比较负」，不是禁止。
 
 ```python
@@ -59,7 +59,6 @@ def alibi_slopes(n_heads):
     ratio = 2 ** (-8 / n_heads)
     return ratio ** torch.arange(1, n_heads + 1, dtype=torch.float32)
 
-
 def alibi_score_bias(q_pos, s_len, slopes):
     # q_pos: [T]; slopes: [H] -> [1, H, T, S]
     k_pos = torch.arange(s_len)
@@ -68,7 +67,6 @@ def alibi_score_bias(q_pos, s_len, slopes):
     bias = slopes[:, None, None] * dist[None, :, :]
     bias = bias.masked_fill(~causal[None, :, :], float("-inf"))
     return bias.unsqueeze(0)
-
 
 def decode_alibi(cache_len, slopes):
     s = cache_len + 1
@@ -81,14 +79,14 @@ $q,k$，ALiBi 只改 softmax 权重，不改 $V$ 本身；距离相同的 $(i,j)
 
 ## 外推和 RoPE 的对比
 
-ALiBi 的卖点是训练短、测试长：偏置随距离线性走，没有 cos/sin 表的 `max_seq` 越界。它 **不是** 免费的无限上下文：窗口外的
-key 仍在 softmax 里吃质量，只是很小；和硬滑窗 `coding-swa-mask` 不同。BLOOM 训练长度和推理长度仍要在评测里报清楚。
+ALiBi 常见用法是训练短、测试长：偏置随距离线性走，没有 cos/sin 表的 `max_seq` 越界。窗口外的
+key 仍在 softmax 里吃质量，只是很小，不是硬滑窗那种截断，见 `coding-swa-mask`。BLOOM 训练长度和推理长度仍要在评测里报清楚。
 
-GQA / MQA 时斜率按 **query head** 数生成，每个 $h_q$ 一条 $m_h$；KV head 被若干 $q$ 共享，但 bias
+GQA / MQA 时斜率按 query head 数生成，每个 $h_q$ 一条 $m_h$；KV head 被若干 $q$ 共享，但 bias
 仍在 $QK^\top$ 的 head 维上，形状跟 `[B, H_q, T, S]` 走。不要给 $H_{\mathrm{kv}}$ 建一套更短的斜率再
 repeat 错轴，repeat 规则见 `coding-gqa-repeat`。
 
-斜率可以不进优化器：论文是固定几何序列。改成可学会换外推行为，那就不是原版 ALiBi。head 数不是 $2$ 的幂时 HuggingFace 用「先填最近 $2$ 幂再插值」，白板先写 $2$ 幂，提一句去读实现。
+斜率可以不进优化器：论文是固定几何序列。改成可学会换外推行为，那就不是原版 ALiBi。
 
 ## 追问
 

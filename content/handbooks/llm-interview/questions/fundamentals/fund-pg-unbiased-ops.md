@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-这块容易把「无偏」当成道德词：好像 MC 一定比 GAE 高级，clip 一定是作弊。我会先钉死 **无偏相对哪条期望**，再把操作分成两类。相对的是 on-policy 策略梯度
+错法：把「无偏」当成道德词，好像 MC 一定比 GAE 高级、clip 一定是作弊。先钉死无偏相对哪条期望，再把操作分成两类。相对的是 on-policy 策略梯度
 
 $$
 \nabla_\theta J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}\Big[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t\Big],
@@ -40,15 +40,15 @@ $$
 
 下面这些操作，期望梯度与上式相同，只改变方差。
 
-- **Reward-to-go。** 把整段 $R$ 换成从 $t$ 起的 $G_t$。$t$ 之前的奖励不依赖 $a_t$，乘进去仍无偏，但多乘了一截噪声。
-- **只依赖 state（或常数）的 baseline。** $\mathbb{E}_{a\sim\pi}[\nabla\log\pi(a\mid s)b(s)]=0$，所以 $G_t-b(s_t)$ 不改期望。$V$ 再不准，只要它 **不是当前 sampled action 的函数**、也不拿去替换未来回报，MC 优势 $G_t-V(s_t)$ 仍然无偏。见 `fund-pg-baseline`、`fund-optimal-baseline`。
-- **普通重要性采样。** 数据来自 $\mu$，乘 $\rho=\pi/\mu$，在 support 覆盖时 $\mathbb{E}_\mu[\rho f]=\mathbb{E}_\pi[f]$。无偏，方差随 $\rho$ 尾部爆炸。见 `fund-is`。
+- Reward-to-go：把整段 $R$ 换成从 $t$ 起的 $G_t$。$t$ 之前的奖励不依赖 $a_t$，乘进去仍无偏，但多乘了一截噪声。
+- 只依赖 state（或常数）的 baseline。$\mathbb{E}_{a\sim\pi}[\nabla\log\pi(a\mid s)b(s)]=0$，所以 $G_t-b(s_t)$ 不改期望。$V$ 再不准，只要它不是当前 sampled action 的函数、也不拿去替换未来回报，MC 优势 $G_t-V(s_t)$ 仍然无偏。见 `fund-pg-baseline`、`fund-optimal-baseline`。
+- 普通重要性采样：数据来自 $\mu$，乘 $\rho=\pi/\mu$，在 support 覆盖时 $\mathbb{E}_\mu[\rho f]=\mathbb{E}_\pi[f]$。无偏，方差随 $\rho$ 尾部爆炸。见 `fund-is`。
 
 这三步是「先会无偏梯度，再谈降方差」的全部合法手段。现场应能默写为什么 baseline 那条期望是 0，而不是只说「减个均值更稳」。
 
 ## 会引入偏差：用 $V$ 替未来、截断、改权重
 
-这些操作让估计的期望 **不再等于** 原来的 $\nabla J$，换的是可训练性。
+这些操作让估计的期望不再等于原来的 $\nabla J$，换的是可训练性。
 
 | 操作 | 偏在哪 | 换来什么 |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ $$
 | 按长度平均 loss | 每条回复等权，不是每 token 等权 | 压长尾或反过来 |
 | 组均值含当前样本 | 有限样本下自己抵消自己 | $G$ 大时接近无偏 |
 
-GAE 的偏差来自 **bootstrap**，不是来自「减了 $V$」。把 $G_t-V$ 和 $\sum(\gamma\lambda)^l\delta_{t+l}$ 说成同一件事，下一问会拆穿。clip 也不是无偏的方差公式，见 `pt-cispo`、`fund-vtrace`。除标准差、长度归约是在定义隐式目标，见 `fund-adv-norm-bias`、`pt-drgrpo`。
+GAE 的偏差来自 bootstrap，不是来自「减了 $V$」。把 $G_t-V$ 和 $\sum(\gamma\lambda)^l\delta_{t+l}$ 说成同一件事，下一问会拆穿。clip 也不是无偏的方差公式，见 `pt-cispo`、`fund-vtrace`。除标准差、长度归约是在定义隐式目标，见 `fund-adv-norm-bias`、`pt-drgrpo`。
 
 ## 怎么收
 

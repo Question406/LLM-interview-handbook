@@ -32,7 +32,7 @@ sources:
     type: primary
 ---
 
-RAG / Knowledge Bases 岗会把 embedding 问成「是不是 MTEB 第一」。Muennighoff 等人的 MTEB 论文核心结论正好相反：**没有一种嵌入方法在所有任务上称王**。STS 强不代表检索强。Titan V2 的公开卖点是 RAG：默认 1024 维，可选 512 / 256，AWS 写 512 维大约留住 99% 检索分、256 维大约 97%，用来换存储和延迟。不是某次逐字真题。生成侧怎么评见 `amazon-titan-eval`；本题只评向量。
+RAG / Knowledge Bases 岗会把 embedding 问成「是不是 MTEB 第一」。Muennighoff 等人的 MTEB 论文核心结论正好相反：**没有一种嵌入方法在所有任务上称王**。STS 强不代表检索强。Titan V2 的公开卖点是 RAG：默认 1024 维，可选 512 / 256，AWS 写 512 维大约留住 99% 检索分、256 维大约 97%，用来换存储和延迟。生成侧怎么评见 `amazon-titan-eval`；本题只评向量。
 
 ## MTEB 能看什么，不能当门禁
 

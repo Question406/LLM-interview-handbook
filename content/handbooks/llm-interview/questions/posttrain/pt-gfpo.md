@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-GRPO 之后回答变长，不全是「更会思考」。很多 token 是重复、套话、对正确率没贡献的填料，见 `sys-rl-longer-after-rl`、`data-length-hacking`。GFPO（`2508.09726`）的点是：**训练时多采样，只拿短且有效的轨迹更新**，让推理默认变短。百度面经会把它和 DAPO / GSPO 并列，不要答成又一个 clip 公式。
+GRPO 之后回答变长，不全是「更会思考」。很多 token 是重复、套话、对正确率没贡献的填料，见 `sys-rl-longer-after-rl`、`data-length-hacking`。GFPO（`2508.09726`）的点是：训练时多采样，只拿短且有效的轨迹更新，让推理默认变短。百度面经会把它和 DAPO / GSPO 并列，不要答成又一个 clip 公式。
 
 ## 先滤，再算组优势
 
@@ -34,7 +34,7 @@ GRPO 之后回答变长，不全是「更会思考」。很多 token 是重复�
 - **长度。** 留下更短的正确（或更高分）回复。
 - **token 效率。** $R/|y|$，同样的分更短的更值钱。
 
-过滤之后，**只在幸存者上**做 $\hat A_i=(R_i-\mu)/(\sigma+\epsilon)$。长度没有进标量奖励，避免和正确率抢权重、也避免「长度惩罚把该写的证明写没」。Adaptive Difficulty 变体按当前难度把探索预算分给更难的题，和动态采样是同一类课，见 `pt-dapo`、`data-rlvr-select`。
+过滤之后，只在幸存者上做 $\hat A_i=(R_i-\mu)/(\sigma+\epsilon)$。长度没有进标量奖励，避免和正确率抢权重、也避免「长度惩罚把该写的证明写没」。Adaptive Difficulty 变体按当前难度把探索预算分给更难的题，和动态采样是同一类课，见 `pt-dapo`、`data-rlvr-select`。
 
 现场口令：sample more to think less。训练墙钟略涨，换的是部署延迟。论文报过长度膨胀砍掉一大截、准确率基本保住；数字随模型和题集变，面试讲机制，不要背百分比。
 

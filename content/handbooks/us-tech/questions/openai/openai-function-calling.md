@@ -33,17 +33,17 @@ sources:
 
 ## 题怎么来的
 
-2023 年 OpenAI 把 function calling 做成 Chat Completions 的一等能力，后来补了并行调用和 Structured Outputs。LLM 团队问这题，不是让你背 API 字段名，是看你是否把 **模型当不可信的调用方**。产品设计对照见 `design-chat-tools`；Anthropic 把同一件事叫 tool use，见 `anthropic-tool-use`。我会按 OpenAI 的三条通道答：JSON mode、function calling、带 schema 的约束解码。
+2023 年 OpenAI 把 function calling 做成 Chat Completions 的一等能力，后来补了并行调用和 Structured Outputs。LLM 团队问这题，不是让你背 API 字段名，是看你是否把模型当不可信的调用方。产品设计对照见 `design-chat-tools`；Anthropic 把同一件事叫 tool use，见 `anthropic-tool-use`。我会按 OpenAI 的三条通道答：JSON mode、function calling、带 schema 的约束解码。
 
 ## 三条通道不要并成一句「会输出 JSON」
 
-**JSON mode**（`response_format` 为 json object）：模型在 **助手 content** 里吐一个能 `json.loads` 的对象。文档写明 prompt 里还得要求 JSON，否则可能空转。它不选工具、不保证有哪些键、不保证类型。适合「抽字段进对象」。不适合「去查天气」。
+JSON mode（`response_format` 为 json object）：模型在助手 content 里吐一个能 `json.loads` 的对象。文档写明 prompt 里还得要求 JSON，否则可能空转。它不选工具、不保证有哪些键、不保证类型。适合「抽字段进对象」。不适合「去查天气」。
 
-**Function calling：** 你提供一组工具，每项有 `name`、`description`、`parameters`（JSON Schema）。模型若要行动，返回的是 `tool_calls`：名字加 **参数字符串**，不是最终用户可见的答案。宿主解析、校验、执行，再把工具结果贴回对话。`tool_choice` 可以放权（auto）、强迫用工具、或钉死某一个。这是路由，不只是语法。
+Function calling：你提供一组工具，每项有 `name`、`description`、`parameters`（JSON Schema）。模型若要行动，返回的是 `tool_calls`：名字加参数字符串，不是最终用户可见的答案。宿主解析、校验、执行，再把工具结果贴回对话。`tool_choice` 可以放权（auto）、强迫用工具、或钉死某一个。这是路由，不只是语法。
 
-**Structured Outputs：** 在 json schema 或 `strict` 工具上做约束解码，合法前缀才允许下一步 token。它消灭「参数不是 JSON / 少字段」这一类，**消灭不了**「字段合法但用户 id 是别人的」。政策检查仍在宿主。
+Structured Outputs：在 json schema 或 `strict` 工具上做约束解码，合法前缀才允许下一步 token。它消灭「参数不是 JSON / 少字段」这一类，消灭不了「字段合法但用户 id 是别人的」。政策检查仍在宿主。
 
-Schema 要让错误形状难出现：枚举代替自由字符串、数字带范围、副作用工具把「预览」和「提交」拆开。一个自由字符串命令字段等于把 shell 交给模型。描述里写何时 **不要** 调，和相近工具的差别；模型是靠 docstring 做 ACI，不是靠你心里想的语义。
+Schema 要让错误形状难出现：枚举代替自由字符串、数字带范围、副作用工具把「预览」和「提交」拆开。一个自由字符串命令字段等于把 shell 交给模型。描述里写何时不要调，和相近工具的差别；模型是靠 docstring 做 ACI，不是靠你心里想的语义。
 
 ## 并行、失败、循环
 
@@ -68,7 +68,7 @@ def dispatch(call, registry, policy):
     return fn(args)
 ```
 
-和 JSON mode 的一句话对照：JSON mode 是 **content 语法**；function calling 是 **侧信道上的行动提议**；strict schema 是 **解码器帮你做类型检查**。三者可以叠，但叠完仍要把执行权留在自己手里。
+对照：JSON mode 是 content 语法；function calling 是侧信道上的行动提议；strict schema 是解码器帮你做类型检查。三者可以叠，但叠完仍要把执行权留在自己手里。
 
 ## 追问
 

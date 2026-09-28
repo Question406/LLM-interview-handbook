@@ -67,7 +67,7 @@ Iteration-level 调度每步 $B$ 在变，结束序列腾页、新请求插入�
 - **POD / 混合步：** 公开核可以把 prefill 块和 decode 打进同一次 attention，对应 chunked prefill 混部，见 `sys-chunked-prefill`。调度器决定本步 token 预算，核只看见 packed $Q$ 和各自的 KV 区间。
 - **Cascade / 共享前缀：** 公共 KV 和私有 KV 分两段 attention 再合并，给 radix / prefix 共享少读一遍公共页，见 `sys-radix-tree`。
 
-错误说法：FlashInfer 等于 vLLM；append 会自己向 CPU malloc；采样必须先对词表排序；把调度逻辑写进 CUDA 才能快。前三个是接口错，最后一个是把不该进核的策略塞进核，graph 和调试都会坏。
+错误说法：FlashInfer 等于 vLLM；append 会自己向 CPU malloc；采样必须先对词表排序；把调度逻辑写进 CUDA 才能快。前三个是接口错；最后一个把不该进核的策略塞进核，graph 和调试都会坏。
 
 NVIDIA 岗可能追 Nsight：decode 步是 HBM SOL 还是 launch 太碎。答案通常是 fused attention + fused sampling、减少 Python 往返；SGLang 的 overlap scheduler 在 GPU 跑本步时 CPU 组下一步的 indptr，正是为了填这条缝。
 

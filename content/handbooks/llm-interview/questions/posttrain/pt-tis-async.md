@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-异步、partial、量化 rollout 都会让采样分布 $\mu$ 不等于训练图上的 $\pi_{\mathrm{old}}$，见 `sys-partial-kv-policy`、`slime-dynamic-partial`。这块容易把 `--use-tis` 说成「就是 CISPO」。先问 $\rho$ 的分母是引擎行为策略，还是 trainer 重算的旧策略。
+异步、partial、量化 rollout 都会让采样分布 $\mu$ 不等于训练图上的 $\pi_{\mathrm{old}}$，见 `sys-partial-kv-policy`、`slime-dynamic-partial`。别把 `--use-tis` 说成「就是 CISPO」。先问 $\rho$ 的分母是引擎行为策略，还是 trainer 重算的旧策略。
 
 ## TIS：校正行为策略
 

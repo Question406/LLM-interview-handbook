@@ -26,7 +26,7 @@ sources:
     type: candidate-first-hand
 ---
 
-蚂蚁那道 veRL 账本，用 slime CLI 重答。这块容易把 `--global-batch-size` 当成 prompt 数，或把 $n$ 和 batch 拧成同一个旋钮。官方写明 gbs 按 **sample** 计：一条 completion 才是 1。对不齐时，要么一步重复用同一批轨迹（off-policy 上升），要么 drop 掉组的一部分（GRPO 组统计坏掉）。面试我先在白板上写 $N_{\mathrm{traj}}=\mathrm{rbs}\times n$，再填 gbs 和 micro，不要从 Hydra 字段名倒推。四个量必须同时在场：每步几道题、每题几条、一次 optimizer 看见几条、每卡一次塞多少。缺一个，学习率、KL 和显存反推都会错。动态 batch 还会把 micro 作废，超长样本可能拆组，账本和长尾是同一类 bug。
+蚂蚁那道 veRL 账本，用 slime CLI 重答。错法：把 `--global-batch-size` 当成 prompt 数，或把 $n$ 和 batch 拧成同一个旋钮。官方写明 gbs 按 sample 计：一条 completion 才是 1。对不齐时，要么一步重复用同一批轨迹（off-policy 上升），要么 drop 掉组的一部分（GRPO 组统计坏掉）。面试我先在白板上写 $N_{\mathrm{traj}}=\mathrm{rbs}\times n$，再填 gbs 和 micro，不要从 Hydra 字段名倒推。四个量必须同时在场：每步几道题、每题几条、一次 optimizer 看见几条、每卡一次塞多少。缺一个，学习率、KL 和显存反推都会错。动态 batch 还会把 micro 作废，超长样本可能拆组，账本和长尾是同一类 bug。
 
 ## 字段怎么对
 
@@ -48,7 +48,7 @@ $$
 
 ## 整除约束
 
-`global_batch_size` 应整除 $N_{\mathrm{traj}}$。除不尽时实现会丢尾或补，GRPO 的组可能被切开：同一 prompt 的 $n$ 条必须进 **同一次** 优势估计。组被拆到两个 optimizer step，组均值就不是那 $n$ 条，优势定义坏了，见 `sys-rl-group-n`。面试先写
+`global_batch_size` 应整除 $N_{\mathrm{traj}}$。除不尽时实现会丢尾或补，GRPO 的组可能被切开：同一 prompt 的 $n$ 条必须进 同一次 优势估计。组被拆到两个 optimizer step，组均值就不是那 $n$ 条，优势定义坏了，见 `sys-rl-group-n`。面试先写
 
 $$
 \texttt{gbs} \mid (\texttt{rbs}\times n),\quad \texttt{gbs}=n\times k
@@ -57,14 +57,6 @@ $$
 （$k$ 是每次更新覆盖的 prompt 数），再谈显存。micro 只影响每卡能塞多少 token / 多少条，不改变「一组有没有被拆」。veRL 的 `ppo_mini_batch_size` 有的配方写在 prompt 维、有的已经乘过 $n$，对字段时必须问一句「含不含 rollout.n」。含糊地对过去，学习率、KL 和「一步看到多少题」会对不上，复现 DAPO 数字就会差一截。`--num-steps-per-rollout` 大于 1 时，要像 PPO epoch 一样报：同一批轨迹更新几次、KL 涨多少就停。不要把它理解成「多走几步优化器所以收敛更快」，off-policy 程度在涨。动态 batch 按 token 数切 micro 时，一条超长 completion 可能独占一卡，组内其余短样本被分到别的 step，又是拆组。长尾和账本是同一类 bug。
 
 ## `--balance-data` 的坑
-
-`--balance-data` 用 Karmarkar-Karp 按 FLOPs 在 DP 间匀负载，**可能把同一 prompt 的 $n$ 条拆到不同 step / 不同 DP**。对 SFT 或非 group 算法这是好事；对 GRPO 会让组统计跨分区。要匀负载又保组，应按 **prompt 组** 做 packing，而不是按单条长度。先想清楚再开，或只在非 group 算法上用。蚂蚁面若问「为什么 loss 抖、组方差对不上」，先查这一项和 gbs 整除。我会把「prompt 数、每题 $n$、一次 step 的 sample 数、每卡 micro」四条线画出来，这道账本题就过了。数字对不上时优先查：是否按 sample 计数、组有没有被 balance 拆开、动态 batch 有没有把超长条单独切走。不要先改学习率。
-
-## 对字段时问的三句话
-
-第一句：gbs 含不含 $n$、按 sample 还是按 prompt。第二句：$N_{\mathrm{traj}}$ 能否被 gbs 整除、一组 $n$ 条会不会被切到两次 `optimizer.step`。第三句：开了动态 batch 之后 micro 还管不管用。三句都答上，蚂蚁那道账本就过了。`--num-steps-per-rollout \gt 1` 要当成 PPO 多 epoch 报 off-policy，而不是「多更新几次所以更好」。`--balance-data` 按 FLOPs 切可能拆组，GRPO 上默认谨慎开。veRL 的 `ppo_mini_batch_size` 配方不统一，对表时当场问，不要假设和 slime gbs 同维。数字对不上先查计数单位，再查拆组，最后才改学习率。我会把 prompt 数、每题 $n$、一次 step 的 sample、每卡 micro 画成四条线。
-
-对字段时当场问 veRL 的 mini-batch 含不含 $n$，不要假设和 slime gbs 同维。四个量画成四条线：prompt 数、每题 $n$、一次 step 的 sample、每卡 micro。数字对不上先查计数单位（sample vs prompt），再查 `--balance-data` 和动态 batch 有没有拆组，最后才改学习率。`--num-steps-per-rollout \gt 1` 按 PPO 多 epoch 报 off-policy。蚂蚁那道账本过关标准是：能从 CLI 反推一步看见多少题、多少条、会不会把 GRPO 组切开。
 
 ## 追问
 

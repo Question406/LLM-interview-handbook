@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-OpenAI / Anthropic / Google 的 agent 岗会问「你怎么知道新 harness 能发」。WebArena 把指标写成功能成功；GitHub evals 只是 runner。白板要的是：任务图、可重放、把非确定性关进笼子。不是某次现场逐字题。污染和 A/B 纪律见 `design-eval-platform`；浏览器环境见 `design-browser-agent`。
+OpenAI / Anthropic / Google 的 agent 岗会问「你怎么知道新 harness 能发」。WebArena 把指标写成功能成功；GitHub evals 只是 runner。白板要的是任务图、可重放、把非确定性关进笼子。污染和 A/B 纪律见 `design-eval-platform`；浏览器环境见 `design-browser-agent`。
 
 ## 任务是图，不是一道题的 BLEU
 
@@ -56,7 +56,7 @@ Trace 存：模型消息、工具名与参数、工具结果哈希、截屏或�
 
 污染：把评测站点写进训练博客、把 fixture HTML 喂进预训练，都会让 WebArena 类分数虚高。Canary 页面和 n-gram 扫训练集，见 `align-eval-contam`。评测日志回流训练前必须换 held-out 图。
 
-## 非确定性要拆开，不要揉成「agent 就是随机」
+## 非确定性要拆开报
 
 三路噪声：
 

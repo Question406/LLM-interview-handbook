@@ -31,7 +31,7 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗在 `amazon-nova` 之后会追问「那张图打哪一档」。公开用户指南：Micro 文本；Lite / Pro / Premier 文本 + 图 + 视频，文档类型以当时表为准。Intelligent Prompt Routing 仍在 **同一族** 里预测质量再 fallback。跨模态请求不是「更长的 prompt」，是另一条能力面。不是逐字真题。
+Bedrock 应用岗在 `amazon-nova` 之后会追问「那张图打哪一档」。公开用户指南：Micro 文本；Lite / Pro / Premier 文本 + 图 + 视频，文档类型以当时表为准。Intelligent Prompt Routing 仍在同一族里预测质量再 fallback。跨模态请求不是「更长的 prompt」，是另一条能力面。
 
 ## 路由先看模态，再看难度
 
@@ -60,8 +60,6 @@ Token 账：图和视频会变成一大段视觉 token，TTFT 和 E2E 都涨，�
 ## 我会怎么收设计题
 
 先钉输入契约（最大边长、页数、视频秒数）和是否必须引用页码。再选默认档，最后加同族路由。知识库、工具、护栏绑应用不绑死 model id，方便 Lite 换 Pro。离线可以全打 Pro 当上限，线上用后悔率证明带图请求没被降到 Micro。护栏和工具绑应用层，换档不换契约。
-
-护栏和工具绑应用层，换档不换契约。离线全打 Pro 当上限，线上用后悔率证明带图请求没落到 Micro。
 
 ## 追问
 

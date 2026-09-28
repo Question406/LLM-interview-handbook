@@ -40,7 +40,7 @@ $d_{\mathrm{model}}$ 能被 $H$ 整除，$d_h=d_{\mathrm{model}}/H$。
 
 1. `qkv = Linear(x)` → split 成 $Q,K,V$，各 `[B,T,H,d_h]`，再 transpose 成 `[B,H,T,d_h]`。
 2. `scores = einsum("bhtd,bhsd->bhts", q, k) / sqrt(d_h)`。
-3. Mask：**先加 mask，再 softmax**。因果 mask 把 $t<s$ 的位置打成 $-\infty$。Padding 同理。Mask 形状要能广播到 `[B,H,T,S]`，不要在 head 维上 silently 错位。
+3. Mask：先加 mask，再 softmax。因果 mask 把 $t<s$ 的位置打成 $-\infty$。Padding 同理。Mask 形状要能广播到 `[B,H,T,S]`，不要在 head 维上 silently 错位。
 4. `attn = softmax(scores, dim=-1)`，再 `@ V`，transpose 回 `[B,T,H,d_h]`，view 成 `[B,T,d]`，输出投影。
 
 电面 30 分钟写完正向就很好。主动说：fp16 下不缩放会 overflow；eval 关 dropout；decode 一步只算当前 $q$，K/V 走 cache。KV cache 是同一条评论里的高频 follow-up，见 `openai-transformer-debug`。
@@ -49,7 +49,7 @@ $d_{\mathrm{model}}$ 能被 $H$ 整除，$d_h=d_{\mathrm{model}}/H$。
 
 ## Apple 口味
 
-Siri 上的注意力题往往会拐到 **端侧约束**：head 数、KV 是否 GQA、量化后 mask 还能不能用 $-\infty$。答「和云端同一份 PyTorch」不够。可以说：端上 decode 更在意 KV 带宽，GQA / 量化 cache 比再堆 head 优先；mask 在 int8 scores 上要用足够负的数，不能假设 fp32 的 `-1e9` 一定安全。
+Siri 上的注意力题往往会拐到端侧约束：head 数、KV 是否 GQA、量化后 mask 还能不能用 $-\infty$。答「和云端同一份 PyTorch」不够。可以说：端上 decode 更在意 KV 带宽，GQA / 量化 cache 比再堆 head 优先；mask 在 int8 scores 上要用足够负的数，不能假设 fp32 的 `-1e9` 一定安全。
 
 组里如果做语音，可能追 self-attention vs cross-attention（encoder 记忆 vs decoder 当前）。那是另一套 shape，Q 来自 decoder，K/V 来自 encoder，没有因果 mask 在 cross 上。
 

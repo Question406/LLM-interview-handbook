@@ -137,6 +137,4 @@ $$
 - **组全对 / 全错时 $\hat{A}=0$。** 没有相对信号，这一批是空梯度。PPO 的 Critic 在这种情况下仍可能给出非零 $A$，只是不一定对。
 - **$\sigma$ 归一化不是免费的。** 它会改变不同题目的权重；Dr.GRPO 指出长度和 std 带来的偏置。RLOO 则用「不含自己的组均值」，更接近教科书 baseline。
 
-我会把链收成：REINFORCE 给无偏梯度，baseline / $A$ 降方差，$V$+GAE 估 $A$，IS 复用旧轨迹，clip 限制 $\rho$ 得到 PPO，同题组统计换掉 $V$ 得到 GRPO。
-
-面试若只问「PPO 和 GRPO 的公式差在哪」，先答：同一套 clipped IS 策略梯度；差在 advantage 从哪来，以及还要不要训 Critic。
+整条链：REINFORCE 给无偏梯度，baseline / $A$ 降方差，$V$+GAE 估 $A$，IS 复用旧轨迹，clip 限制 $\rho$ 得到 PPO，同题组统计换掉 $V$ 得到 GRPO。若只问「PPO 和 GRPO 的公式差在哪」：同一套 clipped IS 策略梯度；差在 advantage 从哪来，以及还要不要训 Critic。

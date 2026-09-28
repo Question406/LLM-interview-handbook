@@ -34,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GRPO的优势值是什么？怎么算？baseline是什么？”**
 
-没有 critic 不等于没有 baseline。GRPO 的 baseline 就是**同一 prompt 下这组 rollout 的经验均值**，优势是相对它的标准化残差。别答「优势就是奖励」，全组奖励相同则优势为 0，这正是后续「on-policy 采不出正确答案」类题的根源。也不要把 GSPO 的序列级 ratio 和优势定义混为一谈。
+没有 critic 不等于没有 baseline。GRPO 的 baseline 就是**同一 prompt 下这组 rollout 的经验均值**，优势是相对它的标准化残差。别答「优势就是奖励」——全组奖励相同则优势为 0，这正是后续「on-policy 采不出正确答案」类题的根源。也不要把 GSPO 的序列级 ratio 和优势定义混为一谈。
 
 ## 公式：组均值作 baseline，再除标准差
 

@@ -25,7 +25,7 @@ sources:
     type: secondary
 ---
 
-公开整理里这道题以 Bedrock Knowledge Bases + Seller Support 的形式出现：S3 上约 500 万 PDF，p95 低于 2 秒，政策每天更新，还要避免过期条款。不一定是某一次现场的逐字题面，但和 AWS / AGI 应用岗的口味一致。按 Leadership Principles 收：要有指标、所有权、失败模式，不要只画一个向量库。
+公开整理里这道题以 Bedrock Knowledge Bases + Seller Support 的形式出现：S3 上约 500 万 PDF，p95 低于 2 秒，政策每天更新，还要避免过期条款。和 AWS / AGI 应用岗的口味一致。按 Leadership Principles 收：要有指标、所有权、失败模式，不要只画一个向量库。
 
 ## 切块和索引
 

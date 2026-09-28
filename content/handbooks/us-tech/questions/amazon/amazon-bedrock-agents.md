@@ -32,13 +32,13 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗把 agent 问成所有权题：谁调 API、记忆存在哪、拦了谁负责。公开文档里 Classic Agents 编排 FM、数据源和会话，Action Group 用 OpenAPI 或 function schema，可接 Lambda 或把控制交回应用。Memory 把跨 session 的对话收成摘要，按你给的 `memoryId` 加载。Guardrails 仍走输入 / 输出两道，见 `amazon-guardrails`。文档也写了 Classic 对 **新客户关闭**，新能力看 AgentCore。面试两套都要能讲，不要假装只有一个产品名。不是某次逐字真题。通用 harness 原则见 `design-agent-harness`。
+Bedrock 应用岗把 agent 问成所有权题：谁调 API、记忆存在哪、拦了谁负责。公开文档里 Classic Agents 编排 FM、数据源和会话，Action Group 用 OpenAPI 或 function schema，可接 Lambda 或把控制交回应用。Memory 把跨 session 的对话收成摘要，按你给的 `memoryId` 加载。Guardrails 仍走输入 / 输出两道，见 `amazon-guardrails`。文档也写了 Classic 对 **新客户关闭**，新能力看 AgentCore。面试两套都要能讲，不要只记一个产品名。通用 harness 原则见 `design-agent-harness`。
 
 ## 托管循环里有什么，没有什么
 
 一次 `InvokeAgent` 公开路径大致是：理解用户 → 决定调哪个 action 或查哪个 KB → 填参、调 Lambda 或 return control → 观察结果 → 再想一步 → 后处理。你可以改预处理 / 编排 / KB / 后处理的 prompt 模板，用 trace 看每步 rationale。这很像「少写编排代码」。
 
-它 **不替你做** 的，才是和自建的分界：
+它不替你做的，才是和自建的分界：
 
 - **工具权限和副作用。** Schema 能描述参数，不能描述「退款超过限额要人工」。不可逆动作要确认框或 return control，让应用层拍板，不要让模型直接打生产 Lambda。
 - **预算。** 步数、token、墙钟、重试。托管循环会转，直到模型说结束或你超时。没有硬顶就会在工具抖动时空转。

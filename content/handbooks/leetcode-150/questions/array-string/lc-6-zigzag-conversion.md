@@ -28,7 +28,7 @@ sources:
 
 ## 思路
 
-不必真的建二维网格。`rows[0..numRows)` 各攒一行字符。下标 `r` 从 $0$ 出发，方向 `dir=1`；写入后 `r += dir`，碰到顶或底则 `dir = -dir`。最后 `"".join(rows)`。
+不必建二维网格。`rows[0..numRows)` 各攒一行字符。下标 `r` 从 $0$ 出发，方向 `dir=1`；写入后 `r += dir`，碰到顶或底则 `dir = -dir`。最后 `"".join(rows)`。
 
 也可用周期 $2(\texttt{numRows}-1)$ 直接算每个字符属于哪一行。模拟更好讲。
 

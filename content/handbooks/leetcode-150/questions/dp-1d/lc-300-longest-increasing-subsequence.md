@@ -30,11 +30,11 @@ sources:
 
 ## 思路
 
-白板我先讲状态：$dp[i]$ 是以 `nums[i]` 结尾的 LIS 长度。枚举 $j\lt i$ 且 `nums[j] < nums[i]`，取 $\max dp[j]+1$。答案是 $\max dp$。$O(n^2)$。
+$dp[i]$ 是以 `nums[i]` 结尾的 LIS 长度。枚举 $j\lt i$ 且 `nums[j] < nums[i]`，取 $\max dp[j]+1$。答案是 $\max dp$。$O(n^2)$。
 
 要更快：`tails[k]` 表示长度为 $k+1$ 的递增子序列里，最小的结尾值。扫到 $x$ 时二分找第一个 $\ge x$ 的位置替换（严格递增用 $\ge$）。`tails` 本身递增，长度即答案。`tails` 不是某个真实子序列，只保证长度正确。
 
-下面写 $O(n\log n)$，追问时补 $O(n^2)$ 转移。
+下面写 $O(n\log n)$，$O(n^2)$ 转移放追问。
 
 ## 参考代码
 

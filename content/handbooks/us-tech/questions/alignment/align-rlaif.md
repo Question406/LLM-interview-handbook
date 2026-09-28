@@ -27,13 +27,13 @@ sources:
     type: primary
 ---
 
-Google 的 RLAIF 论文和 Anthropic 的 CAI 是同一族问题的两边：反馈从哪来、人还干什么。对齐岗常追「模型给自己打分会不会崩」。CAI 流程见 `align-cai`。本题收三个点：RLAIF 不是无 RM、批评模型要隔离、条款没有反例等于没写。
+Google 的 RLAIF 论文和 Anthropic 的 CAI 是同一族问题的两边：反馈从哪来、人还干什么。对齐岗常追「模型给自己打分会不会崩」。CAI 流程见 `align-cai`。三点要讲清：RLAIF 仍有 RM、批评模型要隔离、条款没有反例等于没写。
 
-## RLAIF 在替什么，不在替什么
+## RLAIF 替什么
 
 RLHF：人看两条回答，标 chosen/rejected，训 RM，再 RL。瓶颈是吞吐，harmless 数据还消耗标注员。RLAIF：同样训 RM 或直接当 pairwise loss，但偏好来自模型。人的工作上移到写原则、设计比较 prompt、抽查失败。Lee 等人表明，在 summarization 一类任务上，AI 反馈可以接近人反馈的 RLHF，前提是比较指令写清楚。
 
-它不取消奖励模型，也不取消人。答成「无监督对齐」偏题。CAI 是 RLAIF 的一种：比较时显式读 constitution。也可以不用书面宪法，只把「更无害 / 更有用」写进 judge prompt，那是弱原则，更依赖抽查。Helpfulness 仍常走人偏好，harmlessness 走 AI 反馈，两条目标分开，不要塞进一个标量。
+它不取消奖励模型，也不取消人。说成「无监督对齐」偏题。CAI 是 RLAIF 的一种：比较时显式读 constitution。也可以不用书面宪法，只把「更无害 / 更有用」写进 judge prompt，那是弱原则，更依赖抽查。Helpfulness 仍常走人偏好，harmlessness 走 AI 反馈，两条目标分开，不要塞进一个标量。
 
 自奖励（同一策略给自己打分再更新）是更险的特例。没有隔离时，策略会强化自己已经会的文风和拒答模板，评测数字涨、行为变窄。面试把 RLAIF 和 self-rewarding 分开：前者可以是冻结的教师；后者默认不隔离。
 
@@ -46,7 +46,7 @@ RLHF：人看两条回答，标 chosen/rejected，训 RM，再 RL。瓶颈是吞
 - **信息隔离。** 比较 prompt 不要泄露「哪条是当前策略」。位置偏差（先出现的赢）要随机交换顺序。原则文本给 critic，不要把「请给高分」写进去。
 - **任务隔离。** 被训模型如果同时生成批评和回答，批评会变成自我辩解。监督阶段的 critique-revision 可以同模型，但 RL 阶段的偏好来源应尽量换一套或至少换权重。
 
-隔离不是为了理论漂亮，是为了打断「自己给自己刷分」的环。发现 RM 分涨、人工切片掉，先查 critic 是不是已经和 policy 同源，再查条款是不是被钻空。换 critic 家族后分数崩，说明你在过拟合 judge，不是对齐进步。
+隔离是为了打断「自己给自己刷分」的环。发现 RM 分涨、人工切片掉，先查 critic 是不是已经和 policy 同源，再查条款是不是被钻空。换 critic 家族后分数崩，多半是过拟合 judge，不是对齐进步。
 
 ## 条款要有反例，否则 critic 会自嗨
 

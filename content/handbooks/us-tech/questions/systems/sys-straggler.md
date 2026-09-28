@@ -47,7 +47,7 @@ DDP / ZeRO / TP 每层都有屏障。某一个 data loader 慢、某一个 exper
 
 和「某 rank 没进 collective」要分开。后者是控制流分叉：OOM 被吞掉、`if rank == 0` 里包了通信、空 microbatch 跳过 all-reduce。别的 rank 会在 NCCL 里无限等，栈看起来像网络。真正的链路故障通常伴有 CRC / IB 报错或个别节点反复掉；所有人整齐停在同一个 op、其中几个永远不来，优先查 divergence。NCCL 环本身的带宽/重叠见 `nvidia-nccl-allreduce`；本题管的是「为什么有人没进来」和超时怎么设。
 
-排查顺序：`NCCL_DEBUG=INFO` 对齐各 rank 最后一次 collective 序号；`TORCH_DISTRIBUTED_DEBUG=DETAIL` 看 unused parameter；不要一上来换网卡。先证明控制流一致，再怀疑链路。
+排查顺序：`NCCL_DEBUG=INFO` 对齐各 rank 最后一次 collective 序号；`TORCH_DISTRIBUTED_DEBUG=DETAIL` 看 unused parameter。先证明控制流一致，再怀疑链路。别一上来换网卡。
 
 一个现场形状：1024 卡、某 rank dataloader 少一个 batch。999 张卡停在 `ncclAllReduce`，看起来像 IB 挂了。最早不再打 step log 的那个 rank 才是根因。超时只是把这个 hang 从「挂整夜」变成「几分钟后作业死掉」。
 
@@ -59,7 +59,7 @@ DDP / ZeRO / TP 每层都有屏障。某一个 data loader 慢、某一个 exper
 
 NCCL / PyTorch 的 heartbeat、`TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC`、较新的 `NCCL_TIMEOUT` 是看门狗：一步墙钟的数倍设超时，让死 rank 把作业拉下来，而不是挂一整晚。设太短会误杀长 step（checkpoint、长序列、偶发 GC）；设太长等于没有。超时栈停在 `ncclAllReduce` 时，先对齐各 rank 最后一条用户日志时间戳，找 **最早停住** 的那个，不要只看最后爆炸的受害者。
 
-Google 弹性作业、NVIDIA 千卡，验收看 P99 step time、failover 后 loss 是否接上、跳过坏 batch 的计数是否所有 rank 一致。不要只报「开了 elastic」。
+Google 弹性作业、NVIDIA 千卡，验收看 P99 step time、failover 后 loss 是否接上、跳过坏 batch 的计数是否所有 rank 一致。别只报「开了 elastic」。
 
 ## 追问
 

@@ -88,4 +88,4 @@ Data 相关题目原帖故意没收：几乎没法背，全靠你自己的数据
 - Data：怎么筛 RLVR、熵塌怎么读、塌了先动哪几个旋钮：`data-rlvr-select`、`data-entropy-collapse`、`data-entropy-fix-order`
 - Agent 过程奖励和 GiGPO 锚点哈希怎么选：`arl-process-vs-gigpo`
 
-我会按三圈准备：先能白板推 PG → PPO → GRPO；再能对照 DAPO / GSPO / CISPO / SAPO / DPPO 各自改 clip 的哪一层；最后能画 rollout 与 trainer 解耦、说出 staleness 和 KV 版本。原帖强调「做算法也会问 Infra」，所以不要把后两圈当成 Infra 岗专属。
+准备顺序：先能白板推 PG → PPO → GRPO；再对照 DAPO / GSPO / CISPO / SAPO / DPPO 各自改 clip 的哪一层；最后能画 rollout 与 trainer 解耦、说出 staleness 和 KV 版本。原帖强调「做算法也会问 Infra」，后两圈不是 Infra 岗专属。

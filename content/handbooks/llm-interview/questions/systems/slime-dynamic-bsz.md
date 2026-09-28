@@ -26,13 +26,13 @@ sources:
     type: primary
 ---
 
-这块容易把动态 batch 说成「把 `--micro-batch-size` 改大一点」。开关打开后条数不再是常数，拼的是**每卡 token 预算**；只改训练帽、忘了 logp 帽，会在重算 $\log\pi$ 时 OOM。更大的坑是 `--balance-data`：它为了匀负载，可能把同一 prompt 的 $n$ 条 response 拆进不同 training step，GRPO 组内相对优势直接坏掉。
+错法：把动态 batch 说成「把 `--micro-batch-size` 改大一点」。开关打开后条数不再是常数，拼的是每卡 token 预算；只改训练帽、忘了 logp 帽，会在重算 $\log\pi$ 时 OOM。更大的坑是 `--balance-data`：它为了匀负载，可能把同一 prompt 的 $n$ 条 response 拆进不同 training step，GRPO 组内相对优势直接坏掉。
 
 ## 按 token 拼，不按条数
 
 官方例子：长度 $100/200/300$、预算 $300$，得到两个 micro-batch $[100,200]$ 和 $[300]$。`--micro-batch-size` 此时被忽略。目标是让每卡有效 token 贴近 `--max-tokens-per-gpu`，短序列不再被最长那条拖着 padding。
 
-有 context parallel 时，文档按 `max_response_len // cp_size` 估预算，不要按整段 $L$ 去填，否则实际激活比你想的小、卡会空。`--balance-by-flops` 用 $cL+L^2$ 估注意力，匀得更狠，但某个 micro-batch 可能**超过** `--max-tokens-per-gpu`，OOM 发生在「看起来已经均衡」之后。
+有 context parallel 时，文档按 `max_response_len // cp_size` 估预算，不要按整段 $L$ 去填，否则实际激活比你想的小、卡会空。`--balance-by-flops` 用 $cL+L^2$ 估注意力，匀得更狠，但某个 micro-batch 可能超过 `--max-tokens-per-gpu`，OOM 发生在「看起来已经均衡」之后。
 
 ## 和 veRL 字段怎么对
 

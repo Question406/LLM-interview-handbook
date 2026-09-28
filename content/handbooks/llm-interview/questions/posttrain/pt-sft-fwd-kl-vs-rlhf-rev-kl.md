@@ -59,9 +59,9 @@ SFT 的 $p$ 是数据、$\pi$ 是模型，正向 covering；RLHF 的 $p^*$ 是�
 
 蒸馏接在这张表上：教师轨迹或全词表 CE 仍是正向，学生必须覆盖教师所有峰，生成任务里容易把低概率尾巴学糊。OPD / MiniLLM 改成学生采样，目标变成 $D_{\mathrm{KL}}(\pi_S\|\pi_T)$，切到反向，见 `pt-kd-forward-vs-reverse`。方向仍然由采样分布决定，不由「这是蒸馏还是 RL」的名称决定。
 
-DPO 从带 **反向** KL 的 RLHF 目标换元而来；把 SFT 的正向 KL 直接写进 DPO 间隔，最优策略的闭式就对不上。现场推导应先写 $\pi^*\propto\pi_{\mathrm{ref}}e^{r/\beta}$，再写出 $D_{\mathrm{KL}}(\pi\|\pi^*)$，不要从 CE 硬拐。PPO 实现里 KL 估在 rollout 上，天然是反向；若有人提议「改成对 SFT 数据做 CE 当正则」，那就把采样改回数据分布，变成又一次 SFT，和 on-policy 奖励项的期望都不在同一分布上。两阶段衔接我会说：先正向 covering 把格式和技能铺上，再反向 seeking 按奖励收窄。
+DPO 从带 **反向** KL 的 RLHF 目标换元而来；把 SFT 的正向 KL 直接写进 DPO 间隔，最优策略的闭式就对不上。现场推导应先写 $\pi^*\propto\pi_{\mathrm{ref}}e^{r/\beta}$，再写出 $D_{\mathrm{KL}}(\pi\|\pi^*)$，不要从 CE 硬拐。PPO 实现里 KL 估在 rollout 上，天然是反向；若有人提议「改成对 SFT 数据做 CE 当正则」，那就把采样改回数据分布，变成又一次 SFT，和 on-policy 奖励项的期望都不在同一分布上。
 
-白板用三行就够：SFT 期望在 $p_{\mathrm{data}}$ 上、正向、covering；RLHF 期望在 $\pi$ 上、反向、seeking；蒸馏看学生还是教师采样。方向反了，SFT 会漏示范，RLHF 会逼着留下有害峰。SFT 阶段你在逼模型把数据里出现过的说法都学会，所以会糊、会覆盖多峰；RLHF 阶段你在用当前策略采样去贴 $\pi^*\propto\pi_{\mathrm{ref}}e^{r/\beta}$，所以会收窄、会寻求高奖模式，并靠反向 KL 挡住参考支撑之外的胡话。面试把采样对象说清，公式左右就不会写反。
+白板用三行就够：SFT 期望在 $p_{\mathrm{data}}$ 上、正向、covering；RLHF 期望在 $\pi$ 上、反向、seeking；蒸馏看学生还是教师采样。方向反了，SFT 会漏示范，RLHF 会逼着留下有害峰。
 
 ## 追问
 

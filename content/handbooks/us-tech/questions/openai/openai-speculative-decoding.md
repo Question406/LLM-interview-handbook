@@ -31,9 +31,9 @@ sources:
 
 ## 算法我先讲清楚，再碰 cache
 
-小草稿模型 $q$ 一次提出 $\gamma$ 个 token $x_{t+1},\ldots,x_{t+\gamma}$。目标模型 $p$ 用 **一次平行前向**（这段很像短 prefill）算出这 $\gamma$ 个位置的 logits。然后从左到右接受：以 $\min(1, p(x)/q(x))$ 的概率留下草稿 token，直到第一次拒绝。拒绝处从修正分布再抽一个真正的 token。期望接受长度大于 1 时，target 的前向次数就少了。
+小草稿模型 $q$ 一次提出 $\gamma$ 个 token $x_{t+1},\ldots,x_{t+\gamma}$。目标模型 $p$ 用一次平行前向（这段很像短 prefill）算出这 $\gamma$ 个位置的 logits。然后从左到右接受：以 $\min(1, p(x)/q(x))$ 的概率留下草稿 token，直到第一次拒绝。拒绝处从修正分布再抽一个真正的 token。期望接受长度大于 1 时，target 的前向次数就少了。
 
-关键：这一次平行前向已经把草稿位置的 $K,V$ 算出来并 append 进 target cache。接受 $k$ 个、拒绝第 $k+1$ 个，意味着序列里 **没有** 第 $k+1$ 个草稿 token，但它的 KV 已经躺在 cache 末尾。
+关键：这一次平行前向已经把草稿位置的 $K,V$ 算出来并 append 进 target cache。接受 $k$ 个、拒绝第 $k+1$ 个，意味着序列里没有第 $k+1$ 个草稿 token，但它的 KV 已经躺在 cache 末尾。
 
 所以 rollback 是：
 
@@ -43,7 +43,7 @@ sources:
 
 只 `pop` 输出 token、不截 KV，后面每一步 $q_t$ 都会点积到那段幽灵 key。生成会 silently 偏，和「位置从 0 旋」同属对齐失败，不是随机噪声。
 
-拒绝处的那一个 token 不是草稿里的下一个，而是从修正分布抽的。论文写法是把 $p$ 里被 $q$ 多给的质量削掉再归一。实现上我先 `resize` cache 到 $S+k$，再把这个新 token 当普通 decode 一步写进去。顺序反了会把拒绝草稿的 KV 留在 $S+k$ 这个槽里。
+拒绝处的那一个 token 从修正分布抽，不是草稿里的下一个。论文写法是把 $p$ 里被 $q$ 多给的质量削掉再归一。实现上我先 `resize` cache 到 $S+k$，再把这个新 token 当普通 decode 一步写进去。顺序反了会把拒绝草稿的 KV 留在 $S+k$ 这个槽里。
 
 ```python
 k_cache = k_cache[:, :, : S + n_accept, :]
@@ -57,11 +57,11 @@ v_cache = v_cache[:, :, : S + n_accept, :]
 
 和 continuous batching 叠的时候更烦：每个请求的接受长度不同，不能假设 batch 里每条都 append $\gamma$ 再一起 truncate。按请求维护 cache 指针，拒绝就 `resize` 时间维。paged KV 把「截断」变成还 page，而不是大块 `cat` 再拷，见 `openai-continuous-batching`。
 
-数值：greedy 投机（草稿和目标都 argmax）时，接受规则退化成「前缀必须逐 token 相同」，rollback 仍然要做——相同前缀之后第一条分歧仍会多写 KV。
+数值：greedy 投机（草稿和目标都 argmax）时，接受规则退化成「前缀必须逐 token 相同」，rollback 仍然要做：相同前缀之后第一条分歧仍会多写 KV。
 
 验收和 `openai-kv-cache-impl` 同一把尺子：固定 greedy，投机路径（$\gamma>1$）和逐步 decode 必须逐 token 相同。对不上先查 rollback 有没有漏层，再查 RoPE offset。
 
-时间不够就画：文本指针和 KV 指针是同一个长度。任何让两者分叉的优化都要在拒绝时把它们焊回去。
+文本指针和 KV 指针是同一个长度。任何让两者分叉的优化都要在拒绝时把它们焊回去。
 
 ## 追问
 

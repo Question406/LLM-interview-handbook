@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-DeepSeek 向面试很少只问框架名。这块容易直接答成背 MLA、MoE、R1 口号，却对不上 V3 原文里 KV 怎么压、无辅助均衡靠什么、R1 为何先规则奖励再谈 RM。公开「含完整答案」类帖当练习准备，不标真题。数字和机制以 R1、V3、DeepSeekMath 原文为准。
+DeepSeek 向面试很少只问框架名。错法：背 MLA、MoE、R1 口号，却对不上 V3 原文里 KV 怎么压、无辅助均衡靠什么、R1 为何先规则奖励再谈 RM。公开「含完整答案」类帖当练习准备，不标真题。数字和机制以 R1、V3、DeepSeekMath 原文为准。
 
 ## 准备主线
 
@@ -56,4 +56,4 @@ Post-Training、Architecture、Systems 三章我会按这三条串，不会按�
 
 - **MLA 和 GQA 差在哪？** GQA 少 KV 头；MLA 把 KV 压到低维 latent，cache 按 latent 存。不要说成「就是 GQA」。
 - **为什么可以弱化辅助均衡损失？** 用 expert bias 等可学习偏置调路由，见 `arch-moe-noaux`，对照 V3。
-- **R1 为什么先规则奖励？** 可验证域上 RM 噪声和 hacking 成本更高，规则可复现。RM 只补规则盖不住的偏好。以论文为准，不背二手完整答案帖。
+- **R1 为什么先规则奖励？** 可验证域上 RM 噪声和 hacking 成本更高，规则可复现。RM 只补规则盖不住的偏好。以论文为准。

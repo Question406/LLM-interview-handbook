@@ -23,7 +23,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「全对就该学得更快」。GRPO 的 $A$ 来自组内相对差异；全对或全错时 $r_i$ 常数，$\sigma\approx 0$，$\hat{A}_i\approx 0$，这一批是空梯度。这是 reasoning RL 的经典 failure mode：难题全错、简单题全对，相对优势学不到东西。阿里国际面常从这里接到 DAPO / GSPO。组内标准化公式见 `ali-grpo-advantage`。
+错法：「全对就该学得更快」。GRPO 的 $A$ 来自组内相对差异；全对或全错时 $r_i$ 常数，$\sigma\approx 0$，$\hat{A}_i\approx 0$，这一批是空梯度。这是 reasoning RL 的经典 failure mode：难题全错、简单题全对，相对优势学不到东西。阿里国际面常从这里接到 DAPO / GSPO。组内标准化公式见 `ali-grpo-advantage`。
 
 ## 空 group：不是「没学好」，是信号定义如此
 
@@ -39,7 +39,7 @@ DAPO（Decoupled Clip and Dynamic Sampling Policy Optimization）针对这类塌
 
 ## 阿里方向再对一下 GSPO
 
-Qwen **GSPO**（Group Sequence Policy Optimization，[arXiv:2507.18071](https://arxiv.org/abs/2507.18071)）把重要性比从 token 级改到序列级：对整段似然比做长度归一再 clip，而不是每个 token 一个 $\rho_t$。和 token-level GRPO 对照着讲：同一套组内优势，差在重要性采样的粒度。空 group 问题 GSPO 同样存在。序列级 $\rho$ 救的不是零方差 $A$。选型仍看任务：可验证、组内能分出对错，才值得上 on-policy；否则先改题难度或回到 SFT/DPO（`ali-grpo-vs-sft`）。
+Qwen GSPO（Group Sequence Policy Optimization，[arXiv:2507.18071](https://arxiv.org/abs/2507.18071)）把重要性比从 token 级改到序列级：对整段似然比做长度归一再 clip，而不是每个 token 一个 $\rho_t$。和 token-level GRPO 对照着讲：同一套组内优势，差在重要性采样的粒度。空 group 问题 GSPO 同样存在。序列级 $\rho$ 救的不是零方差 $A$。选型仍看任务：可验证、组内能分出对错，才值得上 on-policy；否则先改题难度或回到 SFT/DPO（`ali-grpo-vs-sft`）。
 
 ## 追问
 

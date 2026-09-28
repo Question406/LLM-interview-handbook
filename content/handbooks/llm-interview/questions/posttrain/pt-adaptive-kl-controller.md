@@ -25,7 +25,7 @@ sources:
 
 ## Controller 在调什么
 
-InstructGPT 一类流水线维护系数 $\beta_t$，每步估计 $\widehat{\mathrm{KL}}_t=\mathbb{E}[\log\pi_\theta-\log\pi_{\mathrm{ref}}]$。若高于目标 $KL_{\mathrm{target}}$ 则增大 $\beta$，反之减小。直觉是控制「离参考分布多远」，而不是死守一个与损失尺度纠缠的固定权重。奖励突然放大时，固定小 $\beta$ 管不住漂移；奖励变弱时，固定大 $\beta$ 又会把策略按死在 SFT 附近。它是反馈控制，不是新的目标函数：真正优化的仍是奖励减 $\beta\,\mathrm{KL}$。
+InstructGPT 一类流水线维护系数 $\beta_t$，每步估计 $\widehat{\mathrm{KL}}_t=\mathbb{E}[\log\pi_\theta-\log\pi_{\mathrm{ref}}]$。若高于目标 $KL_{\mathrm{target}}$ 则增大 $\beta$，反之减小。直觉是控制「离参考分布多远」，而不是死守一个与损失尺度纠缠的固定权重。奖励突然放大时，固定小 $\beta$ 管不住漂移；奖励变弱时，固定大 $\beta$ 又会把策略按死在 SFT 附近。它是反馈控制，不是新的目标函数：优化的仍是奖励减 $\beta\,\mathrm{KL}$。
 
 实现上要对 $\beta$ 做平滑、上下限，避免单步估计噪声把系数打飞。估计必须和训练同一 reduction、同一 mask：把 prompt 算进 KL，controller 会把「读懂问题」当偏离来罚。和 clip 分工：clip 管相对 $\pi_{\mathrm{old}}$ 的一步比率，controller 管相对 $\pi_{\mathrm{ref}}$ 的累积漂移，两层同时猛调会看不清是谁在起作用。
 

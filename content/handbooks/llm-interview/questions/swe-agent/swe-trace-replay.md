@@ -31,7 +31,7 @@ sources:
 
 ## 失败模式与隐私
 
-评测上能刷或失效的点：只记最终 patch、不记中间命令；把 secret 和源码全文打进 APM；没有 span 关联导致 tool 结果对不上 request；时钟不同步；用 LLM 读自己的 trace 当唯一根因。未经脱敏的源码、凭证、用户数据不能进通用 observability 后端；用 hash + 受控对象存储，并设 TTL 销毁。没有销毁策略的 trace 会变成新的泄密面。能重放的失败才叫可运营；只能看 chat 日志叫演示。落地最小字段集可以记成：`attempt_id`、输入 hash、镜像 digest、模型版本、逐步 tool IO、diff、权限决策、测试状态转移、first-failure 标签。缺关联 ID 或脱敏策略，trace 要么不能重放，要么不能进生产。
+评测上能刷或失效的点：只记最终 patch、不记中间命令；把 secret 和源码全文打进 APM；没有 span 关联导致 tool 结果对不上 request；时钟不同步；用 LLM 读自己的 trace 当唯一根因。未经脱敏的源码、凭证、用户数据不能进通用 observability 后端；用 hash + 受控对象存储，并设 TTL 销毁。没有销毁策略的 trace 会变成新的泄密面。能重放的失败才叫可运营；只能看 chat 日志叫演示。落地最小字段集：`attempt_id`、输入 hash、镜像 digest、模型版本、逐步 tool IO、diff、权限决策、测试状态转移、first-failure 标签。缺关联 ID 或脱敏策略，trace 要么不能重放，要么不能进生产。
 
 排障时先重放工具与测试，再决定要不要重采样模型。若确定性 replay 已经失败，问题在 harness 或环境，不该先怪模型。脱敏策略与 TTL 写进同一份 tracing 设计，避免调试通道变成泄密通道。
 

@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-没有 Resource Indicator，access token 就变成「谁拿到都能用」的万能钥匙。MCP client、authorization server、MCP server 必须对「这个 token 是签给哪一个 resource」有同一 canonical URI。我会讲 audience 绑定，以及为什么 passthrough 会变成 confused deputy，不会只背 PKCE。PKCE、HTTPS、refresh rotation 是基础，不替代 audience 校验。MCP Authorization 规范把 resource 当成一等公民，正是为了挡住跨服务滥用。
+没有 Resource Indicator，access token 就变成「谁拿到都能用」的万能钥匙。MCP client、authorization server、MCP server 必须对「这个 token 是签给哪一个 resource」有同一 canonical URI。要讲 audience 绑定，以及为什么 passthrough 会变成 confused deputy，不要只背 PKCE。PKCE、HTTPS、refresh rotation 是基础，不替代 audience 校验。MCP Authorization 规范把 resource 当成一等公民，正是为了挡住跨服务滥用。
 
 ## 为什么要 resource 与 canonical URI
 
@@ -31,7 +31,7 @@ sources:
 
 ## 评测要记什么
 
-对抗用例：audience 为 A 的 token 打 B；server 把 Authorization 头转发给第三方；exchange 后 scope 被放大。记录：校验失败码、是否发生转发、下游 token 的 audience 与 TTL。评测上能刷的是：demo 用一个全局 PAT；微服务互相透传 `Authorization`；只测「能登录 MCP」。token 面向具体 server；下游另换短票；passthrough 就是 confused deputy。代码门禁可以搜入站 `Authorization` 是否被写入出站请求。评测最小集：错 audience 拒绝、透传拦截、exchange 后 audience 与 TTL 符合预期。现场把 resource 和 scope 一句话说清，比讲 OAuth 流程细节更像安全设计。
+对抗用例：audience 为 A 的 token 打 B；server 把 Authorization 头转发给第三方；exchange 后 scope 被放大。记录：校验失败码、是否发生转发、下游 token 的 audience 与 TTL。token 面向具体 server；下游另换短票；passthrough 就是 confused deputy。代码门禁可以搜入站 `Authorization` 是否被写入出站请求。评测最小集：错 audience 拒绝、透传拦截、exchange 后 audience 与 TTL 符合预期。resource 回答「能对谁做」，scope 回答「能做什么」。
 
 ## 追问
 

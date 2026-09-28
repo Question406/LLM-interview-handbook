@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易短 GSM8K、卡很少也上 PD，或把 PD 说成 Megatron 训练环的功能。PD 改的是 **SGLang rollout 池**：prefill 吃吞吐、decode 吃 KV / 低 TP。训练图不动。短单轮、colocate 已经在抢显存时，拆开会多一份 KV 传输和调度税，墙钟更差。见 `sys-chunk-pd`、`sys-prefill-decode`。
+错法：短 GSM8K、卡很少也上 PD，或把 PD 说成 Megatron 训练环的功能。PD 改的是 SGLang rollout 池：prefill 吃吞吐、decode 吃 KV / 低 TP。训练图不动。短单轮、colocate 已经在抢显存时，拆开会多一份 KV 传输和调度税，墙钟更差。见 `sys-chunk-pd`、`sys-prefill-decode`。
 
 ## 什么时候才拆
 
@@ -36,14 +36,14 @@ RL rollout 不像 SFT 一批短 completion：工具史把 prompt 拉得很长，
 
 ## 两条配置路径
 
-- **玩具**：`--prefill-num-servers 1`，单 actor、只想把角色拆开。
-- **生产**：`--sglang-config` 里分别写 `worker_type: prefill|decode`，各自 `num_gpus`、`num_gpus_per_engine`、`overrides`（decode 更高 `mem_fraction_static`）。
+- 玩具：`--prefill-num-servers 1`，单 actor、只想把角色拆开。
+- 生产：`--sglang-config` 里分别写 `worker_type: prefill|decode`，各自 `num_gpus`、`num_gpus_per_engine`、`overrides`（decode 更高 `mem_fraction_static`）。
 
 同一 model 不要混 `regular` 和 PD worker。`--rollout-num-gpus` 必须等于 YAML 总卡，否则 router 和卡账对不上。多轮必须开 session affinity，否则 PD 拆开会把前缀缓存和 KV 打散，见 `slime-router-session`。
 
 ## 和 veRL、chunked prefill 的关系
 
-veRL 侧对应「rollout 用 SGLang 多轮 / PD」，不是 HybridEngine。Chunked prefill 是同卡把长 prompt 切块、与 decode 混排，**不传 KV**；PD 是跨池传 KV。短任务先 chunk，长多轮、角色不对称再 PD。KV 传输本身可能比算子贵，网络和 cache placement 要单独算；InfiniBand 上 8k 上下文的 KV 复制，有时已经接近一次 prefill 的墙钟。
+veRL 侧对应「rollout 用 SGLang 多轮 / PD」，不是 HybridEngine。Chunked prefill 是同卡把长 prompt 切块、与 decode 混排，不传 KV；PD 是跨池传 KV。短任务先 chunk，长多轮、角色不对称再 PD。KV 传输本身可能比算子贵，网络和 cache placement 要单独算；InfiniBand 上 8k 上下文的 KV 复制，有时已经接近一次 prefill 的墙钟。
 
 ## 追问
 

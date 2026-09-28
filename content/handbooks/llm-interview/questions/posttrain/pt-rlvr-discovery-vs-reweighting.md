@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-RLVR 之后 `pass@1` 大涨，不等于模型发明了 base 不会的算法。一种机制是 discovery：出现了 base 在合理采样预算下几乎采不到的新成功路径。另一种是 reweighting：base 的长尾里本来就有正确轨迹，RL 只是把它们的概率从「偶尔」抬到「默认」。`pt-r1zero` 讲 search-selection-amplification 的正反馈；本题要你设计实验，避免把 amplification 误称为创造。这块容易直接答成只看 `pass@1`，或只看平均 CoT 变长。
+RLVR 之后 `pass@1` 大涨，不等于模型发明了 base 不会的算法。一种机制是 discovery：出现了 base 在合理采样预算下几乎采不到的新成功路径。另一种是 reweighting：base 的长尾里本来就有正确轨迹，RL 只是把它们的概率从「偶尔」抬到「默认」。`pt-r1zero` 讲 search-selection-amplification 的正反馈；本题要你设计实验，避免把 amplification 误称为创造。错法：只看 `pass@1`，或只看平均 CoT 变长。
 
 ## 先画 base 的可达成功集
 
@@ -47,7 +47,7 @@ RLVR 之后 `pass@1` 大涨，不等于模型发明了 base 不会的算法。�
 
 若 containment 很高且 OOD 不动，下一步通常是改善 seed / 探索 / 环境，而不是再堆同分布 RL 步数。探索不足时，温度、熵奖励、课程难度或 `pt-self-generated-curriculum` 比再跑同样的 RLVR 更相关。白板结论允许是混合的：一部分题是 reweighting，一小部分题出现了越出 base 覆盖的过程，按题切片报，不要用一个形容词概括整个 run。
 
-报告模板：base $K$-coverage 是否已平台、RL 成功的 answer / trace containment、OOD 是否越出原覆盖。三句齐才能说 discovery；只见 `pass@1` 只够说「默认更好用」。
+能说 discovery 之前要齐：base $K$-coverage 是否已平台、RL 成功的 answer / trace containment、OOD 是否越出原覆盖。只见 `pass@1` 只够说「默认更好用」。
 
 ## 追问
 

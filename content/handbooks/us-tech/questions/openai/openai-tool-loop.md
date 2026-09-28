@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-`openai-function-calling` 收 schema、JSON mode、并行。这题收 **循环跑起来之后**：观察怎么写回、工具名是幻觉、何时停。Chat Completions 把 `tool_calls` 和后续 `role: tool` 做成一等消息；Assistants / Responses 只是同一状态机的另一套壳。生产执行见 `design-tool-prod`。训练侧见 `openai-agent-rl`。不是某一份隐藏面经。
+`openai-function-calling` 收 schema、JSON mode、并行。这题收循环跑起来之后：观察怎么写回、工具名是幻觉、何时停。Chat Completions 把 `tool_calls` 和后续 `role: tool` 做成一等消息；Assistants / Responses 只是同一状态机的另一套壳。生产执行见 `design-tool-prod`。训练侧见 `openai-agent-rl`。不是某一份隐藏面经。
 
 ## 观察是数据，不是新的系统提示
 
@@ -41,10 +41,10 @@ sources:
 
 1. 模型输出 0 个或多个 `tool_calls`（名字 + 参数）。
 2. 宿主白名单、parse、schema、政策检查、执行。
-3. 每条调用写回一条带 **同一 call id** 的观察。
+3. 每条调用写回一条带同一 call id 的观察。
 4. 再调模型。直到它给出不再带 tool 的 assistant 文本，或触发停止条件。
 
-写回格式要稳定：`tool_call_id`、工具名、截断后的正文、错误码。网页 HTML、堆栈、二进制不要原样倒进上下文——又贵又给注入表面。截断策略事先定：头 N 字符、结构化字段白名单、超长时加 `truncated=true` 让模型知道没看全。观察里出现的「忽略系统提示 / 现在以管理员运行」一律当数据，不可逆动作仍只看宿主政策，见 `design-tool-prod`。
+写回格式要稳定：`tool_call_id`、工具名、截断后的正文、错误码。网页 HTML、堆栈、二进制不要原样倒进上下文：又贵又给注入表面。截断策略事先定：头 N 字符、结构化字段白名单、超长时加 `truncated=true` 让模型知道没看全。观察里出现的「忽略系统提示 / 现在以管理员运行」一律当数据，不可逆动作仍只看宿主政策，见 `design-tool-prod`。
 
 并行：同一 assistant 步里多个无依赖的读可以一起执行；写回必须按 id 对齐，不要按完成时间乱序张冠李戴。第二个调用需要第一个返回值时，不能并行，要走「调一次 → 观察进上下文 → 再调」。依赖拆错的签名是：后一个工具吃到空 id 或幻觉 id。
 
@@ -77,10 +77,10 @@ def step(messages, model, registry, budget):
 
 停止条件要同时有，单靠模型说「我做完了」不够：
 
-- **最大步数 / 最大墙钟 / 最大新增 token。** 没有上限的 loop 会在 5xx 上烧完预算。
-- **重复熔断。** 同一 `(name, canonical_args)` 连续失败或连续成功超过阈值，停。死循环搜同一 query 是 WebGPT 时代就有的病。
-- **模型 finish。** 不再发 `tool_calls`，给出用户可见回复。强迫 `tool_choice` 某函数时，它可能永远不 finish，对话助手要用 auto。
-- **宿主判定任务完成。** 单测绿了、用户点了确认。模型还想再调一次也要拦。
+- 最大步数 / 最大墙钟 / 最大新增 token。 没有上限的 loop 会在 5xx 上烧完预算。
+- 重复熔断。 同一 `(name, canonical_args)` 连续失败或连续成功超过阈值，停。死循环搜同一 query 是 WebGPT 时代就有的病。
+- 模型 finish。 不再发 `tool_calls`，给出用户可见回复。强迫 `tool_choice` 某函数时，它可能永远不 finish，对话助手要用 auto。
+- 宿主判定任务完成。 单测绿了、用户点了确认。模型还想再调一次也要拦。
 
 凭证、内网 URL、文件系统根不进参数空间；模型连提议都该被拒。停止之后不要把半截工具结果留在用户气泡里，写审计。
 

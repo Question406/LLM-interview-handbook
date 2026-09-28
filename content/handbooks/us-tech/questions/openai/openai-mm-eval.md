@@ -33,15 +33,15 @@ sources:
 
 ## 题怎么来的
 
-GPT-4V / GPT-4o 发数字时，对外是 MMMU、文档、图表一类；对内仍要防刷榜，纪律见 `openai-eval-harness`。多模态多了两种污染：题干自己能答，以及训练见过这张图。MMStar（Chen et al.）把 Gemini 在 **不给图** 时 MMMU 仍远超随机写进论文。这题不是背榜名，是你会不会拆泄漏、OCR、真正的视觉推理。原生 token 预算见 `openai-mm-gpt`。
+GPT-4V / GPT-4o 发数字时，对外是 MMMU、文档、图表一类；对内仍要防刷榜，纪律见 `openai-eval-harness`。多模态多了两种污染：题干自己能答，以及训练见过这张图。MMStar（Chen et al.）把 Gemini 在不给图时 MMMU 仍远超随机写进论文。这题不是背榜名，是你会不会拆泄漏、OCR、真正的视觉推理。原生 token 预算见 `openai-mm-gpt`。
 
 ## 盲文基线：先把图关掉
 
 我会把每条样本跑三遍：
 
-1. **图+文** $S_v$。常规协议。
-2. **只文** $S_{wv}$。图换成空白或删掉 image part，题干和选项不动。
-3. **只视觉塔对应的纯 LM** $S_t$（若你有基座）。用来看多模态训练是不是在背题。
+1. 图+文 $S_v$。常规协议。
+2. 只文 $S_{wv}$。图换成空白或删掉 image part，题干和选项不动。
+3. 只视觉塔对应的纯 LM $S_t$（若你有基座）。用来看多模态训练是不是在背题。
 
 MMStar 定义 multimodal gain $MG=S_v-S_{wv}$，leakage $ML=\max(0,S_{wv}-S_t)$。$S_{wv}$ 比随机高一大截，这张榜就不能当「看图能力」。MMMU 上公开数字：强 LM 不看图也能到四十出头，因为学院选择题的选项和题干已经泄漏了学科常识。面试先报盲文，再报带图；只报一个 MMMU 总分，评委会当没测视觉。
 
@@ -64,7 +64,7 @@ Holdout 必须是从未用来选 checkpoint 的图。公开 MMMU 只能沟通，
 
 协议锁死：分辨率（low vs high，见 `openai-mm-gpt`）、是否把选项画进图、解码温度、是否允许工具。GPT-4V 系统卡自己也按类别谈局限；内部 harness 要按类切片，不要一个 macro。判分：选择题对选项顺序敏感；开放描述不要用被测模型当法官，法官隔版本，同 `openai-eval-harness`。
 
-错法：用带图的 CoT prompt 和别人的盲文比；把 OCR 榜当 MMMU；不跑 $S_{wv}$。指令遵循仍要单独测，见 `openai-if-eval`——「用 JSON 列出图中物体」失败可能是格式，不是没看见。
+错法：用带图的 CoT prompt 和别人的盲文比；把 OCR 榜当 MMMU；不跑 $S_{wv}$。指令遵循仍要单独测，见 `openai-if-eval`：「用 JSON 列出图中物体」失败可能是格式，不是没看见。
 
 ## 追问
 

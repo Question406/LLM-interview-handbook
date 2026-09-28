@@ -46,7 +46,7 @@ $$
 \end{aligned}
 $$
 
-seq-mean-token-mean：每条回复权重相同，长文的单个 token 权更小，短回复相对更响。seq-mean-token-sum：每条先对 token 求和再平均，长回复权更大，长度 hack 会被放大。token-mean：batch 内每个有效 token 等权。veRL 示例默认 token-mean，并写明论文原 GRPO 更接近 seq-mean-token-mean。长 CoT 时 token-mean 通常更稳，因为不会把一条长推理链的每个 token 稀释掉；DAPO 的 token-level PG 就是在推这条。没有绝对正确，只有「你有没有声明长度权重」。
+seq-mean-token-mean：每条回复权重相同，长文的单个 token 权更小，短回复相对更响。seq-mean-token-sum：每条先对 token 求和再平均，长回复权更大，长度 hack 会被放大。token-mean：batch 内每个有效 token 等权。veRL 示例默认 token-mean，并写明论文原 GRPO 更接近 seq-mean-token-mean。长 CoT 时 token-mean 通常更稳，不会把一条长推理链的每个 token 稀释掉；DAPO 的 token-level PG 也在推这条。没有绝对正确，要声明你用的长度权重。
 
 ## 不要和 KL / GSPO / CISPO 混
 

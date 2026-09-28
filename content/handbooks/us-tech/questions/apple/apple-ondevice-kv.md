@@ -32,7 +32,7 @@ sources:
     type: primary
 ---
 
-量化卡 `apple-ondevice-quant` 问的是 palettization 和 mask 的 $-\infty$。这题问的是 **decode 为什么读不动历史**。Apple 2024 就写 GQA 和 Neural Engine 上的 KV 更新；2025 明确 **KV cache 8-bit**，并把模型切成两段、第二段复用第一段末层 KV，cache 大约再降 **37.5%**。公开材料不是现场逐字题。云端同一笔账见 `sys-kv-quant`、`google-gqa-mqa`，这里把墙换成手机带宽和预分配静态 shape，见 `apple-ane`。
+量化卡 `apple-ondevice-quant` 问的是 palettization 和 mask 的 $-\infty$。这题问的是 decode 为什么读不动历史。Apple 2024 就写 GQA 和 Neural Engine 上的 KV 更新；2025 明确 KV cache 8-bit，并把模型切成两段、第二段复用第一段末层 KV，cache 大约再降 37.5%。云端同一笔账见 `sys-kv-quant`、`google-gqa-mqa`，这里把墙换成手机带宽和预分配静态 shape，见 `apple-ane`。
 
 ## 先写字节，再谈技巧
 
@@ -42,17 +42,17 @@ $$
 \mathrm{Bytes} \approx 2 \cdot L \cdot H_{\mathrm{kv}} \cdot d_h \cdot S \cdot b
 $$
 
-$2$ 是 K 和 V，$L$ 层数，$S$ 是已写入的上下文，$b$ 是每元素字节。Query head 数 $H_q$ **不进 cache**。GQA 把 $H_{\mathrm{kv}}$ 收到 $H_q/g$；MQA 收到 1。形状是 $[B,H_{\mathrm{kv}},S_{\max},d_h]$，算注意力时再 broadcast 到 $H_q$，不要把 cache 存成 $H_q$ 份，否则 GQA 白做。手写 attention 见 `apple-mha-code`。
+$2$ 是 K 和 V，$L$ 层数，$S$ 是已写入的上下文，$b$ 是每元素字节。Query head 数 $H_q$ 不进 cache。GQA 把 $H_{\mathrm{kv}}$ 收到 $H_q/g$；MQA 收到 1。形状是 $[B,H_{\mathrm{kv}},S_{\max},d_h]$，算注意力时再 broadcast 到 $H_q$，不要把 cache 存成 $H_q$ 份，否则 GQA 白做。手写 attention 见 `apple-mha-code`。
 
-端上 decode 每步 $T_q=1$，算术强度接近 1：FLOPs 和从 DRAM 搬来的 KV 字节同一量级。权已经 palettize 到约 3.7 或 2 bpw 之后，读权变便宜，**长 $S$ 时 KV 成为主带宽**。所以面试顺序是：GQA $\to$ 量化 cache $\to$ 少算一些层的 KV，而不是「再 INT8 一下 softmax」。
+端上 decode 每步 $T_q=1$，算术强度接近 1：FLOPs 和从 DRAM 搬来的 KV 字节同一量级。权已经 palettize 到约 3.7 或 2 bpw 之后，读权变便宜，长 $S$ 时 KV 成为主带宽。所以面试顺序是：GQA $\to$ 量化 cache $\to$ 少算一些层的 KV，而不是「再 INT8 一下 softmax」。
 
 三刀正交，不要说成一种量化：
 
-- **GQA。** 线性降 $H_{\mathrm{kv}}$。质量敏感时不要直接 MQA；AFM 公开走 grouped-query。
-- **8-bit KV。** $b: 2\to 1$（相对 fp16）。Scale 按 head 或按 token 存。Score 仍建议在 fp16 累加；mask 加在反量化之后，见 `apple-ondevice-quant`。K 的 outlier 常沿通道，乱 per-tensor 会把注意力打歪，云端同构讨论见 `sys-kv-quant`。
-- **KV sharing（2025）。** 模型按约 5:3 深度切成两块，block 2 的 KV 直接用 block 1 末层的 cache，公开写降约 37.5%，还能让 prefill 跳过第二块的 KV 生成。这是改深度结构，不是 PTQ。
+- GQA。线性降 $H_{\mathrm{kv}}$。质量敏感时不要直接 MQA；AFM 公开走 grouped-query。
+- 8-bit KV。$b: 2\to 1$（相对 fp16）。Scale 按 head 或按 token 存。Score 仍建议在 fp16 累加；mask 加在反量化之后，见 `apple-ondevice-quant`。K 的 outlier 常沿通道，乱 per-tensor 会把注意力打歪，云端同构讨论见 `sys-kv-quant`。
+- KV sharing（2025）。模型按约 5:3 深度切成两块，block 2 的 KV 直接用 block 1 末层的 cache，公开写降约 37.5%，还能让 prefill 跳过第二块的 KV 生成。这是改深度结构，不是 PTQ。
 
-ANE 还要求 **预分配 $S_{\max}$**，不能 `torch.cat` 沿时间维涨。Stateful 模型把 KV 登记成跨 `predict` 的 state；写入是定点 slice。随机 scatter 容易掉出 ANE。档位太稀浪费 SRAM，太密二进制膨胀，见 `apple-ane`。
+ANE 还要求预分配 $S_{\max}$，不能 `torch.cat` 沿时间维涨。Stateful 模型把 KV 登记成跨 `predict` 的 state；写入是定点 slice。随机 scatter 容易掉出 ANE。档位太稀浪费 SRAM，太密二进制膨胀，见 `apple-ane`。
 
 ## 带宽例子，用来证明你算过
 

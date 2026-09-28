@@ -37,11 +37,11 @@ Gemini 长上下文要训练和 serving 都碰到 $T$ 到百万。FlashAttention
 
 标准注意力物化 $S=QK^\top$，形状 $[T,T]$，HBM 和激活爆掉。精确注意力的 FLOPs 仍是 $\Theta(T^2 d)$，谁也没改公式。
 
-FlashAttention：在片上 SRAM（TPU 叫 VMEM）里对 $Q,K,V$ 分块，在线 softmax，不把 $S$ 写回 HBM。HBM 访问大约 $O(T^2 d^2/M)$，$M$ 是片上容量。反向重算 $P$ 而不是存它。它解决的是 **单设备上注意力核的带宽**。TPU 上 Splash / Pallas 做同一件事。
+FlashAttention：在片上 SRAM（TPU 叫 VMEM）里对 $Q,K,V$ 分块，在线 softmax，不把 $S$ 写回 HBM。HBM 访问大约 $O(T^2 d^2/M)$，$M$ 是片上容量。反向重算 $P$ 而不是存它。它解决的是单设备上注意力核的带宽。TPU 上 Splash / Pallas 做同一件事。
 
-Blockwise Parallel Transformer（Liu et al.）：序列切成块，一块 query 对一块 KV 算完注意力，立刻把这块送进 FFN / 残差，再处理下一块。峰值激活不再需要整层 $[T, D]$ 的注意力输出和 FFN 中间同时在。它解决的是 **层内激活 HBM**，不是换一种注意力数学。块内仍然可以跑 Flash 式核。
+Blockwise Parallel Transformer（Liu et al.）：序列切成块，一块 query 对一块 KV 算完注意力，立刻把这块送进 FFN / 残差，再处理下一块。峰值激活不再需要整层 $[T, D]$ 的注意力输出和 FFN 中间同时在。它解决的是层内激活 HBM，不是换一种注意力数学。块内仍然可以跑 Flash 式核。
 
-Ring Attention：把序列沿设备切，$T/N$ 每卡。每卡拿自己的 $Q$，KV 块沿着环传一圈，本地算一块注意力，累加输出。通信量和计算可以重叠，前提是块够大、环上带宽够。它解决的是 **跨设备的序列并行**，让 $T$ 超出单卡 HBM。块内同样可以是 Flash。
+Ring Attention：把序列沿设备切，$T/N$ 每卡。每卡拿自己的 $Q$，KV 块沿着环传一圈，本地算一块注意力，累加输出。通信量和计算可以重叠，前提是块够大、环上带宽够。它解决的是跨设备的序列并行，让 $T$ 超出单卡 HBM。块内同样可以是 Flash。
 
 所以关系是包含，不是替代：Ring 的一跳里跑 blockwise 的一块，一块里跑 Flash tile。面试说「Ring 取代了 Flash」是错的；说「有了 Flash 就不需要切 $T$」也是错的。单卡 HBM 仍按 $T$ 线性（KV）或按激活策略走。
 
@@ -53,7 +53,7 @@ Decode：$T_q=1$，没有 $[T,T]$ 可物化。Flash 仍避免多余写回，但�
 
 块大小是超参：太小，kernel 启动和 ring 同步压过计算；太大，VMEM / HBM 又塞不下。TPU 还要对齐 128 的 MXU，见 `google-tpu-llm`。XLA 静态 shape，块大小在编译期定死，变长请求靠 pad。
 
-Ring 一圈的通信量大约是整段 KV 扫过每个设备：每跳 $O((T/N) d)$，共 $N$ 跳，总量 $O(T d)$，和把 KV all-gather 一遍同阶，但可以和本地注意力重叠。重叠不够时，ring 只是把 HBM 爆换成 ICI 延迟，没有免费午餐。
+Ring 一圈的通信量大约是整段 KV 扫过每个设备：每跳 $O((T/N) d)$，共 $N$ 跳，总量 $O(T d)$，和把 KV all-gather 一遍同阶，但可以和本地注意力重叠。重叠不够时，ring 只是把 HBM 爆换成 ICI 延迟，没有白捡的带宽。
 
 ## 别和近似注意力混
 

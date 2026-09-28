@@ -28,7 +28,7 @@ sources:
     type: secondary
 ---
 
-这块容易直接把 PPO 里每个 token 乘 $\rho_t$ 叫做「无偏 per-decision IS」。无偏 off-policy 评估要的是：行为策略 $\mu$ 上的样本，乘上 **从开头到该奖励为止** 的似然比，把测度改回 $\pi$。PPO 既不是整段 $w_{0:T}$，也不是严格的 per-decision，见 `fund-is`、`fund-token-is-var`。
+错法：把 PPO 里每个 token 乘 $\rho_t$ 叫做「无偏 per-decision IS」。无偏 off-policy 评估要的是：行为策略 $\mu$ 上的样本，乘上从开头到该奖励为止的似然比，把测度改回 $\pi$。PPO 既不是整段 $w_{0:T}$，也不是严格的 per-decision，见 `fund-is`、`fund-token-is-var`。
 
 ## 整段：一个乘积管所有奖励
 
@@ -47,13 +47,13 @@ $$
 w_{0:t}=\prod_{k=0}^t\rho_k.
 $$
 
-$r_t$ 在 $t$ 时刻已实现，之后的动作不再改变这笔奖励，后面的 $\rho_{t+1:T}$ 对它是噪声。可以证明 $\mathbb{E}_\mu[\hat J_{\mathrm{PD}}]$ 仍是 $J(\pi)$，故 **同样无偏**，方差通常严格更小（少乘了独立于 $r_t$ 的未来比）。这是 off-policy 评估里该默认的那一档，不是「有偏的逐步近似」。
+$r_t$ 在 $t$ 时刻已实现，之后的动作不再改变这笔奖励，后面的 $\rho_{t+1:T}$ 对它是噪声。可以证明 $\mathbb{E}_\mu[\hat J_{\mathrm{PD}}]$ 仍是 $J(\pi)$，故同样无偏，方差通常严格更小（少乘了独立于 $r_t$ 的未来比）。这是 off-policy 评估里该默认的那一档，不是「有偏的逐步近似」。
 
 加权 / 自归一化、截断 $c_t=\min(1,\rho_t)$（Retrace / V-trace）在 per-decision 之上再动手，才开始偏，见 `fund-wis-ess`、`fund-vtrace`。
 
 ## PPO 的 $\rho_t A_t$ 是第三种东西
 
-Surrogate $\mathbb{E}_\mu[\rho_t\hat A_t]$ 在 $\theta=\theta_{\mathrm{old}}$ 处对 $\theta$ 的导数等于 on-policy 梯度，离开这一点既偏也高方差。它 **没有** 把 $w_{0:t}$ 乘到早期奖励上：优势 $\hat A_t$ 已经是从 $t$ 起的量，再乘的是 **单步** $\rho_t$，不是前缀乘积。这是工程局部近似，不是 Precup 的 PD-IS 定理。GSPO 把单步 $\rho_t$ 收成序列几何平均，改粒度；CISPO 截断单步 $\rho$，改尾部。都不要说成「所以我们在做无偏 per-decision IS」。
+Surrogate $\mathbb{E}_\mu[\rho_t\hat A_t]$ 在 $\theta=\theta_{\mathrm{old}}$ 处对 $\theta$ 的导数等于 on-policy 梯度，离开这一点既偏也高方差。它没有把 $w_{0:t}$ 乘到早期奖励上：优势 $\hat A_t$ 已经是从 $t$ 起的量，再乘的是单步 $\rho_t$，不是前缀乘积。这是工程局部近似，不是 Precup 的 PD-IS 定理。GSPO 把单步 $\rho_t$ 收成序列几何平均，改粒度；CISPO 截断单步 $\rho$，改尾部。都不要说成「所以我们在做无偏 per-decision IS」。
 
 异步 LLM 若真要无偏复用旧轨迹，应对每笔 token 奖励乘前缀 $w_{0:t}$ 再考虑截断；实践上几乎没人在长 CoT 上做完整 PD-IS，因为 $w_{0:t}$ 照样随 $t$ 爆。于是退回 fresh + 单步 $\rho$ + clip。三层要说清：整段无偏最高方；PD-IS 无偏较低方；PPO 局部有偏。
 

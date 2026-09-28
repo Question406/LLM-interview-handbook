@@ -34,7 +34,7 @@ sources:
     type: primary
 ---
 
-`meta-llama-rope` 停在概念层。Llama / 长上下文岗追问时，要把 **PI、NTK-aware、YaRN、改 `rope_theta`** 四条拆开。前三条主要是**已训好的 RoPE 模型怎么外推**；后一条是 **训练超参**。不要说成「Llama 3 用了 YaRN」。
+`meta-llama-rope` 停在概念层。Llama / 长上下文岗追问时，要把 PI、NTK-aware、YaRN、改 `rope_theta` 四条拆开。前三条主要是已训好的 RoPE 模型怎么外推；后一条是训练超参。别说成「Llama 3 用了 YaRN」。
 
 ## 外推在拧哪根旋钮
 
@@ -44,11 +44,11 @@ RoPE 第 $d$ 对频率 $\theta_d = b^{-2d/|D|}$，波长 $\lambda_d = 2\pi/\thet
 - **NTK-aware：** $g(m)=m$，改底 $b' = b\cdot s^{|D|/(|D|-2)}$，于是 $h$ 变成新频率。设计目标是：最低频接近按 $s$ 插值，最高频几乎不动。无微调时往往比 PI 更能撑过原窗。代价：部分维会略微外推到训练没见过的相位，YaRN 论文写明 **NTK 微调效果常不如 PI**；实践里 $s$ 还得设得比名义倍数更大。
 - **YaRN：** NTK-by-parts + 注意力温度。用 $r(d)=L/\lambda_d$（原窗里转了几圈）。$r$ 很小（低频、波长 $\ge L$）就按 $s$ 插值，避免外推；$r$ 很大（高频）完全不插，保住相邻 token 分辨率；中间线性 ramp。Llama 族论文里常用 $\alpha=1,\beta=32$。温度：$1/\sqrt{t}=0.1\ln(s)+1$，等价于把 $q,k$ 再乘这个因子，softmax 不那么糊。兼容 FlashAttention，因为没改注意力核，只改了 RoPE 表。
 
-Code Llama 公开把 RoPE base 提到 $10^6$ 量级，YaRN 把它归成 NTK-aware 的一种手调。那是 **Code Llama 的外推旋钮**，不要安到 Llama 3 预训练头上。
+Code Llama 公开把 RoPE base 提到 $10^6$ 量级，YaRN 把它归成 NTK-aware 的一种手调。那是 Code Llama 的外推旋钮，别安到 Llama 3 预训练头上。
 
-## 和改 rope_theta 不是一件事
+## 和改 rope_theta 差在哪
 
-Llama 2：常见 $b=10^4$，预训练 $4\mathrm{k}$。Llama 3 / 3.1 公开 conf 把 `rope_theta` 提到 $5\times 10^5$，再在 $8\mathrm{k}\to 128\mathrm{k}$ 上**继续预训练**（六段、约 $800\mathrm{B}$ token，见 `meta-llama3-pretrain`）。
+Llama 2：常见 $b=10^4$，预训练 $4\mathrm{k}$。Llama 3 / 3.1 公开 conf 把 `rope_theta` 提到 $5\times 10^5$，再在 $8\mathrm{k}\to 128\mathrm{k}$ 上继续预训练（六段、约 $800\mathrm{B}$ token，见 `meta-llama3-pretrain`）。
 
 相同点：提高 $b$，高频在大 $m$ 上少转几圈，直觉和 NTK 一类。差别：
 
@@ -57,7 +57,7 @@ Llama 2：常见 $b=10^4$，预训练 $4\mathrm{k}$。Llama 3 / 3.1 公开 conf 
 3. **$s$ 还在不在。** 官方长窗模型推理时按训练长度用 RoPE，不必再套一层 YaRN。社区给老 8k 权外推到 32k / 128k 才需要 $s$。
 4. **开源 `rope_type: llama3`。** 有的权重文件带 `factor`、`low_freq_factor`、`high_freq_factor`，按波长分段，和 YaRN 同类。Herd 论文写的是继续训 + 提高 theta。现场说「实现上可能有分段缩放，训练故事仍是长窗 CPT」，不要把 HuggingFace 字段说成 Meta 训练代码。
 
-Dynamic NTK：每步用当前长度算 $s=\max(1,t/L)$。KV cache 必须存**旋转前**的 $k$，否则 $s$ 一变历史 key 全错。Llama 3.1 原生 128k 服务不要开这套。
+Dynamic NTK：每步用当前长度算 $s=\max(1,t/L)$。KV cache 必须存旋转前的 $k$，否则 $s$ 一变历史 key 全错。Llama 3.1 原生 128k 服务不要开这套。
 
 ## 一个具体错法
 

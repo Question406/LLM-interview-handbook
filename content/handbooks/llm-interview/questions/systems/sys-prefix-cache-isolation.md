@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易答「前缀 token 相同就可以共享 KV」。Prefix cache 复用的是 **已经算过的 K/V**，能砍掉重复 system prompt 的 prefill，TTFT 和成本都下降。但 token id 相同不等于语义可共享：换一个 LoRA、换一套 RoPE、换一个租户的检索上下文，KV 都不能给下一个人用。成本优化不能绕过数据隔离。多租户 serving 里，省钱发生在真正公共的前缀；私有上下文一旦进共享缓存，就是事故。我会把「可以共享的前缀」和「绝对不能共享的前缀」各举一例，比只背 key 列表像做过。
+这块容易答「前缀 token 相同就可以共享 KV」。Prefix cache 复用的是 **已经算过的 K/V**，能砍掉重复 system prompt 的 prefill，TTFT 和成本都下降。但 token id 相同不等于语义可共享：换一个 LoRA、换一套 RoPE、换一个租户的检索上下文，KV 都不能给下一个人用。成本优化不能绕过数据隔离。多租户 serving 里，省钱发生在真正公共的前缀；私有上下文一旦进共享缓存，就是事故。答的时候我会把「可以共享的前缀」和「绝对不能共享的前缀」各举一例。
 
 ## Cache key 必须覆盖什么
 
@@ -50,7 +50,7 @@ sources:
 
 Cache 读写不应暴露「别人是不是刚问过同样的话」。命中导致 TTFT 明显变短，攻击者可以用时序判断某前缀是否在缓存里。多租户下这是经典侧信道。缓解：对安全敏感路径关闭共享、加 salt、或把命中延迟填充到与未命中同量级（贵，只用于高敏）。监控错误复用率、跨 tenant 探测、版本失效率，不能只报 hit rate 和 TTFT 节省。
 
-公共 system prompt、稳定工具 schema 进共享 namespace，按模型版本分桶，这是省 prefill 的主战场。用户文档、检索片段、会话盐、租户权限进私有段或直接 salt，这是隔离的底线。key 漏 adapter / RoPE / tokenizer / policy_version 任一字段，都会在「token 看起来一样」时串激活。命中率只在公共段有意义；为了总 hit rate 拿掉租户键，就是在用事故换成本。TTFT 差一个数量级会泄露是否命中，高敏路径默认 salt 或把命中延迟垫平。RL 里同一 prompt 的 $n$ 条共享 prompt KV 合法，跨用户、跨策略版本不合法。上线清单：hit rate、TTFT 节省、错误复用、版本失效、跨 tenant 探测。后三项不过，不能宣称省了 40%。高敏行业（金融、医疗、内部代码）默认 salt，用多付一点 prefill 换隔离。
+公共 system prompt、稳定工具 schema 进共享 namespace，按模型版本分桶，这是省 prefill 的主战场。用户文档、检索片段、会话盐、租户权限进私有段或直接 salt。key 漏 adapter / RoPE / tokenizer / policy_version 任一字段，都会在「token 看起来一样」时串激活。命中率只在公共段有意义；为了总 hit rate 拿掉租户键，就是在用事故换成本。TTFT 差一个数量级会泄露是否命中，高敏路径默认 salt 或把命中延迟垫平。RL 里同一 prompt 的 $n$ 条共享 prompt KV 合法，跨用户、跨策略版本不合法。上线看 hit rate、TTFT 节省、错误复用、版本失效、跨 tenant 探测；后三项不过，不能宣称省了多少。高敏行业（金融、医疗、内部代码）默认 salt，用多付一点 prefill 换隔离。
 
 ## 追问
 
@@ -61,4 +61,4 @@ Cache 读写不应暴露「别人是不是刚问过同样的话」。命中导�
 - **命中会不会泄露信息？** 会。TTFT 差一个数量级就能判断某前缀是否在缓存里。高敏行业默认 salt，或把命中延迟垫到与未命中同量级。
 - **改 chat template 要不要清缓存？** 要。同一自然语言会变成不同 token 或不同位置，旧 KV 不能用。只改 system 里一个日期而不换 key，命中的是过期政策。
 - **公共前缀多长才值得共享？** 足够长、足够稳、真正全租户一样。三五个 token 的问候语省不下 prefill；整段产品 system prompt 才是主战场。私有检索结果再长也不能进公共池。
-- **一句话怎么兼顾省钱和隔离？** 公共稳定前缀进带模型版本的共享 namespace；用户、租户、盐、检索进私有段。key 漏一项就会在 token 看起来一样时串数据。命中时序是侧信道。RL 里同一 prompt 的 $n$ 条可共享 prompt KV，跨 policy version 不行。
+- **怎么兼顾省钱和隔离？** 公共稳定前缀进带模型版本的共享 namespace；用户、租户、盐、检索进私有段。key 漏一项就会在 token 看起来一样时串数据。命中时序是侧信道。

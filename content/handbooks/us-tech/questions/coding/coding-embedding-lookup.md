@@ -28,7 +28,7 @@ sources:
 
 ## 题怎么来的
 
-看起来像 API 题，翻车点是 **pad 和 mask 不是一件事**、以及大词表把 embedding 矩阵当成「小表」。NVIDIA 问显存；Apple 问端侧词表；OpenAI debug 会漏 padding mask，pad 位置仍进 softmax。权重共享见 `coding-weight-tying`。
+看起来像 API 题，翻车点是 pad 和 mask 不是一件事，以及大词表把 embedding 矩阵当成「小表」。NVIDIA 问显存；Apple 问端侧词表；OpenAI debug 会漏 padding mask，pad 位置仍进 softmax。权重共享见 `coding-weight-tying`。
 
 ## Lookup：gather 一行，不是 matmul
 
@@ -38,7 +38,7 @@ $$
 x_{b,t}=E_{\mathrm{ids}[b,t]}\in\mathbb{R}^{D},\qquad x\ \mathrm{shape}\ [B,T,D].
 $$
 
-实现是 index，不是 $U\times E$。`padding_idx=p` 时第 $p$ 行初始化为 0，**每次 backward 把该行梯度清零**，所以它学不会。这只保证 pad token 的向量固定为 0，**不保证** attention 忽略它：零向量和 $q$ 的点积是 0，softmax 仍给正质量。必须在 scores 上把 pad key 打成 $-\infty$，见 `apple-mha-code`、`coding-softmax-stable`。
+实现是 index，不是 $U\times E$。`padding_idx=p` 时第 $p$ 行初始化为 0，每次 backward 把该行梯度清零，所以它学不会。这只保证 pad token 的向量固定为 0，不保证 attention 忽略它：零向量和 $q$ 的点积是 0，softmax 仍给正质量。必须在 scores 上把 pad key 打成 $-\infty$，见 `apple-mha-code`、`coding-softmax-stable`。
 
 ```python
 import torch
@@ -50,13 +50,11 @@ def embed_forward(embed, ids, pad_id=0):
     pad = ids.eq(pad_id)  # [B, T]
     return x, pad
 
-
 def attn_pad_mask(pad, qlen=None):
     # pad True = ignore this key; scores: [B, H, T, S]
     # mask broadcast: [B, 1, 1, S]
     key_pad = pad[:, None, None, :]
     return key_pad
-
 
 class SmallLM(nn.Module):
     def __init__(self, vocab, dim, pad=0):
@@ -68,7 +66,6 @@ class SmallLM(nn.Module):
         x, pad = embed_forward(self.embed, ids, self.pad)
         # scores += -inf where attn_pad_mask(pad)
         return x, pad
-
 
 def check():
     m = SmallLM(100, 16, pad=0)
@@ -89,7 +86,7 @@ $$
 
 Llama 3 词表 $V\approx 128256$，$D=4096$，bf16 一份 $\approx 1.05$ GB。再加 AdamW 的 $m,v$（fp32）大约 $\times 8$ 到参数自身。Tying 把 lm_head 那份省掉，optimizer state 也只留一套。词表并行：按 $V$ 切开，lookup 前 all-to-all id，是系统题，白板先报 1 GB 这个数。
 
-Apple 端侧：词表大、ANE 上 gather 不连续，常压 int8 embedding 或缩小 $V$。不要假设「embedding 相对 70B 可忽略」——decode 时它和 lm_head 仍是 $V$ 维大 GEMM / gather。扩词表要同时改 tokenizer id 和 $E$ 的行数，新行初始化（均值、零、copy 相近 token）要说一声。
+Apple 端侧：词表大、ANE 上 gather 不连续，常压 int8 embedding 或缩小 $V$。不要假设「embedding 相对 70B 可忽略」：decode 时它和 lm_head 仍是 $V$ 维大 GEMM / gather。扩词表要同时改 tokenizer id 和 $E$ 的行数，新行初始化（均值、零、copy 相近 token）要说一声。
 
 ## 追问
 

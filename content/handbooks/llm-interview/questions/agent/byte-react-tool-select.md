@@ -27,7 +27,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“ReAct 框架下，Agent 如何选择工具？选错了怎么纠正？”**
 
-这块容易直接答成「看到工具名字就调」，或选错之后在 Thought 里假装成功。ReAct（Yao 等，先推理再行动）里选工具是：Thought 写清当前缺口，Action 按 schema 和 Observation 选最少、最贴缺口的工具，Observation 用来校验成败。纠正信号来自环境，不是模型补一段「已经查到了」。结构总览见 `xiaohongshu-react-structure`。
+错法：「看到工具名字就调」，或选错之后在 Thought 里假装成功。ReAct（Yao 等，先推理再行动）里选工具是：Thought 写清当前缺口，Action 按 schema 和 Observation 选最少、最贴缺口的工具，Observation 用来校验成败。纠正信号来自环境，不是模型补一段「已经查到了」。结构总览见 `xiaohongshu-react-structure`。
 
 ## 按缺口选，不按名字选
 

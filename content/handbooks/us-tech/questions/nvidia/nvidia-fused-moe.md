@@ -47,7 +47,7 @@ $$
 
 $x$ 在内存里按请求 / 序列排，同一 expert 的行不相邻。不 permute 就变成不规则 gather GEMM，Tensor Core tile 对不齐，$M_i=3$ 那种边角会把吞吐打穿。
 
-Permute（有的实现叫 expand / sort）：把 $N\cdot k$ 个 token-expert 对按 expert id 排序，得到 $x_{\mathrm{perm}}$ 和一组 `group_sizes` $[M_0,\ldots,M_{E-1}]$，$\sum M_i=Nk$。CUTLASS grouped GEMM 要求同一核里 $K,N$ 维相同，只允许 $M_i$ 变——MoE 正好满足。再 launch 两次（或三次）grouped：gate/up、down。Unpermute：按逆置换把 $z$ 写回，并
+Permute（有的实现叫 expand / sort）：把 $N\cdot k$ 个 token-expert 对按 expert id 排序，得到 $x_{\mathrm{perm}}$ 和一组 `group_sizes` $[M_0,\ldots,M_{E-1}]$，$\sum M_i=Nk$。CUTLASS grouped GEMM 要求同一核里 $K,N$ 维相同，只允许 $M_i$ 变：MoE 正好满足。再 launch 两次（或三次）grouped：gate/up、down。Unpermute：按逆置换把 $z$ 写回，并
 
 $$
 h=\sum_{j=1}^{k} w_{i,j}\,z_{i,j}.
@@ -61,7 +61,7 @@ z = grouped_gemm(h, Wd, sizes)
 y = unpermute_weighted(z, inv, w)          # [N, D]
 ```
 
-Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核。Megatron 训练侧常单开；推理 fused 核把 **gather 索引塞进 GEMM 的 A 读取**，把 **scatter + 门控乘** 塞进第二段 GEMM 的 epilogue，中间激活不写满 HBM。这才是 fused 的含义：不是神奇地少算 FLOPs，是少几次 $NkD$ 的往返。
+Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核。Megatron 训练侧常单开；推理 fused 核把 **gather 索引塞进 GEMM 的 A 读取**，把 **scatter + 门控乘** 塞进第二段 GEMM 的 epilogue，中间激活不写满 HBM。这才是 fused 的含义。不是神奇地少算 FLOPs，是少几次 $NkD$ 的往返。
 
 TRT-LLM 的 Triton / CUTLASS / DeepGEMM 后端都走这套骨架。Triton 核注释写得很直：`sorted_token_ids` 按 expert 聚齐并 pad 到 `BLOCK_M` 的倍数，无效 pad 行要 mask，否则脏数据进累加器。
 
@@ -75,7 +75,7 @@ CUDA Graph：`group_sizes` 每步变。要么 pad 到固定容量再 mask，要�
 
 ## 融到哪一步算过头
 
-可以融：token sort 的元数据、第一段 grouped、SiLU$\odot$、量化 cast、第二段 grouped、scatter 加权。不要把 router 的 softmax 硬塞进 GEMM——$E$ 很大时 router 是另一类核。共享 expert（DeepSeek 一类）形状和 routed expert 不同，$K,N$ 不一致，grouped 要求拆核或共享那路单独 GEMM。
+可以融：token sort 的元数据、第一段 grouped、SiLU$\odot$、量化 cast、第二段 grouped、scatter 加权。不要把 router 的 softmax 硬塞进 GEMM：$E$ 很大时 router 是另一类核。共享 expert（DeepSeek 一类）形状和 routed expert 不同，$K,N$ 不一致，grouped 要求拆核或共享那路单独 GEMM。
 
 FP8 / W4 的 grouped 路径还要带 per-group scale，tile 对齐更烦。质量问题和 dense 量化相同，见 `nvidia-w4a8`。面试顺序：先能画出 permute 前后的 $[N,D]\to[Nk,D]$，再说融合，最后才是 EP。
 

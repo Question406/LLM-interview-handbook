@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易「每个 rank `torch.save` 完就算成功」。进程在写第 $N-1$ 片时崩溃，目录里会留下半旧半新文件，下次 resume 静默 load 会训飞。生产语义是：清单是提交点。PyTorch DCP 用 planner 写分片、读时可 reshard；本题用手写 IO 把原子性讲清楚。异步上传、步边界一致性见 `sys-async-checkpoint`；换 world size 重切见 `sys-elastic-resume-reshard`。
+错法：「每个 rank `torch.save` 完就算成功」。进程在写第 $N-1$ 片时崩溃，目录里会留下半旧半新文件，下次 resume 静默 load 会训飞。生产语义是：清单是提交点。PyTorch DCP 用 planner 写分片、读时可 reshard；本题用手写 IO 把原子性讲清楚。异步上传、步边界一致性见 `sys-async-checkpoint`；换 world size 重切见 `sys-elastic-resume-reshard`。
 
 ## 协议
 
@@ -70,7 +70,9 @@ def load_shards(ckpt_dir: str) -> dict[int, bytes]:
 
 ## 崩溃窗口与读者约定
 
-读者（resume 进程）只承认带完整 `MANIFEST.json` 的目录。`ckpt.writing/` 或只有部分 `shard_*.bin` 的路径一律当不存在，绝不「能 load 多少算多少」。多版本并存时用目录名带 step，例如 `ckpt/step-1000/`，成功后再把 `latest` 指针原子改过去；正在上传的 step 不得成为 `latest`。这和异步落盘的「最后一致快照」是同一提交点，见 `sys-async-checkpoint`。校验失败要整版拒绝：修某一个 shard 而不改清单，会造成「清单里的 digest 与文件不一致」的第三种半态。手写 rank 文件够讲清原子性；真正换 TP/EP 需要按逻辑张量存的 DCP，不要假装这份 `shard_{rank}.bin` 能任意 reshard。数据文件也建议 `fsync` 再写清单：只同步清单、shard 还在页缓存，掉电后会出现「清单齐全、打开是短文件」。`world` 与实际文件数必须相等，多出来的旧 shard 不得被 load 混入。Rank 间用屏障对齐「我写完了」，rank 0 才 commit；有人没写完就 rename，就是把不齐套版本标成成功。这和训练步边界栅栏是同一纪律，只是对象从梯度换成文件。
+读者（resume 进程）只承认带完整 `MANIFEST.json` 的目录。`ckpt.writing/` 或只有部分 `shard_*.bin` 的路径一律当不存在，绝不「能 load 多少算多少」。多版本并存时用目录名带 step，例如 `ckpt/step-1000/`，成功后再把 `latest` 指针原子改过去；正在上传的 step 不得成为 `latest`。这和异步落盘的提交点一致，见 `sys-async-checkpoint`。
+
+校验失败要整版拒绝：只修某一个 shard 而不改清单，会造成 digest 与文件不一致的第三种半态。数据文件也建议 `fsync` 再写清单，否则掉电后会出现「清单齐全、打开是短文件」。`world` 与实际文件数必须相等，多出来的旧 shard 不得混入。Rank 间用屏障对齐「我写完了」，rank 0 才 commit。手写 rank 文件够讲清原子性；真正换 TP/EP 需要按逻辑张量存的 DCP，这份 `shard_{rank}.bin` 不能任意 reshard。
 
 ## 追问
 

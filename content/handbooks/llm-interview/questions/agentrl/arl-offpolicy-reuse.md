@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-旧轨迹不是不能用，错在把它当成当前 policy 的 on-policy 梯度。行为策略 $\pi_b$ 与待优化 $\pi$ 不同，还想估 $\pi$ 的回报梯度，就必须做 off-policy 校正。Agent 里偏移更大：权重变了，检索索引、网页、工具版本也可能变了。这块容易直接答成「replay buffer 很大所以数据够」。WebArena 一类环境第二天 DOM 就变，$s$ 本身过期；GRPO 默认吃的是同批 rollout，混进跨代轨迹要单独论证。
+错法：「replay buffer 很大所以数据够」。旧轨迹不是不能用，错在把它当成当前 policy 的 on-policy 梯度。行为策略 $\pi_b$ 与待优化 $\pi$ 不同，还想估 $\pi$ 的回报梯度，就必须做 off-policy 校正。Agent 里偏移更大：权重变了，检索索引、网页、工具版本也可能变了。WebArena 一类环境第二天 DOM 就变，$s$ 本身过期；GRPO 默认吃的是同批 rollout，混进跨代轨迹要单独论证。
 
 ## 重要性采样、陈旧、clip
 
@@ -35,11 +35,11 @@ sources:
 
 ## 何时 replay 合理
 
-**通常 OK：** 成功轨迹做 SFT / filtered BC（承认这是分布偏移，但目标是克隆可用行为）；近端、同一工具版本的样本做辅助价值或偏好；离线评估时明确分数属于 $\pi_b$。**要小心：** 用旧轨迹估当前 policy gradient；环境或工具已换仍当 on-policy。**做法：** 限制 freshness（只吃最近 $k$ 代）、对 $\rho$ 做 clip 并监控被裁比例、或干脆 on-policy 重采样。SFT 旧成功轨迹也算偏移：风险是模仿过时工具用法，应用环境版本过滤，而不是当免费的 on-policy 数据。
+通常 OK：成功轨迹做 SFT / filtered BC（承认这是分布偏移，但目标是克隆可用行为）；近端、同一工具版本的样本做辅助价值或偏好；离线评估时明确分数属于 $\pi_b$。要小心：用旧轨迹估当前 policy gradient；环境或工具已换仍当 on-policy。做法：限制 freshness（只吃最近 $k$ 代）、对 $\rho$ 做 clip 并监控被裁比例、或干脆 on-policy 重采样。SFT 旧成功轨迹也算偏移：风险是模仿过时工具用法，应用环境版本过滤，而不是当免费的 on-policy 数据。
 
 网页与检索类任务尤其不能把「去年的成功点击序列」当今年的 RL 批次。按钮没了，$\rho$ 再精也修不了。
 
-决策可以压成一句话：旧轨迹默认当演示或过滤 BC；只有 log-prob、环境版本、reward 规则都还在，且 freshness 够，才进带 clip 的 IS/PPO；缺任何一项就重采样。面试里若有人说「我们有一百万条历史轨迹所以 RL 数据够」，先问这三样还在不在，再问 clip 比例是多少。最后我会补一句：SFT/过滤演示可以用旧轨迹；当 on-policy 梯度必须有 log-prob、版本和 freshness，否则 IS 高方差、clip 有偏。Buffer 大代替不了覆盖。
+决策可以压成一句话：旧轨迹默认当演示或过滤 BC；只有 log-prob、环境版本、reward 规则都还在，且 freshness 够，才进带 clip 的 IS/PPO；缺任何一项就重采样。面试里若有人说「我们有一百万条历史轨迹所以 RL 数据够」，先问这三样还在不在，再问 clip 比例是多少。
 
 ## 追问
 

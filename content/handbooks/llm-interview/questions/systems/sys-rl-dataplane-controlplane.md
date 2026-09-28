@@ -49,7 +49,7 @@ Rollout 池和 trainer 池的瓶颈不同：前者吃 decode 与 sandbox 延迟�
 
 故障隔离：verifier 超时是数据面局部失败，应按 `sys-rl-rollout-admission` drop / retry，而不是让作业控制器把整个 trial 标成 failed。控制面升级（改 clip $\varepsilon$、改 $n$）必须打版本，旧轨迹要么丢要么按旧契约消费，否则 advantage 和 loss 对不上。Freshness 也是控制面的契约：允许的最大 `policy_version` gap 写在 spec 里，数据面只执行过滤。
 
-验收看三件事：控制面重启后数据面 inflight 是否可恢复；改实验配置是否必须等版本栅栏而不是热改一半 worker；weight sync 的成功以版本号为准，而不是「NCCL 没报错」。我会把「编排」和「张量」画在一张图的两边，不背框架 API。
+验收看三件事：控制面重启后数据面 inflight 是否可恢复；改实验配置是否必须等版本栅栏而不是热改一半 worker；weight sync 的成功以版本号为准，而不是「NCCL 没报错」。把「编排」和「张量」画在一张图的两边，不必背框架 API。
 
 ## 追问
 

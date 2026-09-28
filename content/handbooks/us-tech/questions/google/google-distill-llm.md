@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Gemini 很大，线上很多表面要的是 Flash / Gemma 量级的延迟和价格。Google 研究岗问蒸馏，要听 on-policy 和 SFT 的分布差，不是背「温度 $T=2$ 的 KL」。GKD（Agarwal et al.）是 Google 把这件事写成 on-policy 的那篇；Gemma 2 公开写了从更大教师蒸馏。CoT 教师轨迹见 `google-cot-reason`。
+Gemini 很大，线上很多表面要的是 Flash / Gemma 量级的延迟和价格。Google 研究岗问蒸馏，要听 on-policy 和 SFT 的分布差，别背「温度 $T=2$ 的 KL」。GKD（Agarwal et al.）是 Google 把这件事写成 on-policy 的那篇；Gemma 2 公开写了从更大教师蒸馏。CoT 教师轨迹见 `google-cot-reason`。
 
 ## SFT：学生在教师的前缀上学
 

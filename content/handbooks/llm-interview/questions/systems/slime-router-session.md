@@ -26,11 +26,11 @@ sources:
     type: primary
 ---
 
-这块容易多轮 Agent 仍用默认 `cache_aware`，或把「router 粘 session」和「`loss_mask` 掩 observation」说成一件事。前者是 KV / 前缀缓存落在哪张卡；后者是梯度算不算这段 token。政策错了，每轮把整段 history 重 prefill，工具史一长墙钟翻倍。PD 分离时更致命：decode 机上没有你的 KV。
+错法：多轮 Agent 仍用默认 `cache_aware`，或把「router 粘 session」和「`loss_mask` 掩 observation」说成一件事。前者是 KV / 前缀缓存落在哪张卡；后者是梯度算不算这段 token。政策错了，每轮把整段 history 重 prefill，工具史一长墙钟翻倍。PD 分离时更致命：decode 机上没有你的 KV。
 
 ## 为什么必须钉住 worker
 
-自定义 `generate` 打 **router** 不打单机。slime 给每条 `Sample` 分配 `session_id`；`consistent_hashing` 用这个 key（请求头 `X-SMG-Routing-Key`）钉住同一 worker，前缀 KV 才能命中。自己写多轮循环时不要每轮换新 id，也不要绕过 router 随机挑 engine。看起来在「负载均衡」，其实每轮冷启动。
+自定义 `generate` 打 router 不打单机。slime 给每条 `Sample` 分配 `session_id`；`consistent_hashing` 用这个 key（请求头 `X-SMG-Routing-Key`）钉住同一 worker，前缀 KV 才能命中。自己写多轮循环时不要每轮换新 id，也不要绕过 router 随机挑 engine。看起来在「负载均衡」，其实每轮冷启动。
 
 单轮、无共享前缀时，粘不粘差别不大。多轮、工具返回、PD 拆开之后，粘性是正确性而不只是加速：KV 在 A 机，请求打到 B 机，不是慢，是要重算或直接失败。
 
@@ -44,7 +44,7 @@ sources:
 
 ## 和 veRL、梯度掩码分开说
 
-veRL 的 SGLang multi-turn 同样吃 session；若用 vLLM 则靠 prefix cache + sticky，能力取决于后端。面试把两句话拆开：`loss_mask` 掩 observation 是**训练图**；router 粘 session 是**推理 KV**。只做掩码、路由是 round-robin，采样已经贵了，梯度再正确也救不了墙钟。
+veRL 的 SGLang multi-turn 同样吃 session；若用 vLLM 则靠 prefix cache + sticky，能力取决于后端。面试把两句话拆开：`loss_mask` 掩 observation 是训练图；router 粘 session 是推理 KV。只做掩码、路由是 round-robin，采样已经贵了，梯度再正确也救不了墙钟。
 
 ## 追问
 

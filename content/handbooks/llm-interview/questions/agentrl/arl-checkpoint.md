@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-只把对话文本存下来不够。恢复后文件系统已变、网页 session 过期、事务状态未知，Agent 会基于错误世界继续。看起来像「接着聊」，其实 MDP 已经换了。这块容易直接答成把 checkpoint 当成 chatbot 的 session 序列化。生产 Agent 的持久化（如 LangGraph thread checkpoint）存的是图状态与通道，不是聊天记录副本。
+只把对话文本存下来不够。恢复后文件系统已变、网页 session 过期、事务状态未知，Agent 会基于错误世界继续。看起来像「接着聊」，其实 MDP 已经换了。错法：把 checkpoint 当成 chatbot 的 session 序列化。生产 Agent 的持久化（如 LangGraph thread checkpoint）存的是图状态与通道，不是聊天记录副本。
 
 ## 逻辑状态与外部世界必须一起钉住
 
@@ -47,7 +47,7 @@ sources:
 
 Restore 顺序建议：加载 harness 版本 → 恢复文件系统 / 容器 → 用事务 ID 刷新外部真相 → 校验逻辑状态与观察是否一致 → 才允许策略继续生成。不一致就停：标 dirty，不要让模型「猜世界还是不是那样」。长任务还要能从任意 tool 边界恢复，而不是只在用户回合存一次。崩溃往往发生在工具执行中。评测应注入：恢复后目录哈希变了、session 过期、事务其实已成功。看 Agent 是查状态还是盲目接着点。
 
-最后我会补一句：checkpoint 是 $(s_t, \text{handles}, \text{versions})$，不是聊天日志。可回放的存哈希，不可逆的存事务 ID 并重查。对不齐就标 dirty，禁止在错误世界上继续优化。
+Checkpoint 存的是 $(s_t, \text{handles}, \text{versions})$，不是聊天日志。可回放的存哈希，不可逆的存事务 ID 并重查；对不齐就标 dirty，禁止在错误世界上继续优化。
 
 ## 追问
 

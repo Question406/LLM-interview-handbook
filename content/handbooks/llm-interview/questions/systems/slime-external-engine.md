@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易把 `--rollout-external-engine-addrs` 和 `--sglang-config` 叠在一起，或把 external 说成 `--colocate`。三件事互斥：slime 自己起 engine、slime 用 YAML 管 PD / 多模型、serving 团队已经起好只让 slime 连。叠开关会让生命周期和卡账对不上。external 是**分池的极端**，不是一体。
+错法：把 `--rollout-external-engine-addrs` 和 `--sglang-config` 叠在一起，或把 external 说成 `--colocate`。三件事互斥：slime 自己起 engine、slime 用 YAML 管 PD / 多模型、serving 团队已经起好只让 slime 连。叠开关会让生命周期和卡账对不上。external 是分池的极端，不是一体。
 
 ## 三选一，别叠
 
@@ -39,11 +39,11 @@ sources:
 
 ## 权重怎么同步
 
-同集群能建 NCCL comm group：默认 `full` transport，一步推整份权。跨集群、异构卡、建不了 comm：`--update-weight-transport disk`。大 MoE 再 `--update-weight-mode delta`，只推变更。晚加入的 replica 必须先吃一份 **full**，不能只回放 delta，否则缺基线。版本和 KV flush 要你自己保证，一体/分离开关管不到那套卡，见 `slime-weight-sync`、`slime-colocate-vs-split`。
+同集群能建 NCCL comm group：默认 `full` transport，一步推整份权。跨集群、异构卡、建不了 comm：`--update-weight-transport disk`。大 MoE 再 `--update-weight-mode delta`，只推变更。晚加入的 replica 必须先吃一份 full，不能只回放 delta，否则缺基线。版本和 KV flush 要你自己保证，一体/分离开关管不到那套卡，见 `slime-weight-sync`、`slime-colocate-vs-split`。
 
 ## 和 veRL、colocate 怎么划界
 
-veRL 少见「推理集群完全外置」这条一等路径；slime 把它当成 GLM 规模的生产接口。colocate 是同卡两进程 + offload；external 是另一套卡、另一套运维。版本号、KV flush、PD 角色都要在 serving 侧对齐，slime 只保证能连上并推权。最后我会补一句：external 卖的是复用已有 serving，税是同步协议和版本对齐，不是少一份权、也不是一体。
+veRL 少见「推理集群完全外置」这条一等路径；slime 把它当成 GLM 规模的生产接口。colocate 是同卡两进程 + offload；external 是另一套卡、另一套运维。版本号、KV flush、PD 角色都要在 serving 侧对齐，slime 只保证能连上并推权。
 
 ## 追问
 

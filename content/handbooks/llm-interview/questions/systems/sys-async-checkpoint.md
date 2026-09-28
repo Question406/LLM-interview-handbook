@@ -5,7 +5,7 @@ order: 268
 level: A
 title: 异步落盘 Checkpoint 如何保证可恢复一致性？和 activation checkpointing 差在哪？
 quick: >-
-  这块容易直接答成重算激活，那是另一题。同步 ckpt 会让 GPU 空等存储；我会在步边界先拍一份齐套快照，权重、优化器、RNG、DP
+  错法：重算激活，那是另一题。同步 ckpt 会让 GPU 空等存储；我会在步边界先拍一份齐套快照，权重、优化器、RNG、DP
   shard 都在，训练接着跑，后台再上传。版本要有栅栏，清单齐了才能原子 rename。崩溃时不能留下「半旧半新」却标成成功。
 tags:
   - Checkpoint
@@ -41,11 +41,11 @@ $$
 
 后台上传会在进程崩溃时留下残文件。成功标记只能在 **清单里列出的所有 shard 校验通过之后** 出现：先写 `tmp/`，再原子 rename 目录，或把 `MANIFEST.json.tmp` rename 成 `MANIFEST.json`。没有清单的目录等于不存在，恢复程序不得加载。校验和按 shard；缺文件、digest 不对，整版作废，回退上一成功版本。
 
-RL 还要同步 env / episode 计数、dataloader 位点、rollout 的 `policy_version`。只恢复 $\theta$ 会让 verifier 进度和策略对不上。控制面触发 ckpt（见 `sys-rl-dataplane-controlplane`），数据面 rank 各自写 shard。触发频率是吞吐税：太密则拷贝气泡打满，太疏则故障窗口大。我会报「步边界一致快照 + 齐套才成功」，不会报「开了 async 所以更快」。Activation checkpointing 省的是这一 step 的激活；落盘 checkpoint 保的是下一小时还能 resume。两味药对两类病。
+RL 还要同步 env / episode 计数、dataloader 位点、rollout 的 `policy_version`。只恢复 $\theta$ 会让 verifier 进度和策略对不上。控制面触发 ckpt（见 `sys-rl-dataplane-controlplane`），数据面 rank 各自写 shard。触发频率是吞吐税：太密则拷贝气泡打满，太疏则故障窗口大。我会报「步边界一致快照 + 齐套才成功」，不会报「开了 async 所以更快」。Activation checkpointing 省的是这一 step 的激活；落盘 checkpoint 保的是下一小时还能 resume。
 
 ## 追问
 
-- **和 `sys-checkpoint` 怎么一句话分清？** 那题重算激活换显存；本题异步写权重换容错。一个不落盘，一个必须齐套落盘。
+- **和 `sys-checkpoint` 怎么分清？** 那题重算激活换显存；本题异步写权重换容错。一个不落盘，一个必须齐套落盘。
 - **为什么不能边 backward 边存？** 梯度与 $\theta$ 不同步，恢复后优化器状态对不上，可能 NaN。必须步边界。
 - **只存权重不存优化器？** 能 resume 但 Adam 动量归零，等效换优化器，loss 会抖。生产要齐套。
 - **DCP 和每 rank 一个 `mp_rank_*` 文件差在哪？** DCP 按逻辑张量存，可读入新并行；绑死 rank 文件换 world size 就要重切，见 `sys-elastic-resume-reshard`。

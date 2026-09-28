@@ -46,7 +46,7 @@ $$
 y_\tau=\arg\max_i\bigl((z_i+g_i)/\tau\bigr)=\arg\max_i(z_i/\tau+g_i/\tau).
 $$
 
-$z/\tau$ 就是 softmax 温度：$\tau\to 0$ 质量集中到 $\arg\max z$；$g/\tau$ 同时放大，离散 argmax 仍由噪声打破平手，但相对 $z$ 的尖锐程度和 $\mathrm{softmax}(z/\tau)$ 一致。$\tau\to\infty$ 接近均匀。所以：**Gumbel-max + 温度 ≡ 对 $\mathrm{softmax}(z/\tau)$ 做 categorical 采样**。不要答成两套无关的机制。
+$z/\tau$ 就是 softmax 温度：$\tau\to 0$ 质量集中到 $\arg\max z$；$g/\tau$ 同时放大，离散 argmax 仍由噪声打破平手，但相对 $z$ 的尖锐程度和 $\mathrm{softmax}(z/\tau)$ 一致。$\tau\to\infty$ 接近均匀。Gumbel-max 加温度，等价于对 $\mathrm{softmax}(z/\tau)$ 做 categorical 采样，不是两套无关机制。
 
 ```python
 import torch
@@ -56,12 +56,10 @@ def gumbel_noise(shape, eps=1e-20, generator=None):
     u = u.clamp(min=eps, max=1.0 - eps)
     return -torch.log(-torch.log(u))
 
-
 def gumbel_max(logits, tau=1.0, generator=None):
     # logits: [B, V]
     g = gumbel_noise(logits.shape, generator=generator)
     return torch.argmax((logits + g) / tau, dim=-1)
-
 
 def gumbel_softmax(logits, tau=1.0, hard=False, generator=None):
     g = gumbel_noise(logits.shape, generator=generator)

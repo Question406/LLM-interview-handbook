@@ -34,7 +34,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 训练 / CUDA / NeMo 岗爱从 Megatron 一层往下挖。万亿怎么切见 `nvidia-trillion-train`；这题更窄。我会先画一层，标 QKV 和 MLP 的权重切在哪一维、正向到底几次集合通信，再主动说序列并行不是「再切一次 TP」。评委要听通信落点，不是背 3D 并行表。
+NVIDIA 训练 / CUDA / NeMo 岗爱从 Megatron 一层往下挖。万亿怎么切见 `nvidia-trillion-train`；这题更窄。我会先画一层，标 QKV 和 MLP 的权重切在哪一维、正向到底几次集合通信，再主动说序列并行不是「再切一次 TP」。要落到通信落点，别背 3D 并行表。
 
 ## 一层里切什么
 
@@ -48,7 +48,7 @@ Transformer 的默认接法（Megatron 论文）：
 4. MLP 上投影（$D\to 4D$）：列并行，GeLU 本地。
 5. MLP 下投影（$4D\to D$）：行并行，正向 all-reduce ②。
 
-一层正向就是这两次。反向对称：列并行的输入梯度要再 reduce 一次，所以论文说 forward / backward 各两次 all-reduce。把「QKV 切完就要 all-reduce」说出来是常见错法——QKV 刚切完每卡算的是自己的 head，还没有东西需要对齐。
+一层正向就是这两次。反向对称：列并行的输入梯度要再 reduce 一次，所以论文说 forward / backward 各两次 all-reduce。把「QKV 切完就要 all-reduce」说出来是常见错法：QKV 刚切完每卡算的是自己的 head，还没有东西需要对齐。
 
 ```python
 # x: [B, T, D]，已在 TP 组内对齐

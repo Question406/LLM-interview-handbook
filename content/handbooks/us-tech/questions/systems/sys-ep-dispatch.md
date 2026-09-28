@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-`sys-expert-parallel` 讲 EP 切的是专家、搬的是 token。本题把镜头推到 dispatch 这一跳的负载：直方图一歪，all-to-all 和 expert GEMM 一起歪。DeepSeek-V3 报告、开源 DeepEP / EPLB，以及 NVIDIA grouped GEMM，都是公开材料。xAI 岗也会从 decode 碎片问过来，见 `xai-moe-decode`。不要把未开源的内部 dispatch 讲成自己写过。
+`sys-expert-parallel` 讲 EP 切的是专家、搬的是 token。本题把镜头推到 dispatch 这一跳的负载：直方图一歪，all-to-all 和 expert GEMM 一起歪。DeepSeek-V3 报告、开源 DeepEP / EPLB，以及 NVIDIA grouped GEMM，都是公开材料。xAI 岗也会从 decode 碎片问过来，见 `xai-moe-decode`。别把未开源的内部 dispatch 讲成自己写过。
 
 ## Dispatch 在干什么
 
@@ -73,7 +73,7 @@ Router 塌缩：少数 expert 吃掉大部分 token。预训练 aux 再好，推
 
 Overlap：同批 dispatch 的输出是该批 GEMM 的输入，同微批叠不上。要切微批或像 DualPipe / DeepEP 那样把通信核占用的 SM 限住，让下一微批的 MMA 还能跑。面试说「我们 overlap 了」要能指出重叠的是下一微批，不是因果上的同一批。
 
-错误说法：EP 均衡了所以 all-to-all 和 dense all-reduce 一样齐；decode 继续用 prefill 的大吞吐核；只看平均 tokens/s。直方图、P99 步时、每 expert 的 $c_e$ 才是体检。
+错误说法：EP 均衡了所以 all-to-all 和 dense all-reduce 一样齐；decode 继续用 prefill 的大吞吐核；只看平均 tokens/s。体检看直方图、P99 步时、每 expert 的 $c_e$。
 
 PD 分离时 prefill / decode 用不同 EP 度是合理的：prefill 吃吞吐 dispatch，decode 复制 expert 换通信。KV 布局和 expert 布局是两件事，见 `sys-prefill-decode-disagg`。
 

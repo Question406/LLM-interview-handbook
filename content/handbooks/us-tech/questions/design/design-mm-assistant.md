@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Apple Intelligence / Siri、Gemini 相机问答、Copilot 看屏都会问「你指的是图上哪一块」。Gemini 报告讲能力；Apple 讲端侧和隐私。不是某次现场逐字题。三路时钟和打断见 `design-multimodal-prod`；本题把**引用区域**和 **patch token 预算**讲透。语音接地专项见 `apple-siri-grounded`。图文有害见 `align-mm-harm`。
+Apple Intelligence / Siri、Gemini 相机问答、Copilot 看屏都会问「你指的是图上哪一块」。Gemini 报告讲能力；Apple 讲端侧和隐私。三路时钟和打断见 `design-multimodal-prod`；本题把引用区域和 patch token 预算讲透。语音接地专项见 `apple-siri-grounded`。图文有害见 `align-mm-harm`。
 
 ## 引用是框，不是一句「如图所示」
 
@@ -58,7 +58,7 @@ def grounded_ok(span, bbox, ocr_spans, iou_min=0.5):
 
 端侧：相册、截屏优先设备编码器；上传要用户可见指示。云端跑重视觉时，引用框在端上裁剪再传作物，比传整张原图更符合隐私叙事。弱网：先到的语音可以确认「图还在处理」，图后到再补一句带引用的纠正，不要两套矛盾答案并存。
 
-失败模式：图没到用预训练知识报品牌；框很大等于没引；OCR 吃掉小数点后下单；为了快用小视觉模型，大模型稍后推翻且不改框。延迟指标：TTFA、各模态等待、视觉超时率、引用点击率（用户有没有去看框——全不点可能是框在瞎画）。
+失败模式：图没到用预训练知识报品牌；框很大等于没引；OCR 吃掉小数点后下单；为了快用小视觉模型，大模型稍后推翻且不改框。延迟指标：TTFA、各模态等待、视觉超时率、引用点击率（用户有没有去看框；全不点可能是框在瞎画）。
 
 Serving：视觉 encoder 绑在 prefill，同一张图多轮问应走前缀 KV；图一换，视觉段必须失效。连续看屏不要 30 fps 进大模型，场景变化才重编码。和 `design-chat-serving` 同一套连续批，但准入要按 $T_{\mathrm{vis}}$ 估 KV 页，不能只按文本长度。内容安全对图同步轻量审核，见 `design-moderation`。
 

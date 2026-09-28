@@ -24,7 +24,7 @@ sources:
     type: legacy-reference
 ---
 
-两者的共同点是：不训练 learned value model，而是让同 prompt 的多次采样彼此充当 baseline。差别不在「有没有 critic」，都没有，而在 baseline 是否包含当前样本、以及是否再做 group-std normalization。把所有「无 critic RL」混为一谈，下一问标准差归一化会答空。我会说清具体实现：leave-one-out 还是组均值、除不除 $\sigma$、全同组怎么处理，不背「都是组内相对优势」。两者都不能代替 critic 去做逐步信用分配；长轨迹逐步奖仍可能需要 GAE。适用场景也类似：可验证奖励、能付得起 group rollout。全对或全错时，两条算法都会失去方向，这是结构问题，不是实现 bug。
+两者的共同点是：不训练 learned value model，而是让同 prompt 的多次采样彼此充当 baseline。差别不在「有没有 critic」，都没有，而在 baseline 是否包含当前样本、以及是否再做 group-std normalization。把所有「无 critic RL」混为一谈，下一问标准差归一化会答空。要说清具体实现：leave-one-out 还是组均值、除不除 $\sigma$、全同组怎么处理，不背「都是组内相对优势」。两者都不能代替 critic 去做逐步信用分配；长轨迹逐步奖仍可能需要 GAE。适用场景也类似：可验证奖励、能付得起 group rollout。全对或全错时，两条算法都会失去方向，这是结构问题，不是实现 bug。
 
 ## 共同点：同 prompt 多样本降方差
 

@@ -33,7 +33,7 @@ sources:
 
 Actor 要前向、反向、更新。和 SFT 一样，经典 mixed-precision Adam 大约 $16$ bytes/param（BF16 $W$ / 梯度、FP32 master、$m$、$v$）。未分片时 $7\mathrm{B}$ 量级仍是约 $112\,\mathrm{GB}$ 的状态，外加 activation。GRPO 省掉的是 **Critic 那一整份同规模状态**，不是把 Actor 变成「只有 14GB」。
 
-Reference $\pi_{\mathrm{ref}}$ 通常冻结：无梯度、无 Adam，BF16 约 $2$ bytes/param（$\approx 14\,\mathrm{GB}$），但仍要做 KL / log-prob 前向。即使权重与 Actor 同构，也常是第二份驻留，或与 Actor 分时加载。不要把它从账单里默默删掉。
+Reference $\pi_{\mathrm{ref}}$ 通常冻结：无梯度、无 Adam，BF16 约 $2$ bytes/param（$\approx 14\,\mathrm{GB}$），但仍要做 KL / log-prob 前向。即使权重与 Actor 同构，也常是第二份驻留，或与 Actor 分时加载。别从账单里默默删掉。
 
 Activation 按 `micro-batch` $\times$ 回复长度走。GRPO 一次对 $G$ 条 completion 算 loss，有效 token 数是 $B\cdot G\cdot T_{\mathrm{resp}}$，比同 batch 的 SFT 更容易把激活打满。Checkpointing、序列切分、对 pad 做 `response_mask` 都是在削这本账。
 

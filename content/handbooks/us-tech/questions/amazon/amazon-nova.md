@@ -32,11 +32,11 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗和 AGI org 都会把「用哪颗 Amazon 模型」问成系统设计。公开叙事：Titan 是 Amazon 第一代托管 FM；Nova 是后续生成模型族，按能力 / 时延 / 价位分档。Intelligent Prompt Routing 文档写明：在 **同一模型族** 里预测质量，再决定走小的还是 fallback 大的。不是某次逐字真题。应用评测底座见 `amazon-titan-eval`——本题补族内路由和换代，不把 BLEU 再讲一遍。
+Bedrock 应用岗和 AGI org 都会把「用哪颗 Amazon 模型」问成系统设计。公开叙事：Titan 是 Amazon 第一代托管 FM；Nova 是后续生成模型族，按能力 / 时延 / 价位分档。Intelligent Prompt Routing 文档写明：在 **同一模型族** 里预测质量，再决定走小的还是 fallback 大的。应用评测底座见 `amazon-titan-eval`。本题补族内路由和换代，不把 BLEU 再讲一遍。
 
 ## 族怎么切，别把 Titan 和 Nova 焊成一个模型
 
-我会先在白板上分两行：
+先在白板上分两行：
 
 - **生成。** Nova Micro（低时延文本）、Lite（便宜多模态）、Pro（质量 / 速度折中）、Premier（最强，也常当蒸馏教师）。输入模态和是否支持 SFT / RFT 以当时用户指南为准，面试要说「以文档为准」，不要背死一张过期表。
 - **嵌入。** 检索和 RAG 仍大量用 Titan Text Embeddings V2（可变维、长上下文）。这是另一条模型卡，评 MTEB / 领域检索，见 `amazon-titan-embed`。不要用聊天 Arena 分数给 embedding 发版。

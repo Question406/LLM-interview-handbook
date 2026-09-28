@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-论文是 Dao 等人的 IO 感知精确注意力，不是 Google 出品。Google / DeepMind 训练和推理岗仍会问，因为你们在 TPU 上一样会被 **把 $[T,T]$ 物化进 HBM** 打死。开口先钉：公式没变，变的是存储层次上的往返次数。KV head 数那条杠杆见 `google-gqa-mqa`。
+论文是 Dao 等人的 IO 感知精确注意力，不是 Google 出品。Google / DeepMind 训练和推理岗仍会问，因为你们在 TPU 上一样会被 把 $[T,T]$ 物化进 HBM 打死。开口先钉：公式没变，变的是存储层次上的往返次数。KV head 数那条杠杆见 `google-gqa-mqa`。
 
 ## 标准注意力慢在写回，不在乘加次数
 
@@ -35,19 +35,19 @@ $$
 S=QK^\top/\sqrt{d},\quad P=\mathrm{softmax}(S),\quad O=PV
 $$
 
-FLOPs 仍是 $\Theta(T^2 d)$ 量级。朴素实现会把 $S$ 和 $P$ 以 $[T,T]$ 落到 HBM（GPU 上的高带宽显存；TPU 上对应片外 HBM）。现代加速器算力涨得比 HBM 快，attention 经常是 **memory-bound**：时间 $\approx$ 字节 / 带宽，不是 FLOPs / 峰值算力。
+FLOPs 仍是 $\Theta(T^2 d)$ 量级。朴素实现会把 $S$ 和 $P$ 以 $[T,T]$ 落到 HBM（GPU 上的高带宽显存；TPU 上对应片外 HBM）。现代加速器算力涨得比 HBM 快，attention 经常是 memory-bound：时间 $\approx$ 字节 / 带宽，不是 FLOPs / 峰值算力。
 
 论文给的 HBM 访问量级：标准实现 $\Omega(Td + T^2)$；FlashAttention $O(T^2 d^2 / M)$，其中 $M$ 是片上 SRAM 容量。$d$ 和 $M$ 取 A100 一类常见值时，HBM 往返能少数倍。这就是墙钟。
 
-具体数量级：$T=4096$ 时 $[T,T]$ 的 $P$ 仅 bf16 就要约 32MB 量级，还要写再读、正向再反向。A100 片上 SRAM 只有约 192KB/SM，HBM 带宽大约 1.5–2 TB/s，算力却是几百 TFLOP。把 32MB 来回搬几次，时间就被带宽吃掉。近似注意力论文爱报「FLOPs 从二次变线性」，但若仍把中间矩阵换来换去，墙上时钟不一定赢——FlashAttention 的对比对象就是这类「降 FLOPs 却不降 IO」的工作。
+具体数量级：$T=4096$ 时 $[T,T]$ 的 $P$ 仅 bf16 就要约 32MB 量级，还要写再读、正向再反向。A100 片上 SRAM 只有约 192KB/SM，HBM 带宽大约 1.5–2 TB/s，算力却是几百 TFLOP。把 32MB 来回搬几次，时间就被带宽吃掉。近似注意力论文爱报「FLOPs 从二次变线性」，但若仍把中间矩阵换来换去，墙上时钟不一定赢。FlashAttention 的对比对象就是这类「降 FLOPs 却不降 IO」的工作。
 
 ## 算法：分块 + 在线 softmax + 反向重算
 
 SRAM 放不下整个 $S$。把 $Q,K,V$ 切成能进 SRAM 的 tile。对一块 query，依次流过 key/value 块，在片上累加输出。
 
-Softmax 不是分块可结合的普通求和：每一行需要全局 max 和全局分母。在线 softmax 维护运行中的 $m$（目前最大值）和 $\ell$（目前指数和）。来下一块分数，先 rescale 已有分子分母，再累加。数值上等价于一次性 softmax，所以叫 **exact**，不是 Linformer 那种近似。
+Softmax 不是分块可结合的普通求和：每一行需要全局 max 和全局分母。在线 softmax 维护运行中的 $m$（目前最大值）和 $\ell$（目前指数和）。来下一块分数，先 rescale 已有分子分母，再累加。数值上等价于一次性 softmax，所以叫 exact，不是 Linformer 那种近似。
 
-反向：不把 $P$ 存回 HBM。前向只留下 softmax 归一化统计，反向在片上重算注意力。重算 **增加 FLOPs**，但少读一个 $[T,T]$，在这个硬件比例下仍然更快。面试听到「重算一定更慢」要反驳：那是把 FLOPs 当成时间模型了。
+反向：不把 $P$ 存回 HBM。前向只留下 softmax 归一化统计，反向在片上重算注意力。重算 增加 FLOPs，但少读一个 $[T,T]$，在这个硬件比例下仍然更快。面试听到「重算一定更慢」要反驳：那是把 FLOPs 当成时间模型了。
 
 实现上还把 QK、scale、mask、softmax、PV 融进一个 kernel，避免每步都 round-trip。融合是 IO 故事的一部分，不是「CUDA 写得好看」。
 

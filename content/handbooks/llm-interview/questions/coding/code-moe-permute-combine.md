@@ -74,10 +74,10 @@ def moe_permute_combine(x, expert_idx, gates, n_experts, expert_fn):
 
 ## 易错点
 
-- **Combine 用 `scatter` 而不是 `index_add`。** $k\gt 1$ 时同一 token 有多条记录，`scatter` 会覆盖，只留下最后一个专家。
-- **先加再乘门控。** 必须 `out * g` 再累加。漏乘等于每个选中专家权重为 $1$，和 router 无关。
-- **用 `x` 的原序去切专家。** 不 permute 就只能 `x[mask]` 每次拷一块，等价于 $N$ 次随机 gather，带宽更差。
-- **Capacity。** 真正带 drop 时，在排序后对每个专家截断前 $C$ 条，被丢掉的记录不进 `expert_fn`、不进 `index_add`，见 `sys-moe-capacity-token-drop`。本题默认 dropless。
+- Combine 用 `scatter` 而不是 `index_add`：$k\gt 1$ 时同一 token 有多条记录，`scatter` 会覆盖，只留下最后一个专家。
+- 先加再乘门控：必须 `out * g` 再累加。漏乘等于每个选中专家权重为 $1$，和 router 无关。
+- 用 `x` 的原序去切专家：不 permute 就只能 `x[mask]` 每次拷一块，等价于 $N$ 次随机 gather，带宽更差。
+- Capacity：真正带 drop 时，在排序后对每个专家截断前 $C$ 条，被丢掉的记录不进 `expert_fn`、不进 `index_add`，见 `sys-moe-capacity-token-drop`。本题默认 dropless。
 
 ## 追问
 

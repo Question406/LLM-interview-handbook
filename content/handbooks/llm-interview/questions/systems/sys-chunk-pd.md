@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易把两者说成一回事，或者以为上了 PD 就不需要切块。它们打的是同一类伤害：大 prefill 占满 SM、饿死 decode、TPOT 出尖刺。一层在**同卡调度**，一层在**跨池放置**。我看的是 throughput、TTFT、TPOT、KV transfer cost 和利用率，不会只报「拆没拆」。见 `sys-prefill-decode`。
+这块容易把两者说成一回事，或者以为上了 PD 就不需要切块。它们打的是同一类伤害：大 prefill 占满 SM、饿死 decode、TPOT 出尖刺。一层在**同卡调度**，一层在**跨池放置**。验收看 throughput、TTFT、TPOT、KV transfer cost 和利用率，不会只报「拆没拆」。见 `sys-prefill-decode`。
 
 ## Chunked prefill：同卡切块混排
 
@@ -41,7 +41,7 @@ Prefill 算术强度高、偏 compute；decode 每步读整份权和历史 KV，
 
 ## 怎么选
 
-短单轮、卡少：我先 chunked prefill。长多轮、prefill/decode 要不同 TP 或不同机型：再 PD。两者可以叠：prefill 池内部仍可切块，避免一条超长 prompt 独占 prefill 机。不要为了「架构完整」在 GSM8K 一类短单轮上拆 PD。验收画两条曲线：TTFT 是否因切块变差、TPOT P99 是否因混排变好；PD 再加一条 KV 传输占比，超过算子时间就要先优网络而不是再加卡。
+短单轮、卡少：我先 chunked prefill。长多轮、prefill/decode 要不同 TP 或不同机型：再 PD。两者可以叠：prefill 池内部仍可切块，避免一条超长 prompt 独占 prefill 机。短单轮（GSM8K 一类）通常不必拆 PD。验收画两条曲线：TTFT 是否因切块变差、TPOT P99 是否因混排变好；PD 再加一条 KV 传输占比，超过算子时间就要先优网络而不是再加卡。
 
 ## 追问
 

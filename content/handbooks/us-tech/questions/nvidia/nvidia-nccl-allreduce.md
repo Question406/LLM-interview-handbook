@@ -63,7 +63,7 @@ DP 的梯度 all-reduce 体积是「本卡分到的参数字节」，和 batch�
 
 重叠失败的常见原因：同步插在中间（不必要的 `cudaDeviceSynchronize`）、NCCL 和计算抢 SM 导致两个都慢、bucket 太小启动次数爆炸、或者根本在同一条 default stream 上串着跑。
 
-Nsight Systems：看 `ncclDevKernel` 和 MMA kernel 是交错还是一条缝。缝大且 GPU 空，是真等通信；两者重叠但各自 SOL 都很低，是抢资源。不要只报「NCCL 占了 30% 时间」——要说这 30% 能不能挪到计算底下。Occupancy 那套见 `nvidia-occupancy`。
+Nsight Systems：看 `ncclDevKernel` 和 MMA kernel 是交错还是一条缝。缝大且 GPU 空，是真等通信；两者重叠但各自 SOL 都很低，是抢资源。不要只报「NCCL 占了 30% 时间」：要说这 30% 能不能挪到计算底下。Occupancy 那套见 `nvidia-occupancy`。
 
 ## 追问
 

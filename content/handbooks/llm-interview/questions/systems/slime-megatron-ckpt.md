@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易从 veRL-FSDP 过来，直接 `from_pretrained` 喂 slime。veRL 常吃 HF；slime 的训练图是 Megatron，要自己的层名、TP/PP/EP 切分和 `--num-layers` 等结构参数（可复用 pretrain 脚本）。HF 必须先转成 Megatron ckpt。说「slime 读 HF 训」会当场穿帮。
+错法：从 veRL-FSDP 过来，直接 `from_pretrained` 喂 slime。veRL 常吃 HF；slime 的训练图是 Megatron，要自己的层名、TP/PP/EP 切分和 `--num-layers` 等结构参数（可复用 pretrain 脚本）。HF 必须先转成 Megatron ckpt。说「slime 读 HF 训」会当场穿帮。
 
 ## 为什么必须转 Megatron
 
@@ -33,7 +33,7 @@ Megatron 把线性层按并行组切开，state dict 的 key 和 shard 边界都
 ## `torch` 和 `torch_dist`
 
 - **`torch`（`mp_rank_*`）**：每个 rank 一个目录，并行度锁死。换 TP/PP 必须重切或按原并行拉起。
-- **`torch_dist`（`.distcp`）**：一份 ckpt 能按**当前** TP/PP/EP 重切，slime 推荐。MoE 还要 EP/ETP 能整除 world size，否则专家对不齐。
+- `torch_dist`（`.distcp`）：一份 ckpt 能按当前 TP/PP/EP 重切，slime 推荐。MoE 还要 EP/ETP 能整除 world size，否则专家对不齐。
 
 面试一句话：`torch` 是「按当时切分冻住的分片」；`torch_dist` 是「可再切的分布式 ckpt」。改并行先换 `torch_dist`，不要先改 `--tensor-model-parallel-size` 再赌旧目录能 load。
 

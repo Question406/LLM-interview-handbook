@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-OPSD 仍要 GT $y^\star$，见 `pt-opsd`。u-OPSD 把「外部监督」再拆掉：特权上下文来自 **模型自己的多数票**。不要答成「无监督 GRPO」或「self-consistency 当 reward」。同一套 $G$ 条 rollout，GRPO 用对错方差估 $A$；u-OPSD 用同意轨迹当教师、反对轨迹当学生前缀，监督仍是 token 级 $D(p_T\|p_S)$。
+OPSD 仍要 GT $y^\star$，见 `pt-opsd`。u-OPSD 把「外部监督」再拆掉：特权上下文来自 **模型自己的多数票**。别答成「无监督 GRPO」或「self-consistency 当 reward」。同一套 $G$ 条 rollout，GRPO 用对错方差估 $A$；u-OPSD 用同意轨迹当教师、反对轨迹当学生前缀，监督仍是 token 级 $D(p_T\|p_S)$。
 
 ## 三步：采、票、蒸反对票
 

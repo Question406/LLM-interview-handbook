@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「再刷一套 LeetCode」。阿里 AI 研发 0325 公开复盘是约 20 选择 + 3 编程 + 1 Prompt：选择会挖 teacher forcing、MHA/MQA/GQA、ReAct、MCP tool vs resource、多 Agent；编程仍是算法；Prompt 单独计分，格式错、漏边界就是零。三条线缺一就翻车。总复习地图见 `ali-prep-map`。
+错法：「再刷一套 LeetCode」。阿里 AI 研发 0325 公开复盘是约 20 选择 + 3 编程 + 1 Prompt：选择会挖 teacher forcing、MHA/MQA/GQA、ReAct、MCP tool vs resource、多 Agent；编程仍是算法；Prompt 单独计分，格式错、漏边界就是零。三条线缺一就翻车。总复习地图见 `ali-prep-map`。
 
 ## 选择：概念要对到实现，不要背名词
 
@@ -36,7 +36,7 @@ sources:
 
 0325 Prompt 是出租车计费一类：角色 + 抽取字段默认值；计费/业务规则逐步写死；夜间加价、不足 1 km、等候不足 5 分钟等边界单独强调；强制 JSON schema；禁止解释性废话。我会把规则引擎写进提示词：先列输入字段，再逐步 if-else，最后「只输出约定 JSON」。用反例自测：不足 1 km、等候不足 5 分钟、夜间跨段。完整题面见 `ali-oa-taxi-prompt`。现场时间紧，先写 schema 和边界，再补角色语气。
 
-笔试后的面试会立刻接到 GRPO/DPO/Agent（`ali-ppo-dpo-grpo-ask`、`ali-grpo-vs-sft`）。笔试过了不等于算法面能白板推公式，选择里见过的名词要能在白板上展开：teacher forcing 为啥推理会暴露暴露偏差、GQA 的 KV 体积怎么写、ReAct 和一次性 plan 差在哪。Prompt 题是把业务规则编译成模型可执行的约束，和线上 Agent 的 schema/拒答是同一肌肉；计费规则漏边界，等价于工具参数没过校验器。建议同步刷牛客 Prompt 题库，但现场以「可自测的 JSON」为第一目标，不要写散文。
+笔试后的面试会立刻接到 GRPO/DPO/Agent（`ali-ppo-dpo-grpo-ask`、`ali-grpo-vs-sft`）。笔试过了不等于算法面能白板推公式，选择里见过的名词要能在白板上展开：teacher forcing 为啥推理会暴露偏差、GQA 的 KV 体积怎么写、ReAct 和一次性 plan 差在哪。Prompt 题是把业务规则编译成模型可执行的约束，和线上 Agent 的 schema/拒答是同一肌肉；计费规则漏边界，等价于工具参数没过校验器。建议同步刷牛客 Prompt 题库，但现场以「可自测的 JSON」为第一目标，不要写散文。
 
 ## 追问
 

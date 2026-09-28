@@ -34,7 +34,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA CUDA / LLM serving 岗在 `nvidia-flash-attn` 之后常补一句：那 decode 呢。Tri Dao、Haziza 等人 2023 的 Flash-Decoding 博客把答案写死了：再加一维并行——KV 的序列长。产品侧 xFormers dispatcher、FlashAttention 2.2+、TensorRT-LLM 的 generation attention，思路同源。我会先画训练核的网格，再画 split-K 的网格，评委听的是 occupancy 从哪来，不是「都叫 Flash」。
+NVIDIA CUDA / LLM serving 岗在 `nvidia-flash-attn` 之后常补一句：那 decode 呢。Tri Dao、Haziza 等人 2023 的 Flash-Decoding 博客把答案写死了：再加一维并行，沿 KV 的序列长切。产品侧 xFormers dispatcher、FlashAttention 2.2+、TensorRT-LLM 的 generation attention，思路同源。我会先画训练核的网格，再画 split-K 的网格，评委听的是 occupancy 从哪来，不是「都叫 Flash」。
 
 ## 训练核：沿 $Q$ 铺，墙在 $[T,T]$ 的 IO
 

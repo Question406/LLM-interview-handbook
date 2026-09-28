@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易把 z-loss 说成「又一种负载均衡」。面试官若追问「那和 $N\sum_i f_i P_i$ 有何不同」，答成同一件事就漏了。ST-MoE 把 logits 幅度单独正则掉，因为 MoE 训练后期 router 分数容易涨到极大，softmax 变成 one-hot，FP16 下还溢出。
+错法：把 z-loss 说成「又一种负载均衡」。面试官若追问「那和 $N\sum_i f_i P_i$ 有何不同」，答成同一件事就漏了。ST-MoE 把 logits 幅度单独正则掉，因为 MoE 训练后期 router 分数容易涨到极大，softmax 变成 one-hot，FP16 下还溢出。
 
 ## 公式
 
@@ -57,9 +57,9 @@ Aux 在均匀负载时取最小值 $1$（Switch 形式），和 logits 幅度无
 
 ## 实现要点
 
-- **不要对 softmax 之后的概率做 z-loss。** 概率已经在单纯形上，LSE 信息没了。
-- **和 jitter / 噪声正交。** Switch 训练时在 logits 上加噪声是为了探索冷专家；z-loss 是压幅度。同时开时先加噪声再算 LSE，或对「干净 logits」算 LSE，要在代码里写死，训推一致。
-- **推理关掉。** 它只是训练正则。导出的 router 权重已经学完。
+- 不要对 softmax 之后的概率做 z-loss。概率已经在单纯形上，LSE 信息没了。
+- 和 jitter / 噪声正交。Switch 训练时在 logits 上加噪声是为了探索冷专家；z-loss 是压幅度。同时开时先加噪声再算 LSE，或对「干净 logits」算 LSE，要在代码里写死，训推一致。
+- 推理关掉。它只是训练正则。导出的 router 权重已经学完。
 
 ## 追问
 

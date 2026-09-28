@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易只报 tokens/s。产品比较的是 **给定 TTFT / TPOT SLO 下还有多少有效吞吐**。把 batch 开到最大，throughput 很好看，尾延迟已经打穿 SLA，这个数叫空转的繁忙。四个词要能画到同一条请求的时间轴上，而不是背定义。到达 → 排队 → prefill（首 token）→ decode 循环（后续 token）。TTFT 覆盖前三段，TPOT 覆盖最后一段的平均，throughput 数所有段加起来的 token，goodput 只数 SLO 内的请求。内部优化用 tokens/s 看引擎有没有喂饱，对外 SLA 用 goodput。回答「系统好不好」时我先报 goodput 和 P99，再报峰值吞吐。没有 SLO 就没有 goodput，只剩一个没有约束的繁忙程度。
+这块容易只报 tokens/s。产品比较的是给定 TTFT / TPOT SLO 下还有多少有效吞吐。把 batch 开到最大，throughput 很好看，尾延迟已经打穿 SLA，这个数只是空转的繁忙。四个词要能画到同一条请求的时间轴上：到达 → 排队 → prefill（首 token）→ decode 循环（后续 token）。TTFT 覆盖前三段，TPOT 覆盖最后一段的平均，throughput 数所有段的 token，goodput 只数 SLO 内的请求。内部优化用 tokens/s 看引擎有没有喂饱，对外 SLA 用 goodput。回答「系统好不好」时我先报 goodput 和 P99，再报峰值吞吐。
 
 ## TTFT 和 TPOT
 
@@ -41,7 +41,7 @@ sources:
 
 **Goodput**：满足 latency SLO 的有效吞吐。例如「TTFT $\lt$ 200ms 且 TPOT $\lt$ 50ms 的请求」每秒完成多少。SLO 外的 token 对用户是失败，不应进这个分子。DistServe 把 goodput 当作 PD 分离的优化目标，正是因为混部时 TTFT 和 TPOT 互相伤害：堆 prefill 救了吞吐、打穿了 TPOT，或反过来。
 
-我会画 **latency-throughput frontier**：横轴吞吐，纵轴 P50/P99 TTFT 或 TPOT。只报一个工作点没有意义。加 replica 提高的是 frontier 的位置；加 batch 常常是在同一条曲线上用延迟换吞吐。
+我会画 latency-throughput frontier：横轴吞吐，纵轴 P50/P99 TTFT 或 TPOT。只报一个工作点没有意义。加 replica 提高的是 frontier 的位置；加 batch 常常是在同一条曲线上用延迟换吞吐。
 
 ## 怎么报数才像做过
 
@@ -59,4 +59,4 @@ sources:
 - **ITL 和 TPOT 差在哪？** ITL 是相邻 token 间隔序列，TPOT 常对间隔取平均。尾部一个慢 token 拉高平均，直方图才能看见被 prefill 打断的尖刺。流式体感更接近 ITL。
 - **只报均值 TTFT 为什么会被打？** 短请求把均值拉好看，P99 已经被排队打穿。必须带百分位，并声明是否含 tokenize、是否从到达时刻起算。
 - **goodput 分子包不包含超时后仍生成的 token？** 不应包含。用户没等到的 token 对产品是失败，对计费也不该算收入。否则优化会走向「拼命产出超时 token」。
-- **四个指标怎么一句话串起来？** TTFT 是排队加 prefill，TPOT 是 decode 间隔，throughput 是总产出，goodput 是 SLO 内的有效产出。产品比较看 goodput 和 P99，内部看 tokens/s 判断引擎是否喂饱。没有 SLO 就没有 goodput，加并发是在 frontier 上用延迟换吞吐。
+- **四个指标怎么串？** TTFT 是排队加 prefill，TPOT 是 decode 间隔，throughput 是总产出，goodput 是 SLO 内的有效产出。产品比较看 goodput 和 P99，内部看 tokens/s 判断引擎是否喂饱。

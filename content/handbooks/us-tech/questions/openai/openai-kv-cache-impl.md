@@ -35,7 +35,7 @@ sources:
 - 轮次：ML debugging；公开报告是「改完带 bug 的 Transformer，再加 KV cache」
 - 来源：Exponent 2025 候选人报告；细节和查 bug 顺序见 `openai-transformer-debug`
 
-我会把正确性不变量先说出来，再写 concat。评委要的不是「cache 能跑」，是 **greedy 对齐**。
+先说正确性不变量，再写 concat。要的不是「cache 能跑」，是 greedy 对齐。
 
 ## 题怎么收：先不变量，再 API
 

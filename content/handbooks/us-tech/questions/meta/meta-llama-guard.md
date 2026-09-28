@@ -35,7 +35,7 @@ Llama / 安全 / 推理平台岗会问：为什么不把安全完全做进 chat 
 
 ## Guard 实际在算什么
 
-它还是因果 LM，但任务是分类。输入里带：**风险 taxonomy 的明文说明**、要判的是 user prompt 还是 assistant response、对话内容。输出约定：先一个 token `safe` 或 `unsafe`；若 unsafe，下一行列出违反的类别编号。二分类分数读**第一个生成 token** 的概率，再设阈值。不是另接一个 $[D, 2]$ 线性头——这样做的好处是：换策略、换输出格式，可以用同一套指令微调或 zero-shot / few-shot 改 prompt。
+它还是因果 LM，但任务是分类。输入里带：**风险 taxonomy 的明文说明**、要判的是 user prompt 还是 assistant response、对话内容。输出约定：先一个 token `safe` 或 `unsafe`；若 unsafe，下一行列出违反的类别编号。二分类分数读**第一个生成 token** 的概率，再设阈值。不是另接一个 $[D, 2]$ 线性头。好处是换策略、换输出格式时，可以用同一套指令微调或 zero-shot / few-shot 改 prompt。
 
 论文把 **prompt 分类** 和 **response 分类** 拆成两种指令。同一句「怎么做炸弹」：用户侧是求助/攻击，模型侧是教了还是拒了，标签可以不同。一个 chat 模型的 RLHF 拒答，分不清这两层。
 
@@ -51,7 +51,7 @@ Llama Guard 3：对齐 MLCommons 危害类型，另加 Code Interpreter Abuse，
 2. **Guard。** 独立 7B/8B，专判输入输出。策略在 prompt 里，权重点可以独立发版。主模型一次生成，Guard 再跑一次前向（或只对高风险流量开）。延迟和成本是 $8\mathrm{B}$ 的 prefill，不是「免费的安全层」。
 3. **系统策略。** 正则、工具白名单、检索过滤。Guard 是 LLM 闸门，不是唯一闸门。
 
-错法：把 Guard 的生成文本当 chat 回复，或把 chat 模型的「我不能帮你」当成分类分数。前者格式一漂阈值就坏；后者没有稳定的 unsafe 概率。另一个错法：只拦输出、不拦输入——越狱 prompt 已经进了上下文，主模型可能在内部推理里被带偏，再靠输出分类补，晚了。
+错法：把 Guard 的生成文本当 chat 回复，或把 chat 模型的「我不能帮你」当成分类分数。前者格式一漂阈值就坏；后者没有稳定的 unsafe 概率。另一个错法：只拦输出、不拦输入：越狱 prompt 已经进了上下文，主模型可能在内部推理里被带偏，再靠输出分类补就晚了。
 
 分数怎么用：首 token $\log p(\texttt{unsafe})$ 设阈值。要按类别拦，用 1-vs-all：每次 prompt 只放一个类别，看该次 unsafe 概率。吞吐会乘上类别数，生产上常先二分类再对 unsafe 做多标签解码。
 
@@ -59,7 +59,7 @@ Llama Guard 3：对齐 MLCommons 危害类型，另加 Code Interpreter Abuse，
 
 Guard 的 chat 模板必须和训练一致，多一个 `begin_of_text` 或角色头，首 token 分布就偏。分类要覆盖整段 user/assistant，不是只看最后一句。和 RAG / 工具：要把检索片段、代码执行结果一并送进 response 分类，否则模型「引用了有害段落」会漏。
 
-和评测：安全数字很容易自污染——把公开 jailbreak 写进 SFT 再在同一套上报表。Guard 的测试集要和训练 taxonomy 对齐，并留一块政策外 holdout。能力评测见 `meta-llama-eval`，别用 MMLU 证明安全。Guard 和基座可以不同步发版：基座一周升一次，政策变了只换 Guard prompt 或只微调 8B，这才是「独立分类器」的产品含义。
+和评测：安全数字很容易自污染：把公开 jailbreak 写进 SFT 再在同一套上报表。Guard 的测试集要和训练 taxonomy 对齐，并留一块政策外 holdout。能力评测见 `meta-llama-eval`，别用 MMLU 证明安全。Guard 和基座可以不同步发版：基座一周升一次，政策变了只换 Guard prompt 或只微调 8B，这才叫独立分类器：政策变了不必重训基座。
 
 ## 追问
 

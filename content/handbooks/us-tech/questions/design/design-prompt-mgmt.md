@@ -28,11 +28,11 @@ sources:
     type: secondary
 ---
 
-OpenAI function calling、Anthropic 工具循环、Microsoft Copilot 都把提示和 schema 当产品表面。白板问版本 / 灰度 / 回滚，是因为现场事故经常是「改了一句系统提示」。不是某次逐字题。工具运行时见 `design-tool-prod`；评测闸门见 `design-eval-platform`、`design-offline-eval`。客服话术见 `design-chat-tools`。
+OpenAI function calling、Anthropic 工具循环、Microsoft Copilot 都把提示和 schema 当产品表面。白板问版本 / 灰度 / 回滚，是因为现场事故经常是「改了一句系统提示」。工具运行时见 `design-tool-prod`；评测闸门见 `design-eval-platform`、`design-offline-eval`。客服话术见 `design-chat-tools`。
 
 ## 版本：提示、schema、模型钉死成发布
 
-我会先问：几个表面（web、API、内部 agent）、谁能改提示、是否多模型、工具是否对外。然后把一份 **release** 定义成：
+我会先问：几个表面（web、API、内部 agent）、谁能改提示、是否多模型、工具是否对外。然后把一份 release 定义成：
 
 `model_ckpt + system_prompt@sha + tool_schema@sha + decoder_params + policy_flags`
 

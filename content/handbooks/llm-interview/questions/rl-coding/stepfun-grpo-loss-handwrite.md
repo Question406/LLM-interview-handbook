@@ -1,7 +1,7 @@
 ---
 id: stepfun-grpo-loss-handwrite
-section: coding
-order: 185
+section: rl-coding
+order: 7
 level: S
 title: 阶跃星辰：手撕 GRPO 时 loss 和组内优势分别怎么写？
 quick: >-
@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：手撕 **“top-p sampling、grpo”**
 
-这块容易把 GRPO 写成带 critic 的 PPO，或 `std=0` 时只加 `eps`。GRPO 不训 value，baseline 是组内均值；完整采样见 `code-sampling`，组优势边角见 `code-grpo`、`stepfun-grpo-group-advantage`。同面先写优势张量，再写 `ratio.clamp` 与 `min`。MoE+RL 见 `stepfun-rl-moe-gspo`，不要和 loss 公式混在一起。
+错法：把 GRPO 写成带 critic 的 PPO，或 `std=0` 时只加 `eps`。GRPO 不训 value，baseline 是组内均值；完整采样见 `code-sampling`，组优势边角见 `code-grpo`、`stepfun-grpo-group-advantage`。同面先写优势张量，再写 `ratio.clamp` 与 `min`。把 GSPO 的序列比和 TRL / verl 开关写全，见 `code-ppo-grpo-gspo`。MoE+RL 见 `stepfun-rl-moe-gspo`，不要和 loss 公式混在一起。
 
 ## 优势：在 $G$ 维标准化
 

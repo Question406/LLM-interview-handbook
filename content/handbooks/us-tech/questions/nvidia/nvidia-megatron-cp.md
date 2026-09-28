@@ -44,7 +44,7 @@ CP 组大小 $N$。序列切成块，每卡前向只存自己那一段的 KV，�
 2. 非阻塞把当前 KV 发给下一个 rank，同时收上一个 rank 的 KV。
 3. 转 $N-1$ 圈，每卡的 $Q$ 都见过全序列。反向再聚集一次 KV 来算梯度。
 
-通信发生在「一张卡和它在其他 TP 组里的对端」之间。文档例子：$T=8\mathrm{k}$，每卡 4k；GPU0 与 GPU2 组成 CP 组互换 KV，GPU1 与 GPU3 另一组——因为 TP=2 时相邻卡先组成 TP，CP 跨过去。总卡数 $\mathrm{TP}\times\mathrm{CP}\times\mathrm{PP}\times\mathrm{DP}$。KV 体积跟 $H_{\mathrm{kv}}$ 走，GQA / MQA 直接减通信量，见 `google-gqa-mqa`。
+通信发生在「一张卡和它在其他 TP 组里的对端」之间。文档例子：$T=8\mathrm{k}$，每卡 4k；GPU0 与 GPU2 组成 CP 组互换 KV，GPU1 与 GPU3 另一组：因为 TP=2 时相邻卡先组成 TP，CP 跨过去。总卡数 $\mathrm{TP}\times\mathrm{CP}\times\mathrm{PP}\times\mathrm{DP}$。KV 体积跟 $H_{\mathrm{kv}}$ 走，GQA / MQA 直接减通信量，见 `google-gqa-mqa`。
 
 Overlap：第 $k$ 块的 FA 和下一跳 P2P 叠。块太小，核启动和延迟吃掉重叠；块太大，单卡又放不下。这是 CP 的 MFU 旋钮，不是 TP 那两次 all-reduce 的旋钮，见 `nvidia-tensor-parallel`、`nvidia-nccl-allreduce`。
 
@@ -52,7 +52,7 @@ Overlap：第 $k$ 块的 FA 和下一跳 P2P 叠。块太小，核启动和延�
 
 Decoder 下三角：排在序列前面的 $Q$ 有效 KV 短，排在后面的 $Q$ 有效 KV 长。若按连续段切，rank 0 几乎全是 mask，rank $N-1$ 几乎满算，环上最慢的那张卡决定一步时间。
 
-Megatron 的修法：把序列切成 $2N$ 块，每张卡拿一块靠前 + 一块靠后（zigzag / 头尾配对）。每卡看到的 mask 比例接近，负载拉平。代价是本地 $Q$ 不再是一段连续 $T$，mask 逻辑要知道「哪一块 Q 对哪一块远程 KV 合法」；有的子块直接跳过。面试说「开了环就负载均匀」是错的——均匀来自切块方式，不是来自 P2P。
+Megatron 的修法：把序列切成 $2N$ 块，每张卡拿一块靠前 + 一块靠后（zigzag / 头尾配对）。每卡看到的 mask 比例接近，负载拉平。代价是本地 $Q$ 不再是一段连续 $T$，mask 逻辑要知道「哪一块 Q 对哪一块远程 KV 合法」；有的子块直接跳过。面试说「开了环就负载均匀」是错的。均匀来自切块方式，不是来自 P2P。
 
 和 Ring Attention 原论文的差别：Megatron 强调用现成 FA 核，而不是自己写一套 blockwise 注意力；并且明确要砍掉因果下的废 FLOPs。数值上仍是精确注意力，在线 softmax 把各 KV 块的统计合起来，和 FlashAttention 的 tile 是同一件事，见 `nvidia-flash-attn`。
 

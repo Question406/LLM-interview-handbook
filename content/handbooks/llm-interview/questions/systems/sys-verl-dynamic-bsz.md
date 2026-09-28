@@ -23,7 +23,7 @@ sources:
     type: primary
 ---
 
-这块容易把 `ppo_micro_batch_size_per_gpu` 当成「每卡样本数」的唯一旋钮。长 CoT 下固定 $m$ 条，显存跟最长那条走，短序列全在 pad；打开动态 batch 却只改 actor，ref / rollout 重算 logp 时会 OOM 或变慢。动态模式改的是**每卡 token 预算**，条数变成因变量。和蚂蚁「每卡样本数」连问时，我先声明：开了动态开关，样本数不再是常数，汇报改成 tokens / step。GRPO 的 completion 方差远大于 SFT，这题几乎是默认该会的工程开关。
+这块容易把 `ppo_micro_batch_size_per_gpu` 当成「每卡样本数」的唯一旋钮。长 CoT 下固定 $m$ 条，显存跟最长那条走，短序列全在 pad；打开动态 batch 却只改 actor，ref / rollout 重算 logp 时会 OOM 或变慢。动态模式改的是每卡 token 预算，条数变成因变量。和蚂蚁「每卡样本数」连问时，我先声明：开了动态开关，样本数不再是常数，汇报改成 tokens / step。GRPO 的 completion 方差远大于 SFT，这题几乎是默认该会的工程开关。
 
 ## 固定条数 vs token 预算
 
@@ -37,9 +37,9 @@ sources:
 
 动态拼 batch 会改变 group 边界。GRPO 的 $\hat A$ 是同一 prompt 的 $n$ 条相对优势，见 `sys-rl-group-n`。packing 若把同组拆进不同 micro-batch / step，组均值就算错，全对全错的零梯度判断也会漂，和 `byte-grpo-all-same-zero-adv` 对不上。slime 的 `--balance-data` 文档写明可能把同一 prompt 的 response 分到不同 step，先确认组还在同一统计窗口再开均衡。drop-last 会丢掉尾部不够预算的组，有效 $n$ 可能被静默改掉，日志里要同时看名义组和有效组。和蚂蚁连问时先画：prompt $\times n$ → global batch → 每卡 token；动态模式下「样本数」是结果不是输入。长度过滤、DAPO 动态采样会再改有效组，见 `slime-dynamic-partial`，不要和 `use_dynamic_bsz` 当成同一个开关。
 
-我会把三个「动态」拆开说：动态 batch 是按 token 帽拼 micro-batch；动态采样是丢掉零方差组再补采；partial rollout 是半截轨迹跨步接着生成。三者都会改「一步看见几条」，但改的对象不同。打开之后，会计账从「每卡 $m$ 条」改成「每卡不超过 $T$ token、本步实际 $k$ 条、drop-last 丢掉 $d$ 组」，这三件事都要能从日志对上。对不上就不要先加学习率。
+我会把三个「动态」拆开：动态 batch 按 token 帽拼 micro-batch；动态采样丢掉零方差组再补采；partial rollout 是半截轨迹跨步接着生成。三者都会改「一步看见几条」，但改的对象不同。打开之后，会计账从「每卡 $m$ 条」改成「每卡不超过 $T$ token、本步实际 $k$ 条、drop-last 丢掉 $d$ 组」，这三件事都要能从日志对上。对不上就不要先加学习率。
 
-调试顺序也要改：先看每步实际 token 数是否贴着帽，再看有没有频繁 drop-last，再看 GRPO 组是否还在同一 micro-batch。token 数远低于帽说明拼得太碎或过滤过狠；经常顶帽并 OOM 说明帽和真实峰值（含临时张量）没对齐，要给 all-gather / logits 留余量。组被拆开时优势方差会突然变怪，不要先动温度。监控面板如果还按「每卡样本数」画图，会看起来像 batch 在随机跳。把横轴改成 tokens / step，跳变才是真异常。
+调试顺序也要改：先看每步实际 token 数是否贴着帽，再看有没有频繁 drop-last，再看 GRPO 组是否还在同一 micro-batch。token 数远低于帽说明拼得太碎或过滤过狠；经常顶帽并 OOM 说明帽和真实峰值（含临时张量）没对齐，要给 all-gather / logits 留余量。组被拆开时优势方差会突然变怪，不要先动温度。监控若还按「每卡样本数」画图，会看起来像 batch 在随机跳；横轴改成 tokens / step，跳变才是真异常。
 
 ## 追问
 

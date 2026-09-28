@@ -24,14 +24,14 @@ sources:
     type: primary
 ---
 
-这块容易背论文摘要，却说不出 slime 里动过的开关。`--advantage-estimator` 和 veRL 的 `algorithm.adv_estimator` 是同一层：换的是优势怎么估、clip 对象是谁，不是换一套 rollout 栈。OPD 正交，叠加 `--use-opd`，不要说「OPD 是一种 advantage」。默认 per-sample loss，对齐百度「序列 loss 怎么落到 token」要开 `--calculate-per-token-loss`。面试我先报当时用的估计器和聚合方式，再讲长尾样本会被哪种平均淹没。组大小走 `--n-samples-per-prompt`，对 veRL `actor_rollout_ref.rollout.n`。
+错法：背论文摘要，却说不出 slime 里动过的开关。`--advantage-estimator` 和 veRL 的 `algorithm.adv_estimator` 是同一层：换的是优势怎么估、clip 对象是谁，不是换一套 rollout 栈。OPD 正交，叠加 `--use-opd`，不要说「OPD 是一种 advantage」。默认 per-sample loss，对齐百度「序列 loss 怎么落到 token」要开 `--calculate-per-token-loss`。面试我先报当时用的估计器和聚合方式，再讲长尾样本会被哪种平均淹没。组大小走 `--n-samples-per-prompt`，对 veRL `actor_rollout_ref.rollout.n`。
 
 ## 估计器怎么切
 
-- **GRPO**：`--n-samples-per-prompt` 做组内相对 advantage，无 critic。$n=1$ 时相对优势没有定义，见 `sys-rl-group-n`。同一套 SGLang rollout，只换 estimator。
-- **GSPO / CISPO**：同一套 rollout，换 clip 对象。GSPO 用序列 likelihood ratio，减轻超长回复把 token-level $\rho$ 拉爆。CISPO 把 IS 权重截断后 detach，梯度仍走 $\log\pi$（见 `pt-cispo`）。追问「为啥换」答长度偏差和「越界 token 还要不要梯度」，不要只报名字。
-- **PPO**：同一组 train GPU 上 actor / critic 轮流 offload，并行拓扑必须一致；角色差异走 `--megatron-config-path`，没有单独 `critic_num_gpus`。别按 OpenRLHF 的 critic 独立卡去套 slime。
-- **REINFORCE++ / baseline**：`--advantage-estimator reinforce_plus_plus` 或 `reinforce_plus_plus_baseline`，仍无 critic，baseline 形式不同，组统计约束比 GRPO 弱。
+- GRPO：`--n-samples-per-prompt` 做组内相对 advantage，无 critic。$n=1$ 时相对优势没有定义，见 `sys-rl-group-n`。同一套 SGLang rollout，只换 estimator。
+- GSPO / CISPO：同一套 rollout，换 clip 对象。GSPO 用序列 likelihood ratio，减轻超长回复把 token-level $\rho$ 拉爆。CISPO 把 IS 权重截断后 detach，梯度仍走 $\log\pi$（见 `pt-cispo`）。追问「为啥换」答长度偏差和「越界 token 还要不要梯度」，不要只报名字。
+- PPO：同一组 train GPU 上 actor / critic 轮流 offload，并行拓扑必须一致；角色差异走 `--megatron-config-path`，没有单独 `critic_num_gpus`。别按 OpenRLHF 的 critic 独立卡去套 slime。
+- REINFORCE++ / baseline：`--advantage-estimator reinforce_plus_plus` 或 `reinforce_plus_plus_baseline`，仍无 critic，baseline 形式不同，组统计约束比 GRPO 弱。
 
 OPD：`--use-opd --opd-kl-coef`，和 estimator 正交。TIS：`--use-tis`，修 SGLang 采样策略和训练图不一致（量化、partial rollout、旧权），也正交。不要把 TIS / OPD / estimator 拧成一个枚举。
 
@@ -42,12 +42,6 @@ OPD：`--use-opd --opd-kl-coef`，和 estimator 正交。TIS：`--use-tis`，修
 ## 放置不要跟着算法改
 
 GRPO/GSPO/CISPO 都是无 critic 的组算法，放置仍是 Megatron + SGLang，`--colocate` 或分卡。切到 PPO 才多一个 value 角色，但卡还是同一组 train GPU 轮流 offload，不是突然加一套 critic 池。Serving 侧 generate 函数、router、`--partial-rollout` 保持不变。算法开关在 estimator 和 loss 聚合；Infra 开关在放置和引擎。面试把两层分开，才不会把「我们上了 GSPO」说成换了框架。
-
-我会按「同一套 rollout，换估计器」来讲。SGLang + Buffer + Megatron 不动，动的是 `--advantage-estimator`。GRPO 用组内均值当 baseline，必须 `--n-samples-per-prompt` $\gt 1$。GSPO 把 clip 放到序列 likelihood ratio，缓解超长 CoT 把 token 级 $\rho$ 拉爆。CISPO 截断 IS 权重后 detach，梯度仍走 $\log\pi$，回答「越界 token 还要不要梯度」。PPO 才引入 critic，但 slime 没有独立 `critic_num_gpus`，同一组 train GPU 轮流 offload，角色差在 `--megatron-config-path`。OPD 与 TIS 都是叠加开关：`--use-opd --opd-kl-coef` 不是一种 advantage；`--use-tis` 修量化 / partial / 旧权的采样隙。损失默认 per-sample 平均，长样本被摊薄；`--calculate-per-token-loss` 改全局 token 平均，长尾会主导，和 veRL `loss_agg_mode` 对表。换估计器不改 `--global-batch-size` 账本，也不自动允许 `--balance-data` 拆组。先报用过的估计器和聚合方式，再讲为什么换，比背论文公式稳。veRL 侧同一层是 `algorithm.adv_estimator` 和 `actor_rollout_ref.rollout.n`，只是 Hydra 而不是 CLI。
-
-## 先报开关再讲论文
-
-面试顺序：估计器名字 → `--n-samples-per-prompt` → 损失是 per-sample 还是 `--calculate-per-token-loss` → OPD/TIS 有没有叠。GSPO/CISPO 讲长度偏差和越界梯度，不要只报字母。PPO 讲同一组 GPU 轮流 offload。换估计器不改账本、不改 colocate。和 veRL 对 Hydra 字段。长尾会被哪种平均淹没要主动说。
 
 ## 追问
 

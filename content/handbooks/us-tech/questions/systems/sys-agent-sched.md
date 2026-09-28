@@ -37,7 +37,7 @@ Agent 流量不是「一条长 completion」。模型吐几十到一百多个 to
 
 ## 三个状态，不要占着 decode 槽
 
-我会先把请求拆成 `prefill` / `decode` / `tool_wait`（外加排队）。GPU 只该跑前两个。工具等待墙钟经常是 $10^3$–$10^4$ 毫秒，一步 decode 是个位数到几十毫秒。若等工具时仍留在 running batch：
+我会先把请求拆成 `prefill` / `decode` / `tool_wait`（外加排队）。GPU 只该跑前两个。工具等待墙钟经常是 $10^3$-$10^4$ 毫秒，一步 decode 是个位数到几十毫秒。若等工具时仍留在 running batch：
 
 - 同步等：整步 batch 陪着空转，SM 利用率塌掉。
 - 假装还在生成：语义错，会在 tool 结果回来之前继续往下编。
@@ -46,7 +46,7 @@ Agent 流量不是「一条长 completion」。模型吐几十到一百多个 to
 正确动作在 iteration 边界：
 
 1. 解析到 tool call（或模型自己停在需要外部输入的点），把该序列移出 running，释放计算槽。
-2. KV 页：秒级等待且 HBM 紧，卸到 CPU，见 `sys-kv-offload`；HBM 松或等待很短，可留 GPU 并加引用，回来零拷贝。不要把页当结束请求直接丢——丢掉下一轮就要整段 prefill。
+2. KV 页：秒级等待且 HBM 紧，卸到 CPU，见 `sys-kv-offload`；HBM 松或等待很短，可留 GPU 并加引用，回来零拷贝。不要把页当结束请求直接丢；丢掉下一轮就要整段 prefill。
 3. 立刻从 waiting 里补别人的 decode（或一块 chunked prefill）。有效 $B$ 维持住，decode 瘦 GEMM 继续喂。
 4. 工具结果返回：请求变成「短 append prefill」（只算观察 token）再回到 decode。历史 KV 必须还能对上 RoPE 位置。
 
@@ -68,13 +68,13 @@ Chunked prefill 仍然重要：agent 集群里同时有人开新会话（长 pre
 
 错误说法：等工具时把请求留在 batch 里「占着图」；每次工具返回都当新请求从 token 0 prefill；为了命中率永不淘汰挂起 KV。前一个空转 GPU，中间一个把 radix / prefix cache 的意义归零，后一个把在飞 decode OOM。
 
-监控：`tool_wait` 条数、挂起 KV 字节、工具返回后的 TTFT（应接近短 append）、running $B$、因挂起挤出导致的 GPU miss。不要只报 tokens/s——等工具期间 token 是 0，但 GPU 不该是 0。
+监控：`tool_wait` 条数、挂起 KV 字节、工具返回后的 TTFT（应接近短 append）、running $B$、因挂起挤出导致的 GPU miss。不要只报 tokens/s。等工具期间 token 是 0，但 GPU 不该是 0。
 
 ## 追问
 
 - **KV 留 GPU 还是卸 CPU？** 等待远小于一秒且 HBM 松，留 GPU。秒级工具且槽位紧，卸 CPU，回来 DMA。盘只给超长冷前缀。
 - **观察回来要不要 PD 走一圈？** 几十到几百 token 通常在 decode 池 append。整篇文档级观察当新 prefill。
-- **和 continuous batching 是一层吗？** 同一套 iteration 插拔。Agent 多一个 `tool_wait` 队列，结束条件不是 eos 而是外部事件。
+- **和 continuous batching 是一层吗？** 同一套 iteration 插拔。Agent 多一个 `tool_wait` 队列，结束条件改成外部事件，不再是 eos。
 - **为什么 radix 对 agent 更香？** 每轮只在尾巴分叉，主干（系统提示 + 工具头 + 历史）共享。见 `sys-radix-tree`。
 - **挂起算 inflight 吗？** 不算算力 inflight。占 KV 要单独记账，否则 `max_num_seqs` 会被僵尸会话吃光。
 - **工具很慢时公平怎么做？** 限制每会话挂起 TTL 和 KV 占比；超时驱逐并记 `tool_timeout`，不要让 GPU 热层被冷会话占满。

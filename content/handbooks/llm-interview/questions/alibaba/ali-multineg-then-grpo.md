@@ -22,11 +22,11 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成两句口号：「多负 DPO 已经学全排序，不必再 RL」或「DPO 后熵一定崩，不能接 GRPO」。多负 DPO 主要学「正优于各负」，不保证 rejected 之间的精细序。DPO 压尖后可以接 GRPO 做 on-policy 探索，但要先确认组内还能采出可被奖励分开的差异。分类 / 偏好清晰时 DPO 往往更稳、更省。接续诊断见 `pt-dpo-to-grpo`，三者对比见 `ali-ppo-dpo-grpo-ask`。
+错法：两句口号——「多负 DPO 已经学全排序，不必再 RL」或「DPO 后熵一定崩，不能接 GRPO」。多负 DPO 主要学「正优于各负」，不保证 rejected 之间的精细序。DPO 压尖后可以接 GRPO 做 on-policy 探索，但要先确认组内还能采出可被奖励分开的差异。分类 / 偏好清晰时 DPO 往往更稳、更省。接续诊断见 `pt-dpo-to-grpo`，三者对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## 多负 DPO 学的是什么
 
-单正多负通常把一条 chosen 对多条 rejected 做成多个 pair，或写成 listwise 变体。Bradley-Terry 目标拉高 $\pi_\theta(y_w\mid x)$、压低各 $y_l$，并不自动得到 $y_l$ 之间的序。若业务要「错误 A 比错误 B 更可接受」，需要更完整的 ranking 标注或额外约束，而不是假设多负已经给出全序。DPO 还可能把分布变尖：$\beta$ 大、负例太易、过拟合都会让采样多样性下降。这不是定理，要用 rollout 验证，不要口头断言熵。
+单正多负通常把一条 chosen 对多条 rejected 做成多个 pair，或写成 listwise 变体。Bradley-Terry 目标拉高 $\pi_\theta(y_w\mid x)$、压低各 $y_l$，并不自动得到 $y_l$ 之间的序。若业务要「错误 A 比错误 B 更可接受」，需要更完整的 ranking 标注或额外约束，别假设多负已经给出全序。DPO 还可能把分布变尖：$\beta$ 大、负例太易、过拟合都会让采样多样性下降。这不是定理，要用 rollout 验证，不要口头断言熵。
 
 ## 接 GRPO 的条件
 
@@ -36,7 +36,7 @@ $$
 \hat{A}_i=\frac{r_i-\mu}{\sigma+\epsilon}.
 $$
 
-若 DPO 后同题采样几乎相同，或一组全对 / 全错，则 $\sigma\approx 0$，相对信号消失。此时应先调温度 / 熵、减小学习率，或回退部分 SFT 数据，而不是加大步长硬推。组内 advantage 细节见 `ali-grpo-advantage`。Reference 锚点要说清：用 DPO checkpoint 还是更早的 SFT，KL 系数跟着变。
+若 DPO 后同题采样几乎相同，或一组全对 / 全错，则 $\sigma\approx 0$，相对信号消失。此时应先调温度 / 熵、减小学习率，或回退部分 SFT 数据，别加大步长硬推。组内 advantage 细节见 `ali-grpo-advantage`。Reference 锚点要说清：用 DPO checkpoint 还是更早的 SFT，KL 系数跟着变。
 
 ## 分类场景为何 DPO 更稳
 

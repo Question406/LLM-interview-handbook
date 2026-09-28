@@ -36,7 +36,7 @@ sources:
 
 奖励模型。BT 只看差，见 `align-reward-model`。若 $y_w$ 系统比 $y_l$ 长，$r$ 学会「token 多就加分」。校准指标可以很好，仍然在给长度打分。BoN 取 $\arg\max r$ 时，这个特征被搜到极限，见 `align-best-of-n`、`align-reward-hack`。
 
-策略目标。DPO / IPO 的 $\Delta$ 是两条序列 log 比的差。实现若对 token **求和**，更长序列的 $\log\pi$ 量级更大，长度差会进间隔；改成 token **平均**等于偷偷重标定 $\beta$，见 `align-dpo`。RL 的回报若按序列给一个标量、没有长度惩罚，策略会注水到 RM 喜欢的区间。
+策略目标。DPO / IPO 的 $\Delta$ 是两条序列 log 比的差。实现若对 token 求和，更长序列的 $\log\pi$ 量级更大，长度差会进间隔；改成 token 平均等于偷偷重标定 $\beta$，见 `align-dpo`。RL 的回报若按序列给一个标量、没有长度惩罚，策略会注水到 RM 喜欢的区间。
 
 评测。Arena 和 LLM-as-judge 同样偏长、偏 markdown，见 `align-arena`、`align-llm-judge`。你用这些当 gold，会把注水训回去。
 

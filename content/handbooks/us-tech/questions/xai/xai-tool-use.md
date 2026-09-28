@@ -34,7 +34,7 @@ sources:
 
 ## 题怎么来的
 
-xAI 应用 / Agent 岗问 Grok 怎么接工具。公开层只有文档里的两类： **内置工具** 在 xAI 侧执行（网页搜索、X 搜索、代码解释器、图片生成、Collections 检索等，以当时文档列表为准）； **function calling** 由你定义 JSON Schema，模型返回 `tool_call`，你执行后再把结果塞回对话。Grok-3 博文把 DeepSearch 写成带搜索和代码解释器的 agent，没有公布路由模型和重试策略。面试讲工程约束，不编内部 planner。`realInterview: false`。
+xAI 应用 / Agent 岗问 Grok 怎么接工具。公开层只有文档里的两类：内置工具在 xAI 侧执行（网页搜索、X 搜索、代码解释器、图片生成、Collections 检索等，以当时文档列表为准）；function calling 由你定义 JSON Schema，模型返回 `tool_call`，你执行后再把结果塞回对话。Grok-3 博文把 DeepSearch 写成带搜索和代码解释器的 agent，没有公布路由模型和重试策略。面试讲工程约束，不编内部 planner。`realInterview: false`。
 
 ## 合同：谁执行、什么 schema、何时停
 
@@ -43,7 +43,7 @@ xAI 应用 / Agent 岗问 Grok 怎么接工具。公开层只有文档里的两�
 1. 请求带 `tools`（名字、描述、parameters 必须是 JSON object schema）和 `tool_choice`（`auto` / `required` / `none` / 指定函数）。
 2. 模型要么直接答，要么返回一个或多个 tool call（文档默认允许并行）。
 3. 你本地执行，用对应 `tool_call_id` 回传结果。内置工具则是服务端跑完，响应里可能带引用。
-4. 没有上限的循环会在搜索和代码解释器上把自己打崩。宿主要设 **最大轮数、每轮超时、总 token**，和 `xai-rate-limiter` 同一道门。
+4. 没有上限的循环会在搜索和代码解释器上把自己打崩。宿主要设最大轮数、每轮超时、总 token，和 `xai-rate-limiter` 同一道门。
 
 Schema 工程比「模型很聪明」重要。根类型要是 object；枚举写清；必填列出。描述决定模型何时调——把「删除账号」和「搜文档」放进同一轮 `auto`，是在请误调。文档写过单请求工具数量上限（量级是上百，以当时 docs 为准），上限之内仍然要按任务裁剪列表：工具太多，选错的先验上升。
 

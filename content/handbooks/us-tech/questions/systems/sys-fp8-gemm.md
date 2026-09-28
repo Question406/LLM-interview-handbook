@@ -38,7 +38,7 @@ NVIDIA H100 / Blackwell 推理岗几乎必问 FP8 GEMM。训练混合精度（�
 
 ## Scale 是一等公民
 
-我会先挡一句：FP8 动态范围窄。E4M3 尾数多、范围更窄，推理权重大多用它；E5M2 指数多，训练梯度常用。没有 INT8 那个零点。一块张量要先乘 scale 再量化：
+FP8 动态范围窄。E4M3 尾数多、范围更窄，推理权重大多用它；E5M2 指数多，训练梯度常用。没有 INT8 那个零点。一块张量要先乘 scale 再量化：
 
 $$
 x_{\mathrm{fp8}}=\mathrm{cast}(x / s),\qquad
@@ -51,7 +51,7 @@ GEMM 在 Tensor Core 上做 $D \approx (X_{\mathrm{fp8}} s_x)\,(W_{\mathrm{fp8}}
 - **Per-token / per-channel：** 激活按 token，权重按输出通道。比 per-tensor 稳，scale 元数据仍小。
 - **DeepSeek-V3 公开的细粒度：** 激活按 $1\times 128$ tile（每个 token、每 128 通道一个 scale），权重按 $128\times 128$ block。报告写明这是为了在 FP8 窄范围里扛 outlier；权重文件里 `weight_block_size: [128, 128]`、`fmt: e4m3` 也是公开的。当时 Hopper Tensor Core 不能在 MMA 内部吃分组 scale，部分累加要出 Tensor Core 到 CUDA core 做反量化再进 FP32 累加，这就是「细粒度准、但有来回税」的来源。报告甚至建议未来硬件把 group scale 做进 MMA。
 
-把 FP8 说成「INT8 去掉零点」不够。要说：scale 轴必须对准 outlier 轴，和 KV 量化同一句口诀，只是这里的张量是 GEMM 的 $X$ 和 $W$，不是 cache。
+把 FP8 说成「INT8 去掉零点」不够。scale 轴必须对准 outlier 轴，和 KV 量化同一句口诀，只是这里的张量是 GEMM 的 $X$ 和 $W$，不是 cache。
 
 Transformer Engine 训练侧常用 delayed scaling：用历史 amax，避免每步为当前 tensor 做一次同步。推理侧权重 scale 冻结，激活往往动态 per-token 或 per-tile，和训练 delayed 不是同一套统计。不要把 TE 训练故事原样搬到 serving GEMM。
 

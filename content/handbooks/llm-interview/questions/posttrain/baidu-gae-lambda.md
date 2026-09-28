@@ -31,7 +31,7 @@ sources:
 - 岗位：大模型 RL 后训练；2026-03-18 一面
 - 原始措辞：**“广义优势估计是怎么计算？GAE中lambda的作用，该值大小和GAE 方差/偏差的关系”**
 
-这块容易把 $\lambda$ 说成学习率，或和折扣因子 $\gamma$ 混成一个数。$\gamma$ 决定回报看多远；$\lambda$ 决定多步 TD 之间怎么混合。没有 critic 就没有这根轴，GRPO 用组均值代替 $V(s)$，根本不算 GAE，见 `sys-rl-group-n`。白板顺序必须是：先定义 TD 残差 $\delta_t$，再写 $(\gamma\lambda)^l$ 的指数和，最后才谈 $0$ 和 $1$ 两个端点。只背「$\lambda$ 大方差大」而不写公式，下一问「那 $\gamma$ 呢」会答空。
+这块容易把 $\lambda$ 说成学习率，或和折扣因子 $\gamma$ 混成一个数。$\gamma$ 决定回报看多远；$\lambda$ 决定多步 TD 之间怎么混合。没有 critic 就没有这根轴，GRPO 用组均值代替 $V(s)$，根本不算 GAE，见 `sys-rl-group-n`。白板顺序：先定义 TD 残差 $\delta_t$，再写 $(\gamma\lambda)^l$ 的指数和，最后才谈 $0$ 和 $1$ 两个端点。只背「$\lambda$ 大方差大」而不写公式，下一问「那 $\gamma$ 呢」会答空。
 
 ## 公式：从 TD 残差到 GAE
 
@@ -46,7 +46,7 @@ LLM token 级 RL 轨迹极长。$\lambda$ 过大时，末端噪声会沿 $(\gamm
 
 ## 和奖励稀疏、算法选型一起拧
 
-稀疏终局奖（对/错、单测过/不过）时，前面大部分 $r_t=0$。小 $\lambda$ 把优势压在最后几个 token 附近，思维链中间几乎没梯度；大 $\lambda$ 把终局奖往回传，方差按长度涨，长 CoT 尤其狠。价值网络跟不上政策时，宁可把 $\lambda$ 推向 1 偏 MC，也不要把错误的 $V$ 当成真理去降方差，那是在用偏差换一种更糟的偏差。若任务可对同一题采 $n$ 条、奖励可验证，直接换 GRPO，绕开 $\lambda$ 和 critic。PPO clip 与 CISPO 管的是 $\rho=\pi_\theta/\pi_{\mathrm{old}}$，和 GAE 正交，见 `pt-cispo`：优势再准，越界 token 仍可能被 clip 掉。
+稀疏终局奖（对/错、单测过/不过）时，前面大部分 $r_t=0$。小 $\lambda$ 把优势压在最后几个 token 附近，思维链中间几乎没梯度；大 $\lambda$ 把终局奖往回传，方差按长度涨，长 CoT 尤其狠。价值网络跟不上政策时，宁可把 $\lambda$ 推向 1 偏 MC，也不要把错误的 $V$ 当成真理去降方差。若任务可对同一题采 $n$ 条、奖励可验证，直接换 GRPO，绕开 $\lambda$ 和 critic。PPO clip 与 CISPO 管的是 $\rho=\pi_\theta/\pi_{\mathrm{old}}$，和 GAE 正交，见 `pt-cispo`：优势再准，越界 token 仍可能被 clip 掉。
 
 ## 追问
 

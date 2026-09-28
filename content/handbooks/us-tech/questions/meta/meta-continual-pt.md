@@ -34,11 +34,11 @@ sources:
     type: secondary
 ---
 
-FAIR / Llama 岗把「再训 500B 代码」当成工程题，不是名词题。Gururangan 的 Don't Stop Pretraining 把 DAPT 说清楚了；Code Llama 和 Llama 3 Herd 给了 Meta 公开实例。别把 CPT 说成 SFT：目标仍是 next-token，数据是无监督领域语料，学习率比 SFT 大、token 比 SFT 多几个数量级。
+FAIR / Llama 岗把「再训 500B 代码」当工程题。Gururangan 的 Don't Stop Pretraining 把 DAPT 说清楚了；Code Llama 和 Llama 3 Herd 给了 Meta 公开实例。别把 CPT 说成 SFT：目标仍是 next-token，数据是无监督领域语料，学习率比 SFT 大、token 比 SFT 多几个数量级。
 
 ## Meta 公开的两条分叉
 
-Code Llama：从 Llama 2 初始化。Llama 2 大约 $2\mathrm{T}$ token，其中代码只有约 $80\mathrm{B}$。再在**代码为主**的 mix 上训 $500\mathrm{B}$（70B 是 $1\mathrm{T}$），论文写大约 $85\%$ 代码。7B 对照从零训同一 mix：从零的终点 loss，大约只相当于 CPT 跑到一半。结论：**通用预训练是领域继续训的免费初始化**，不是浪费。后面还有 infill 目标、长窗微调到更大 $T$。图上能看到：代码变强时，Llama 2 的 helpfulness 奖励模型分数往下掉——这就是遗忘的公开形状，不是传闻。
+Code Llama：从 Llama 2 初始化。Llama 2 大约 $2\mathrm{T}$ token，其中代码只有约 $80\mathrm{B}$。再在**代码为主**的 mix 上训 $500\mathrm{B}$（70B 是 $1\mathrm{T}$），论文写大约 $85\%$ 代码。7B 对照从零训同一 mix：从零的终点 loss，大约只相当于 CPT 跑到一半。结论：**通用预训练是领域继续训的免费初始化**，不是浪费。后面还有 infill 目标、长窗微调到更大 $T$。图上能看到：代码变强时，Llama 2 的 helpfulness 奖励模型分数往下掉。这是遗忘的公开形状，不是传闻。
 
 Llama 3 code expert：从**主预训练 run 中途分叉**，再继续约 $1\mathrm{T}$，其中代码大于 $85\%$。末段做 repo 级长窗微调到 $16\mathrm{k}$，再按主模型那套 SFT / DPO，但数据偏向代码。这个专家用来产代码人工标注和 rejection sampling，不是替代 405B chat。Herd 把这条明确写成 Gururangan / Code Llama 同类。
 

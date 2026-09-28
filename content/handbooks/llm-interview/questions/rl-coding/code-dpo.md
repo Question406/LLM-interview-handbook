@@ -1,7 +1,7 @@
 ---
 id: code-dpo
-section: coding
-order: 5
+section: rl-coding
+order: 3
 level: S
 title: 手写 DPO Loss：如何从 token logits 得到 sequence log-prob？
 quick: >-

@@ -31,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-OpenAI 数值题和 CE 白板是同一块肌肉。评委让你写 `logsumexp`，再问「交叉熵还要不要过 softmax」。答案是不要：CE 就是在 log 域用这条归约。稳定 softmax 见 `coding-softmax-stable`，完整 CE 见 `coding-cross-entropy`。PaLM 的 z-loss 直接正则这条 $z=\mathrm{logsumexp}$，见 `coding-z-loss`。
+OpenAI 数值题和 CE 白板是同一块肌肉。评委让你写 `logsumexp`，再问「交叉熵还要不要过 softmax」。不要：CE 就是在 log 域用这条归约。稳定 softmax 见 `coding-softmax-stable`，完整 CE 见 `coding-cross-entropy`。PaLM 的 z-loss 直接正则这条 $z=\mathrm{logsumexp}$，见 `coding-z-loss`。
 
 ## Trick：先减 max
 
@@ -67,16 +67,13 @@ def logsumexp(z, dim=-1, keepdim=False):
     out = m + (z - m).exp().sum(dim=dim, keepdim=True).log()
     return out if keepdim else out.squeeze(dim)
 
-
 def log_softmax(z, dim=-1):
     return z.float() - logsumexp(z, dim=dim, keepdim=True)
-
 
 def nll_from_logits(logits, target):
     # logits: [N, V], target: [N]
     logp = log_softmax(logits, dim=-1)
     return -logp.gather(1, target.unsqueeze(1)).squeeze(1)
-
 
 def check():
     z = torch.tensor([[1.0, 2.0, 3.0], [1000.0, 1000.0, 1001.0]])

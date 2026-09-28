@@ -25,9 +25,9 @@ sources:
 
 ## 定义
 
-Spring Bean 是容器管理的对象：容器负责创建、注入依赖、调用初始化、在关闭时销毁。生命周期口述我抓四段，不要背二十步清单。第一段实例化，无参构造或工厂方法 new 出裸对象。第二段填充属性，按 `@Autowired` / `@Resource` / setter 把依赖灌进去。第三段初始化：先走各种 `Aware`（让 Bean 拿到 `BeanName`、`ApplicationContext`），再进入 `BeanPostProcessor` 的 `postProcessBeforeInitialization`，然后是 `@PostConstruct`、`InitializingBean.afterPropertiesSet`、自定义 `init-method`，最后 `postProcessAfterInitialization`，AOP 代理通常在这里包一层。第四段销毁：`@PreDestroy`、`DisposableBean`、`destroy-method`。
+Spring Bean 是容器管理的对象：容器负责创建、注入依赖、调用初始化、在关闭时销毁。生命周期口述抓四段，别背二十步清单。第一段实例化，无参构造或工厂方法 new 出裸对象。第二段填充属性，按 `@Autowired` / `@Resource` / setter 把依赖灌进去。第三段初始化：先走各种 `Aware`（让 Bean 拿到 `BeanName`、`ApplicationContext`），再进入 `BeanPostProcessor` 的 `postProcessBeforeInitialization`，然后是 `@PostConstruct`、`InitializingBean.afterPropertiesSet`、自定义 `init-method`，最后 `postProcessAfterInitialization`，AOP 代理通常在这里包一层。第四段销毁：`@PreDestroy`、`DisposableBean`、`destroy-method`。
 
-AOP 是把横切逻辑（日志、鉴权、事务、限流）从业务方法里拆出去，用代理在方法调用前后织入通知。Spring 默认：有接口走 JDK 动态代理，没接口走 CGLIB 子类。通知类型是 before / after / around / after-returning / after-throwing。切点用表达式选方法。核心限制一句话：**只有经过代理对象的外部调用才会进切面**，`this.foo()` 是直接调目标对象，切面和事务都不生效。
+AOP 是把横切逻辑（日志、鉴权、事务、限流）从业务方法里拆出去，用代理在方法调用前后织入通知。Spring 默认：有接口走 JDK 动态代理，没接口走 CGLIB 子类。通知类型是 before / after / around / after-returning / after-throwing。切点用表达式选方法。核心限制：只有经过代理对象的外部调用才会进切面，`this.foo()` 是直接调目标对象，切面和事务都不生效。
 
 ## 对比 / 分层
 
@@ -39,7 +39,7 @@ AOP 是把横切逻辑（日志、鉴权、事务、限流）从业务方法里�
 | 初始化 | `@PostConstruct` | 预热缓存、订阅 MQ |
 | 销毁 | `@PreDestroy` | 停线程池、关连接 |
 
-作用域：默认单例，全容器一份；`prototype` 每次要都新建，但注入到单例里只会注入一次，需要 `ObjectFactory` 或 `@Lookup`。循环依赖：单例用三级缓存，把早期引用暴露出去，让 setter / 字段注入的环能转起来；**构造器循环解不开**，因为对象还没创建完。AOP 和事务叠在循环依赖上会更绕：早期引用可能还不是最终代理，面试说到「可能拿到半成品代理」就够。
+作用域：默认单例，全容器一份；`prototype` 每次要都新建，但注入到单例里只会注入一次，需要 `ObjectFactory` 或 `@Lookup`。循环依赖：单例用三级缓存，把早期引用暴露出去，让 setter / 字段注入的环能转起来；构造器循环解不开，因为对象还没创建完。AOP 和事务叠在循环依赖上会更绕：早期引用可能还不是最终代理，面试说到「可能拿到半成品代理」就够。
 
 事务 `@Transactional` 是 AOP 的特例。默认只回滚 RuntimeException；自调用不开启事务；方法必须是 `public` 且从另一个 Bean 进来。传播行为里校招常考 `REQUIRED`（加入当前事务）和 `REQUIRES_NEW`（挂起后开新事务，适合「主单失败也要记审计」）。
 
@@ -47,7 +47,7 @@ AOP 是把横切逻辑（日志、鉴权、事务、限流）从业务方法里�
 
 下单服务里 `OrderService.placeOrder()` 标了 `@Transactional`，里面先写订单再 `this.deductCoupon()`。优惠扣减上的事务或锁切面不会走，大促一压就会出现「订单写了、券没扣」或反过来。改法是把扣券抽到独立 Bean，或注入自己的代理再调。初始化阶段也不要在 `@PostConstruct` 里同步拉全量商品库，启动会被拖死；改成异步预热，并用就绪探针挡住流量。
 
-配置中心、HSF / Dubbo 消费者这类 Bean，销毁时必须先摘流量再关线程池，否则发布过程中还有请求打到半关闭的池。阿里内部发布常见「先下线注册中心，再停 JVM」，对应的就是销毁顺序。循环依赖的真实案例：`PriceService` 依赖 `PromotionService`，后者又回调算价，字段注入能跑，但单测和阅读成本高。校招更加分的说法是：能转不等于设计对，尽量拆成事件或第三方面。
+配置中心、HSF / Dubbo 消费者这类 Bean，销毁时必须先摘流量再关线程池，否则发布过程中还有请求打到半关闭的池。阿里内部发布常见「先下线注册中心，再停 JVM」，对应的就是销毁顺序。循环依赖的真实案例：`PriceService` 依赖 `PromotionService`，后者又回调算价，字段注入能跑，但单测和阅读成本高。能转不等于设计对，尽量拆成事件或第三方面。
 
 ## 追问
 

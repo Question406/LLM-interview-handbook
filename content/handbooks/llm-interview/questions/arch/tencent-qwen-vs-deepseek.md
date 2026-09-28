@@ -29,23 +29,23 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“Qwen 和 DeepSeek 有什么区别？你会怎么选底座？”**
 
-这块容易只背参数量或复读博客「DeepSeek 更强」。对照只讲你能辩护的点：注意力、MoE、后训练。换底座用同一套评测集，不要用社交媒体结论替实验。同面 MoE 题见 `tencent-moe-vs-dense`；MLA 原理见 `arch-mla`。
+错法：只背参数量或复读博客「DeepSeek 更强」。对照只讲你能辩护的点：注意力、MoE、后训练。换底座用同一套评测集，不要用社交媒体结论替实验。同面 MoE 题见 `tencent-moe-vs-dense`；MLA 原理见 `arch-mla`。
 
 ## 架构：GQA vs MLA，常规 MoE vs 细粒度 + 共享专家
 
-- **注意力**：Qwen 系常用 GQA，少 KV 头、实现简单、和标准 RoPE 兼容。DeepSeek-V2/V3 用 MLA：把 K/V 压进低维 latent，RoPE 拆开，推理靠矩阵吸收不必物化全长 K/V。长上下文、大 batch decode 时 cache 带宽差一档；短上下文小模型上 GQA 往往够用。
-- **MoE**：DeepSeek 细粒度专家 + 共享专家 + 负载均衡（aux / 无 aux 变体，见 `arch-moe-noaux`）。Qwen-MoE 更接近常规 top-$k$。选型时问：有没有共享专家兜底、专家粒度、训推路由是否一致。
-- **其它**：词表与 tokenizer、MTP / 推测解码、是否开源推理栈（vLLM 对 MLA/GQA 的成熟度）也会左右「能不能上线」，但一面先把注意力和 MoE 两条讲完。
+- 注意力：Qwen 系常用 GQA，少 KV 头、实现简单、和标准 RoPE 兼容。DeepSeek-V2/V3 用 MLA：把 K/V 压进低维 latent，RoPE 拆开，推理靠矩阵吸收不必物化全长 K/V。长上下文、大 batch decode 时 cache 带宽差一档；短上下文小模型上 GQA 往往够用。
+- MoE：DeepSeek 细粒度专家 + 共享专家 + 负载均衡（aux / 无 aux 变体，见 `arch-moe-noaux`）。Qwen-MoE 更接近常规 top-$k$。选型时问：有没有共享专家兜底、专家粒度、训推路由是否一致。
+- 其它：词表与 tokenizer、MTP / 推测解码、是否开源推理栈（vLLM 对 MLA/GQA 的成熟度）也会左右「能不能上线」，但一面先把注意力和 MoE 两条讲完。
 
 不要把「总参数 671B」和「激活 37B」混报；DeepSeek 的卖点是激活小、容量大，见 `minimax-param-breakdown`。
 
 ## 后训练与何时换底座
 
-- **DeepSeek-R1 / 推理向**：规则奖励、两阶段（SFT 冷启动 → RL）把长思维链训得很重。要长 CoT、竞赛数学、省 KV 时优先试。
-- **Qwen 指令版**：中文对齐、工具调用、开箱模板往往更省事。要稳定 function call、中文产品、多模态 Qwen-VL 生态时优先试。
-- **数据与许可**：商用、蒸馏条款、是否能继续训，比 leaderboard 分更早卡死选型。
+- DeepSeek-R1 / 推理向：规则奖励、两阶段（SFT 冷启动 → RL）把长思维链训得很重。要长 CoT、竞赛数学、省 KV 时优先试。
+- Qwen 指令版：中文对齐、工具调用、开箱模板往往更省事。要稳定 function call、中文产品、多模态 Qwen-VL 生态时优先试。
+- 数据与许可：商用、蒸馏条款、是否能继续训，比 leaderboard 分更早卡死选型。
 
-换底座清单：同一 prompt 集看 instruction / tool / long-context / 安全；看 decode 延迟与 KV；看你们后训练配方是 SFT 为主还是 RLVR。R1 风格底座接短指令 SFT 可能把格式弄坏；Qwen 接纯推理 RL 可能不如从 R1 冷启动。最终对照实验，不要「听说换了就涨」。
+换底座清单：同一 prompt 集看 instruction / tool / long-context / 安全；看 decode 延迟与 KV；看你们后训练配方是 SFT 为主还是 RLVR。R1 风格底座接短指令 SFT 可能把格式弄坏；Qwen 接纯推理 RL 可能不如从 R1 冷启动。最终对照实验，不要靠「听说换了就涨」。
 
 ## 追问
 

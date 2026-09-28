@@ -53,7 +53,7 @@ Llama 2 时代就同时报 MMLU、代码、人评 win rate。只刷 MMLU 过不�
 
 预训练：Herd 跟 Singh et al. 2024，用 **8-gram 重叠**。一条评测样本，若其中比例 $\mathcal{T}_D$ 的 token 属于训练集里出现过的 8-gram，就算污染。$\mathcal{T}_D$ 按数据集选，让「干净子集 vs 全集」的分数差（估计增益）最大。结果因榜而异：有的榜污染率高且增益高（论文举 PiQA、HellaSwag）；有的污染率看起来高但增益几乎为零（Natural Questions）。所以**不要报一个全局污染百分比**，要分榜：污染率、估计增益、干净子集分数。
 
-后训练：对每个 benchmark 的 **prompt 做 exact match** 去污染。合成 SFT 特别容易把题面洗进来，见 `meta-synth-sft`。退火实验把 GSM8k / MATH 训练集加进去，8B 大涨、405B 几乎不涨——这是「背题」和「真会」的对照，面试要主动讲。
+后训练：对每个 benchmark 的 **prompt 做 exact match** 去污染。合成 SFT 特别容易把题面洗进来，见 `meta-synth-sft`。退火实验把 GSM8k / MATH 训练集加进去，8B 大涨、405B 几乎不涨。这是「背题」和「真会」的对照，面试要主动讲。
 
 组织措施论文写得很硬：预训练数据由**单独团队**采和洗，激励就是挡住外部 benchmark；人评只有不参与训练的一小撮人能碰。这不是 HR 废话，是防建模同学用测试集调 mix。
 
@@ -61,7 +61,7 @@ Llama 2 时代就同时报 MMLU、代码、人评 win rate。只刷 MMLU 过不�
 
 我会三列：公开榜、去污染后、内部 / 人评。长窗单独一列：短任务有没有回归 + haystack，不要用 haystack 代替推理。安全单独一列：Guard 的 FPR / 拒答，见 `meta-llama-guard`，不要和 MMLU 加总成一个「综合分」。
 
-错法：用训练中的验证 PPL 代替下游。PPL 跌、MMLU 不动，可能是格式或污染。错法二：在同一套合成数据上既训又测。错法三：只报 instruct 模型的 MMLU，不报 base——后训练会改选择题行为，两套都要。
+错法：用训练中的验证 PPL 代替下游。PPL 跌、MMLU 不动，可能是格式或污染。错法二：在同一套合成数据上既训又测。错法三：只报 instruct 模型的 MMLU，不报 base：后训练会改选择题行为，两套都要。
 
 ## 追问
 

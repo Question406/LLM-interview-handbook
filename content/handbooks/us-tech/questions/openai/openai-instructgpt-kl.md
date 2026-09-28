@@ -36,7 +36,7 @@ $$
 r(x,y)=r_{\phi}(x,y)-\beta\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}.
 $$
 
-$\pi_{\mathrm{ref}}$ 通常是冻结 SFT。这一项是 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 的样本估计：当前策略相对 SFT 的 **反向 KL**。它惩罚「SFT 几乎不写、RM 却很喜欢」的句子，用来防 reward hacking 和语言崩坏。
+$\pi_{\mathrm{ref}}$ 通常是冻结 SFT。这一项是 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 的样本估计：当前策略相对 SFT 的反向 KL。它惩罚「SFT 几乎不写、RM 却很喜欢」的句子，用来压 reward hacking 和语言崩坏。
 
 PPO clip 相对的是 $\pi_{\mathrm{old}}$（本批 rollout 策略）：
 

@@ -41,7 +41,7 @@ $$
 
 EP all-to-all 的痛是 **不规则小消息 × 多目的 rank**，见 `sys-expert-parallel`。细粒度 $N=256$ 时，朴素 Top-$8$ 很容易把一个 token 洒到 $8$ 个节点：每条消息只有一份 hidden，启动开销和尾包比带宽更致命，overlap 也没窗口，见 `sys-moe-alltoall-overlap`。Device-limited 把「跨机度」写成路由约束，用一点专家选择自由度换通信拓扑。
 
-它 **不是** 负载均衡。$M$ 台里仍可能全挤向同一热点专家；bias / 极小 complementary aux 仍要。它也 **不是** capacity：容量是每专家能接多少 token，device-limited 是每 token 能碰多少设备。
+它不是负载均衡：$M$ 台里仍可能全挤向同一热点专家；bias / 极小 complementary aux 仍要。它也不是 capacity：容量是每专家能接多少 token，device-limited 是每 token 能碰多少设备。
 
 ## 实现注意
 

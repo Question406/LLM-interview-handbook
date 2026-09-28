@@ -29,13 +29,13 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“大模型生成内容的评测方式有哪些，具体如何操作？”**
 
-这块容易只报 BLEU / ROUGE，或把 LLM-as-judge 当金标。开放生成没有唯一参考句，n-gram 重叠既惩罚合理改写，也奖励套话。我会拆维，再加分层 golden，最后和线上闭环。Judge 校准见 `fund-judge`；业务侧成功见 `xiaohongshu-agent-business-eval`；事实题构造见 `xiaohongshu-factoid-data`。同面一致性、幻觉、多智能体是同一棵树：先定义「错」，再谈抑制。
+错法：只报 BLEU / ROUGE，或把 LLM-as-judge 当金标。开放生成没有唯一参考句，n-gram 重叠既惩罚合理改写，也奖励套话。我会拆维，加分层 golden，再和线上闭环。Judge 校准见 `fund-judge`；业务侧成功见 `xiaohongshu-agent-business-eval`；事实题构造见 `xiaohongshu-factoid-data`。同面一致性、幻觉、多智能体是同一棵树：先定义「错」，再谈抑制。
 
 ## 拆维与自动指标
 
 任务拆维：事实忠实、指令遵循、安全、多样性、业务成功（收藏 / 不投诉 / 不删改）。自动层只承担可程序化的轴：引用是否落在证据里、毒性与违禁、重复 n-gram、长度异常、格式 schema。有检索时把 retrieval 与 faithfulness 拆开，避免「召回对了但生成胡编」被平均分掩盖（同类拆分见 `ali-rag-eval`）。没有证据的创意内容，自动指标只能做护栏，不能定高下。
 
-覆盖不足时，离线集看起来很好、线上长尾崩，见 `pdd-offline-eval-coverage`。Golden set 按品类、敏感主题、笔记类型分层；提示词迭代时 **冻结评测集**，否则自己刷自己。
+覆盖不足时，离线集看起来很好、线上长尾崩，见 `pdd-offline-eval-coverage`。Golden set 按品类、敏感主题、笔记类型分层；提示词迭代时冻结评测集，否则自己刷自己。
 
 ## Judge、人工与线上
 

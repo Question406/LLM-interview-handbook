@@ -28,7 +28,7 @@ sources:
 
 ## 题怎么来的
 
-Llama 2 70B 公开配置是 $64$ 个 query head、$8$ 个 KV head、头维 $128$（$8192/64$）。Meta 白板会让你把 `repeat_kv` 写出来，并说清 **cache 存几组、算的时候 repeat 几次**。选型见 `meta-llama-gqa`、`google-gqa-mqa`。MQA 是 $H_{\mathrm{kv}}=1$ 的端点，实现见 `coding-mq-attn`。评委要 shape assert，不要口头「广播一下」。
+Llama 2 70B 公开配置是 $64$ 个 query head、$8$ 个 KV head、头维 $128$（$8192/64$）。Meta 白板会让你把 `repeat_kv` 写出来，并说清 cache 存几组、算的时候 repeat 几次。选型见 `meta-llama-gqa`、`google-gqa-mqa`。MQA 是 $H_{\mathrm{kv}}=1$ 的端点，实现见 `coding-mq-attn`。shape assert 要写上，别口头「广播一下」。
 
 ## 分组和 repeat 的轴
 
@@ -38,7 +38,7 @@ $$
 H_q \bmod H_{\mathrm{kv}}=0,\quad n_{\mathrm{rep}}=H_q/H_{\mathrm{kv}}.
 $$
 
-70B：$n_{\mathrm{rep}}=8$，每组 $8$ 个 query head 共享一组 $K,V$。Repeat 发生在 **算 $QK^\top$ 之前**，cache 仍写 $8$ 组。把 cache 存成 $64$ 组，等于把 GQA 的带宽又吐回去。
+70B：$n_{\mathrm{rep}}=8$，每组 $8$ 个 query head 共享一组 $K,V$。Repeat 发生在算 $QK^\top$ 之前，cache 仍写 $8$ 组。把 cache 存成 $64$ 组，等于把 GQA 的带宽又吐回去。
 
 正确的 head 排布是「相邻 $n_{\mathrm{rep}}$ 个 $Q$ head 共用同一个 KV head」：
 
@@ -61,7 +61,6 @@ def repeat_kv(x, n_rep):
         .expand(b, h, n_rep, s, d)
         .reshape(b, h * n_rep, s, d)
     )
-
 
 def gqa_attn(q, k, v):
     # q: [B, H_q, T, D]; k,v: [B, H_kv, S, D]

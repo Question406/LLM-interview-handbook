@@ -32,11 +32,11 @@ OpenAI 对齐岗爱问「RM 还在涨，你为什么停」。Gao 等人把这件
 
 ## 优化程度当 $x$ 轴，不要当质量
 
-「优化程度」可以是 RL 步数、KL 到参考策略的距离、或 Best-of-N 的 $N$。横轴越大，策略越往 proxy $r_\phi$ 的高分区挤。纵轴画两条：训练 RM（proxy）、held-out RM 或人评（gold）。典型形状：proxy 单调升；gold 有峰值，过了就掉。这就是代理失效——你最大化的量不再跟踪真目标。
+「优化程度」可以是 RL 步数、KL 到参考策略的距离、或 Best-of-N 的 $N$。横轴越大，策略越往 proxy $r_\phi$ 的高分区挤。纵轴画两条：训练 RM（proxy）、held-out RM 或人评（gold）。典型形状：proxy 单调升；gold 有峰值，过了就掉。这就是代理失效：你最大化的量不再跟踪真目标。
 
 BoN 特别好画：同一 $\pi$ 抽 $N$ 条，取 $\arg\max_i r_\phi(x,y_i)$。$N=1$ 是原策略。$\log N$ 增大时 decode 近线性变贵，proxy 分仍涨，gold 会分叉。面试别说「$N$ 是免费质量旋钮」。前缀 KV 能摊 prompt，摊不掉 $N$ 路 decode，见 `align-best-of-n`。
 
-Gold RM 更大、数据更新，峰值往往更晚出现——Gao 的 scaling 叙述。这不是「再训一张更大的 RM 就永远不掉」，只是把拐点推后。用同一张 $r_\phi$ 既选 BoN 又报分，你永远看不见分叉。
+Gold RM 更大、数据更新，峰值往往更晚出现（Gao 的 scaling 叙述）。这不是「再训一张更大的 RM 就永远不掉」，只是把拐点推后。用同一张 $r_\phi$ 既选 BoN 又报分，你永远看不见分叉。
 
 ```python
 def bon_curve(scores_proxy, scores_gold):
@@ -52,7 +52,7 @@ def bon_curve(scores_proxy, scores_gold):
 
 ## 代理失效不只发生在 RL
 
-离线 DPO 也会：优化的是 implicit reward 与偏好数据的一致，held-out 人评仍可掉。Online DPO / 反复用 RM 造 pair，等于把 BoN 写进训练集，污染更狠，见 `align-online-dpo`、`align-eval-contam`。LLM-as-judge 当 gold 只是第二 proxy，位置偏差和家族偏好吃掉拐点，见 `align-llm-judge`。可验证任务用单测当 gold，proxy 可以是格式分——格式新高、单测掉，同一句话。
+离线 DPO 也会：优化的是 implicit reward 与偏好数据的一致，held-out 人评仍可掉。Online DPO / 反复用 RM 造 pair，等于把 BoN 写进训练集，污染更狠，见 `align-online-dpo`、`align-eval-contam`。LLM-as-judge 当 gold 只是第二 proxy，位置偏差和家族偏好吃掉拐点，见 `align-llm-judge`。可验证任务用单测当 gold，proxy 可以是格式分：格式新高、单测掉，同一句话。
 
 护栏（面试要落到操作）：
 

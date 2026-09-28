@@ -43,9 +43,9 @@ $f$ 对离散选择计数，对 logits 的梯度主要走 $P$。完全均匀时 
 
 ## 实现要点
 
-- **Ties**：`topk` 在分数相等时不稳定，应用唯一次序（加极小噪声或稳定 sort）。
-- **Capacity**：真正 dispatch 时还要截断到 $C$；aux 统计的是「想选谁」，容量截断是系统层，别混进这一行公式。
-- **DeepSeek 无辅助**：选择用 `sigmoid(score)+bias` 的 top-$k$，gates 用未加 bias 的分数；本题若追问，说 aux 被 bias 控制器替换，见 `arch-moe-noaux`。
+- Ties：`topk` 在分数相等时不稳定，应用唯一次序（加极小噪声或稳定 sort）。
+- Capacity：真正 dispatch 时还要截断到 $C$；aux 统计的是「想选谁」，容量截断是系统层，别混进这一行公式。
+- DeepSeek 无辅助：选择用 `sigmoid(score)+bias` 的 top-$k$，gates 用未加 bias 的分数；本题若追问，说 aux 被 bias 控制器替换，见 `arch-moe-noaux`。
 
 ```python
 import torch

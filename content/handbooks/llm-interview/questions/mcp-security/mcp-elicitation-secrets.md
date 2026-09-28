@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-Elicitation 的 form 看起来像「向用户问一个字段」，但字段会经过 MCP server、client 日志、trace，常常还会进模型上下文和下游工具。密码、API key、卡号一旦走这条路，等于把秘密交给不可信链路。秘密只在浏览器可信域完成；MCP 只回收完成 / 取消和最小授权结果。规范把 URL mode 留给认证与支付，不是为了少做一个输入框。好 UX 不是少弹窗，而是用户能看懂谁要什么权限。
+Elicitation 的 form 看起来像「向用户问一个字段」，但字段会经过 MCP server、client 日志、trace，常常还会进模型上下文和下游工具。密码、API key、卡号一旦走这条路，等于把秘密交给不可信链路。秘密只在浏览器可信域完成；MCP 只回收完成 / 取消和最小授权结果。规范把 URL mode 留给认证与支付。好 UX 是用户能看懂谁要什么权限。
 
 ## 为什么 form 收集秘密是错的
 
@@ -31,7 +31,7 @@ Form 输入对 server 可见，也对任何记录 elicitation 的调试通道可
 
 ## 评测与能刷的点
 
-安全评测应包含：恶意 server 用 form 要 token；URL 指向非 allowlist 域；redirect 到相似域名；完成页把 code 塞进 elicitation 结果。成功标准是拦截且 canary secret 不出现在 prompt / trace。评测上能刷的是：只测「有个 OAuth 按钮」、不测钓鱼 URL、把减少弹窗当 UX 成功、demo 把 PAT 粘进 form。elicitation 可以问偏好，不可以问秘密；秘密走浏览器，token 走 host，模型只看见连接状态。实现上把 form schema 做字段级分类：secret / payment 直接拒绝，强制 URL mode。评测把「form 里出现 password」当成漏洞，而不是 UX 问题。现场能画出 secret 永不经过模型上下文的数据流，比背规范章节更有用。Client 实现上应对 elicitation schema 做静态检查，secret 类字段直接拒绝该请求。日志只留「曾发起 URL mode 到某域」，不留下 token。
+安全评测应包含：恶意 server 用 form 要 token；URL 指向非 allowlist 域；redirect 到相似域名；完成页把 code 塞进 elicitation 结果。成功标准是拦截且 canary secret 不出现在 prompt / trace。能刷的点：只测「有个 OAuth 按钮」、不测钓鱼 URL、把减少弹窗当 UX 成功、demo 把 PAT 粘进 form。实现上把 form schema 做字段级分类：secret / payment 直接拒绝，强制 URL mode。评测把「form 里出现 password」当成漏洞。Client 应对 elicitation schema 做静态检查，secret 类字段直接拒绝该请求。日志只留「曾发起 URL mode 到某域」，不留下 token。
 
 ## 追问
 

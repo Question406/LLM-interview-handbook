@@ -30,7 +30,7 @@ sources:
 
 FP16：5 exponent / 10 fraction（另有 hidden bit）。范围大约到 $6\times 10^4$，softmax / 梯度易 Inf，要动态 loss scale。BF16：8 exponent / 7 fraction，指数与 FP32 同宽，范围大约到 $10^{38}$，大模型训练更稳，几乎可关复杂 scaling。
 
-Master weight 和优化器状态仍常用 FP32：16 位只承担 GEMM 和激活。敏感归约（softmax、residual、某些 all-reduce）建议高精累加。选 BF16 不是因为它更准。尾数更少，相对误差更大。
+选 BF16 不是因为它更准——尾数更少，相对误差更大。Master weight 和优化器状态仍常用 FP32：16 位只承担 GEMM 和激活。敏感归约（softmax、residual、某些 all-reduce）建议高精累加。
 
 ## FP8：E4M3 / E5M2 与 scale
 

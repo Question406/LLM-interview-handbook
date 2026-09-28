@@ -40,7 +40,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“有关强化学习算法的代码库，TRL，VERL，Ray等”**
 
-这块容易把 TRL、veRL、Ray 并列成「三个同类库」。Ray 是调度 / 放置，不是 GRPO 实现。TRL 是算法 + HuggingFace Trainer。veRL / OpenRLHF / slime 才是把 rollout 和训练拆成 worker 的 RL Infra。选错层会把「单机跑通」和「70B 同卡换布局」混成同一句话。Agentic RL 岗还会追工具稳定性、稀疏奖励；框架答完我会补一句用过的 `rollout.n`、是否重算 logp、clip 是否真的触发。
+错法：把 TRL、veRL、Ray 并列成「三个同类库」。Ray 是调度 / 放置，不是 GRPO 实现。TRL 是算法 + HuggingFace Trainer。veRL / OpenRLHF / slime 才是把 rollout 和训练拆成 worker 的 RL Infra。选错层会把「单机跑通」和「70B 同卡换布局」混成同一句话。Agentic RL 岗还会追工具稳定性、稀疏奖励；框架答完我会补一句用过的 `rollout.n`、是否重算 logp、clip 是否真的触发。
 
 ## 三层不要并列
 
@@ -63,12 +63,6 @@ veRL HybridEngine：同卡、同进程换训练分片 ↔ 推理 TP，少一份�
 ## 怎么开口选型
 
 先报模型规模、卡是否同构、ckpt 是 HF 还是 Megatron、要不要 Agent 工具循环。7B 验证算法：TRL。多机 GRPO/DAPO、要 HybridEngine：veRL。绑定 SGLang 生产栈：slime。生成池已隔离：OpenRLHF。Ray 是它们底下的调度，不是第四个算法库。补实验细节：`rollout.n` 多少、logp 是否训练图重算、clip 有没有真触发。只报库名会被追问拆穿。
-
-选型按层说。Ray 回答「worker 怎么放、怎么等」；TRL 回答「HF 生态里怎么把 GRPO 跑通」；veRL / OpenRLHF / slime 回答「rollout 和训练怎么拆、权怎么同步、70B 放不放得下」。把 Ray 和 TRL 比快慢没有意义。实习项目 7B、数卡、HF ckpt：TRL 足够验证 clip 和组优势；要写进周报的 Infra 细节（HybridEngine、重算 logp、`rollout.n`）再去读 veRL。生产同构大模型卡紧：veRL HybridEngine 少一份整模。已经绑定 SGLang、要 router / PD / `--custom-generate-function-path`：slime。生成节点规格和训练不同：OpenRLHF 独立 vLLM actor。Agent 岗追问工具循环时，TRL 往往要自己接 env；slime / veRL 有一等 RM + generate 接口。最后补三个数字：`n`、是否重算 logp、clip 触发率，证明跑的是算法而不是 `import`。框架是放置策略的实现，先报拓扑再报名字。
-
-## 实习怎么答
-
-7B 数卡先 TRL 验证组优势和 clip。要写 HybridEngine、重算 logp、`rollout.n` 再读 veRL。同构 70B 卡紧偏 veRL；绑 SGLang router / 自定义 generate 偏 slime；生成池已隔离偏 OpenRLHF。Ray 只是调度。最后报 $n$、是否训练图 logp、clip 触发率。框架跟在拓扑后面，不要先报品牌。
 
 ## 追问
 

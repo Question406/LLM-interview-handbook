@@ -24,13 +24,13 @@ sources:
     type: secondary
 ---
 
-这块容易看到熵曲线往下就喊「崩了」，或反过来把熵当唯一健康指标。策略熵是动作分布的不确定度
+错法：看到熵曲线往下就喊「崩了」，或反过来把熵当唯一健康指标。策略熵是动作分布的不确定度
 
 $$
 H(\pi(\cdot\mid x))=-\mathbb{E}_{a\sim\pi(\cdot\mid x)}\big[\log\pi(a\mid x)\big],
 $$
 
-对 LLM 通常在 response token 上平均。任务本身接近确定性（标准答案、格式锁死）且已经会做时，低熵是收敛，不是事故。要判的是 **熵掉下去的时刻，成功有没有跟上**。
+对 LLM 通常在 response token 上平均。任务本身接近确定性（标准答案、格式锁死）且已经会做时，低熵是收敛，不是事故。要判的是熵掉下去的时刻，成功有没有跟上。
 
 ## 先看时序，再谈失败
 
@@ -40,14 +40,14 @@ $$
 - 正确率平台或在掉，熵却陡降：探索停了。后面 unique 轨迹变少、零方差组变多，GRPO 会空转，见 `byte-grpo-all-same-zero-adv`。
 - 熵涨、长度暴涨、正确率不动：可能是胡话和重复在刷探索，不是「还在学」，见 `data-length-hacking`。
 
-DAPO 把不健康的熵/长度上涨部分归因于 **sample-level loss 摊薄长序列里的坏 token**；改 token-level PG 和 clip-higher，就是让「该罚的重复」和「该放的稀有好 token」都能进梯度，见 `pt-dapo`。
+DAPO 把不健康的熵/长度上涨部分归因于 sample-level loss 摊薄长序列里的坏 token；改 token-level PG 和 clip-higher，就是让「该罚的重复」和「该放的稀有好 token」都能进梯度，见 `pt-dapo`。
 
 ## 早期塌缩常见原因
 
 按「目标 / 采样 / 数据」三层说，不要只调一个温度。
 
 - **目标。** 对称 clip 上界太紧，稀有正 token 梯度为 0；KL / entropy bonus 太弱；reward scale 过大，一步就把质量堆到当前众数上。
-- **采样。** rollout `temperature` 过低，组内几乎是同一条；$G$ 太小更容易全对或全错。温度只改 **rollout 分布**，不进 $\nabla_\theta$，所以把温度调高 **代替不了** 训练里的熵正则。
+- **采样。** rollout `temperature` 过低，组内几乎是同一条；$G$ 太小更容易全对或全错。温度只改 rollout 分布，不进 $\nabla_\theta$，所以把温度调高代替不了训练里的熵正则。
 - **数据。** 题过易，很快全对；过难，长期全错。两种都会让优势消失，策略在噪声上过拟合格式。
 
 Entropy bonus 是 $\mathcal{L}\leftarrow\mathcal{L}-\lambda H(\pi)$，直接改 objective；采样温度是推理旋钮。面试被追「你怎么把熵拉回来」时，先说改了哪一层，不要说「我们温度调到 1.2」。

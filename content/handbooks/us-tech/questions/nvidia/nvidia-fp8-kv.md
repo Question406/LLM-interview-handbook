@@ -45,7 +45,7 @@ $$
 W\approx \sum |W|\cdot b_W.
 $$
 
-$T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重、INT4 AWQ）对症。$T$ 长或并发高：KV 线性涨，权重每步不变，墙转到 cache。$b$ 从 2（fp16）收到 1（FP8），同样 HBM 能塞大约 2 倍 token 或更大 batch；读 KV 的带宽也减半。官方量化博客写过：GPT-J 一类从 fp16 KV 换 FP8 KV，H100 上 batch 可以到 2–3 倍，吞吐再跟一截。这和「权重 FP8 让 Tensor Core 更快」不是同一条 roofline。
+$T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重、INT4 AWQ）对症。$T$ 长或并发高：KV 线性涨，权重每步不变，墙转到 cache。$b$ 从 2（fp16）收到 1（FP8），同样 HBM 能塞大约 2 倍 token 或更大 batch；读 KV 的带宽也减半。官方量化博客写过：GPT-J 一类从 fp16 KV 换 FP8 KV，H100 上 batch 可以到 2-3 倍，吞吐再跟一截。这和「权重 FP8 让 Tensor Core 更快」不是同一条 roofline。
 
 所以可以出现四种组合，面试要能分开：
 
@@ -60,7 +60,7 @@ $T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重�
 
 权重量化：离线 PTQ，per-tensor 或 per-channel $s_W$，GEMM 里 $x_{\mathrm{fp8}} W_{\mathrm{fp8}}$，累加器 fp32 再 rescale。Outlier 在通道上，SmoothQuant / AWQ 那套故事，见 `nvidia-int8-quant`。
 
-KV 量化：K、V 是运行时写进去的激活，每步多一行。Scale 常常 per-tensor 粗、或沿 token / 通道更细。Attention 是 $QK^{\top}$，K 的误差直接进 logits；softmax 对少数过大的 logit 很敏感。V 的误差进加权和，相对钝一点。乱套「和权重同一个 per-tensor INT8」容易把长上下文注意力打崩。TRT-LLM 建议 Hopper / Ada 上 KV 用 FP8 而不是 INT8：E4M3 的动态范围对 cache 更友好，实测精度打击通常小于 INT8 KV。Ampere 没有原生 FP8 MMA，仍可能 FP8 存、算前转回——那是带宽收益，不是 Tensor Core 收益。
+KV 量化：K、V 是运行时写进去的激活，每步多一行。Scale 常常 per-tensor 粗、或沿 token / 通道更细。Attention 是 $QK^{\top}$，K 的误差直接进 logits；softmax 对少数过大的 logit 很敏感。V 的误差进加权和，相对钝一点。乱套「和权重同一个 per-tensor INT8」容易把长上下文注意力打崩。TRT-LLM 建议 Hopper / Ada 上 KV 用 FP8 而不是 INT8：E4M3 的动态范围对 cache 更友好，实测精度打击通常小于 INT8 KV。Ampere 没有原生 FP8 MMA，仍可能 FP8 存、算前转回。那是带宽收益，不是 Tensor Core 收益。
 
 写 cache：attention plugin 可以在核内把新 K/V cast 成 FP8 再落到 paged block。读 cache：dequant 后和 $Q$ 做点积，或走 FP8 attention。Paged 布局见 `nvidia-paged-kv`。Scale 要跟块一起存，否则 gather 回来无法还原。
 

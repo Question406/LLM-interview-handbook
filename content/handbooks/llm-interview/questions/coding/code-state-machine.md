@@ -25,8 +25,7 @@ sources:
     type: reference
 ---
 
-这块容易把 tool 调用的进度写进对话里让模型「自己记得」。LLM 擅长语义决策（叫不叫、填哪个槽），但 transaction、权限、重试次数、是否已有副作用必须由 harness 结构化保存。压缩 context、幻觉、进程重启都会丢掉自然语言里的安全信息。权限模型见 `agent-tool-permissions`；schema 见 `agent-schema-contract`。
-
+错法：把 tool 调用的进度写进对话里让模型「自己记得」。LLM 擅长语义决策（叫不叫、填哪个槽），但 transaction、权限、重试次数、是否已有副作用必须由 harness 结构化保存。压缩 context、幻觉、进程重启都会丢掉自然语言里的安全信息。权限模型见 `agent-tool-permissions`；schema 见 `agent-schema-contract`。
 ## 显式状态：PARSE 到 RETURN，失败有单独边
 
 建议主路径：
@@ -79,3 +78,4 @@ def step(state, event, ctx):
 - **多工具并行？** 每个 call 独立状态机，共享预算与权限快照。不要一个 JSON 数组混一个 attempt 计数。
 - **压缩对话后怎么办？** 状态在外部 store，observation 按需注入。不能靠「摘要里提过已经执行」。
 - **和 ReAct 文本轨迹？** ReAct 是给模型看的；本机状态是给运行时看的。两者 id 对齐，但不互相替代。
+

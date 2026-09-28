@@ -39,7 +39,7 @@ NVIDIA TensorRT-LLM 叫 in-flight batching，vLLM / Hugging Face TGI 叫 continu
 
 $B$ 条请求一起 generate，长度可以差一个数量级。静态实现 pad 到最长那条：先结束的行仍占着计算槽和按 `max_len` 预留的 KV，直到最慢那条写完。GPU 看起来在做 $[B,d]\times[d,d]$，有的行已经是 mask 掉的废计算。LLM 生成长度方差远大于分类模型，这个税更重。
 
-调大静态 `batch_size` 只是让空洞更贵：更多行在等最长尾部。这就是 hole 碎片——时间上的洞（短请求结束后空转）和内存上的洞（按 max length 预留、实际没用满）。两件都要补。
+调大静态 `batch_size` 只是让空洞更贵：更多行在等最长尾部。hole 碎片有两类：时间上的洞（短请求结束后空转）和内存上的洞（按 max length 预留、实际没用满）。两件都要补。
 
 ## Iteration-level 调度补洞
 

@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA Megatron Core 的 `context_parallel_size`、Ring Attention、长上下文预训练都会问：单卡装不下 $T$ 时注意力怎么切。名字容易和 `sys-seq-parallel` 撞车。我会先划清：Megatron SP 是 TP 的配套布局，LN / dropout 按 $T$ 切开，进列并行前仍 all-gather 完整序列；CP 切的是注意力本身，Q 分段驻留，KV 在 CP 组里搬家。四维切分里 CP 和 TP/PP/DP 怎么配，见 `sys-3d-parallel`；超长序列还要叠哪几味，见 `sys-overlong`。
+NVIDIA Megatron Core 的 `context_parallel_size`、Ring Attention、长上下文预训练都会问：单卡装不下 $T$ 时注意力怎么切。名字容易和 `sys-seq-parallel` 撞车。先划清：Megatron SP 是 TP 的配套布局，LN / dropout 按 $T$ 切开，进列并行前仍 all-gather 完整序列；CP 切的是注意力本身，Q 分段驻留，KV 在 CP 组里搬家。四维切分里 CP 和 TP/PP/DP 怎么配，见 `sys-3d-parallel`；超长序列还要叠哪几味，见 `sys-overlong`。
 
 NVIDIA 岗还会追因果 mask 下环是否负载均衡、KV 交换能不能和 Flash kernel overlap。不提 zigzag 和 overlap，评委会当只背过名词。
 

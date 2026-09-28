@@ -64,7 +64,7 @@ Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nv
 
 1. **Encoder 不可切成 LLM 那种 token chunk。** ViT 的层间依赖是整图注意力。Chunked prefill 切的是 **已经算好的视觉 embedding 在 LLM 里的消费**，不是把一张图的 patch 分两步跑完 encoder。TRT-LLM 后来给 llava-next / Qwen2 补的 multimodal chunked prefill，文档强调 embedding cache / 只跑尚未消费的视觉段。把一张图的 encoder 斩两半当 chunk，hidden 对不上。
 
-2. **Token budget 被图打满。** 一张图 576–2k token，再加长 caption，$U=2048$ 可能只够半张图的 LLM prefill。正在飞的 decode TBT 被这条视觉 prefill 抬成尖刺，比纯文本 8k 还常见，因为请求一来就带着图。
+2. **Token budget 被图打满。** 一张图 576-2k token，再加长 caption，$U=2048$ 可能只够半张图的 LLM prefill。正在飞的 decode TBT 被这条视觉 prefill 抬成尖刺，比纯文本 8k 还常见，因为请求一来就带着图。
 
 3. **Batch 轴错位。** 4 条文本 decode（$B=4$、$T_q=1$）和 1 张待编码的图。Encoder 想要 $B_{\mathrm{img}}\ge 8$ 才饱和；LLM decode 已经在抢 HBM。同卡要么让图排队凑 encoder batch（TTFT 差），要么 $B_{\mathrm{img}}=1$ 跑瘦 ViT（利用率差）。分卡（encoder 池 / decode 池）把 embedding 经 PCIe 或 NVLink 送过去，形状问题变成带宽问题。
 

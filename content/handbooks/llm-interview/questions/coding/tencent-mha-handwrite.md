@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写 Multi-Head Attention”**
 
-这块容易调用 `F.scaled_dot_product_attention` 交差：混元一面要的是形状、mask 语义和 `contiguous`，不是库名。同场常接着括号生成，十分钟内必须先画张量再写主干。骨架与 `code-attention` / `deepseek-mha-handwrite` 相同，但这场绑定混元，先保证能口述完 $[B,T,D]\to[B,H,T,d_h]\to[B,H,T,T]$ 再拼回。
+错法：调用 `F.scaled_dot_product_attention` 交差。混元一面要的是形状、mask 语义和 `contiguous`，不是库名。同场常接着括号生成，十分钟内必须先画张量再写主干。骨架与 `code-attention` / `deepseek-mha-handwrite` 相同，但这场绑定混元，先保证能口述完 $[B,T,D]\to[B,H,T,d_h]\to[B,H,T,T]$ 再拼回。
 
 ## 形状与 mask 必须先画
 

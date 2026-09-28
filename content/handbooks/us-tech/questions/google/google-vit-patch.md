@@ -31,7 +31,7 @@ sources:
     type: secondary
 ---
 
-ViT 把图切成 $P\times P$ 的 patch，线性投进 Transformer。Google / Gemini 视觉岗问这题，不是让你背 224 和 patch 16，而是问：**分辨率一涨，序列长度怎么爆，serving 窗口怎么收。** 原生多模态怎么和文本抢 $T$ 见 `google-gemini-mm`；视频再乘时间见 `google-video-token`。不是某次逐字真题。
+ViT 把图切成 $P\times P$ 的 patch，线性投进 Transformer。Google / Gemini 视觉岗问的是：**分辨率一涨，序列长度怎么爆，serving 窗口怎么收。** 原生多模态怎么和文本抢 $T$ 见 `google-gemini-mm`；视频再乘时间见 `google-video-token`。不是某次逐字真题。
 
 ## Token 账：跟 $H,W,P$ 走
 
@@ -87,7 +87,7 @@ Shape 口头报：单图 $[N, D]$，pack 之后 $[B_{\mathrm{pack}}, T_{\mathrm{
 
 这和「换一个更大的 ViT」不是一回事。切块的失败模式是跨块推理：答案在表的左上和右下，两块没同时进窗口。评测要带跨块题，不要只报单块 VQA。和 OCR 还是像素的取舍仍按错误类型，见 `google-gemini-mm`，这里不重复。
 
-面试把「可变分辨率」说成 **packing + 2D 位置 + 可选切块**，不要丢三个模型缩写当答案。
+面试把「可变分辨率」收成 packing、2D 位置、可选切块；别只丢三个模型缩写。
 
 ## 追问
 

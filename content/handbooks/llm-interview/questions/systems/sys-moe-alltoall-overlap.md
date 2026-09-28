@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易把 MoE 的 all-to-all 讲成「和 Dense 的 all-reduce 一样，反向一 overlap 就行」。Dense TP 的通信尺寸固定、对端集合固定；EP 的 dispatch / combine 是 **路由之后才知道的变长消息**，见 `sys-expert-parallel`。同一批 token 必须先 all-to-all 到齐，expert GEMM 才有输入，所以 **同微批的 dispatch 与该批 GEMM 有硬依赖**，叠不上。Overlap 靠的是 **下一批通信 vs 当前批计算**，外加专用通信 kernel。DeepSeek-V3 用 DeepEP 做 EP 的 dispatch/combine，并用 DualPipe 一类流水把通信藏进计算；我会讲清依赖和切微批，不必背产品开关。
+这块容易把 MoE 的 all-to-all 讲成「和 Dense 的 all-reduce 一样，反向一 overlap 就行」。Dense TP 的通信尺寸固定、对端集合固定；EP 的 dispatch / combine 是 **路由之后才知道的变长消息**，见 `sys-expert-parallel`。同一批 token 必须先 all-to-all 到齐，expert GEMM 才有输入，所以 **同微批的 dispatch 与该批 GEMM 有硬依赖**，叠不上。Overlap 靠的是 **下一批通信 vs 当前批计算**，外加专用通信 kernel。DeepSeek-V3 用 DeepEP 做 EP 的 dispatch/combine，并用 DualPipe 一类流水把通信藏进计算。讲清依赖和切微批即可，不必背产品开关。
 
 ## 怎样叠：切微批、双流、反向对称
 
@@ -44,7 +44,7 @@ DeepEP 把跨节点 RDMA 与节点内 NVLink 的不规则 all-to-all 做成可�
 - **动态 shape / CUDA graph。** Token drop、变长 dispatch 让每次 all-to-all 的 count 不同，静态 graph 捕获失败或频繁 re-capture。这是 MoE 比 Dense 更难 overlap 的根因之一。
 - **隐式同步。** 默认流上随手 `torch.cuda.synchronize`、或把通信输出立刻用在默认流，会把双流打回串行。必须显式 stream 与 buffer 轮换，避免 GEMM 写到通信还在读的那块。
 
-我会先保证路由不太歪，再切够大的微批，再用 DeepEP 这类通信库；不要在热点 expert 上「开 overlap 开关」指望吞吐翻倍。Overlap 是把 **可预测的平均通信** 藏进 GEMM；不规则尾部要用均衡和容量来砍，而不是更多 stream。
+我会先保证路由不太歪，再切够大的微批，再用 DeepEP 这类通信库；不要在热点 expert 上指望「开 overlap 开关」吞吐翻倍。Overlap 把可预测的平均通信藏进 GEMM；不规则尾部要用均衡和容量来砍，而不是更多 stream。
 
 ## 追问
 

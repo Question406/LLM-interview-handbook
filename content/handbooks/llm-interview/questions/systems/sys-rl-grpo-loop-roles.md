@@ -63,11 +63,11 @@ veRL 把 Actor / Rollout / Ref 配在 `actor_rollout_ref` 下一组，是因为�
 
 ## 容易混的三个 $\pi$
 
-$\pi_{\mathrm{old}}$、$\pi_\theta$、$\pi_{\mathrm{ref}}$ 必须分开。采样时引擎里的是 old 的推理视图；更新时训练图上的是 $\theta$；KL 用的是冻结 ref。Reward 不是 $\pi$，是标量打分，常常是规则。Critic 在 GRPO 里不存在，不要为了「RL 都有 value」硬编一个。一步墙钟按角色拆：Rollout 最长，Ref 一次前向中等，Actor backward 短但吃优化器显存。同卡就轮流占；分卡就同步权。漏掉「只有 Actor 写权重」，后面问「Ref 要不要学习率」就会答错。公式最后补，$\rho$ 的分子分母来自训练图而不是引擎，这句话要主动说。
+$\pi_{\mathrm{old}}$、$\pi_\theta$、$\pi_{\mathrm{ref}}$ 必须分开。采样时引擎里的是 old 的推理视图；更新时训练图上的是 $\theta$；KL 用的是冻结 ref。Reward 是标量打分，常常是规则，不是 $\pi$。Critic 在 GRPO 里不存在，不要为了「RL 都有 value」硬编一个。一步墙钟按角色拆：Rollout 最长，Ref 一次前向中等，Actor backward 短但吃优化器显存。漏掉「只有 Actor 写权重」，后面问「Ref 要不要学习率」就会答错。$\rho$ 的分子分母来自训练图，不是引擎。
 
 ## 追问
 
-- **$\pi_{\mathrm{old}}$ 是谁？** 采样那一版 Actor，用来算 ratio。不是 Ref。Ref 只进 KL。把三个 $\pi$ 说成两个，clip 的对象就错了。引擎里的 logp 也不能直接当 old 的数值，所以要训练图重算。
+- **$\pi_{\mathrm{old}}$ 是谁？** 采样那一版 Actor，用来算 ratio。不是 Ref。Ref 只进 KL。引擎里的 logp 也不能直接当 old 的数值，所以要训练图重算。
 - **为什么 Ref 还要占卡？** KL 要 $\log\pi_{\mathrm{ref}}$，大模型再 forward 一次不便宜。同卡方案会把 Ref 和 Actor 错开跑；分卡则多一份驻留。省掉 Ref 等于关掉 KL，漂远是另一类事故。
 - **Reward 打在 token 上还是序列上？** GRPO 常用序列标量再广播到生成 token（配合 response mask）。过程奖要另说，不要默认逐步 critic。RLVR 里 Reward 常常是规则，不是要训的网络。
 - **少了重算 logp 会怎样？** ratio 进的是引擎数值，clip 区间可能被噪声打穿，见美团那题。PagedAttention、量化、不同 TP 都会造出能进 $\rho$ 的误差。
@@ -75,4 +75,4 @@ $\pi_{\mathrm{old}}$、$\pi_\theta$、$\pi_{\mathrm{ref}}$ 必须分开。采样
 - **veRL 为什么配在 `actor_rollout_ref` 一组？** 它们常共享 GPU、轮流占显存：先采、卸 KV、再 ref、再 backward。这是放置，不是三个模块融合成一个算子。
 - **没有 Ref 能不能训 GRPO？** 能，等于关掉 KL，策略容易漂。短实验可以，长训或高学习率时 holdout 会垮。要说清你关的是正则，不是「GRPO 不需要 ref」。
 - **Reward 是网络时谁在更新？** RLHF 的 RM 通常冻结当打分器；要训 RM 是另一阶段。不要把「有 RM」说成这一步有两个可训网络。Critic 仍是 PPO 才有。
-- **一步里谁产生 $\rho$、$\hat A$、KL？** $\rho$ 来自训练图上的 $\pi_\theta$ 对 $\pi_{\mathrm{old}}$；$\hat A$ 来自组内奖励减均值；KL 来自冻结 ref。引擎 logp 不进这三项的可靠数值。只有 Actor 写权。Rollout 是推理视图，GRPO 没有 Critic，不要把 RM 和 Critic 说成同一个东西。
+- **一步里谁产生 $\rho$、$\hat A$、KL？** $\rho$ 来自训练图上的 $\pi_\theta$ 对 $\pi_{\mathrm{old}}$；$\hat A$ 来自组内奖励减均值；KL 来自冻结 ref。引擎 logp 不进这三项的可靠数值。

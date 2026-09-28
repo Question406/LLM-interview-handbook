@@ -33,15 +33,15 @@ sources:
 
 ## 题怎么来的
 
-Dao、Haziza、Massa、Sizov 的 Flash-Decoding 是公开推理 kernel，不是 OpenAI 内部代号。推理岗会把它接在 `openai-prefill-decode` 后面问：既然 FlashAttention 已经不物化 $[T,T]$，decode 为什么还慢。答案在并行度，不在公式。片上 softmax 见 `google-flash-attention`、`nvidia-flash-attn`、`coding-online-softmax`。
+Dao、Haziza、Massa、Sizov 的 Flash-Decoding 是公开推理 kernel，不是 OpenAI 内部代号。推理岗会把它接在 `openai-prefill-decode` 后面问：既然 FlashAttention 已经不物化 $[T,T]$，decode 为什么还慢。差在并行度，不在公式。片上 softmax 见 `google-flash-attention`、`nvidia-flash-attn`、`coding-online-softmax`。
 
 ## Decode 的并行度塌了
 
-FlashAttention 的外层并行是 batch、head、**query tile**。Prefill 时 $T_q$ 上千，每个 query 块都能占一个 CTA，HBM 往返被 tile 吃掉，这是 prefill 的红利。
+FlashAttention 的外层并行是 batch、head、query tile。Prefill 时 $T_q$ 上千，每个 query 块都能占一个 CTA，HBM 往返被 tile 吃掉，这是 prefill 的红利。
 
-Decode 一步：$Q$ 是 `[B, H, 1, D]`，$K,V$ 是 `[B, H_{\mathrm{kv}}, T, D]`。分数已经是 `[1, T]`，没有 $[T,T]$ 可省。墙上的时间是把整段 KV 从 HBM 读进来。更糟的是 **能发 load 的 CTA 太少**：并行度大约 $B\cdot H$（GQA 时是 $B\cdot H_q$，但 KV 头更少）。$B=1$、$H=32$，A100 有 108 个 SM，大部分 SM 闲着，带宽打不满。这不是算术强度公式变了，是 occupancy。
+Decode 一步：$Q$ 是 `[B, H, 1, D]`，$K,V$ 是 `[B, H_{\mathrm{kv}}, T, D]`。分数已经是 `[1, T]`，没有 $[T,T]$ 可省。墙上的时间是把整段 KV 从 HBM 读进来。更糟的是能发 load 的 CTA 太少：并行度大约 $B\cdot H$（GQA 时是 $B\cdot H_q$，但 KV 头更少）。$B=1$、$H=32$，A100 有 108 个 SM，大部分 SM 闲着，带宽打不满。这不是算术强度公式变了，是 occupancy。
 
-所以「decode 再套一遍 prefill 的 FlashAttention」加速比通常很小。GQA / 量化 cache 降的是每步要读的字节，见 `google-gqa-mqa`；FlashDecoding 降的是 **读这些字节时 SM 闲着**。两杠杆正交。
+所以「decode 再套一遍 prefill 的 FlashAttention」加速比通常很小。GQA / 量化 cache 降的是每步要读的字节，见 `google-gqa-mqa`；FlashDecoding 降的是读这些字节时 SM 闲着。两杠杆正交。
 
 ## Split-K：沿 KV 切开，再用 LSE 合并
 
@@ -67,7 +67,7 @@ def merge_splits(O_s, lse_s):
 
 因果：decode 一步没有未来 key，mask 不是主因。Paged KV 只改物理布局，split 仍然按逻辑 $T$ 切，见 `openai-continuous-batching`。投机解码的验证步 $T_q=\gamma\gt 1$，并行度回来了，往往不必 split-K，见 `openai-speculative-decoding`。
 
-错法：说 FlashDecoding 把复杂度改成线性；说它和 FlashAttention 公式不同；在大 batch 上默认 split。评委要听的是 **何时切、怎么合并、何时不切**。
+错法：说 FlashDecoding 把复杂度改成线性；说它和 FlashAttention 公式不同；在大 batch 上默认 split。要讲清何时切、怎么合并、何时不切。
 
 ## 追问
 

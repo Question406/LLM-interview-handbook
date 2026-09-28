@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、日期与岗位明确）
 - 原始措辞：**“Claude Code是给模型用grep检索，没有用RAG检索，这俩有什么区别？为什么没用rag？”**
 
-这块容易直接答成「Claude Code 不用 RAG，所以 RAG 过时了」。同一面还问混合召回，文档侧 BM25+向量仍然成立。我会对比工作区精确搜索和静态语义召回，再说明代码 Agent 为什么先搜再读。Harness 与 Skill 渐进披露见 `ant-skills-vs-harness`。
+错法：「Claude Code 不用 RAG，所以 RAG 过时了」。同一面还问混合召回，文档侧 BM25+向量仍然成立。我会对比工作区精确搜索和静态语义召回，再说明代码 Agent 为什么先搜再读。Harness 与 Skill 渐进披露见 `ant-skills-vs-harness`。
 
 ## 二者假设不同
 

@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“解释Agent和RAG原理”**
 
-这块容易直接答成「Agent 就是更好的 RAG」。RAG 是检索一块知识再生成，目标是降低参数记忆造成的过时和幻觉；Agent 是带状态的决策环，可多次选工具、改计划、拒答。RAG 常常只是 Agent 动作集合里的一种。没有状态机和副作用控制，就只是 RAG 管道。场景选择见 `jd-agent-beyond-guide`，评测差异见 `jd-agent-eval-beyond-qa`。
+错法：「Agent 就是更好的 RAG」。RAG 是检索一块知识再生成，目标是降低参数记忆造成的过时和幻觉；Agent 是带状态的决策环，可多次选工具、改计划、拒答。RAG 常常只是 Agent 动作集合里的一种。没有状态机和副作用控制，就只是 RAG 管道。场景选择见 `jd-agent-beyond-guide`，评测差异见 `jd-agent-eval-beyond-qa`。
 
 ## RAG：检索约束生成
 

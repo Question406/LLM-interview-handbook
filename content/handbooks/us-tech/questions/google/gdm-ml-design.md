@@ -6,7 +6,7 @@ level: A
 title: Google DeepMind：分子（或其它科学）数据怎么做 ML design？
 quick: >-
   先钉任务：预测、生成还是检索；再钉监督信号、泄漏和评测单位（分子 / 构象 / scaffold）。模型选择（图网络、3D
-  encoder、语言模型）放在数据约束后面。DeepMind 这轮要的是实验设计，不是套 ResNet。
+  encoder、语言模型）放在数据约束后面。DeepMind 这轮要的是实验设计，别套 ResNet。
 tags:
   - Google
   - DeepMind
@@ -50,13 +50,13 @@ sources:
 - 3D：坐标或点云，适合构象 / 对接。坐标和能量对平移旋转要等变或不变，别直接 flatten 成 MLP。
 - 串：SMILES / SELFIES，适合生成和语言模型。SMILES 对同一分子不唯一，评测要用 canonical 或图匹配。
 
-DeepMind 风格是：你能不能把归纳偏置说成对数据对称性的约束，而不是「GNN 更先进」。
+要把归纳偏置说成对数据对称性的约束，别答「GNN 更先进」。
 
 ## 评测要能进实验室
 
 不要只报 accuracy。性质预测用 MAE + 校准；生成用 validity / uniqueness / novelty，再加和训练集的 scaffold 距离。生成模型很容易复制训练分子，novelty 为 0 仍可能「看起来合法」。
 
-若标签贵（湿实验），主动学习、模拟器打分、人类专家抽查要写进 pipeline。AlphaFold 的教训是：关键在数据、等价性、和能在独立结构上评；不是更深的网络名字。
+若标签贵（湿实验），主动学习、模拟器打分、人类专家抽查要写进 pipeline。AlphaFold 的教训是数据、等价性、和能在独立结构上评；不是更深的网络名字。
 
 系统题：训练是否要物理模拟在环、batch 怎么按图大小 padding、3D 对齐的计算开销。MLE 岗会追这些，RS 岗会追能量函数和评测是否过拟合 CASP 式公开集。
 

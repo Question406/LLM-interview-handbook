@@ -99,7 +99,7 @@ def maxProfit_k(k, prices):
     return sell[k]
 ```
 
-- **拆成两次「只做一笔」？** 令 `left[i]` 为 `[0..i]` 内一笔最大利润，`right[i]` 为 `[i..n)` 内一笔最大利润，答案是 $\max_i(\textit{left}[i]+\textit{right}[i])$。两次线性扫描，时间 $O(n)$。和四变量状态机等价，白板可当交叉验证。
+- **拆成两次「只做一笔」？** 令 `left[i]` 为 `[0..i]` 内一笔最大利润，`right[i]` 为 `[i..n)` 内一笔最大利润，答案是 $\max_i(\textit{left}[i]+\textit{right}[i])$。两次线性扫描，时间 $O(n)$。和四变量状态机等价，可当交叉验证。
 
 ```python
 def maxProfit_split(prices):

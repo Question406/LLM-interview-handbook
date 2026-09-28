@@ -31,9 +31,8 @@ sources:
 ## 题怎么来的
 
 词表 $V$ 到十万量级时，logits `[B, T, V]` 往往比隐状态还大。NVIDIA 训练 kernel 和 OpenAI debug
-都会问：CE 真的需要这张表吗？不需要。损失只依赖目标列和整行 logsumexp。Liger / Apex / Megatron 的 fused
-linear-cross-entropy 沿 $V$ 分块做 $hW^\top$，用 online 归约攒分母，反向再扫一遍块，不把 `[N, V]` 留在
-HBM。公式底盘见 `coding-cross-entropy`、`coding-logsumexp`。
+都会问：CE 要不要物化整张表。损失只依赖目标列和整行 logsumexp，不必留 `[N, V]`。Liger / Apex / Megatron 的 fused
+linear-cross-entropy 沿 $V$ 分块做 $hW^\top$，用 online 归约攒分母，反向再扫一遍块。公式底盘见 `coding-cross-entropy`、`coding-logsumexp`。
 
 ## 只留 $z_y$ 和 $(m,\ell)$
 
@@ -92,8 +91,6 @@ Weight tying 时 $W$ 就是 embedding 矩阵，见 `coding-weight-tying`。Fused
 $m+\log\ell$，可以同一趟加 $10^{-4}(m+\log\ell)^2$，见 `coding-z-loss`。Tensor parallel
 沿 $V$ 切开时，每卡先做局部 logsumexp，再跨卡 all-reduce max 和 rescale 后的 $\ell$，和 split-K
 注意力同一类归约，见 `coding-flash-decode`。
-
-Shift 在 flatten 之前做：`h[:, :-1]` 对 `labels[:, 1:]`。不要对整段 $T$ 算完再靠 ignore 把最后一位丢掉却仍除以 $T$。
 
 ## 追问
 

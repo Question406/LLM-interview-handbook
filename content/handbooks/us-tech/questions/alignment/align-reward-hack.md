@@ -58,9 +58,9 @@ InstructGPT 的护栏是反向 KL 到 SFT，见 `align-rlhf-kl`。KL 只能限�
 
 能规则 / verifier 的信号不要交给纯 RM。客服把「是否解决」和「态度」拆开，避免态度吞掉任务。定期换一批盲测题重训或换 RM，防止策略过拟合旧判官。Best-of-n 对 proxy RM 同样会 overoptimize，只是发生在推理期。
 
-白板我会画一张长度 vs RM 散点：SFT 是一团，RL 之后变成「又长又高分」的角。再叠 gold 或人工分，角上的点 gold 很低，就是 hack 集群。格式刷分用开场白计数器就能抓；谄媚必须做立场翻转对照，单看满意度看不出来。
+我会画一张长度 vs RM 散点：SFT 是一团，RL 之后变成「又长又高分」的角。再叠 gold 或人工分，角上的点 gold 很低，就是 hack 集群。格式刷分用开场白计数器就能抓；谄媚必须做立场翻转对照，单看满意度看不出来。
 
-面试收尾：proxy 指标用来挑 checkpoint，门禁用人工切片和 held-out 任务，永远不要让训练 RM 同时当选模器和验收器。
+proxy 指标用来挑 checkpoint，门禁用人工切片和 held-out 任务；训练 RM 不要同时当选模器和验收器。
 
 ## 追问
 

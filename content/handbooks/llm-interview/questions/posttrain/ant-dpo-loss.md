@@ -34,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“讲一下 DPO , PPO , GRPO 的原理和区别，写一下 DPO loss 函数”**
 
-这块容易直接答成「再做一次 pairwise 交叉熵」，或者把 $\beta$ 说成学习率。DPO 不是凭空发明的分类损失，它是从反向 KL 约束 RL 的闭式最优策略反解奖励，再代入 Bradley-Terry。方向写反，最优策略对不上，后面所有符号都会漂，见 `fund-kl-directions`。白板我会主动写出三样：冻结的 $\pi_{\mathrm{ref}}$、完成序列上的 $\log\pi$ 求和，以及优化的是 chosen 相对 rejected 的间隔，不是正例绝对似然。缺任何一项，面试官下一问就会拆穿。
+错法：「再做一次 pairwise 交叉熵」，或者把 $\beta$ 说成学习率。DPO 是从反向 KL 约束 RL 的闭式最优策略反解奖励，再代入 Bradley-Terry，不是凭空发明的分类损失。方向写反，最优策略对不上，后面所有符号都会漂，见 `fund-kl-directions`。我会主动写出三样：冻结的 $\pi_{\mathrm{ref}}$、完成序列上的 $\log\pi$ 求和，以及优化的是 chosen 相对 rejected 的间隔，不是正例绝对似然。缺任何一项，面试官下一问就会拆穿。
 
 ## 从最优策略反解到分类损失
 

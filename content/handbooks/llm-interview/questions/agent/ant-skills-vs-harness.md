@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“项目的skills是怎么实现的？你是怎么写skills的？”**；**“Spring AI框架的skills调用更像Claude Code还是其他Harness agent？”**
 
-同一面先问怎么写 Skill，再对比 Spring AI 和 Claude Code。这块容易直接答成把 `@Tool` 注解当成 Skill，或把所有 harness 画等号。Skill vs Rule 见 `ali-skill-vs-rules-governance`；grep vs RAG 见 `ant-grep-vs-rag`；Skill 评测见 `agent-skill-eval`。
+同一面先问怎么写 Skill，再对比 Spring AI 和 Claude Code。错法：把 `@Tool` 注解当成 Skill，或把所有 harness 画等号。Skill vs Rule 见 `ali-skill-vs-rules-governance`；grep vs RAG 见 `ant-grep-vs-rag`；Skill 评测见 `agent-skill-eval`。
 
 ## Skill 怎么写
 
@@ -38,7 +38,7 @@ sources:
 
 ## Harness 才决定怎么调用
 
-Harness 负责何时加载 Skill、工具输出如何隔离、权限在哪执行。Claude Code 用工作区检索（grep）按需拉文件，工具面相对窄，上下文由探索构成，Skill 渐进披露。Spring AI 常见路径是预先暴露一组 `@Tool`，循环 function call，更像经典 tool-calling Agent。若项目里的「Skill」只是 Java 方法注解，应主动说：**更接近 tool catalog，还不是 Claude 那种渐进披露**。不要硬说「Spring AI 就是 Claude Code」。Harness 工程化还可对照 `byte-harness-engineering`。
+Harness 负责何时加载 Skill、工具输出如何隔离、权限在哪执行。Claude Code 用工作区检索（grep）按需拉文件，工具面相对窄，上下文由探索构成，Skill 渐进披露。Spring AI 常见路径是预先暴露一组 `@Tool`，循环 function call，更像经典 tool-calling Agent。若项目里的「Skill」只是 Java 方法注解，应主动说：更接近 tool catalog，还不是 Claude 那种渐进披露。不要硬说「Spring AI 就是 Claude Code」。Harness 工程化还可对照 `byte-harness-engineering`。
 
 ## 对比时怎么落到一句
 

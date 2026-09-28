@@ -38,9 +38,9 @@ $$
 \hat A_i=\frac{r_i-\mathrm{mean}(r)}{\mathrm{std}(r)+\varepsilon}.
 $$
 
-同一条序列上每个 response token 共用这个 $\hat A_i$。策略目标仍是 PPO 那套 importance ratio clip，只是 $\hat A$ 不再来自 critic。反向 KL 到 $\pi_{\mathrm{ref}}$ 仍以奖励惩罚或 token 正则出现，见 `align-rlhf-kl`。答成「GRPO 砍掉了 KL」是错的；砍掉的是 **learned baseline**。
+同一条序列上每个 response token 共用这个 $\hat A_i$。策略目标仍是 PPO 那套 importance ratio clip，只是 $\hat A$ 不再来自 critic。反向 KL 到 $\pi_{\mathrm{ref}}$ 仍以奖励惩罚或 token 正则出现，见 `align-rlhf-kl`。答成「GRPO 砍掉了 KL」是错的；砍掉的是 learned baseline。
 
-组均值是 **按 prompt 的控制变量**：难题普遍低分、易题普遍高分，减均值之后比的是「这题里谁更好」，不是跨题绝对分。这比全局 moving-average 的 REINFORCE 更贴 LLM 的 prompt 异质性。
+组均值是按 prompt 的控制变量：难题普遍低分、易题普遍高分，减均值之后比的是「这题里谁更好」，不是跨题绝对分。这比全局 moving-average 的 REINFORCE 更贴 LLM 的 prompt 异质性。
 
 ```python
 def grpo_adv(rewards, eps=1e-6):
@@ -64,7 +64,7 @@ clip 仍然相对 $\pi_{\mathrm{old}}$，不是相对 $\pi_{\mathrm{ref}}$。两
 
 资源紧、奖励可验证（数学、代码、单测）：GRPO 合理，省一张 critic，数据闭环也简单。开放对话、奖励噪声大、组内分不开：组标准化会放大标注噪声，PPO + 学到的 $V$ 或先训 RM 再 RL 更常见。和 DPO 比：DPO 离线、不 rollout，见 `align-dpo`；GRPO 在线、要采样。不是「R1 证明 DPO 过时了」。
 
-白板我会画：$G$ 条柱子、均值当零轴、clip 盒子、旁边再画一个没画出来的 critic。评委要听的是你知道省了什么计算、引入了什么方差。
+我会画：$G$ 条柱子、均值当零轴、clip 盒子、旁边再画一个没画出来的 critic。评委要听的是你知道省了什么计算、引入了什么方差。
 
 ## 追问
 

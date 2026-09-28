@@ -20,7 +20,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「全连接」，或者漏掉 softmax 归一化，或者把 $QK^{\top}$ 形状说成 $d\times d$。它是内容寻址的软检索/软组合：用 query 匹配 keys 得到权重，再对 values 加权求和。淘天校招白板要先写公式再讲直觉，再接到 Agent 窗口局限（`ali-attention-agent-limit`）。
+错法：「全连接」，或者漏掉 softmax 归一化，或者把 $QK^{\top}$ 形状说成 $d\times d$。它是内容寻址的软检索/软组合：用 query 匹配 keys 得到权重，再对 values 加权求和。淘天校招白板要先写公式再讲直觉，再接到 Agent 窗口局限（`ali-attention-agent-limit`）。
 
 ## 公式与凸组合
 
@@ -38,7 +38,7 @@ $$
 
 ## 接到 Agent 时别停在公式
 
-公式说的是窗口内软组合。多轮工具 JSON 一长，softmax 质量被噪声位置稀释，早先约束（「别改价」）会被最新 observation 盖住。所以白板我会收到：Attention 解决的是当前上下文里的内容寻址；跨会话、可审计、可权限的状态必须外置。通义方向常接着问 RoPE 相对性。位置信息在旋转里，不在加性 bias 上，外推另说。GQA 把 KV 头共享，改的是 cache 体积 $O(n_{\mathrm{kv}}Td_h)$，不改「Q 打 K、加权 V」这件事。
+公式说的是窗口内软组合。多轮工具 JSON 一长，softmax 质量被噪声位置稀释，早先约束（「别改价」）会被最新 observation 盖住。所以我会收成：Attention 解决的是当前上下文里的内容寻址；跨会话、可审计、可权限的状态必须外置。通义方向常接着问 RoPE 相对性。位置信息在旋转里，不在加性 bias 上，外推另说。GQA 把 KV 头共享，改的是 cache 体积 $O(n_{\mathrm{kv}}Td_h)$，不改「Q 打 K、加权 V」这件事。
 
 ## 追问
 

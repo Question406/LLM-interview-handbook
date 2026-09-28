@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写attention”**
 
-这块容易只写 `nn.MultiheadAttention`，或因果 / padding 的 True-False 反了。同面还可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状与 `deepseek-mha-handwrite` 同构，拼多多要的是口述 broadcast。
+错法：只写 `nn.MultiheadAttention`，或因果 / padding 的 True-False 反了。同面还可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状与 `deepseek-mha-handwrite` 同构，拼多多要的是口述 broadcast。
 
 ## 白板顺序与形状
 

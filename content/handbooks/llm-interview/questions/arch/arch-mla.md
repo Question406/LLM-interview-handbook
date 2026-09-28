@@ -22,13 +22,13 @@ sources:
     type: legacy-reference
 ---
 
-这块容易把 MLA 说成「另一种 GQA」或「把 K/V 随便压成一个小向量」。两者都为 decode 的 KV 带宽服务，压缩轴不同：GQA 减少独立 KV 头的个数；MLA 把每 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
+错法：把 MLA 说成「另一种 GQA」，或「把 K/V 随便压成一个小向量」。两者都为 decode 的 KV 带宽服务，压缩轴不同：GQA 减少独立 KV 头的个数；MLA 把每 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
 
 ## 1. GQA：沿 head 数共享
 
 MHA 对每个 query head 存一对 $k,v$，每 token cache 约为 $2 n_h d_h$。GQA 令 $n_{\mathrm{kv}}\lt n_h$，若干 query 头共用同一 KV 头。MQA 是 $n_{\mathrm{kv}}=1$ 的极端。
 
-Cache 从 $O(n_h d_h)$ 降到 $O(n_{\mathrm{kv}} d_h)$。实现简单，和标准 RoPE 兼容：旋转仍作用在完整头维上。代价是头之间的独立性变弱；压过头（直接 MQA）质量往往掉一截。GQA **没有**在头内部做低秩分解，只是少存几份头。
+Cache 从 $O(n_h d_h)$ 降到 $O(n_{\mathrm{kv}} d_h)$。实现简单，和标准 RoPE 兼容：旋转仍作用在完整头维上。代价是头之间的独立性变弱；压过头（直接 MQA）质量往往掉一截。GQA 没有在头内部做低秩分解，只是少存几份头。
 
 ## 2. MLA：沿表示维压缩，再拆 RoPE
 
@@ -52,7 +52,7 @@ $$
 (q^C)^\top k^C=(c^Q)^\top(W^{UQ})^\top W^{UK}c^{KV}.
 $$
 
-把 $(W^{UQ})^\top W^{UK}$ 吸进 query 侧，推理只需拿 $c^{KV}$ 做等价点积。Value 侧把 $W^{UV}$ 吸进输出投影。于是 decode **不必每步显式恢复大 $k,v$**，算力和带宽都停在 latent 上。这是 MLA 相对「先低秩压缩、再解压再 attention」的关键工程差。
+把 $(W^{UQ})^\top W^{UK}$ 吸进 query 侧，推理只需拿 $c^{KV}$ 做等价点积。Value 侧把 $W^{UV}$ 吸进输出投影。于是 decode 不必每步显式恢复大 $k,v$，算力和带宽都停在 latent 上。这是 MLA 相对「先低秩压缩、再解压再 attention」的关键工程差。
 
 | | GQA | MLA |
 | --- | --- | --- |

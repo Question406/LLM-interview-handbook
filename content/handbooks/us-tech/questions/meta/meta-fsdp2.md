@@ -32,7 +32,7 @@ sources:
     type: primary
 ---
 
-Meta 训练栈岗（PyTorch / Llama pretrain / Recsys 大模型）会把 FSDP 当默认语言，而不是「你会不会 DeepSpeed」。FairScale 的 FSDP 从 Meta 进了 PyTorch；FSDP2 是同一条产品线的重写。和 `nvidia-trillion-train` 的 3D 并行不互斥：FSDP 是数据并行这一轴怎么切状态。
+Meta 训练栈岗（PyTorch / Llama pretrain / Recsys 大模型）默认讲 FSDP，DeepSpeed 反而是旁支。FairScale 的 FSDP 从 Meta 进了 PyTorch；FSDP2 是同一条产品线的重写。和 `nvidia-trillion-train` 的 3D 并行不互斥：FSDP 是数据并行这一轴怎么切状态。
 
 ## 切什么：先对齐 ZeRO 表
 
@@ -58,7 +58,7 @@ FSDP 的 `FULL_SHARD` 对齐 ZeRO-3；`SHARD_GRAD_OP` 对齐 ZeRO-2（forward �
 
 和 DDP 的差别：DDP 是整网梯度 all-reduce，参数始终完整；FSDP 把集合通信拆到 unit 边界，才能和计算重叠。Prefetch：算第 $\ell$ 层时异步 all-gather 第 $\ell+1$ 层。讲不出 overlap，评委会觉得你只背了分片表。
 
-通信量：每个 unit 的 all-gather / reduce-scatter 都是 $O(\mathrm{numel})$ 量级，和 ZeRO-3 同类。层太碎，启动延迟吃掉带宽；层太厚，缓冲显存和无法重叠的气泡都会难看。这是调 wrap 的原因，不是玄学。
+通信量：每个 unit 的 all-gather / reduce-scatter 都是 $O(\mathrm{numel})$ 量级，和 ZeRO-3 同类。层太碎，启动延迟吃掉带宽；层太厚，缓冲显存和无法重叠的气泡都会难看。所以才要调 wrap。
 
 ## FSDP1 → FSDP2，以及和 TP 怎么叠
 
@@ -66,7 +66,7 @@ FSDP1：一组参数 flatten、拼接、padding 成 `FlatParameter`，再均分�
 
 FSDP2（`torch.distributed.fsdp.fully_shard`）：每个参数在 dim-0 上切成 `DTensor`，逻辑上仍按你调用 `fully_shard` 的 module 打成一个通信组（一组一次 collective），但不再真的拼成一根 1D 向量。文档强调：自底向上 wrap；`named_parameters()` 仍是原名加分片 DTensor；sharded state dict 不必为了保存再 all-gather。对冻结参数、和 TP/HSDP 组 mesh，这是 Meta 现在推的原因。
 
-和 ZeRO-3 的一句话关系：**内存语义同类，实现和可组合性不同。** DeepSpeed 是引擎；FSDP2 吃 PyTorch 的 DTensor / torch.compile（见 `meta-pytorch-compile`）。万亿 dense 通常还要 TP，单靠 FSDP 只能把复制去掉，切不了层内大 GEMM，见 `nvidia-trillion-train`。推荐侧巨型 embedding 表也不是 FSDP 的主战场，那是按表切的 all-to-all，见 `meta-dlrm`。
+和 ZeRO-3：**内存语义同类，实现和可组合性不同。** DeepSpeed 是引擎；FSDP2 吃 PyTorch 的 DTensor / torch.compile（见 `meta-pytorch-compile`）。万亿 dense 通常还要 TP，单靠 FSDP 只能把复制去掉，切不了层内大 GEMM，见 `nvidia-trillion-train`。推荐侧巨型 embedding 表也不是 FSDP 的主战场，那是按表切的 all-to-all，见 `meta-dlrm`。
 
 ## 追问
 

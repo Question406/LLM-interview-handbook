@@ -31,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 岗把注意力当 kernel 题，不是当 Transformer 名词题。论文是 FlashAttention 的 IO 分析；产品侧 Megatron / Transformer Engine / TensorRT-LLM 都接了同类 kernel。我会先写标准注意力在 HBM 上写了什么，再画 SRAM tile，最后主动说 decode 为什么不能抄 prefill 的加速比。
+NVIDIA 岗把注意力当 kernel 题，不是当 Transformer 名词题。论文是 FlashAttention 的 IO 分析；产品侧 Megatron / Transformer Engine / TensorRT-LLM 都接了同类 kernel。我会先写标准注意力在 HBM 上写了什么，再画 SRAM tile，最后说明 decode 为什么不能抄 prefill 的加速比。
 
 ## 标准注意力的 IO
 

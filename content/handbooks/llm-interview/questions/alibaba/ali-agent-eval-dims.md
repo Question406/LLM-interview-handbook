@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成只报「任务成功率」。淘天 Agent 面里，planning 失败和 hallucination 都会让 success 掉，但修法完全不同：前者是子目标或依赖拆错，后者是无证据断言或伪造 tool 参数。糊成一个数，线上只能靠聊天感觉，回不去。单次 LLM 打分也不是 Agent 评估（对照 `ali-score-vs-agent`）。
+错法：只报「任务成功率」。淘天 Agent 面里，planning 失败和 hallucination 都会让 success 掉，但修法完全不同：前者是子目标或依赖拆错，后者是无证据断言或伪造 tool 参数。糊成一个数，线上只能靠聊天感觉，回不去。单次 LLM 打分也不是 Agent 评估（对照 `ali-score-vs-agent`）。
 
 ## Outcome 与 Process 必须拆开
 
@@ -36,7 +36,7 @@ Planning 看子目标有没有覆盖关键步骤、依赖顺序对不对、有�
 
 幻觉看三件事：无依据事实、伪造引用、与工具结果矛盾。Agent 里最常见的是错误 tool 参数（编订单号、编原因码）和无视 observation 继续编。忠实度应对齐「当前工具返回 + 允许的知识库」，不是对齐预训练记忆。这和 RAG 评估同构：证据一层、生成忠实一层、端到端一层（见 `ali-rag-eval`、`ali-hallucination-intercept`）。无证据必须拒答或澄清；拒答率过低，通常是幻觉被 success 掩盖。Safety 单独开一维：越权、不可逆未确认，不要把安全失败算进 hallucination，否则 Guardrail 和事实核对会修错闸门。
 
-淘天白板我会收成一张表：行是 Outcome / Process / Planning / Faithfulness / Safety，列是「自动可算吗、金标从哪来、失败时修哪一层」。没有金标 plan 就不要假装算 planning F1，改成关键动作覆盖；没有证据文档就不要假装算引用正确率。Agent RL 的训练 reward（GRPO 组内 $A$、DPO 偏好）更不能替代这张表。训练信号会 hack，评估集必须独立、可回放。新失败 trace 入库后要能指出是规划依赖错、工具参数幻觉，还是越权，否则下周还是只看到 success 掉了几个点。
+淘天我会收成一张表：行是 Outcome / Process / Planning / Faithfulness / Safety，列是「自动可算吗、金标从哪来、失败时修哪一层」。没有金标 plan 就不要假装算 planning F1，改成关键动作覆盖；没有证据文档就不要假装算引用正确率。Agent RL 的训练 reward（GRPO 组内 $A$、DPO 偏好）更不能替代这张表。训练信号会 hack，评估集必须独立、可回放。新失败 trace 入库后要能指出是规划依赖错、工具参数幻觉，还是越权，否则下周还是只看到 success 掉了几个点。
 
 ## 追问
 

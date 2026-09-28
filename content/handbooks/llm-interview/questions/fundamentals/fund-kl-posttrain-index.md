@@ -70,4 +70,4 @@ sources:
 - 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
 - GRPO 的 KL 和 PPO 的 KL 是一模一样的吗？
 
-我会这么串：方向看采样分布；Trust-Region 对 $\pi_{\mathrm{old}}$，Drift 对 $\pi_{\mathrm{ref}}$；外部 OPD 学生采样常是反向 KL；OPSD 还要再问下一 token 公式写的是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。
+串法：方向看采样分布；Trust-Region 对 $\pi_{\mathrm{old}}$，Drift 对 $\pi_{\mathrm{ref}}$；外部 OPD 学生采样常是反向 KL；OPSD 还要再问下一 token 公式写的是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。

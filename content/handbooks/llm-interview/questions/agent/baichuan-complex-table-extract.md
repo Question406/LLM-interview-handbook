@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“如何提取复杂表格信息”**
 
-百川实习一面这题，别答成「把 Excel 截图丢给 VLM」。复杂表的难点是结构不是规则网格。模型负责理解问法和选择操作，数值以 spreadsheet engine 为准。同一面的 SQL 安全、多 Agent 分工见 `baichuan-sql-agent-safety-detection`、`baichuan-multi-agent-collab`。
+错法：「把 Excel 截图丢给 VLM」。复杂表的难点是结构不是规则网格。模型负责理解问法和选择操作，数值以 spreadsheet engine 为准。同一面的 SQL 安全、多 Agent 分工见 `baichuan-sql-agent-safety-detection`、`baichuan-multi-agent-collab`。
 
 ## 先恢复结构，再定位单元格
 

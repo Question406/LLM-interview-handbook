@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-Search / Recs / Bedrock 检索岗爱问这题，不是让你背 DSSM。Amazon Science 的 Semantic Product Search 把商品召回做成双塔：query 塔实时、item 塔离线。后面 BERT 双塔要蒸馏才能扛住电商实时延迟。公开论文不是某次 onsite 逐字题，但和「十亿级目录、毫秒召回」是同一张图。按 Leadership Principles 收：先指标和失败模式，不要只画两个 MLP。
+Search / Recs / Bedrock 检索岗爱问这题。Amazon Science 的 Semantic Product Search 把商品召回做成双塔：query 塔实时、item 塔离线。后面 BERT 双塔要蒸馏才能扛住电商实时延迟。公开论文和「十亿级目录、毫秒召回」是同一张图。按 Leadership Principles 收：先指标和失败模式，不要只画两个 MLP。
 
 ## 训练对齐的是什么
 
@@ -74,6 +74,6 @@ def infonce(q, p, t=0.05):
 
 ## 追问
 
-- **为什么不把 query、item 塞进同一个 Transformer？** 交叉注意力更准，但 item 不能预计算，延迟从毫秒变成对全库做 Transformer。召回用双塔，精排再用交叉。别把两段合成一个「端到端更优雅」。
+- **为什么不把 query、item 塞进同一个 Transformer？** 交叉注意力更准，但 item 不能预计算，延迟从毫秒变成对全库做 Transformer。召回用双塔，精排再用交叉。别把召回和精排合成一段。
 - **ANN recall 已经 0.99 为什么还掉转化？** 召回集对了，排序目标可能仍是点击不是购买；或词法精确匹配被语义近邻挤掉。看失败 query：漏 ASIN 是召回，排错是 ranker。
 - **item 塔要不要每天全量重嵌？** 改标题、类目、合规状态的走增量；embedding 模型一换必须全量。增量更新和模型版本打在同一索引别名上，否则训练/服务再偏一次。

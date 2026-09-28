@@ -28,7 +28,7 @@ sources:
     type: secondary
 ---
 
-Google 训练岗默认硬件是 TPU，不是 8 卡 NVLink 盒子。题通常是：540B 或 Gemini 规模，你怎么把张量铺到芯片上。PaLM 跨 Pod 那一层见 `google-palm-pathways`；这里讲 **单 Pod 里 mesh 轴和 GPU 3D 并行的对照表**。
+Google 训练岗默认硬件是 TPU。题通常是：540B 或 Gemini 规模，你怎么把张量铺到芯片上。PaLM 跨 Pod 那一层见 `google-palm-pathways`；这里讲单 Pod 里 mesh 轴和 GPU 3D 并行的对照。
 
 ## Mesh 是逻辑轴，ICI 是物理边
 
@@ -57,11 +57,11 @@ mesh = Mesh(devices.reshape(D, M), ("data", "model"))
 | 超长序列激活 | 序列 / 上下文并行 | 再加一条 `seq` 轴切 $T$ |
 | 专家 | EP + all-to-all | 专家维贴独立 mesh 轴，见 `google-gemini-moe` |
 
-类比的正确用法：三本账还是 **参数、激活、优化器状态**。万亿参数塞不进单芯片，必须有一条轴切权重；batch 太小则 data 轴利用率差。类比的错误用法：把 `TP=8` 搬到 TPU 上。8 来自 DGX 拓扑，不是数学常数。TPU 的 model 轴取 2、4、16 都可以，取决于那一维 ICI 和每层同步次数。
+类比停在三本账：参数、激活、优化器状态。万亿参数塞不进单芯片，必须有一条轴切权重；batch 太小则 data 轴利用率差。别把 `TP=8` 搬到 TPU 上：8 来自 DGX 拓扑。TPU 的 model 轴取 2、4、16 都可以，取决于那一维 ICI 和每层同步次数。
 
-编译器（XLA GSPMD）看的是切分标注，不是 Python `all_reduce` 调用。你在逻辑上写完整 matmul，它在 model 轴切开的地方插入通信。和手写 Megatron 的差别：你调的是 **轴和 PartitionSpec**，通信模式是推导出来的。`pjit` / `shard_map` 怎么讲 SPMD，见 `google-jax-pjit`。
+编译器（XLA GSPMD）看切分标注，不看你有没有手写 `all_reduce`。逻辑上写完整 matmul，它在 model 轴切开的地方插入通信。和手写 Megatron 的差别：你调的是轴和 PartitionSpec，通信模式是推导出来的。`pjit` / `shard_map` 怎么讲 SPMD，见 `google-jax-pjit`。
 
-## 我会主动诊断的错切
+## 错切怎么诊断
 
 Batch 很小却把 data 轴拉满：每芯片 $B=1$，GEMM 瘦，MFU 崩。模型很宽却不切 model：单芯片 HBM 装不下一层。PP 太深：气泡和每 stage 的 padding 浪费，TPU 静态 shape 更痛。序列很长却只切 $B$：激活按 $B\cdot T\cdot L\cdot d$ 涨，该切 $T$ 或开重计算 / Flash 式核，见 `google-flash-attention`。
 
@@ -72,4 +72,4 @@ Batch 很小却把 data 轴拉满：每芯片 $B=1$，GEMM 瘦，MFU 崩。模�
 - **FSDP 在 TPU 上叫什么？** 还是参数分片 + 按需 all-gather。实现上往往是 mesh 上多一条轴，或 ZeRO 风格的 `P("data")` 打在权重上。名字不重要，字节账重要。
 - **为什么 TPU 讨厌动态 shape？** XLA 按静态 shape 编译。MoE 变长 dispatch、变长 decode 都要 padding 到容量。这是 mesh 上 MoE 慢的常见原因。
 - **单芯片 debug 和多芯片不一致？** 切分改变了归约顺序和浮点，bitwise 不一定相同。功能正确看 loss 曲线和下游，不要用 CPU 单核 bit exact 当 TPU SPMD 的验收。
-- **和 GPU 3D 哪个更「先进」？** 都是切这三维。先进的是你能不能按带宽层次选轴，而不是硬件品牌。
+- **和 GPU 3D 哪个更「先进」？** 都是切这三维。差别在你能不能按带宽层次选轴，不在硬件品牌。

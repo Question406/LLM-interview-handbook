@@ -62,7 +62,7 @@ $\mathcal{L}_{\mathrm{SFT}}$ 把 chosen 的似然拉上去，odds ratio 让 chos
 
 显存和工程：少一次前向、少一份权重、少一套和策略对不齐的 tokenizer/checkpoint。Phi-2 这种 $2.7\mathrm{B}$ 在单机上可以对偏好数据直接训，不必为了 DPO 再塞一个同尺寸冻结模型。论文把这叫做 monolithic：SFT 和偏好不是两段 job。
 
-理论：DPO 的 $\beta$ 来自「奖励 = 隐式 log 比 + 参考策略的 KL」。ORPO 没有这条 KL。约束 chosen 不飞出预训练语言的，是 NLL 本身——它只在 $y_w$ 上提供正信号，对 $y_l$ 的惩罚来自 odds ratio，而不是「相对 SFT 的 token KL」。所以：
+理论：DPO 的 $\beta$ 来自「奖励 = 隐式 log 比 + 参考策略的 KL」。ORPO 没有这条 KL。约束 chosen 不飞出预训练语言的，是 NLL 本身：它只在 $y_w$ 上提供正信号，对 $y_l$ 的惩罚来自 odds ratio，而不是「相对 SFT 的 token KL」。所以：
 
 - $\lambda$ 太小：几乎就是 SFT，偏好学不够，rejected 风格还在。
 - $\lambda$ 太大：模型为了压 $P(y_l)$ 把大量 token 概率削掉，出现乱码、拒答、长度塌缩。没有 $\pi_{\mathrm{ref}}$ 给你一条 KL 曲线当刹车。

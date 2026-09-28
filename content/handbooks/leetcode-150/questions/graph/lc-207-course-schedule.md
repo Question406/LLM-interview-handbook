@@ -105,4 +105,4 @@ def findOrder(n, prerequisites):
     return order if len(order) == n else []
 ```
 
-- **为何不能只看强连通？** 「能修完」的充要条件是有向无环（DAG）。Tarjan / Kosaraju 求 SCC 也能判环：存在大小 $\gt 1$ 的分量，或大小为 $1$ 但带自环，就不能修完。代价更高，还容易漏自环。无向图的连通块与本题无关，先修是有向的。白板用三色 DFS 或 Kahn 即可，不要上 SCC。
+- **为何不能只看强连通？** 「能修完」的充要条件是有向无环（DAG）。Tarjan / Kosaraju 求 SCC 也能判环：存在大小 $\gt 1$ 的分量，或大小为 $1$ 但带自环，就不能修完。代价更高，还容易漏自环。无向图的连通块与本题无关，先修是有向的。面试用三色 DFS 或 Kahn 即可，不要上 SCC。

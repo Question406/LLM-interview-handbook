@@ -26,7 +26,7 @@ sources:
     type: secondary
 ---
 
-这块容易直接答成「PPO 去掉 critic」或「GRPO 换个名字」。三者差在 **baseline 的作用域** 和 **还要不要组**。PPO 用 learned $V$ + GAE，有 bootstrap 偏差，见 `fund-optimal-baseline`。GRPO / RLOO 用 **同一 prompt 的 $G$ 条** 当 $b(s)$，小 $G$ 除 $\sigma$ 有题目级偏，见 `fund-finite-sample-baseline`、`pt-drgrpo`。REINFORCE++ 的主张：prompt 级局部标准化是有偏且易过拟合单题的，改成全局 batch 标准化，batch 大时接近无偏。
+错法：「PPO 去掉 critic」或「GRPO 换个名字」。三者差在 baseline 的作用域，以及还要不要组。PPO 用 learned $V$ + GAE，有 bootstrap 偏差，见 `fund-optimal-baseline`。GRPO / RLOO 用同一 prompt 的 $G$ 条当 $b(s)$，小 $G$ 除 $\sigma$ 有题目级偏，见 `fund-finite-sample-baseline`、`pt-drgrpo`。REINFORCE++ 的主张：prompt 级局部标准化是有偏且易过拟合单题的，改成全局 batch 标准化，batch 大时接近无偏。
 
 ## 怎么降方差：全局标准化，而不是组 $\sigma$
 
@@ -36,7 +36,7 @@ $$
 \hat A=\frac{r-\mathrm{mean}_{\mathrm{batch}}(r)}{\mathrm{std}_{\mathrm{batch}}(r)+\varepsilon}.
 $$
 
-均值是常数 baseline，无偏族；除的是 **全局** $\sigma$，不按题放大「大家都差不多对」的微小分差。论文称这是 effective unbiased：偏差 $O(1/N_{\mathrm{batch}})$，随 batch 消失。对比 GRPO 的 $O(1/G)$ 且 $G$ 常为 8。$k=1$（每题一条）时 GRPO 的相对优势没有定义，REINFORCE++ 仍能更新，用的是跨题对照，不是组内对照。代价是：不同难度的题被装进同一个 $\sigma$，batch 配方变了，同一条轨迹的 $A$ 含义就变；也抹不掉「这题绝对该不该加强」，只是抹的粒度从组改成了 batch。
+均值是常数 baseline，无偏族；除的是 全局 $\sigma$，不按题放大「大家都差不多对」的微小分差。论文称这是 effective unbiased：偏差 $O(1/N_{\mathrm{batch}})$，随 batch 消失。对比 GRPO 的 $O(1/G)$ 且 $G$ 常为 8。$k=1$（每题一条）时 GRPO 的相对优势没有定义，REINFORCE++ 仍能更新，用的是跨题对照，不是组内对照。代价是：不同难度的题被装进同一个 $\sigma$，batch 配方变了，同一条轨迹的 $A$ 含义就变；也抹不掉「这题绝对该不该加强」，只是抹的粒度从组改成了 batch。
 
 仍用 PPO clip，所以越界 token 的梯度照样可以为 0。无偏讨论的是 advantage 估计；clip 是另一轴，见 `fund-pg-unbiased-ops`。slime / veRL 里对应 `--advantage-estimator reinforce_plus_plus`，和 `grpo` 同一层开关，见 `slime-advantage-estimator`。
 

@@ -25,11 +25,11 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「直接上 DPO / GRPO 微调 Qwen」，或对整段对话算 CE。先定目标：指令遵循与工具协议用 SFT（只对 assistant / action token 计 loss）；偏好用 DPO；可验证目标用 GRPO / GSPO。阶段不要跳，数据与 mask 必须匹配部署时的 chat template 和 tool schema。阶段分工见 `ali-sft-then-posttrain`，对齐算法对比见 `ali-ppo-dpo-grpo-ask`。
+错法：直接上 DPO / GRPO 微调 Qwen，或对整段对话算 CE。先定目标：指令遵循与工具协议用 SFT（只对 assistant / action token 计 loss）；偏好用 DPO；可验证目标用 GRPO / GSPO。阶段不要跳，数据与 mask 必须匹配部署时的 chat template 和 tool schema。阶段分工见 `ali-sft-then-posttrain`，对齐算法对比见 `ali-ppo-dpo-grpo-ask`。
 
 ## 先定目标再选阶段
 
-为何先 SFT 再对齐：先学会格式、角色、工具调用协议，再优化偏好或成功率。跳过 SFT，偏好对里混着格式错误，DPO 会把「会说话」和「格式对」缠在一起。可验证任务（工具成功、数学）再上 on-policy RL。Qwen 系列官方 post-train 还包含 GSPO 等序列级稳定化，面试提到名字时要能说：它针对 token 级重要性比的噪声，把优化放到序列 / 组的相对尺度上，而不是背一个缩写。
+为何先 SFT 再对齐：先学会格式、角色、工具调用协议，再优化偏好或成功率。跳过 SFT，偏好对里混着格式错误，DPO 会把「会说话」和「格式对」缠在一起。可验证任务（工具成功、数学）再上 on-policy RL。Qwen 系列官方 post-train 还包含 GSPO 等序列级稳定化，面试提到名字时要能说：它针对 token 级重要性比的噪声，把优化放到序列 / 组的相对尺度上，别只会背缩写。
 
 目标与 loss 对齐：模仿示范 → token CE；成对更好 / 更差 → DPO；组内可比较的标量奖励 → GRPO。不要用 SFT 硬学「更有用」，那会把偏好噪声写进最大似然。
 

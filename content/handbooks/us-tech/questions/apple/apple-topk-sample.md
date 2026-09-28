@@ -34,12 +34,12 @@ Apple Siri / Intelligence 相关 MLE 电面常把 sampling 和 attention、k-mea
 
 记 logits 为 $z\in\mathbb{R}^{|V|}$。端上词表大约 49k（Apple 公开的 on-device 模型）。
 
-1. **温度：** $z' = z / T$，$T>0$。$T<1$ 更尖，$T>1$ 更平。$T\to 0$ 不要真除零，退化成 argmax。
-2. **Top-k：** 只保留 $z'$ 里最大的 $k$ 个，其余置成 $-\infty$（或足够负的有限值，见 `apple-ondevice-quant`）。
-3. **Nucleus / top-p：** 在已经温度化、且过了 top-k 的分布上，按概率降序累加，取最小前缀使质量 $\ge p$，其余清掉，再归一化。
+1. 温度：$z' = z / T$，$T>0$。$T<1$ 更尖，$T>1$ 更平。$T\to 0$ 不要真除零，退化成 argmax。
+2. Top-k：只保留 $z'$ 里最大的 $k$ 个，其余置成 $-\infty$（或足够负的有限值，见 `apple-ondevice-quant`）。
+3. Nucleus / top-p：在已经温度化、且过了 top-k 的分布上，按概率降序累加，取最小前缀使质量 $\ge p$，其余清掉，再归一化。
 4. 从剩余分布采样。禁止生成的控制符在温度之前就 mask 掉。
 
-常见错法：先 softmax 再除 $T$；或先 top-p 再除 $T$。那样截尾集合不随温度变，和常见开源实现也对不上。Top-k 与 top-p 同时开时必须规定先后：业界默认 **温度 → top-k → top-p**。两种顺序留下的 token 不同，面试里把约定说死比争论「哪个更正确」重要。
+常见错法：先 softmax 再除 $T$；或先 top-p 再除 $T$。那样截尾集合不随温度变，和常见开源实现也对不上。Top-k 与 top-p 同时开时必须规定先后：业界默认温度 → top-k → top-p。两种顺序留下的 token 不同，面试里把约定说死比争论「哪个更正确」重要。
 
 $p=1$ 等于关掉 nucleus；$p=0$ 或 $k=1$ 应退化成贪心，不能把候选裁空再除零。全词表被 mask 时要报错或回退，不要对全 `NaN` 的 softmax 继续抽。
 
@@ -47,10 +47,10 @@ $p=1$ 等于关掉 nucleus；$p=0$ 或 $k=1$ 应退化成贪心，不能把候�
 
 云端可以每步对十万词表做完整排序再核。手机不行。
 
-- **延迟可预期。** Top-k 是找最大 $k$ 个，堆或 `np.partition`，最坏 $O(|V|+k\log k)$，候选数固定。Nucleus 要先出全词表概率再扫前缀，保留个数随 $p$ 和当前分布变，p99 会抖。Siri 语音链路的预算见 `apple-siri-latency`，解码一步必须是微秒到亚毫秒，不能偶发卡十几毫秒。
-- **静态 shape。** ANE 几乎要求固定形状，见 `apple-ane`。Top-k 的候选张量永远是 $[B,k]$；nucleus 的有效长度是数据依赖的，图要为最坏 $|V|$ 付款，或退回 CPU。
-- **小模型尾巴脏。** On-device 大约 3B。温度一升高，长尾会冒出乱码、语言混杂。Top-k 把尾巴直接砍掉，比只调 $p$ 更稳。产品侧摘要、改写经常 $k=1$ 或很小的 $k$，要的是可复现不是多样性。
-- **功耗。** Apple 公开数字：iPhone 15 Pro 上大约 0.6 ms 每个 prompt token 的首 token、约 30 token/s 的生成（投机解码之前）。采样若每步全排序，会把这 30 token/s 吃掉一截，还占不到 Neural Engine。
+- 延迟可预期。Top-k 是找最大 $k$ 个，堆或 `np.partition`，最坏 $O(|V|+k\log k)$，候选数固定。Nucleus 要先出全词表概率再扫前缀，保留个数随 $p$ 和当前分布变，p99 会抖。Siri 语音链路的预算见 `apple-siri-latency`，解码一步必须是微秒到亚毫秒，不能偶发卡十几毫秒。
+- 静态 shape。ANE 几乎要求固定形状，见 `apple-ane`。Top-k 的候选张量永远是 $[B,k]$；nucleus 的有效长度是数据依赖的，图要为最坏 $|V|$ 付款，或退回 CPU。
+- 小模型尾巴脏。On-device 大约 3B。温度一升高，长尾会冒出乱码、语言混杂。Top-k 把尾巴直接砍掉，比只调 $p$ 更稳。产品侧摘要、改写经常 $k=1$ 或很小的 $k$，要的是可复现不是多样性。
+- 功耗。Apple 公开数字：iPhone 15 Pro 上大约 0.6 ms 每个 prompt token 的首 token、约 30 token/s 的生成（投机解码之前）。采样若每步全排序，会把这 30 token/s 吃掉一截，还占不到 Neural Engine。
 
 我会主动说：创造性写作可以再叠一个较大的 $p$；工具调用、槽位、日期，贪心或很小的 $k$。不要一套超参打所有 adapter。
 

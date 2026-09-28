@@ -31,11 +31,11 @@ sources:
     type: secondary
 ---
 
-Seller 政策和商品问答把检索问成「向量不够再上大模型」。公开层 Bedrock 有 Rerank API 和 Knowledge Bases 里的 rerankingConfiguration；模型卡上是 Amazon Rerank 1.0 和 Cohere Rerank 3.5 一类交叉编码器。LLM 当 reranker 是你自己的第三段，不是默认托管。底座召回见 `amazon-titan-embed`、`amazon-kendra-hybrid`。不是逐字真题。
+Seller 政策和商品问答把检索问成「向量不够再上大模型」。公开层 Bedrock 有 Rerank API 和 Knowledge Bases 里的 rerankingConfiguration；模型卡上是 Amazon Rerank 1.0 和 Cohere Rerank 3.5 一类交叉编码器。LLM 当 reranker 是你自己的第三段，不是默认托管。底座召回见 `amazon-titan-embed`、`amazon-kendra-hybrid`。
 
 ## 三层，不要一层吃到饱
 
-记 query $q$，语料 $\mathcal{D}$。我会画三段：
+记 query $q$，语料 $\mathcal{D}$。画三段：
 
 1. **召回。** BM25 并上 embedding ANN，取 $k$（常见 50–100）。标识符、条款号走词法；同义走向量。分数空间不同，用 RRF 或各自归一后再融，见 `amazon-kendra-hybrid`。这一层要高召回，允许脏。
 2. **交叉精排。** Bedrock Rerank / Cohere 对 $(q, d_i)$ 打相关分，收到 $n$（10–20）。它看的是 query–文档对，不是双塔点积。公开文档写：用 reranker 可以少塞一些块给生成，降成本和延迟。索引仍用 Titan 或你选的 embedding，**不要用 rerank 模型去建库**。

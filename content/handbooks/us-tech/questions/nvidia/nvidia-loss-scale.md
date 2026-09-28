@@ -74,7 +74,7 @@ Nsight 里你看不到 overflow 这个计数器，除非自己 log。训练曲�
 
 溢出：丢弃本步梯度（权重、动量保持上一份干净值），$S \leftarrow S/2$。连续 `growth_interval` 步没有 inf：$S \leftarrow 2S$，上限封顶。这是在搜「刚好不炸」的最大 $S$，让更多小梯度活在 fp16 里。
 
-跳过的 step 不要用脏梯度做一次「很小的更新」——那会把 inf 写进 Adam。也不要 rewind 一长段 checkpoint，除非 inf 来自数据损坏而不是 scale。分布式下 inf 标志要 all-reduce：一张卡炸了、别的卡仍 step，权重立刻分叉。通信原语见 `nvidia-nccl-allreduce`。
+跳过的 step 不要用脏梯度做一次「很小的更新」，那会把 inf 写进 Adam。也不要 rewind 一长段 checkpoint，除非 inf 来自数据损坏而不是 scale。分布式下 inf 标志要 all-reduce：一张卡炸了、别的卡仍 step，权重立刻分叉。通信原语见 `nvidia-nccl-allreduce`。
 
 和 FP8 delayed scaling 对比：loss scale 是一条全局乘数，保护 fp16 下溢；FP8 的 $s$ 是每 GEMM 一张量，保护 E4M3 格子。Hopper 上 bf16 + FP8 很常见，此时 GradScaler 可能根本不在，溢出走 Transformer Engine 的 amax / inf 计数。
 

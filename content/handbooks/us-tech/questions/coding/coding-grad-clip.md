@@ -37,9 +37,9 @@ c=\min\bigl(1,\ \mathrm{max\_norm}/(g+\varepsilon)\bigr),\qquad
 h_i\leftarrow c\,h_i.
 $$
 
-$h_i$ 是每个参数的 `.grad`。这是 **全局** 范数，不是逐层各自 clip。逐层 clip 会改变层与层之间的相对步长；global 只保证整步更新的欧氏长度不超过 `max_norm`。$g\le \mathrm{max}$ 时 $c=1$，梯度不动。
+$h_i$ 是每个参数的 `.grad`。这是全局范数，不是逐层各自 clip。逐层 clip 会改变层与层之间的相对步长；global 只保证整步更新的欧氏长度不超过 `max_norm`。$g\le \mathrm{max}$ 时 $c=1$，梯度不动。
 
-不要对每个 tensor 单独除自己的范数再乘 max——那是 per-tensor clip，和 `clip_grad_norm_` 不是一回事。`clip_grad_value_` 是逐元素夹紧，更不是 global norm。
+不要对每个 tensor 单独除自己的范数再乘 max，那是 per-tensor clip，和 `clip_grad_norm_` 不是一回事。`clip_grad_value_` 是逐元素夹紧，也不是 global norm。
 
 ```python
 import math
@@ -56,7 +56,6 @@ def total_grad_norm(params, eps=1e-6):
         total += float(g.norm(2).item() ** 2)
     return math.sqrt(total)
 
-
 def clip_grad_norm_(params, max_norm, eps=1e-6, error_if_nonfinite=True):
     params = [p for p in params if p.grad is not None]
     g = total_grad_norm(params, eps)
@@ -71,17 +70,17 @@ def clip_grad_norm_(params, max_norm, eps=1e-6, error_if_nonfinite=True):
     return g
 ```
 
-返回值 $g$ 是 clip **之前** 的范数，用来打日志：突然变 `inf` 就是这条 batch 坏了。$\varepsilon$ 只防 $g=0$ 时除零；正常训练 $g$ 不会真是 0。
+返回值 $g$ 是 clip 之前的范数，用来打日志：突然变 `inf` 就是这条 batch 坏了。$\varepsilon$ 只防 $g=0$ 时除零；正常训练 $g$ 不会真是 0。
 
 ## inf / nan：不要乘一个 NaN 系数
 
-若某个 `.grad` 已是 inf/nan，$g$ 非有限，`max_norm/g` 也是 NaN，再 `mul_` 会把 **所有** 参数的梯度毒成 NaN，整次 run 报废。PyTorch 1.13+ 的 `error_if_nonfinite=True` 直接抛。训练实践：
+若某个 `.grad` 已是 inf/nan，$g$ 非有限，`max_norm/g` 也是 NaN，再 `mul_` 会把所有参数的梯度毒成 NaN，整次 run 报废。PyTorch 1.13+ 的 `error_if_nonfinite=True` 直接抛。训练实践：
 
 1. 跳过这一 step（zero_grad，不 `optimizer.step`）；
 2. 或直接 crash，留 checkpoint 回滚；
 3. 不要「当 0 继续训」却不打日志。
 
-混合精度：`GradScaler.unscale_(opt)` **之后**再 clip。先 clip 再 unscale，等于在放大过的 fp16 梯度上算范数，阈值对不上。For-each kernel 和单 tensor 循环在有限情况下应给出同一 $g$；有 inf 时 foreach 路径的行为要查当前版本文档，白板说「先查有限性再算范数」更稳。
+混合精度：`GradScaler.unscale_(opt)` 之后再 clip。先 clip 再 unscale，等于在放大过的 fp16 梯度上算范数，阈值对不上。For-each kernel 和单 tensor 循环在有限情况下应给出同一 $g$；有 inf 时 foreach 路径的行为要查当前版本文档，白板说「先查有限性再算范数」更稳。
 
 NVIDIA 还会问：clip 改变的是更新方向的长度，不改变各坐标的相对比例。Loss 本身爆 inf 时 clip 救不了，要先查数据、overflow、没减 max 的 softmax，见 `coding-softmax-stable`。
 

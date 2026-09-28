@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-把 CISPO 当成「还是 REINFORCE / GRPO 组优势，但 off-policy 权重的截断方式换了」，不要背成第四种完全无关的算法。
+错法：背成第四种完全无关的算法。CISPO 仍是 REINFORCE / GRPO 组优势，只是 off-policy 权重的截断方式换了。
 
 ## 它在修 PPO clip 的哪个缺陷
 

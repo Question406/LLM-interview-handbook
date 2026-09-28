@@ -40,7 +40,6 @@ $$
 $q_t K^\top$ 的形状是 `[B, H, 1, S+1]`。不要再对过去 token 算 $Q$。Causal mask 在 decode 一步里通常不需要：当前 query 只看 $\le t$ 的 key，而 cache 里本来就是过去。
 
 Prefill：一次算完整 $Q,K,V$，写满 cache，复杂度 $O(S^2)$。之后每步 $O(S)$。
-
 ```python
 import torch
 import torch.nn.functional as F
@@ -58,4 +57,4 @@ def decode_step(q, k, v, cache_k, cache_v):
 
 - **显存？** 每层每 token 存 $K,V$：$2\cdot L\cdot H\cdot D\cdot \mathrm{bytes}$（再乘 batch）。GQA 把 $H$ 换成 $H_{\mathrm{kv}}$。
 - **PagedAttention？** 物理上 cache 不连续 concat，逻辑仍是「当前 $q$ 打全部过去 $k$」。手写用 `cat` 即可。
-- **多 query 的 prefill chunk？** 那是 chunked prefill，要对新 chunk 内部做因果，并对 cache 做 cross-attn；不要和纯 decode 一步混。
+- **多 query 的 prefill chunk？** 那是 chunked prefill，要对新 chunk 内部做因果，并对 cache 做 cross-attn；不要和纯 decode 一步混讲。

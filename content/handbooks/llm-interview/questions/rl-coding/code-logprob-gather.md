@@ -1,7 +1,7 @@
 ---
 id: code-logprob-gather
-section: coding
-order: 219
+section: rl-coding
+order: 1
 level: A
 title: 手写从 logits gather token logprob，并乘 response mask
 quick: >-
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-DPO 要 sequence logp，GRPO / PPO 要 token logp 再乘优势，SFT 的 token CE 是同一条索引链。本题把原语写对；完整 DPO 见 `code-dpo`，组优势见 `code-grpo`，mask 语义见 `sys-rl-response-mask`。采样引擎上的 logp 不能直接进 ratio，见 `meituan-verl-recompute-logprob`。这块容易栽在两处：不 shift（用 $t$ 的 logits 去打 $t$ 自己），以及 prompt 没 mask 掉。
+DPO 要 sequence logp，GRPO / PPO 要 token logp 再乘优势，SFT 的 token CE 是同一条索引链。本题把原语写对；完整 DPO 见 `code-dpo`，组优势见 `code-grpo`，mask 语义见 `sys-rl-response-mask`。采样引擎上的 logp 不能直接进 ratio，见 `meituan-verl-recompute-logprob`。错法：栽在两处：不 shift（用 $t$ 的 logits 去打 $t$ 自己），以及 prompt 没 mask 掉。
 
 ## 对齐：shift 和 mask
 
@@ -42,7 +42,7 @@ $$
 
 数值用 `log_softmax`，不要 `log(softmax(...))`。FP16 / BF16 下先 `float()` 再 softmax 更稳，logp 仍可乘回原 dtype。
 
-举一条 $T=6$ 的序列：前 $4$ 个是 prompt，后 $2$ 个是回复（含 EOS）。shift 之后要对齐的是「用位置 $0,\ldots,4$ 的 logits 去打 token $1,\ldots,5$」。response mask 也要 slice 成 `[1:]`，于是 prompt 的 $4$ 个位置里只有「prompt 最后一个 token 去预测回复第一个 token」那一格可能为 $1$，更早的 prompt-to-prompt 必须为 $0$。差一格就会把系统提示的最后一个字训进去。TRL SFT 里常见 `labels` 把 prompt 写成 `-100`，本质是同一条 mask，只是用 ignore index 代替显式乘法。
+举一条 $T=6$ 的序列：前 $4$ 个是 prompt，后 $2$ 个是回复（含 EOS）。shift 之后要对齐的是「用位置 $0,\ldots,4$ 的 logits 去打 token $1,\ldots,5$」。response mask 也要 slice 成 `[1:]`，于是 prompt 的 $4$ 个位置里只有「prompt 最后一个 token 去预测回复第一个 token」那一格可能为 $1$，更早的 prompt-to-prompt 必须为 $0$。差一格就会把系统提示的最后一个字训进去。TRL SFT 里常见 `labels` 把 prompt 写成 `-100`，和显式 mask 是同一条索引链，只是用 ignore index 代替乘法。
 
 ## 手写
 

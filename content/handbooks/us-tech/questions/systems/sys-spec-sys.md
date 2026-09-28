@@ -39,7 +39,7 @@ vLLM / TensorRT-LLM 的投机解码、OpenAI serving 在 KV 之后的追问，�
 
 ## 草稿长度是在赌接受率
 
-草稿模型 $q$ 生成 $\gamma$ 个 token，目标 $p$ 一次平行前向（短 prefill）给出这 $\gamma$ 个位置的 logits，再从左到右接受。期望接受长度 $\alpha>1$ 才省 $p$ 的步数。$\gamma$ 太大：后面几个几乎必拒，白算草稿、白写一段 KV 再 rollback。$\gamma$ 太小：一次验证摊不回。现场用平均接受长度和「每产出 token 的 target 前向次数」调，不要锁死 $\gamma=5$。
+草稿模型 $q$ 生成 $\gamma$ 个 token，目标 $p$ 一次平行前向（短 prefill）给出这 $\gamma$ 个位置的 logits，再从左到右接受。期望接受长度 $\alpha>1$ 才省 $p$ 的步数。$\gamma$ 太大：后面几个几乎必拒，白算草稿、白写一段 KV 再 rollback。$\gamma$ 太小：一次验证摊不回。现场用平均接受长度和「每产出 token 的 target 前向次数」调，别锁死 $\gamma=5$。
 
 草稿太强或太弱都亏：太接近 $p$ 则草稿本身慢；太弱则 $\alpha\to 1$，系统退化成双模型开销。Medusa / EAGLE / n-gram 换的是草稿来源，调度不变量不变：验证步是 compute-bound 的小 prefill，草稿步仍是 decode。和 continuous batching 叠时，各请求 $\alpha$ 不同，不能假设 batch 里每条都 append $\gamma$ 再一起 truncate，见 `sys-cont-batch`。
 
@@ -49,7 +49,7 @@ vLLM / TensorRT-LLM 的投机解码、OpenAI serving 在 KV 之后的追问，�
 
 验证前向已经把草稿位置的 $K,V$ 写进 target cache。接受 $k$ 个、在 $k+1$ 拒绝，序列里没有第 $k+1$ 个草稿 token，但它的 KV 已在末尾。必须把 cache 从 $S+\gamma$ 截回 $S+k$，再写入拒绝处新采样 token 的 KV。草稿侧同样截。文本长度和 KV 长度必须焊死。PagedAttention 上这就是还页，不是大块 `cat` 再拷。
 
-只改输出字符串、不剪 cache，后面每一步 $q_t$ 都会点积到幽灵 key，生成 silently 偏。这和「加速比」无关，是正确性。验收：greedy 投机路径和逐步 decode 逐 token 相同。对不上先查有没有漏层没截，再查 RoPE offset。
+只改输出字符串、不剪 cache，后面每一步 $q_t$ 都会点积到幽灵 key，生成 silently 偏。这是正确性，跟加速比无关。验收：greedy 投机路径和逐步 decode 逐 token 相同。对不上先查有没有漏层没截，再查 RoPE offset。
 
 ## 吞吐不要把垃圾算进去
 

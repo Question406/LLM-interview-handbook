@@ -7,7 +7,7 @@ title: NVIDIA：W4A8 和 KV 量化、激活量化不是一把开关
 quick: >-
   W4 砍的是每步读权重；A8 砍的是 GEMM 里的激活带宽和 Tensor Core 格式；KV 量化砍的是 cache 容量和
   attention 读历史。TensorRT-LLM 的 `w4a8_awq` 和 `kv_cache_quant_algo` 分开配。W4A8 的
-  A 通常是 FP8 不是 INT8。三套 scale、三种误差，别说「都量化了」。
+  A 通常是 FP8 不是 INT8。三套 scale、三种误差，别并成「都量化了」。
 tags:
   - NVIDIA
   - W4A8
@@ -49,7 +49,7 @@ $$
 $N$ 是这一步的 token 数（纯 decode 接近瞬时 $B$）。三套比特互相独立：
 
 - **权重 $b_W$。** 小 batch decode 是内存墙，读 $W$ 往往最大。INT4 相对 fp16 是 $1/4$ 的权重流量。W4A16（AWQ / GPTQ）只做这件事，激活仍 fp16/bf16，GEMM 是 mixed-dtype。
-- **激活 $b_A$。** Prefill 或大 $N$ 时 GEMM 变算力墙，激活也量化才能喂 INT8 / FP8 Tensor Core。W4A8 在 NVIDIA 栈里通常是 **INT4 权重 + FP8 激活**（`w4a8_awq`），不是 INT4 乘 INT8。W8A8 才是 SmoothQuant 那条 INT8 权激。
+- **激活 $b_A$。** Prefill 或大 $N$ 时 GEMM 变算力墙，激活也量化才能喂 INT8 / FP8 Tensor Core。W4A8 在 NVIDIA 栈里通常是 INT4 权重 + FP8 激活（`w4a8_awq`），不是 INT4 乘 INT8。W8A8 才是 SmoothQuant 那条 INT8 权激。
 - **KV $b_{\mathrm{KV}}$。** 跟线性层激活不是同一个张量。长 $T$ 时 attention 读历史压过读 $W$。FP8 KV 把 cache 和这段带宽减半，开关叫 `kv_cache_quant_algo`，见 `nvidia-fp8-kv`。
 
 所以「开了 W4A8」只保证线性层的 $W$ 和 $x$；KV 可能仍是 fp16。反过来，只开 FP8 KV、权重仍 fp16，短上下文小 batch 对 TPOT 几乎没感觉。
@@ -68,7 +68,7 @@ $N$ 是这一步的 token 数（纯 decode 接近瞬时 $B$）。三套比特互
 
 **A8：** 运行时对当前 token（或 per-tensor）量化激活。W4A8 路径里常有 `pre_quant_scale`（AWQ 的平滑）再 cast 成 E4M3，再和 INT4 权重做 mixed GEMM，输出再乘 $\alpha$。激活 outlier 仍在：只压权重不够时，要么 SmoothQuant 把幅度迁到 $W$，要么别走太窄的 $A$。
 
-**KV：** K/V 是注意力写出的，每步多一行。Scale 跟 paged block 走。K 的误差进 $QK^{\top}$，对 softmax 更狠；V 钝一些。和 $W$ 的 group scale **不能共用**，校准数据也不是同一批张量。训练 FP8 的 amax 更不能拿来当 KV scale，见 `nvidia-fp8`。
+**KV：** K/V 是注意力写出的，每步多一行。Scale 跟 paged block 走。K 的误差进 $QK^{\top}$，对 softmax 更狠；V 钝一些。和 $W$ 的 group scale 不能共用，校准数据也不是同一批张量。训练 FP8 的 amax 更不能拿来当 KV scale，见 `nvidia-fp8`。
 
 错法：把 W4A8 说成「KV 也是 4 bit」。那是 NVFP4 KV 之类的第三条配方，质量口子要单独评。
 
@@ -78,7 +78,7 @@ $N$ 是这一步的 token 数（纯 decode 接近瞬时 $B$）。三套比特互
 
 长上下文、并发高：先 FP8 KV（或 GQA），否则 W4 再省也塞不下 cache。显存仍不够，才轮到卸载，见 `nvidia-kv-offload`。卸载的带宽比量化差一个数量级，能用 $b_{\mathrm{KV}}$ 解决就不要把热 KV 赶到 PCIe 上。
 
-质量：W4 伤 MLP 的通道；KV 伤长距离注意力。分开 A/B，再组合。TRT-LLM 表上 Hopper 支持 W4A8 AWQ，Ampere 往往只有 W4A16——没有原生 FP8 MMA 时 A8 不一定划算。
+质量：W4 伤 MLP 的通道；KV 伤长距离注意力。分开 A/B，再组合。TRT-LLM 表上 Hopper 支持 W4A8 AWQ，Ampere 往往只有 W4A16：没有原生 FP8 MMA 时 A8 不一定划算。
 
 ## 追问
 

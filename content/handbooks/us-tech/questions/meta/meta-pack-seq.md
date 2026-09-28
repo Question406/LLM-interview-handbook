@@ -47,7 +47,7 @@ Llama 预训练吞吐题。文档长度长尾，pad 到 $8\mathrm{k}$ / $128\mat
 - **注意力 mask：** 防跨文档 attend。
 - **loss mask：** SFT 只在 assistant token 上计 CE；pad / prompt / 文档缝上的 next-token 不计。两者独立。只 mask loss、不隔注意力，梯度仍会穿过邻居文档。
 
-EOS 当分隔符**不够**。模型可以学会「EOS 后面是新篇」，仍然在 softmax 里看见上一篇的 key。分隔符是数据约定，不是隔离。
+EOS 当分隔符不够。模型可以学会「EOS 后面是新篇」，仍然在 softmax 里看见上一篇的 key。分隔符只是数据约定，隔离要靠 mask。
 
 ## 位置和 RoPE
 
@@ -59,11 +59,11 @@ GQA 的 KV 仍按真实段长写。变长 kernel 里 $K,V$ 是 packed 一维 + `
 
 ## 预训练 vs SFT，以及吞吐账
 
-预训练：有的配方故意**允许**跨文档注意力，把 packed 序列当一条长流，换实现简单和更高 MFU。要说出口：这是数据假设，不是实现忘了 mask。Llama 3 论文没把 packing 实现写成一章；现场保守说法是「短评测要恢复、长窗 haystack 要过，mask 策略改了必须重跑这两项」。
+预训练：有的配方故意允许跨文档注意力，把 packed 序列当一条长流，换实现简单和更高 MFU。要说出口：这是数据假设，不是实现忘了 mask。Llama 3 论文没把 packing 实现写成一章；现场保守说法是「短评测要恢复、长窗 haystack 要过，mask 策略改了必须重跑这两项」。
 
 SFT / DPO：默认隔离。一条 packed 行里两个 user 串话，等于把别人的系统提示当自己的。completion-only loss 救不了注意力泄漏。
 
-吞吐：packing 提高的是有效 token / 秒，不是 step 数。若 collator 把 $N$ 条拼成 $1$ 条，optimizer step 变少，要用 token 预算而不是 step 预算对齐实验。FlashAttention 变长路径对长度方差大的数据收益最大；大家差不多都是 $T$ 时，packing 几乎没好处。
+吞吐：packing 提高的是有效 token / 秒；collator 把 $N$ 条拼成 $1$ 条时 optimizer step 变少，要用 token 预算对齐实验。FlashAttention 变长路径对长度方差大的数据收益最大；大家差不多都是 $T$ 时，packing 几乎没好处。
 
 `torch.compile` 最恨动态 $T$。packing 之后每步 `cu_seqlens` 不同，容易 recompile。处理：长度分桶，或只 compile block、变长注意力留在外面，见 `meta-pytorch-compile`。
 

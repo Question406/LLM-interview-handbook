@@ -52,15 +52,15 @@ def run_tool_loop(step, *, max_rounds=8, max_tokens=20000, step_timeout_s=15):
     return {"status": "max_round"}
 ```
 
-- **每步超时。** 搜索和代码解释器最容易挂。超时回 `retryable=true` 的短错误，不要把半页 HTML 塞回去。
-- **总轮数 / 总 token。** 模型会反复搜同一个失败查询。宿主计数，超过就对模型说 `retryable=false`，把控制权交还用户。限流见 `xai-rate-limiter`。
-- **写操作。** 默认不自动重试。并行两个 `create_ticket` 没有幂等就是两张单，见 `xai-tool-use`。
+- 每步超时。搜索和代码解释器最容易挂。超时回 `retryable=true` 的短错误，不要把半页 HTML 塞回去。
+- 总轮数 / 总 token。模型会反复搜同一个失败查询。宿主计数，超过就对模型说 `retryable=false`，把控制权交还用户。限流见 `xai-rate-limiter`。
+- 写操作。默认不自动重试。并行两个 `create_ticket` 没有幂等就是两张单，见 `xai-tool-use`。
 
 内置搜索的超时是 xAI 侧的；你仍要给整段循环一个墙钟，否则 DeepSearch 风格轨迹会在语音里变成长静音，见 `xai-realtime`。
 
 ## 观测必须显示截断
 
-工具结果当不可信输入，进下一轮前截断到 $N$ 字符或 $M$ token。关键是 **留下标记**：`truncated=true`、原始字节数、哈希。否则日志里是全文，模型看见的是前 2k，你无法复现幻觉。网页注入发生在未截断的尾巴里更常见，见 `xai-search-agent`。
+工具结果当不可信输入，进下一轮前截断到 $N$ 字符或 $M$ token。要留下标记：`truncated=true`、原始字节数、哈希。否则日志里是全文，模型看见的是前 2k，你无法复现幻觉。网页注入发生在未截断的尾巴里更常见，见 `xai-search-agent`。
 
 回给模型的错误要短、结构化：`timeout` / `empty` / `denied` / `retryable`。禁止「好像成功了」。状态以系统记录为准。
 

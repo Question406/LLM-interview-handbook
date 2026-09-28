@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-本题管模式开关，再把 think 能力蒸馏进 no-think。`pt-adaptive-thinking-budget` 是推理时还要不要续写、何时停；`pt-reasoning-token-cost-frontier` 是训练目标里惩罚无效 thinking token。三张卡不要并成「让模型少想一点」。这块容易直接答成固定长 CoT，或者训练只喂长链、线上却把思考关掉。
+本题管模式开关，再把 think 能力蒸馏进 no-think。`pt-adaptive-thinking-budget` 是推理时还要不要续写、何时停；`pt-reasoning-token-cost-frontier` 是训练目标里惩罚无效 thinking token。三张卡不要并成「让模型少想一点」。错法：直接答成固定长 CoT，或者训练只喂长链、线上却把思考关掉。
 
 ## 怎么切：同一权重，两套模板
 

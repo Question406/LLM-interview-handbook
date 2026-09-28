@@ -30,7 +30,7 @@ sources:
     type: secondary
 ---
 
-这块容易直接答成：减均值所以无偏，把期望公式直接搬到 **大小为 $G$ 的同一组样本**。恒等式 $\mathbb{E}_a[\nabla\log\pi\,b(s)]=0$ 里的 $b(s)$ 不能是当前这条 $a$ 的函数。有限样本里，组均值、batch 均值、组标准差都看见了当前 $r_i$，无偏性要重新算。和 `pt-rloo-vs-grpo` 的差别：那题比算法选型；本题只钉 **有限样本偏差从哪来**。
+错法：减均值所以无偏，把期望公式直接搬到大小为 $G$ 的同一组样本。恒等式 $\mathbb{E}_a[\nabla\log\pi\,b(s)]=0$ 里的 $b(s)$ 不能是当前这条 $a$ 的函数。有限样本里，组均值、batch 均值、组标准差都看见了当前 $r_i$，无偏性要重新算。和 `pt-rloo-vs-grpo` 的差别：那题比算法选型；本题只钉有限样本偏差从哪来。
 
 ## 含自身的组均值：偏差是 $1/G$
 
@@ -48,15 +48,15 @@ $$
 b_i=\frac{1}{G-1}\sum_{j\neq i}r_j,\qquad \hat A_i=r_i-b_i.
 $$
 
-$b_i$ 与当前动作独立（给定其余样本），是 REINFORCE control variate 的有限样本版：期望上不改梯度，只降方差。$G=2$ 时优势就是两条之差，没有 $(G-1)/G$。RLOO 通常 **不再除组 $\sigma$**，尺度仍是原始 reward；跨题幅度不可比，但不会因为「这题大家都差不多对」就把微小分差放大。
+$b_i$ 与当前动作独立（给定其余样本），是 REINFORCE control variate 的有限样本版：期望上不改梯度，只降方差。$G=2$ 时优势就是两条之差，没有 $(G-1)/G$。RLOO 通常不再除组 $\sigma$，尺度仍是原始 reward；跨题幅度不可比，但不会因为「这题大家都差不多对」就把微小分差放大。
 
 白板用 $G=2$、$r=(1,0)$ 走一遍：GRPO 得 $A=(+0.5,-0.5)$（若再除 $\sigma$ 还会再缩放）；RLOO 得 $A=(+1,-1)$。听到「含不含自身」比背论文名字重要。
 
 ## Batch 标准化：偏差随 batch 消失，除 $\sigma$ 是另一回事
 
-REINFORCE++ 一类做法把 baseline 改成 **全局 batch 均值**，再可选地除全局 $\sigma$。相对 prompt 级小 $G$，batch 往往大几十倍，$O(1/N)$ 偏差可以忽略，论文因此说「effective unbiased」。这解决的是「不要在 8 条里估 $\sigma$」，不是证明除标准差无偏。
+REINFORCE++ 一类做法把 baseline 改成全局 batch 均值，再可选地除全局 $\sigma$。相对 prompt 级小 $G$，batch 往往大几十倍，$O(1/N)$ 偏差可以忽略，论文因此说「effective unbiased」。这解决的是「不要在 8 条里估 $\sigma$」，不是证明除标准差无偏。
 
-除 $\sigma$ 无论组内还是全局，都在做 **数据依赖的重加权**：方差小的切片有效学习率变大。Dr.GRPO 批评的 question-level reweighting 就是组内这层，见 `pt-drgrpo`、`fund-adv-norm-bias`。全局 $\sigma$ 把不同 prompt 混在同一个尺度里，偏差形式不同：不再按题放大，但 batch 组成一变，同一条轨迹的 $A$ 含义就变。减均值（常数 baseline）仍在无偏族；除 $\sigma$ 是改目标。
+除 $\sigma$ 无论组内还是全局，都在做数据依赖的重加权：方差小的切片有效学习率变大。Dr.GRPO 批评的 question-level reweighting 就是组内这层，见 `pt-drgrpo`、`fund-adv-norm-bias`。全局 $\sigma$ 把不同 prompt 混在同一个尺度里，偏差形式不同：不再按题放大，但 batch 组成一变，同一条轨迹的 $A$ 含义就变。减均值（常数 baseline）仍在无偏族；除 $\sigma$ 是改目标。
 
 ## 追问
 

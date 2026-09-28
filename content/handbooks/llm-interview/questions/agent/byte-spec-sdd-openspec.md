@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“什么是SDD（规范驱动开发）”**；**“什么是Spec-kit”**；**“什么是OpenSpec”**；**“OpenSpec 和Spec-kit 的区别？”**；秋招帖还问 **“如何理解Spec Coding和Harness？”**
 
-这块容易直接答成背营销名、编一套没用过的 CLI。这面要的是：规格先于实现、对错可判定；工具链只是把规格、任务、验证落成仓库约定。没亲手用过就说「同类物是规格文件 + 任务拆解 + 自动验证」，不要假装跑过某条命令。和 Harness 的分工见 `byte-harness-engineering`；同类「先规格再编码」也可对照 `pdd-openclaw-spec-driven`。
+错法：背营销名、编一套没用过的 CLI。这面要的是：规格先于实现、对错可判定；工具链只是把规格、任务、验证落成仓库约定。没亲手用过就说「同类物是规格文件 + 任务拆解 + 自动验证」，不要假装跑过某条命令。和 Harness 的分工见 `byte-harness-engineering`；同类「先规格再编码」也可对照 `pdd-openclaw-spec-driven`。
 
 ## SDD：先写可验收规格再改代码
 

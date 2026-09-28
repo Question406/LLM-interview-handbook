@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-不要把 DAPO 答成「又一个优势公式」或「把 KL 删掉的 GRPO」。它仍用组相对优势，改的是 clip、有效样本、loss 归约、超长惩罚这四件工程失败。小红书真题卡 `xiaohongshu-dapo-vs-grpo` 问的是同一件事；本题把四个旋钮拆开，能白板写公式。
+错法：答成「又一个优势公式」或「把 KL 删掉的 GRPO」。它仍用组相对优势，改的是 clip、有效样本、loss 归约、超长惩罚这四件工程失败。小红书真题卡 `xiaohongshu-dapo-vs-grpo` 问的是同一件事；本题把四个旋钮拆开，能白板写公式。
 
 ## Clip-Higher：正向上界单独放宽
 

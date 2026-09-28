@@ -44,7 +44,7 @@ $$
 
 问答 RL 里「华丽但空洞」常让某一个 RM 打高分、另外两个明显偏低。$\sigma$ 尖峰应触发人工抽检或拒用该 batch 的极端高分，而不是平均掉继续训。高 $\mu$ 低 $\sigma$ 才是相对可信的强化区；高 $\mu$ 高 $\sigma$ 优先当 OOD 候选。成员若共享同一标注偏差（都偏爱长答案），$\sigma$ 低也不能证明可靠。那是共有 bias，不是校准好的置信度。Label noise 会抬高所有成员的抖动，不代表该样本更 OOD：同一 $(x,y)$ 在不同数据折上分数都散，更像标注不稳；只在某一折 / 某一 seed 上飞，才像外推。实践上把高 $\sigma$ 队列给人审或更严 verifier，确认后再决定是拒训、降权还是补标。KL 加大只能推迟离开 $\pi_{\mathrm{ref}}$，发现不了「所有成员一起被同一捷径骗走」；那种共谋要用独立 gold，不能靠再加一个同族 RM。
 
-ensemble 是保守更新和审计开关，不是把 $\sigma$ 当成 $p(\text{human prefers})$。成员相关、标签噪声和 epistemic 分歧要分开讲。现场可以补一句：proxy 单调上升而 gold 与 $\sigma$ 同时恶化，就是 overoptimization 的仪表盘，不要再加步数。
+ensemble 是保守更新和审计开关，不是把 $\sigma$ 当成 $p(\text{human prefers})$。成员相关、标签噪声和 epistemic 分歧要分开讲。proxy 单调上升而 gold 与 $\sigma$ 同时恶化，就是 overoptimization 的仪表盘，不要再加步数。
 
 ## 追问
 

@@ -31,8 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“LoRA 原理、常见超参、一般加在 Transformer 哪些模块”**；**“LoRA和 QLoRA？”**
 
-这块容易把 LoRA 讲成「再训一层小网络」，或把 QLoRA 说成新算法。LoRA 是冻结 $W$ 后在 Linear 上加低秩残差；QLoRA 只是把基座权重量到 4bit 再挂同一套适配器。商汤这岗还会追多模态挂哪，不要只背语言侧 q/v。初始化细节见 `tencent-lora-ab-init`，本题先把挂载点与超参讲清。
-
+错法：把 LoRA 讲成「再训一层小网络」，或把 QLoRA 说成新算法。LoRA 是冻结 $W$ 后在 Linear 上加低秩残差；QLoRA 只是把基座权重量到 4bit 再挂同一套适配器。商汤这岗还会追多模态挂哪，不要只背语言侧 q/v。初始化细节见 `tencent-lora-ab-init`，本题先把挂载点与超参讲清。
 ## 原理与超参：$r$ 是容量，$\alpha/r$ 是步长
 
 $$
@@ -45,7 +44,7 @@ $$
 
 语言侧优先 Attention 的 $W_q,W_k,W_v,W_o$ 与 MLP 的 gate/up/down，见 `meituan-lora-not-after-ln`。不要插在 LayerNorm / RMSNorm 之后当随意加性扰动：Norm 已经校准激活尺度，再挂未约束可训练变换容易初期尖刺。Embedding / lm_head 看任务：词表域变化大（新语言、特殊 token）才考虑。
 
-多模态（商汤应用岗高频）：视觉塔默认冻结，只训投影（MLP / Q-Former / linear projector）和语言侧 LoRA；OCR / 定位重的任务再松视觉塔最后几层或给 ViT Linear 挂低秩。不要语言、视觉两侧无差别全开 $r=64$。QLoRA：NF4 量化基座 + LoRA，激活仍较高精度，省的是基座显存不是新目标函数，见 `arch-qlora`。二面若只问「LoRA 和 QLoRA」，一句「量化基座 + 同一适配器」即可，不要再展开成第三遍 A 高斯 B 全零，除非被追初始化。
+多模态（商汤应用岗高频）：视觉塔默认冻结，只训投影（MLP / Q-Former / linear projector）和语言侧 LoRA；OCR / 定位重的任务再松视觉塔最后几层或给 ViT Linear 挂低秩。不要语言、视觉两侧无差别全开 $r=64$。QLoRA：NF4 量化基座 + LoRA，激活仍较高精度，省的是基座显存不是新目标函数，见 `arch-qlora`。二面若只问「LoRA 和 QLoRA」，一句「量化基座 + 同一适配器」即可；除非被追初始化，不必再展开 A 高斯 B 全零。
 
 ## 追问
 

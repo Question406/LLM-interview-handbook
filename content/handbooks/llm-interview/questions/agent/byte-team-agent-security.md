@@ -28,13 +28,13 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“如果让你把这个本地 Coding Agent 做成团队内部工具，你会怎么处理权限、安全和审计？比如文件读写、命令执行、敏感信息泄露。”**
 
-这块容易直接答成把安全写进 prompt「请不要泄露」。内部 Coding Agent 一旦共享、能执行命令、能读仓，边界必须在工具服务端和策略引擎。模型会被注入或「忽略以上指令」打穿；审计日志若允许模型写，等于没有审计。这是 Harness 的授权层，见 `byte-harness-engineering`、`agent-tool-permissions`、`agent-prompt-injection`。
+错法：把安全写进 prompt「请不要泄露」。内部 Coding Agent 一旦共享、能执行命令、能读仓，边界必须在工具服务端和策略引擎。模型会被注入或「忽略以上指令」打穿；审计日志若允许模型写，等于没有审计。这是 Harness 的授权层，见 `byte-harness-engineering`、`agent-tool-permissions`、`agent-prompt-injection`。
 
 ## 按人、仓、命令三类授权
 
 身份走 SSO，会话绑定人而不是绑定「这台笔记本」。默认可读当前有 ACL 的 repo；写路径与 shell 走白名单。分层：身份 → 仓库 ACL → 工具策略（禁网络、禁 `sudo`、禁读 `~/.ssh`）→ 输出脱敏。同学 A 在有写权限的 `frontend` 仓可改 `src/**`、跑 `npm test`；同一 Agent 被要求 `cat ~/.ssh/id_rsa` 或把 `.env` 打到外网，策略引擎直接拒并记审计。同学 B 没有该仓 ACL，即使用同一套模型也读不到。
 
-个人本地玩具可以松；一旦能 `git push`、能碰密钥或生产配置，默认拒绝并且可审计。真正的访问控制不在 system prompt。命令白名单按风险分级：只读检索默许，写文件要路径前缀，网络和特权命令要额外审批。Skill 与工具描述里的注入面见 `agent-skill-security`。
+个人本地玩具可以松；一旦能 `git push`、能碰密钥或生产配置，默认拒绝并且可审计。访问控制不在 system prompt。命令白名单按风险分级：只读检索默许，写文件要路径前缀，网络和特权命令要额外审批。Skill 与工具描述里的注入面见 `agent-skill-security`。
 
 ## 密钥、输出脱敏、模型不持有生产凭据
 

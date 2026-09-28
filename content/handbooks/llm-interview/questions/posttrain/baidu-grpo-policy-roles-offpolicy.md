@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、面试时间、岗位、轮次与业务方向明确）
 - 原始措辞：**“GRPO里的 $\pi_\theta$, $\pi_{\theta_{\mathrm{old}}}$, $\pi_{\theta_{\mathrm{rollout}}}$”**；追问：**“GRPO里是off-poliy/on-policy，当batch_size非常大时，如何缓解off-poliy的问题？”**
 
-这块容易按名字死记三个 $\pi$，或者说「同步实现里它们是同一个检查点，所以不用区分」。必须按时间轴拆角色：谁产生轨迹、谁当 importance ratio 的分母、谁被梯度更新。实现可以让前两者同源，时间角色仍然不同。大 batch、异步队列、多 epoch 复用会拉大行为策略与训练策略的差距，这是 freshness 问题，不是把 `batch_size` 再加大能修的。KL 方向仍是当前 $\pi_\theta$ 对冻结 $\pi_{\mathrm{ref}}$，见 `fund-kl-directions`；把 ref 当成 old，clip 的对象就错了。
+这块容易按名字死记三个 $\pi$，或者说「同步实现里它们是同一个检查点，所以不用区分」。按时间轴拆角色：谁产生轨迹、谁当 importance ratio 的分母、谁被梯度更新。实现可以让前两者同源，时间角色仍然不同。大 batch、异步队列、多 epoch 复用会拉大行为策略与训练策略的差距，这是 freshness 问题，不是把 `batch_size` 再加大能修的。KL 方向仍是当前 $\pi_\theta$ 对冻结 $\pi_{\mathrm{ref}}$，见 `fund-kl-directions`；把 ref 当成 old，clip 的对象就错了。
 
 ## 三个 $\pi$，三个时刻
 

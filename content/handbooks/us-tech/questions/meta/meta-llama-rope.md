@@ -44,7 +44,7 @@ $$
 (R_{\theta,m} q)^\top (R_{\theta,n} k) = q^\top R_{\theta,n-m} k
 $$
 
-score 只依赖相对位移 $n-m$。第 $i$ 对频率 $\theta_i = \theta_{\mathrm{base}}^{-2i/d}$：低频管长距，高频管近距。$V$ 通常不转——位置交互主要由 $QK$ 决定。绝对位置仍在单个 $q_m$ 里，只是点积有干净的相对结构。和 KV cache 兼容：decode 时用 `cache_len` 当 $m$，不要每步都从 $0$ 转。
+score 只依赖相对位移 $n-m$。第 $i$ 对频率 $\theta_i = \theta_{\mathrm{base}}^{-2i/d}$：低频管长距，高频管近距。$V$ 通常不转：位置交互主要由 $QK$ 决定。绝对位置仍在单个 $q_m$ 里，只是点积有干净的相对结构。和 KV cache 兼容：decode 时用 `cache_len` 当 $m$，不要每步都从 $0$ 转。
 
 Llama 2 预训练上下文 $4\mathrm{k}$；Llama 3 博客写预训练 $8\mathrm{k}$；Llama 3.1 / 3.2 把窗口做到 $128\mathrm{k}$。公开 conf 里常见把 `rope_theta` 从 $10^4$ 提到 $5\times 10^5$ 量级，这是**改基频**，不是换一套位置编码。
 

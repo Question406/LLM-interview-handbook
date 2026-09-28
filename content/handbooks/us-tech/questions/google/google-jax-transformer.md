@@ -6,7 +6,7 @@ level: S
 title: Google：用 JAX 写一层 Transformer，shard、scan、remat 怎么摆
 quick: >-
   权重和激活用 PartitionSpec 钉在 mesh 上，编译器插通信。层循环用 `lax.scan` 压编译时间和 HBM 里的图。`remat`
-  丢掉中间激活、反向再算一遍。三件叠在一起才是 TPU 上能编译、能放下的训练步，不是把 PyTorch
+  丢掉中间激活、反向再算一遍。三件叠在一起才是 TPU 上能编译、能放下的训练步；别把 PyTorch
   `nn.Module` 翻译成 `jit`。
 tags:
   - Google
@@ -36,7 +36,7 @@ Google 训练代码默认 JAX。白板题经常是：别讲论文故事，写（
 
 ## shard：Python 写完整矩阵，编译器切
 
-激活 $h$ 形状 $[B, T, D]$，权重 $W_q$ 形状 $[D, D]$。典型钉法：$B$ 走 `data`，$D$ 的输出通道走 `model`。你在函数里仍写 `h @ W`，GSPMD 在需要的轴上插 all-gather / reduce-scatter。中间激活若让编译器自己选布局，偶发一次隐式 reshard，MFU 莫名掉。长 $T$ 的注意力输出我会钉住，用 `with_sharding_constraint`。
+激活 $h$ 形状 $[B, T, D]$，权重 $W_q$ 形状 $[D, D]$。典型钉法：$B$ 走 `data`，$D$ 的输出通道走 `model`。你在函数里仍写 `h @ W`，GSPMD 在需要的轴上插 all-gather / reduce-scatter。中间激活若让编译器自己选布局，偶发一次隐式 reshard，MFU 莫名掉。长 $T$ 的注意力输出用 `with_sharding_constraint` 钉住。
 
 动态 $T$、MoE 变长 dispatch 会逼着重编译或 pad 到编译期上界。TPU 上这不是细节，是墙钟。MoE 的静态容量见 `google-moe-routing`。
 

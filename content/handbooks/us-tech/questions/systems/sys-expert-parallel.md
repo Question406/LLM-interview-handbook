@@ -58,7 +58,7 @@ Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子�
 - TP：切单个 expert 内部矩阵，通信规则、适合 NVLink。
 - EP：切专家集合，通信是不规则 all-to-all。
 
-常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP 吞吐会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批——这里先记住：**同批 dispatch 叠不上该批 GEMM**。
+常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP 吞吐会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批。记住：**同批 dispatch 叠不上该批 GEMM**。
 
 推理侧 prefill 的 $T$ 大，all-to-all 有体积；decode 每步 token 少，all-to-all 变成小消息延迟墙。所以 MoE serving 经常 prefill / decode 用不同 EP 度，或 decode 把 expert 复制一份换通信。不要把训练拓扑原样搬到 decode。
 

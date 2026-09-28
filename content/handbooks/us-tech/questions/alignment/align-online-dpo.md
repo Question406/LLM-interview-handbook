@@ -32,7 +32,7 @@ DPO 论文本身是离线偏好。之后一堆 iterative / online 变体：当�
 
 ## 滞后是什么
 
-DPO 梯度依赖 $\pi_\theta(y_w)$、$\pi_\theta(y_l)$ 相对 $\pi_{\mathrm{ref}}$。若 $y_w,y_l$ 来自很旧的策略，当前 $\pi_\theta$ 在这些序列上 logp 已经极低，ratio 进饱和区：rejected 早被打穿，chosen 也带不上来，看起来像 $\beta$ 太小，其实是 **数据过期**。这叫策略滞后：标注时的行为分布 $\neq$ 训练时的 $\pi_\theta$。
+DPO 梯度依赖 $\pi_\theta(y_w)$、$\pi_\theta(y_l)$ 相对 $\pi_{\mathrm{ref}}$。若 $y_w,y_l$ 来自很旧的策略，当前 $\pi_\theta$ 在这些序列上 logp 已经极低，ratio 进饱和区：rejected 早被打穿，chosen 也带不上来，看起来像 $\beta$ 太小，其实是数据过期。这叫策略滞后：标注时的行为分布 $\neq$ 训练时的 $\pi_\theta$。
 
 PPO / GRPO 每步用 $\pi_{\mathrm{old}}$ rollout，importance clip 管单步偏离；偏好来自刚刚采样的 $y$。DPO 把 rollout 和更新拆开，滞后可以跨很多 SGD step。离线 HH 还能用，是因为你不把策略推太远，或 pair 本来就覆盖宽。要持续涨能力、奖励会漂，离线一份 pair 不够。
 

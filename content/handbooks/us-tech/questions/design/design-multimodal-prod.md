@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看屏，都会问「语音已经开始听，图还在上传怎么办」。Gemini 报告讲的是模型能力；Apple 公开叙述是 on-device 和 Private Cloud Compute。白板要的是延迟不齐、隐私和接地。不是某次现场逐字题。语音接地专项见 `apple-siri-grounded`；工具循环见 `design-agent-harness`。
+Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看屏，都会问「语音已经开始听，图还在上传怎么办」。Gemini 报告讲的是模型能力；Apple 公开叙述是 on-device 和 Private Cloud Compute。白板要的是延迟不齐、隐私和接地。语音接地专项见 `apple-siri-grounded`；工具循环见 `design-agent-harness`。
 
 ## 三路时钟，不要等最慢的那个
 
@@ -54,7 +54,7 @@ Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看�
 
 对齐：用户说「这个」时，指的是当前帧还是上一张图，要把 UI 焦点和时间戳写进 $E$。语音时间轴和视频帧 ID 对不上，就会答错对象。多图要编号，口头也说编号。
 
-失败模式：图还没到，模型用预训练知识喊出品牌（听着很自信）；ASR 把药名听错，视觉其实对，融合时信了 ASR；屏幕 OCR 把价格小数点吃掉，工具下单用错金额——金额必须走确认框；首包为了快用了小模型，大模型稍后推翻，用户听到两套说法。
+失败模式：图还没到，模型用预训练知识喊出品牌（听着很自信）；ASR 把药名听错，视觉其实对，融合时信了 ASR；屏幕 OCR 把价格小数点吃掉，工具下单用错金额；金额必须走确认框；首包为了快用了小模型，大模型稍后推翻，用户听到两套说法。
 
 延迟拆：TTFA（首包音频）、端到端、各模态等待时间、打断后静音间隔。p95 按网况分层。视觉超时率是一等公民指标，不是「偶发」。
 

@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Bedrock 应用和内部 GenAI 平台岗会把延迟问成 SLO 设计。CloudWatch 现在把 `TimeToFirstToken` 和 `InvocationLatency` 分开：前者是流式 API 从收到请求到第一个输出 token，后者是到最后一个 token。公开文档不是某次面试逐字题，但和 `amazon-bedrock-rag` 的 p95 2 秒是同一类题：预算要切开，平均值没用。Amazon 口味是所有权：每个分段有负责人，p99 超了能指出是排队、prefill 还是生成太长。
+Bedrock 应用和内部 GenAI 平台岗会把延迟问成 SLO 设计。CloudWatch 现在把 `TimeToFirstToken` 和 `InvocationLatency` 分开：前者是流式 API 从收到请求到第一个输出 token，后者是到最后一个 token。和 `amazon-bedrock-rag` 的 p95 2 秒是同一类题：预算要切开，平均值没用。Amazon 口味是所有权：每个分段有负责人，p99 超了能指出是排队、prefill 还是生成太长。
 
 ## 用户感知的不是同一个时钟
 
@@ -36,7 +36,7 @@ Bedrock 应用和内部 GenAI 平台岗会把延迟问成 SLO 设计。CloudWatc
 
 Agent、JSON 工具、工单摘要落库、Automated Reasoning 要看完整答案：第一个 token 再快，函数参数没闭合也不能调工具。这时 SLO 钉 E2E / `InvocationLatency`，并按输出 token 数归一。官方也提醒：`InvocationLatency` 变差，要先分清是服务吞吐掉了，还是输出变长了。输出 token 翻倍，E2E 翻倍，TTFT 可以几乎不动。
 
-所以面试开口：**流式体验报 TTFT；完成契约报 E2E；两者都看 p99，不看平均。** 分布右偏，排队和限流全在尾巴上。p50 好看、p99 爆炸，是典型的批次里塞进一条超长 prompt。
+所以面试开口：流式体验报 TTFT；完成契约报 E2E；两者都看 p99，不看平均。分布右偏，排队和限流全在尾巴上。p50 好看、p99 爆炸，是典型的批次里塞进一条超长 prompt。
 
 ## p99 尾巴拆给谁
 

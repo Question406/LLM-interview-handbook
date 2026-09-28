@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易把 MTP 说成「训练时一次看未来 $k$ 个 token，推理就自然一次吐 $k$ 个」。标准 next-token loss 只直接监督 $t+1$。MTP 增加多个未来位置的预测目标，让 hidden state 被要求携带更长程的可预测信息；其价值首先是训练信号，不是魔法式地改变自回归语义。推理若要用额外头当 draft，必须走 speculative verification，否则分布就变了。
+错法：把 MTP 说成「训练时一次看未来 $k$ 个 token，推理就自然一次吐 $k$ 个」。标准 next-token loss 只直接监督 $t+1$。MTP 增加多个未来位置的预测目标，让 hidden state 被要求携带更长程的可预测信息；价值首先是训练信号，不会魔法式地改变自回归语义。推理若要用额外头当 draft，必须走 speculative verification，否则分布就变了。
 
 ## 训练：多偏移监督，防泄漏
 
@@ -39,9 +39,9 @@ $$
 
 ## 推理：draft 不能直接采纳
 
-若把 MTP 头当 draft，一次提出多个候选 token，再用目标模型并行验证：接受前缀直到第一次拒绝，拒绝处按目标分布重采样。目标分布由验证规则保证，不是「多吐几个就算加速」。系统收益取决于 draft 成本、acceptance rate、KV / 调度开销。候选差则只增加工作量。这和独立小模型做 speculative decoding 同一套验收，只是 draft 来自同源多头。
+若把 MTP 头当 draft，一次提出多个候选 token，再用目标模型并行验证：接受前缀直到第一次拒绝，拒绝处按目标分布重采样。目标分布由验证规则保证。系统收益取决于 draft 成本、acceptance rate、KV / 调度开销。候选差则只增加工作量。这和独立小模型做 speculative decoding 同一套验收，只是 draft 来自同源多头。
 
-FlashAttention 等内核加速的是单步 attention 访存，不代替 acceptance rate。别把「训得更好」和「decode 更快」说成一件事。
+FlashAttention 等内核加速的是单步 attention 访存，替代不了 acceptance rate。「训得更好」和「decode 更快」是两件事。
 
 ## 追问
 

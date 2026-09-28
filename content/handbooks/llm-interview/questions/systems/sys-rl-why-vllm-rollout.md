@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-别说「vLLM 的 logprob 更准所以拿去更新」。选推理引擎是因为 **生成是墙钟大头**，训练图的 `generate` 不会做 serving 那套 decode 调度。数值上反而更不能信引擎 logp，ratio 必须回到训练图，见 `meituan-verl-recompute-logprob`。这题和「为什么重算 logp」是一对：一个问吞吐，一个问数学。我先承认引擎为速度牺牲了数值对齐，再讲 PagedAttention，才不会在下一问里自相矛盾。
+选推理引擎是因为生成是墙钟大头，训练图的 `generate` 不会做 serving 那套 decode 调度。数值上更不能信引擎 logp，ratio 必须回到训练图，见 `meituan-verl-recompute-logprob`。这题和「为什么重算 logp」是一对：一个问吞吐，一个问数学。开口先承认引擎为速度牺牲了数值对齐，再讲 PagedAttention，下一问才不会自相矛盾。
 
 ## 为什么生成会占满一步
 
@@ -62,7 +62,7 @@ TRL、veRL、OpenRLHF、slime 把 rollout 接到这类引擎，不是炫技：�
 
 组内 $n$ 条回复长度差一个数量级时，静态 batch 必须 pad 到最长。先结束的序列仍占着整行 KV 和计算槽，直到最长那条写完。PagedAttention + continuous batching 把结束的页还给后来者，这才是「同卡吞吐差一截」的来源，而不是 vLLM 的 matmul 魔法更快。长 CoT、组采样越大，这个差距越明显；短 SFT 式固定长度反而看不太出来，所以有人会误以为「训练 generate 也够用」。
 
-切换成本也要算进墙钟：同卡方案每次 rollout 前后要卸 KV、换布局或 offload 进程，这部分不是 decode 本身，但会随同步频率线性涨。分卡把切换换成权重传输。选引擎之后仍要选放置，见 `sys-verl-hybridengine`。Profile 时用分段计时：`generate`、`update_weights`、`recompute_logp`、`backward` 四段。只看到总 step time 下降，说不清是 vLLM 快了还是同步碰巧变少。vLLM 解决 generate 段；sync 看放置；recompute 看训练图；backward 才轮到并行策略。四段里任何一段都能让「换了 vLLM 还是慢」成立，所以不要把引擎当万能加速器。采样用快引擎，ratio 用训练图，放置另选题。不要在同一句里承诺「vLLM 又快又数值对齐」。那两件事正好冲突，下一问重算 logp 就会把这句话拆掉。引擎可以量化、可以 PagedAttention，训练图必须可导、可复现；把这两条要求绑在同一个 generate 调用上，是训练框架自己 decode 又慢又不准的根源。
+切换成本也要算进墙钟：同卡方案每次 rollout 前后要卸 KV、换布局或 offload 进程，这部分不是 decode 本身，但会随同步频率线性涨。分卡把切换换成权重传输。选引擎之后仍要选放置，见 `sys-verl-hybridengine`。Profile 时分段计时：`generate`、`update_weights`、`recompute_logp`、`backward`。只看总 step time 下降，说不清是 vLLM 快了还是同步碰巧变少。四段里任何一段都能让「换了 vLLM 还是慢」成立。采样用快引擎，ratio 用训练图，放置另选题；引擎可以量化、可以 PagedAttention，训练图必须可导、可复现，两件事绑在同一个 `generate` 上就会又慢又不准。
 
 ## 追问
 

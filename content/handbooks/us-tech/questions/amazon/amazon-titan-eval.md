@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Bedrock 应用、Nova / Titan 和内部助手岗都会问评测。AWS 自己的 Knowledge Base evaluation 写明：ROUGE / F1 会被字面相似骗过，意思可以完全不对。BLEU 同源，是机器翻译的 n-gram 精度，不是客服政策问答的指标。公开材料不是某次逐字真题。按 Amazon 口味：先契约，再数字；数字要能拦上线，见 `amazon-lp-ml`。
+Bedrock 应用、Nova / Titan 和内部助手岗都会问评测。AWS 自己的 Knowledge Base evaluation 写明：ROUGE / F1 会被字面相似骗过，意思可以完全不对。BLEU 同源，是机器翻译的 n-gram 精度，不是客服政策问答的指标。按 Amazon 口味：先契约，再数字；数字要能拦上线，见 `amazon-lp-ml`。
 
 ## BLEU 在这里测不到什么
 
@@ -52,7 +52,7 @@ Bedrock 的 LLM-as-a-judge 把正确性、有帮助、有害、拒答等打到 $
 3. **任务层。** Seller Support：一次解决、升级工单、错误引用过期条款。搜索式生成：是否帮用户落到可购买 ASIN。没有任务层，评测在自嗨。
 4. **系统层。** TTFT / E2E 的 p99、限流、成本，见 `amazon-p99-stream`。质量涨 1 个点、p99 翻倍，Insist on the Highest Standards 不会放行。
 
-线上：客服改写率、用户重问、点赞点踩、Guardrail 干预率、事故工单。A/B 预注册。不要上线后才决定「我们看 BLEU」。离线集要含失败回溯：上次幻觉、上次 PII、上次冷启动零结果，见 `amazon-cold-start`。Learn and Be Curious 是把生产失败写回 eval，不是换一个更大的 Titan。
+线上：客服改写率、用户重问、点赞点踩、Guardrail 干预率、事故工单。A/B 预注册。不要上线后才决定「我们看 BLEU」。离线集要含失败回溯：上次幻觉、上次 PII、上次冷启动零结果，见 `amazon-cold-start`。Learn and Be Curious 是把生产失败写回 eval，而不是换一个更大的 Titan。
 
 Titan 和 Claude 换底座时，应用评测集不动。底座排行榜（MMLU、内部对话竞技场）只能解释「为什么换」，不能替代应用门禁。蒸馏双塔那类论文用相关性加线上 A/B，也不是 BLEU，见 `amazon-two-tower`。
 

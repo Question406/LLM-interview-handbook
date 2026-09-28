@@ -34,7 +34,7 @@ sources:
 
 ## 请求级 batch 在浪费什么
 
-静态 batch：凑满 $B$ 条，pad 到这个 batch 的 max length，一起 decode，直到最慢那条 EOS。三条罪状：
+静态 batch：凑满 $B$ 条，pad 到这个 batch 的 max length，一起 decode，直到最慢那条 EOS。三处浪费：
 
 1. **Padding。** 长度 20 和长度 200 坐一桌，短的每步都在算 pad。
 2. **队头阻塞。** 先到的短请求必须等这个 batch 收齐，或者等长请求结束。
@@ -46,7 +46,7 @@ sources:
 
 ## iteration-level 在干什么
 
-Orca 的想法：调度单位是 **一次 decoder iteration**，不是一次完整请求。每步：
+Orca 的想法：调度单位是一次 decoder iteration，不是一次完整请求。每步：
 
 - 已结束的序列出队，释放它的 KV。
 - 等待中的新请求，在有空位时 prefill 并加入。
@@ -60,7 +60,7 @@ GPU 不再为已经结束的位置做 GEMM。连续批（continuous batching）�
 
 实现上每条请求至少要：当前 `position`、采样 RNG、结束条件、以及 KV 的 page 表。batch 维不再对应「第 $i$ 个固定样本」，而是当前活着的 slot。attention kernel 必须能吃 ragged 长度，或先按 page 间接寻址。写死 `[B, H, T_max, D]` 再 pad，等于把 continuous batching 的收益吐回去。
 
-面试我会画两个时间线：上面是静态 batch 的空白 pad，下面是每步都满的活 token。评委追「状态存在哪」，答：每条请求一份 KV 指针 + 采样状态，没有全局 `T`。
+可以画两个时间线：上面是静态 batch 的空白 pad，下面是每步都满的活 token。状态存在哪：每条请求一份 KV 指针 + 采样状态，没有全局 `T`。
 
 ## 追问
 

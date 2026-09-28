@@ -29,7 +29,7 @@ sources:
 
 ## 思路
 
-别整表排序，那是 LC 56。一次扫描分三段：
+别整表排序，那是 LC 56 的做法。一次扫描分三段：
 
 1. `intervals[i].end < new.start`：完全在左，直接放入答案。
 2. `intervals[i].start <= new.end`：有重叠，把 `new` 的左右端扩到覆盖这些段。
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **原区间未排序？** 先把 `newInterval` 丢进列表，再走合并区间：按起点排序，能重叠就扩 `end`，否则新开一段。时间 $O(n\log n)$，不必自己写三段扫。这就是 LC 56。独立卡见 `lc-56-merge-intervals`。若只有一次插入却整表无序，排序是值得的；若已有序，别退回这条 $O(n\log n)$ 路。
+- **原区间未排序？** 先把 `newInterval` 丢进列表，再走合并区间：按起点排序，能重叠就扩 `end`，否则新开一段。时间 $O(n\log n)$，不必自己写三段扫。这就是 LC 56。独立卡见 `lc-56-merge-intervals`。只有一次插入却整表无序时，排序就够；若已有序，别退回这条 $O(n\log n)$ 路。
 
 ```python
 def insertUnsorted(intervals, newInterval):

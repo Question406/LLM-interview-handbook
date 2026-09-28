@@ -57,7 +57,7 @@ Li et al. 的 Sequence Parallelism、Ring Attention、NVIDIA 后来的 context p
 - Megatron SP：和 TP 绑死，改的是 LN/dropout 的内存布局，GEMM 仍按 Megatron 列/行切。
 - Context / 环状 SP：切注意力的序列轴，通信是 KV 搬家，目的是更长 $T$。
 
-评委说「sequence parallel 减 activation」，NVIDIA 语境默认第一句；Google 长上下文和 2105.13120 默认第二句。我会问清再往下画。三维切分怎么给 SP/CP 留位置，见 `sys-3d-parallel`；和 TP 的列/行切法对着看 `nvidia-tensor-parallel`。
+评委说「sequence parallel 减 activation」，NVIDIA 语境默认第一句；Google 长上下文和 2105.13120 默认第二句。问清再往下画。三维切分怎么给 SP/CP 留位置，见 `sys-3d-parallel`；和 TP 的列/行切法对着看 `nvidia-tensor-parallel`。
 
 一个常见错觉：开了 SP，层内通信量「消失了」。没有。AG+RS 的字节量和原来的 all-reduce 同阶，只是内存布局变了。Nsight 上 NCCL 时间不会 magically 归零；省下的是 HBM 里那份复制的 LN 激活。
 

@@ -30,7 +30,7 @@ sources:
 
 ## 题怎么来的
 
-Shazeer 的 GLU 变体里，Llama 选了 SwiGLU。Meta 手写 Transformer 会要 MLP 这一块：不是 `Linear-ReLU-Linear`，是 **门控 × 上投影，再下投影**。中间宽写成 $4D$ 会让参数比论文多一块。激活函数本身见 `coding-silu`。前层归一化是 RMSNorm，见 `coding-rmsnorm`。
+Shazeer 的 GLU 变体里，Llama 选了 SwiGLU。Meta 手写 Transformer 会要 MLP 这一块：不是 `Linear-ReLU-Linear`，是门控 × 上投影，再下投影。中间宽写成 $4D$ 会让参数比论文多一块。激活函数本身见 `coding-silu`。前层归一化是 RMSNorm，见 `coding-rmsnorm`。
 
 ## 门控，不是两层 MLP
 
@@ -40,7 +40,7 @@ $$
 y=\big(\mathrm{SiLU}(x W_g)\odot (x W_u)\big) W_d.
 $$
 
-$W_g,W_u\in\mathbb{R}^{D\times H}$，$W_d\in\mathbb{R}^{H\times D}$。Llama **没 bias**。`SiLU` 只作用在 gate 那支；up 那支是线性。两支在 $H$ 维上逐点乘，再投回 $D$。不要写成 `silu(gate(x) * up(x))`，那是先乘后激活，对不上权重。
+$W_g,W_u\in\mathbb{R}^{D\times H}$，$W_d\in\mathbb{R}^{H\times D}$。Llama 没 bias。`SiLU` 只作用在 gate 那支；up 那支是线性。两支在 $H$ 维上逐点乘，再投回 $D$。不要写成 `silu(gate(x) * up(x))`，那是先乘后激活，对不上权重。
 
 普通 FFN 是 $D\to 4D\to D$ 两份矩阵。SwiGLU 有三份。若 $H=4D$，参数大约是旧 FFN 的 $1.5$ 倍。Llama 把 $H$ 收到 $\tfrac{2}{3}\cdot 4D=\tfrac{8}{3}D$，三份矩阵的参数量和原来的两份 $4D$ 宽层接近。再按 `multiple_of=256` 向上取整，方便分核 / TP。7B：$D=4096$，$\tfrac{8}{3}D\approx 10923$，对齐到 $11008$。
 
@@ -55,7 +55,6 @@ def llama_ffn_hidden(dim, multiple_of=256, ffn_mult=None):
         h = int(ffn_mult * h)
     return multiple_of * ((h + multiple_of - 1) // multiple_of)
 
-
 class SwiGLU(nn.Module):
     def __init__(self, dim, hidden=None):
         super().__init__()
@@ -67,7 +66,6 @@ class SwiGLU(nn.Module):
     def forward(self, x):
         # x: [B, T, D] -> [B, T, D]
         return self.w_down(F.silu(self.w_gate(x)) * self.w_up(x))
-
 
 def check():
     m = SwiGLU(4096)

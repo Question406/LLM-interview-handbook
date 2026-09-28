@@ -26,7 +26,7 @@ sources:
     type: secondary
 ---
 
-这块容易直接答成「上了 critic 所以梯度有偏」。Critic 有两种用法，偏倚来自第二种。第一种是 control variate：
+错法：「上了 critic 所以梯度有偏」。Critic 有两种用法，偏倚来自第二种。第一种是 control variate：
 
 $$
 \hat A_t^{\mathrm{MC}}=G_t-\hat V(s_t).
@@ -41,22 +41,20 @@ $$
 \hat A_t^{\mathrm{GAE}}=\sum_{l\ge 0}(\gamma\lambda)^l\delta_{t+l}.
 $$
 
-$\lambda=1$ 且不截断时，残差链在代数上回到 $G_t-V(s_t)$（$V$ 在中间项抵消）。$\lambda\lt 1$ 或 $n$-step 提前用 $\hat V(s_{t+n})$ 截断，等于声称「从那儿起的期望回报就是 $\hat V$」。这句话错了，期望就错了。所以：
-
-| | 用了 $V$ 吗 | 无偏？ |
+$\lambda=1$ 且不截断时，残差链在代数上回到 $G_t-V(s_t)$（$V$ 在中间项抵消）。$\lambda\lt 1$ 或 $n$-step 提前用 $\hat V(s_{t+n})$ 截断，等于声称「从那儿起的期望回报就是 $\hat V$」。这句话错了，期望就错了。所以：| | 用了 $V$ 吗 | 无偏？ |
 | --- | --- | --- |
 | 纯 $G_t$ | 否 | 是，方差最大 |
 | $G_t-\hat V(s_t)$ | 只减 | 是 |
 | GAE $\lambda=1$、完整回合 | 减，中间抵消 | 是（忽略函数近似实现细节） |
 | GAE $\lambda\lt 1$ / TD | 减且替换未来 | 否 |
 
-我会记：**减 $V$ 无偏，替未来有偏。** 不要把 PPO 标配的 $\lambda=0.95$ 说成「无偏 actor-critic」。它明确用偏差换方差，见 `pt-gae`、`stepfun-gae-mc-td`。
+记：减 $V$ 无偏，替未来有偏。 不要把 PPO 标配的 $\lambda=0.95$ 说成「无偏 actor-critic」。它明确用偏差换方差，见 `pt-gae`、`stepfun-gae-mc-td`。
 
 ## 想保持无偏时 critic 还能干什么
 
-- **只当 baseline。** 拟合 $V^\pi$，用 $G_t-\hat V$，或 $\lambda=1$。样本仍要跑完整回合（或承认截断是另一层偏，见 `fund-term-vs-trunc`）。
-- **Q-Prop 一类。** 把 critic 当控制变量，再补一项对 critic 可微的修正，使总期望仍是 $\nabla J$。加分项，不必当默认实现。
-- **不要** 指望「先把 $V$ 训准，小 $\lambda$ 就近似无偏」。$V$ 准则偏差小，但「近似无偏」仍是有偏；$V$ 一滞后（策略已经走了），偏差立刻回来。
+- 只当 baseline：拟合 $V^\pi$，用 $G_t-\hat V$，或 $\lambda=1$。样本仍要跑完整回合（或承认截断是另一层偏，见 `fund-term-vs-trunc`）。
+- Q-Prop 一类：把 critic 当控制变量，再补一项对 critic 可微的修正，使总期望仍是 $\nabla J$。加分项，不必当默认实现。
+- 不要 指望「先把 $V$ 训准，小 $\lambda$ 就近似无偏」。$V$ 准则偏差小，但「近似无偏」仍是有偏；$V$ 一滞后（策略已经走了），偏差立刻回来。
 
 LLM 长 CoT 很难拿到准 $V$，所以很多人宁可用组均值这种粗 baseline，也不用小 $\lambda$ 的 GAE。组均值是 $b(s)$ 的经验版，属于「减」、不是「替未来」。有限样本偏差是另一层，见 `fund-finite-sample-baseline`。
 

@@ -32,7 +32,7 @@ sources:
 
 NVIDIA 量化开口题常常是对称 INT8 映射；`nvidia-int8-quant` 把非对称和零点讲完。本题收成可写的 GEMM：scale
 怎么广播、饱和怎么打、累加用哪一种整数。Dettmers 的 LLM.int8() / bitsandbytes 是 LLM
-推理里最常被点名的实现：向量方向的 scale，外加 outlier 通道走 fp16。白板先写纯对称路径，再提混合精度是补丁不是定义。
+推理里最常被点名的实现：向量方向的 scale，外加 outlier 通道走 fp16。白板先写纯对称路径；混合精度拆通道是补丁，不是对称量化的定义。
 
 ## 映射：scale 与饱和
 
@@ -72,14 +72,12 @@ def symm_quant_int8(x, dim=None):
     q = (x / scale).round().clamp(-127, 127).to(torch.int8)
     return q, scale
 
-
 def int8_linear(xq, wq, sx, sw):
     # xq: [M, K] int8; wq: [N, K] int8; sx: [M,1] or scalar; sw: [N] or scalar
     acc = xq.to(torch.int32) @ wq.to(torch.int32).T  # [M, N]
     y = acc.float() * sx
     sw_t = sw.reshape(1, -1) if torch.as_tensor(sw).numel() > 1 else sw
     return y * sw_t
-
 
 def roundtrip_err(x, dim=None):
     q, s = symm_quant_int8(x, dim=dim)
@@ -92,9 +90,9 @@ def roundtrip_err(x, dim=None):
 ## LLM.int8 和「对称」差在哪
 
 bitsandbytes 的 LLM.int8() 仍是对称、向量方向 scale，但发现少数 feature 通道幅度极大，INT8 格不够。做法：把
-outlier 列留在 fp16，其余做 INT8 GEMM，再把两段结果加回 `[M, N]`。这不是非对称零点，是 **混合精度拆通道**。面试别把
+outlier 列留在 fp16，其余做 INT8 GEMM，再把两段结果加回 `[M, N]`。这是混合精度拆通道，不是非对称零点；别把
 outlier 路径说成 $z\ne 0$。Decode 一步 $M$ 很小（常是 $B$），GEMM 瘦，INT8 加速可能被 dequant 和
-kernel launch 吃掉，和 `nvidia-int8-quant` 同一句「先 profile」。
+kernel launch 吃掉，和 `nvidia-int8-quant` 一样：先 profile。
 
 ## 追问
 

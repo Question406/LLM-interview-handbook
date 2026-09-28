@@ -73,9 +73,9 @@ def kmeans(x, k, n_iter=20, seed=0):
 
 「最近邻」有时是 k-means 的赋值（每个点找最近中心，其实是 $k$ 个原型上的 1-NN），有时是真的 $k$NN 分类 / 检索。
 
-- **原型：** 推理只存 $k$ 个中心，$O(k d)$。这就是向量量化。Apple 端上 palettization：投影权按块做 k-means，$k=16$ 个中心对应 4-bit 码本，见 `apple-ondevice-quant`。面试把这句接上，coding 题就变成了公司题。
-- **检索：** 私有消息 / 照片 embedding 的 top-k 邻居。精确 $O(n d)$；端上 $n$ 是用户自己的库，暴力扫往往够。需要更快再上 IVF（先 k-means 粗量化，再只扫近的几个倒排表）或图索引。不要一上来画分布式集群——和数据不出设备冲突，见 `apple-personalize`。
-- **kNN vs k-means：** 分类题若 $n$ 小、决策边界不规则，kNN 更直接；要压缩模型或做码本，才是 k-means。说清任务，不要把两个 $k$ 混用。
+- 原型：推理只存 $k$ 个中心，$O(k d)$。这就是向量量化。Apple 端上 palettization：投影权按块做 k-means，$k=16$ 个中心对应 4-bit 码本，见 `apple-ondevice-quant`。面试把这句接上，coding 题就变成了公司题。
+- 检索：私有消息 / 照片 embedding 的 top-k 邻居。精确 $O(n d)$；端上 $n$ 是用户自己的库，暴力扫往往够。需要更快再上 IVF（先 k-means 粗量化，再只扫近的几个倒排表）或图索引。不要一上来画分布式集群——和数据不出设备冲突，见 `apple-personalize`。
+- kNN vs k-means：分类题若 $n$ 小、决策边界不规则，kNN 更直接；要压缩模型或做码本，才是 k-means。说清任务，不要把两个 $k$ 混用。
 
 评测：inertia（上式）只测紧致，不测下游。Palettization 要看恢复 adapter 之后的任务分；检索要看 recall@$k$ 和延迟。聚类没有唯一标签时，不要硬报 accuracy。
 

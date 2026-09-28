@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-Infra 面经会问 **「vLLM / SGLang 的 continuous batching」**：请求结束立刻插入新序列，避免短序列空等。这是引擎层，见 `sys-cont-batch`，和「异步 RL」不是一层。这块容易答「SGLang 一定更快」或「vLLM logp 更准所以拿去更新」。选引擎是因为 **生成是墙钟大头**；数值上 ratio 仍要回训练图。两者都做 paging 和连续 batch，选型差在生态、多轮工具、以及你 serving 已经绑了谁，不在「谁的 kernel 赢了 5%」。我先报负载（单轮数学还是多轮 Agent）和现有 serving 栈，再报 `rollout.name`。承诺「又快又数值对齐」会在下一问重算 logp 时穿帮。快来自引擎，对齐来自训练图。进程组冲突看起来像 NCCL hang，先隔离 communicator 再换引擎。
+Infra 面经会问「vLLM / SGLang 的 continuous batching」：请求结束立刻插入新序列，避免短序列空等。这是引擎层，见 `sys-cont-batch`，和「异步 RL」不是一层。这块容易答「SGLang 一定更快」或「vLLM logp 更准所以拿去更新」。选引擎是因为生成是墙钟大头；数值上 ratio 仍要回训练图。两者都做 paging 和连续 batch，选型差在生态、多轮工具、以及你 serving 已经绑了谁，不在「谁的 kernel 赢了 5%」。我先报负载（单轮数学还是多轮 Agent）和现有 serving 栈，再报 `rollout.name`。快来自引擎，对齐来自训练图；承诺「又快又数值对齐」会在下一问重算 logp 时穿帮。进程组冲突看起来像 NCCL hang，先隔离 communicator 再换引擎。
 
 ## 怎么切
 
@@ -44,11 +44,11 @@ veRL 切换：`actor_rollout_ref.rollout.name=sglang` 或 `vllm`。单轮数学 
 
 多轮不是多次单轮拼接。要在同一条 session 里保留 KV、插入 tool observation、按 schema 约束解码。SGLang 的程序化生成 / router 对这类状态机更顺；vLLM 也能接工具，但和 serving 侧若已经是 SGLang 协议，RL 再自研一套 multi-turn worker 是重复税。Agent 的墙钟还含环境延迟，引擎差距可能小于 sandbox，先 profile 再换引擎。
 
-无论哪个引擎：采样 logp 都要在训练图重算；同步后都要 flush KV、记 `policy_version`。量化（尤其 FP8 rollout）会让引擎 logp 和 FSDP/Megatron 差出能进 $\rho$ 的误差。正确拆法是 **采样用快引擎，ratio / KL 用训练图**，见 `meituan-verl-recompute-logprob`。
+无论哪个引擎：采样 logp 都要在训练图重算；同步后都要 flush KV、记 `policy_version`。量化（尤其 FP8 rollout）会让引擎 logp 和 FSDP/Megatron 差出能进 $\rho$ 的误差。正确拆法是采样用快引擎，ratio / KL 用训练图，见 `meituan-verl-recompute-logprob`。
 
 ## 和放置的关系
 
-同卡 HybridEngine：两种引擎都是「采完卸 KV、reshard 回训练」。分卡：引擎常驻，训练另一套，按步推权。OpenRLHF 更常绑独立 vLLM actor；slime colocate 绑 SGLang server + offload。引擎选择和放置选择正交：可以 vLLM + HybridEngine，也可以 SGLang + 分卡。我先报负载（单轮 vs 多轮），再报放置，最后才报名字。多轮 Agent 的状态机（session、tool、schema）才是 SGLang 常被点名的原因；把这一点说成「SGLang 更快」会被追问 benchmark 拆穿。结构化输出、constrained decoding 同样偏 SGLang 的程序化生成；纯补全、无工具，vLLM 完全够。选完之后仍要：同步 flush KV、训练图重算 logp、profile generate vs sync vs backward。引擎名解决不了后三件。
+同卡 HybridEngine：两种引擎都是「采完卸 KV、reshard 回训练」。分卡：引擎常驻，训练另一套，按步推权。OpenRLHF 更常绑独立 vLLM actor；slime colocate 绑 SGLang server + offload。引擎选择和放置选择正交：可以 vLLM + HybridEngine，也可以 SGLang + 分卡。我先报负载（单轮 vs 多轮），再报放置，最后才报名字。多轮 Agent 的状态机（session、tool、schema）才是 SGLang 常被点名的原因；把这一点说成「SGLang 更快」会被追问 benchmark 拆穿。结构化输出、constrained decoding 同样偏 SGLang 的程序化生成；纯补全、无工具，vLLM 完全够。选完之后仍要：同步 flush KV、训练图重算 logp、profile generate vs sync vs backward。
 
 单轮数学/代码：团队镜像是谁就用谁，改 `actor_rollout_ref.rollout.name`。多轮工具、结构化输出、serving 已是 SGLang：偏 SGLang。纯吞吐熟路、现成 vLLM：不必换。slime 默认 SGLang 是栈收窄，不是 veRL 不能接 SGLang。microbenchmark 快 5% 不能当理由。
 
@@ -62,4 +62,4 @@ veRL 切换：`actor_rollout_ref.rollout.name=sglang` 或 `vllm`。单轮数学 
 - **微基准快 5% 能当理由吗？** 不能。RL 一步还含 `update_weights` 和重算 logp。引擎快、同步慢，一步仍然慢。用分段计时，不要用纯 serving tokens/s。
 - **FP8 rollout 怎么选引擎？** 两边都能量化，数值漂移都会进 $\rho$，更不能跳过训练图重算。选你 serving 已经在用、权同步协议更熟的那个，量化是附加约束不是选型主因。
 - **多轮 session 的 KV 要不要跨步保留？** 要，否则每轮重 prefill。SGLang 对 session / 工具插入更顺；若 vLLM 侧已经有稳定的多轮 worker，不必为了「更现代」而换。先报现有协议。
-- **面试怎么选？** 单轮数学/代码跟团队镜像走；多轮工具、结构化输出、serving 已是 SGLang 则偏 SGLang。无论哪个：采样用快引擎，ratio 用训练图，同步后 flush KV。不要承诺又快又数值对齐。continuous batching 两者都有，那不是选型差异。进程组冲突先隔离 communicator。
+- **面试怎么选？** 单轮数学/代码跟团队镜像走；多轮工具、结构化输出、serving 已是 SGLang 则偏 SGLang。无论哪个：采样用快引擎，ratio 用训练图，同步后 flush KV。continuous batching 两者都有，那不是选型差异。进程组冲突先隔离 communicator。

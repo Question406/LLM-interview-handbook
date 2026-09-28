@@ -36,7 +36,7 @@ sources:
 
 ## 题怎么来的
 
-GPT-4 把 32k / 128k 做成产品；研究岗会问「从 4k 基座怎么接到这个窗」。公开配方多来自 RoPE 论文、位置插值、YaRN、Code Llama 的基频改法，不是 OpenAI 内部 wiki。评测切片见 `anthropic-long-context` 和 `msft-long-context`；本题只收 **怎么训**。Decode 时位置下标写错是另一题，见 `openai-rope-offset`。
+GPT-4 把 32k / 128k 做成产品；研究岗会问「从 4k 基座怎么接到这个窗」。公开配方多来自 RoPE 论文、位置插值、YaRN、Code Llama 的基频改法，不是 OpenAI 内部 wiki。评测切片见 `anthropic-long-context` 和 `msft-long-context`；本题只收怎么训。Decode 时位置下标写错是另一题，见 `openai-rope-offset`。
 
 ## 基频、插值、续训
 
@@ -46,13 +46,13 @@ RoPE 第 $i$ 对维度的角频率 $\theta_i=\theta^{-2i/d}$，默认 $\theta=10
 2. **位置插值（PI）。** 推理或短续训时把位置缩成 $m' = m\cdot L_{\mathrm{train}}/L_{\mathrm{target}}$，让新窗仍落在旧相位范围。近处分辨率被稀释，短依赖可能伤。
 3. **NTK / YaRN。** 低频多放、高频少动，介于「只改 $\theta$」和「全局缩位置」之间。社区外推常用；不要说成 OpenAI 官方配方。Llama 侧概念见 `meta-llama-rope`。
 
-只改公式、不看长文档，模型仍然不会用中间那些 token。我会做 **continual pretrain**：从短窗 checkpoint 出发，压低 lr（常是预训练峰值的 $1/10$–$1/30$），在真实长文档上再跑一段，窗可以阶梯涨（8k → 32k → 128k）。数据必须是 **真的长依赖**：仓库、书、长对话、论文，而不是把短网页 pack 满 128k 假装长上下文。后者模型只学到「很多短篇拼在一起」，Lost in the Middle 仍然会在中间位置掉点。
+只改公式、不看长文档，模型仍然不会用中间那些 token。我会做 continual pretrain：从短窗 checkpoint 出发，压低 lr（常是预训练峰值的 $1/10$–$1/30$），在真实长文档上再跑一段，窗可以阶梯涨（8k → 32k → 128k）。数据必须是真的长依赖：仓库、书、长对话、论文，而不是把短网页 pack 满 128k 假装长上下文。后者模型只学到「很多短篇拼在一起」，Lost in the Middle 仍然会在中间位置掉点。
 
 显存：激活随 $T$ 涨，checkpoint 和序列并行几乎必开，见 `openai-grad-checkpoint`。服务期滑窗是另一套，不能代替长窗训练，见 `openai-attention-sink`。
 
 ## packing：拼得满，但文档之间不要互看
 
-短文档要 pack 满 $[B,T]$ 才不浪费。错法是直接 concat，让文档 A 的 token attend 到文档 B。模型会学到虚假跨文依赖，长窗评测时反而更爱抄隔壁。正确是文档级注意力 mask：同一篇内因果，跨篇全挡。结束符可以当边界特征，**不能代替 mask**。
+短文档要 pack 满 $[B,T]$ 才不浪费。错法是直接 concat，让文档 A 的 token attend 到文档 B。模型会学到虚假跨文依赖，长窗评测时反而更爱抄隔壁。正确是文档级注意力 mask：同一篇内因果，跨篇全挡。结束符可以当边界特征，不能代替 mask。
 
 ```python
 # 文档 id 是 [B, T]，同一篇同号
@@ -62,7 +62,7 @@ attn_mask = same & causal          # True = 可见
 scores = scores.masked_fill(~attn_mask[:, None], float("-inf"))
 ```
 
-损失只在有效 token 上算；pad 和跨篇位置走 ignore index。curriculum 可以先短后长，但每一档都要有 **该长度上的真实任务**（复制针、多跳、全书问答），否则 loss 下降只说明短模式还在。
+损失只在有效 token 上算；pad 和跨篇位置走 ignore index。curriculum 可以先短后长，但每一档都要有该长度上的真实任务（复制针、多跳、全书问答），否则 loss 下降只说明短模式还在。
 
 Lost in the Middle 是评测现象：证据在中间比在头尾差。训练上能做的是：长文档、位置均匀的监督、不要只把答案放在末段。它不是靠把 $\theta$ 再乘十就能消失的。
 

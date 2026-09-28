@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-Grounded QA / RAG 的 RLVR 要同时满足：检索证据覆盖关键事实、引用真正蕴含声明、最终答案正确、证据不足时拒答或标不确定。这些目标互相冲突，不能当成一个标量随便加。这块容易写成 $r = r_{\mathrm{ans}} + r_{\mathrm{cite}} + r_{\mathrm{refuse}}$ 一把梭：模型会堆假引用刷 citation 分、或遇难就拒答刷安全分，答案质量反而坏。`pt-reward-design` 讲奖励可验证；`pt-reward-ood-failure` 讲代理奖励出支撑就失效。本题把这两点落到 grounded 场景的分阶段训练。
+Grounded QA / RAG 的 RLVR 要同时满足：检索证据覆盖关键事实、引用蕴含声明、最终答案正确、证据不足时拒答或标不确定。这些目标互相冲突，不能当成一个标量随便加。错法：写成 $r = r_{\mathrm{ans}} + r_{\mathrm{cite}} + r_{\mathrm{refuse}}$ 一把梭：模型会堆假引用刷 citation 分、或遇难就拒答刷安全分，答案质量反而坏。`pt-reward-design` 讲奖励可验证；`pt-reward-ood-failure` 讲代理奖励出支撑就失效。本题把这两点落到 grounded 场景的分阶段训练。
 
 ## 四层信号必须分开定义
 

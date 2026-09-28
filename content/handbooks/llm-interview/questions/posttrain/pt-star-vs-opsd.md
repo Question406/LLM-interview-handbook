@@ -63,7 +63,7 @@ stop-gradient 之后就是 token 级政策梯度。$\hat{y}$ 终局错了，$r_n
 | GRPO | 无教师 | 组内有方差才有 | 序列 $A$ 摊到整段 |
 | OPSD | 只前向，不生成 | 学生轨迹，对错都算 | 稠密分布 / $r_n$ |
 
-我会说：**STaR 把错的扔掉；OPSD 把错的当成要纠正的前缀。** 题太难、教师看了 $y^\star$ 也不会 rationalize 时，OPSD 的 $r_n$ 是噪声，并不比丢掉错解更聪明，见 `pt-opsd` 容量限制。
+STaR 把错的扔掉；OPSD 把错的当成要纠正的前缀。题太难、教师看了 $y^\star$ 也不会 rationalize 时，OPSD 的 $r_n$ 是噪声，并不比丢掉错解更聪明，见 `pt-opsd` 容量限制。
 
 ## 追问
 

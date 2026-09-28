@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“Flash attention原理”**
 
-蚂蚁一面这题，这块容易直接答成「更快的近似注意力」，或者只说「算子融合」。我会先讲 I/O：标准实现把 $QK^\top$ 和 softmax 概率落到 HBM，长序列时读写远贵过 FLOPs。FlashAttention 在 SRAM 里分块做精确 softmax 合并，省的是 HBM 流量，数值上和标准 attention 等价。相关卡：`sys-flash`、`sys-online-softmax`、`baichuan-flash-attn`。
+错法：「更快的近似注意力」，或者只说「算子融合」。先讲 I/O：标准实现把 $QK^\top$ 和 softmax 概率落到 HBM，长序列时读写远贵过 FLOPs。FlashAttention 在 SRAM 里分块做精确 softmax 合并，省的是 HBM 流量，数值上和标准 attention 等价。相关卡：`sys-flash`、`sys-online-softmax`、`baichuan-flash-attn`。
 
 ## 为什么 $N\times N$ 会打满带宽
 
@@ -44,7 +44,7 @@ Attention 是 $\mathrm{softmax}(QK^\top/\sqrt{d})V$。朴素 kernel 先写出 $N
 
 ## 和 PagedAttention / 量化不是一层
 
-FlashAttention 解决单步算子的 I/O；PagedAttention 解决 KV cache 的分页与碎片，见 `ant-vllm-paged`。短序列或已经算力打满、瓶颈在通信时，加速可能接近零，别背一个全球倍数。causal mask 在块内用局部 mask 实现，不会因此变成近似。最后我会补一句：精确、IO-aware、online softmax；不是 Linformer / Reformer 那类近似。
+FlashAttention 解决单步算子的 I/O；PagedAttention 解决 KV cache 的分页与碎片，见 `ant-vllm-paged`。短序列或已经算力打满、瓶颈在通信时，加速可能接近零，别背一个全球倍数。causal mask 在块内用局部 mask 实现，不会因此变成近似。记住三点：精确、IO-aware、online softmax；不是 Linformer / Reformer 那类近似。
 
 ## 追问
 

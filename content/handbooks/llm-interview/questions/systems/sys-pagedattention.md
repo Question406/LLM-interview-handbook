@@ -21,7 +21,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易说 PagedAttention 改了注意力公式，或把它和 FlashAttention 当成同一层。它改的是 **KV 怎么分配和查找**，像 OS 虚拟内存：逻辑地址连续，物理页可以散落。Attention 数学仍是 $QK^\top$ + softmax + $V$。加速来自少碎片、高并发，不是近似 softmax。见 `ant-vllm-paged`。
+这块容易说 PagedAttention 改了注意力公式，或把它和 FlashAttention 当成同一层。它改的是 KV 怎么分配和查找，像 OS 虚拟内存：逻辑地址连续，物理页可以散落。Attention 数学仍是 $QK^\top$ + softmax + $V$。加速来自少碎片、高并发，不是近似 softmax。见 `ant-vllm-paged`。
 
 ## 为什么像虚拟内存
 

@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“了解ReAct结构吗，介绍一下?”**
 
-这块容易直接答成把任何 Agent 都叫 ReAct。没有显式 Thought 或没有环境反馈，只是 function calling 循环。ReAct（Yao et al.）把「只想」和「只做」拼起来：Thought 决定假设与下一步，Action 调用检索 / 工具，Observation 把结果接回，再进入下一轮，直到给出最终答案。它是策略骨架，不是训练算法。多轮检索何时停，见 `xiaohongshu-deep-research-stop`。
+错法：把任何 Agent 都叫 ReAct。没有显式 Thought 或没有环境反馈，只是 function calling 循环。ReAct（Yao et al.）把「只想」和「只做」拼起来：Thought 决定假设与下一步，Action 调用检索 / 工具，Observation 把结果接回，再进入下一轮，直到给出最终答案。它是策略骨架，不是训练算法。多轮检索何时停，见 `xiaohongshu-deep-research-stop`。
 
 ## Thought / Action / Observation
 
@@ -43,7 +43,7 @@ sources:
 
 ## 和 function calling、多 Agent 的界限
 
-现代 API 的 tool call 可以没有自然语言 Thought，仍是 ReAct 的亲戚：模型选动作、环境返回、再决策。我会主动说差别：ReAct 论文强调可检查的推理痕迹；生产可以结构化 Thought。没有环境反馈的多步自说自话不是 ReAct。多 Agent 只是把某些 Action 交给另一个策略，协作协议见 `pdd-multi-vs-single-agent`。LangGraph、MCP、Skill 不是 ReAct，那些是图、协议和操作知识，见 `xiaohongshu-mcp-skill-token-efficiency`。介绍时我会按循环画一遍，再补工程补丁。
+现代 API 的 tool call 可以没有自然语言 Thought，仍是 ReAct 的亲戚：模型选动作、环境返回、再决策。差别在于：ReAct 论文强调可检查的推理痕迹；生产可以结构化 Thought。没有环境反馈的多步自说自话不是 ReAct。多 Agent 只是把某些 Action 交给另一个策略，协作协议见 `pdd-multi-vs-single-agent`。LangGraph、MCP、Skill 不是 ReAct，那些是图、协议和操作知识，见 `xiaohongshu-mcp-skill-token-efficiency`。介绍时按循环画一遍，再补工程补丁。
 
 ## 追问
 

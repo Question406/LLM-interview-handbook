@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“多 agent如何如何做的协作”**
 
-实习一面别答成「多个 chatbot 互聊」。多 Agent 只在单模型上下文或技能过载时才值得拆。先写共享 state、角色接口和唯一写者，再选拓扑。评的是端到端任务成功，不是轮数。对照 `arl-multiagent`、`pdd-multi-vs-single-agent`、`xiaohongshu-multiagent-quality`。同一面表格 / SQL 是天然流水线。
+错法：「多个 chatbot 互聊」。多 Agent 只在单模型上下文或技能过载时才值得拆。先写共享 state、角色接口和唯一写者，再选拓扑。评的是端到端任务成功，不是轮数。对照 `arl-multiagent`、`pdd-multi-vs-single-agent`、`xiaohongshu-multiagent-quality`。同一面表格 / SQL 是天然流水线。
 
 ## 先协议，后拓扑
 

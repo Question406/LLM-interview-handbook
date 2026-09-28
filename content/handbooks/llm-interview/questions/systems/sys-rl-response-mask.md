@@ -36,9 +36,9 @@ veRL 里是 `response_mask`：loss / entropy / KL 只在 mask $=1$ 的位置求�
 
 ## Agent 多轮不要训 Observation
 
-多轮里模型自己写的 Thought / function call 是动作；搜索引擎、代码沙箱、浏览器返回的 observation 是环境。把整段轨迹当 completion 一起反传，等于让模型去「学」搜索引擎说了什么，credit 会漏到不可控文本上，工具格式稍变梯度就抖。正确做法是只对模型发出的 token 置 1，工具结果当条件。和「只训 response」是同一条原则，只是 response 被切成了多段。组内优势仍按整条轨迹的标量奖励广播到这些 mask=1 的位置。环境延迟往往超过 decode，一步墙钟不再能用 MFU 解释，见 `sys-rl-infra`；但那是调度问题，不能反过来成为「所以 observation 也该训」的理由。多轮 mask 写错，比单轮漏 prompt 更难查：loss 看着正常，策略却在模仿检索片段。查法很具体：从 batch 里抽一条，打印 prompt 长度、response 长度、mask 的 1 的个数，三者对不上就是实现 bug，不是超参问题。训练曲线上若出现「reward 不动、KL 却在涨」或「系统提示词被改得越来越像高分答案」，优先怀疑 mask 而不是学习率。长度奖励、EOS 惩罚、format reward 全部作用在同一条 mask 上，mask 错了这些辅助项也会一起错。
+多轮里模型自己写的 Thought / function call 是动作；搜索引擎、代码沙箱、浏览器返回的 observation 是环境。把整段轨迹当 completion 一起反传，等于让模型去「学」搜索引擎说了什么，credit 会漏到不可控文本上，工具格式稍变梯度就抖。正确做法是只对模型发出的 token 置 1，工具结果当条件。和「只训 response」是同一条原则，只是 response 被切成了多段。组内优势仍按整条轨迹的标量奖励广播到这些 mask=1 的位置。环境延迟往往超过 decode，一步墙钟不再能用 MFU 解释，见 `sys-rl-infra`；但那是调度问题，不能反过来成为「所以 observation 也该训」的理由。多轮 mask 写错更难查：loss 看着正常，策略却在模仿检索片段。从 batch 抽一条，打印 prompt 长度、response 长度、mask 为 1 的个数，对不上就是实现 bug。曲线上若「reward 不动、KL 却在涨」或系统提示被改得像高分答案，优先查 mask。长度奖励、EOS 惩罚、format reward 都挂在同一条 mask 上，mask 错了它们一起错。
 
-还有一类更隐蔽的写法：用 attention_mask 直接当 loss mask。attention 必须看见 prompt，loss 不能更新 prompt，两套 mask 差在「从哪一格开始是 1」。实现上常见 bug 是 tokenize 后 prompt 长度和字符串切分差 1，BOS 或 chat template 的 special token 被算进 response，系统提示的最后几个 token 开始被训。对账方法是 decode mask=1 的片段，人眼看是不是模型写的那一段。对不上就停训，先修数据管线。padding 进平均、EOS 之后仍为 1，会让短答案被稀释、长答案拖到 max length，长度奖励从 pad 里漏出来，看起来像「RL 之后越写越长」其实是 mask 事故。先修边界，再去看 `sys-rl-longer-after-rl`。策略梯度的动作是模型选出来的 token，prompt 和工具返回都不是。
+更隐蔽的写法：用 `attention_mask` 直接当 loss mask。attention 必须看见 prompt，loss 不能更新 prompt，两套 mask 差在「从哪一格开始是 1」。tokenize 后 prompt 长度和字符串切分差 1、BOS 或 chat template 的 special token 被算进 response，都会把系统提示最后几个 token 训进去。对账：decode mask=1 的片段，看是不是模型写的那一段；对不上就停训修管线。padding 进平均或 EOS 之后仍为 1，也会让长度从 pad 里漏出来，先修边界再看 `sys-rl-longer-after-rl`。
 
 ## 追问
 

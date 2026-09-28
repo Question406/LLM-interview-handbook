@@ -34,7 +34,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA LLM 推理 / CUDA 岗爱问「TRT-LLM、vLLM、Triton 你怎么摆」。我会先画三层，再落到 plugin、in-flight batch、量化三件产品功能。NeMo 训完导出引擎也走这条。评委要听职责切分，不接受「都是推理框架」四个字。
+NVIDIA LLM 推理 / CUDA 岗爱问「TRT-LLM、vLLM、Triton 你怎么摆」。我会先画三层，再落到 plugin、in-flight batch、量化三件产品功能。NeMo 训完导出引擎也走这条。要讲职责切分，别答「都是推理框架」四个字。
 
 ## 三层各管什么
 
@@ -44,7 +44,7 @@ vLLM 是另一套引擎加 serving。PagedAttention 论文从那边来；continu
 
 Triton Inference Server 是网关：动态 batch、ensemble、多后端、metrics。LLM 路径上它把请求送进 TensorRT-LLM backend，真正的 GPU 占用由引擎 scheduler 决定。Triton 的 `max_queue_delay` 是把形状相同的请求拼成一次 launch，要求一起进、一起出。LLM decode 长度差几个数量级，这套对不上。Triton 怎么配见 `nvidia-triton-infer`。
 
-口诀：Triton 管进出；TRT-LLM / vLLM 管一步 transformer 怎么跑。
+Triton 管进出；TRT-LLM / vLLM 管一步 transformer 怎么跑。
 
 ## Plugin 在补什么
 
@@ -56,7 +56,7 @@ Triton Inference Server 是网关：动态 batch、ensemble、多后端、metric
 
 面试别背插件名单。一句话：没有 plugin，编译器不知道 KV cache 和 inflight 的间接索引，只会生成「先物化 attention 矩阵」的慢图。FlashAttention 的 IO 账见 `nvidia-flash-attn`。
 
-## Inflight 和量化别并成一句「都优化了」
+## Inflight 和量化别并成「都优化了」
 
 In-flight batching：每个 iteration 结束的序列立刻腾槽，新请求插进来，context 和 generation 可以同一步。这是调度，依赖 paged KV，细节见 `nvidia-inflight-batch`。量化是 dtype 和 kernel：Hopper 上权 / 激活 FP8，KV 还可以单独 FP8；INT8 SmoothQuant、INT4 AWQ / GPTQ 是另一组配方。权重量化和 KV 量化不是一把开关，见 `nvidia-fp8`、`nvidia-fp8-kv`、`nvidia-int8-quant`。
 

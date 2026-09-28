@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Google 企业搜、Amazon Bedrock 知识库、Meta 工作问答一旦接截屏和 PDF 扫描件，就会从 `design-prod-rag` 追到「图怎么索引、权限怎么漏」。CLIP 给图文对齐向量；ColPali 一类把页当视觉文档检索。不是某次现场逐字题。生成侧引用框见 `design-mm-assistant`。本题收检索层：双路索引、ACL、融合、泄漏。
+Google 企业搜、Amazon Bedrock 知识库、Meta 工作问答一旦接截屏和 PDF 扫描件，就会从 `design-prod-rag` 追到「图怎么索引、权限怎么漏」。CLIP 给图文对齐向量；ColPali 一类把页当视觉文档检索。生成侧引用框见 `design-mm-assistant`。本题收检索层：双路索引、ACL、融合、泄漏。
 
 ## 切片仍先于 embedding，像素也有租户
 
@@ -40,7 +40,7 @@ Google 企业搜、Amazon Bedrock 知识库、Meta 工作问答一旦接截屏�
 2. **图级 CLIP / SigLIP。** 查询是「红色 logo 的那页」时，文字塔对不上。
 3. **页级视觉检索（ColPali 一类）。** 版式、印章、手写，OCR 丢的信号在这里。
 
-过滤必须在 ANN 之前或走支持预过滤的引擎：`acl ∩ 未作废 ∩ 语言`，**再**向量。把无权限页的像素打进上下文，再靠 prompt「请忽略」，等于已经泄漏。缩略图、缓存 CDN、日志里的图 URL 都要过同一 ACL。
+过滤必须在 ANN 之前或走支持预过滤的引擎：`acl ∩ 未作废 ∩ 语言`，再向量。把无权限页的像素打进上下文，再靠 prompt「请忽略」，等于已经泄漏。缩略图、缓存 CDN、日志里的图 URL 都要过同一 ACL。
 
 ```python
 def mm_retrieve(q, user, q_image=None):
@@ -58,7 +58,7 @@ embedding 升级双写，按 `doc_id` 切流。图模型和文本模型版本都
 
 引用：`doc_id` + 页 + `bbox`。对不上就删句。过期页用元数据挡，不要指望向量「自己过期」。图更新（换了合同扫描件）要按版本作废旧向量，和文本同一套。
 
-失败模式：OCR 把印章日期读错，生成信了 OCR 而没看图；视觉检索命中相似但不该看的租户水印页——若 ACL 漏了就是事故；把用户上传的截屏写进共享索引；审核没扫图就进库，有害图当知识，见 `align-mm-harm`、`design-moderation`。p95 拆：OCR、三路检索、重排、生成。视觉超时当该模态缺失，不许拿过期缓存图当本页。
+失败模式：OCR 把印章日期读错，生成信了 OCR 而没看图；视觉检索命中相似但不该看的租户水印页；ACL 漏了就是事故；把用户上传的截屏写进共享索引；审核没扫图就进库，有害图当知识，见 `align-mm-harm`、`design-moderation`。p95 拆：OCR、三路检索、重排、生成。视觉超时当该模态缺失，不许拿过期缓存图当本页。
 
 企业场景 Amazon / Google 还会问：同一 `doc_id` 的图和文字权限必须一致；图更「好看」不能成为绕过 ACL 的理由。评测集要含：纯文能答、必须看图、图文冲突、无权限探测、扫描件无 OCR。不要用 BLEU。
 

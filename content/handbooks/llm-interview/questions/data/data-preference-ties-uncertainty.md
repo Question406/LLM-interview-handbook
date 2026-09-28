@@ -20,7 +20,7 @@ sources:
     type: primary
 ---
 
-这块容易把 tie / 「不确定」当成脏数据丢掉，或强制标注员选边再送进 DPO。两个回答都可接受或都差时，强制胜负等于注入随机噪声；全部丢光则模型缺少「别为微小风格差拉大 logit」的监督，容易放大长度和文风。DPO 的 Bradley-Terry 假设是严格序
+错法：把 tie / 「不确定」当成脏数据丢掉，或强制标注员选边再送进 DPO。两个回答都可接受或都差时，强制胜负等于注入随机噪声；全部丢光则模型缺少「别为微小风格差拉大 logit」的监督，容易放大长度和文风。DPO 的 Bradley-Terry 假设是严格序
 
 $$
 p(y_w \succ y_l)=\sigma\Big(\beta\log\frac{\pi_\theta(y_w)}{\pi_{\mathrm{ref}}(y_w)}-\beta\log\frac{\pi_\theta(y_l)}{\pi_{\mathrm{ref}}(y_l)}\Big),

@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写交叉熵”**
 
-这块容易先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。必须 log 域：减行最大值再 `logsumexp`。同面 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
+错法：先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。必须 log 域：减行最大值再 `logsumexp`。同面 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
 
 ## 公式：NLL = $-z_y + \mathrm{logsumexp}(z)$
 

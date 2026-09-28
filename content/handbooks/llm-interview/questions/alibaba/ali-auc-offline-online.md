@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「过拟合」或「换个模型」。闪购 AI Coding 压轴要按数据/标签/serving 归因：离线 AUC 高、上线暴跌，常见根因是 train-serving skew、样本分布偏移、特征泄露、标签口径或延迟、标注噪声、模型与 feature schema 不一致、在线缺失填充与精度差异。用日志回放、特征监控、切片评估验证，而不是只猜。纯生成式 Agent 没有 AUC，不要硬套；但「离线集好看、线上掉」的思路仍然适用（对照 `data-offline-online-metric-gap`）。
+错法：「过拟合」或「换个模型」。闪购 AI Coding 压轴要按数据/标签/serving 归因：离线 AUC 高、上线暴跌，常见根因是 train-serving skew、样本分布偏移、特征泄露、标签口径或延迟、标注噪声、模型与 feature schema 不一致、在线缺失填充与精度差异。用日志回放、特征监控、切片评估验证，而不是只猜。纯生成式 Agent 没有 AUC，不要硬套；但「离线集好看、线上掉」的思路仍然适用（对照 `data-offline-online-metric-gap`）。
 
 ## 先对齐特征和口径，再谈模型
 

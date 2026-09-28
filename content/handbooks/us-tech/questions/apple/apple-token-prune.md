@@ -31,15 +31,15 @@ sources:
     type: primary
 ---
 
-端侧多模态把 $N_{\mathrm{vis}}$ 写进 $S_{\max}$ 之后，下一问就是「能不能少留一些」。FastV：LLaVA 类模型深层几乎不看视觉 token，第 2 层之后按注意力剪，公开大约 45% FLOPs 下降。PruMerge 用 ViT class token 注意力挑重要块再合并。ToMe 按相似度两两合并。这些都是公开方法，不是 AFM 内部 kernel。端上还要过 ANE 静态 shape，见 `apple-ane`、`apple-vision-edge`。不是逐字真题。
+端侧多模态把 $N_{\mathrm{vis}}$ 写进 $S_{\max}$ 之后，下一问就是「能不能少留一些」。FastV：LLaVA 类模型深层几乎不看视觉 token，第 2 层之后按注意力剪，公开大约 45% FLOPs 下降。PruMerge 用 ViT class token 注意力挑重要块再合并。ToMe 按相似度两两合并。这些都是公开方法，不是 AFM 内部 kernel。端上还要过 ANE 静态 shape，见 `apple-ane`、`apple-vision-edge`。
 
 ## 剪、合并、固定 $K$
 
 记剪之前网格 $N$，之后 $K$。Prefill 注意力从 $O((N+N_{\mathrm{text}})^2)$ 降到 $O((K+N_{\mathrm{text}})^2)$，KV 字节按 $S$ 降。三种手段不要说成一种：
 
-- **剪。** FastV 在指定层 $L_{\mathrm{cut}}$ 按平均注意力丢掉低分视觉 token。训练免费，推理插入。问题是 **$K$ 随图变**。GPU 可以动态；ANE 要静态 $K$。
-- **合并。** ToMe / PruMerge 把相似块加成一个，信息比直接丢掉温和。输出仍应是固定 $K$，用 pad 补齐。
-- **训练时压缩。** 连接器平均池化到 64/144，MM1 已经走这条，见 `apple-mm-train`。这是架构选择，不是 decode 期剪枝。
+- 剪。FastV 在指定层 $L_{\mathrm{cut}}$ 按平均注意力丢掉低分视觉 token。训练免费，推理插入。问题是 $K$ 随图变。GPU 可以动态；ANE 要静态 $K$。
+- 合并。ToMe / PruMerge 把相似块加成一个，信息比直接丢掉温和。输出仍应是固定 $K$，用 pad 补齐。
+- 训练时压缩。连接器平均池化到 64/144，MM1 已经走这条，见 `apple-mm-train`。这是架构选择，不是 decode 期剪枝。
 
 端侧正确导出：永远输出 $[B,K,D]$，不足 pad，mask 掉 pad。不要 `gather` 出变长序列再 `cat`。随机 scatter 容易掉 CPU。若必须按注意力挑 top-$K$，把 top-$K$ 写成静态 $K$，分数在 CPU 或允许的 op 上算完再送回 ANE。
 
@@ -47,9 +47,9 @@ sources:
 
 剪背景、天空通常没事。先坏的是：
 
-- **小字 / OCR / 验证码。** 高分注意力在问句 token 上，数字块可能分数低。屏幕理解不能按自然图的压缩比切，见 `apple-multimodal`。
-- **指称定位。** 「左上那个开关」依赖空间网格。合并相邻块等于糊掉边界，框 IoU 掉。
-- **多图。** 每张图各自 $K$，总前缀仍可能打满 $S_{\max}$。
+- 小字 / OCR / 验证码。高分注意力在问句 token 上，数字块可能分数低。屏幕理解不能按自然图的压缩比切，见 `apple-multimodal`。
+- 指称定位。「左上那个开关」依赖空间网格。合并相邻块等于糊掉边界，框 IoU 掉。
+- 多图。每张图各自 $K$，总前缀仍可能打满 $S_{\max}$。
 
 评测把 VQA 总分和 OCR / grounding 切片分开，延迟看 TTFT 和 decode 带宽，见 `apple-afm-eval`。公开 FastV 在通用榜上能近似持平，不代表通知截图上持平。
 
@@ -57,11 +57,7 @@ sources:
 
 和量化正交：权 2–4 bit、KV 8-bit 省的是字节，减不掉 $N_{\mathrm{vis}}$ 个 softmax 位置，见 `apple-ondevice-quant`、`apple-ondevice-kv`。先定 $K$，再量化。
 
-具体账：576 视觉 token 的 prefill 注意力大约是 $576^2$ 量级；收到固定 $K=144$ 大约除以 16。端上若 SRAM 只够 4k 上下文，这 432 个坑是给工具 JSON 和生成的。剪完仍要测 OCR 切片：通用 VQA 持平、验证码掉点，就说明 $K$ 太小，不是「再量化一点」。ANE 上 $K$ 必须编译进图；同一款机型不要按内容动态改 $K$。
-
-端上同一 $K$ 要写进编译图；按内容动态改 $K$ 会掉出 ANE。评测失败时先看 OCR 切片，再谈量化。
-
-面试收尾主动报失败模式和评测切片，不要停在架构名词。
+具体账：576 视觉 token 的 prefill 注意力大约是 $576^2$ 量级；收到固定 $K=144$ 大约除以 16。端上若 SRAM 只够 4k 上下文，这 432 个坑是给工具 JSON 和生成的。剪完仍要测 OCR 切片：通用 VQA 持平、验证码掉点，就说明 $K$ 太小，不是「再量化一点」。ANE 上 $K$ 必须编译进图；同一款机型不要按内容动态改 $K$。评测失败时先看 OCR 切片，再谈量化。
 
 ## 追问
 

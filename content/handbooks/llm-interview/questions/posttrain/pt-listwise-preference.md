@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易直接答成「list-wise 一定比 DPO 强」，或「把排序拆成所有 pair 就等价」。Pairwise 只说 $y_w\succ y_l$，丢掉同 prompt 下其余候选的名次与间隔。List-wise 对 $y_1,\ldots,y_K$ 建模完整排序，名次靠前的难负例和「第二名也很好」都会进似然；但标注更贵，对位置偏差和裁判长度偏好仍然敏感。信息增益来自同 prompt 的名次结构，不是来自 loss 名字更高级。
+错法：「list-wise 一定比 DPO 强」，或「把排序拆成所有 pair 就等价」。Pairwise 只说 $y_w\succ y_l$，丢掉同 prompt 下其余候选的名次与间隔。List-wise 对 $y_1,\ldots,y_K$ 建模完整排序，名次靠前的难负例和「第二名也很好」都会进似然；但标注更贵，对位置偏差和裁判长度偏好仍然敏感。信息增益来自同 prompt 的名次结构。
 
 ## Plackett-Luce 比 pair 多了什么
 

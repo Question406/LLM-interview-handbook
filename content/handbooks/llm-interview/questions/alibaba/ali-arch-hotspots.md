@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成背 Qwen 特性清单。阿里系公开面经的高频簇是能画图、能手算、能讲 trade-off 的白板题：RoPE 相对性与外推、RMSNorm/Pre-Norm、SwiGLU 参数量、GQA 与 KV Cache、LoRA 初始化与 $\alpha$、ZeRO 显存、TP 切分。只会说「我们用了 GQA」而算不出 KV 体积，面试官下一问就停。Attention 公式底盘见 `ali-attention-math`。
+错法：背 Qwen 特性清单。阿里系公开面经的高频簇是能画图、能手算、能讲 trade-off 的白板题：RoPE 相对性与外推、RMSNorm/Pre-Norm、SwiGLU 参数量、GQA 与 KV Cache、LoRA 初始化与 $\alpha$、ZeRO 显存、TP 切分。只会说「我们用了 GQA」而算不出 KV 体积，面试官下一问就停。Attention 公式底盘见 `ali-attention-math`。
 
 ## 结构：能推公式，能说为什么这样改
 

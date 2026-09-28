@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“是否有评估训练后的收益”**；**“搜索引擎召回的top-k值是固定还是模型选择”**
 
-这块容易报「平均分涨了」或让 Agent 自己决定无限加大 $k$。收益必须是 **对照实验**：同一 prompt、同一检索版本、同一解码，比训练前；分事实、多轮、安全桶；报告胜率置信区间和回归。没有冻结对照集的「感觉更好」不算收益。生成评测操作见 `xiaohongshu-gen-eval`；离线-线上缺口见 `data-offline-online-metric-gap`。原帖也强调落地重于背 DAPO 公式，算法对比见 `xiaohongshu-dapo-vs-grpo`。
+错法：报「平均分涨了」或让 Agent 自己决定无限加大 $k$。收益必须是对照实验：同一 prompt、同一检索版本、同一解码，比训练前；分事实、多轮、安全桶；报告胜率置信区间和回归。没有冻结对照集的「感觉更好」不算收益。生成评测操作见 `xiaohongshu-gen-eval`；离线-线上缺口见 `data-offline-online-metric-gap`。原帖也强调落地重于背 DAPO 公式，算法对比见 `xiaohongshu-dapo-vs-grpo`。
 
 ## 训练收益怎么报
 

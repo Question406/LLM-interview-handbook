@@ -40,7 +40,7 @@ In-flight 解决「人进出」，见 `nvidia-inflight-batch`。长 prompt 进�
 
 Prefill：一条序列的 $Q,K,V$ 都是 $[T_{\mathrm{in}}, D]$，GEMM / FMHA 算术强度随 $T$ 涨，算力墙，墙钟可以到几十到几百毫秒。Decode：每条 $Q$ 长度 1，反复读权重和历史 KV，带宽墙，一步往往一两毫秒量级，见 `nvidia-flash-attn`。
 
-IFB 若仍「新请求的整段 context 必须在一步里做完」，那一步的墙钟跟最长 prompt 走。正在飞的 decode 全部停等，TPOT / TBT 出现尖刺。更糟：`max_num_tokens` 必须不小于最长 prompt，这个预算从 KV 池里抢 HBM，并发反而下降。短请求的 TTFT 也可能被排队抬起来——不是模型慢，是队头一条长 context。
+IFB 若仍「新请求的整段 context 必须在一步里做完」，那一步的墙钟跟最长 prompt 走。正在飞的 decode 全部停等，TPOT / TBT 出现尖刺。更糟：`max_num_tokens` 必须不小于最长 prompt，这个预算从 KV 池里抢 HBM，并发反而下降。短请求的 TTFT 也可能被排队抬起来。不是模型慢，是队头一条长 context。
 
 ## 切块以后一步里有什么
 
@@ -56,7 +56,7 @@ Attention：这一块的 $Q$ 只覆盖新 token，形状大约 $[B_{\mathrm{mix}
 
 显存：每步工作集跟 $U$ 走，不再跟「本服务支持的最大 prompt」走。于是 `max_num_tokens` 可以远小于 128k，省下的 HBM 给 KV，inflight 并发上去。这是官方 long-sequence 文档强调的第二点。
 
-代价：幸运的那条短 prompt 本来一步就能出首 token，现在可能被切、被 decode 同行稀释，平均 TTFT 往往更好，某几条「本来能秒出」的 TTFT 可能变差。NVIDIA 文档把这句写进了推荐理由——生产看排队和最坏 TTFT，不是看幸运样本。
+代价：幸运的那条短 prompt 本来一步就能出首 token，现在可能被切、被 decode 同行稀释，平均 TTFT 往往更好，某几条「本来能秒出」的 TTFT 可能变差。NVIDIA 文档把这句写进了推荐理由：生产看排队和最坏 TTFT，不看幸运样本。
 
 ## 不是分离部署
 

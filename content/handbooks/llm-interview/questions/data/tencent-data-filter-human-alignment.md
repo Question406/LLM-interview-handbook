@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位和轮次明确；届别、面试日期未披露）
 - 原始措辞：**“介绍一下如何筛选数据(大模型从哪几个维度)，怎么确定模型筛选一定能和人工对齐?”**
 
-这块容易承诺「一定对齐」或只报过滤通过率。自动筛选相对人标是分类器，**对齐只能被检验、不能被一次证明**。正确叙事：rubric → 独立 gold set → precision / recall / 校准 → 高风险切片 → disagreement 回流 → 分布漂移时重标定。标注一致性见 `data-annotator-agreement`，分数校准见 `data-reward-calibration`、`fund-calibration`。
+错法：承诺「一定对齐」或只报过滤通过率。自动筛选相对人标是分类器，对齐只能被检验、不能被一次证明。正确叙事：rubric → 独立 gold set → precision / recall / 校准 → 高风险切片 → disagreement 回流 → 分布漂移时重标定。标注一致性见 `data-annotator-agreement`，分数校准见 `data-reward-calibration`、`fund-calibration`。
 
 ## 维度、gold set 与指标
 
@@ -40,7 +40,7 @@ sources:
 
 ## 回流、影子实验与漂移
 
-把人审 disagreement、false-positive / false-negative 回流成 hard case，改 rubric、规则或模型阈值，而不是只调一个全局 cutoff。用 shadow filter / canary 比较「过新滤器」与「过旧滤器」对下游 eval 的影响，避免滤器自嗨、训练指标不动。新数据源、新教师模型或新安全政策出现时，**重新标定**，不要沿用旧阈值。评测泄漏与近重复仍走 `data-contamination`、`data-sft-pipeline` 的去污步骤。
+把人审 disagreement、false-positive / false-negative 回流成 hard case，改 rubric、规则或模型阈值，而不是只调一个全局 cutoff。用 shadow filter / canary 比较「过新滤器」与「过旧滤器」对下游 eval 的影响，避免滤器自嗨、训练指标不动。新数据源、新教师模型或新安全政策出现时，重新标定，不要沿用旧阈值。评测泄漏与近重复仍走 `data-contamination`、`data-sft-pipeline` 的去污步骤。
 
 失败模式：用调阈值的同一批人审报「对齐良好」；只优化通过率导致难例被杀；线上 query 漂移后仍信旧校准。
 

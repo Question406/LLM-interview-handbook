@@ -31,7 +31,7 @@ Llama / GPT 训练栈默认 AdamW，不是「Adam 加一点 L2」。Meta、OpenA
 
 ## 一步：$m,v$ → 纠偏 → 自适应步 → 再 decay
 
-梯度 $g_t=\nabla_\theta L(\theta_{t-1})$（**不含**权重衰减）：
+梯度 $g_t=\nabla_\theta L(\theta_{t-1})$（不含权重衰减）：
 
 $$
 \begin{aligned}
@@ -73,7 +73,7 @@ def demo():
     return p
 ```
 
-`m,v` 和参数同 shape，每个 param 一份 state。Bias 通常 **不** decay；LN / RMSNorm 的 $\gamma$ 很多 recipe 也不 decay。白板先写 dense 参数，再口头排除。
+`m,v` 和参数同 shape，每个 param 一份 state。Bias 通常不 decay；LN / RMSNorm 的 $\gamma$ 很多 recipe 也不 decay。白板先写 dense 参数，再口头排除。
 
 ## 耦合 L2 错在哪
 

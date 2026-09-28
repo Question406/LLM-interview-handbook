@@ -29,7 +29,7 @@ MoE 的「哪几个 expert 干活」是离散 top-$k$。训练图和推理图只
 - **Expert bias**：训练逐步更新 $b_i$，推理若清零或用另一套 checkpoint，top-$k$ 集合会变。应把末期 bias 写进权重，或明确推理不再更新。
 - **精度**：训练 FP16/BF16 router，推理 INT8/FP8。Affinity 排序对小扰动敏感，top-$k$ 容易翻盘。Router 常单独保高精度。
 - **Capacity / drop 策略**：训练 CF 大、几乎不丢；推理为吞吐把 CF 砍小。被 drop 的 token 等于这一层 MoE 被跳过。
-- **RL 两套引擎**：rollout 用 vLLM/SGLang 融合 kernel，trainer 用 Megatron 自己的 dispatch。这是字节 GSPO 卡（`byte-moe-rollout-routing-gspo`）的工程背景：算法用 sequence-level ratio 降局部路由噪声，系统仍要对齐实现。本题强调 **一致性工程**，不是再讲一遍 GSPO。
+- **RL 两套引擎**：rollout 用 vLLM/SGLang 融合 kernel，trainer 用 Megatron 自己的 dispatch。这是字节 GSPO 卡（`byte-moe-rollout-routing-gspo`）的工程背景：算法用 sequence-level ratio 降局部路由噪声，系统仍要对齐实现。本题强调一致性工程，不是再讲一遍 GSPO。
 
 ## 检测
 

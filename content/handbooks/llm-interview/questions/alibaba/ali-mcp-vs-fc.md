@@ -22,7 +22,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成 MCP 是「更好的 Function Calling」，或反过来觉得有了 FC 就不需要协议。FC 是模型侧的接口形态：应用把 tools schema 塞进请求，模型返回结构化调用，执行仍在宿主。MCP 是连接协议：把能力抽象为可发现的 tools / resources / prompts，统一 schema、传输与会话，让多个 Agent、IDE、模型复用同一套服务。生产要的是协议层与业务层解耦，每个业务手写一份工具描述撑不久。边界见 `jd-mcp-protocol`、`mcp-tool-catalog-trust`。
+错法：MCP 是「更好的 Function Calling」，或反过来觉得有了 FC 就不需要协议。FC 是模型侧的接口形态：应用把 tools schema 塞进请求，模型返回结构化调用，执行仍在宿主。MCP 是连接协议：把能力抽象为可发现的 tools / resources / prompts，统一 schema、传输与会话，让多个 Agent、IDE、模型复用同一套服务。生产要的是协议层与业务层解耦，每个业务手写一份工具描述撑不久。边界见 `jd-mcp-protocol`、`mcp-tool-catalog-trust`。
 
 ## FC 是模型侧接口，MCP 是连接协议
 

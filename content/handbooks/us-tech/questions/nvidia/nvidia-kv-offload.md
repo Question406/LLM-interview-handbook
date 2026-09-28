@@ -46,11 +46,11 @@ $$
 \mathrm{NVMe\ seq}\sim 7\text{--}14\ \mathrm{GB/s}.
 $$
 
-HBM 到 PCIe 大约快 $50\times$；到 NVMe 再差几倍，而且是顺序峰值，随机 16–64 token 的页更惨。设一层 KV 每 token $c$ 字节（含 K 和 V、所有 kv head）。读 $T$ 个 token 的时间下界 $Tc/B_{\mathrm{bus}}$。$T=32\mathrm{k}$、$c=256\,\mathrm{B}$ 量级时，HBM 是几十微秒，PCIe 是毫秒，NVMe 可以到十毫秒。Decode 的 TBT SLO 若是 50 ms 量级，**热路径每步从 CPU 流一遍 KV** 会直接打穿。
+HBM 到 PCIe 大约快 $50\times$；到 NVMe 再差几倍，而且是顺序峰值，随机 16-64 token 的页更惨。设一层 KV 每 token $c$ 字节（含 K 和 V、所有 kv head）。读 $T$ 个 token 的时间下界 $Tc/B_{\mathrm{bus}}$。$T=32\mathrm{k}$、$c=256\,\mathrm{B}$ 量级时，HBM 是几十微秒，PCIe 是毫秒，NVMe 可以到十毫秒。Decode 的 TBT SLO 若是 50 ms 量级，**热路径每步从 CPU 流一遍 KV** 会直接打穿。
 
 所以卸载不是「把 cache 变大就加速」。它只增加 **容量**。命中冷页时，你在用一次 PCIe 拷贝换一次重算 prefill。拷贝划得来，当且仅当这块 KV **不是每 token 都读**。
 
-TRT-LLM：`host_cache_size` 分配 pinned host 二级池；GPU 页按优先级淘汰。`secondary_offload_min_priority` 以下的块不卸、直接丢，避免低价值块把 PCIe 打满。演示脚本把 GPU `max_tokens` 故意设很小，才能看见 reused blocks——生产上若 GPU 池已经装得下工作集，卸载路径不该被踩热。
+TRT-LLM：`host_cache_size` 分配 pinned host 二级池；GPU 页按优先级淘汰。`secondary_offload_min_priority` 以下的块不卸、直接丢，避免低价值块把 PCIe 打满。演示脚本把 GPU `max_tokens` 故意设很小，才能看见 reused blocks；生产上若 GPU 池已经装得下工作集，卸载路径不该被踩热。
 
 ## 何时量化更好
 

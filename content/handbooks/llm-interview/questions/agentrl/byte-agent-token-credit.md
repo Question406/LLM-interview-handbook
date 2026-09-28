@@ -30,15 +30,15 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“针对Agent行为打分，在反向传播的时候，具体到token分数是怎么计算的”**
 
-这块容易直接答成「每个 token 都有自己的真实奖励」。环境通常只在完整 action / 轨迹结束后给一个标量，语言模型的 $\sum_t \log\pi(a_t)$ 却是逐 token。面试官要听的是 credit 粒度与 mask 边界，不是发明 per-token 真值。和 `arl-credit`、`xiaohongshu-credit-assignment` 同一条线，只是字节这问落到反传实现。
+错法：「每个 token 都有自己的真实奖励」。环境通常只在完整 action / 轨迹结束后给一个标量，语言模型的 $\sum_t \log\pi(a_t)$ 却是逐 token。面试官要听的是 credit 粒度与 mask 边界，不是发明 per-token 真值。和 `arl-credit`、`xiaohongshu-credit-assignment` 同一条线，只是字节这问落到反传实现。
 
 ## 先定分数在哪一层，再广播到可训练 token
 
 我会先切三层，不要一上来写 loss：
 
-1. **环境分数** 出现在 trajectory、semantic step 或完整 tool action 之后，记为 $R$ 或 $r_k$。
-2. **优势** 在同一粒度估计：整段 completion 一个 $A$，或每个 tool-call 一个 $A_k$（GAE / return-to-go / 组相对）。
-3. **落到 token：** 把 $A_k$ 赋给该 action 内部、策略生成的那些 token 的 PG 或 PPO/GRPO surrogate，再按 mask 求和或平均。
+1. 环境分数出现在 trajectory、semantic step 或完整 tool action 之后，记为 $R$ 或 $r_k$。
+2. 优势在同一粒度估计：整段 completion 一个 $A$，或每个 tool-call 一个 $A_k$（GAE / return-to-go / 组相对）。
+3. 落到 token：把 $A_k$ 赋给该 action 内部、策略生成的那些 token 的 PG 或 PPO/GRPO surrogate，再按 mask 求和或平均。
 
 Mask 必须关掉：system / user prompt、tool result / observation、padding、以及 harness 插入的非策略文本。这些 token 没有 $\pi_\theta$ 的因果贡献，反传会污染。Observation 属于 $s$，不属于 $a$，见 `arl-gui-observation` 里同一原则。
 
@@ -54,7 +54,7 @@ Mask 必须关掉：system / user prompt、tool result / observation、padding�
 
 诊断看：去掉 observation 的梯度是否真为零；等价改写 JSON 空白后 $A$ 是否稳定；按 action 长度分桶的回报。mask 漏了 tool 回包，模型会「背答案」而不是学调用。
 
-最后我会补一句：环境分在 action / 轨迹级；优势广播到该 action 的可训练 token；prompt、tool 结果、padding 全 mask。这不是 per-token 真值。长链用 step reward 或组相对改善归因，并报 mask 与长度口径。
+环境分在 action / 轨迹级；优势广播到该 action 的可训练 token；prompt、tool 结果、padding 全 mask。这不是 per-token 真值。长链用 step reward 或组相对改善归因，并报 mask 与长度口径。
 
 ## 追问
 

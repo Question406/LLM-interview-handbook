@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-GUI 评测不可复现，多半不是模型，而是页面改版、登录态、DPI、时钟、后台通知和真实 SaaS 漂移。只冻模型版本就发 leaderboard，数字没法比。我会讲整条 run 的版本包：环境、fixture、mock、harness、预算，以及 frozen 和 live 分报。一个「提升两个点」如果没有重跑方差和环境 digest，不能当结果。
+GUI 评测不可复现，多半不是模型，而是页面改版、登录态、DPI、时钟、后台通知和真实 SaaS 漂移。只冻模型版本就发 leaderboard，数字没法比。一条 run 的版本包要覆盖环境、fixture、mock、harness、预算，以及 frozen 和 live 分报。一个「提升两个点」如果没有重跑方差和环境 digest，不能当结果。
 
 ## 必须冻结的清单
 
@@ -31,11 +31,11 @@ GUI 评测不可复现，多半不是模型，而是页面改版、登录态、D
 
 ## Frozen 与 live 不要混
 
-Live benchmark 反映新鲜性与站点漂移，有价值，但不能和冻结分加总成一个 headline。分别报 frozen reproducible score 与 live robustness score。评测上能刷的是：对着会变的网站调到绿再截图发论文、不报超时、把环境崩溃算模型失败或反过来全甩给环境、只跑一次。发布数字时附上重跑次数、失败归因表和环境 digest。可发表的是带版本包和方差的 frozen 分；live 分用来看是否过时，不是用来刷榜。提交结果时附环境 digest、重跑次数、超时率、env_crash 率。缺这四项，百分点没有对照物。现场被追问「网页变了怎么办」时，答案是分轨，而不是每周重标一次当同一条曲线。比较两个模型必须用同一任务版本包；换过 mock 或 DPI 的数字不能直接减。
+Live benchmark 反映新鲜性与站点漂移，有价值，但不能和冻结分加总成一个 headline。分别报 frozen reproducible score 与 live robustness score。评测上能刷的是：对着会变的网站调到绿再截图发论文、不报超时、把环境崩溃算模型失败或反过来全甩给环境、只跑一次。
 
-发布页面把 frozen 包的下载地址和环境 digest 放在分数旁边。没有包就没有分数。Live 轨用不同的表，避免读者把漂移当退化。比较模型时复制同一包，而不是各自准备网站账号。
+发布数字时附上重跑次数、失败归因表和环境 digest。可发表的是带版本包和方差的 frozen 分；live 分用来看是否过时，不是用来刷榜。提交结果时附环境 digest、重跑次数、超时率、env_crash 率。缺这四项，百分点没有对照物。比较两个模型必须用同一任务版本包；换过 mock 或 DPI 的数字不能直接减。
 
-我会讲版本包：镜像、fixture、mock、DPI、预算、方差。网页会变不是放弃复现的理由，而是必须分 frozen / live。没有 digest 的分数不要对外讲。
+发布页面把 frozen 包的下载地址和环境 digest 放在分数旁边。没有包就没有分数。Live 轨用不同的表，避免读者把漂移当退化。网页会变不是放弃复现的理由，而是必须分 frozen / live。
 
 ## 追问
 

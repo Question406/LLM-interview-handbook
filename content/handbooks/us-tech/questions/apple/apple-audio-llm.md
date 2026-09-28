@@ -31,16 +31,16 @@ sources:
     type: secondary
 ---
 
-Siri / 端侧语音岗容易把题答成「上个音频 LLM」。公开层 Apple 把 **流式 ASR** 做成一等公民：研究侧有 Omni-router 的流式检查点，系统侧 WWDC25 的 SpeechAnalyzer 在设备上转写并已用于备忘录一类应用。Foundation model 公开叙事仍是语言核心加工具，语音链路的延迟拆解见 `apple-siri-latency`。音频离散 token 是业界对照（Whisper 编码器、codec tokenizer），不要说成 AFM 内部架构。不是逐字真题。
+Siri / 端侧语音岗容易把题答成「上个音频 LLM」。公开层 Apple 把流式 ASR 做成一等公民：研究侧有 Omni-router 的流式检查点，系统侧 WWDC25 的 SpeechAnalyzer 在设备上转写并已用于备忘录一类应用。Foundation model 公开叙事仍是语言核心加工具，语音链路的延迟拆解见 `apple-siri-latency`。音频离散 token 是业界对照（Whisper 编码器、codec tokenizer），不要说成 AFM 内部架构。
 
 ## 两条进 LLM 的契约
 
 记波形 $x_{1:t}$。两条路：
 
-- **ASR 文本。** 流式编码器出 partial 文本 $w_{\le t}$，端点后再出最终 $w$。LLM 条件是 $(w, E)$，$E$ 是工具证据。形状按文本 token，和 `apple-ane` 的静态档位一致。工具槽、TTS、接地全是字符串，见 `apple-siri-grounded`。
-- **音频 token。** 波形量化成离散单元或连续帧 $a_{1:T_a}$，$T_a$ 大约每秒 25–75。前缀长，韵律、笑声、重叠说话还在。LLM 要另训音频嵌入。ANE 必须预分配 $T_a^{\max}$，说话长短一变就要 pad，和视觉档位同一痛，见 `apple-vision-edge`。
+- ASR 文本。流式编码器出 partial 文本 $w_{\le t}$，端点后再出最终 $w$。LLM 条件是 $(w, E)$，$E$ 是工具证据。形状按文本 token，和 `apple-ane` 的静态档位一致。工具槽、TTS、接地全是字符串，见 `apple-siri-grounded`。
+- 音频 token。波形量化成离散单元或连续帧 $a_{1:T_a}$，$T_a$ 大约每秒 25–75。前缀长，韵律、笑声、重叠说话还在。LLM 要另训音频嵌入。ANE 必须预分配 $T_a^{\max}$，说话长短一变就要 pad，和视觉档位同一痛，见 `apple-vision-edge`。
 
-Siri 产品约束偏向第一条。日历、发消息、读验证码，错一个数字的代价高于少听一点情绪。Partial ASR 可以提前做意图分类或预取工具，**事实槽位等最终 hypothesis**，否则 TTS 读出去撤回成本极高，见 `apple-siri-latency`。
+Siri 产品约束偏向第一条。日历、发消息、读验证码，错一个数字的代价高于少听一点情绪。Partial ASR 可以提前做意图分类或预取工具，事实槽位等最终 hypothesis，否则 TTS 读出去撤回成本极高，见 `apple-siri-latency`。
 
 第二条的正当场景：副语言（生气 / 犹豫）、音乐、多人叠音、ASR 必错的专名用声学记忆。即使做，也常常是短窗口音频 token 加 ASR 文本双通道，而不是丢掉转写。
 

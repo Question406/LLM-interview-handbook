@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-这块容易把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
+错法：把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
 
 ## 四种东西各管什么
 

@@ -65,7 +65,7 @@ CUDA graph：捕获固定 shape。做法是几档 $B\in\{1,2,4,8,16,32\}$，本�
 
 Prefix / radix 命中的请求进入 decode 池时，prefill 后缀可能很短，几乎像直接 inflight。命中率高时 decode 池更满、KV 更紧，要重新调 KV 预留比例，见 `sys-radix-tree`。
 
-错误说法：inflight 等于当天 QPS；结束序列可以等整图跑完再回收；`max_num_seqs` 开到显存极限吞吐最好；没有分页也能靠把 batch 开大吃满 GPU。
+错误说法：inflight 等于当天 QPS；结束序列可以等整图跑完再回收；`max_num_seqs` 开到显存极限吞吐最好；没有分页也能靠把 batch 开大吃满 GPU。前三条把口径和回收弄反了，后一条会在碎片上先 OOM。
 
 监控：$B_{\mathrm{run}}$、槽利用率、KV 使用率、每步结束条数、因 KV 不足无法准入的次数、graph 档位分布、P99 TPOT。$B_{\mathrm{run}}$ 长期远小于上限，不是「还有余量」，是 waiting 空或 KV 碎片导致补不进去。
 

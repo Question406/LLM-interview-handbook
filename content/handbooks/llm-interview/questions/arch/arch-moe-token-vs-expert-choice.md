@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易把两种 Top-$k$ 说成同一个 `topk` 调用、只是维不一样。它们保证的不变量相反，permute、capacity 和「没被选中的 token 怎么办」都要跟着改。GShard / Switch / Mixtral / DeepSeek 都是 token-choice；Expert Choice 是另一张分配表。
+错法：把两种 Top-$k$ 说成同一个 `topk` 调用、只是维不一样。它们保证的不变量相反，permute、capacity 和「没被选中的 token 怎么办」都要跟着改。GShard / Switch / Mixtral / DeepSeek 都是 token-choice；Expert Choice 是另一张分配表。
 
 ## Token-choice：token 挑专家
 
@@ -52,7 +52,7 @@ $$
 - 热门 token 被很多专家选中，等效 $k_{\mathrm{eff}}\gt k$；
 - 冷门 token $k_{\mathrm{eff}}=0$，这一层只有 residual / shared。
 
-实现上 permute 的主键变成「每个 expert 一段固定长 $C$」，padding 少，很适合静态 shape。但要显式处理 $k_{\mathrm{eff}}=0$：输出置零、走 residual，或再做一次 token-choice 补洞。面试别说 expert-choice「没有 drop」，它 drop 的是 token 的专家覆盖，不是专家的容量。
+实现上 permute 的主键变成「每个 expert 一段固定长 $C$」，padding 少，很适合静态 shape。但要显式处理 $k_{\mathrm{eff}}=0$：输出置零、走 residual，或再做一次 token-choice 补洞。面试别说 expert-choice「没有 drop」：它 drop 的是 token 的专家覆盖，不是专家的容量。
 
 $C$ 的取法和 token-choice 的 capacity 同源：$C=\mathrm{CF}\cdot kT/N$。$\mathrm{CF}=1$ 时平均每个 token 仍大约被 $k$ 个专家覆盖，只是覆盖不再逐 token 保证。
 

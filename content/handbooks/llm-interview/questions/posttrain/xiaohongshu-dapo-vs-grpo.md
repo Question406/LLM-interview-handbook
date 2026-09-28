@@ -32,11 +32,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“DAPO 相对于GRPO 的优化”**
 
-小红书 Hi lab 一面这题，这块容易把 DAPO 答成「更好的 GRPO」或和「去 KL」混成一件事。我会讲：GRPO 省 critic 之后，长链 RL 仍会在 clip、采样和长度上翻车；DAPO 改的是这些工程失败，不是换了一个新的优势公式。条目以论文为准，针对哪种 GRPO 病来讲。
+错法：把 DAPO 答成「更好的 GRPO」，或和「去 KL」混成一件事。GRPO 省 critic 之后，长链 RL 仍会在 clip、采样和长度上翻车；DAPO 改的是这些工程失败，不是换了一个新的优势公式。条目以论文为准，针对哪种 GRPO 病来讲。
 
 ## GRPO 实务上会踩哪些坑
 
-组相对优势 $A_i=(r_i-\bar r)/\sigma_r$ 能去掉 value model，但常见失败是：响应越训越长、熵掉、clip 上界过紧把稀有正向 token 卡死、组内全对 / 全错浪费样本。这些不是「没 critic」造成的，而是 clip 对称、序列等权损失和硬截断奖励叠在一起。我会先点名病，再对药。相关卡：`pt-grpo`、`pt-dapo`。
+组相对优势 $A_i=(r_i-\bar r)/\sigma_r$ 能去掉 value model，但常见失败是：响应越训越长、熵掉、clip 上界过紧把稀有正向 token 卡死、组内全对 / 全错浪费样本。这些不是「没 critic」造成的，而是 clip 对称、序列等权损失和硬截断奖励叠在一起。先点名病，再对药。相关卡：`pt-grpo`、`pt-dapo`。
 
 ## DAPO 四类改动分别治什么
 
@@ -49,7 +49,7 @@ sources:
 
 ## 落地时不要口号化
 
-改 clip 上界会让更新更猛，必须盯熵、长度和 holdout。动态采样长期只留当前可解题，会变成隐性 curriculum，要周期性探测全错桶。token 级损失不是永远优于序列级，取决于你要序列等权还是 token 等权。我会收成：GRPO 提供组相对基线；DAPO 修 clip、有效样本、长度加权和截断噪声。相关卡：`xiaohongshu-grpo-drop-kl`、`gaode-dapo-no-kl`。
+改 clip 上界会让更新更猛，必须盯熵、长度和 holdout。动态采样长期只留当前可解题，会变成隐性 curriculum，要周期性探测全错桶。token 级损失不是永远优于序列级，取决于你要序列等权还是 token 等权。收成：GRPO 提供组相对基线；DAPO 修 clip、有效样本、长度加权和截断噪声。相关卡：`xiaohongshu-grpo-drop-kl`、`gaode-dapo-no-kl`。
 
 ## 追问
 

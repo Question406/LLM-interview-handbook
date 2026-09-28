@@ -20,7 +20,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「上下文已经 128k，记忆问题解决了」。多轮 Agent 里，Attention 只是窗口内的软检索，不是外部状态机。局限是：上下文长度与噪声、长程依赖被稀释、工具结果与历史混杂导致 distraction、计算/显存随序列平方（或线性注意力下的线性）增长。它无法替代显式状态、记忆、权限和终止条件。公式底盘见 `ali-attention-math`。
+错法：「上下文已经 128k，记忆问题解决了」。多轮 Agent 里，Attention 只是窗口内的软检索，不是外部状态机。局限是：上下文长度与噪声、长程依赖被稀释、工具结果与历史混杂导致 distraction、计算/显存随序列平方（或线性注意力下的线性）增长。它无法替代显式状态、记忆、权限和终止条件。公式底盘见 `ali-attention-math`。
 
 ## 窗口内软寻址 vs 显式状态
 
@@ -34,7 +34,7 @@ $\mathrm{softmax}(QK^{\top}/\sqrt{d})$ 把质量分给当前序列里的所有�
 
 朴素注意力是 $O(T^{2}d)$；即便线性注意力/SSM 把二次项换掉，distraction 还在：更长窗口意味着更多噪声 token 来抢权重。靠加长上下文硬扛多轮工具日志，p95 延迟和走神一起升。工程上应对：observation 摘要与截断、只把本轮决策需要的字段注入、会话状态外置、热点路径缓存。双十一流量下这会变成容量问题（`ali-double11-scale`）。
 
-KV cache 只避免重算历史 $K,V$，不提供「按 key 取约束、过期、权限」的记忆 API。Agent 若把整段 trace 当 prompt，softmax 会把质量分给最新、最长的 JSON 字段，而不是分给第 1 轮的业务红线。Skill 解决的是可复用程序；Memory 解决的是跨会话可寻址事实；RAG 解决的是外部知识。三者都是显式寻址，和 Attention 的软寻址互补，不要互相替代（对照 `ali-skill-memory-rag`）。最后我会补一句：Attention 是窗口内可微检索；多轮 Agent 的状态机必须外置。
+KV cache 只避免重算历史 $K,V$，不提供「按 key 取事实、过期、权限」的记忆 API。Agent 若把整段 trace 当 prompt，softmax 会把质量分给最新、最长的 JSON 字段，而不是分给第 1 轮的业务红线。Skill 解决的是可复用程序；Memory 解决的是跨会话可寻址事实；RAG 解决的是外部知识。三者都是显式寻址，和 Attention 的软寻址互补，不要互相替代（对照 `ali-skill-memory-rag`）。Attention 是窗口内可微检索；多轮 Agent 的状态机必须外置。
 
 ## 追问
 

@@ -26,13 +26,13 @@ sources:
     type: primary
 ---
 
-这块容易把 Data Buffer 说成「一个 replay 队列」，或去 Megatron 里手写工具循环。官方说法：training / rollout / Data Buffer 是一条路，Agent 就是数据生成，不 fork 训练核。Buffer 是两边的 **唯一数据面**：灌 prompt、收轨迹 / reward / verifier / mask，再给 Megatron 读 packed/varlen batch。默认 `sglang_rollout.generate_rollout` 已带异步、dynamic sampling、partial rollout。多轮工具应换 `--custom-generate-function-path` 或 `--rollout-function-path` 包一层 thought-action-obs，见 `slime-custom-generate`。veRL 对等物是自定义 Reward Manager + Env，不是同一个模块名。别在训练核里调工具，那会把 serving 的连续 batch、前缀缓存全丢掉。
+错法：把 Data Buffer 说成「一个 replay 队列」，或去 Megatron 里手写工具循环。官方说法：training / rollout / Data Buffer 是一条路，Agent 就是数据生成，不 fork 训练核。Buffer 是两边的 唯一数据面：灌 prompt、收轨迹 / reward / verifier / mask，再给 Megatron 读 packed/varlen batch。默认 `sglang_rollout.generate_rollout` 已带异步、dynamic sampling、partial rollout。多轮工具应换 `--custom-generate-function-path` 或 `--rollout-function-path` 包一层 thought-action-obs，见 `slime-custom-generate`。veRL 对等物是自定义 Reward Manager + Env，不是同一个模块名。别在训练核里调工具，那会把 serving 的连续 batch、前缀缓存全丢掉。
 
 ## 三框：Rollout / Buffer / Train
 
-1. **Rollout（SGLang + router）**：生产 token 和工具结果，写入 Buffer。请求打 `--sglang-router-ip/port`。权重靠 `update_weights` 与 trainer 对齐，见 `slime-weight-sync`。
-2. **Buffer**：保存可训练字段（prompt、response、`loss_mask`、reward、group id、`status`、`policy_version`）。partial 半成品也在这里，默认 `--buffer-filter-path` FIFO（`pop_first`）。
-3. **Train（Megatron）**：从 Buffer 取 batch，更新后再把新权推回引擎。
+1. Rollout（SGLang + router）：生产 token 和工具结果，写入 Buffer。请求打 `--sglang-router-ip/port`。权重靠 `update_weights` 与 trainer 对齐，见 `slime-weight-sync`。
+2. Buffer：保存可训练字段（prompt、response、`loss_mask`、reward、group id、`status`、`policy_version`）。partial 半成品也在这里，默认 `--buffer-filter-path` FIFO（`pop_first`）。
+3. Train（Megatron）：从 Buffer 取 batch，更新后再把新权推回引擎。
 
 面试画三框比背类名有用。Buffer 不是算法：`--advantage-estimator` 在 train 侧读完 Buffer 之后算。dynamic sampling 的 abort / 回收也通过 Buffer 把未完成 `Sample` 塞回去。FIFO 会把没写完的长题优先弹出，下一步可能被同一批长尾拖住，要用 filter 或长度惩罚对冲，见 `slime-dynamic-partial`。
 
@@ -43,12 +43,6 @@ sources:
 ## 和 veRL 怎么对、什么别做
 
 veRL 没有叫 Data Buffer 的同名模块，数据面散在 rollout worker 输出和 trainer 输入。slime 把它收成显式队列，partial / abort / 自定义 generate 才好接。不要：在 Megatron forward 里调 HTTP 工具；绕过 Buffer 把 tensor 直接塞进 optimizer；评测轨迹和 train 轨迹混写同一条无 `evaluation` 标记的路径。`--eval-function-path` 分流。验收：Buffer 里一条样本能否反推出 group、$n$、mask、版本；缺字段下一步 GRPO 统计会 silently 错。
-
-我会把 Data Buffer 画成唯一交接面：左边 SGLang+router 写入 token、mask、reward、status、`policy_version`；右边 Megatron 读 packed batch，更新后再 `update_weights`。Agent 多轮是左边怎么生成，不是右边怎么改 kernel。默认 `sglang_rollout.generate_rollout` 已经把异步、dynamic sampling、partial 接到这条面；你要做的是更浅的 `--custom-rm-path` / `--custom-generate-function-path`，或整段 `--rollout-function-path`。半截轨迹也住在 Buffer 里，FIFO `pop_first` 会把最长最难的题优先送回，长尾可能更尖，旧 token 必须 mask 或 `--use-tis`。fully-async 仍然写同一 Buffer，只是交组不等整个 `rollout_id`，版本字段更重要。veRL 没有同名模块，对等的是 rollout 输出到 actor 输入，魔改精神仍是 Reward Manager + Env。不要绕过 Buffer 把激活直接塞进 optimizer，也不要在 Megatron forward 里打工具 HTTP。面试能画出三框和字段契约，这题就过了；只说「有个队列」过不了追问。
-
-## 字段契约
-
-Buffer 里一条样本要能反推 group、$n$、mask、`status`、`policy_version`。缺字段则 GRPO 统计 silently 错。partial 半截也在这里，FIFO 会把长尾优先送回。fully-async 仍写同一面，版本更重要。不要绕过 Buffer 塞 tensor，不要在 Megatron 里打工具。veRL 对等的是 rollout 输出到 actor 输入，不是同名模块。
 
 ## 追问
 

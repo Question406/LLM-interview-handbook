@@ -67,4 +67,3 @@ Llama 3.1 $128\mathrm{k}$ 窗把这件事放大：几乎没有请求真用满窗
 - **405B 一张机跑不了怎么办？** TP（再加 PP）切权重，分页切的是每卡上的 KV 池。两层正交。
 - **前缀共享和 beam 是一层吗？** 都用引用计数 + CoW。Prefix cache 跨请求；beam 是同一请求内分叉。没有分页就得 memcpy。
 - **多模态 serving 的 SLO 怎么定？** 拆 encoder 时延、文本 prefill、decode TPOT。图尺寸一变，encoder 先抖，不要只盯 tokens/s。
----

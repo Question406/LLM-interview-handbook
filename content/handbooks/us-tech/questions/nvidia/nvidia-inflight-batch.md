@@ -34,7 +34,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 把这套叫 in-flight batching（IFB），vLLM / TGI 叫 continuous batching，论文原点是 Orca 的 iteration-level 调度。TensorRT-LLM 岗位常从「为什么静态 batch 吃不满 H100」进到这一题。我会先画一步 decode 的时间线，再主动说：没有 paged KV，inflight 只是把碎片从时间挪到显存。引擎定位见 `nvidia-trt-llm`。
+NVIDIA 把这套叫 in-flight batching（IFB），vLLM / TGI 叫 continuous batching，论文原点是 Orca 的 iteration-level 调度。TensorRT-LLM 岗位常从「为什么静态 batch 吃不满 H100」进到这一题。我会先画一步 decode 的时间线，再补一句：没有 paged KV，inflight 只是把碎片从时间挪到显存。引擎定位见 `nvidia-trt-llm`。
 
 ## 静态 batch 的空洞
 
@@ -54,7 +54,7 @@ GPU 看起来在做 $[B, D]\times[D, D]$，有的行已经 mask 掉。LLM 生成
 2. waiting 里能 admit 的新请求（显存还够、`max_batch_size` / `max_num_tokens` 没打满）插进来。新来的先走 context，老的走 generation。
 3. 组一次 ragged batch：packed token，不再为对齐 pad 到全局 max。Attention plugin 用 block table 做 gather，见 `nvidia-paged-kv`。
 
-吞吐涨的原因是 SM 和 HBM 对着「这一步还活着的 token」，不是矩阵变大了。静态 $B=32$ 里可能只有 8 条真在写；inflight 的瞬时 $B$ 一直贴着 KV 水位。NVIDIA 博客写过：真实流量上 IFB 加 kernel 优化，H100 吞吐可以翻倍量级——面试用数量级，不要背具体倍数。
+吞吐涨的原因是 SM 和 HBM 对着「这一步还活着的 token」，不是矩阵变大了。静态 $B=32$ 里可能只有 8 条真在写；inflight 的瞬时 $B$ 一直贴着 KV 水位。NVIDIA 博客写过真实流量上 IFB 加 kernel 优化，H100 吞吐可以翻倍量级；面试用数量级，不要背具体倍数。
 
 Context 和 generation 同一步：prefill 是算力墙，decode 是带宽墙。混在一起能填 decode 的计算空洞，但一条超长 context 仍可能把这一步的墙钟拉长，TPOT 出尖刺。这就是 chunked prefill 要切 prompt 的原因，见 `nvidia-chunked-prefill`。IFB 解决「人进出」；chunking 解决「一次 context 太大」。
 

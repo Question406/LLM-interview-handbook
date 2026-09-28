@@ -6,7 +6,7 @@ level: A
 title: Meta / Llama：为什么 70B 用 GQA？和 MHA 比 decode 省在哪？
 quick: >-
   Llama 2 70B 公开配置是 $32$ 个 query head、 $8$ 个 KV head。KV cache 大约降到 MHA 的 $1/4$，decode
-  带宽跟着降。质量用 grouped 的 KV 保住，不走到 MQA 的极端共享。这是 Meta 推理岗的默认开口，不是名词题。
+  带宽跟着降。质量用 grouped 的 KV 保住，不走到 MQA 的极端共享。这是 Meta 推理岗的默认开口。
 tags:
   - Meta
   - Llama

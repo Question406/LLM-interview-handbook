@@ -35,7 +35,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“讲讲verl的结构，关键组件，如何魔改,遇到的问题”**
 
-字节 Agent 算法一面这题，这块容易按目录名报 `workers/`，或一上来讲 Megatron kernel。我会按数据流讲：Trainer 编排 → Actor/Rollout/Ref 在同一组 GPU 上换布局采样 → Reward/Env 打分 →（PPO 才有）Critic。魔改优先级是 Reward 与工具协议，再是 loss 与异步，最后才动内核。相关卡：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`didi-verl-metrics`。
+错法：按目录名报 `workers/`，或一上来讲 Megatron kernel。按数据流讲：Trainer 编排 → Actor/Rollout/Ref 在同一组 GPU 上换布局采样 → Reward/Env 打分 →（PPO 才有）Critic。魔改优先级是 Reward 与工具协议，再是 loss 与异步，最后才动内核。相关卡：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`didi-verl-metrics`。
 
 ## 按数据流说组件
 

@@ -25,15 +25,15 @@ sources:
     type: primary
 ---
 
-应用岗会把「Claude 偶发把 JSON 包进代码围栏」问到解码层。官方 structured outputs 有两条：整段回答走 `output_config.format` 的 `json_schema`；工具参数走 `strict: true`。两者都是文法约束采样，不是再跑一次评委模型。题不是某一场 OA，是你能不能把「形状正确」和「语义正确」拆开。
+应用岗会把「Claude 偶发把 JSON 包进代码围栏」问到解码层。官方 structured outputs 有两条：整段回答走 `output_config.format` 的 `json_schema`；工具参数走 `strict: true`。两者都是文法约束采样，不是再跑一次评委模型。面试要能把「形状正确」和「语义正确」拆开。
 
 ## 约束解码保证的是形状
 
 Schema 编译成文法。每一步合法续写集合被 mask 掉，模型抽不到会破坏括号、类型、`required` 的 token。于是 `json.loads` 和缺字段这一类循环可以去掉。对象必须 `additionalProperties: false`，否则文法不知道能不能多键。首次用某 schema 要编译，有一截 TTFT；编译结果大约缓存一天，改结构或工具集才失效。改 `description` 通常不使文法失效。
 
-官方子集：基本类型、`enum` / `const`、有限的 `anyOf`、内部 `$ref`。**不吃**：递归 schema、`minimum` / `maximum`、`minLength`、复杂正则（反向引用、lookahead）。SDK 常把这些约束删掉写进 description——模型可能遵守，文法不强制。
+官方子集：基本类型、`enum` / `const`、有限的 `anyOf`、内部 `$ref`。不吃：递归 schema、`minimum` / `maximum`、`minLength`、复杂正则（反向引用、lookahead）。SDK 常把这些约束删掉写进 description——模型可能遵守，文法不强制。
 
-它**不**保证：数字在业务范围里；字符串是合法订单号；路径不指向系统目录；枚举选了合法值但是用错工具。`anthropic-tool-use` 里写过：schema 过了还要政策检查。constraining ≠ validating 产品不变量。
+它不保证：数字在业务范围里；字符串是合法订单号；路径不指向系统目录；枚举选了合法值但是用错工具。`anthropic-tool-use` 里写过：schema 过了还要政策检查。constraining ≠ validating 产品不变量。
 
 ## 再解析挡什么、什么时候还需要
 
@@ -58,9 +58,7 @@ if not (0 <= data["score"] <= 1):
 
 给模型看的长资料用 `anthropic-xml-prompt` 的标签边界；给运行时执行的用 JSON Schema。MCP server 的 `inputSchema` 仍是 JSON Schema，但远程 server 必须自己再校验一遍，不能信 client 已经约束过，见 `anthropic-mcp`。换 `output_config.format` 会让对话前缀失效，打爆 `anthropic-prompt-cache`。
 
-错法：schema 写成自由字符串 `cmd`；打开 `additionalProperties`；把约束解码当越权防护。
-
-文法第一次编译会加一截 TTFT，之后大约缓存一天。评测延迟时要把冷编译和热请求分开报。数值区间、字符串长度这类官方文法不吃的约束，写进 description 只是提示，宿主校验才是合同。
+错法：schema 写成自由字符串 `cmd`；打开 `additionalProperties`；把约束解码当越权防护。评测延迟时要把冷编译和热请求分开报。数值区间、字符串长度写进 description 只是提示，宿主校验才是合同。
 
 ## 追问
 

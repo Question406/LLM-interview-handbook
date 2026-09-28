@@ -42,7 +42,7 @@ Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。M
 - **TP**：切的是单个 expert 的矩阵，通信是 expert 内 collective，模式规则、适合 NVLink 域。
 - **EP**：切的是 expert 集合，通信是 token 级不规则 all-to-all。
 
-常见拓扑：节点内 TP $\times$ EP，跨节点 DP。EP size 加大能放下更多 expert，但 all-to-all 跳数和消息碎片变多；当专家计算已经很碎、通信占比 $\gt 50\%$，再加 EP 吞吐会掉。DeepSeek-V3 用 DeepEP 一类专用 kernel 做 dispatch/combine 与计算重叠，我会讲清「不规则 all-to-all + overlap」，不必背产品名。
+常见拓扑：节点内 TP $\times$ EP，跨节点 DP。EP size 加大能放下更多 expert，但 all-to-all 跳数和消息碎片变多；当专家计算已经很碎、通信占比 $\gt 50\%$，再加 EP 吞吐会掉。DeepSeek-V3 用 DeepEP 一类专用 kernel 做 dispatch/combine 与计算重叠。面试讲清「不规则 all-to-all + overlap」即可，不必背产品名。
 
 ## 追问
 

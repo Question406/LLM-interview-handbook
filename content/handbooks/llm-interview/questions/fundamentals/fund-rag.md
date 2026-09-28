@@ -24,7 +24,7 @@ sources:
     type: secondary
 ---
 
-这块容易三选一站队，或让 cross-encoder 扫全库。工业默认是 **hybrid 召回 + 贵模型精排**：BM25 保专有名词 / ID / 原文片段，dense 保同义改写，cross-encoder 只看几十到几百候选。切块见 `fund-chunking`，ANN 索引见 `fund-ann`，融合权重见 `ant-bm25-hybrid`、`jd-hybrid-retrieval-weight`。最终质量要拆 retrieval recall 与 answer faithfulness；检索对了生成仍可胡编。要不要微调生成模型见 `fund-rag-ft`。
+错法：三选一站队，或让 cross-encoder 扫全库。工业默认是 hybrid 召回 + 贵模型精排：BM25 保专有名词 / ID / 原文片段，dense 保同义改写，cross-encoder 只看几十到几百候选。切块见 `fund-chunking`，ANN 索引见 `fund-ann`，融合权重见 `ant-bm25-hybrid`、`jd-hybrid-retrieval-weight`。最终质量要拆 retrieval recall 与 answer faithfulness；检索对了生成仍可胡编。要不要微调生成模型见 `fund-rag-ft`。
 
 ## 三路各自算什么
 
@@ -42,7 +42,7 @@ BM25 是词项匹配 + 文档长度归一，对稀有精确串强，对 paraphra
 
 Rerank 的 $K$ 由延迟预算反推：cross-encoder 一次 forward 的成本乘 $K$ 必须落在 SLA 内，所以常见 $K\in[20,100]$ 而不是 $K=1000$。$K$ 太小，正确证据根本进不了精排；$K$ 太大，噪声文档和延迟一起涨。Chunk 边界错误时三路一起盲，先修切块重叠再谈融合。生成侧是否微调是另一题（`fund-rag-ft`）：检索没到证据，微调生成也补不回事实。
 
-我会这么讲：lexical 保命、dense 保义、cross 保序、生成受证据约束。复杂度和准确度怎么换，我会说清楚，不会站队「BERT 更强所以全程 BERT」。
+口令：lexical 保命、dense 保义、cross 保序、生成受证据约束。复杂度和准确度怎么换要说清楚，别站队「BERT 更强所以全程 BERT」。
 
 ## 追问
 

@@ -28,11 +28,11 @@ sources:
     type: primary
 ---
 
-岗位是 Research Engineer 不是刷题选手。评委要看你能不能对着带 bug 的训练代码改对，再把 KV cache / 并行 / 对齐目标讲成可交接的系统。六周是压缩版：每天有产出，周末用一篇论文把本周代码连起来。和 Scientist / Applied 的分界见 `us-research-vs-applied`；轮次形态见 `us-loop-types`。论文精读清单见 `us-llm-paper-stack`。
+岗位是 Research Engineer。评委要看你能不能对着带 bug 的训练代码改对，再把 KV cache / 并行 / 对齐目标讲成可交接的系统。六周是压缩版：每天有产出，周末用一篇论文把本周代码连起来。和 Scientist / Applied 的分界见 `us-research-vs-applied`；轮次形态见 `us-loop-types`。论文精读清单见 `us-llm-paper-stack`。
 
 ## 六周骨架
 
-**第 1–2 周：debug 与 ML coding。** 闭卷写 attention、causal mask、softmax 轴、$\sqrt{d_k}$、RoPE 偏移。再专门练「给一份能跑但错的 Transformer」：四个区间各一个 bug，改完加 KV cache。这是 OpenAI 电面的公开形态，见 `us-debug-vs-leetcode`、`openai-transformer-debug`。白板手撕 softmax / layernorm / 采样，见 `coding-softmax-stable`、`coding-layernorm`。Apple 会要你手写 MHA，见 `apple-mha-code`。不要一周只看论文不写 shape。
+**第 1-2 周：debug 与 ML coding。** 闭卷写 attention、causal mask、softmax 轴、$\sqrt{d_k}$、RoPE 偏移。再专门练「给一份能跑但错的 Transformer」：四个区间各一个 bug，改完加 KV cache。这是 OpenAI 电面的公开形态，见 `us-debug-vs-leetcode`、`openai-transformer-debug`。白板手撕 softmax / layernorm / 采样，见 `coding-softmax-stable`、`coding-layernorm`。Apple 会要你手写 MHA，见 `apple-mha-code`。不要一周只看论文不写 shape。
 
 **第 3 周：系统。** 三维并行切哪一维、ZeRO 省什么、激活重计算换什么、paged attention 为什么能连续批。NVIDIA 岗把这周权重大于对齐。见 `sys-3d-parallel`、`sys-paged-attn`、`openai-continuous-batching`、`sys-prefix-cache`。自己画一张：prefill 绑首 token、decode 绑 slot、KV 水位决定准入。能讲清「为什么请求级 batch 会队头阻塞」，这周过关。
 
@@ -42,13 +42,13 @@ sources:
 
 **第 6 周：串起来。** 两套模拟：45 分钟改 Transformer + 加 cache；45 分钟设计题限时画完约束。行为面用真实权衡，不要背原则。级别预期见 `us-leveling`。有 Meta onsite 再模拟 AI coding，见 `us-onsite-ai-coding`。论文栈过一遍，每篇只留「面试会问的那一页」。
 
-## 每周不要做什么
+## 每周别做什么
 
-不要把六周变成「读完 RLHF 综述」。没有代码和 shape 的阅读，OpenAI 电面会挂。不要赌冷门变体名；GRPO / IPO / KTO 够用，见对齐章，不必背二十个字母汤。不要零 LeetCode：Meta / Amazon / Microsoft 仍有中等题，见 `us-debug-vs-leetcode`。不要伪造「我训过万卡」；把你论文或业务里真实失败讲清楚更安全。
+六周别变成「读完 RLHF 综述」。没有代码和 shape 的阅读，OpenAI 电面会挂。别赌冷门变体名；GRPO / IPO / KTO 够用，见对齐章，不必背二十个字母汤。别零 LeetCode：Meta / Amazon / Microsoft 仍有中等题，见 `us-debug-vs-leetcode`。别伪造「我训过万卡」；把你论文或业务里真实失败讲清楚更安全。
 
 公司倾斜：OpenAI 加一周 debug + 信息论；Anthropic 加分层实现和宪法；NVIDIA 加并行和 Nsight 叙事；Apple / Amazon 加端侧或企业 RAG 约束。地图表见 `us-prep-map`。
 
-节奏：工作日 60–90 分钟写代码或推式，周末 3 小时把本周主题连到一篇论文（第 2 周 Attention，第 3 周 vLLM，第 4 周 InstructGPT + DPO，第 5 周按目标岗选 RAG 或 serving）。模拟面要计时、出声、写 shape，不要只在心里过。
+节奏：工作日 60-90 分钟写代码或推式，周末 3 小时把本周主题连到一篇论文（第 2 周 Attention，第 3 周 vLLM，第 4 周 InstructGPT + DPO，第 5 周按目标岗选 RAG 或 serving）。模拟面要计时、出声、写 shape，不要只在心里过。
 
 产出检查：能闭卷写带 cache 的一步 decode；能画 paged KV 准入；能从 RLHF 目标推到 DPO；能在白板上拒绝「再加一个大模型」并给出闸门。这四条过了，六周没有浪费。简历上的项目准备 8 分钟：问题、你改的假设、哪张表能证伪、上线约束。RE 岗会从论文拽回训练栈，见 `us-research-vs-applied`。
 
@@ -68,4 +68,4 @@ sources:
 
 级别预期不要演：初级把模块改对；中级主动提 SLO 和门禁；更高级定义评测和失败模式，见 `us-leveling`。跨级投也先保证 attention 写对。
 
-六周结束时用 `us-prep-map` 过一遍公司列，缺的只补那一列，不要重开新计划。
+六周结束时用 `us-prep-map` 过一遍公司列，缺的只补那一列，别重开新计划。

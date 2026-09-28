@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Google HELM、OpenAI simple-evals、LMSYS MT-Bench 都在说：评测要固定协议。MLE / 对齐岗白板问离线平台，要的是切片、人评、污染、回归门禁。在线 A/B、护栏、peek 见 `design-eval-platform`。本题不把广告推荐当例子。内部 harness 纪律见 `openai-eval-harness`。污染手法见 `align-eval-contam`。
+Google HELM、OpenAI simple-evals、LMSYS MT-Bench 都在说：评测要固定协议。MLE / 对齐岗白板问离线平台，要的是切片、人评、污染、回归门禁。在线 A/B、护栏、peek 见 `design-eval-platform`。内部 harness 纪律见 `openai-eval-harness`。污染手法见 `align-eval-contam`。
 
 ## 切片是一等公民
 
@@ -61,7 +61,7 @@ LLM-as-judge 做筛子，不做唯金标。位置交换、换家族验收，见 
 - **软闸。** 公开集、文风、长度、成本。掉了要解释和切片，不自动红灯。
 - **不变式。** 有 cache vs 无 cache 的 greedy 对齐；提示版本变更必须重跑全套，见 `design-prompt-mgmt`。
 
-门禁对着 **切片** 不是对着一个平均分。平均持平、医疗切片崩，仍是红灯。对比对象是上一个生产 checkpoint 和 SFT 基线，不是「历史上最好的内部实验」。
+门禁对着 切片 不是对着一个平均分。平均持平、医疗切片崩，仍是红灯。对比对象是上一个生产 checkpoint 和 SFT 基线，不是「历史上最好的内部实验」。
 
 失败模式：刷公开集提示词；用训练 RM 当验收；人评疲劳全标「还可以」；门禁只看总分；把评测 prompt 写进系统提示过拟合考题。
 

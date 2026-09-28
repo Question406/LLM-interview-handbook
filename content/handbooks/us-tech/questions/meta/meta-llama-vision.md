@@ -37,9 +37,9 @@ Llama / 多模态岗会问 3.2 视觉怎么接到 3.1 上。公开答案在 Conn
 
 1. **视觉编码器。** 公开实现是两段 ViT：约 $32$ 层局部编码（按 tile）再约 $8$ 层 global，让不同切块互相看见。中间若干层和最后一层拼接再投影到 LM 隐空间。图像先按长宽比切成最多 $4$ 块正方形 tile（Meta Guard 3 Vision 卡片写每块 $560\times 560$），不是整图强行缩成一张正方形。
 2. **语言模型。** 11B-Vision 挂在 Llama 3.1 8B 栈上（约 $40$ 层），90B-Vision 挂在 70B 上。名字里的 11B / 90B 是 **LM + 视觉** 合计，别当成又训了一个 11B 稠密 LM。文本自注意力、RoPE、GQA 仍按 3.1，见 `meta-llama-gqa`。
-3. **Adapter。** 在 LM 若干层插入 cross-attn。11B 公开默认层号 $[3,8,13,18,23,28,33,38]$，大约每 $5$ 层一块。文本 token 当 $Q$，视觉表示当 $K/V$。**没有 RoPE，没有因果 mask**——图像不是从左到右的词。Query/Key 上再做 RMSNorm。残差用可学门控，初始化近 $0$，插进去时不立刻打坏已冻住的 3.1 表示，和 Flamingo 的 gated xattn 同一思路。
+3. **Adapter。** 在 LM 若干层插入 cross-attn。11B 公开默认层号 $[3,8,13,18,23,28,33,38]$，大约每 $5$ 层一块。文本 token 当 $Q$，视觉表示当 $K/V$。**没有 RoPE，没有因果 mask**：图像不是从左到右的词。Query/Key 上再做 RMSNorm。残差用可学门控，初始化近 $0$，插进去时不立刻打坏已冻住的 3.1 表示，和 Flamingo 的 gated xattn 同一思路。
 
-文本序列里只有少量 image 占位符，告诉模型「这里有图」；真正的视觉信息不走 LM 自注意力的 $T$ 维。这和 LLaVA 把几百个视觉 token 拼进同一条因果序列是两种系统。
+文本序列里只有少量 image 占位符，告诉模型「这里有图」；视觉信息不走 LM 自注意力的 $T$ 维。这和 LLaVA 把几百个视觉 token 拼进同一条因果序列是两种系统。
 
 ```python
 def gated_xattn(x, vis, wq, wk, wv, wo, g):
@@ -57,7 +57,7 @@ Shape 口头报：自注意力仍是 $[B, T, D]$；cross-attn 的 $K/V$ 是 $[B,
 
 博客写得很死：adapter 训练时 **更新编码器 + cross-attn，不更新 LM**。目的是文本能力不回退，视觉版当 3.1 的 drop-in。训练分两段：先大规模脏图文对，再中等规模高质量 / 知识增强对；后训练跟文本类似，SFT、rejection sampling、DPO，合成题用 Llama 3.1 滤和扩。数据量公开写约 $6\mathrm{B}$ 图文对，知识截止 2023-12。指令数据另有公开视觉指令集和约 $3\mathrm{M}$ 合成例。
 
-错法：说「3.2 从零训了一个原生多模态 Transformer」——那是 Chameleon / Gemini 叙事，见 `google-gemini-mm`。错法二：冻视觉编码器只训一层 MLP——那是 LLaVA 连接器，3.2 明确改了 encoder。错法三：把 SAM 当视觉塔，见 `meta-segment-anything`，任务都不是 LM。
+错法：说「3.2 从零训了一个原生多模态 Transformer」，那是 Chameleon / Gemini 叙事，见 `google-gemini-mm`。错法二：冻视觉编码器只训一层 MLP，那是 LLaVA 连接器，3.2 明确改了 encoder。错法三：把 SAM 当视觉塔，见 `meta-segment-anything`，任务都不是 LM。
 
 Serving：视觉 encoder 是额外 prefill，和文本 prefill 不同池。Cross-attn 的 $K/V$ 按图缓存，图不变就别重算。多图、高分辨率会线性抬 $N$，见 `meta-anyres`。安全闸门要能看图，见 `meta-mm-safety`。
 
@@ -68,4 +68,3 @@ Serving：视觉 encoder 是额外 prefill，和文本 prefill 不同池。Cross
 - **90B 是 90B 稠密 LM 吗？** 不是。70B 文本栈加视觉组件，卡片写约 $88.8\mathrm{B}$。
 - **占位符算不算视觉 token？** 占位符只占几个文本位置。计算量在 encoder 和 cross-attn 的 $N$ 上，不要用「一张图 = 1 个 token」或「一张图 = 两千个 LM token」两头糊弄。
 - **和 Flamingo 的差别？** 骨架同类（gated xattn + 冻 LM）。3.2 挂的是现成 Llama 3.1、GQA、切块 encoder，产品目标是 drop-in，不是从零训 Perceiver。
----

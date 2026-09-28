@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易把 MoE 前向画成「$N$ 个 `nn.Linear` 循环」。白板能过，上卡就死在 kernel launch 和空算。Permute 之后每个专家拿到一段连续 token，真正贵的是 **怎么喂进 Tensor Core**。三种喂法对应三种浪费。
+这块容易把 MoE 前向画成「$N$ 个 `nn.Linear` 循环」。白板能过，上卡就死在 kernel launch 和空算。Permute 之后每个专家拿到一段连续 token，贵的是怎么喂进 Tensor Core。三种喂法对应三种浪费。
 
 ## 三种算子
 

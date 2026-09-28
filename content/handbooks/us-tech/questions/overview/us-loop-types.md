@@ -29,7 +29,7 @@ sources:
 
 ## 电面：能不能独立改对东西
 
-OpenAI / Apple 常见给一份能跑的小 Transformer 或 attention，里面有 bug，或者让你现场加 KV cache。Anthropic 常见 CodeSignal 分层实现。Google / Meta 电面更接近「中等算法 + 一点 ML」。这一轮不是展示阅读量，是展示你能在没人提示时定位 shape / 数值 / 并发。
+OpenAI / Apple 常见给一份能跑的小 Transformer 或 attention，里面有 bug，或者让你现场加 KV cache。Anthropic 常见 CodeSignal 分层实现。Google / Meta 电面更接近「中等算法 + 一点 ML」。这一轮考的是没人提示时你能不能定位 shape / 数值 / 并发，阅读量帮不上忙。
 
 准备法：闭卷写 attention 和一步 decode，再专门练「四类植入 bug」：因果 mask、softmax 轴、缩放、位置偏移。见 `openai-transformer-debug`、`apple-mha-code`。
 

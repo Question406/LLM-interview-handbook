@@ -50,7 +50,7 @@ Serving 走后者：底座 GEMM 所有请求共用，再加两次瘦 GEMM。$x$ 
 分清三种「切」。
 
 1. 进程级换模型：把整份 $W$ 卸了再装另一份。秒级，不可接受。多 LoRA 就是为了避免这个。
-2. 请求级换 adapter，底座不动：若 $A,B$ 已在 HBM，切换是绑一份指针 / 改 kernel 参数，微秒到亚毫秒。若在 CPU，HtoD 拷贝按 adapter 字节走，通常远小于一次 70B 权重加载，但仍可能比一步 decode GEMM 显眼——decode 本身就很短。
+2. 请求级换 adapter，底座不动：若 $A,B$ 已在 HBM，切换是绑一份指针 / 改 kernel 参数，微秒到亚毫秒。若在 CPU，HtoD 拷贝按 adapter 字节走，通常远小于一次 70B 权重加载，但仍可能比一步 decode GEMM 显眼：decode 本身就很短。
 3. 同一 batch 多种 adapter：没有单一 $W'$。要对 batch 维做 segmented / grouped GEMM（Punica 的 SGMV 一类）：同一 LoRA 的行打成一段，一段一次瘦 GEMM。实现复杂，但底座那次大 GEMM 仍然只做一遍。
 
 热池策略：LRU 留 $K$ 个 adapter 在 GPU。$K$ 太大挤 KV；$K$ 太小，切客户时反复 HtoD，p99 出现「偶发尖刺」。面试把尖刺归因到 adapter miss，不要怪底座。

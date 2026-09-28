@@ -39,14 +39,14 @@ NVIDIA Megatron、Google 长上下文预训练、Meta FSDP 训 Llama，都会问
 
 不 checkpoint 时，每层把反向要用的激活留在 HBM。Transformer 里这份东西跟 $B\cdot T\cdot L\cdot h$ 走，长序列时经常比参数还大。ZeRO 再怎么切状态也碰不到它。
 
-做法：只在段边界留一份激活，段内中间结果丢掉。反向进入该段，从边界再 forward 一遍，恢复张量再算梯度。Chen et al. 的结论是：边界选得好，激活显存大约 $O(\sqrt{L})$，额外计算是常数倍前向。实务几乎从不是每一算子都重算，而是每个 Transformer block 一个边界，或 selective：只重算便宜的 LayerNorm / dropout / 注意力分数，大 GEMM 的输出该存还是存。
+做法：只在段边界留一份激活，段内中间结果丢掉。反向进入该段，从边界再 forward 一遍，恢复张量再算梯度。Chen et al. 的结论是：边界选得好，激活显存大约 $O(\sqrt{L})$，额外计算是常数倍前向。实务很少每一算子都重算，常见是每个 Transformer block 一个边界，或 selective：只重算便宜的 LayerNorm / dropout / 注意力分数，大 GEMM 的输出该存还是存。
 
 两笔账分开说：
 
 - 省：激活 HBM，往往是峰值的大头。
 - 付：额外 forward FLOPs，以及重算和集体通信能不能错开。
 
-已经 compute-bound、batch 也喂饱了，再付百分之二十到三十的 FLOPs 是纯税。本来被显存卡住、microbatch 开不大、GEMM 很瘦，用省下的显存把 $B$ 或 $T$ 加倍，算术强度上去，墙钟反而更好。面试要讲这个拐点，不要背「checkpoint 一定更快」或「一定更慢」。
+已经 compute-bound、batch 也喂饱了，再付百分之二十到三十的 FLOPs 是纯税。本来被显存卡住、microbatch 开不大、GEMM 很瘦，用省下的显存把 $B$ 或 $T$ 加倍，算术强度上去，墙钟反而更好。面试要讲这个拐点，别背「checkpoint 一定更快」或「一定更慢」。
 
 一个数量级：不 checkpoint 时激活大致跟 $B\cdot T\cdot L\cdot h$ 走；每 block 留一个边界，激活大约按 $\sqrt{L}$ 降，前向大约再付 $1\times$。Selective 只重算 LN / dropout，额外 FLOPs 可以压到百分之十以下，显存降幅仍可观。这才是和「每层全重算」的差别。
 

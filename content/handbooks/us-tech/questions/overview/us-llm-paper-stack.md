@@ -57,7 +57,7 @@ DPO：把「RM + 反向 KL」解析成隐式奖励 $r=\beta\log(\pi/\pi_{\mathrm
 
 vLLM / PagedAttention：KV 按页分配，序列不必连续预留最大长度，才能做 iteration 级调度和前缀共享。Orca 解决请求级 batch 的队头阻塞；分页让变长 append 不把显存预留打满。面试要能说：块多大、前缀命中键含什么、水位怎么做准入，见 `sys-paged-attn`、`sys-prefix-cache`、`openai-continuous-batching`、`nvidia-paged-kv`。产品化排队见 `design-chat-serving`。
 
-Llama 2 报告：预训练数据与 GQA、SFT / RLHF 聊天、上下文长度、安全。面试不当考古：用它当「开源栈默认假设」——tokenizer、GQA、RoPE、对话模板。细节见 `meta-llama-gqa`、`meta-llama3-tokenizer`。Llama 1 可以当预训练配方补充，聊天对齐仍以 2 的 RLHF 章和 InstructGPT 对照。
+Llama 2 报告：预训练数据与 GQA、SFT / RLHF 聊天、上下文长度、安全。面试不当考古：把它当开源栈的默认假设（tokenizer、GQA、RoPE、对话模板）。细节见 `meta-llama-gqa`、`meta-llama3-tokenizer`。Llama 1 可以当预训练配方补充，聊天对齐仍以 2 的 RLHF 章和 InstructGPT 对照。
 
 六篇之外按岗加一篇：NVIDIA 加 Megatron / FlashAttention；Anthropic 加 CAI；代码岗加 SWE-bench。加了也只精读失败模式，不要冲数量。
 
@@ -65,7 +65,7 @@ Llama 2 报告：预训练数据与 GQA、SFT / RLHF 聊天、上下文长度、
 
 每篇一张纸：问题、关键式、shape 或复杂度、作者承认的失败、你若实现会踩的坑。合上论文能推 DPO 换元、能画 paged KV、能说明 GQA 省的是哪项显存，才算过。读了二十篇摘要、推导写不出，电面会现形。
 
-不要把这篇当「美国版八股索引」去背引用。现场允许说「InstructGPT 的 KL 在当前策略上取」；不允许说「我读过」然后方向写反。
+现场可以说「InstructGPT 的 KL 在当前策略上取」；不能说「我读过」然后方向写反。
 
 ## 追问
 

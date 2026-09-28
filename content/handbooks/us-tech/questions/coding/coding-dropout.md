@@ -27,7 +27,7 @@ sources:
 
 ## 题怎么来的
 
-Srivastava et al. 2014 的 dropout 是面试里最容易写反缩放的一层。OpenAI Transformer debug 会把 `train()` / `eval()` 混用：你改对了 mask 也看不出来。Apple 手写 MHA 之后会问 attention dropout 推理要不要留。PyTorch 默认是 **inverted dropout**：缩放发生在训练。白板把期望说清楚，比背 `p=0.1` 有用。
+Srivastava et al. 2014 的 dropout 是面试里最容易写反缩放的一层。OpenAI Transformer debug 会把 `train()` / `eval()` 混用：mask 改对了也对不齐。Apple 手写 MHA 之后会问 attention dropout 推理要不要留。PyTorch 默认是 inverted dropout：缩放发生在训练。白板把期望说清楚，比背 `p=0.1` 有用。
 
 ## 训练乘 $1/(1-p)$，推理恒等
 
@@ -54,13 +54,11 @@ def dropout(x, p, training, generator=None):
     mask = torch.empty_like(x).bernoulli_(keep, generator=generator)
     return x * mask / keep
 
-
 def attn_with_dropout(scores, p, training):
     # scores: [B, H, T, S] already masked with -inf
     w = torch.softmax(scores, dim=-1)
     w = dropout(w, p, training)
     return w
-
 
 def check():
     g = torch.Generator().manual_seed(0)
@@ -71,7 +69,7 @@ def check():
     assert y.max() <= 2.0 + 1e-6
 ```
 
-注意力 dropout 打在 softmax **之后**的权重上，不是打在 logits 上。打在 logits 等于随机把某些 key 打成 $-\infty$，分布会再归一化，语义不同。残差旁的 dropout 和 attention dropout 是两份独立 mask。
+注意力 dropout 打在 softmax 之后的权重上，不是打在 logits 上。打在 logits 等于随机把某些 key 打成 $-\infty$，分布会再归一化，语义不同。残差旁的 dropout 和 attention dropout 是两份独立 mask。
 
 ## 和 debug / 端侧
 

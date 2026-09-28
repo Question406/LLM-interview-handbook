@@ -58,7 +58,7 @@ PP 看起来通信少，税在空转：warmup 时后段 GPU 闲。1F1B 把气泡
 
 通信体积直觉就一句：**TP 跟激活走，DP 跟参数走，PP 跟气泡走。** 长上下文时 $B\cdot T\cdot h$ 涨，先加序列并行（见 `sys-seq-parallel`），不要盲目加 TP。参数极大、激活还好时，ZeRO-3 比加深 TP 更对症（见 `sys-zero-stages`）。
 
-错误切法主动说：纯 DP 塞万亿（优化器先爆）；纯 PP 五十段（气泡难看）；TP 等于 64 还跨机柜（NCCL 延迟把 MFU 打穿）。NVIDIA 岗还会问 Nsight 上 GPU 在算、在等 NVLink，还是在等 IB——三种空转对应三条轴选错。
+错误切法主动说：纯 DP 塞万亿（优化器先爆）；纯 PP 五十段（气泡难看）；TP 等于 64 还跨机柜（NCCL 延迟把 MFU 打穿）。NVIDIA 岗还会问 Nsight 上 GPU 在算、在等 NVLink，还是在等 IB。三种空转对应三条轴选错。
 
 ## 一个数量级
 

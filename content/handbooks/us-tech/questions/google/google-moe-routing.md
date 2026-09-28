@@ -61,7 +61,7 @@ $$
 C=\left\lceil \gamma\cdot n / E\right\rceil
 $$
 
-$\gamma$ 常见 $1.0$–$1.25$。专家 $i$ 只收 $C$ 个槽。分数低的 token drop：这层 FFN 输出走残差或零。$\gamma$ 太小，质量掉；太大，padding 和通信体积涨，稀疏红利没了。
+$\gamma$ 常见 $1.0$：$1.25$。专家 $i$ 只收 $C$ 个槽。分数低的 token drop：这层 FFN 输出走残差或零。$\gamma$ 太小，质量掉；太大，padding 和通信体积涨，稀疏红利没了。
 
 TPU 上 $C$ 必须是编译期上界。真实直方图每步都变，你仍按 $C$ pad。平均利用率在 $1/\gamma$ 以下，MXU 在算零。这就是「稀疏理论 FLOPs」和墙钟对不上的主要来源之一，和 `google-tpu-llm` 的 MXU 利用率是同一笔账。
 

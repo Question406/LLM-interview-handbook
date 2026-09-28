@@ -51,9 +51,9 @@ KV 池是硬上限（可与模型权重争 HBM）。调度器在页用尽时通�
 | Swap | 页换到 host / 更远存储 | PCIe 流量，decode 步抖动 |
 | Preempt | 整条请求暂停或踢出，让给更高优先级 | 公平性与尾延迟；可能级联重试 |
 
-没有绝对最优。短请求被长 CoT 占满页会饿死；只保吞吐则大 tenant 挤占。必须同时看：KV OOM 次数、碎片率（有空字节却分不出页）、preempt 率、recompute token、P99 TPOT、每完成请求的有效 token。只报 GPU utilization 会掩盖「算力很忙、页已经不公平」。
+没有绝对最优。短请求被长 CoT 占满页会饿死；只保吞吐则大 tenant 挤占。同时看 KV OOM 次数、碎片率（有空字节却分不出页）、preempt 率、recompute token、P99 TPOT、每完成请求的有效 token。只报 GPU utilization 会掩盖「算力很忙、页已经不公平」。
 
-优先级与长度感知的 admission（先估计剩余页、限制并发 $G$）比事后抢占更稳。公平性可以按 token、按请求或按租户配额，三种目标互相冲突，要在 SLA 里写死。调度器不能只盯 SM 利用率：页已经不公平时，GPU 仍可以很忙。
+优先级与长度感知的 admission（先估计剩余页、限制并发 $G$）比事后抢占更稳。公平性可以按 token、按请求或按租户配额，三种目标互相冲突，要在 SLA 里写死。
 
 ## 追问
 

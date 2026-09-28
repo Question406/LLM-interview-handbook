@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-OpenAI / Anthropic 对齐岗把 InstructGPT 当默认背景，不一定点名「reverse KL」。我会先说惩罚落在哪一种偏离，再写公式左右哪边是 $\pi_\theta$。方向写反，后面 DPO 换元和 PPO 监控全拧。工程拆分（ref KL 对 $\pi_{\mathrm{ref}}$，clip 对 $\pi_{\mathrm{old}}$）见 `openai-instructgpt-kl`。本题把正向 / 反向讲死。
+OpenAI / Anthropic 对齐岗把 InstructGPT 当默认背景，不一定点名「reverse KL」。我会先说惩罚落在哪一种偏离，再写公式左右哪边是 $\pi_\theta$。方向写反，后面 DPO 换元和 PPO 监控全拧。工程拆分（ref KL 对 $\pi_{\mathrm{ref}}$，clip 对 $\pi_{\mathrm{old}}$）见 `openai-instructgpt-kl`。本题把正向 / 反向说清楚。
 
 ## 反向 KL：罚的是你现在会说的话
 
@@ -43,7 +43,7 @@ $$
 
 $\pi_{\mathrm{ref}}$ 通常冻 SFT，不要冻 base：用 base 当锚会把指令格式本身当偏离来罚，SFT 白做。锚太强（已经对齐过的模型）会把探索空间压没。
 
-PPO clip 相对的是本批 $\pi_{\mathrm{old}}$，管单步别跳太猛。ref KL 管整段训练别离开可用语言。两个系数、两个参照。答成「KL 就是 PPO」直接掉分。
+PPO clip 相对的是本批 $\pi_{\mathrm{old}}$，管单步别跳太猛。ref KL 管整段训练别离开可用语言。两个系数、两个参照。把 ref KL 和 PPO clip 说成一回事会掉分。
 
 ## 正向 KL 会怎样
 

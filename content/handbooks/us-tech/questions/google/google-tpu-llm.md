@@ -32,7 +32,7 @@ sources:
     type: primary
 ---
 
-Mesh 轴怎么命名见 `google-tpu-mesh`。这题要听的是：一张 Transformer 层在芯片上怎么跑，以及为什么 Google 大规模训练常常浅流水线、重 2D 切分。评委来自 Gemini / PaLM / JAX 训练，不是问你 NVLink 盒子里 $\mathrm{TP}=8$ 的口诀。
+Mesh 轴怎么命名见 `google-tpu-mesh`。这题要听：一张 Transformer 层在芯片上怎么跑，以及为什么 Google 大规模训练常常浅流水线、重 2D 切分。评委来自 Gemini / PaLM / JAX 训练；NVLink 盒子里 $\mathrm{TP}=8$ 的口诀在这用不上。
 
 ## MXU 吃 GEMM，其它算子别假装在矩阵单元里
 
@@ -56,7 +56,7 @@ GPU 三维并行口头禅：节点内 TP，节点间 PP，最后 DP。TPU Pod �
 - 气泡比例大约随 stage 数涨、随 microbatch 数降。stage 很深、microbatch 开不大（显存或数据不够），MFU 先被气泡吃掉。
 - 某 stage 开了更狠的 remat，负载不齐，1F1B 的公式要重算。
 
-GSPMD 可以把流水线也做成一条 mesh 轴，Python 仍写完整网络。这和手写 GPipe 调度不是同一套 API，但气泡账相同。能 2D 放下就别上 PP，是我会主动说的偏好，不是定理。
+GSPMD 可以把流水线也做成一条 mesh 轴，Python 仍写完整网络。API 和手写 GPipe 调度不同，气泡账相同。能 2D 放下就别上 PP，这是我会说的偏好，不是硬定理。
 
 ## 和 GPU 三维并行对照，只对齐三本账
 
@@ -74,7 +74,7 @@ GSPMD 可以把流水线也做成一条 mesh 轴，Python 仍写完整网络。�
 
 ## 追问
 
-- **为什么 decode 的 MXU 利用率差？** 收缩维还够，但 batch 维只有并发数。连续批处理是在喂 MXU，不是为了代码好看。
-- **TPU 上 FSDP 叫什么？** 还是参数分片 + 按需 gather。名字不重要，字节和通信时机重要。
+- **为什么 decode 的 MXU 利用率差？** 收缩维还够，但 batch 维只有并发数。连续批处理是在喂 MXU。
+- **TPU 上 FSDP 叫什么？** 还是参数分片 + 按需 gather。名字随意，字节和通信时机才重要。
 - **和 GPU 比谁更适合深 PP？** GPU 跨节点带宽差一截，深 PP 常见。TPU Pod 内更匀，先 2D；跨 Pod 再考虑 DP 或浅 PP。
-- **bf16 在 MXU 上够吗？** 训练默认够。softmax / 累加仍要更高精度的累加器，这是数值问题，不是「TPU 不支持 fp32」。
+- **bf16 在 MXU 上够吗？** 训练默认够。softmax / 累加仍要更高精度的累加器，这是数值问题；别说成「TPU 不支持 fp32」。

@@ -28,11 +28,11 @@ sources:
     type: primary
 ---
 
-Apple Siri、Amazon Alexa / Bedrock 语音、Google Assistant 都会问 barge-in 和「听错一个药名之后怎么办」。Whisper 论文给的是识别；白板要的是状态机、延迟预算、错误如何进工具。不是某次现场逐字题。端侧延迟专项见 `apple-siri-latency`；接地见 `apple-siri-grounded`；多模态时钟见 `design-multimodal-prod`。
+Apple Siri、Amazon Alexa / Bedrock 语音、Google Assistant 都会问 barge-in 和「听错一个药名之后怎么办」。Whisper 论文给的是识别；白板要的是状态机、延迟预算、错误如何进工具。端侧延迟专项见 `apple-siri-latency`；接地见 `apple-siri-grounded`；多模态时钟见 `design-multimodal-prod`。
 
 ## 打断是状态机，不是把麦克风一直打开
 
-四个态够讲：听、想、说、被打断。用户在 TTS 播放时说话：立刻停播、丢弃未发出的音频、取消或降级未完成的 LLM / 工具、把新 ASR 前缀接到当前会话。不要等这轮工具返回再听——那是电话客服最讨厌的「请稍候」死锁。
+四个态够讲：听、想、说、被打断。用户在 TTS 播放时说话：立刻停播、丢弃未发出的音频、取消或降级未完成的 LLM / 工具、把新 ASR 前缀接到当前会话。不要等这轮工具返回再听；那是电话客服最讨厌的「请稍候」死锁。
 
 端点检测（endpointing）和打断是一对：太敏，用户换气被当成说完，LLM 抢跑；太钝，首包音频晚半拍。流式 ASR 部分假设可以先出词，但开工具要等稳定的槽位，或对低置信实体口头确认。
 

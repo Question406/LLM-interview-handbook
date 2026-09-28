@@ -46,7 +46,7 @@ Anthropic computer use、OpenAI 的电脑/浏览器使用、Microsoft Copilot �
 
 不可逆：支付、发邮件、删数据、改分享、同意授权。UI 展示即将提交的人话 + 关键字段（金额、收件人），用户点了才 `click(submit)`。批量「全选确认」等于没有确认。只读浏览可以自动。
 
-定位脆弱是这题的技术核心。CSS / XPath 绑 class 名，A/B 实验一改就点到「接受全部 cookie」。更稳的顺序：
+定位脆弱是这题的技术核心。CSS / XPath 绑 class 名，A/B 实验一改就点到「接受全部 cookie」。我会按这个顺序选定位：
 
 1. 角色 + 可访问名称（无障碍树）。
 2. 可见标签文本、路标。

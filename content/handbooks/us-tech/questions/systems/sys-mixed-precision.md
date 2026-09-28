@@ -33,13 +33,13 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 训推都会问「8 bit / 16 bit」。我会先挡：训练混合精度（AMP / Transformer Engine）和推理 PTQ 不是一件事。Hopper 上两者都能快，但溢出模型、是否更新权重、要不要 master copy 全不同。FP8 每张量 scale 见 `nvidia-fp8`；FP16 全局 $S$ 见 `nvidia-loss-scale`。本题把 master weights 和「别跟 serving 量化混」讲清。
+NVIDIA 训推都会问「8 bit / 16 bit」。先分清：训练混合精度（AMP / Transformer Engine）和推理 PTQ 是两件事。Hopper 上两者都能快，但溢出模型、是否更新权重、要不要 master copy 全不同。FP8 每张量 scale 见 `nvidia-fp8`；FP16 全局 $S$ 见 `nvidia-loss-scale`。本题把 master weights 和「别跟 serving 量化混」讲清。
 
 KV 量化、权重量化是部署带宽问题，不要在这题里展开成同一套 scale 故事，见 `sys-kv-quant`。
 
 ## 算用窄的，存一份 FP32 真身
 
-2017 混合精度的核心不是「模型改成 FP16」，而是：前向/反向 GEMM 走 FP16 或 BF16，**一份 FP32 master 权重**给优化器。小更新在 FP16 尾数里会冲掉；Adam 的一阶二阶矩更需要宽累加。典型一步：
+2017 混合精度的做法：前向/反向 GEMM 走 FP16 或 BF16，**一份 FP32 master 权重**给优化器。小更新在 FP16 尾数里会冲掉；Adam 的一阶二阶矩更需要宽累加。典型一步：
 
 1. Master $W_{32}$ 转成 $W_{16}$ 做 GEMM。
 2. 反向得到窄格式梯度，升到 FP32，除 loss scale（若有），Adam 更新 $W_{32}$。
@@ -55,7 +55,7 @@ FP8 训练（Transformer Engine）：E4M3 正向、E5M2 梯度常见；每张量
 
 推理量化：GPTQ / AWQ / SmoothQuant / INT8 TensorRT，目的是冻住权重、减带宽。有零点、校准集、outlier 迁移。没有反向，没有 Adam，没有「skip 这一 step」。KV 的 INT8/FP8 更是 cache 带宽问题，见 `sys-kv-quant`。Hopper 上推理也可以走 FP8，那是部署配方，仍然没有训练那套 delayed amax 历史。
 
-错误并法：把 SmoothQuant 的通道 scale 接到 TE 的 per-tensor amax 上；用校准表当训练 GEMM 的 scale；说「开了 FP8 就可以删 master」。面试先问：这条 8 bit 路径有没有反向。有，就是混合精度；没有，就是量化部署。
+错误并法：把 SmoothQuant 的通道 scale 接到 TE 的 per-tensor amax 上；用校准表当训练 GEMM 的 scale；说「开了 FP8 就可以删 master」。先问这条 8 bit 路径有没有反向。有，就是混合精度；没有，就是量化部署。
 
 通信也不要和计算精度绑死。梯度 all-reduce 常用 FP32 或 FP16 累加；用 BF16 规约会让换 DP 度数后曲线对不上，见 `sys-allreduce-reducescatter`。FP8 训练里 amax 历史要进 checkpoint，否则 resume 后第一步用错 scale，尖刺像 `sys-loss-spike`。
 

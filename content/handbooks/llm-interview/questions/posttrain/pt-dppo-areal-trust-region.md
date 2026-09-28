@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-两套 KL 的锚点见 `pt-trust-region-vs-drift-kl`。本题问的是 **近端约束怎么落地**：硬 KL、ratio clip、散度 mask、还是异步样本的年龄。2026 社区 35 题里的 DPPO，默认是 Divergence Proximal Policy Optimization（`2602.04879`），不是 Distributed PPO，也不是把 IS 和 clip 拆开的 Decoupled PPO。名字撞了先问对方。
+两套 KL 的锚点见 `pt-trust-region-vs-drift-kl`。本题问的是**近端约束怎么落地**：硬 KL、ratio clip、散度 mask、还是异步样本的年龄。2026 社区 35 题里的 DPPO，默认是 Divergence Proximal Policy Optimization（`2602.04879`），不是 Distributed PPO，也不是把 IS 和 clip 拆开的 Decoupled PPO。名字撞了先问对方。
 
 ## TRPO：约束写在分布上
 
@@ -38,21 +38,21 @@ $$
 \mathbb{E}_s\big[D_{\mathrm{KL}}(\pi_{\mathrm{old}}(\cdot\mid s)\,\|\,\pi_\theta(\cdot\mid s))\big]\le\delta.
 $$
 
-约束的是 **整份条件分布** 的 KL，不是某一个被采样 token 的 $\rho$。实现走 Fisher / 共轭梯度，大词表 LLM 基本不用。PPO 用 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$ 做一阶工程近似，见 `pt-ppo-clip`。
+约束的是**整份条件分布**的 KL，不是某一个被采样 token 的 $\rho$。实现走 Fisher / 共轭梯度，大词表 LLM 基本不用。PPO 用 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$ 做一阶工程近似，见 `pt-ppo-clip`。
 
 ## PPO clip 为什么在 LLM 上歪
 
-$|\rho-1|\le\varepsilon$ 相当于用 **一个被采样 token** 的比去估总变差。低频探索 token 的 $\rho$ 噪声大，容易被 clip 掉，正是 CISPO / clip-higher 想救的那类 token，见 `pt-cispo`、`pt-dapo`。高频 token 的 $\rho$ 靠近 1，真正的分布漂移可能已经很大，clip 却放行。所以 clip 不是「算过 KL」，只是 noisy Monte Carlo。
+$|\rho-1|\le\varepsilon$ 相当于用一个被采样 token 的比去估总变差。低频探索 token 的 $\rho$ 噪声大，容易被 clip 掉，正是 CISPO / clip-higher 想救的那类 token，见 `pt-cispo`、`pt-dapo`。高频 token 的 $\rho$ 靠近 1，分布漂移可能已经很大，clip 却放行。所以 clip 不是「算过 KL」，只是 noisy Monte Carlo。
 
 ## DPPO：直接估散度再 mask
 
 Divergence PPO 仍用策略梯度 surrogate，但进出信任域的判据换成 TV 或 KL 的估计，而不是 $|\rho-1|$。词表太大，精确散度吃显存，论文用 **Binary**（把质量拆成「被采样 token vs 其余」）和 **Top-$K$** 近似。mask 是非对称的：只挡「已经在往域外走」的更新，不挡把 $\rho$ 往 1 拉回来的步。VeRL 文档里有 Binary-TV / Binary-KL 实现。
 
-两句口令：trust region 必须锚在 **行为策略 / 引擎采样分布** $\mu$，不要锚在训练图重算出来的 $\pi_{\mathrm{old}}$；没有信任域的 CISPO / 纯 IS，训推 mismatch 会累积到崩。Drift KL 相对冻结 $\pi_{\mathrm{ref}}$，仍是另一列，不要和 DPPO 的一步约束合成一个 $\beta$。
+两句口令：trust region 必须锚在**行为策略 / 引擎采样分布** $\mu$，不要锚在训练图重算出来的 $\pi_{\mathrm{old}}$；没有信任域的 CISPO / 纯 IS，训推 mismatch 会累积到崩。Drift KL 相对冻结 $\pi_{\mathrm{ref}}$，仍是另一列，不要和 DPPO 的一步约束合成一个 $\beta$。
 
 ## AReaL：约束的是样本有多旧
 
-AReaL 要解的是同步 RL 等长尾、生成与训练互斥，见 `sys-areal-vs-slime`。Fully async 之后，一个 batch 里混多个 policy 版本。它的「trust region」是 **staleness-aware**：版本差太大的轨迹丢掉或降权，打断生成时 flush KV，见 `sys-partial-kv-policy`、`sys-staleness`。改的是数据准入，不是把 $\rho$ 换成 TV。
+AReaL 要解的是同步 RL 等长尾、生成与训练互斥，见 `sys-areal-vs-slime`。Fully async 之后，一个 batch 里混多个 policy 版本。它的「trust region」是**staleness-aware**：版本差太大的轨迹丢掉或降权，打断生成时 flush KV，见 `sys-partial-kv-policy`、`sys-staleness`。改的是数据准入，不是把 $\rho$ 换成 TV。
 
 | | 约束对象 | 典型实现 |
 | --- | --- | --- |

@@ -28,7 +28,7 @@ sources:
     type: secondary
 ---
 
-微软多模态岗把 LLaVA 当白板题：不是背 class 名，是两阶段冻谁、视觉 token 怎么进序列。论文：Liu 等人先用过滤后的 CC 图文对训投影，再用 GPT-4 生成的多轮视觉指令做 SFT。LLaVA-1.5 换成 336px、MLP 投影、加学术 VQA / ShareGPT。产品不一定叫 LLaVA，Phi-Vision / Copilot Vision 仍是这条。Token 预算见 `msft-llava`；冻塔对照见 `apple-mm-train`。不是逐字真题。
+微软多模态岗把 LLaVA 当白板题。不是背 class 名，是两阶段冻谁、视觉 token 怎么进序列。论文：Liu 等人先用过滤后的 CC 图文对训投影，再用 GPT-4 生成的多轮视觉指令做 SFT。LLaVA-1.5 换成 336px、MLP 投影、加学术 VQA / ShareGPT。产品不一定叫 LLaVA，Phi-Vision / Copilot Vision 仍是这条。Token 预算见 `msft-llava`；冻塔对照见 `apple-mm-train`。不是逐字真题。
 
 ## 两阶段，冻的是不同的东西
 
@@ -36,7 +36,7 @@ sources:
 
 **阶段 1（特征对齐）。** 冻 $f_v$ 和 $\theta$，只训 $W$。数据是短 caption。目标是让网格特征落到词嵌入空间。LLaVA-1.0 用线性层；1.5 用两层 MLP。学习率相对高、数据相对少。解冻 LLM 会在这点把语言能力洗掉。
 
-**阶段 2（视觉指令）。** 仍冻 $f_v$，打开 $W$ 和 $\theta$。数据是「看图回答 / 多轮」。学习率降一个数量级。这才是「visual instruction tuning」这个词的意思——不是从零训 ViT。
+**阶段 2（视觉指令）。** 仍冻 $f_v$，打开 $W$ 和 $\theta$。数据是「看图回答 / 多轮」。学习率降一个数量级。这才是「visual instruction tuning」这个词的意思，不是从零训 ViT。
 
 视觉 token 数：
 
@@ -56,11 +56,7 @@ $$
 
 Phi 小模型上更要守冻塔，见 `msft-phi-vision`。Azure 上视觉 token 进 TPM，见 `msft-azure-tpm`。导出 ONNX 时分辨率档要和训练一致，见 `msft-onnx-export`。
 
-我会先在白板上写冻/解冻表，再写 $N_{\mathrm{vis}}$，再问产品要看清什么。主动说 AnyRes 是推理税，不是免费质量。两阶段用不同学习率和数据，混成一轮「全解开训到底」是常见错法。
-
-两阶段用不同学习率和数据。混成一轮「全解开训到底」是常见错法，小模型上尤其容易毁语言。
-
-面试收尾主动报失败模式和评测切片，不要停在架构名词。
+我会先在白板上写冻/解冻表，再写 $N_{\mathrm{vis}}$，再问产品要看清什么。AnyRes 是推理税，不是免费质量。两阶段用不同学习率和数据；混成一轮「全解开训到底」是常见错法，小模型上尤其容易毁语言。评测切开 VQA / OCR / 接地 / 幻觉拒答，推理分辨率要进配置。
 
 ## 追问
 

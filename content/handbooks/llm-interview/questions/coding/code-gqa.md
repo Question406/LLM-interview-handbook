@@ -31,7 +31,7 @@ $$
 \mathrm{Attn}(Q,\;\mathrm{repeat}(K),\;\mathrm{repeat}(V)).
 $$
 
-等价实现是 `einsum` / gather：第 $i$ 个 Q head 用第 $\lfloor i/g\rfloor$ 个 KV head，避免真的把显存放大 $g$ 倍。手写面试复制即可，但要说「生产实现按组索引，不物理 repeat」。
+等价实现是 `einsum` / gather：第 $i$ 个 Q head 用第 $\lfloor i/g\rfloor$ 个 KV head，避免真的把显存放大 $g$ 倍。手写面试复制即可，但要说生产实现按组索引，不物理 repeat。
 
 ```python
 import torch
@@ -62,4 +62,4 @@ Decode 一步：只 repeat 当前和新 concat 后的 cache KV，Q 仍是 $H_q$ 
 
 - **Cache 公式？** 把 `arch-kv-cache` 里的 $n_{\mathrm{heads}}$ 换成 $n_{\mathrm{kv}}$。
 - **$H_q$ 不能整除 $H_{\mathrm{kv}}$？** 非法配置；Llama-3 8B 是 32 Q / 8 KV。
-- **和 MLA？** MLA 压的是 KV 的低秩潜变量，不是简单 repeat；别把 GQA 说成 DeepSeek MLA。
+- **和 MLA？** MLA 压的是 KV 的低秩潜变量，不是简单 repeat；GQA 不是 DeepSeek MLA。

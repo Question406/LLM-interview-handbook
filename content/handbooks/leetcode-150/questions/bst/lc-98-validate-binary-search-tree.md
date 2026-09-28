@@ -109,4 +109,4 @@ def isValidBST_inorder(root):
     return dfs(root)
 ```
 
-- **允许等于（非严格 BST）？** 把开区间改成闭：左界判断改成 `node.val < lo` 才失败，右界 `node.val > hi`；中序改成非严格递增 `node.val < prev` 才失败。本题题面是严格，白板我会先确认。值可能是 $32$ 位最值，边界用 `None` 而不是 `INT_MIN`。
+- **允许等于（非严格 BST）？** 把开区间改成闭：左界判断改成 `node.val < lo` 才失败，右界 `node.val > hi`；中序改成非严格递增 `node.val < prev` 才失败。本题题面是严格，先确认。值可能是 $32$ 位最值，边界用 `None` 而不是 `INT_MIN`。

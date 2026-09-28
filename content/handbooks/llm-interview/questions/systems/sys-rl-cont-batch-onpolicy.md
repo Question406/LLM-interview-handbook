@@ -40,7 +40,7 @@ Continuous batching 为什么涨吞吐，见 `sys-cont-batch`。那张卡讲的�
 
 ## 合法用法
 
-连续 batching 仍然该开：组内长度方差极大，静态 generate 几乎总在等最长 CoT，见 `sys-rl-why-vllm-rollout`。工程约束是：
+连续 batching 仍然该开：组内长度方差极大，静态 generate 几乎总在等最长 CoT，见 `sys-rl-why-vllm-rollout`。工程上要约束：
 
 - 每条轨迹写 `policy_version`、token、old logprob。
 - 优势估计等组齐；动态采样也是组级滤，见 `slime-dynamic-partial`。
@@ -48,7 +48,7 @@ Continuous batching 为什么涨吞吐，见 `sys-cont-batch`。那张卡讲的�
 
 vLLM 强在 PagedAttention 和通用吞吐；SGLang 强在 RadixAttention、共享前缀和结构化 / 多轮 workflow。选型见 `sys-verl-vllm-vs-sglang`。无论哪个引擎，采样 logp 都要在训练图重算。
 
-不要把 continuous batching 说成异步 RL。前者是 decode step 内换人；后者是 trainer 与 rollout 两池流水线。可以同时开，stale 来源变成两条，账要分开记。
+Continuous batching 和异步 RL 不是一层：前者是 decode step 内换人；后者是 trainer 与 rollout 两池流水线。可以同时开，stale 来源变成两条，账要分开记。
 
 ## 追问
 

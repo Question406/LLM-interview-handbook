@@ -43,7 +43,7 @@ Router 是离散 top-$k$。引擎（vLLM / SGLang、量化、不同 batch）和 
 
 TIS / 重算 logp 修的是概率数值，不是离散 top-$k$。可以叠：先对齐路由，再截断 $\rho$，见 `pt-tis-async`。
 
-现场口令：GSPO 降方差，Replay 对齐计算图。路由都错了先不要换 clip。
+GSPO 降方差，Replay 对齐计算图。路由都错了先不要换 clip。
 
 ## 追问
 

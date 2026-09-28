@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-Google 论文把 MQA 做出来，GQA 是折中。国内也高频，系统写法见 `arch-gqa`。美国 Google / DeepMind 推理岗会把它问成「你怎么给 decode 降 KV」，而不是名词对比。
+Google 论文把 MQA 做出来，GQA 是折中。国内也高频，系统写法见 `arch-gqa`。美国 Google / DeepMind 推理岗会把它问成「你怎么给 decode 降 KV」，别答成名词对比。
 
 ## 三档
 

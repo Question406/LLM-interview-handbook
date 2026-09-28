@@ -42,7 +42,7 @@ Prefill：$T$ 大，一次 GEMM / FMHA 就能把 GPU 喂饱，launch 几个微�
 
 Decode：每条序列 $Q$ 是 $[B, 1, D]$。一层里仍是 QKV GEMM、attention（读整段 KV）、输出投影、MLP。核很多，每个都短。HBM 墙在读 KV，见 `nvidia-flash-attn`；但即便核本身是带宽墙，CPU 排队 launch、每个核前的间隙加起来可以和 GPU 工作同一个数量级，尤其 $B$ 小、TPOT 指标紧的时候。Graph 把这串核和它们的依赖录成一次提交，replay 时 GPU 自己往下走。
 
-粗算：一步 40 个核、每个 launch $5\,\mu\mathrm{s}$，光 host 就是 $0.2\,\mathrm{ms}$。70B 在 $B=8$ 时一步 GPU 工作也可能只有一两毫秒，这笔税看得见。$B$ 很大、GEMM 已经很长时，graph 的相对收益下降——面试要说「小 batch / 低延迟 decode 才是主战场」。
+粗算：一步 40 个核、每个 launch $5\,\mu\mathrm{s}$，光 host 就是 $0.2\,\mathrm{ms}$。70B 在 $B=8$ 时一步 GPU 工作也可能只有一两毫秒，这笔税看得见。$B$ 很大、GEMM 已经很长时，graph 的相对收益下降。面试要说清：小 batch / 低延迟 decode 才是主战场。
 
 这和「把 occupancy 从 40% 调到 70%」不是同一剂药。Decode 网格本来就瘦，split-K / FlashDecoding 是为了填 SM；graph 是为了消灭核与核之间的 CPU 缝。Nsight Systems 上看缝，Nsight Compute 上看墙。
 
@@ -55,13 +55,11 @@ CUDA Graph 捕获的是：核的 launch 配置、固定（或更新受限）的�
 
 TensorRT-LLM 的做法：开工前按一组 `batch_sizes` 各捕获一张 decode 图（文档提醒每张图可能到一两百 MB 额外显存）。padding 打开时，真实 $B$ pad 到下一个已捕获尺寸，空槽浪费算力。默认若按 2 的幂跳，高并发区间相邻尺寸能差到几百，padding 税很痛；官方后来把默认间隔收紧。面试落到「图是离散桶，IFB 是连续整数，$B$ 对不上就 pad 或退回 eager」。
 
-Prefill / 混合步：token 数随 prompt 变，一张图罩不住。Piecewise CUDA Graph 把 attention 留在 eager（变长、paged、MLA 分支），前后 GEMM 分段捕获；attention 写成 in-place，输出缓冲由 graph 段预分配，指针才稳。动态维只放行 `num_tokens`。这是在承认：不是整模型都能进图。Chunked prefill 的混合步更是如此，见 `nvidia-chunked-prefill`。
+Prefill / 混合步：token 数随 prompt 变，一张图罩不住。Piecewise CUDA Graph 把 attention 留在 eager（变长、paged、MLA 分支），前后 GEMM 分段捕获；attention 写成 in-place，输出缓冲由 graph 段预分配，指针才稳。动态维只放行 `num_tokens`。这是在承认。不是整模型都能进图。Chunked prefill 的混合步更是如此，见 `nvidia-chunked-prefill`。
 
 不要每步 recapture。捕获本身要把那条路径跑一遍，成本远高于一次 replay。形状漂了就换桶或 eager，不要现场录。
 
-Nsight Systems 上若仍看到每步一串短核，就是没走 graph，或 IFB 把 $B$ 打出了桶。
-
-Graph 也不是完全不能改参数：CUDA 允许在 replay 前更新 kernel 参数和部分指针，但 launch 维和拓扑必须还是捕获时那套。Decode 把 KV 写进预分配的 paged 池，基址不变，才能 replay；一旦 `malloc` 出新缓冲，图就废了。这就是为什么 serving 要先把 KV 池和 workspace 一次留够。Nsight Systems 上若仍看到每步一串短核，就是没走 graph，或 IFB 把 $B$ 打出了桶。
+Graph 也可以在 replay 前更新 kernel 参数和部分指针，但 launch 维和拓扑必须还是捕获时那套。Decode 把 KV 写进预分配的 paged 池，基址不变，才能 replay；一旦 `malloc` 出新缓冲，图就废了。所以 serving 要先把 KV 池和 workspace 一次留够。Nsight Systems 上若仍看到每步一串短核，就是没走 graph，或 IFB 把 $B$ 打出了桶。
 
 ## 追问
 

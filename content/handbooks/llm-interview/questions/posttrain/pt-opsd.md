@@ -53,7 +53,7 @@ $$
 
 $D$ 可以是 KL 或 $\mathrm{JSD}_\beta$。论文默认 $\beta=0$，即在该前缀上的全词表正向 $D_{\mathrm{KL}}(p_T\|p_S)$。梯度只回学生 logits。这和 STaR 不同：STaR 要教师显式写出 rationalization，再对答对的硬标签做 SFT；OPSD 即使学生终局错了，前缀上仍有稠密分布信号。对照卡 `pt-star-vs-opsd`。无 GT 时走 `pt-u-opsd`；多轮只有动作示范走 `pt-pi-distill`；特权本身要可学走 `pt-lopd`。
 
-我会这样钉：谁采样（学生）决定状态 on-policy；谁进上下文（$y^\star$）决定教师比学生强；梯度只走没特权的那一侧。
+谁采样（学生）决定状态 on-policy；谁进上下文（$y^\star$）决定教师比学生强；梯度只走没特权的那一侧。
 
 ## 和 OPD、GRPO 的差
 

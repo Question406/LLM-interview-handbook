@@ -31,7 +31,7 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗把 function calling 问成 Converse，而不是「你会不会 ReAct」。公开文档：client-side 模式下模型 **不执行** 工具；你在 `toolConfig` 里给 `toolSpec`（名、描述、JSON Schema），响应里 `stopReason` 为 `tool_use`，content 里一块或多块 `toolUse`。你执行后用同一 `toolUseId` 回 `toolResult`。托管循环见 `amazon-bedrock-agents`。不是逐字真题。
+Bedrock 应用岗把 function calling 问成 Converse，而不是「你会不会 ReAct」。公开文档：client-side 模式下模型 **不执行** 工具；你在 `toolConfig` 里给 `toolSpec`（名、描述、JSON Schema），响应里 `stopReason` 为 `tool_use`，content 里一块或多块 `toolUse`。你执行后用同一 `toolUseId` 回 `toolResult`。托管循环见 `amazon-bedrock-agents`。
 
 ## 合同：schema、并行、停止
 

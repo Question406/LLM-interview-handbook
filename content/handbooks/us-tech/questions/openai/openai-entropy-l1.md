@@ -49,13 +49,13 @@ $$
 
 ## L1：换的是单纯形上的几何，不是换一个激活名字
 
-Softmax 把 $\mathbb{R}^n$ 映到单纯形内部，对应的是指数族 / $\ell_2$ 在 log 域的几何，和 CE、KL 一套。L1 距离 $\|p-q\|_1$ 活在单纯形上，但 **softmax 不再是对的归一化**。
+Softmax 把 $\mathbb{R}^n$ 映到单纯形内部，对应的是指数族 / $\ell_2$ 在 log 域的几何，和 CE、KL 一套。L1 距离 $\|p-q\|_1$ 活在单纯形上，但 softmax 不再是对的归一化。
 
 可实现的网络：
 
-1. **非负再 $\ell_1$ 归一：** $y=\mathrm{ReLU}(Wx)$，$p=y/\|y\|_1$。这是常见的「线性 + 正部 + L1 归一」，对应稀疏、可出现精确 0 的分布。全 0 要有 fallback（均匀或加 $\varepsilon$）。
-2. **欧氏投影到单纯形：** $p=\Pi_{\Delta}(Wx)$，可用 Duchi 的 $O(n\log n)$ 投影。比 ReLU 归一更接近「L1 球 ∩ 概率单纯形」。
-3. **损失：** 目标若是贴近分布 $q$，用 $\frac12\|p-q\|_1$ 或 TV；不要再接 CE。对 one-hot 目标，$\|p-e_y\|_1=2(1-p_y)$，等于在优化正确类概率，但梯度和 softmax+CE 不同，零概率处不可微，需要 subgradient。
+1. 非负再 $\ell_1$ 归一： $y=\mathrm{ReLU}(Wx)$，$p=y/\|y\|_1$。这是常见的「线性 + 正部 + L1 归一」，对应稀疏、可出现精确 0 的分布。全 0 要有 fallback（均匀或加 $\varepsilon$）。
+2. 欧氏投影到单纯形： $p=\Pi_{\Delta}(Wx)$，可用 Duchi 的 $O(n\log n)$ 投影。比 ReLU 归一更接近「L1 球 ∩ 概率单纯形」。
+3. 损失： 目标若是贴近分布 $q$，用 $\frac12\|p-q\|_1$ 或 TV；不要再接 CE。对 one-hot 目标，$\|p-e_y\|_1=2(1-p_y)$，等于在优化正确类概率，但梯度和 softmax+CE 不同，零概率处不可微，需要 subgradient。
 
 Sparsemax 是把欧氏投影到单纯形写成可微层，面试提到它能说明你知道「softmax 不是唯一的单纯形映射」，但题目说的是 L1，优先讲 $\ell_1$ 归一和 TV，不要把名字偏到 sparsemax 当标准答案。
 

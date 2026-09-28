@@ -37,7 +37,7 @@ RLVR 的起点是可信 verifier 与 fresh rollout，不是把 benchmark 分数�
 
 先定义能执行且抗投机的 verifier：规则、单测、字段校验，输出可审计。再选处于当前策略可探索区域的 prompts，全对全错组没有梯度。采样 group rollout，算 reward，控制 KL / policy freshness 后更新。正确路径稀少时，先做 cold-start SFT、curriculum 或 rejection sampling，而不是加大 group 空转。Reward 必须和业务成功一致：解析器松会让格式刷分；解析器严会把对的判错。
 
-不能以 benchmark 的题目和答案反复喂给训练来换分。训练分布与评测包隔离，是策略的一部分，不是事后良心。
+训练分布与评测包隔离，是策略的一部分，不是事后良心。不能以 benchmark 的题目和答案反复喂给训练来换分。
 
 ## 用分桶定位，不要一个总分
 

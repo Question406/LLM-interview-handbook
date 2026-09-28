@@ -67,5 +67,3 @@ Packing 把变长文档拼到训练长度 $T$，文档边界要留特殊 token�
 - **packing 和 padding 怎么选？** 预训练要有效 token，默认 pack。要对齐文档、做文档级 loss 再 pad 或用 attention mask，别把两篇粘成一句还当一句。
 - **blend 权重要不要进 ckpt？** 要。配比 RNG 和文档游标一样，丢了 resume 后语料配比会漂，曲线接上但数据混合物变了。
 - **mmap 和流式怎么选？** 稳态预训练预建 index 更准、更好 resume。数据还在写、不想预建，用 Streaming / WebDataset，但精确续跑更烦。
-
-- **token 级全局 shuffle 为什么不做？** 随机读会打爆磁盘。文档级洗再 pack 是吞吐和随机性的折中。

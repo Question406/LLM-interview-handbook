@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 训练岗在 `nvidia-tensor-parallel` 和 `nvidia-nccl-allreduce` 之后会追：这两次层内 all-reduce 到底叠进 GEMM 没有。Megatron / Transformer Engine 的 userbuffer overlap、序列并行下的 AG/RS 切块，问的都是通信墙有没有露出来。我会先写体积和时间比，再讲 overlap 的依赖，不先报一个开关名。
+NVIDIA 训练岗在 `nvidia-tensor-parallel` 和 `nvidia-nccl-allreduce` 之后会追：这两次层内 all-reduce 到底叠进 GEMM 没有。Megatron / Transformer Engine 的 userbuffer overlap、序列并行下的 AG/RS 切块，问的都是通信墙有没有露出来。先写体积和时间比，再讲 overlap 的依赖，不先报一个开关名。
 
 ## 先算会不会成为墙
 
@@ -61,7 +61,7 @@ DP 梯度 AR 容易藏在前几层 backward 后面；TP 层内 AR 默认藏不�
 
 ## 怎么在 Nsight 上暴露墙
 
-Systems 时间线：`ncclDevKernel` 和 MMA 并排且 GPU 忙，overlap 在工作。一条缝、GPU 空，就是等通信——墙露出来了。两者重叠但 SOL 都很低，是抢 SM，再加 overlap 会更差，该减 TP 或把通信移回 NVLink。不要只报「NCCL 占 30%」：要说这 30% 能不能挪到计算底下。
+Systems 时间线：`ncclDevKernel` 和 MMA 并排且 GPU 忙，overlap 在工作。一条缝、GPU 空，就是在等通信，墙露出来了。两者重叠但 SOL 都很低，是抢 SM，再加 overlap 会更差，该减 TP 或把通信移回 NVLink。不要只报「NCCL 占 30%」：要说这 30% 能不能挪到计算底下。
 
 错误处方：通信墙了就加 TP（墙更厚）；墙了就关 SP（字节没少）；墙了就开 ZeRO-3（又加每层 AG）。对症是减小 TP、加大 $h$ 方向的算术强度、或把 TP 缩回节点内。
 

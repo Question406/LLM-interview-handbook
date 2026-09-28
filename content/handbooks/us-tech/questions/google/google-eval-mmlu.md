@@ -31,7 +31,7 @@ sources:
     type: secondary
 ---
 
-PaLM / Gemini 技术报告都把 MMLU 当头条能力数。Google 研究岗问这题，不是让你背 57 个科目，而是问：这个数能不能当训练目标、会不会被污染和 prompt 把戏抬起来。CoT 怎么用见 `google-cot-reason`。别把「我们 MMLU +1.2」说成产品赢了。
+PaLM / Gemini 技术报告都把 MMLU 当头条能力数。Google 研究岗问这题，不是背 57 个科目，而是问这个数能不能当训练目标、会不会被污染和 prompt 把戏抬起来。CoT 怎么用见 `google-cot-reason`。别把「我们 MMLU +1.2」说成产品赢了。
 
 ## 污染：公开题早就在网上
 
@@ -57,7 +57,7 @@ MMLU 是四选一。分数对下面这些东西敏感，敏感程度经常大于
 - 是否 CoT。Gemini Ultra 公开数字用了 CoT；和 0-shot 直接选字母不是同一项测试。报数时必须写清协议。
 - 宏平均 vs 微平均。MMLU 官方是科目宏平均。题量大的科目被微平均放大。
 
-面试我会说：内部对比锁死 prompt、解码、抽取脚本，存在 git 里。换了 decoding 或「加一句 let's think」就不是同一张表。MMLU-Pro 把选项加到十个、题更硬，能减轻一点「会考试格式」。它仍然是公开集，污染逻辑不变。
+面试要说：内部对比锁死 prompt、解码、抽取脚本，存在 git 里。换了 decoding 或「加一句 let's think」就不是同一张表。MMLU-Pro 把选项加到十个、题更硬，能减轻一点「会考试格式」。它仍然是公开集，污染逻辑不变。
 
 ## 多语言：翻译题不是能力平移
 

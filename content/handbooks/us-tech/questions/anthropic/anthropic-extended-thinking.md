@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-研究 / 应用岗会问「打开 thinking 质量涨、延迟也涨，产品怎么接」。文档现在把手工 `thinking.type: enabled` + `budget_tokens` 标成过渡：新模型用 adaptive，模型自己决定想不想、想多深；要可预期延迟才谈固定预算。面试别背死某一个字段名，要讲清预算、计费、可见性和安全。这是 API 产品题，不是隐藏面经。
+研究 / 应用岗会问「打开 thinking 质量涨、延迟也涨，产品怎么接」。文档现在把手工 `thinking.type: enabled` + `budget_tokens` 标成过渡：新模型用 adaptive，模型自己决定想不想、想多深；要可预期延迟才谈固定预算。面试别背死某一个字段名，要讲清预算、计费、可见性和安全。这是 API 产品题。
 
 ## 预算是目标，不是墙上的硬闸
 
@@ -53,15 +53,7 @@ Thinking 配置会编进 prompt 前缀，乱切换 effort 会打爆 `anthropic-p
 
 错法：把可见 thinking 当黄金 CoT 做 SFT；在产品 UI 里默认展开；为了「可解释」把 redacted 块强行解密给用户。
 
-预算很大时走 `anthropic-batch-api`，不要在同步路径上赌超长思考不被网关掐断。交错 thinking 适合只读工具链；有副作用的调用想完仍要宿主确认，见 `anthropic-tool-use`。和 prompt cache 一起：thinking / effort 必须编进预热请求，否则线上第一条必 miss。
-
-redacted 块也要原样回传，丢掉会让后续轮次丢推理状态。产品侧把 thinking 当调试开关，默认关，出事再由内部打开，不要做成用户可编辑的草稿箱。流式必须收齐 signature 再提交。评测延迟时把「思考时间」和「可见 token 时间」分开报，否则会把预算浪费在用户看不见的输出上。
-
-评测延迟时把思考时间和可见 token 时间分开报，否则会把预算浪费在用户看不见的输出上。签名必须收齐再回传；redacted 与 thinking 块同等对待，缺一块后续轮次就会断。
-
-和 `anthropic-batch-api` 的分界：要流式、要交互就别开超大预算；要质量、可隔夜出数，把高预算题丢进批处理。
-
-可见摘要可以给开发者排障，但不要进用户可见的合规日志。
+预算很大时走 `anthropic-batch-api`，不要在同步路径上赌超长思考不被网关掐断。交错 thinking 适合只读工具链；有副作用的调用想完仍要宿主确认，见 `anthropic-tool-use`。thinking / effort 必须编进 prompt cache 预热请求，否则线上第一条必 miss。redacted 与 thinking 块都要原样回传，缺一块后续轮次会断。产品侧把 thinking 当调试开关，默认关；可见摘要可以给开发者排障，不要进用户合规日志，也不要做成用户可编辑的草稿箱。评测延迟时把思考时间和可见 token 时间分开报。要流式、要交互就别开超大预算；要质量、可隔夜出数，把高预算题丢进批处理。
 
 ## 追问
 

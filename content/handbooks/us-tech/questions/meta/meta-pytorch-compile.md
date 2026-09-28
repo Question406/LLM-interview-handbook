@@ -42,7 +42,7 @@ Meta 是 PyTorch 的大本营，训练 / 平台岗会问 `torch.compile` 到底�
 - **更少的 kernel launch：** Transformer 一层里几十个小 kernel，launch 和 CPU 调度会占墙钟。Compile 后 launch 变少。
 - **少一层 Python：** eager 每步都在 Python 里走 autograd；编译后热路径在生成代码里。
 
-省的不是「矩阵乘 FLOPs 变少」。大 GEMM 已经被 cuBLAS / FlashAttention 吃满时，compile 的边际小。收益出在 **memory-bound 的小算子 + Python 开销**。Llama 式 decoder 层：RMSNorm、RoPE、残差、SwiGLU 的逐元素部分，往往比再抠一版大 GEMM 更值得 compile。
+省的是 launch 和融合，不是「矩阵乘 FLOPs 变少」。大 GEMM 已经被 cuBLAS / FlashAttention 吃满时，compile 的边际小。收益出在 memory-bound 的小算子和 Python 开销。Llama 式 decoder 层：RMSNorm、RoPE、残差、SwiGLU 的逐元素部分，往往比再抠一版大 GEMM 更值得 compile。
 
 `mode="reduce-overhead"` 会走 CUDA Graph，进一步砍 launch，但对 **静态 shape** 更苛刻。`max-autotune` 第一次更慢，换吞吐。面试说清：第一次迭代是编译时间，benchmark 要从 warmup 之后算。
 
@@ -50,11 +50,11 @@ Meta 是 PyTorch 的大本营，训练 / 平台岗会问 `torch.compile` 到底�
 
 ## 何时关掉，或缩小范围
 
-我会主动报这些关掉 / 降级的理由：
+关掉或缩小范围时，我会报这些理由：
 
 1. **调试数值：** NaN、和 eager 对不齐、要逐层打印。Compile 会融掉中间张量，diff 很难看。先 `torch.compile(..., disable=True)` 或对子模块不包。
 2. **动态 shape：** 每个新的 $(B,T)$ 都可能再编译。推荐训练变长序列、LLM 变长 pack，会变成编译风暴。处理：pad 到桶、`dynamic=True` 并接受一次更泛的图，或只 compile 固定 shape 的主干。
-3. **Graph break：** `.item()`、Python 侧 `if tensor>0`、打印、部分集合通信、自定义 autograd。Break 越多，越接近 eager，还多了框架税。`fullgraph=True` 用来**暴露** break，不是生产默认。
+3. **Graph break：** `.item()`、Python 侧 `if tensor>0`、打印、部分集合通信、自定义 autograd。Break 越多，越接近 eager，还多了框架税。`fullgraph=True` 用来暴露 break，生产别默认开。
 4. **稀疏 embedding / all-to-all：** DLRM 那种动态下标 + 不规则通信（`meta-dlrm`）很容易碎图。Compile MLP、别硬 compile 整张表 lookup。
 5. **短作业：** 编译时间几分钟，fine-tune 只跑几百 step，可能净亏。Pretrain 长跑才摊得平。
 
@@ -62,7 +62,7 @@ Meta 是 PyTorch 的大本营，训练 / 平台岗会问 `torch.compile` 到底�
 
 ## 现场怎么查
 
-我会说：打开 `TORCH_LOGS=graph_breaks` 或 `torch._dynamo.explain`，列出 break 点。再对比 eager / compile 的 kernel 数和 GPU 利用率。利用率已经 $95\%$ 且全是大 GEMM，compile 不是优先项。CPU 打满、GPU 空、小 kernel 密，才值得开。
+打开 `TORCH_LOGS=graph_breaks` 或 `torch._dynamo.explain`，列出 break 点。再对比 eager / compile 的 kernel 数和 GPU 利用率。利用率已经 $95\%$ 且全是大 GEMM，compile 排不上队。CPU 打满、GPU 空、小 kernel 密，才值得开。
 
 和 `nvidia-trillion-train` 的差别：那边是切并行轴；这边是单卡（或单 rank）上的图编译。两者叠：先并行正确，再 compile 热路径。
 

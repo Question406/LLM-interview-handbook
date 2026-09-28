@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易答「字符串看起来一样就能复用 KV」。Prefix cache 复用的是**已经算好的 K/V 页**，命中条件是 token 序列和计算语义一致，不是 UTF-8 一致。system prompt 改一个空格、chat template 不同、LoRA 不同，都应当 miss。错命中比 miss 更危险：静默用错前缀，输出错、还难查。实现上这些页通常挂在 PagedAttention 的 block table 上，见 `sys-pagedattention`。
+Prefix cache 复用的是已经算好的 K/V 页，命中条件是 token 序列和计算语义一致，不是 UTF-8 一致。system prompt 改一个空格、chat template 不同、LoRA 不同，都应当 miss。错命中比 miss 更危险：静默用错前缀，输出错、还难查。实现上这些页通常挂在 PagedAttention 的 block table 上，见 `sys-pagedattention`。
 
 ## 命中要对齐什么
 
@@ -31,7 +31,7 @@ Cache key 至少包含：token IDs（不是原文）、model / 版本、adapter�
 
 ## Agent 与多租户
 
-带工具的多轮：真正稳的公共前缀往往只有模板头，后面每轮 schema / 检索片段都变。要提高命中，把稳定段和易变段切开，稳定段才进 cache。slime 多轮还必须 session affinity，否则页在 A 机、请求打到 B 机，等于强制 miss，见 `slime-router-session`。
+带工具的多轮：稳的公共前缀往往只有模板头，后面每轮 schema / 检索片段都变。要提高命中，把稳定段和易变段切开，稳定段才进 cache。slime 多轮还必须 session affinity，否则页在 A 机、请求打到 B 机，等于强制 miss，见 `slime-router-session`。
 
 多租户要按 tenant / 安全边界隔离，防止 cache poisoning：用户 A 的前缀页被用户 B 命中。隔离和命中率是反着的，不能只报 hit rate。
 

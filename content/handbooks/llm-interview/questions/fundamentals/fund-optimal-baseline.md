@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-这块容易直接答成「$V$ 不准所以梯度有偏」。要拆成两件事：**当 baseline 减**，和 **当 bootstrap 替换未来回报**。前者不要求 $V$ 正确；后者才把 critic 的误差写进期望。Baseline 恒等式见 `fund-pg-baseline`：
+错法：「$V$ 不准所以梯度有偏」。要拆成两件事：当 baseline 减，和当 bootstrap 替换未来回报。前者不要求 $V$ 正确；后者才把 critic 的误差写进期望。Baseline 恒等式见 `fund-pg-baseline`：
 
 $$
 \mathbb{E}_{a\sim\pi(\cdot\mid s)}\big[\nabla_\theta\log\pi_\theta(a\mid s)\,b(s)\big]=b(s)\,\nabla_\theta\sum_a\pi_\theta(a\mid s)=0.
@@ -42,7 +42,7 @@ $$
 b^\star(s)=\mathbb{E}[G_t\mid s_t=s]=V^\pi(s)
 $$
 
-得到 advantage $A^\pi=Q^\pi-V^\pi$，在 $s$ 上均值为 0，去掉公共噪声。严格讲，最小化 $\mathrm{Var}(\nabla\log\pi\cdot(G-b(s)))$ 的 $b$ 是按 $\|\nabla\log\pi\|^2$ 加权的条件期望，不一定恰好等于 $V$；面试说 **$V$ 是自然 / 近优的 control variate** 即可，不必推加权式。实践上训一个 critic 去拟合 $V^\pi$，就是在估这条 baseline。
+得到 advantage $A^\pi=Q^\pi-V^\pi$，在 $s$ 上均值为 0，去掉公共噪声。严格讲，最小化 $\mathrm{Var}(\nabla\log\pi\cdot(G-b(s)))$ 的 $b$ 是按 $\|\nabla\log\pi\|^2$ 加权的条件期望，不一定恰好等于 $V$；面试说 $V$ 是自然 / 近优的 control variate 即可，不必推加权式。实践上训一个 critic 去拟合 $V^\pi$，就是在估这条 baseline。
 
 $b$ 一旦依赖当前动作，恒等式不再成立，除非再做 importance 或 leave-one-out 修正。这就是为什么不能把「这条回复自己的 reward」未经处理地当自己的 baseline，也是 RLOO 要留一只样本在组外的原因，见 `fund-finite-sample-baseline`。
 
@@ -50,8 +50,8 @@ $b$ 一旦依赖当前动作，恒等式不再成立，除非再做 importance �
 
 记 $\hat V$ 是任意函数（欠拟合、滞后、甚至常数 0）。
 
-- **MC advantage** $\hat A_t=G_t-\hat V(s_t)$。$\hat V(s_t)$ 仍只依赖 state，期望梯度不变。估错的代价是 **方差减得少**，甚至比不减更吵，不是偏差。
-- **$n$-step / GAE** 把 $G_t$ 里尚未发生的回报换成 $\gamma^n\hat V(s_{t+n})$。$\hat V\neq V^\pi$ 时，这段替换的期望不是真优势，这才是偏差。$\lambda\to 0$ 越信 $\hat V$，$\lambda\to 1$ 越退回 MC。见 `pt-gae`、`stepfun-gae-mc-td`。
+- MC advantage $\hat A_t=G_t-\hat V(s_t)$。$\hat V(s_t)$ 仍只依赖 state，期望梯度不变。估错的代价是方差减得少，甚至比不减更吵，不是偏差。
+- $n$-step / GAE 把 $G_t$ 里尚未发生的回报换成 $\gamma^n\hat V(s_{t+n})$。$\hat V\neq V^\pi$ 时，这段替换的期望不是真优势，这才是偏差。$\lambda\to 0$ 越信 $\hat V$，$\lambda\to 1$ 越退回 MC。见 `pt-gae`、`stepfun-gae-mc-td`。
 
 Actor-critic 常被追「那 critic 不准还能训吗」。答：能，PPO 天天这么干；你接受的是 GAE 的 bootstrap 偏差，换方差。$\hat V$ 系统性低估长思维链时，小 $\lambda$ 会把长思考的优势压掉。这是偏差已经主导，该加大 $\lambda$、换组相对、或先把 value 拟合终局，而不是加学习率。
 

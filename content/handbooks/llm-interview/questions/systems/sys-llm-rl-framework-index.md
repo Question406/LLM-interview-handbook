@@ -64,6 +64,8 @@ sources:
 - 为什么 RL Systems 比 SFT 复杂？
 - 字节 27 暑期：GRPO rollout 长尾拖低 GPU 利用率，工程上怎么解？
 
+代码路径（优势在哪算、clip 在哪个函数、归约怎么除）见「手写 PPO / GRPO / GSPO：TRL 和 verl 各改哪一段？」，以及 Miles / verl / TRL 三张拆解：Miles 里 GRPO / GSPO / PPO 的代码从 train.py 走到哪？、verl 里优势在 driver、clip 在 worker，代码怎么接？、TRL 的 GRPOTrainer 把变体都收进 loss_type，代码怎么分支？
+
 ## veRL × slime（两套都用过时）
 
 - 你用过 veRL 和 slime，两者差在哪、什么时候换？
@@ -88,4 +90,4 @@ sources:
 - 什么时候用 Unsloth 做 LLM RL？为什么进不了和 veRL / slime 同一张选型表？
 - 2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？
 
-我会按场景选：原型用 TRL 或 Unsloth；Ray 异构生成池用 OpenRLHF；FSDP / vLLM / DAPO 复现用 veRL；Megatron 透传 + SGLang router / PD / FP8 / 自定义 generate 用 slime；同步等长尾、要 fully async 再评估 AReaL。Ray 仍是调度层。Unsloth 为什么进不了多机控制面比较，见「什么时候用 Unsloth 做 LLM RL？为什么进不了和 veRL / slime 同一张选型表？」。
+我会按场景选：原型用 TRL 或 Unsloth；Ray 异构生成池用 OpenRLHF；FSDP / vLLM / DAPO 复现用 veRL；Megatron 透传 + SGLang router / PD / FP8 / 自定义 generate 用 slime；同步等长尾、要 fully async 再评估 AReaL。Ray 仍是调度层。Unsloth 为什么进不了多机控制面比较，见选型表那条。

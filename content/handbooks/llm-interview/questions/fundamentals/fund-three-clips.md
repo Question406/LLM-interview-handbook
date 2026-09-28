@@ -29,15 +29,15 @@ sources:
     type: secondary
 ---
 
-这块容易把 `clip_grad_norm_`、`adv.clamp`、PPO 的 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$ 说成同一种「为了稳定」。稳定都有，但 **无偏性掉在不同层**。PPO 目标本身见 `pt-ppo-clip`；本题只做对照表。
+错法：把 `clip_grad_norm_`、`adv.clamp`、PPO 的 $\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)$ 说成同一种「为了稳定」。稳定都有，但无偏性掉在不同层。PPO 目标本身见 `pt-ppo-clip`；本题只做对照表。
 
 ## 截的是谁
 
-**Gradient clip。** 反传之后若 $\|\hat g\|\gt \tau$，缩放到 $\tau$。$\hat g$ 作为 $\nabla J$ 的估计，在 clip **之前** 可以仍无偏；clip 之后这一 **步更新** 不再是那个无偏方向上的任意步长。它不改 $\hat A$，也不改 $\rho$。RNN / 大模型防爆炸的工程件，见 `fund-gradclip`。不要说「所以策略梯度有偏」，有偏的是被截断后的一步 $\Delta\theta$，不是你在用的 advantage 公式。
+Gradient clip。反传之后若 $\|\hat g\|\gt \tau$，缩放到 $\tau$。$\hat g$ 作为 $\nabla J$ 的估计，在 clip 之前可以仍无偏；clip 之后这一步更新不再是那个无偏方向上的任意步长。它不改 $\hat A$，也不改 $\rho$。RNN / 大模型防爆炸的工程件，见 `fund-gradclip`。不要说「所以策略梯度有偏」，有偏的是被截断后的一步 $\Delta\theta$，不是你在用的 advantage 公式。
 
-**Advantage / return / reward clip。** 如 $\hat A\leftarrow\mathrm{clip}(\hat A,-c,c)$，或把 RM 分打到 $[-1,1]$。这直接改乘在 $\nabla\log\pi$ 上的系数，期望变成 $\mathbb{E}[\nabla\log\pi\cdot\mathrm{clip}(A)]$，相对原 $J$ **有偏**。换来的是不被极端轨迹主导。Reward normalization / 除 $\sigma$ 是同一族的「改系数」，见 `fund-adv-norm-bias`。
+Advantage / return / reward clip。如 $\hat A\leftarrow\mathrm{clip}(\hat A,-c,c)$，或把 RM 分打到 $[-1,1]$。这直接改乘在 $\nabla\log\pi$ 上的系数，期望变成 $\mathbb{E}[\nabla\log\pi\cdot\mathrm{clip}(A)]$，相对原 $J$ 有偏。换来的是不被极端轨迹主导。Reward normalization / 除 $\sigma$ 是同一族的「改系数」，见 `fund-adv-norm-bias`。
 
-**Ratio clip（PPO / GRPO surrogate）。**
+Ratio clip（PPO / GRPO surrogate）。
 
 $$
 \min\big(\rho_t\hat A_t,\;\mathrm{clip}(\rho_t,1-\varepsilon,1+\varepsilon)\hat A_t\big).
@@ -49,7 +49,7 @@ $$
 
 三层可以同时开，有效更新可能被吃光：ratio 已经把大部分 token 打成 0，advantage 再夹紧，最后 grad clip 再砍一步。监控应对着看 clip fraction（ratio）、advantage 分位数、grad norm 触顶率。Ratio clip fraction 接近 1，先减 epoch / 更勤 rollout，而不是把 grad clip 再拧紧。
 
-Value clip（PPO 里对 $V$ target 相对旧 $V$ 的夹紧）是第四个：偏的是 **critic 回归目标**，不直接改 policy 的 $\nabla\log\pi$，但下一轮 GAE 会吃进被夹过的 $V$。不要和 ratio clip 混报成「PPO 的 clip」。
+Value clip（PPO 里对 $V$ target 相对旧 $V$ 的夹紧）是第四个：偏的是 critic 回归目标，不直接改 policy 的 $\nabla\log\pi$，但下一轮 GAE 会吃进被夹过的 $V$。不要和 ratio clip 混报成「PPO 的 clip」。
 
 ## 追问
 

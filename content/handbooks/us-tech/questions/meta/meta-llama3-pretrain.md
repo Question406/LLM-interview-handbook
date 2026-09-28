@@ -37,11 +37,11 @@ GenAI / Llama 预训练岗不会让你背「用了多少卡」。Herd 论文把 
 
 405B 在约 $15.6\mathrm{T}$ token、上下文 $8\mathrm{k}$ 上做因果 LM。FLOPs 论文写成约 $3.8\times 10^{25}$，相对 Llama 2 70B 大约 $50\times$。Llama 3 博客里 8B / 70B 写的是约 $15\mathrm{T}$，同一量级。小模型故意训得比 compute-optimal 更久，换的是同样推理预算下更强。
 
-数据 mix 用知识分类器 + 小模型 scaling law 扫，不是「爬到什么训什么」。论文对外的最终配比大约是：一般知识 $50\%$、数学与推理 $25\%$、代码 $17\%$、多语言 $8\%$。网上娱乐类被下调；训练中途还加过非英语、数学、更新的网页，并下调后来判定为低质的子集。现场别编「每个语言多少 T」。
+数据 mix 用知识分类器 + 小模型 scaling law 扫，不会「爬到什么训什么」。论文对外的最终配比大约是：一般知识 $50\%$、数学与推理 $25\%$、代码 $17\%$、多语言 $8\%$。网上娱乐类被下调；训练中途还加过非英语、数学、更新的网页，并下调后来判定为低质的子集。现场别编「每个语言多少 T」。
 
-过滤叙事是多层的：启发式、去重、模型打质量分。面试说「分类器决定 upsample / downsample」，比说「我们去了毒性」更像训过数据的人。tokenizer 压缩（英语大约 $3.17\to 3.94$ 字符/token）让同样 $T$ 读到的字变多，这是数据题也是算力题。
+过滤叙事是多层的：启发式、去重、模型打质量分。面试说「分类器决定 upsample / downsample」，比只说「我们去了毒性」更像训过数据的人。tokenizer 压缩（英语大约 $3.17\to 3.94$ 字符/token）让同样 $T$ 读到的字变多，这是数据题也是算力题。
 
-实现上这段就是标准 packed causal LM：文档拼进 $8\mathrm{k}$，next-token CE。文档边界和 mask 的坑见 `meta-pack-seq`。GQA 从 8B 起就在，不是 70B 才有，见 `meta-llama-gqa`。
+实现上这段就是标准 packed causal LM：文档拼进 $8\mathrm{k}$，next-token CE。文档边界和 mask 的坑见 `meta-pack-seq`。GQA 从 8B 起就在，见 `meta-llama-gqa`。
 
 ## 第二段：长窗必须后置，分六段验收
 
@@ -50,15 +50,15 @@ GenAI / Llama 预训练岗不会让你背「用了多少卡」。Herd 论文把 
 1. 短上下文评测完全恢复；
 2. 该长度上 needle-in-a-haystack 全对。
 
-只报 haystack、短任务还没回来，就是过拟合到长窗相位。RoPE 侧公开做法是提高 `rope_theta` 并在目标长度上继续训，不是推理时改 `max_position_embeddings`。社区 NTK / YaRN 是另一条旋钮，见 `meta-yarn-ntk`。
+只报 haystack、短任务还没回来，就是过拟合到长窗相位。RoPE 侧公开做法是提高 `rope_theta` 并在目标长度上继续训；别只在推理时改 `max_position_embeddings`。社区 NTK / YaRN 是另一条旋钮，见 `meta-yarn-ntk`。
 
-长窗阶段仍是预训练目标，不是 SFT。序列变长后，激活显存和 attention 墙钟一起涨，训练栈要跟着改 packing、checkpoint、wrap 粒度，见 `meta-fsdp-llm`。
+长窗阶段仍是预训练目标，还没进 SFT。序列变长后，激活显存和 attention 墙钟一起涨，训练栈要跟着改 packing、checkpoint、wrap 粒度，见 `meta-fsdp-llm`。
 
 ## 第三段：退火不是「再训 800B」
 
 最后 **$40\mathrm{M}$ token**（注意是 M 不是 B）：学习率线性收到 $0$，窗仍是 $128\mathrm{k}$，数据改成上采样非常高质量的来源，尤其代码和数学。最后对退火期间的 checkpoint 做 Polyak 平均，得到预训练权重。
 
-退火还被他们拿来当**小数据集试金石**：在训到一半的 8B 上，用 $40\mathrm{B}$ token 把学习率收到 $0$，新数据占 $30\%$、原 mix 占 $70\%$，看值不值得进正餐。这比每次都做 scaling law 便宜。
+退火还被他们拿来当小数据集试金石：在训到一半的 8B 上，用 $40\mathrm{B}$ token 把学习率收到 $0$，新数据占 $30\%$、原 mix 占 $70\%$，看值不值得进正餐。这比每次都做 scaling law 便宜。
 
 错法：把 $800\mathrm{B}$ 长窗和 $40\mathrm{M}$ 退火混成「末期高质量长文本」。一个改长度，一个改 LR 和 mix。另一个错法：以为退火就是把 GSM8k / MATH **训练集**加进去。论文明确说正式退火不含常用 benchmark 训练集会；他们按 OpenAI 的做法做过对照：8B 在 GSM8k / MATH 验证集上大约 $+24\%$ / $+6.4\%$，405B 上几乎没涨。大模型不靠背训练集。评测污染见 `meta-llama-eval`。
 

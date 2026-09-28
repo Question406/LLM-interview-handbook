@@ -41,7 +41,7 @@ Llama / GenAI 岗很少问「BPE 的全称」。更常见的是：两代 Llama �
 
 Llama 2（沿用 Llama 1）：SentencePiece 上的 BPE，词表 $32000$，带 byte fallback。空格是独立符号（常见写法是下划线块），整句送进去，没有 GPT-2 那种正则预分词。OOV 靠字节回退，不会 unk 炸掉，但多语言和代码会切得很碎。
 
-Llama 3：Herd 论文写明，词表约 $128\mathrm{K}$，底表来自 tiktoken 的约 $100\mathrm{K}$ token，再加约 $28\mathrm{K}$ 非英语 token。实现是字节级 BPE：**先按正则切成片段（字母、数字、标点），再按冻结的 merge 优先级合并**。这和 GPT-4 系同一条族谱，不是把 SentencePiece 模型换个文件名。Llama 3 Instruct 还有一套管道符包裹的 special token（`begin_of_text`、`eot_id`、header），chat 模板必须和训练时一致。
+Llama 3：Herd 论文写明，词表约 $128\mathrm{K}$，底表来自 tiktoken 的约 $100\mathrm{K}$ token，再加约 $28\mathrm{K}$ 非英语 token。实现是字节级 BPE：先按正则切成片段（字母、数字、标点），再按冻结的 merge 优先级合并。这和 GPT-4 系同一条族谱；别当成 SentencePiece 换了个文件名。Llama 3 Instruct 还有一套管道符包裹的 special token（`begin_of_text`、`eot_id`、header），chat 模板必须和训练时一致。
 
 现场别说成「Llama 3 改用 Unigram」或「SentencePiece 不能做 BPE」。SentencePiece 是训练/编码框架，Llama 2 选的是里面的 BPE；Llama 3 换的是库、预分词和词表规模。
 
@@ -63,13 +63,13 @@ tiktoken 风格 encode 的错法和 Anthropic 白板同一类：上线没有语�
 - `vocab_size` 必须等于 embedding 行数；
 - 特殊 token 的 id 冻结，chat 模板多一个或少一个 bos，位置编码会整段错位。
 
-两代不能互换：用 Llama 2 的句长去估 Llama 3 的 8k/128k 窗口，会系统性偏长。继续预训练如果换词表，要扩矩阵并处理新 id 的初始化，不是改配置文件。
+两代不能互换：用 Llama 2 的句长去估 Llama 3 的 8k/128k 窗口，会系统性偏长。继续预训练如果换词表，要扩矩阵并处理新 id 的初始化，改配置文件不够。
 
 白板如果被要求对比 encode，我会先画预分词：tiktoken 族先用正则把数字、空格、字母切开，再对每个片段做 BPE；SentencePiece Llama 2 更接近「整句一条链」。不要在现场发明 Llama 3 的正则原文，说「和 GPT-4 同类、以仓库里的 tokenizer 文件为准」就够。
 
 ## 追问
 
 - **为什么加 28k 非英语 token？** 论文说压缩和下游都有收益，且英语切分基本不受影响。面试答「多语言 fertility」，不要编造每个语言加了多少。
-- **数字怎么切？** tiktoken 族常常把数字切得很细（一位一块很常见）。算术和表格任务会变长；这是词表税，不是模型「不会数数」的唯一原因。
-- **和 128k 上下文是一件事吗？** 不是。词表压缩改变的是同样字符占用的 $T$；长上下文是注意力能看多远，见 `meta-llama-rope`。两者相乘：更肥的 token 在同样 128k 窗口里能塞更多字。
-- **能把 Llama 2 权重接到 Llama 3 tokenizer 上吗？** 不能直接接。id 空间变了，embedding 行对不上。要扩词表并重新训或做 embedding 对齐，这是另一个项目，不是 tokenizer 配置开关。
+- **数字怎么切？** tiktoken 族常常把数字切得很细（一位一块很常见）。算术和表格任务会变长；这是词表税，模型「不会数数」只是其中一种读法。
+- **和 128k 上下文是一件事吗？** 词表压缩改变的是同样字符占用的 $T$；长上下文是注意力能看多远，见 `meta-llama-rope`。两者相乘：更肥的 token 在同样 128k 窗口里能塞更多字。
+- **能把 Llama 2 权重接到 Llama 3 tokenizer 上吗？** 不能直接接。id 空间变了，embedding 行对不上。要扩词表并重新训或做 embedding 对齐，这是另一个项目。

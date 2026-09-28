@@ -32,7 +32,7 @@ sources:
     type: secondary
 ---
 
-`google-tpu-llm` 讲训练期 MXU 和浅流水线。这题把 **生成期** 拆开：一步 query 长度 $T_q=1$ 时算力单元在饿，HBM 在喂历史 KV。Pope 等人在 TPU v4 上服务 PaLM 540B 的公开账是：大 batch 处理输入 token 可以很高 MFU（他们报到约 76%）；低延迟逐步生成即使量化权重，利用率也掉一截。Gemini serving / JAX 推理岗要听这本账，不是背 NVLink 必须等于 8。Mesh 轴见 `google-tpu-mesh`。
+`google-tpu-llm` 讲训练期 MXU 和浅流水线。这题把 **生成期** 拆开：一步 query 长度 $T_q=1$ 时算力单元在饿，HBM 在喂历史 KV。Pope 等人在 TPU v4 上服务 PaLM 540B 的公开账是：大 batch 处理输入 token 可以很高 MFU（他们报到约 76%）；低延迟逐步生成即使量化权重，利用率也掉一截。Gemini serving / JAX 推理岗要听这本账；NVLink 必须等于 8 那套口诀在这不对口。Mesh 轴见 `google-tpu-mesh`。
 
 ## 为什么 MXU 吃不满
 
@@ -52,7 +52,7 @@ $$
 
 $T$ 从 8k 到 1M，线性涨两个数量级，窗口叙事见 `google-gemini-longctx`。MXU 就算吃饱了 FFN，注意力仍可能在等 HBM。GQA / MQA 把 $H_{\mathrm{kv}}$ 砍下来，是 Google 推理论文的一等杠杆，见 `google-gqa-mqa`。量化 cache、前缀缓存、多 query 共享 KV，全是打这条带宽，不是打 FLOPs 公式。
 
-Splash / Pallas 式注意力在 prefill 上避免物化 $[T,T]$，见 `google-flash-attention`。Decode 的主要 IO 已经是读 KV，再融一次 softmax 红利有限。别把 Flash 说成 decode 的银弹。
+Splash / Pallas 式注意力在 prefill 上避免物化 $[T,T]$，见 `google-flash-attention`。Decode 的主要 IO 已经是读 KV，再融一次 softmax 红利有限。Flash 解决不了 decode 主 IO 已经是读 KV 这件事。
 
 口算一张卡：TPU v4 公开量级大约每芯片 32 GiB HBM、约 1.2 TB/s 带宽、bf16 矩阵算力约 275 TFLOP。单请求百万 token 的 KV 可以到百 GB 量级（随 $L,H_{\mathrm{kv}}$），根本塞不下，更谈不上 MXU 利用率。并发变成「HBM 里能活几段 cache」。
 
@@ -65,7 +65,7 @@ Splash / Pallas 式注意力在 prefill 上避免物化 $[T,T]$，见 `google-fl
 | 逐步开销 | 编译图静态，host 启动也要摊 | CUDA graph / inflight batch 减 launch |
 | 长 $T$ | MQA/GQA + 切 mesh | 同；再加分页 KV 防碎片 |
 
-类比停在「decode = 小 $M$ 的 GEMM + 线性读 KV」。错的类比是把 DGX 的 kernel 名搬过来当 TPU 答案，或说 TPU 不能做投机——验证步是标准前向，TPU 友好，难的是草稿模型和主模型都要占 MXU。
+类比停在「decode = 小 $M$ 的 GEMM + 线性读 KV」。错的类比是把 DGX 的 kernel 名搬过来当 TPU 答案，或说 TPU 不能做投机。验证步是标准前向，TPU 友好；难的是草稿模型和主模型都要占 MXU。
 
 MoE decode 还要降专家并行，见 `google-moe-routing`。专家过多、token 太少，all-to-all 比 MXU 空转更早爆。
 

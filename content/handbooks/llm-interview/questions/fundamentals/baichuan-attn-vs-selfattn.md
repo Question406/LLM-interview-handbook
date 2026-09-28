@@ -34,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“你知道最早的 attention 做机器翻译，它的注意力怎么得的吗？”**；**“这个 attention 和 self attention 的 QKV 怎么来的？”**
 
-这块容易直接答成：所有注意力都画成 Transformer 的 $Q,K,V$ 三投影。Bahdanau / Luong 时代的 seq2seq **没有**「三个同型矩阵都乘在同一条序列上」。我会先画一张来源表，再写公式。缩放点积见 `meituan-attention-scale-dk`；矩阵形状见 `ali-attention-math`；手写实现见 `pdd-attention-handwrite`。
+错法：所有注意力都画成 Transformer 的 $Q,K,V$ 三投影。Bahdanau / Luong 时代的 seq2seq 没有「三个同型矩阵都乘在同一条序列上」。先画一张来源表，再写公式。缩放点积见 `meituan-attention-scale-dk`；矩阵形状见 `ali-attention-math`；手写实现见 `pdd-attention-handwrite`。
 
 ## 经典对齐注意力
 
@@ -52,7 +52,7 @@ $$
 
 Transformer 对同一矩阵 $X$ 做 $Q=XW_Q$、$K=XW_K$、$V=XW_V$，再 $\mathrm{softmax}(QK^\top/\sqrt{d_k})V$。Encoder 自注意力无因果 mask；Decoder 自注意力加因果 mask，防止看见未来目标词。Encoder-Decoder 的 cross-attention：$Q$ 来自目标侧（解码器层输出），$K,V$ 来自源侧（编码器输出）。Decoder 一层里通常是「masked self-attn → cross-attn → FFN」。
 
-我会这么记：机器翻译对齐就是解码状态去查源端记忆；self-attn 是序列内部互相查；cross-attn 是目标查源。不要把 2014 的加性注意力硬说成 2017 的 scaled dot-product。
+机器翻译对齐就是解码状态去查源端记忆；self-attn 是序列内部互相查；cross-attn 是目标查源。不要把 2014 的加性注意力硬说成 2017 的 scaled dot-product。
 
 ## 面试画一张来源表就够用
 
@@ -65,7 +65,7 @@ Transformer 对同一矩阵 $X$ 做 $Q=XW_Q$、$K=XW_K$、$V=XW_V$，再 $\mathr
 
 「最早做机器翻译的 attention」指的是上表第一行：用对齐权重读源端记忆，缓解固定向量瓶颈。当时常见实现是加性或点积，不一定出现名为 $W_Q,W_K,W_V$ 的三个同型矩阵。Self-attention 把「查别人」改成「序列内部互查」，这才需要三套投影把同一 $X$ 映射到不同空间，否则 $Q$ 和 $K$ 用同一向量，表达力受限。Cross-attention 则是把 MT 对齐重新嵌进 Transformer 层里：目标侧发问，源侧提供记忆。
 
-缩放 $\sqrt{d_k}$ 是点积注意力的数值问题，加性注意力不靠它，不要在 Bahdanau 那一问里硬塞进去（留给 `meituan-attention-scale-dk`）。Decoder 因果 mask 的原因也很具体：teacher forcing 时未来词已在输入里，不 mask 等于作弊。要是追问「QKV 到底是向量还是矩阵」：角色是向量，$W_Q,W_K,W_V$ 是把隐状态映到该角色的线性层；经典 MT 里 query 常常就是 $s_t$ 本身或经过一层 $W_s$，不一定三套同型。Self-attention 为了让同一位置既当提问者又当被查对象，才需要三套投影把空间拆开。画完表再写一行公式，比背 2014 与 2017 两个年份更稳。Encoder-only 没有 cross，Decoder-only 把源和目标拼进同一因果序列，机制不同但 QKV 来源规则不变。
+缩放 $\sqrt{d_k}$ 是点积注意力的数值问题，加性注意力不靠它，不要在 Bahdanau 那一问里硬塞进去（留给 `meituan-attention-scale-dk`）。Decoder 因果 mask 的原因也很具体：teacher forcing 时未来词已在输入里，不 mask 等于作弊。要是追问「QKV 到底是向量还是矩阵」：角色是向量，$W_Q,W_K,W_V$ 是把隐状态映到该角色的线性层；经典 MT 里 query 常常就是 $s_t$ 本身或经过一层 $W_s$，不一定三套同型。Self-attention 为了让同一位置既当提问者又当被查对象，才需要三套投影把空间拆开。画完表再写一行公式，比背 2014 与 2017 两个年份更稳。
 
 ## 追问
 

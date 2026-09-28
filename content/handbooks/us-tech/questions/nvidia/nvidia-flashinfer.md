@@ -46,9 +46,9 @@ Cascade attention：共享 system prompt 的页只算一次，再和各请求私
 
 ## Append KV 为什么单独成核
 
-Decode 一步要：(1) 读历史 KV 做 attention；(2) 把本步新的 $K,V$ 写进当前页的空槽。朴素实现是两个 kernel，中间还夹 RoPE。页满了还要让调度器先从 free list 拿新页，**append 假定空间已经留好**——文档写得很死：`kv_indices` / `indptr` / `kv_last_page_len` 必须已经计入新 token。
+Decode 一步要：(1) 读历史 KV 做 attention；(2) 把本步新的 $K,V$ 写进当前页的空槽。朴素实现是两个 kernel，中间还夹 RoPE。页满了还要让调度器先从 free list 拿新页，**append 假定空间已经留好**（文档写得很死：`kv_indices` / `indptr` / `kv_last_page_len` 必须已经计入新 token）。
 
-形状（NHD）：页池 $[P_{\max}, B_{\mathrm{page}}, H_{\mathrm{kv}}, d_h]$，一次 append 的 $K_{\mathrm{new}}$ 是 $[N_{\mathrm{append}}, H_{\mathrm{kv}}, d_h]$。$N_{\mathrm{append}}$ 在纯 decode 里等于瞬时 batch，在 chunked prefill 里等于这一块的 token 数。核做的是间接写：按 `(batch_idx, position)` 算落在哪一页的哪一槽。和 attention 融，能少一次 HBM round-trip；vLLM 后来接的 RoPE + paged append fusion 就是这条。别把 append 说成「PagedAttention 的一部分公式」——公式仍是 $QK^{\top}V$，append 是 cache 的 write path。
+形状（NHD）：页池 $[P_{\max}, B_{\mathrm{page}}, H_{\mathrm{kv}}, d_h]$，一次 append 的 $K_{\mathrm{new}}$ 是 $[N_{\mathrm{append}}, H_{\mathrm{kv}}, d_h]$。$N_{\mathrm{append}}$ 在纯 decode 里等于瞬时 batch，在 chunked prefill 里等于这一块的 token 数。核做的是间接写：按 `(batch_idx, position)` 算落在哪一页的哪一槽。和 attention 融，能少一次 HBM round-trip；vLLM 后来接的 RoPE + paged append fusion 就是这条。别把 append 说成「PagedAttention 的一部分公式」。公式仍是 $QK^{\top}V$，append 是 cache 的 write path。
 
 RoPE 必须在写入页之前做：cache 里存的是旋转后的 $K$，下一步 decode 只读不转。融合核的常见顺序是 QKV 投影 → RoPE → 写 K/V 进 page → 用同一份 $Q$ 打 paged attention。拆开写会多一次对页池的 store/load；融错顺序会把未旋转的 $K$ 留下，后面整段上下文的分数全歪。
 

@@ -58,7 +58,7 @@ Google Gemini、OpenAI 的图文模型、Apple / Meta 的端侧视觉都会问�
 
 评测：攻击成功率按通道报（纯文、纯图、图文组合、截屏 UI），加上误杀率。不要只报一张「安全分」。生成侧仍要输出过滤，因为视觉绕过成功后模型会在文本里把有害内容写出来。
 
-公司差：Google / OpenAI 云端可以叠专用视觉分类器和 OCR；Apple 端侧要在延迟和隐私里塞进轻量层，过不了的再上 Private Cloud。Meta 还要考虑 UGC 图和模型输出两套管道。白板先画「文本 moderation 看不见像素」，再画动作层硬闸——评委听的是通道，不是又一个分类器名。
+公司差：Google / OpenAI 云端可以叠专用视觉分类器和 OCR；Apple 端侧要在延迟和隐私里塞进轻量层，过不了的再上 Private Cloud。Meta 还要考虑 UGC 图和模型输出两套管道。白板先画「文本 moderation 看不见像素」，再画动作层硬闸：评委听的是通道，不是又一个分类器名。
 
 训练侧：把图文有害当 RFT grader 或 RM 的一维，会和 helpful 打架，见 `align-safety-tax`。能规则的（哈希、已知违法）不要交给 RL。
 

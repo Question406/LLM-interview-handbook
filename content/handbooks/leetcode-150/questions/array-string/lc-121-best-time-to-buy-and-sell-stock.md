@@ -32,7 +32,7 @@ sources:
 
 卖出日一旦定了，最优买入就是它之前的最低价。我从左扫，维护 `min_price`，每天算 `prices[i] - min_price` 更新答案，再把当天纳入最低价。
 
-不要两层循环枚举买卖日。白板我会先点明「只交易一次」，再跟 LC 122（可多次）分开。
+不要两层循环枚举买卖日。开口先说「只交易一次」，跟 LC 122（可多次）分开。
 
 ## 参考代码
 
@@ -78,7 +78,7 @@ def maxProfit_ii(prices):
     return ans
 ```
 
-- **冷冻期 / 手续费 / 最多 $k$ 次？** 都走状态机。冷冻期（LC 309）：卖出后必须空仓一天。维护 `hold`（持有）、`sold`（今日卖出）、`rest`（空仓且可买）。每天 `hold = max(hold, rest - p)`，新的 `sold` 为旧 `hold + p`，`rest = max(rest, sold)`。时间 $O(n)$，额外空间 $O(1)$。手续费（LC 714）：无限次但每笔卖出扣 `fee`，写成 `cash = max(cash, hold + p - fee)` 就行，时间 $O(n)$。最多 $k$ 次（LC 188）：`buy[t]` / `sell[t]` 表示第 $t$ 笔买入成本与卖出利润，每天对 $t=1..k$ 更新；若 $k \ge n/2$，一笔至少占两天，限制失效，退化为 122。时间 $O(nk)$，额外空间 $O(k)$。独立卡见 `lc-188-best-time-to-buy-and-sell-stock-iv`。这块容易栽：冷冻期是「卖完隔一天」，不是「买完隔一天」。
+- **冷冻期 / 手续费 / 最多 $k$ 次？** 都走状态机。冷冻期（LC 309）：卖出后必须空仓一天。维护 `hold`（持有）、`sold`（今日卖出）、`rest`（空仓且可买）。每天 `hold = max(hold, rest - p)`，新的 `sold` 为旧 `hold + p`，`rest = max(rest, sold)`。时间 $O(n)$，额外空间 $O(1)$。手续费（LC 714）：无限次但每笔卖出扣 `fee`，写成 `cash = max(cash, hold + p - fee)` 就行，时间 $O(n)$。最多 $k$ 次（LC 188）：`buy[t]` / `sell[t]` 表示第 $t$ 笔买入成本与卖出利润，每天对 $t=1..k$ 更新；若 $k \ge n/2$，一笔至少占两天，限制失效，退化为 122。时间 $O(nk)$，额外空间 $O(k)$。独立卡见 `lc-188-best-time-to-buy-and-sell-stock-iv`。这块容易栽：冷冻期约束的是卖完之后隔一天，买完不用隔。
 
 ```python
 def maxProfit_cooldown(prices):

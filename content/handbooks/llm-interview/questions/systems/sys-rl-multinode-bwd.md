@@ -46,9 +46,7 @@ Ref 只前向。RM / verifier 在奖励进程里，更不会进 Actor 的 autogr
 - **归约粒度。** 先各卡对序列平均再 AVG，长回复被摊薄；先对有效 token 求和再除总 token，才是 token-mean。DAPO / 百度那问见 `baidu-grpo-loss-agg`。
 - **动态 batch。** 各 rank 有效 token 数不同，必须按 token 计数同步，不能假定每卡 $B$ 相同，见 `sys-verl-dynamic-bsz`。
 
-HybridEngine / slime colocate 改变的是 **同一组卡在 generate 和 train 之间 reshard**，不是发明一种新的 backward。权重推回引擎是参数广播或 delta，见 `infra-rl-weight-sync`，也不走 backward 图。
-
-现场口令：反传只发生在 Actor 训练图上；通信仍是 DP/TP/PP/EP 那张表；多出来的全是 loss 怎么平均、哪些 tensor 不许进图。
+HybridEngine / slime colocate 改变的是同一组卡在 generate 和 train 之间 reshard，不是发明一种新的 backward。权重推回引擎是参数广播或 delta，见 `infra-rl-weight-sync`，也不走 backward 图。反传落在 Actor 训练图上；通信仍是 DP/TP/PP/EP；多出来的是 loss 怎么平均、哪些 tensor 不许进图。
 
 ## 追问
 

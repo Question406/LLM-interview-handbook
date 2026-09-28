@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-MCP sampling 允许 server 借用 client 侧模型。若顺手把用户记忆、全部工具和身份也借出去，server 就完成了权限升级：它自己本不能发邮件、不能读本地文件，却能让 client 模型去调。无限递归则同时是费用攻击。sampling 是受限 capability，不是把 Agent 宿主交给 server。规范要求 host 控制采样，而不是 server 自助循环。没有预算的「自主 loop」既是成本问题，也是升级路径。
+MCP sampling 允许 server 借用 client 侧模型。若顺手把用户记忆、全部工具和身份也借出去，server 就完成了权限升级：它自己本不能发邮件、不能读本地文件，却能让 client 模型去调。无限递归则同时是费用攻击。sampling 是受限 capability，不是把 Agent 宿主交给 server。规范要求 host 控制采样，而不是 server 自助循环。没有预算的自主 loop 既是成本问题，也是升级路径。
 
 ## 最小转交
 
@@ -31,11 +31,9 @@ Host 对每次 sampling 显示或记录来源 server、prompt 摘要，用户可
 
 ## 怎么测
 
-对抗任务：server 诱导模型调用未授权工具；把隐藏 prompt 塞进 sampling；深度递归烧 token；把 tool 结果和 request ID 错配。成功标准是：server 拿不到超出本次授权的模型、记忆和工具，且费用被封顶。评测上能刷的是：demo 默认允许全部工具；不展示 sampling prompt；失败只表现为账单异常却无审计。sampling 是带预算、带可见 prompt、带工具白名单的借用，不是把 client Agent 出租给 server。Host 侧默认：prompt 可见、depth 为 $1$、工具空集或只读、费用封顶、副作用再确认。评测把「隐藏 prompt + 未授权发信 + 无限递归」当必过项。现场能指出 server 在采样里多拿到了什么，就是权限模型。费用和深度超限必须是可测试的拒绝，而不是账单上才发现。
+对抗任务：server 诱导模型调用未授权工具；把隐藏 prompt 塞进 sampling；深度递归烧 token；把 tool 结果和 request ID 错配。成功标准是：server 拿不到超出本次授权的模型、记忆和工具，且费用被封顶。能刷的点：demo 默认允许全部工具；不展示 sampling prompt；失败只表现为账单异常却无审计。Host 侧默认：prompt 可见、depth 为 $1$、工具空集或只读、费用封顶、副作用再确认。评测把「隐藏 prompt + 未授权发信 + 无限递归」当必过项。费用和深度超限必须是可测试的拒绝，而不是账单上才发现。
 
 采样请求进政策引擎：来源 server、prompt hash、允许工具、depth、费用上限都是输入。超限返回明确错误给 server，同时通知用户。没有这层闸门，sampling 就是把 client 能力裸租出去。
-
-sampling 是租用模型，不是出租宿主。Prompt 可见、工具白名单、depth 与费用封顶、副作用再确认。能指出 server 多拿到的那一项，权限模型就清楚了。
 
 ## 追问
 

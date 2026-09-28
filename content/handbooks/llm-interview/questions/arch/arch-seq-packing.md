@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易只说「拼在一起提高 GPU 利用率」，却不提 mask。例如 max length $4096$，四条 $800$-token 样本各自 pad 会浪费约八成位置；packing 后可以放进同一 sequence。若不做隔离，样本 A 的 token 会看见样本 B，因果 LM 变成串味的跨文档注意力，loss 数字好看、任务却脏。
+错法：只说「拼在一起提高 GPU 利用率」，却不提 mask。例如 max length $4096$，四条 $800$-token 样本各自 pad 会浪费约八成位置；packing 后可以放进同一 sequence。若不做隔离，样本 A 的 token 会看见样本 B，因果 LM 变成串味的跨文档注意力，loss 数字好看、任务却脏。
 
 ## 必须对齐的三张 mask
 
@@ -38,7 +38,7 @@ RoPE 的 position id 可每段从 $0$ 重置，或沿 packed 序列连续编号�
 
 ## 吞吐涨了，统计口径会变
 
-Packing 提高有效 token / 步，但「一个 batch 有多少样本」和「有多少 token」不再正比。梯度按 token 平均还是按 sequence 平均，会改变短样本权重。课程学习、温度、MoE 的 aux loss 若按 batch 内专家频率算，packed 后 token 来源更杂，负载统计要按真实 token 而不是按「条数」。SwiGLU FFN 的算力跟有效 token 走，padding 少了，MFU 才上去。
+Packing 提高有效 token / 步，但「一个 batch 有多少样本」和「有多少 token」不再正比。梯度按 token 平均还是按 sequence 平均，会改变短样本权重。课程学习、温度、MoE 的 aux loss 若按 batch 内专家频率算，packed 后 token 来源更杂，负载统计要按真实 token，不能按「条数」。SwiGLU FFN 的算力跟有效 token 走，padding 少了，MFU 才上去。
 
 实现上优先用已有 varlen attention，而不是自己拼一个容易漏的 dense mask。评测阶段通常不 packing，避免和线上单请求分布错位。
 

@@ -19,7 +19,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成「用了 LLM」或「调了一次 function calling」就等于 Agent。单次 LLM 打分更像一次性推理 / 判别；Agent 强调多步决策、与环境交互、状态更新与终止条件。差别在控制回路，不在是否调用了一次模型。面试先和面试官对齐定义，避免各说各的。规划与状态机见 `ali-modular-agent-plan`，Skill / Memory / RAG 也不等于 Agent 回路，见 `ali-skill-memory-rag`。
+错法：「用了 LLM」或「调了一次 function calling」就等于 Agent。单次 LLM 打分更像一次性推理 / 判别；Agent 强调多步决策、与环境交互、状态更新与终止条件。差别在控制回路，不在是否调用了一次模型。面试先和面试官对齐定义，避免各说各的。规划与状态机见 `ali-modular-agent-plan`，Skill / Memory / RAG 也不等于 Agent 回路，见 `ali-skill-memory-rag`。
 
 ## 差别在控制回路
 
@@ -27,7 +27,7 @@ sources:
 
 ## 一次工具也不自动等于 Agent
 
-带一次检索的打分（先搜政策再打「是否可退」）有环境反馈，但若没有多步决策和终止策略，仍更接近工具增强判别。关键看有没有循环：是否根据新观察改变下一步，是否可能再问、再调、再停。把一次 FC 也叫做 Agent，后续安全评审会漏掉循环里的重复执行和权限升级。打分器通常只读，Agent 可能对同一订单调两次退款。权限与 HITL 应按「会不会形成回路」升级，见 `ali-guardrail`、`ali-hitl-risk`。
+带一次检索的打分（先搜政策再打「是否可退」）有环境反馈，但若没有多步决策和终止策略，仍更接近工具增强判别。看有没有循环：是否根据新观察改变下一步，是否可能再问、再调、再停。把一次 FC 也叫做 Agent，后续安全评审会漏掉循环里的重复执行和权限升级。打分器通常只读，Agent 可能对同一订单调两次退款。权限与 HITL 应按「会不会形成回路」升级，见 `ali-guardrail`、`ali-hitl-risk`。
 
 ## 对齐定义再谈权限
 

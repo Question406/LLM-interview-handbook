@@ -21,29 +21,27 @@ sources:
     type: legacy-reference
 ---
 
-在线 TD / 逐步 critic 只用 $s_t$ 附近的信息估 $A_t$，长工具链里信号极噪。Hindsight 的直觉：episode 结束后我们已有完整未来轨迹和 outcome，可以用「后来发生了什么」回过头判断某步是否关键。这块容易直接答成把事后叙事当成因果。judge 很容易编一个好听的贡献故事。本题讲的是事后重估中间步，和 HER 把失败轨迹 relabel 成「假如目标是已达状态」不是同一件事，对照 `arl-sparse-reward-exploration`。
+错法：把事后叙事当成因果。judge 很容易编一个好听的贡献故事。在线 TD / 逐步 critic 只用 $s_t$ 附近的信息估 $A_t$，长工具链里信号极噪。Hindsight 的直觉：episode 结束后我们已有完整未来轨迹和 outcome，可以用「后来发生了什么」回过头判断某步是否关键。本题讲的是事后重估中间步，和 HER 把失败轨迹 relabel 成「假如目标是已达状态」不是同一件事，对照 `arl-sparse-reward-exploration`。
 
 ## 事后看见未来，才能认出关键取证步
 
 例子：第 5 步打开一份配置文件，当时像普通浏览；第 20 步才发现 root cause 就在该文件。当时的 $r_5=0$，在线 critic 几乎不会给高分；hindsight evaluator 看到完整证据链，可以把这一步标成关键 evidence-gathering。实现常见三条：
 
-- **事后 LLM / 规则 critic：** 读完整 trace，给决策步打贡献。便宜，但会合理化。
-- **Future-conditioned value：** 用真实后续回报或 $V(s_{t+k})$ 回填，相当于用Monte Carlo 回看，而不是一步 bootstrap。
-- **反事实分支：** 在 $s_t$ 换成别的 action 再滚，看终局是否变。贵，但更接近「这步是否改变了成功概率」。
+- 事后 LLM / 规则 critic：读完整 trace，给决策步打贡献。便宜，但会合理化。
+- Future-conditioned value：用真实后续回报或 $V(s_{t+k})$ 回填，相当于用 Monte Carlo 回看，而不是一步 bootstrap。
+- 反事实分支：在 $s_t$ 换成别的 action 再滚，看终局是否变。贵，但更接近「这步是否改变了成功概率」。
 
-Hindsight 回答的问题不是「这步看起来对不对」，而是「没有这步，后面还会不会成功」。这和 `arl-credit` 要的因果边界一致：credit estimator 必须区分「状态本来就容易」和「这个动作提高了成功概率」。
+Hindsight 要回答的是「没有这步，后面还会不会成功」，不是「这步看起来对不对」。这和 `arl-credit` 要的因果边界一致：credit estimator 必须区分「状态本来就容易」和「这个动作提高了成功概率」。
 
 ## 必须用干预验证，不能只听事后作文
 
 风险是 hindsight judge 自己 hallucination：把巧合成功归功于一句漂亮 Thought，或把真正关键的工具调用说成废话。验证协议：
 
-- 在同一 $s_t$ **删除或替换** 该 action，重放后续或采 counterfactual rollout；outcome 显著变化，credit 才可信。
+- 在同一 $s_t$ 删除或替换该 action，重放后续或采 counterfactual rollout；outcome 显著变化，credit 才可信。
 - 只对高杠杆步深评：熵高、value 不确定、轨迹此后语义大变的 decision state。对每步都做事后 LLM 既贵又容易全面编故事。
 - 事后分必须能对照终局 oracle。相关掉了就关 judge，回到稀疏 outcome。
 
 成本上不要全轨迹扫描。先用规则切决策边界（tool-call、权限门），再对少数步做 hindsight。训练时这些分是 shaping，终局 $R$ 仍要锚定，否则模型会优化「让事后 judge 满意的叙事」。
-
-最后我会补一句：hindsight 用完整未来回看中间步，能认出当时不起眼的取证动作；但必须用替换 / 删除实验验证，不能把事后作文当因果。
 
 ## 追问
 

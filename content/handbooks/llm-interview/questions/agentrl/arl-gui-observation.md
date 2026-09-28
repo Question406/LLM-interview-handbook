@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-GUI Agent 的 observation 不是「把网页塞进上下文」。这块容易直接答成二选一：只截图，定位漂、token 贵；只 DOM，canvas / 图标 / 弹层视觉状态全丢。实用做法是混合：screenshot + DOM / a11y 树 + 元素元数据 + action history。SeeClick 一类工作说明视觉 grounding 要单独训，不能假设截图里「模型自己会找按钮」。定位融合细节见 `cu-dom-a11y-visual-grounding`。
+GUI Agent 的 observation 不是「把网页塞进上下文」。错法二选一：只截图，定位漂、token 贵；只 DOM，canvas / 图标 / 弹层视觉状态全丢。实用做法是混合：screenshot + DOM / a11y 树 + 元素元数据 + action history。SeeClick 一类工作说明视觉 grounding 要单独训，不能假设截图里「模型自己会找按钮」。定位融合细节见 `cu-dom-a11y-visual-grounding`。
 
 ## 表征权衡：成本、可定位、动态一致性
 
@@ -40,7 +40,7 @@ Eval 不要只测静态桌面点选。至少包括：动态加载、弹窗挡点
 
 观测还要可回放：存截图哈希、树序列化、id 映射和动作。没有这些，失败只能叫「模型不会用浏览器」。预算上应对树做可见节点过滤，对截图做局部裁剪，避免把整棵 HTML 和 4K 图都喂进去。那会把长上下文问题伪装成 Agent 能力问题。
 
-最后我会补一句：混合观测是默认，不是折中。树管语义候选，图管几何与视觉-only 状态，历史管「我刚做了什么」。id 不稳、树图冲突、动态加载，都必须进评测。
+混合观测是默认做法：树管语义候选，图管几何与视觉-only 状态，历史管「我刚做了什么」。id 不稳、树图冲突、动态加载，都必须进评测。
 
 ## 追问
 

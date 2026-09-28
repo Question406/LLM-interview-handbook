@@ -35,7 +35,7 @@ Anthropic 研究 / 对齐岗会把这篇当背景，不一定照读论文提问�
 
 Constitution 是可版本化的规则列表（人权、非歧视、避免过度拒绝、尊重法律等），不是一句「要无害」。条款会冲突：无害 vs 有帮助。面试要能举一条冲突并说怎么打破：通常无害优先，但过度拒绝要单独写条款压回去。Claude 公开 constitution 就是给人审的，不是隐藏 system prompt。
 
-## 和 RLHF 比，别说「没人了」
+## 和 RLHF 比
 
 | | RLHF (InstructGPT) | CAI |
 | --- | --- | --- |
@@ -51,5 +51,5 @@ Sycophancy、reward hacking 在 RLAIF 里照样在。评委若用「模型自己
 ## 追问
 
 - **和 RLHF 能叠吗？** 能。常见是 helpfulness 仍走人类偏好，harmlessness 走 CAI。不要说 CAI 替换了全部 RLHF。
-- **constitution 写进 system prompt 算 CAI 吗？** 只是推理期约束。CAI 指用条款生成训练数据。prompt  alone 没有新偏好分布。
+- **constitution 写进 system prompt 算 CAI 吗？** 只是推理期约束。CAI 指用条款生成训练数据。prompt alone 没有新偏好分布。
 - **computer use 的确认框算 constitution 吗？** 不算。那是产品层权限，见 `cu-sensitive-action-confirm`。条款约束的是语言 / 决策倾向，不能替代 OS 级确认。

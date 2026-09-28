@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易直接答成：训练曲线上的 proxy reward 峰值，或「最后一步」，就是最好的模型。这里的 checkpoint 指训练轨迹上的参数快照 $\theta_t$，**不是** Agent 环境的 state 存档，后者见 `arl-checkpoint`（逻辑状态、工具句柄、文件系统快照）。Gao 等的 overoptimization 曲线已经说明：对训练 RM 优化越久，gold / 人类分常常先升后降。最高训练奖励往往对应对代理奖励的过优化，真实任务与安全可能已回退。
+错法：训练曲线上的 proxy reward 峰值，或「最后一步」，就是最好的模型。这里的 checkpoint 指训练轨迹上的参数快照 $\theta_t$，**不是** Agent 环境的 state 存档，后者见 `arl-checkpoint`（逻辑状态、工具句柄、文件系统快照）。Gao 等的 overoptimization 曲线已经说明：对训练 RM 优化越久，gold / 人类分常常先升后降。最高训练奖励往往对应对代理奖励的过优化，真实任务与安全可能已回退。
 
 ## 选点协议必须预先冻结
 
@@ -36,9 +36,7 @@ sources:
 
 ## 后期只涨 proxy 就该早停
 
-数学 RL 常见：step 2k 验证准确率最高，4k 时 training RM 更高但代码集与拒答集掉点，应选 2k（或 2k-3k 的 EMA），而不是最新一步。「最后一步神话」来自 SFT 的习惯：CE 还在降就继续；RL 的 proxy 可以在 gold 已经掉头之后继续涨。对外报告写清选点规则与偷看次数；多次在同一选点集上调阈值，本身就是元过拟合。若后期只有 proxy 涨、gold 不动或安全掉，应早停或回滚，而不是加大步数「再冲一冲」。这和 `pt-reward-ood-failure` 同一信号：proxy-gold 相关掉了，比「训练 reward 还在涨」更早。多目标选点画的是验证集 Pareto，不是训练曲线的最高点：安全与长度是硬约束，能力是约束内最大化。和 `arl-checkpoint` 的对比一句话就够：一个存的是 $\theta$，一个存的是 Agent 世界状态，不要把两个词混用。若计算预算只允许存少数快照，优先按验证门禁存，而不是按等间隔存；崩点附近加密采样，前期平台期可以更疏。选中的 $\theta_t$ 还要用影子流量或小流量 A/B 再确认一次，因为 held-out 仍可能和线上意图不一致，见 `data-offline-online-metric-gap`。
-
-最后我会补一句：checkpoint 选择是多目标门禁，不是 $\mathrm{argmax}_t$ 训练曲线。协议写在开训前，报告里能复现「为什么是这一步」。
+数学 RL 常见：step 2k 验证准确率最高，4k 时 training RM 更高但代码集与拒答集掉点，应选 2k（或 2k-3k 的 EMA），而不是最新一步。「最后一步神话」来自 SFT 的习惯：CE 还在降就继续；RL 的 proxy 可以在 gold 已经掉头之后继续涨。对外报告写清选点规则与偷看次数；多次在同一选点集上调阈值，本身就是元过拟合。若后期只有 proxy 涨、gold 不动或安全掉，应早停或回滚，而不是加大步数「再冲一冲」。这和 `pt-reward-ood-failure` 同一信号：proxy-gold 相关掉了，比「训练 reward 还在涨」更早。多目标选点画的是验证集 Pareto，不是训练曲线的最高点：安全与长度是硬约束，能力是约束内最大化。和 `arl-checkpoint` 的对比一句话就够：一个存的是 $\theta$，一个存的是 Agent 世界状态，不要把两个词混用。若计算预算只允许存少数快照，优先按验证门禁存，而不是按等间隔存；崩点附近加密采样，前期平台期可以更疏。选中的 $\theta_t$ 还要用影子流量或小流量 A/B 再确认一次，因为 held-out 仍可能和线上意图不一致，见 `data-offline-online-metric-gap`。协议写在开训前，报告里能复现「为什么是这一步」：多目标门禁，不是 $\mathrm{argmax}_t$ 训练曲线。
 
 ## 追问
 

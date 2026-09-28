@@ -25,7 +25,7 @@ sources:
     type: legacy-reference
 ---
 
-Kimi / Moonshot 方向，这块容易直接答成背榜单分数。K2 / K2.5 给面试的素材是：什么时候并行 sub-agent 真有收益、orchestrator 和 workers 怎么分 credit、冻结 workers 只训 orchestrator 会带来什么非平稳和能力上限。长上下文还会把「全塞 context vs retrieval / memory / skill」问成工程题，不是窗口越大越好。桌面 Agent 面经另有权限、多窗状态、结果护栏，不要用 chatbot 故事套过去。
+Kimi / Moonshot 方向，错法：背榜单分数。K2 / K2.5 给面试的素材是：什么时候并行 sub-agent 真有收益、orchestrator 和 workers 怎么分 credit、冻结 workers 只训 orchestrator 会带来什么非平稳和能力上限。长上下文还会把「全塞 context vs retrieval / memory / skill」问成工程题，不是窗口越大越好。桌面 Agent 面经另有权限、多窗状态、结果护栏，不要用 chatbot 故事套过去。
 
 ## 准备主线
 
@@ -50,4 +50,4 @@ Kimi / Moonshot 方向，这块容易直接答成背榜单分数。K2 / K2.5 给
 
 - **并行 sub-agent 何时有收益？** 子任务可独立、汇总可验证时有；共享可变状态或信用难分时，串行更稳。
 - **冻结 worker 训 orchestrator 的风险？** worker 能力成上限，orchestrator 学到的是过时环境，上线一换 worker 就 OOD。
-- **为什么不能只看 benchmark？** 榜单不暴露权限、状态和护栏失败。按 id 准备对照实验，不背 Kimi 营销句。
+- **为什么不能只看 benchmark？** 榜单不暴露权限、状态和护栏失败。按 id 准备对照实验。

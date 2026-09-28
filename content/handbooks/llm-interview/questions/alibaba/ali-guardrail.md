@@ -23,7 +23,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成把 Guardrail 写进 system prompt 的「不要越权」。规则引擎管硬约束，LLM 管柔推理。工具分级为只读 / 可逆 / 不可逆；不可逆前人工确认。输出过滤与策略引擎是双闸门，自主性随风险升高而降低。边界必须写在编排和工具服务端。HITL 细节见 `ali-hitl-risk`，幻觉拦截见 `ali-hallucination-intercept`。
+错法：把 Guardrail 写进 system prompt 的「不要越权」。规则引擎管硬约束，LLM 管柔推理。工具分级为只读 / 可逆 / 不可逆；不可逆前人工确认。输出过滤与策略引擎是双闸门，自主性随风险升高而降低。边界必须写在编排和工具服务端。HITL 细节见 `ali-hitl-risk`，幻觉拦截见 `ali-hallucination-intercept`。
 
 ## 分层：输入 → 工具权限 → 执行确认 → 输出 → 审计
 

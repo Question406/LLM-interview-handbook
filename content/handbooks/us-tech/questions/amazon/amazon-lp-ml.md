@@ -29,7 +29,7 @@ sources:
     type: secondary
 ---
 
-Amazon loop 里 Bar Raiser 不单独问「背 16 条」。技术轮结束会追：你为什么敢上线、数据从哪来、错了怎么办。公开面试指南都写 LP 贯穿每一轮。下面按 ML 决策落，不编造某次面经。三条线够用：门禁、数据、纠错。别把 16 条各讲一句。
+Amazon loop 里 Bar Raiser 不单独问「背 16 条」。技术轮结束会追：你为什么敢上线、数据从哪来、错了怎么办。公开面试指南都写 LP 贯穿每一轮。下面按 ML 决策落。三条线够用：门禁、数据、纠错。别把 16 条各讲一句。
 
 ## 上线门禁：Highest Standards，不是 Bias for Action 的挡箭牌
 

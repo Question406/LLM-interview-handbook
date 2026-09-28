@@ -32,7 +32,7 @@ sources:
 
 ## 题怎么来的
 
-Chat Completions 可以回 `logprobs` / `top_logprobs`。研究岗问的不是字段名，是：**这个 $p$ 是什么分布上的数、校准过没有、什么时候能当置信度**。GPT-4 报告有一张很有名的图：预训练模型在选择题上接近对角线，RLHF 之后点跑到对角线上方，过自信。InstructGPT 也写过偏好优化会改概率形态。熵正则见 `openai-entropy-l1`，KL 锚见 `openai-instructgpt-kl`。
+Chat Completions 可以回 `logprobs` / `top_logprobs`。研究岗问的不是字段名，是：这个 $p$ 是什么分布上的数、校准过没有、什么时候能当置信度。GPT-4 报告有一张很有名的图：预训练模型在选择题上接近对角线，RLHF 之后点跑到对角线上方，过自信。InstructGPT 也写过偏好优化会改概率形态。熵正则见 `openai-entropy-l1`，KL 锚见 `openai-instructgpt-kl`。
 
 ## $p$ 是条件 token 概率，不是事实信念
 
@@ -64,7 +64,7 @@ GPT-4 报告的校准图是选择题、有明确对错。换成开放生成、�
 
 可靠性图怎么画：把预测 $p$ 分桶，横轴平均 $p$，纵轴经验准确率。ECE 是桶内 $|{\mathrm{acc}}-\mathrm{conf}|$ 的加权和。选择题可以这么做；开放生成要先定义「对」，否则校准数字是空的。
 
-白板我会写：需要排序（哪个续写更像）时 logprob 有用；需要「这事是不是真的」时不够。内部 eval 仍走 `openai-eval-harness`，不要用平均 logprob 当能力榜。
+需要排序（哪个续写更像）时 logprob 有用；需要「这事是不是真的」时不够。内部 eval 仍走 `openai-eval-harness`，不要用平均 logprob 当能力榜。
 
 ## 追问
 

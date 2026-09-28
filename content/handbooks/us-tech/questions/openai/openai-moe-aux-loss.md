@@ -30,7 +30,7 @@ sources:
 
 ## 题怎么来的
 
-万亿稀疏模型的公开教科书是 Switch / GShard / ST-MoE，不是某篇 OpenAI 技术报告里的结构图。GPT-4 是否 MoE 没有官方确认，面试里我不会把它当事实。问到负载均衡，我按 Switch 的 aux loss 答，并声明这是训练稳定性，不是推理 cache。并行大图见 `nvidia-trillion-train`。
+万亿稀疏模型的公开教科书是 Switch / GShard / ST-MoE，不是某篇 OpenAI 技术报告里的结构图。GPT-4 是否 MoE 没有官方确认，面试里不当事实。问到负载均衡，我按 Switch 的 aux loss 答，并声明这是训练稳定性，不是推理 cache。并行大图见 `nvidia-trillion-train`。
 
 ## aux loss 在惩罚什么
 

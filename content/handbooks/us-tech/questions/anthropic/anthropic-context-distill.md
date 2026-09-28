@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-Askell 等人 2021 年的 *General Language Assistant* 把 context distillation 写进 Anthropic 早期对齐工具箱：长人格 / 原则 prompt 很有效，但占窗口、每步都算一遍。蒸馏想把「看见 $C$ 才有的行为」写进参数。面试对比的是现在人人会写的 system prompt，以及后来的 CAI。
+Askell 等人 2021 年的 *General Language Assistant* 把 context distillation 写进 Anthropic 早期对齐工具箱：长人格 / 原则 prompt 很有效，但占窗口、每步都算一遍。蒸馏想把「看见 $C$ 才有的行为」写进参数。面试对比的是 system prompt，以及后来的 CAI。
 
 ## 损失是条件分布的 KL，不是把 $C$ 当监督文本
 

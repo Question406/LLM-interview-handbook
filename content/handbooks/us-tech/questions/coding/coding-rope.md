@@ -51,7 +51,6 @@ def rope_angles(dim, seqlen, base=10000.0, device=None):
     freqs = torch.outer(t, inv)  # [T, d/2]
     return torch.cos(freqs), torch.sin(freqs)
 
-
 def apply_rope(x, cos, sin):
     # x: [B, H, T, D], cos/sin: [T, D/2]
     xe, xo = x[..., 0::2], x[..., 1::2]
@@ -61,18 +60,17 @@ def apply_rope(x, cos, sin):
     yo = xe * sin + xo * cos
     return torch.stack((ye, yo), dim=-1).flatten(-2)
 
-
 def decode_rope(q, k, cos, sin, pos):
     # pos = cache_len；取该位置的一对 cos/sin，不要用 0
     c, s = cos[pos : pos + 1], sin[pos : pos + 1]
     return apply_rope(q, c, s), apply_rope(k, c, s)
 ```
 
-另一种常见写法是 `rotate_half`：前 $d/2$ 和后 $d/2$ 配对（Llama / GPT-NeoX）。和论文的偶奇成对 **频率排布不同**，checkpoint 必须和训练时同一套。白板先写偶奇对，再提「读权重前确认实现」。
+另一种常见写法是 `rotate_half`：前 $d/2$ 和后 $d/2$ 配对（Llama / GPT-NeoX）。和论文的偶奇成对频率排布不同，checkpoint 必须和训练时同一套。白板先写偶奇对，再提「读权重前确认实现」。
 
 ## Decode：position 是 cache 长度
 
-Prefill：位置 $0..T-1$，整段 $K,V$ 旋转后写入 cache。Decode 新 token 的下标是 `cache_len`，只旋当前 $q_t,k_t$。历史 $K$ **已经旋过**，不要每次重放。packed sample 或 left padding 必须用真实 `position_ids` 索引 cos/sin，不能假设等于 `arange(T)`。
+Prefill：位置 $0..T-1$，整段 $K,V$ 旋转后写入 cache。Decode 新 token 的下标是 `cache_len`，只旋当前 $q_t,k_t$。历史 $K$ 已经旋过，不要每次重放。packed sample 或 left padding 必须用真实 `position_ids` 索引 cos/sin，不能假设等于 `arange(T)`。
 
 不变量：同一前缀 greedy，有 KV cache 和满量 attention 逐 token 相同。位置写 0 是 silent 错。GQA 时 RoPE 仍按 head dim 转，和 $H_{\mathrm{kv}}$ 无关，见 `meta-llama-gqa`。
 

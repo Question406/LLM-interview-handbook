@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“使用 GRPO 时，构造数据要符合什么要求”**
 
-这块容易把 GRPO 数据讲成「再多采一些 SFT 题」。GRPO 的信号来自 **同一 prompt 下 $G$ 条 rollout 的相对优势**；组内几乎全对或全错时，group-normalized advantage 接近零，加再多条也是空转。何时 GRPO 失效见 `tencent-teg-grpo-when-bad`，全同组零优势见 `byte-grpo-all-same-zero-adv`、`ali-grpo-advantage`。先报有效 group 比例，再报样本量。
+错法：把 GRPO 数据讲成「再多采一些 SFT 题」。GRPO 的信号来自同一 prompt 下 $G$ 条 rollout 的相对优势；组内几乎全对或全错时，group-normalized advantage 接近零，加再多条也是空转。何时 GRPO 失效见 `tencent-teg-grpo-when-bad`，全同组零优势见 `byte-grpo-all-same-zero-adv`、`ali-grpo-advantage`。先报有效 group 比例，再报样本量。
 
 ## 题目要落在可探索带
 

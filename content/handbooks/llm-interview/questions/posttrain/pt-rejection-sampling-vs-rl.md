@@ -46,7 +46,7 @@ On-policy RL 的代价是 rollout 成本、staleness（`pt-online-freshness`）�
 
 还要防 RS 特有的偏差：filter 偏爱长答案、某一种解题模板、或与训练 checker 同漏洞的假成功。进 SFT 前做过程抽检，和 `pt-rlvr-reasoning-eval` 同一原则。有强 teacher 时，先考虑 `pt-on-policy-distillation`：监督比「自己采自己滤」稠密，而且状态对学生相关。没有 teacher、有 verifier，才在 RS 与 RL 之间排期。
 
-决策树可以当场画：先看 $C(K)$ 和过程抽检；够且干净则 RS；窄或重复则补 seed / teacher；需要状态上的相对奖励再上 on-policy。不要从算法潮流反推。
+先看 $C(K)$ 和过程抽检；够且干净则 RS；窄或重复则补 seed / teacher；需要状态上的相对奖励再上 on-policy。不要从算法潮流反推。
 
 ## 追问
 

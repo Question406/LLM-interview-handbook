@@ -40,7 +40,7 @@ ChatGPT 类服务的延迟拆成「第一个 token」和「后续 token」。Ope
 
 所以「Transformer 是 $O(T^2)$」只描述 prefill 注意力；decode 有 cache 之后是逐步线性，但被内存绑住。两者的 MFU 曲线完全不同，不能共用一个「把 GPU 打满」的 batch 启发式。
 
-我会现场估一笔账。70B、GQA、$d_{\mathrm{head}}=128$、$H_{\mathrm{kv}}=8$、一层 KV 大约 $2\cdot t\cdot 8\cdot 128$ 个元素。$t=4\mathrm{k}$、bf16 就是数 MB 每层，乘层数后每步 decode 要扫过几百 MB 历史，而这一步的 FLOPs 只有一个 `[1, d]` 的投影加 $O(t d)$ 点积。
+现场估一笔账。70B、GQA、$d_{\mathrm{head}}=128$、$H_{\mathrm{kv}}=8$、一层 KV 大约 $2\cdot t\cdot 8\cdot 128$ 个元素。$t=4\mathrm{k}$、bf16 就是数 MB 每层，乘层数后每步 decode 要扫过几百 MB 历史，而这一步的 FLOPs 只有一个 `[1, d]` 的投影加 $O(t d)$ 点积。
 
 Prefill 同一 $t$ 则是完整 $B=1$ 的大矩阵乘，算术强度高一个数量级。数字不必精确到字节，但方向必须对：decode 加 batch 是为了把那次 HBM 扫描摊开，不是为了再堆 FLOPs。
 
@@ -61,7 +61,7 @@ KV 从 prefill 池交到 decode 池有拷贝或 RDMA 成本。上下文越长，
 
 量化 KV 同理：它降 decode 读带宽，对 prefill GEMM 几乎没帮助，别拿来当 TTFT 的主杠杆。
 
-面试收尾：拆的是 **资源画像**，不是两套权重。权重可以复制；KV 必须跟着 decode 走，迁移 KV 的代价要算进 SLO。
+拆的是资源画像，不是两套权重。权重可以复制；KV 必须跟着 decode 走，迁移 KV 的代价要算进 SLO。
 
 ## 追问
 

@@ -65,7 +65,7 @@ Helpfulness 仍常走人偏好，harmlessness 走 CAI。不要说 CAI 替换了�
 
 条款写「要无害」但没有「不要拒答合法请求」，SL 改写会把正常医疗、新闻、虚构暴力场景全部改成拒绝。条款写「尊重用户」但没有反谄媚，RL 阶段会把同意用户错误观点当 helpful，见 `align-sycophancy`。所以抽查集必须按失败模式切片，不是随机抽 100 条聊天。
 
-把 constitution 贴进推理期 system prompt **不算** CAI。那只是推理约束，没有新的训练分布。CAI 指用条款生成监督数据和 AI 偏好。单靠 prompt 改不了预训练里的有害峰，只改你这轮采样到的表面。
+把 constitution 贴进推理期 system prompt 不算 CAI。那只是推理约束，没有新的训练分布。CAI 指用条款生成监督数据和 AI 偏好。单靠 prompt 改不了预训练里的有害峰，只改你这轮采样到的表面。
 
 ## 追问
 

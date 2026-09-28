@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“问kv cache相关”**；**“decoder的 qkv输入分别来自哪”**；**“除了MHA还知道哪些(GQA MQA MLA)讲原理”**
 
-这块容易把 GQA / MQA / MLA 都说成「少算一点 attention」。Decode 往往受 KV 带宽限制，不是受 $T^2$ 训练 FLOPs 限制。先说清 QKV 从哪来，再谈压缩轴。
+错法：把 GQA / MQA / MLA 都说成「少算一点 attention」。Decode 往往受 KV 带宽限制，不是受 $T^2$ 训练 FLOPs 限制。先说清 QKV 从哪来，再谈压缩轴。
 
 ## Decoder 的 Q、K、V
 

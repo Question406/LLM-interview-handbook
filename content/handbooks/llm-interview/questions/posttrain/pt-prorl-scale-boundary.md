@@ -42,9 +42,7 @@ sources:
 
 熵塌是长训第一杀手。只加温度往往只是推迟塌缩。ProRL 用了 DAPO 的 clip-higher 和动态采样，并 **保留** KL：它从已经会 CoT 的蒸馏起点接着训，不是 R1-Zero 那种从 base 冷启动。KL 项逐渐主导 loss 时，周期性把 $\pi_{\mathrm{ref}}$ 重置成当前 $\pi_\theta$ 并清优化器，让正则重新变成「别一步走太远」，而不是「永远钉死在旧 SFT」。这和「DAPO 去掉 KL」不矛盾：起点和任务不同，见 `xiaohongshu-grpo-drop-kl`。
 
-论文还报告：base 无论采多少次都过不了的题，长训后可以过；轨迹与预训练语料的重叠下降。这是「边界可能扩大」的证据，不是定理。实验协议仍要锁温度、$K$、verifier，否则又把计算不足写成 discovery。
-
-现场收束：scale RL = 临界区数据 $\times$ 探索 $\times$ 稳定步数 $\times$ 可靠 verifier $\times$ rollout 系统。ProRL 给的是长训配方，不是「无限训就会变强」。
+论文还报告：base 无论采多少次都过不了的题，长训后可以过；轨迹与预训练语料的重叠下降。这是「边界可能扩大」的证据，不是定理。实验协议仍要锁温度、$K$、verifier，否则又把计算不足写成 discovery。ProRL 给的是长训配方：临界区数据、探索、稳定步数、可靠 verifier、rollout 吞吐一起 scale，不是「无限训就会变强」。
 
 ## 追问
 

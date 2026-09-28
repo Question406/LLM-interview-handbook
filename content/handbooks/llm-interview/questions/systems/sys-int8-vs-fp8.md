@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-BF16 / FP16 / 训练 FP8 的动态范围见 `sys-precision`。GPTQ / AWQ / SmoothQuant 见 `sys-quant`。本题专门对打 **INT8 vs FP8**，以及训、推、KV 三套 dtype 不要混成一种「开了 8bit」。
+BF16 / FP16 / 训练 FP8 的动态范围见 `sys-precision`。GPTQ / AWQ / SmoothQuant 见 `sys-quant`。题目专门对打 INT8 vs FP8，以及训、推、KV 三套 dtype 不要混成一种「开了 8bit」。
 
 ## 表示差在哪
 
@@ -49,7 +49,7 @@ RL 里 actor 训练图和 rollout 引擎 dtype 可以不同。BF16 训、FP8 采
 
 KV cache 是存 K/V 不是存权：FP8 / INT8 KV 降的是 HBM 和带宽，和 GPTQ 无关。RL 长 CoT 上 KV 往往比权更先爆，见 `sys-rl-memory`。
 
-现场口令：训练 BF16，有硬件再 FP8；推理 FP8 或 INT8 看 kernel；INT8 训练不是默认答案。三套 dtype 分开报。
+训练默认 BF16，有硬件再上 FP8；推理按质量和 kernel 在 FP8 / INT8 里选；INT8 训练不是默认答案。三套 dtype 分开报。
 
 ## 追问
 

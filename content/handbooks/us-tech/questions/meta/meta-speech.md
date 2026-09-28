@@ -57,7 +57,7 @@ Shape：文本 $[B, T_{\mathrm{txt}}, D]$，语音 $[B, T_{\mathrm{sp}}, D]$，�
 
 和级联 ASR→LLM→TTS 的差别：级联每段可独立升级、延迟和错误会级联；交错 LM 把对齐学进同一套权重，但解码语音单元不等于可上线的音色和延迟。SeamlessM4T 走的是编码器–解码器多语言语音翻译，评测是 BLEU / ASR 指标，不要和 Spirit LM 的 few-shot 混报。
 
-错法：说 Llama 3 自带语音。Herd 没有把语音当一等模态发布。错法二：把 HuBERT 簇当字符。簇没有字母表，ASR 是 LM 在交错训练里学到的转写，不是码本自带的。错法三：现场画内部流式 ASR、端侧唤醒、电话栈——那不是公开 Llama 题。
+错法：说 Llama 3 自带语音。Herd 没有把语音当一等模态发布。错法二：把 HuBERT 簇当字符。簇没有字母表，ASR 是 LM 在交错训练里学到的转写，不是码本自带的。错法三：现场画内部流式 ASR、端侧唤醒、电话栈，那不是公开 Llama 题。
 
 Vocoder 是另一段：LM 只吐离散单元，波形要 HuBERT-vocoder 或 EnCodec decoder。单元去重丢了时长，TTS 会发飘，所以 Expressive 才把 pitch / style 交错回去。Serving 上语音 decode 的 token 率按帧率走，和文本 tokens/s 不是同一个 SLO。
 
@@ -68,4 +68,3 @@ Vocoder 是另一段：LM 只吐离散单元，波形要 HuBERT-vocoder 或 EnCo
 - **和视觉 3.2 同一套融合吗？** 不是。3.2 是冻 LM + cross-attn；Spirit LM 是把离散单元塞进同一条因果序列，更接近早融合，见 `meta-early-fusion`。
 - **上下文怎么定预算？** 先按帧率估 $T_{\mathrm{sp}}$，再决定下采样或切块。一分钟语音可以吃掉几千 token，和长文档抢窗。
 - **内部 ASR 能不能讲？** 不要。面试停在公开论文：HuBERT、EnCodec、Spirit LM、Seamless。生产级联可以当对比，但别编系统名和数字。
----

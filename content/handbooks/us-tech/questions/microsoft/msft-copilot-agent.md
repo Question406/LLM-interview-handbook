@@ -64,7 +64,7 @@ def run_copilot_agent(step, *, max_rounds=12, max_tokens=80000, max_wall_s=600):
 
 评测：任务是否真的绿（CI，不是模型说绿）、越权读、重复 push、预算终止率、幻觉 API。不要报「diff 看起来像人写的」。云端 agent 还要看 PR 描述是否引用了真实文件。
 
-错法：Autopilot 当默认给企业；用应用身份扫租户代码；把 Ask 模式的引用契约丢了——agent 更会编「我已经改了」。状态以 git 和 CI 为准。
+错法：Autopilot 当默认给企业；用应用身份扫租户代码；把 Ask 模式的引用契约丢了：agent 更会编「我已经改了」。状态以 git 和 CI 为准。
 
 ## 追问
 

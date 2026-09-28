@@ -28,11 +28,11 @@ sources:
     type: secondary
 ---
 
-OpenAI function calling、Anthropic computer use、Microsoft Copilot 问的是生产执行，不是 ReAct 四个字母。Harness 预算和沙箱见 `design-agent-harness`；客服工单见 `design-chat-tools`。本题把超时、幂等、确认、审计讲死。不是某次现场逐字题。注入见 `anthropic-prompt-injection`；schema 版本见 `design-prompt-mgmt`。
+OpenAI function calling、Anthropic computer use、Microsoft Copilot 问的是生产执行，不是 ReAct 四个字母。Harness 预算和沙箱见 `design-agent-harness`；客服工单见 `design-chat-tools`。本题把超时、幂等、确认、审计讲死。注入见 `anthropic-prompt-injection`；schema 版本见 `design-prompt-mgmt`。
 
 ## 调用是宿主的状态机
 
-我会先问：哪些工具可逆、是否碰账号和外部副作用、超时预算、是否要人确认、审计保留多久。循环写在宿主：模型输出 name + JSON，校验 schema，鉴权，执行，把 **截断后的数据** 当观察值返回。密钥不进提示。
+我会先问：哪些工具可逆、是否碰账号和外部副作用、超时预算、是否要人确认、审计保留多久。循环写在宿主：模型输出 name + JSON，校验 schema，鉴权，执行，把截断后的数据当观察值返回。密钥不进提示。
 
 每条工具定义：超时、重试次数、是否幂等、副作用（读 / 写 / 不可逆）、所需权限、最大 payload。读工具可短超时 + 重试；写工具默认不盲目重试。墙钟预算见 harness 硬顶。并行：无依赖的读可一起；写必须排在确认之后。
 

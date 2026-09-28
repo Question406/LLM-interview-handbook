@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-Agent serving 岗会从 `anthropic-tool-use` 追到「结果太大怎么办」。Messages API 的往返是：模型出 `tool_use`，宿主执行，把 `tool_result` 当 user 块贴回去。下一次请求把这段历史整段再送。所以结果既是模型的观察，也是缓存前缀的一部分。题来自产品和 `anthropic-prompt-cache`，不是隐藏面经。
+Agent serving 岗会从 `anthropic-tool-use` 追到「结果太大怎么办」。Messages API 的往返是：模型出 `tool_use`，宿主执行，把 `tool_result` 当 user 块贴回去。下一次请求把这段历史整段再送。所以结果既是模型的观察，也是缓存前缀的一部分。
 
 ## 过大：截断是合同，不是静默丢
 
@@ -35,9 +35,9 @@ Agent serving 岗会从 `anthropic-tool-use` 追到「结果太大怎么办」�
 
 三条路：
 
-1. **头尾保留。** 日志、HTML 常把头和尾拼起来，中间写省略。比只留开头更不容易丢掉报错。
-2. **外置。** 大文件写到沙箱路径，结果只回路径和前几行，逼模型按需读。这是 Claude Code 那类 agent 的默认。
-3. **摘要。** 只在结果确定是自然语言散文时用。代码、JSON、表格摘要会丢键，下一轮参数就编。
+1. 头尾保留。日志、HTML 常把头和尾拼起来，中间写省略。比只留开头更不容易丢掉报错。
+2. 外置。大文件写到沙箱路径，结果只回路径和前几行，逼模型按需读。这是 Claude Code 那类 agent 的默认。
+3. 摘要。只在结果确定是自然语言散文时用。代码、JSON、表格摘要会丢键，下一轮参数就编。
 
 截图更狠：每张按 `anthropic-vision` 的 $T_{\mathrm{vis}}$ 计，二十步不丢历史，视觉 token 能到三万。只留最近 1–2 张，旧的改成文本动作记录。`is_error` 的结果不要再塞半截 HTML；给错误码和可修的字段。
 
@@ -61,8 +61,8 @@ def pack_result(text, tool_use_id):
 
 正确切法：
 
-- **工具定义、系统提示、长文档** 打 breakpoint，跨请求不变。
-- **本轮 `tool_result`、检索片段、时间戳** 放在点后面，当可变后缀。
+- 工具定义、系统提示、长文档打 breakpoint，跨请求不变。
+- 本轮 `tool_result`、检索片段、时间戳放在点后面，当可变后缀。
 - 文档允许在 `tool_result` 上打点，只适合「同一结果会被立刻再读很多次」的预热，不适合每步都变的 agent。
 
 破坏前缀的常见手法：

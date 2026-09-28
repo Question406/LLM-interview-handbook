@@ -26,16 +26,16 @@ sources:
 - 公司：MiniMax（总结帖收录）
 - 原始措辞：**“大模型算法中模型参数量每个部分有多少？”**
 
-这块容易背某一发布会的「70B / 456B」数字，或把总参数和每 token 激活参数混成一个数。我会给可复用的拆分：词表、注意力、MLP、输出头，再单独说 MoE。数字对不上公开技术报告就说「按公式估」，不要编造。
+错法：背某一发布会的「70B / 456B」数字，或把总参数和每 token 激活参数混成一个数。我会给可复用的拆分：词表、注意力、MLP、输出头，再单独说 MoE。数字对不上公开技术报告就说「按公式估」，不要编造。
 
 ## 稠密 Transformer：四块加法
 
 记隐藏维 $d$、层数 $L$、词表 $V$、FFN 中间维 $d_{\mathrm{ff}}$。SwiGLU 常用 $d_{\mathrm{ff}}\approx 8d/3$，使激活后宽度接近旧版 $4d$。
 
-- **Token embedding**：$\approx V\cdot d$。词表到十万级时，这一项已经是数 B，不可忽略。若 lm_head 与 embedding **untied**，输出头再加一份同量级。
-- **每层 Attention**：标准 MHA 是 $W_Q,W_K,W_V,W_O$ 四块 $d\times d$，约 $4d^2$。GQA 把 $K,V$ 头数降到 $n_{\mathrm{kv}}$，参数按 $d\cdot d_{\mathrm{kv}}$ 打折，见 `pdd-attention-handwrite`、`arch-mla`。偏置、RoPE 频率表相对很小。
-- **每层 MLP**：SwiGLU 三矩阵（gate / up / down）约 $3d\cdot d_{\mathrm{ff}}$；ReLU FFN 是两矩阵 $2d\cdot d_{\mathrm{ff}}$。MLP 通常比 Attention 更大。
-- **Norm / 其它**：RMSNorm 只有 $d$ 级，可忽略。
+- Token embedding：$\approx V\cdot d$。词表到十万级时，这一项已经是数 B，不可忽略。若 lm_head 与 embedding untied，输出头再加一份同量级。
+- 每层 Attention：标准 MHA 是 $W_Q,W_K,W_V,W_O$ 四块 $d\times d$，约 $4d^2$。GQA 把 $K,V$ 头数降到 $n_{\mathrm{kv}}$，参数按 $d\cdot d_{\mathrm{kv}}$ 打折，见 `pdd-attention-handwrite`、`arch-mla`。偏置、RoPE 频率表相对很小。
+- 每层 MLP：SwiGLU 三矩阵（gate / up / down）约 $3d\cdot d_{\mathrm{ff}}$；ReLU FFN 是两矩阵 $2d\cdot d_{\mathrm{ff}}$。MLP 通常比 Attention 更大。
+- Norm / 其它：RMSNorm 只有 $d$ 级，可忽略。
 
 合计
 

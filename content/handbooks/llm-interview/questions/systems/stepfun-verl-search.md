@@ -30,17 +30,17 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“介绍一下trl/verl架构，有哪些类，主要参数”**；**“用verl训agent调用搜索工具为例，讲一下每一类大致怎么设计”**
 
-这块容易背源码类名，或把搜索 RTT 和 GPU generate 绑在同一个同步循环里。我会按职责说：谁采样、谁搜、谁打分、谁更新、谁算 KL。搜索延迟远高于纯生成，不异步、不缓存，GPU 会空转。蚂蚁 VeRL 账本卡讲样本数；本题讲角色与搜索耦合，见 `sys-rl-grpo-loop-roles`、`byte-verl-structure`。
+错法：背源码类名，或把搜索 RTT 和 GPU generate 绑在同一个同步循环里。我会按职责说：谁采样、谁搜、谁打分、谁更新、谁算 KL。搜索延迟远高于纯生成，不异步、不缓存，GPU 会空转。蚂蚁 VeRL 账本卡讲样本数；本题讲角色与搜索耦合，见 `sys-rl-grpo-loop-roles`、`byte-verl-structure`。
 
 ## 按职责拆角色
 
-- **Rollout Worker**：调 vLLM / SGLang 产 Thought/Action，解析 tool call。
-- **Env / Tool**：标准化 query、top-k、超时，把检索结果写成 Observation。
-- **Reward**：最终答对、是否空搜、是否重复搜、结果是否被后续推理用到。
-- **Actor Trainer**：组相对或 PPO 更新；observation 段要 `loss_mask`。
-- **Reference**：算 KL，权冻住。
+- Rollout Worker：调 vLLM / SGLang 产 Thought/Action，解析 tool call。
+- Env / Tool：标准化 query、top-k、超时，把检索结果写成 Observation。
+- Reward：最终答对、是否空搜、是否重复搜、结果是否被后续推理用到。
+- Actor Trainer：组相对或 PPO 更新；observation 段要 `loss_mask`。
+- Reference：算 KL，权冻住。
 
-不必背类名。要点是 rollout 与 update **分阶段**：先采完（含多轮搜），再在训练图上重算 logp、算优势、backward。搜索失败要有超时和默认 Observation，避免一个慢查询卡住整组。
+不必背类名。要点是 rollout 与 update 分阶段：先采完（含多轮搜），再在训练图上重算 logp、算优势、backward。搜索失败要有超时和默认 Observation，避免一个慢查询卡住整组。
 
 ## 关键参数和延迟解耦
 

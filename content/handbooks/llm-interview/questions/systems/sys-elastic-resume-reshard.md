@@ -50,7 +50,7 @@ $R$ 变了，$r$ 号文件不能直接 memcpy 到新 rank。
 
 RL 集群还要重建 rollout worker 的路由：哪组 GPU 跑 generate、哪组跑 trainer、weight sync 的 collective 是谁。HybridEngine 同卡方案改的是卡数与布局，分卡方案改的是两池比例，见 `sys-verl-hybridengine`、`sys-rl-dataplane-controlplane`。Resume 后 rollout 必须加载 **同一 `policy_version`**，并 flush KV，否则 stale 轨迹会混进第一步。弹性不是只把 trainer 拉起来。
 
-验证清单：新并行下 forward 一张固定 batch 的 loss 与参考实现同量级；optimizer step 一次后范数正常；EP 变了则每 expert 的参数和旧 ckpt 对得上（允许排列）。不要只看「进程都 alive」。弹性失败常见是 ckpt 绑死 rank、排水不彻底、只恢复 $\theta$ 没恢复 $m,v$。先修这三件，再谈自动扩缩策略。DP 变了还要重切数据：同一份全局 batch 按新 rank 划分，否则有的样本会重复、有的永远看不到。dataloader 位点若按旧 world 存的绝对 index，resume 后要对新切分做一次映射，不能原样 seek。这和权重 reshard 是同一类「逻辑坐标 vs 物理 rank」问题。
+验证清单：新并行下 forward 一张固定 batch 的 loss 与参考实现同量级；optimizer step 一次后范数正常；EP 变了则每 expert 的参数和旧 ckpt 对得上（允许排列）。进程都 alive 不够。弹性失败常见是 ckpt 绑死 rank、排水不彻底、只恢复 $\theta$ 没恢复 $m,v$。先修这三件，再谈自动扩缩策略。DP 变了还要重切数据：同一份全局 batch 按新 rank 划分，否则有的样本会重复、有的永远看不到。dataloader 位点若按旧 world 存的绝对 index，resume 后要对新切分做一次映射，不能原样 seek。这和权重 reshard 是同一类「逻辑坐标 vs 物理 rank」问题。
 
 ## 追问
 

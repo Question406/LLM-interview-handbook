@@ -51,7 +51,7 @@ $$
 \sum_{s=1}^{S} a_{bhts} = 1.
 $$
 
-**mask 用 0。** 有人写 `scores = scores * causal`，未来位置变成 0。但 $\mathrm{softmax}$ 里 $e^{0}=1$，未来位仍占一块正概率。位置越靠前、未遮蔽的 logit 越接近 0 时，泄漏越大。必须是 softmax **之前** `masked_fill(..., -inf)`，让 $e^{-\infty}=0$。加法 mask 用 $-1\mathrm{e}9$ 在 fp16 里可能 overflow 或不够负，优先真的 $-\infty$，softmax 内部减 max 仍然稳定。
+**mask 用 0。** 有人写 `scores = scores * causal`，未来位置变成 0。但 $\mathrm{softmax}$ 里 $e^{0}=1$，未来位仍占一块正概率。位置越靠前、未遮蔽的 logit 越接近 0 时，泄漏越大。必须是 softmax 之前 `masked_fill(..., -inf)`，让 $e^{-\infty}=0$。加法 mask 用 $-1\mathrm{e}9$ 在 fp16 里可能 overflow 或不够负，优先真的 $-\infty$，softmax 内部减 max 仍然稳定。
 
 缩放漏了 $1/\sqrt{d_k}$ 是第三类：fp16 点积方差随 $d_k$ 涨，softmax 饱和成 one-hot，或者直接 inf。和轴 / mask 分开测。
 
@@ -76,7 +76,7 @@ def test_softmax_axis():
 
 再加一条序列级：`T=4` 的下三角 mask，位置 $t$ 只能看见 $s\le t$。把未来位的注意力抽出来，应当全 0。greedy 有/无 cache 对齐是更强的端到端网，见 `openai-kv-cache-impl`。
 
-白板我会说：先 `eval()` + 固定 seed，再断言，不要用「生成看起来对了」当测试。
+先 `eval()` + 固定 seed，再断言，不要用「生成看起来对了」当测试。
 
 ## 追问
 

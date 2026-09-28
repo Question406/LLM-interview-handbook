@@ -46,9 +46,9 @@ Rollout 不是聊天流量。同一 prompt 采 $G$ 条，前缀理应命中；�
 - **prefix hit 低：** 同题 $G$ 条没共享到块，或每次权重更新把 cache flush 掉。flush 在换 $\theta$ 时是对的，见 `sys-partial-kv-policy`；同版本下命中低才是调度 / 哈希问题。
 - **abort / partial 之后占用不降：** 页没释放，碎片化。看起来 cache 很满，实际可分配连续块不够。
 
-训练侧 MFU 是 GEMM 有效算力，分母是峰值 FLOP。和引擎 KV 占用没有换算公式。Actor 更新时 SM 打满、rollout 卡在等，两池的「利用率」必须分开报。
+训练侧 MFU 是 GEMM 有效算力，分母是峰值 FLOP。和引擎 KV 占用没有换算公式。Actor 更新时 SM 打满、rollout 卡在等，两池的利用率必须分开报。
 
-现场口令：先问 KV 满不满，再问请求在跑还是在等，最后才问 tokens/s。RL 再加一句：同版本前缀该命中，$G$ 条不该各占一份完整 prompt KV。
+先问 KV 满不满，再问请求在跑还是在等，最后才问 tokens/s。RL 还要确认：同版本前缀该命中，$G$ 条不该各占一份完整 prompt KV。
 
 ## 追问
 

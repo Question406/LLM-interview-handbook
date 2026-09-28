@@ -21,7 +21,7 @@ sources:
     type: legacy-reference
 ---
 
-这块容易直接答成把三者塞进同一个向量库，或把操作手册检索叫 Skill、把历史全文拼接叫 Memory。Skill 解决「这类任务怎么做」的程序化经验复用；Memory 解决跨会话状态与个性化；RAG 解决「此刻需要哪条外部证据」。淘天追问重点是边界：手册进 RAG ≠ 有 Skill；所有历史进窗口 ≠ 有 Memory 治理。冲突写入见 `ali-memory-conflict`，RAG 评估见 `ali-rag-eval`，工具连接见 `ali-mcp-vs-fc`。
+错法：把三者塞进同一个向量库，或把操作手册检索叫 Skill、把历史全文拼接叫 Memory。Skill 解决「这类任务怎么做」的程序化经验复用；Memory 解决跨会话状态与个性化；RAG 解决「此刻需要哪条外部证据」。淘天追问重点是边界：手册进 RAG ≠ 有 Skill；所有历史进窗口 ≠ 有 Memory 治理。冲突写入见 `ali-memory-conflict`，RAG 评估见 `ali-rag-eval`，工具连接见 `ali-mcp-vs-fc`。
 
 ## 三个组件解决三个问题
 
@@ -31,7 +31,7 @@ sources:
 | Memory | What should persist across turns / sessions? | 短窗口、摘要、画像、带 provenance 的事件 |
 | RAG | What evidence do I need now? | 检索知识库 / 文档并引用 |
 
-Skill 是可加载的 procedure：退货怎么填槽、先查哪、何时转人工。它可以是 markdown 说明书 + 校验脚本，而不是又一段 embedding。Memory 是用户与会话的状态：地址、偏好、未完成订单，要有实体键和遗忘。RAG 是当前问题的证据：政策条款、商品规格，要可引用、可过期。
+Skill 是可加载的 procedure：退货怎么填槽、先查哪、何时转人工。它可以是 markdown 说明书 + 校验脚本，别当成又一段 embedding。Memory 是用户与会话的状态：地址、偏好、未完成订单，要有实体键和遗忘。RAG 是当前问题的证据：政策条款、商品规格，要可引用、可过期。
 
 ## 不要混成一个向量库
 
@@ -41,7 +41,7 @@ Skill 是可加载的 procedure：退货怎么填槽、先查哪、何时转人�
 
 ## 边界怎么验收
 
-分别造用例：换流程只改 Skill、用户更正只改 Memory、政策更新只改索引。三项同时变时才看端到端。评测拆开：Skill 看步骤合法率，Memory 看更正后是否用新值，RAG 看引用忠实度。不要只报一个「答得对」。
+分别造用例：换流程只改 Skill、用户更正只改 Memory、政策更新只改索引。三项同时变时才看端到端。评测拆开：Skill 看步骤合法率，Memory 看更正后是否用新值，RAG 看引用忠实度。别只报一个「答得对」。
 
 ## 追问
 

@@ -31,7 +31,7 @@ sources:
     type: secondary
 ---
 
-屏幕理解、Visual Intelligence、端侧 AFM 多模态都会问「一张图要几个 token」。云端 AnyRes 把大图切成 $g$ 块再加全局缩略，token 近线性涨，见 `msft-llava`。手机上墙是 ANE 静态 shape、SRAM 和已经预分配的 $S_{\max}$，见 `apple-ane`、`apple-ondevice-kv`。MM1 说分辨率和 token 数主导质量。本题按这些公开约束收，不当成真题记录。
+屏幕理解、Visual Intelligence、端侧 AFM 多模态都会问「一张图要几个 token」。云端 AnyRes 把大图切成 $g$ 块再加全局缩略，token 近线性涨，见 `msft-llava`。手机上墙是 ANE 静态 shape、SRAM 和已经预分配的 $S_{\max}$，见 `apple-ane`、`apple-ondevice-kv`。MM1 说分辨率和 token 数主导质量。按这些公开约束收。
 
 ## 先写预算，再谈切图
 
@@ -51,9 +51,9 @@ $S_{\max}$ 在导出时就定死。视觉前缀写入 KV 之后，decode 每步�
 
 ANE 额外约束：
 
-1. **分辨率是档位，不是连续量。** 编译 `(224, 336, 448)` 一类入口。来图 pad / 缩放到最近档，不要运行时 `interpolate` 出新 $H$。
-2. **$N_{\mathrm{vis}}$ 必须静态。** 切块数 $g$ 一变，序列长度变，整段掉 CPU。要切块就预编译 $g\in\{1,2,4\}$ 三张图，或先在 CPU 上裁 ROI 再送固定编码器。
-3. **布局。** 视觉塔若走 ANE，激活靠近 $[B,C,1,S]$ / Conv 友好格式，和语言塔同一套痛，见 `apple-ane`。随手 `reshape` 会把整网切出 NPU。
+1. 分辨率是档位，不是连续量。编译 `(224, 336, 448)` 一类入口。来图 pad / 缩放到最近档，不要运行时 `interpolate` 出新 $H$。
+2. $N_{\mathrm{vis}}$ 必须静态。切块数 $g$ 一变，序列长度变，整段掉 CPU。要切块就预编译 $g\in\{1,2,4\}$ 三张图，或先在 CPU 上裁 ROI 再送固定编码器。
+3. 布局。视觉塔若走 ANE，激活靠近 $[B,C,1,S]$ / Conv 友好格式，和语言塔同一套痛，见 `apple-ane`。随手 `reshape` 会把整网切出 NPU。
 
 例子：端侧 $S_{\max}=4096$，系统加用户 300，工具证据 400，生成预留 200，视觉只剩大约 3196。一张 576 很宽裕；四张截图加全局就是 2880，文本证据开始被挤。产品决策是减图、裁按钮周围，或把高分辨率文档送给 PCC，而不是把 $S_{\max}$ 口头加长。
 

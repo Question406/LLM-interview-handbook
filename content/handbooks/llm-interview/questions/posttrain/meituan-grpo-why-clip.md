@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“GRPO为什么要做clip，直接用SFT后的模型还会不稳定吗？优势度可以怎样改进？”**
 
-这块容易答「有 SFT 就可以去掉 clip」或「没有 critic 就不需要信任域」。GRPO 只换了 advantage 的构造，clipped importance-weighted surrogate 原样留下。组内 $A$ 很大时，不 clip 会一步毁掉刚 SFT 好的格式。SFT 降低的是解析噪声的先验，不是稳定性证明。这题三问要一起答：为什么 clip、SFT 后为何仍抖、优势怎么改。后两问不是让你把 clip 拆掉。
+错法：答「有 SFT 就可以去掉 clip」或「没有 critic 就不需要信任域」。GRPO 只换了 advantage 的构造，clipped importance-weighted surrogate 原样留下。组内 $A$ 很大时，不 clip 会一步毁掉刚 SFT 好的格式。SFT 降低的是解析噪声的先验，不是稳定性证明。这题三问要一起答：为什么 clip、SFT 后为何仍抖、优势怎么改。后两问不是让你把 clip 拆掉。
 
 ## 1. Clip 管的是相对 $\pi_{\mathrm{old}}$ 的一步偏离
 

@@ -40,9 +40,9 @@ $$
 \sigma(x)=\tfrac12\big(1+\tanh(x/2)\big).
 $$
 
-Swish$_\beta(x)=x\,\sigma(\beta x)$；SiLU 就是 $\beta=1$。$x\to+\infty$ 时 SiLU $\to x$；$x\to-\infty$ 时 $\to 0$。过原点：$\mathrm{SiLU}(0)=0$，小正数区域略大于 $0$，像「平滑 ReLU」。它 **不是奇函数**：$\mathrm{SiLU}(-x)=-x\sigma(-x)=-x(1-\sigma(x))$，和 $-\mathrm{SiLU}(x)$ 差一项 $x$。
+Swish$_\beta(x)=x\,\sigma(\beta x)$；SiLU 就是 $\beta=1$。$x\to+\infty$ 时 SiLU $\to x$；$x\to-\infty$ 时 $\to 0$。过原点：$\mathrm{SiLU}(0)=0$，小正数区域略大于 $0$，像「平滑 ReLU」。它不是奇函数：$\mathrm{SiLU}(-x)=-x\sigma(-x)=-x(1-\sigma(x))$，和 $-\mathrm{SiLU}(x)$ 差一项 $x$。
 
-直接 `x / (1 + exp(-x))`：大正 $x$ 时 $e^{-x}$ 下溢成 $0$，结果是 $x$，没问题；**大负 $x$** 时 $-x$ 为正，$e^{-x}$ overflow 成 inf，分母 inf，得到 NaN。按符号拆：
+直接 `x / (1 + exp(-x))`：大正 $x$ 时 $e^{-x}$ 下溢成 $0$，结果是 $x$，没问题；大负 $x$ 时 $-x$ 为正，$e^{-x}$ overflow 成 inf，分母 inf，得到 NaN。按符号拆：
 
 $$
 \sigma(x)=\begin{cases}
@@ -63,15 +63,12 @@ def sigmoid_stable(x):
     z = torch.exp(-torch.abs(x))
     return torch.where(neg, z / (1 + z), 1 / (1 + z))
 
-
 def silu(x):
     return x * sigmoid_stable(x)
-
 
 def silu_tanh(x):
     x32 = x.float()
     return x * (0.5 * (1.0 + torch.tanh(0.5 * x32)))
-
 
 def check():
     x = torch.tensor([0.0, 2.0, -2.0, 40.0, -40.0])
@@ -85,7 +82,7 @@ def check():
 
 ## 和 GELU、在 MLP 里的位置
 
-GELU 是 $x\Phi(x)$，形状接近 SiLU，GPT-2 用 GELU。Llama 把 SiLU 放在 **gate**：`silu(x W_g) * (x W_u)`，不是 `silu(x W)` 再线性。导函数 $\mathrm{SiLU}'(x)=\sigma(x)+x\sigma(x)(1-\sigma(x))$，反向手推时别漏第二项。面试若问「为什么不用 ReLU」：门控需要光滑、非零负半轴，dead ReLU 和 GLU 不搭。
+GELU 是 $x\Phi(x)$，形状接近 SiLU，GPT-2 用 GELU。Llama 把 SiLU 放在 gate：`silu(x W_g) * (x W_u)`，不是 `silu(x W)` 再线性。导函数 $\mathrm{SiLU}'(x)=\sigma(x)+x\sigma(x)(1-\sigma(x))$，反向手推时别漏第二项。面试若问「为什么不用 ReLU」：门控需要光滑、非零负半轴，dead ReLU 和 GLU 不搭。
 
 ## 追问
 

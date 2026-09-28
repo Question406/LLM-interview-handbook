@@ -26,7 +26,7 @@ sources:
     type: secondary
 ---
 
-OPSD / u-OPSD / π-Distill 都还在换手写特权：GT、多数票、动作轨迹，见 `pt-self-opd-family`。LOPD 的论点是：再发明一种文本特权，仍然被设计师选的格式卡住。把特权改成从经验里学出来的连续上下文，自教师自己决定留下什么。
+OPSD / u-OPSD / π-Distill 都还在换手写特权：GT、多数票、动作轨迹，见 `pt-self-opd-family`。再发明一种文本特权，仍然被设计师选的格式卡住。LOPD 把特权改成从经验里学出来的连续上下文，自教师自己决定留下什么。
 
 ## 学生照旧采样，教师多看 latent
 

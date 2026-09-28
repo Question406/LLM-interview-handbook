@@ -27,11 +27,11 @@ sources:
 
 ## 题怎么来的
 
-Sennrich et al. 2016 的 BPE 是 GPT / Claude 词表的祖先。Anthropic 公开题库有手写 tokenizer；OpenAI 也会在 coding 里问 merge 一步发生了什么。评委要看的是：**训练时合并谁、词表怎么长、encode 为什么不能每步重新数频次**。完整 encode/decode 不变量见 `anthropic-bpe-tokenizer`。白板禁止写 XML 词尾标签，构建器会当成 HTML；写成 `endofword` 或「词尾标记」。
+Sennrich et al. 2016 的 BPE 是 GPT / Claude 词表的祖先。Anthropic 公开题库有手写 tokenizer；OpenAI 也会在 coding 里问 merge 一步发生了什么。要说清：训练时合并谁、词表怎么长、encode 为什么不能每步重新数频次。完整 encode/decode 不变量见 `anthropic-bpe-tokenizer`。白板禁止写 XML 词尾标签，构建器会当成 HTML；写成 `endofword` 或「词尾标记」。
 
 ## 一步 merge：数 pair、合最高频、词表 +1
 
-语料先切成符号序列。字符级从字符出发，词尾贴 `endofword`，避免 `cat` 和 `cater` 的前缀糊在一起。字节级从 0–255 出发，没有 unk。每一步：
+语料先切成符号序列。字符级从字符出发，词尾贴 `endofword`，避免 `cat` 和 `cater` 的前缀糊在一起。字节级从 0-255 出发，没有 unk。每一步：
 
 1. 统计所有相邻 pair 的频次（同一词出现 $n$ 次就乘 $n$）；
 2. 取频次最高的 pair，平手要有确定的 tie-break（字典序）；
@@ -71,7 +71,7 @@ def bpe_one_merge(corpus, merges):
 
 ## Encode 不是再训练一遍
 
-上线没有语料频次，只有冻结的 merge 表。Encode：把词拆成基础符号，按 **训练时的 merge 顺序** 能合就合，直到一轮都不命中。常见错法：每步在当前序列上重新找频次最高的 pair——那是训练。
+上线没有语料频次，只有冻结的 merge 表。Encode：把词拆成基础符号，按训练时的 merge 顺序能合就合，直到一轮都不命中。常见错法：每步在当前序列上重新找频次最高的 pair，那是训练，不是 encode。
 
 `decode(encode(s))` 在训练字符集上要可逆。空格规则必须对称：GPT-2 用前导空格当独立信息，不要把 `"a b"` 和 `"ab"` 编成同一串 id。词表 id 一旦发出去就不能在新训练里洗牌还不存 mapping。
 

@@ -32,8 +32,8 @@ sources:
 ## 题怎么来的
 
 Leviathan et al. / DeepMind speculative sampling：小模型一次提 $\gamma$ 个
-token，大模型一次前向给出这些位置的 logits，再用拒绝采样保证 **边际分布仍是 $p$**。Google / OpenAI
-推理白板要的是接受不等式和「拒绝后从哪一步重采样」，不是加速比。KV 回滚见
+token，大模型一次前向给出这些位置的 logits，再用拒绝采样保证边际分布仍是 $p$。Google / OpenAI
+推理白板要写接受不等式和「拒绝后从哪一步重采样」，不是加速比。KV 回滚见
 `openai-speculative-decoding`、`sys-spec-sys`。本题把规则写成代码。前缀记
 $x_{1:t-1}$，不要写成带比较符的下标。
 
@@ -46,13 +46,13 @@ $$
 $$
 
 抽 $u_i\sim\mathrm{Unif}(0,1)$。若 $u_i\le\alpha_i$，接受 $\hat y_i$，继续。若拒绝：在
-**同一个位置 $i$** 从残差
+同一个位置 $i$ 从残差
 
 $$
 n(v)\propto\max\bigl(0,\,p(v)-q(v)\bigr)
 $$
 
-采样 $y_i$，输出 $\hat y_{1:i-1},y_i$，**丢弃** $\hat y_{i+1:\gamma}$。若全部接受，再从 $p(\cdot\mid x_{1:t-1},\hat y_{1:\gamma})$ 多抽一个 bonus token。这一点保证期望产出长度大于 $1$。
+采样 $y_i$，输出 $\hat y_{1:i-1},y_i$，丢掉 $\hat y_{i+1:\gamma}$。若全部接受，再从 $p(\cdot\mid x_{1:t-1},\hat y_{1:\gamma})$ 多抽一个 bonus token。这一点保证期望产出长度大于 $1$。
 
 残差必须在拒绝的那一步求，条件是已接受前缀，不是草稿的第 $i+1$ 步。常见错法：拒绝后从 $p$ 直接采样却还把后面的草稿留下；或从第 $1$
 步重来。数值上用 logprob：$\alpha=\min(1,\exp(\log p-\log q))$，在 log 域减，避免先 $\exp$ 再除。
@@ -66,7 +66,6 @@ def residual_probs(p_logits, q_logits):
     q = F.softmax(q_logits.float(), dim=-1)
     n = (p - q).clamp(min=0)
     return n / n.sum().clamp_min(1e-12)
-
 
 def spec_accept(draft_ids, log_p, log_q, p_logits, q_logits, bonus_logits):
     # draft_ids, log_p, log_q: [gamma]
@@ -93,7 +92,7 @@ $i=0$ 就残差采样。
 
 $p$ 与 $q$ 必须同一 tokenizer、同一词表约束。非法 token 在两边都打 $-\infty$ 再比 $\log p-\log q$，不要只 mask 一边。温度、top-k、nucleus 若存在，要规定清是只改 $p$、只改 $q$、还是两边同一套；混用会破坏「边际仍是 $p$」的证明，见 `coding-topk-nucleus`。树状草稿只是把这条规则沿多条前缀做，接受的仍是从根出发的一条链。
 
-不要把 $\gamma$ 个草稿的 logprob **求和** 再做一次接受：那是整段接受/拒绝，不是论文算法，期望长度和方差都变了。残差在理论上 $p=q$ 时全 $0$，不会拒绝；若数值把 $p-q$ 全打成负，clamp 后要有 fallback：直接从 $p$ 采样，并查是不是两套 softmax 温度不一致。
+不要把 $\gamma$ 个草稿的 logprob 求和再做一次接受：那是整段接受/拒绝，不是论文算法，期望长度和方差都变了。残差在理论上 $p=q$ 时全 $0$，不会拒绝；若数值把 $p-q$ 全打成负，clamp 后要有 fallback：直接从 $p$ 采样，并查是不是两套 softmax 温度不一致。
 
 ## 追问
 

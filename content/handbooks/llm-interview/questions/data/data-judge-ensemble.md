@@ -20,7 +20,7 @@ sources:
     type: primary
 ---
 
-这块容易直接答成「三个弱 judge 一平均就比一个强 judge 稳」，或以为 ensemble 能消掉 verbosity / 位置偏差。Zheng et al. 已经把 LLM-as-Judge 的位置、篇幅、自我偏好写成必须处理的偏差（`fund-judge`）。相关误差，大家都偏长、都偏同家族文风，投票之后还在。Ensemble 降的是独立噪声，不是共同口味。评委要听构权、校准和同等成本对照，别停在「我们用了四个模型」。
+错法：「三个弱 judge 一平均就比一个强 judge 稳」，或以为 ensemble 能消掉 verbosity / 位置偏差。Zheng et al. 已经把 LLM-as-Judge 的位置、篇幅、自我偏好写成必须处理的偏差（`fund-judge`）。相关误差，大家都偏长、都偏同家族文风，投票之后还在。Ensemble 降的是独立噪声，不是共同口味。评委要听构权、校准和同等成本对照，别停在「我们用了四个模型」。
 
 ## 先承认相关误差，再谈投票
 
@@ -40,7 +40,7 @@ Pointwise ensemble 便于回归校准，但尺度漂；pairwise ensemble 要处�
 
 ## 何时必须上 ensemble
 
-单 judge 在金标切片上不稳定、或单一家族 self-preference 明显时，换一个不同家族的 judge 加入才有边际。门禁级评测：ensemble + 人类抽检 + 可执行检查。RL 若吃 judge 分，ensemble 也不能当唯一 reward，否则政策优化的是委员会的共同口味。Stacking 权重若在同一小金标上又训又选模型，会过拟合那几十条口味；金标应再切 train/eval，或只用温度缩放这种低容量校准。人审校准集要按任务分层，安全题与文风题不要混成一个 $T$。弱模型投票有时只是在平均同一套 verbosity，看起来方差下降、排名却更偏长，应用长度匹配 pair 做一次对照再决定上线。最后我会补一句：先修 rubric 与 swap，再谈构权校准；同等美元下单 judge 自洽赢了，就不要上弱模型投票。
+单 judge 在金标切片上不稳定、或单一家族 self-preference 明显时，换一个不同家族的 judge 加入才有边际。门禁级评测：ensemble + 人类抽检 + 可执行检查。RL 若吃 judge 分，ensemble 也不能当唯一 reward，否则政策优化的是委员会的共同口味。Stacking 权重若在同一小金标上又训又选模型，会过拟合那几十条口味；金标应再切 train/eval，或只用温度缩放这种低容量校准。人审校准集要按任务分层，安全题与文风题不要混成一个 $T$。弱模型投票有时只是在平均同一套 verbosity，看起来方差下降、排名却更偏长，应用长度匹配 pair 做一次对照再决定上线。先修 rubric 与 swap，再谈构权校准；同等美元下单 judge 自洽赢了，就不要上弱模型投票。
 
 ## 追问
 

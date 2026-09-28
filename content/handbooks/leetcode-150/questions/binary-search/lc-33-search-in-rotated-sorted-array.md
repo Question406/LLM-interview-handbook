@@ -31,7 +31,7 @@ sources:
 
 旋转后仍有一半有序。`nums[lo] <= nums[mid]` 则左半有序，否则右半有序。目标落在有序半的闭区间内就缩到这半，否则丢这半。
 
-先找最小值再二次二分也行，两次 $\log$。一次二分更常见。有重复是 LC 81，相等时只能 `lo += 1`，最坏 $O(n)$。
+先找最小值再二次二分也行，两次 $\log$；一次二分更常见。有重复是 LC 81，相等时只能 `lo += 1`，最坏 $O(n)$。
 
 ## 参考代码
 
@@ -104,7 +104,7 @@ def searchDup(nums, target):
     return False
 ```
 
-- **只找最小值（LC 153）？** 不必判断 `target` 落在哪半。和右端比：`nums[mid] \gt nums[hi]` 则最小值在 `mid` 右侧，`lo = mid + 1`；否则 `mid` 本身可能是最小，`hi = mid`。缩到 `lo == hi`。不要和左端比：未旋转时左端一直最小，不好丢弃。时间 $O(\log n)$。独立卡见 `lc-153-find-minimum-in-rotated-sorted-array`。
+- **只找最小值（LC 153）？** 不必判断 `target` 落在哪半。和右端比：`nums[mid] \gt nums[hi]` 则最小值在 `mid` 右侧，`lo = mid + 1`；否则 `mid` 本身可能是最小，`hi = mid`。缩到 `lo == hi`。和左端比不好用：未旋转时左端一直最小，不好丢弃。时间 $O(\log n)$。独立卡见 `lc-153-find-minimum-in-rotated-sorted-array`。
 
 ```python
 def findMin(nums):

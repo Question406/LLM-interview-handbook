@@ -48,7 +48,7 @@ FP8（E4M3 / E5M2）动态范围比 INT8 友好，Hopper / Blackwell Tensor Core
 - **K 的 outlier 多沿 channel。** 某些 hidden 维长期很大。Per-token 一个 scale 救不了这些通道；应对 channel 维（或很小的 group）做 scale。KIVI 把 K 做成 per-channel 低比特，就是这个观察。
 - **V 的 outlier 多沿 token。** 某个 token 的 value 整体偏大。V 更适合 per-token scale。
 
-注意力里 $QK^{\top}$ 的误差会进 softmax，再去加权 $V$。K 量化噪声会被 softmax 放大成错误的权重分布；V 量化噪声更像加权和上的加性误差。所以 **同样 bit 下，K 通常比 V 更娇气**。实务常见：K 用更高精度或更细的 scale，V 可以更狠；或两边都 FP8，但 K 用 per-channel amax。
+注意力里 $QK^{\top}$ 的误差会进 softmax，再去加权 $V$。K 量化噪声会被 softmax 放大成错误的权重分布；V 量化噪声更像加权和上的加性误差。同样 bit 下，K 通常比 V 更娇气。实务常见：K 用更高精度或更细的 scale，V 可以更狠；或两边都 FP8，但 K 用 per-channel amax。
 
 Per-tensor INT8 是面试里的错误答案：一条序列一个 scale，outlier 通道把格子撑满，其余通道塌成几个 bin，长上下文的针点检索先坏。校准不要只看 PPL：要看长上下文检索、复制、多轮是否还对。PPL 对局部量化噪声不敏感。
 

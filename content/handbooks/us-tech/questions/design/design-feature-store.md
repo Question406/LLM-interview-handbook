@@ -27,7 +27,7 @@ sources:
     type: secondary
 ---
 
-Meta / Google 排序、Uber Michelangelo、Amazon 个性化，MLE 系统设计常把「模型」问成「特征怎么来的」。Feast 把 online / offline 拆开；Michelangelo 强调生产化。白板要的是点查 p99、时间点正确、训练-serving 一致。不是某次现场逐字题。推荐和广告的打分预算往往死在这里，见 `design-recsys`、`design-ads-rank`。
+Meta / Google 排序、Uber Michelangelo、Amazon 个性化，MLE 系统设计常把「模型」问成「特征怎么来的」。Feast 把 online / offline 拆开；Michelangelo 强调生产化。白板要的是点查 p99、时间点正确、训练-serving 一致。推荐和广告的打分预算往往死在这里，见 `design-recsys`、`design-ads-rank`。
 
 ## 两条路径，一份定义
 
@@ -59,7 +59,7 @@ def pit_lookup(rows, as_of, window_s):
 
 新鲜度 SLO 按特征分级：实时点击计数秒级；人口统计可以天级。流式写入要用事件时间，处理乱序和重复。窗口计数（过去 1h 点击）在线和离线窗口要对齐，差一个「是否含当前事件」就会漂。
 
-训练-serving 监控：抽样同一 `(entity, request_id)`，比线上日志里的值和离线回放值。相对误差超阈告警。这比多做一个特征对线上更有用。Schema 演进：加字段要默认值；改语义要新名字，不要原地改 `click_1h` 的定义。
+训练-serving 监控：抽样同一 `(entity, request_id)`，比线上日志里的值和离线回放值。相对误差超阈告警。往往比再加一个特征更管用。Schema 演进：加字段要默认值；改语义要新名字，不要原地改 `click_1h` 的定义。
 
 失败模式：泄漏（join 了点击之后的停留时长当特征预测这次点击）；时钟（处理时间和事件时间混用）；热 key 把 KV 打穿；embedding 表没随物品上架更新；两个模型共用一个 view 但一个以为是标准化后的值。泄漏会让离线 AUC 很好、上线平或更差，和随机 split 分子数据是同一类错，见 `gdm-ml-design`。
 

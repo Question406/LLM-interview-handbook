@@ -30,7 +30,7 @@ sources:
 
 ## 题怎么来的
 
-Holtzman et al. 的 nucleus sampling 是解码默认件。Apple Siri MLE 电面把 sampling 和 attention 并列；OpenAI / Anthropic 推理岗会问温度和截断谁先谁后。公开实现（Transformers `generate`）是 **温度 → top-k → top-p**，白板要对齐，不要发明第四种顺序。稳定 softmax 见 `coding-softmax-stable`；和 greedy / beam 的取舍见 `coding-beam-search`。
+Holtzman et al. 的 nucleus sampling 是解码默认件。Apple Siri MLE 电面把 sampling 和 attention 并列；OpenAI / Anthropic 推理岗会问温度和截断谁先谁后。公开实现（Transformers `generate`）是温度 → top-k → top-p，白板对齐这条，别发明第四种顺序。稳定 softmax 见 `coding-softmax-stable`；和 greedy / beam 的取舍见 `coding-beam-search`。
 
 ## 顺序：先整形分布，再截尾
 
@@ -40,7 +40,7 @@ $$
 \pi_T=\mathrm{softmax}(z').
 $$
 
-Top-k：只保留 $\pi_T$ 里最大的 $k$ 个，其余置零。Nucleus（top-p）：在剩下的概率上按降序累计，取最小前缀使质量和 $\ge p$，其余丢掉，**核内重新归一化** 再采样。
+Top-k：只保留 $\pi_T$ 里最大的 $k$ 个，其余置零。Nucleus（top-p）：在剩下的概率上按降序累计，取最小前缀使质量和 $\ge p$，其余丢掉，核内重新归一化再采样。
 
 $T$ 越小分布越尖，同一 $p$ 进核的 token 越少。所以 nucleus 必须定义在温度化之后的分布上。先按原始 softmax 截断再除 $T$，截尾集合不随温度变，和开源推理栈不一致。Top-k 与 top-p 同时开时，常见是先 k 再 p（HF 默认）；反过来保留集不同，必须写进注释和单测。
 

@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、实习性质、轮次与发帖时间明确，届别和面试日期未披露）
 - 原始措辞：**“如何做的 sql安全检查 检测率为多少”**
 
-原帖问了检测率数字。没有公开数字就不要编。答法是：威胁模型 + 攻击集/正常集上的 recall、误拦、逃逸、延迟。政策最终执行点在 DB gateway，LLM 自检只是辅助。权限原则见 `agent-tool-permissions`，表格抽取的执行层见 `baichuan-complex-table-extract`。
+原帖问了检测率数字。错法：编一个百分比交差。答法是威胁模型 + 攻击集/正常集上的 recall、误拦、逃逸、延迟。政策最终执行点在 DB gateway，LLM 自检只是辅助。权限原则见 `agent-tool-permissions`，表格抽取的执行层见 `baichuan-complex-table-extract`。
 
 ## 执行前拦截，不要靠黑名单
 

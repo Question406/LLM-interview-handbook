@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易把「671B 总参数」当成每 token FLOPs，或把 shared 说成又一个 routed expert。DeepSeekMoE / V3 把 FFN 拆成常开的共享专家和稀疏的路由专家。负载怎么均见 `arch-moe-balance`、`arch-moe-noaux`；专家怎么切卡见 `sys-expert-parallel`。本题只问分工和「什么时候不能省掉 shared」。
+错法：把「671B 总参数」当成每 token FLOPs，或把 shared 说成又一个 routed expert。DeepSeekMoE / V3 把 FFN 拆成常开的共享专家和稀疏的路由专家。负载怎么均见 `arch-moe-balance`、`arch-moe-noaux`；专家怎么切卡见 `sys-expert-parallel`。本题只问分工和「什么时候不能省掉 shared」。
 
 ## 分工：公共通道 vs 长尾专家
 
@@ -45,7 +45,7 @@ DeepSeekMoE 还有细粒度切分：把原来一个大 FFN 切成很多小专家
 
 路由还不稳定、或训推路由会漂时，shared 是缓冲。推理 top-$k$ 和训练不完全一致时，纯 routed 的公共能力会抖；常开支路不依赖这次选了谁。它替代不了训推对齐，但能避免「换一次路由公共语言建模就塌」。
 
-可以不留的情况。Mixtral 一类粗粒度、专家大、$k$ 相对不那么极端时，常见做法是纯 routed、没有 shared。稠密 FFN 等价于「全部都是 shared、没有 routed」。面试不要说「MoE 必须有共享专家」，细粒度稀疏才几乎必须。省掉 shared 的代价是：router 同时承担公共与专长，aux / bias 要更用力，热点更常见。
+可以不留的情况。Mixtral 一类粗粒度、专家大、$k$ 相对不那么极端时，常见做法是纯 routed、没有 shared。稠密 FFN 等价于「全部都是 shared、没有 routed」。面试不要说「MoE 必须有共享专家」：细粒度稀疏才几乎必须。省掉 shared 的代价是 router 同时承担公共与专长，aux / bias 要更用力，热点更常见。
 
 ## 参数账和 FLOP 账必须拆开
 
@@ -53,7 +53,7 @@ DeepSeekMoE 还有细粒度切分：把原来一个大 FFN 切成很多小专家
 
 EP 布局也不同：routed 按专家切卡，token 要 all-to-all；shared 每 token 都要，通常复制在每张卡上（或只做 TP 切矩阵），不走 dispatch。面试若把 shared 也画进 EP all-to-all，通信模式就错了。通信与计算怎么叠见 `sys-expert-parallel`。
 
-说白了：shared 买的是与路由无关的稠密底；routed 买的是可扩展的专长容量。细粒度不留 shared，专长还没长出来，公共能力已经在抢热点。
+shared 买的是与路由无关的稠密底；routed 买的是可扩展的专长容量。细粒度不留 shared，专长还没长出来，公共能力已经在抢热点。
 
 ## 追问
 

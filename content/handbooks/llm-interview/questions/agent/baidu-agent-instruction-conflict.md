@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、轮次与面试日期明确，岗位和届别未披露）
 - 原始措辞：**“前后指令冲突怎么处理”**
 
-文心二面这题，别答成「听最后一句」或「让模型自己权衡」。要按 authority 分层：policy / system 压过 developer、user，更压过网页和 tool 输出。不能安全消解就拒绝危险分支并澄清。间接注入见 `agent-prompt-injection`，执行点权限见 `agent-tool-permissions`，多 Agent 政策冲突见 `byte-multiagent-policy-conflict-recovery`。
+错法：「听最后一句」或「让模型自己权衡」。按 authority 分层：policy / system 压过 developer、user，更压过网页和 tool 输出。不能安全消解就拒绝危险分支并澄清。间接注入见 `agent-prompt-injection`，执行点权限见 `agent-tool-permissions`，多 Agent 政策冲突见 `byte-multiagent-policy-conflict-recovery`。
 
 ## 先标 authority，再比具体性
 

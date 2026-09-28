@@ -94,7 +94,7 @@ def kthSmallestPairSum(nums1, nums2, k):
     return lo
 ```
 
-- **有序矩阵第 $k$ 小（LC 378）？** $n\times n$ 每行每列升序，说白了是 $n$ 路归并。堆：先把第一列入堆，弹出后把同行下一列推进去，弹 $k$ 次，时间 $O(k\log n)$。或者对值二分：`mid` 时从左下（或右上）走阶梯，数有多少个 $\le mid$，再跟 $k$ 比，时间 $O(n\log(\max-\min))$。独立卡见 `lc-378`。
+- **有序矩阵第 $k$ 小（LC 378）？** $n\times n$ 每行每列升序，就是 $n$ 路归并。堆：先把第一列入堆，弹出后把同行下一列推进去，弹 $k$ 次，时间 $O(k\log n)$。或者对值二分：`mid` 时从左下（或右上）走阶梯，数有多少个 $\le mid$，再跟 $k$ 比，时间 $O(n\log(\max-\min))$。独立卡见 `lc-378`。
 
 ```python
 def kthSmallestMatrix(matrix, k):

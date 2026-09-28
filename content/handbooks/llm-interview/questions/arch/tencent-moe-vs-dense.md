@@ -28,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“MoE 和 Dense 比，优势和代价是什么？”**
 
-这块容易只复读「稀疏省算力」。MoE 总参数往往更大，省的是每 token 激活的 FFN；代价是路由、通信、训推两套并行。和同面「Qwen vs DeepSeek」连问时，落到共享专家与 MLA，见 `tencent-qwen-vs-deepseek`、`arch-moe`。参数怎么拆见 `minimax-param-breakdown`。
+错法：只复读「稀疏省算力」。MoE 总参数往往更大，省的是每 token 激活的 FFN；代价是路由、通信、训推两套并行。和同面「Qwen vs DeepSeek」连问时，落到共享专家与 MLA，见 `tencent-qwen-vs-deepseek`、`arch-moe`。参数怎么拆见 `minimax-param-breakdown`。
 
 ## 赚：容量与激活解耦
 
@@ -44,9 +44,9 @@ $$
 
 ## 亏：不均、通信、训推两套世界
 
-- **负载不均**：少数专家吃掉流量，其余坏死；aux loss / sequence-level balance / capacity factor 防塌缩，见 `arch-moe-balance`、`ant-moe-aux-load-balance`、`code-moe-router-aux-loss`。capacity 太紧则 drop token，见 `sys-moe-capacity-token-drop`。
-- **通信**：expert parallel 要把 token 按专家 all-to-all；EP size 绑通信体积。小 batch、decode 单 token 时 MoE 并不更快。
-- **训推不一致**：训练 drop / 不同 capacity，serving 另一套 top-$k$ 或 EP，路由统计对不齐，见 `sys-moe-train-infer-routing-mismatch`。RL 还会让路由跟着政策漂，见 `stepfun-rl-moe-gspo`。
+- 负载不均：少数专家吃掉流量，其余坏死；aux loss / sequence-level balance / capacity factor 防塌缩，见 `arch-moe-balance`、`ant-moe-aux-load-balance`、`code-moe-router-aux-loss`。capacity 太紧则 drop token，见 `sys-moe-capacity-token-drop`。
+- 通信：expert parallel 要把 token 按专家 all-to-all；EP size 绑通信体积。小 batch、decode 单 token 时 MoE 并不更快。
+- 训推不一致：训练 drop / 不同 capacity，serving 另一套 top-$k$ 或 EP，路由统计对不齐，见 `sys-moe-train-infer-routing-mismatch`。RL 还会让路由跟着政策漂，见 `stepfun-rl-moe-gspo`。
 
 评测时必须关掉训练专用的随机 drop，用与线上一致的路由。混元若追「和 Dense 训练稳定性」，承认 MoE 超参面更大：lr、aux 系数、$k$、capacity 要一起拧。
 

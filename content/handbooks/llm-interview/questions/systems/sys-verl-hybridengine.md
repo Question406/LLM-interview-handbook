@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-别背「veRL 更快」。要说清的是 **同卡换布局 vs 分卡扩容**：RL 一步里 Actor 既要 backward，又要高吞吐 decode，两套并行布局本来就不同。选错放置，显存和通信会先爆，而不是算法不收敛。生成为什么必须用推理引擎，见 `sys-rl-why-vllm-rollout`。HybridEngine 的名字容易让人以为「训练和推理融合进一个更快的算子」；它做的是 **同一份权重在两种并行方案之间 reshard**，一步内仍然串行。我先把「少存一份整模」和「一步能否重叠」分开，再比较 OpenRLHF / slime。
+要说清的是同卡换布局 vs 分卡扩容：RL 一步里 Actor 既要 backward，又要高吞吐 decode，两套并行布局本来就不同。选错放置，显存和通信会先爆，而不是算法不收敛。生成为什么必须用推理引擎，见 `sys-rl-why-vllm-rollout`。HybridEngine 做的是同一份权重在两种并行方案之间 reshard，一步内仍然串行，不是「训练和推理融合成一个更快的算子」。开口把「少存一份整模」和「一步能否重叠」分开，再比较 OpenRLHF / slime。
 
 ## HybridEngine 在省什么
 
@@ -37,9 +37,9 @@ sources:
 
 HybridFlow / veRL 的 3D-HybridEngine 把生成并行组排成和训练分片 **重叠**：本卡已有的 shard 能直接复用，all-gather 缩到 micro-DP 组内，而不是全集群拉一份整模。目的是 **少存一份权重、少一次全局收集**，让同构大模型（尤其 70B 级以上）在同一批 GPU 上既能训又能采。
 
-代价要主动讲：一步之内训练与生成默认 **串行**。同一张卡不能边 backward 边 decode；采样完卸 KV、reshard 回训练布局，再做更新。Fully async 是后加的另一条路径，会引入 policy staleness，和 `sys-rl-infra` 里的 freshness 是同一笔账，不是 HybridEngine 的默认免费午餐。串行气泡在长 rollout 时尤其明显：生成占满墙钟，训练 GPU 空转。这时同卡省显存的收益还在，但利用率故事要改口；若业务要叠采样与更新，就该评估分卡或 async，而不是继续吹 HybridEngine「更快」。
+代价要主动讲：一步之内训练与生成默认串行。同一张卡不能边 backward 边 decode；采样完卸 KV、reshard 回训练布局，再做更新。Fully async 是后加的另一条路径，会引入 policy staleness，和 `sys-rl-infra` 里的 freshness 是同一笔账。串行气泡在长 rollout 时尤其明显：生成占满墙钟，训练 GPU 空转。这时同卡省显存的收益还在，但利用率故事要改口；若业务要叠采样与更新，就该评估分卡或 async。
 
-Reshard 解决的是 **权重布局**；采样 logp 仍要在训练图上重算，见 `meituan-verl-recompute-logprob`。不要把「省显存的换布局」说成「省掉 recompute」。HybridEngine 换完布局，引擎里的 $\theta$ 已经是新的，但数值图仍是 vLLM/SGLang 的。我会把 HybridEngine、weight sync、recompute 画成三步：第一步布局，第二步版本，第三步训练图 logp。缺一都会在 ratio 上出无声的偏。
+Reshard 解决的是权重布局；采样 logp 仍要在训练图上重算，见 `meituan-verl-recompute-logprob`。不要把「省显存的换布局」说成「省掉 recompute」。HybridEngine、weight sync、recompute 是三步：布局、版本、训练图 logp。缺一都会在 ratio 上出无声的偏。
 
 ## 和 OpenRLHF 分卡怎么选
 
@@ -50,11 +50,11 @@ OpenRLHF 把 vLLM 放成独立 Ray actor：训练走 DeepSpeed ZeRO，生成走�
 - **同构、卡紧、大模型：偏 HybridEngine。** 不想为 rollout 再备一套 70B。
 - **生成与训练异构、要独立扩容、能接受同步延迟：偏 OpenRLHF 式分池。**
 
-两者都能接 vLLM；差别不在「用不用 vLLM」，在 **权重有几份、卡怎么切、一步是否串行**。同构集群上为了「看起来像 OpenRLHF」强行分卡，会多交一份 70B 显存税；反过来在已经隔离的推理池上硬套 HybridEngine，会把 serving 弹性丢掉。先画资源拓扑，再选引擎粘合方式。
+两者都能接 vLLM；差别不在「用不用 vLLM」，在权重有几份、卡怎么切、一步是否串行。同构集群上为了「看起来像 OpenRLHF」强行分卡，会多交一份 70B 显存税；反过来在已经隔离的推理池上硬套 HybridEngine，会把 serving 弹性丢掉。先画资源拓扑，再选引擎粘合方式。
 
 ## 不要和 slime `--colocate` 混为一谈
 
-slime 的 `--colocate` 是同卡、 **两套进程**（Megatron trainer + SGLang server），用 `--offload-train` / `--offload-rollout` 轮流把对方挤出显存。这是放置和 offload，不是同进程换并行组。HybridEngine 追求原地 reshard、少一份整模；colocate 追求同卡时分复用、进程边界仍在。对答见 `slime-colocate-vs-split`、`sys-verl-vs-slime`。说「slime 也是 HybridEngine」会被拆穿。Offload 的代价是 PCIe / NVLink 上把优化器状态和 KV 来回搬，一步里会出现两段明显的拷贝气泡。卡内带宽够时可以接受；跨 NUMA 或 PCIe 代差大时，colocate 可能比分卡还慢。选放置要 profile 拷贝，不要只比「省不省卡」。
+slime 的 `--colocate` 是同卡、两套进程（Megatron trainer + SGLang server），用 `--offload-train` / `--offload-rollout` 轮流把对方挤出显存。这是放置和 offload，不是同进程换并行组。HybridEngine 追求原地 reshard、少一份整模；colocate 追求同卡时分复用、进程边界仍在。对答见 `slime-colocate-vs-split`、`sys-verl-vs-slime`。说「slime 也是 HybridEngine」会被拆穿。Offload 的代价是 PCIe / NVLink 上把优化器状态和 KV 来回搬，一步里会出现两段明显的拷贝气泡。卡内带宽够时可以接受；跨 NUMA 或 PCIe 代差大时，colocate 可能比分卡还慢。选放置要 profile 拷贝，不要只比「省不省卡」。
 
 ## 显存账本怎么讲
 

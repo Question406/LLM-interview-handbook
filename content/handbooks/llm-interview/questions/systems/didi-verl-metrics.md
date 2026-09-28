@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“在用verl做强化学习时，你是根据什么指标来查看训练的进度的。”**
 
-滴滴 RL 实习一面这题，这块容易只报 policy loss 下降。Loss 在 PPO/GRPO 里几乎不能单独当进度：clip 之后 loss 变小可能只是 ratio 被卡住，或在刷长度。最低配要同时看任务有没有变好、策略有没有漂、引擎有没有在干活。评测用 holdout Pass@$k$，不要看当前训练组的平均 reward。相关卡：`byte-verl-structure`、`pt-grpo-variance`、`meituan-rl-loss-reward-oscillation`。会看这三桶，比会背 veRL 配置项更像真的训过。
+错法：只报 policy loss 下降。Loss 在 PPO/GRPO 里几乎不能单独当进度：clip 之后 loss 变小可能只是 ratio 被卡住，或在刷长度。最低配要同时看任务有没有变好、策略有没有漂、引擎有没有在干活。评测用 holdout Pass@$k$，不要看当前训练组的平均 reward。相关卡：`byte-verl-structure`、`pt-grpo-variance`、`meituan-rl-loss-reward-oscillation`。会看这三桶，比会背 veRL 配置项更像真的训过。
 
 ## 任务桶：是不是真的更会做
 

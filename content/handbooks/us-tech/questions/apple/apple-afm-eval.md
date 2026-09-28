@@ -31,11 +31,11 @@ sources:
     type: secondary
 ---
 
-Apple 公开评 AFM 时，主叙事是 **人评、feature adapter、locale**，再辅 IFEval 一类指令跟随。端侧模型写明不是开放世界 chatbot。把 BLEU 当门禁，等于用机器翻译指标去收 iPhone 通知摘要。Bedrock 侧同一类错误见 `amazon-titan-eval`；这里多三刀：功耗、热、数据有没有离开设备。不是某次逐字真题。Exponent 也把 on-device limits 列为 MLE 深度。
+Apple 公开评 AFM 时，主叙事是人评、feature adapter、locale，再辅 IFEval 一类指令跟随。端侧模型写明不是开放世界 chatbot。把 BLEU 当门禁，等于用机器翻译指标去收 iPhone 通知摘要。Bedrock 侧同一类错误见 `amazon-titan-eval`；这里多三刀：功耗、热、数据有没有离开设备。Exponent 也把 on-device limits 列为 MLE 深度。
 
 ## BLEU 在这里骗什么
 
-BLEU / ROUGE 要参考译文。邮件摘要、通知改写常常没有唯一金句：合法说法有很多，换词就掉分；抄一句检索块再加幻觉，n-gram 还可能不低。开放知识问答经常没有参考答案。AFM 的产品任务更是 **有证据 $E$ 的条件生成**，见 `apple-siri-grounded`：源里没有就该拒，BLEU 给不出这个契约。
+BLEU / ROUGE 要参考译文。邮件摘要、通知改写常常没有唯一金句：合法说法有很多，换词就掉分；抄一句检索块再加幻觉，n-gram 还可能不低。开放知识问答经常没有参考答案。AFM 的产品任务更是有证据 $E$ 的条件生成，见 `apple-siri-grounded`：源里没有就该拒，BLEU 给不出这个契约。
 
 公开报告用人做 side-by-side，维度包括分析推理、头脑风暴、分类、抽取、摘要、工具、安全。locale 还要看是否像当地人在说话（英式 football vs soccer）。feature 层另做 adapter 评测：邮件 / 信息 / 通知各自 750 条量级的分层样本，好 / 中 / 差按多维度全好才算好。这才是「上线门禁」的形状，不是 WMT 分数。
 
@@ -45,9 +45,9 @@ BLEU / ROUGE 要参考译文。邮件摘要、通知改写常常没有唯一金�
 
 任务质量之外，现场主动给系统图和隐私图，否则像在评云端 API。
 
-1. **延迟。** Prefill ms/prompt-token、decode token/s、TTFT、语音则是首包音频。公开约 0.6 ms/prompt-token 和 30 token/s 是能力上限，产品看 p95 和热降频后的稳态。拆法见 `apple-siri-latency`。投机只报验证后的有效 token/s，见 `apple-spec-edge`。
-2. **功耗和热。** Talaria / Instruments：每层时延和能量，指导 palettization，见 `apple-ane`、`apple-ondevice-quant`。Joule/token、连续对话是否掉到不可用。30 token/s 瞬时、两分钟后节流，门禁要有稳态。
-3. **隐私。** 这一轮 $E$ 是否离设备；PCC 切片大小和驻留；日志是否含原文。训练基础模型不用用户私有数据是声明，评测要能指出 **产品路径有没有把邮件打到不该去的通道**。DP 只在学人群规律时花 $\varepsilon$，见 `apple-diff-privacy`。把「有 PCC」当成隐私指标，是概念错误。
+1. 延迟。Prefill ms/prompt-token、decode token/s、TTFT、语音则是首包音频。公开约 0.6 ms/prompt-token 和 30 token/s 是能力上限，产品看 p95 和热降频后的稳态。拆法见 `apple-siri-latency`。投机只报验证后的有效 token/s，见 `apple-spec-edge`。
+2. 功耗和热。Talaria / Instruments：每层时延和能量，指导 palettization，见 `apple-ane`、`apple-ondevice-quant`。Joule/token、连续对话是否掉到不可用。30 token/s 瞬时、两分钟后节流，门禁要有稳态。
+3. 隐私。这一轮 $E$ 是否离设备；PCC 切片大小和驻留；日志是否含原文。训练基础模型不用用户私有数据是声明，评测要能指出产品路径有没有把邮件打到不该去的通道。DP 只在学人群规律时花 $\varepsilon$，见 `apple-diff-privacy`。把「有 PCC」当成隐私指标，是概念错误。
 
 接地：句子能否对齐到本地证据或工具结果；错误引用过期日历算事故。格式：通知是否两句、是否剧透，这是 adapter 有没有干活，见 `apple-rank-adapter`、`apple-personalize`。不要合成一个「质量 0.82」。
 
@@ -57,10 +57,10 @@ BLEU / ROUGE 要参考译文。邮件摘要、通知改写常常没有唯一金�
 
 我会钉四层，缺一层就说门禁不完整：
 
-- **任务。** 人评 + 工具成功率；feature 集和底模通测集分开。换底模时 adapter 要重训、重评，公开 toolkit 也是这么说的。
-- **接地 / 安全。** 无证据生成率、拒答是否该拒、有害 / 敏感、剧透。
-- **系统。** TTFT、token/s、Joule/token、峰值内存、ANE 驻留。KV 变长后的曲线，见 `apple-ondevice-kv`。
-- **隐私。** 离设备字节、PCC 调用率、opt-in 分析是否走聚合 / DP。
+- 任务。人评 + 工具成功率；feature 集和底模通测集分开。换底模时 adapter 要重训、重评，公开 toolkit 也是这么说的。
+- 接地 / 安全。无证据生成率、拒答是否该拒、有害 / 敏感、剧透。
+- 系统。TTFT、token/s、Joule/token、峰值内存、ANE 驻留。KV 变长后的曲线，见 `apple-ondevice-kv`。
+- 隐私。离设备字节、PCC 调用率、opt-in 分析是否走聚合 / DP。
 
 线上：用户改写率、重说率、「你说错了」、打断、过热关特性。离线和线上打架先信线上任务指标。不要为了 BLEU 把提示改成更像参考译文、更不像用户邮件。
 

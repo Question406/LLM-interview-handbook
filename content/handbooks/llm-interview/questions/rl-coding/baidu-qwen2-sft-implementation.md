@@ -1,7 +1,7 @@
 ---
 id: baidu-qwen2-sft-implementation
-section: coding
-order: 100
+section: rl-coding
+order: 2
 level: A
 title: 百度文心后训练：用 Transformers / PyTorch 实现 Qwen2 的 SFT 训练
 quick: >-
@@ -32,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“使用transformers，pytorch实现Qwen2模型的SFT训练”**
 
-这块容易「把 prompt 整段截掉再训」代替逐 token loss mask，或用错 Qwen2 chat template 导致 special token 对不齐。SFT 的数据契约是：`input_ids` 仍是整段对话，`labels` 里只有 assistant 目标为真实 id，其余 $-100$。后训练目标对比见 `byte-sft-vs-grpo-objective`；本题要的是能跑的最小闭环。
+错法：「把 prompt 整段截掉再训」代替逐 token loss mask，或用错 Qwen2 chat template 导致 special token 对不齐。SFT 的数据契约是：`input_ids` 仍是整段对话，`labels` 里只有 assistant 目标为真实 id，其余 $-100$。后训练目标对比见 `byte-sft-vs-grpo-objective`；本题要的是能跑的最小闭环。
 
 ## 数据契约：template、labels=-100、多轮
 
@@ -60,7 +60,7 @@ def sft_step(model, batch):
 
 动态 padding 或 packing；`attention_mask` 与 labels 同步。BF16 + gradient accumulation 模拟大 batch。`AutoModelForCausalLM(..., labels=labels)` 内部已做 shift：logits[..., :-1] 对 labels[..., 1:]，不要自己再 shift 一次。Optimizer / cosine warmup、按 step 存 ckpt、从 `global_step` resume。
 
-必须有 held-out：instruction 格式、拒绝、工具调用各一薄集。train loss 下降但 eval 格式崩，通常是 mask 把分隔符学进去了，或 pad 进了 loss。常见坑：template 不匹配、截断切掉 answer、`pad_token` 未设导致 eos 当 pad、packing 跨样本没有切断 attention。我会把 mask 讲清楚，不展示 Trainer 参数表。
+必须有 held-out：instruction 格式、拒绝、工具调用各一薄集。train loss 下降但 eval 格式崩，通常是 mask 把分隔符学进去了，或 pad 进了 loss。常见坑：template 不匹配、截断切掉 answer、`pad_token` 未设导致 eos 当 pad、packing 跨样本没有切断 attention。把 mask 讲清楚即可，不必展示 Trainer 参数表。
 
 ## 追问
 

@@ -58,7 +58,7 @@ CUTLASS 公开调度名（面试用标签，不背头文件）：
 
 ## Persistent：CTA 不随 token 下课
 
-普通 launch：host 每步 enqueue 几十到几百个核（RMSNorm、QKV、RoPE、attention、GEMM、sampler）。Decode 每个核的工作量很小，$B$ 再小，**启动和尾泡** 能占墙钟。CUDA Graph 把 launch 收成 replay，见 `nvidia-cuda-graph`。Persistent kernel 更进一步：grid 大约等于 SM 数，CTA 进核之后进入工作队列循环，
+普通 launch：host 每步 enqueue 几十到几百个核（RMSNorm、QKV、RoPE、attention、GEMM、sampler）。Decode 每个核的工作量很小，$B$ 再小，启动和尾泡能占墙钟。CUDA Graph 把 launch 收成 replay，见 `nvidia-cuda-graph`。Persistent kernel 更进一步：grid 大约等于 SM 数，CTA 进核之后进入工作队列循环，
 
 $$
 \text{while }\mathrm{next\_tile}():\ \mathrm{load\ +\ mma\ +\ store}.
@@ -69,13 +69,13 @@ Tile scheduler 在 device 上发下一块 $(m,n,k)$ 或下一条请求的某一�
 Decode 上「persistent」有两层口语，要分开：
 
 1. **GEMM/注意力核内部 persistent**：一个核里扫完多层 tile，少 launch。CUTLASS 文档写的是这个。
-2. **跨 iteration 常驻**：CTA 不返回，等下一枚 token。这要求工作队列、动态 $B$、$T$ 都能在 device 侧看见，和 IFB 的变长 batch 冲突更大，工程上更常「Graph 捕获一档固定 $B$」而不是真的永不返回。面试说「公开文献里 persistent 主要指 CTA 常驻吃多 tile，跨步常驻是同一思想的延伸」就够，不要编一个 TRT-LLM 函数名。
+2. **跨 iteration 常驻**：CTA 不返回，等下一枚 token。这要求工作队列、动态 $B$、$T$ 都能在 device 侧看见，和 IFB 的变长 batch 冲突更大，工程上更常「Graph 捕获一档固定 $B$」而不是真的永不返回。公开文献里 persistent 主要指 CTA 常驻吃多 tile，跨步常驻是同一思想的延伸；别编 TRT-LLM 函数名。
 
 ## Decode 为什么特别吃这一套
 
 Prefill 大 GEMM 已经能藏延迟，齐次核 + 普通 launch 也过得去。Decode：$M=B$ 很小，每步读整份权重和 KV，计算强度低。TMA 专职把权重 / KV 推进 SMEM，MMA warp 打瘦 $M$ 的 GEMM，epilogue warp 写新 KV 页。再叠 split-K 填 SM。Graph 消 host 间隙。缺任何一层，Nsight Systems 上都能看到：要么核间白缝，要么核内 Tensor Core 等内存。
 
-错法：把 warp specialization 说成「把 batch 维切给不同 warp」——那是数据并行，不是角色并行。把 persistent 说成「提高 occupancy」——常驻可能故意只用一个 CTA 每 SM，occupancy 数字低、管道却满。
+错法：把 warp specialization 说成「把 batch 维切给不同 warp」，那是数据并行，不是角色并行。把 persistent 说成「提高 occupancy」也不对：常驻可能故意只用一个 CTA 每 SM，occupancy 数字低、管道却满。
 
 ## 追问
 

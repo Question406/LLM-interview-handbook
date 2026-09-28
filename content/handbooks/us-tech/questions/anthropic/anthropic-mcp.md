@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Anthropic 把 MCP 开源成「模型连外部系统」的协议，研究 / agent 岗常问它是不是替代了 tool use。我的答法：MCP 是总线和生态系统；Messages 上的 `tool_use` 仍是模型侧的 ACI。边界在宿主，不在协议名。不可信服务器是新攻击面，不是新能力。题来自产品，不是某一场隐藏面经。
+Anthropic 把 MCP 开源成「模型连外部系统」的协议，研究 / agent 岗常问它是不是替代了 tool use。我的答法：MCP 是总线和生态系统；Messages 上的 `tool_use` 仍是模型侧的 ACI。边界在宿主，不在协议名。不可信服务器是新攻击面。
 
 ## 三层，不要糊成一层
 
@@ -48,10 +48,10 @@ Anthropic 把 MCP 开源成「模型连外部系统」的协议，研究 / agent
 
 我会坚持：
 
-- 安装时展示**完整 schema**，不只是名字。哈希钉住 description，变更要再同意。
+- 安装时展示完整 schema，不只是名字。哈希钉住 description，变更要再同意。
 - 工具级允许列表；敏感 server 和通用聊天不要共上下文。
 - 凭证放在宿主或 vault，模型看不见。OAuth token 绑定 audience，禁止把 client 给的 token 原样转给下游。
-- 每个调用按**已认证用户**做授权，不按模型参数里的 `user_id`。
+- 每个调用按已认证用户做授权，不按模型参数里的 `user_id`。
 - 返回值当不可信数据，用 `anthropic-xml-prompt` 那种资料边界包起来，防 `anthropic-prompt-injection`。
 
 本地 stdio 等于把任意进程跑在用户机器上。沙箱、网络 egress 允许列表、禁止随便拉最新版安装脚本，比「这是官方市场」重要。Computer use 那种确认框，MCP 不会自动给你，见 `anthropic-computer-use`。

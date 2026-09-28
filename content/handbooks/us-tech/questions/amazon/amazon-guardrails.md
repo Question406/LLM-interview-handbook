@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-Bedrock / AGI 应用岗会把安全问成系统题，不是「你知不知道有个 Guardrails 产品」。官方文档写得很直：评估用户输入和模型回复。`ApplyGuardrail` 还可以脱离模型、单独跑。不一定是某次现场原题，但和 Seller Support、客服摘要、内部知识库同一类约束。按 Ownership 收：政策谁拍板、拦了怎么审计、漏拦谁 oncall。
+Bedrock / AGI 应用岗会把安全问成系统题，官方文档写得很直：评估用户输入和模型回复。`ApplyGuardrail` 还可以脱离模型、单独跑。和 Seller Support、客服摘要、内部知识库同一类约束。按 Ownership 收：政策谁拍板、拦了怎么审计、漏拦谁 oncall。
 
 ## 生成前拦什么，生成后拦什么
 

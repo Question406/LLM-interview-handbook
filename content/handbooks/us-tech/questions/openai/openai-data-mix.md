@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-GPT-3 论文把训练混合写进了表：Common Crawl、WebText2、Books、Wikipedia 的 **token 采样权重** 和磁盘容量不是一回事。GPT-4 报告几乎不谈 mix。面试如果问「你们内部 web / code / math 各占多少」，我会答：我不知道 GPT-4 的百分比，我知道 **权重、epoch、过滤、去污** 各自管什么。编一个 15% code 当内部数字，比答错 Kaplan 坐标更糟。
+GPT-3 论文把训练混合写进了表：Common Crawl、WebText2、Books、Wikipedia 的 token 采样权重和磁盘容量不是一回事。GPT-4 报告几乎不谈 mix。面试如果问「你们内部 web / code / math 各占多少」，答：我不知道 GPT-4 的百分比，我知道权重、epoch、过滤、去污各自管什么。编一个 15% code 当内部数字，比答错 Kaplan 坐标还糟。
 
 ## 配比是采样，不是仓库体积
 
@@ -45,7 +45,7 @@ GPT-3 的公开账：Common Crawl 原始 token 远多于其它源，训练时只
 - **Code。** 语法严、长依赖，对后来的工具调用和推理有溢出效应。太多会把聊天变成函数体腔；太少则 HumanEval / 仓库编辑掉点。代码要用文档边界或结束符切开。随机把两个仓库拼成一条长序列且不做文档 mask，是另一种脏 $D$，长窗 packing 见 `openai-long-ctx-train`。
 - **Math。** 真实占比通常小，靠上采样和合成题撑评测。合成题极易污染 GSM8K 一类，过滤器和 eval 去污要一起设计，见 `openai-eval-harness`。
 
-DoReMi 的做法是：先训一个小 proxy 学域权重，再放到大模型上。面试用它说明「权重可以学，不是拍脑袋 60/20/20」。不要声称 OpenAI 用了 DoReMi。
+DoReMi 先训一个小 proxy 学域权重，再放到大模型上。用来说明「权重可以学，不是拍脑袋 60/20/20」。不要声称 OpenAI 用了 DoReMi。
 
 ## epoch、重复、过滤的边界
 
@@ -53,7 +53,7 @@ Chinchilla 的 $D$ 默认当成独立 token。数据不够时你会重复。Muen
 
 过滤不是越狠越好。按模型 perplexity 砍尾巴，常把代码、小语种、口语砍掉，留下「像百科的英语」。分类器在正例里如果全是 WebText，风格会朝那偏。毒性过滤和 PII 是产品约束，和 perplexity 过滤分开报。
 
-epoch 和配比会耦合：百科权重 3% 但扫 3 个 epoch，有效暴露远高于 3%。白板要写清是 **采样概率** 还是 **每个源的遍数**。Resume 时打乱种子，避免每次都在同一 shard 边界撞上坏 batch，那种 spike 见 `openai-loss-spike`。
+epoch 和配比会耦合：百科权重 3% 但扫 3 个 epoch，有效暴露远高于 3%。白板要写清是采样概率还是每个源的遍数。Resume 时打乱种子，避免每次都在同一 shard 边界撞上坏 batch，那种 spike 见 `openai-loss-spike`。
 
 和质量相对的另一头是 compute-optimal：在固定 $C$ 下先把 $D$ 当独立高质量 token 来算，再谈重复，见 `openai-scaling-laws`。脏数据上谈 20 token/参数没有意义。
 

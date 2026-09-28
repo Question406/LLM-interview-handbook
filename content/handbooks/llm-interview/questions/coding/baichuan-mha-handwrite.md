@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写多头注意力机制”**；同面还有 **“手写一下 dpo和ppo”**、**“手写梯度下降法的二分”**
 
-这块容易写成 `nn.MultiheadAttention` 一行，或 reshape 时把 $[B,T,H,d_h]$ 和 $[B,H,T,d_h]$ 搞反。骨架与 `deepseek-mha-handwrite`、`pdd-attention-handwrite` 相同；百川二面差在紧接着 GQA、DPO/PPO、二分求根（见 `baichuan-sqrt-binary-search`、`baichuan-grpo-ppo-dpo`）。先画形状再写公式，避免卡在 `view`。
+错法：写成 `nn.MultiheadAttention` 一行，或 reshape 时把 $[B,T,H,d_h]$ 和 $[B,H,T,d_h]$ 搞反。骨架与 `deepseek-mha-handwrite`、`pdd-attention-handwrite` 相同；百川二面差在紧接着 GQA、DPO/PPO、二分求根（见 `baichuan-sqrt-binary-search`、`baichuan-grpo-ppo-dpo`）。先画形状再写公式，避免卡在 `view`。
 
 ## 形状清单：拆头、缩放、mask、拼回
 
@@ -67,7 +67,7 @@ $$
 L=-\log\sigma\bigl(\beta(\log\pi_\theta(y_w)-\log\pi_\theta(y_l)-\log\pi_{\mathrm{ref}}(y_w)+\log\pi_{\mathrm{ref}}(y_l))\bigr).
 $$
 
-PPO：$\min(\rho A,\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)A)$，见 `code-ppo-clip`。三题连问时 Attention 十分钟内写完主干，公式口头写，二分另开卡。不要在 attention 里写 dropout 细节耗掉白板。
+PPO：$\min(\rho A,\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)A)$，见 `code-ppo-clip`。三题连问时 Attention 十分钟内写完主干，公式口头写，二分另开卡。白板时间别耗在 attention 的 dropout 细节上。
 
 ## 追问
 

@@ -51,7 +51,7 @@ $$
 
 ## 一个具体错法
 
-错法：把 multi-token 说成 BERT 式双向、或说成非自回归一次性生成整句。因果 mask 还在，主干仍是 decoder-only，只是损失看见了更远的标签。另一个错法：推理时把 $n$ 个头的分布平均起来当 next-token——那会把 $t+2$ 的预测污染 $t+1$。
+错法：把 multi-token 说成 BERT 式双向、或说成非自回归一次性生成整句。因果 mask 还在，主干仍是 decoder-only，只是损失看见了更远的标签。另一个错法：推理时把 $n$ 个头的分布平均起来当 next-token，会把 $t+2$ 的预测污染 $t+1$。
 
 和 tokenizer 的关系（`meta-llama3-tokenizer`）：$n$ 个未来 token 的粒度取决于词表。代码上 BPE 更「整块」，论文也说代码收益更明显；这是观察，不是证明。
 

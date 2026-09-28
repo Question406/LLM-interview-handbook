@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 TTFT / error budget，容量单位是 token 与 KV。本题发生在 **RL 训练环**：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据不是用户 SLO，而是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步墙钟和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
+这块容易讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 TTFT / error budget，容量单位是 token 与 KV。本题在 RL 训练环：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步墙钟和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
 
 ## 四类闸门：长度、零方差组、stale、verifier
 
@@ -32,7 +32,7 @@ sources:
 - **Stale policy。** 异步栈里轨迹带 `policy_version`。Gap 过大则 $\rho=\pi_\theta/\pi_{\mathrm{old}}$ 偏离 1，方差爆炸。按最大 gap 丢弃或按 age 降权，盯 KL 与 $\rho$ 分位数，见 `sys-rl-infra`。Freshness 是算法约束，不是「旧数据也能当 SFT」。
 - **Verifier / 环境超时。** Sandbox、编译器、裁判没在 deadline 返回，不能默默当 $r=0$。那会学到「超时=失败」。应 retry、标 `unknown` 不进 batch，或走部分信用；超时杀死要记原因，避免把环境故障写成策略差。
 
-决策只有三种：**accept / drop / retry**。排队在训练里对应「下一 micro-batch 再拼」，不是无限 FIFO。和 serving 的对照一句就够：那边保的是 deadline，这边保的是 **有效优势与版本对齐**。
+决策只有三种：accept / drop / retry。排队在训练里对应「下一 micro-batch 再拼」，不是无限 FIFO。serving 保的是 deadline；这里保的是有效优势与版本对齐。
 
 ## 和吞吐旋钮怎么一起拧
 
@@ -47,4 +47,3 @@ sources:
 - **全对组为什么必须 drop？** $\hat A=0$，backward 白做还占 token 帽。丢掉重采是为了有效 $n$，不是为了让准确率数字更好看。
 - **stale 到多少必须丢？** 看 $\rho$ 分位数和 KL，而不是固定步数。Gap 允许范围是算法选择；超过就丢，比硬训更干净。
 - **重试会不会让 off-policy 更严重？** 会。Retry 期间 $\theta$ 可能又更新了。重试也要带 `policy_version`，超时预算算进 admission，避免重试风暴占满 sandbox。
----

@@ -30,7 +30,7 @@ sources:
 - **Prefill：** 输入是整段 prompt，形如 $[T,d]\times[d,d]$（或 batched $[B T,d]$）。$T$ 常是成百上千。一次读权重，对 $T$ 个 token 做乘加，强度随 $T$ 涨，容易把 Tensor Core 喂饱，受算力限制。
 - **Decode：** 每条序列每步只追加 $1$ 个 token，形如 $[B,d]\times[d,d]$。$B$ 往往远小于 $T_{\mathrm{prompt}}$。每步仍要把**整份权重**从 HBM 读进计算单元，再读历史 K/V 做 attention。FLOPs 按 $d^2$ 量级，流量却几乎是整模型加整段 KV，强度接近 $O(1)$，落在带宽墙。
 
-Attention 同理。Prefill 的 $QK^\top$ 是 $[T,d]\times[d,T]$，有 $T^2$ 项可算；decode 只有新 query 对历史 $T$ 行 K/V，计算薄、读 KV 厚。上下文越长，decode 的 KV 流量线性涨，权重流量不变，**更 memory-bound**。
+Attention 同理。Prefill 的 $QK^\top$ 是 $[T,d]\times[d,T]$，有 $T^2$ 项可算；decode 只有新 query 对历史 $T$ 行 K/V，计算薄、读 KV 厚。上下文越长，decode 的 KV 流量线性涨，权重流量不变，更偏 memory-bound。
 
 ## 2. 一个数量级对照
 

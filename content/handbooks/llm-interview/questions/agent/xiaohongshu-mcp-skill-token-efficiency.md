@@ -36,7 +36,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、时间、岗位、轮次与业务方向明确）
 - 原始措辞：**“MCP, SKILL的区别，SKILL为什么能省Token？”**
 
-这块容易直接答成「MCP 比较省 token」或「Skill 就是另一种 function calling」。MCP 解决应用如何标准地发现、读取与调用外部 tools / resources，不规定模型怎样完成一类任务。Skill 把 workflow、边界、示例、检验规则与少量资源封装成可检索、可版本化的操作知识。Token 节省来自渐进展开，不是协议本身压缩上下文。协议层对照 `agent-mcp`，展开层对照 `agent-skill-progressive`。
+错法：「MCP 比较省 token」或「Skill 就是另一种 function calling」。MCP 解决应用如何标准地发现、读取与调用外部 tools / resources，不规定模型怎样完成一类任务。Skill 把 workflow、边界、示例、检验规则与少量资源封装成可检索、可版本化的操作知识。Token 节省来自渐进展开，不是协议本身压缩上下文。协议层对照 `agent-mcp`，展开层对照 `agent-skill-progressive`。
 
 ## MCP 是连接，Skill 是操作知识
 

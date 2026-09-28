@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA NCCL、Meta FSDP、Microsoft ZeRO，都会问 all-reduce 和 reduce-scatter 是不是两套算法。不是。Ring all-reduce 就是这两段拼起来的。ZeRO 的贡献是：**梯度不需要全量副本时，第二段可以不做**。和 `sys-zero-stages` 对着看。NCCL 环/树怎么选见 `nvidia-nccl-allreduce`。OpenAI 的 noisy all-gather 题（见 `openai-allgather-noise`）考信息论；本题考为什么训练里要把集体通信拆开。
+NVIDIA NCCL、Meta FSDP、Microsoft ZeRO，都会问 all-reduce 和 reduce-scatter 是不是两套算法。Ring all-reduce 本来就是这两段拼起来的。ZeRO 的贡献是：梯度不需要全量副本时，第二段可以不做。和 `sys-zero-stages` 对着看。NCCL 环/树怎么选见 `nvidia-nccl-allreduce`。OpenAI 的 noisy all-gather 题（见 `openai-allgather-noise`）考信息论；本题考为什么训练里要把集体通信拆开。
 
 ## Ring 先散再聚
 
@@ -55,7 +55,7 @@ ZeRO-2/3 和 FSDP 把梯度（以及 3 里的参数）按 DP rank 分片。Rank 
 - 反向结束：对梯度做 **reduce-scatter**，每卡只留自己那片和。到此为止，不再 all-gather 梯度。
 - 若参数也分片（ZeRO-3 / FSDP）：下一层 forward 前再 **all-gather 当前层权重**，用完丢掉。
 
-通信模式从「每 step 一次完整 all-reduce」变成「梯度 RS + 按需 AG」。字节账：省掉把完整梯度再拼回去那一趟 $\approx M$；但 AG 次数变成每层一次，启动开销和同步点变多。带宽够、prefetch 做得好时，显存大降、墙钟可以持平；网络差或 wrap 太碎时，拆开反而更慢。这就是 ZeRO-3 的税，见 `sys-zero-stages`。
+通信模式从「每 step 一次完整 all-reduce」变成「梯度 RS + 按需 AG」。字节账：省掉把完整梯度再拼回去那一趟 $\approx M$；但 AG 次数变成每层一次，启动开销和同步点变多。带宽够、prefetch 做得好时，显存大降、墙钟可以持平；网络差或 wrap 太碎时，拆开反而更慢。这是 ZeRO-3 的税，见 `sys-zero-stages`。
 
 和 Megatron TP 对照：TP 的行并行输出需要完整激活，必须 all-reduce（或 SP 下的 reduce-scatter 回到序列切片，见 `sys-seq-parallel`）。那里「谁需要全量」的答案不同，原语相同，切的轴不同。NCCL 里 `AllReduce`、`ReduceScatter`、`AllGather` 是三个 API；算法上 AR $\approx$ RS + AG。面试把它们说成三个无关家族，下一步画 $2(N-1)$ 步会穿帮。
 

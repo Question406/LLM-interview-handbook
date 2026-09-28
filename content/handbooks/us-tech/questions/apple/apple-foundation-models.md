@@ -31,26 +31,26 @@ sources:
     type: secondary
 ---
 
-Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了个什么」。公开材料不是某次逐字真题。2024 报告给出端侧约 3B 加 PCC 上的更大 server 模型；2025 更新把端侧压到 2-bit QAT、KV 共享，server 改成 Parallel-Track MoE，并写明：端侧模型 **不是为开放世界闲聊设计的**。面试要能复述这条产品契约，而不是背 MMLU 超过谁。
+Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了个什么」。2024 报告给出端侧约 3B 加 PCC 上的更大 server 模型；2025 更新把端侧压到 2-bit QAT、KV 共享，server 改成 Parallel-Track MoE，并写明：端侧模型不是为开放世界闲聊设计的。面试要能复述这条产品契约，而不是背 MMLU 超过谁。
 
 ## 端侧和 PCC 不是同一模型的两个部署点
 
 我会先画两套权重、两套约束：
 
-- **端侧。** 约 3B，GQA、共享 embedding、词表公开约 49k。目标是常驻、低功耗、可离线。公开数字：iPhone 15 Pro 上大约 0.6 ms 每个 prompt token、约 30 token/s（投机解码之前）。适合摘要、改写、抽取、短对话、通知、邮件、屏幕上的字。私有上下文默认不出设备，见 `apple-personalize`。
-- **Server / PCC。** 更大、更新架构（2025 公开 PT-MoE、交错局部/全局注意力）。跑在 Apple silicon 的 Private Cloud Compute 上：请求用完丢、不拿用户数据训基础模型。适合更长推理、更重工具、端侧 3B 明显不够的任务。压缩配方不同（公开有 ASTC、约 3.56 bpw），不要和端侧 2-bit 混报，见 `apple-ondevice-quant`。
+- 端侧。约 3B，GQA、共享 embedding、词表公开约 49k。目标是常驻、低功耗、可离线。公开数字：iPhone 15 Pro 上大约 0.6 ms 每个 prompt token、约 30 token/s（投机解码之前）。适合摘要、改写、抽取、短对话、通知、邮件、屏幕上的字。私有上下文默认不出设备，见 `apple-personalize`。
+- Server / PCC。更大、更新架构（2025 公开 PT-MoE、交错局部/全局注意力）。跑在 Apple silicon 的 Private Cloud Compute 上：请求用完丢、不拿用户数据训基础模型。适合更长推理、更重工具、端侧 3B 明显不够的任务。压缩配方不同（公开有 ASTC、约 3.56 bpw），不要和端侧 2-bit 混报，见 `apple-ondevice-quant`。
 
-路由不是「有网就上云」。默认：隐私敏感且短的留本地；本地质量不够，再送 **这一轮需要的最小切片** 到 PCC，而不是同步整个邮箱。PCC 解决的是「苹果侧不持久化明文」，不是差分隐私，见 `apple-diff-privacy`。
+路由不是「有网就上云」。默认：隐私敏感且短的留本地；本地质量不够，再送这一轮需要的最小切片到 PCC，而不是同步整个邮箱。PCC 解决的是「苹果侧不持久化明文」，不是差分隐私，见 `apple-diff-privacy`。
 
 开发者面对的是 Foundation Models 框架：guided generation、工具、rank 32 的 adapter。框架把端侧模型暴露成系统能力，不是让第三方把 3B 当 GPT-4o 用。
 
-## 能力边界要主动说，否则像在吹
+## 能力边界要主动说
 
-2025 更新写得很直：端侧擅长 summarization、entity extraction、短对话、创意短文本；**不是 chatbot for general world knowledge**。现场我会把「不会做什么」说成设计，不是缺点：
+2025 更新写得很直：端侧擅长 summarization、entity extraction、短对话、创意短文本；不是 chatbot for general world knowledge。现场我会把「不会做什么」说成设计：
 
-- **会：** 用户眼前的邮件 / 通知 / 屏幕；格式稳定的任务（靠功能 adapter，见 `apple-rank-adapter`）；工具调用（日历、本地检索）。接地契约同 `apple-siri-grounded`。
-- **不会默认做：** 开放世界长知识问答、把私人语料拿去训基础模型、把全量上下文上传做云端 RAG。后者是 `amazon-bedrock-rag` 那条路，这里默认不成立。
-- **多模态。** 端侧视觉编码器更小（公开 ViTDet 量级），server 更大。屏幕理解见 `apple-multimodal`，不要把 Image Playground 的扩散模型和 AFM 文本模型说成同一个 checkpoint。
+- 会：用户眼前的邮件 / 通知 / 屏幕；格式稳定的任务（靠功能 adapter，见 `apple-rank-adapter`）；工具调用（日历、本地检索）。接地契约同 `apple-siri-grounded`。
+- 不会默认做：开放世界长知识问答、把私人语料拿去训基础模型、把全量上下文上传做云端 RAG。后者是 `amazon-bedrock-rag` 那条路，这里默认不成立。
+- 多模态。端侧视觉编码器更小（公开 ViTDet 量级），server 更大。屏幕理解见 `apple-multimodal`，不要把 Image Playground 的扩散模型和 AFM 文本模型说成同一个 checkpoint。
 
 评测也要按边界报。人评、locale、feature adapter（邮件摘要 vs 通知）比把 3B 丢进开放 chatbot 竞技场更贴近产品。只报 BLEU / MMLU 会被追「那通知摘要为什么还要单独 adapter」，见 `apple-afm-eval`。
 
@@ -60,7 +60,7 @@ Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了
 
 先问用户数据能不能离开设备、任务是格式还是事实、延迟是语音还是静默文本。再给三条路径：本地 3B + 检索 / adapter；PCC + 最小切片；拒答或走非生成 UI。量化、KV、采样是实现细节，分别见 `apple-ondevice-quant`、`apple-ondevice-kv`、`apple-topk-sample`。语音通路还要拆首包，见 `apple-siri-latency`。
 
-训练数据公开口径：许可数据、Applebot 爬取（可 opt out）、合成数据；**不用用户私有数据和交互训基础模型**。改进全球模型走这条；改进「我的摘要口吻」走端上 adapter 或 few-shot 证据，不要把邮箱当 SFT。
+训练数据公开口径：许可数据、Applebot 爬取（可 opt out）、合成数据；不用用户私有数据和交互训基础模型。改进全球模型走这条；改进「我的摘要口吻」走端上 adapter 或 few-shot 证据，不要把邮箱当 SFT。
 
 ## 追问
 

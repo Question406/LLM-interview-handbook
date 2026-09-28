@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-企业文档岗会把「把合同丢给 Claude 并点回原页」当成系统设计。官方路径是 `document` 块，类型为 PDF，不是你先 OCR 再糊进 user 散文。Citations 打开后，PDF 的指针带从 1 计的页码。题是接地，不是隐藏 OA。我会把页图、文本层、引用三件事对齐 `anthropic-citations`。
+企业文档岗会把「把合同丢给 Claude 并点回原页」当成系统设计。官方路径是 `document` 块，类型为 PDF，不是你先 OCR 再糊进 user 散文。Citations 打开后，PDF 的指针带从 1 计的页码。我会把页图、文本层、引用三件事对齐 `anthropic-citations`。
 
 ## 混合编码：每页 = 图 + 字
 
@@ -33,7 +33,7 @@ sources:
 1. 每一页渲染成图，走和 `anthropic-vision` 同一套视觉 token（约 $\lceil W/28\rceil\times\lceil H/28\rceil$，再受长边上限约束）；
 2. 抽取该页 PDF 文本层，按句切开，和页图一起进模型。
 
-所以 token 是 **文本 token 加页图 token**，不是二选一。文档给过数量级：文本大约每页一千五到三千；三页带视觉理解大约七千 token 量级（Bedrock Converse 上他们拿「纯抽文本约一千 / 开视觉约七千」对比过）。密表、小字、嵌图会先撑爆窗口，再碰到页数上限。上限大约：整请求几十 MB；页数在普通窗口约 100，百万 token 窗口可以到数百。密 PDF 往往窗口先满。大文件用 Files API 只传 `file_id`。
+所以 token 是文本 token 加页图 token，不是二选一。文档给过数量级：文本大约每页一千五到三千；三页带视觉理解大约七千 token 量级（Bedrock Converse 上他们拿「纯抽文本约一千 / 开视觉约七千」对比过）。密表、小字、嵌图会先撑爆窗口，再碰到页数上限。上限大约：整请求几十 MB；页数在普通窗口约 100，百万 token 窗口可以到数百。密 PDF 往往窗口先满。大文件用 Files API 只传 `file_id`。
 
 三条产品路不要混：
 
@@ -43,7 +43,7 @@ sources:
 | 原生 PDF / 页图+文本 | 版面 + 字 | 表、章、印章、多栏 |
 | 自己截成多张 `image` | 只有像素 | 扫描件；但 citations 指不到句 |
 
-扫描件、拍照件常常没有文本层。视觉仍可能读字，但 citations 文档写死：目前只能引文本，**不能引 PDF 里的图**。没有文本层就没有可引用 span。此时要么先 OCR 做成 custom content 块，要么 UI 只给「模型看见图，未接地」的弱提示，不要假装有页内高亮。
+扫描件、拍照件常常没有文本层。视觉仍可能读字，但 citations 文档写死：目前只能引文本，不能引 PDF 里的图。没有文本层就没有可引用 span。此时要么先 OCR 做成 custom content 块，要么 UI 只给「模型看见图，未接地」的弱提示，不要假装有页内高亮。
 
 Bedrock Converse 的坑：不开 citations 会退回纯文本抽取，模型「看不见」图和表。这是网关行为，不是 Claude 突然不会看图。面试要说清平台差。
 

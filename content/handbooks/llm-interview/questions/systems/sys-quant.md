@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-这块容易背四个缩写却分不清「只量化权」还是「权+激活」，以及以为 bit 降了一定更快。量化我先问：PTQ 还是 QAT、W-only 还是 W8A8、误差补在权上还是迁到激活上。吞吐还取决于 kernel、dequant 开销和模型是否 memory-bound。硬件不吃这个 shape，INT4 也可能更慢。
+量化我先问：PTQ 还是 QAT、W-only 还是 W8A8、误差补在权上还是迁到激活上。吞吐还取决于 kernel、dequant 开销和模型是否 memory-bound。硬件不吃这个 shape，INT4 也可能更慢。
 
 ## 四条方法
 

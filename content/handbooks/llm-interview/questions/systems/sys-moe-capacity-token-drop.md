@@ -48,4 +48,4 @@ Aux loss / expert bias 把负载推均匀，才能把 CF 降下来。均衡没�
 
 - **Drop 的梯度？** 被丢的 token 通常不经过该 expert，路由器可能仍收到「你选了过载专家」的信号，取决于实现是否对 overflow 反传。
 - **和 EP 的关系？** Capacity 是每个 expert 副本上的本地上限；EP 把 expert 拆到多卡，不自动提高 $C$。热点仍会在持有该 expert 的卡上打满。
-- **面试别说成「drop 等于 dropout」。** Dropout 是正则；token drop 是容量溢出，分布随负载变，不是固定噪声。
+- 面试别把 token drop 说成 dropout。Dropout 是正则；token drop 是容量溢出，分布随负载变，不是固定噪声。

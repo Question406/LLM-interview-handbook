@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-Agent / serving 岗会把 prompt caching 当系统设计题，不是「记得开个开关」。官方机制是前缀缓存：同一条前缀反复进模型，KV 不用从头算。Claude Code 那篇工程文把教训收成一句：整个系统都要围着前缀稳定性转。这不是某一场隐藏 OA。
+Agent / serving 岗会把 prompt caching 当系统设计题，不是「记得开个开关」。官方机制是前缀缓存：同一条前缀反复进模型，KV 不用从头算。Claude Code 那篇工程文把教训收成一句：整个系统都要围着前缀稳定性转。
 
 ## 命中条件是字节级前缀
 
@@ -33,8 +33,8 @@ Agent / serving 岗会把 prompt caching 当系统设计题，不是「记得开
 
 两套打点：
 
-1. **顶层自动缓存。** 请求上挂一个 `cache_control`，系统把点打在最后一个可缓存块，对话变长时点跟着走。适合多轮、每轮只在末尾追加。
-2. **显式 breakpoint。** 打在具体 content block 上。静态系统提示、工具定义、长文档用这个。最多 4 个点。读取时从你的点往回看最多约 20 个块，找**以前写过的条目**，不是「自动发现后面还有稳定内容」。
+1. 顶层自动缓存。请求上挂一个 `cache_control`，系统把点打在最后一个可缓存块，对话变长时点跟着走。适合多轮、每轮只在末尾追加。
+2. 显式 breakpoint。打在具体 content block 上。静态系统提示、工具定义、长文档用这个。最多 4 个点。读取时从你的点往回看最多约 20 个块，找以前写过的条目，不是「自动发现后面还有稳定内容」。
 
 最短可缓存长度按模型而变，不够长会静默不缓存：`cache_creation_input_tokens` 和 `cache_read_input_tokens` 都是 0。不要当成报错。看 `usage` 里这两个字段，不要只看 HTTP 200。
 
@@ -56,9 +56,9 @@ system = [
 
 公开倍率：5 分钟写缓存约 $1.25\times$ 基线输入，1 小时写约 $2\times$，读约 $0.1\times$。输出价不变。同一前缀要被读很多次才划算；只打一次、立刻换前缀，等于付溢价预填。和 Batch 折扣可以叠，见 `anthropic-batch-api`。
 
-延迟上，命中省的是 **prefill**，不是 decode。长系统提示 + 工具 schema + 仓库摘要这类输入主导的请求，TTFT 掉得最明显。输出很长、输入很短，缓存帮不上。
+延迟上，命中省的是 prefill，不是 decode。长系统提示 + 工具 schema + 仓库摘要这类输入主导的请求，TTFT 掉得最明显。输出很长、输入很短，缓存帮不上。
 
-预热：对共享前缀发一次 `max_tokens: 0`，breakpoint 必须打在**后续真请求也共享的那一块**。自动缓存会把点打在占位 user 消息上，预热条目永远对不上线流量。Thinking 配置也要一致，它会编进前缀，见 `anthropic-extended-thinking`。
+预热：对共享前缀发一次 `max_tokens: 0`，breakpoint 必须打在后续真请求也共享的那一块。自动缓存会把点打在占位 user 消息上，预热条目永远对不上线流量。Thinking 配置也要一致，它会编进前缀，见 `anthropic-extended-thinking`。
 
 ## Breakpoint 放哪
 

@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-Computer use 公开之后，研究岗会从 `anthropic-computer-use` 的确认框追到训练：截图上的策略用什么信号更新。Anthropic 的研究文写的是：在计算器、文本编辑器这类离线软件上看截图、数像素、点下去，再泛化。题不是某一场 OA，是你能不能把 **RL 信用分配** 和 **产品权限** 拆开。
+Computer use 公开之后，研究岗会从 `anthropic-computer-use` 的确认框追到训练：截图上的策略用什么信号更新。Anthropic 的研究文写的是：在计算器、文本编辑器这类离线软件上看截图、数像素、点下去，再泛化。要把 RL 信用分配和产品权限拆开讲。
 
 ## 动作级：密、噪、滞后
 

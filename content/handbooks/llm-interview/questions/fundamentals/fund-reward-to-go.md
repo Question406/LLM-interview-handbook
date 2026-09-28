@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-这块容易直接答成 reward-to-go 是「有偏的因果近似」，或反过来以为它已经把方差降到能训 LLM。它只是 **因果性允许的无偏收缩**：过去的奖励与当前 $\nabla\log\pi$ 不相关，乘进去期望仍对，但多乘了一截噪声。完整目标见 `fund-pg-theorem`。
+错法：reward-to-go 是「有偏的因果近似」，或反过来以为它已经把方差降到能训 LLM。它只是因果性允许的无偏收缩：过去的奖励与当前 $\nabla\log\pi$ 不相关，乘进去期望仍对，但多乘了一截噪声。完整目标见 `fund-pg-theorem`。
 
 ## 过去的 $r$ 对当前 score 的贡献期望是 0
 
@@ -53,11 +53,11 @@ $$
 
 ## 方差为什么更小（通常）
 
-$\mathrm{Var}(\nabla\log\pi\cdot R)=\mathrm{Var}(\nabla\log\pi\cdot(G_t+\text{past}))$。past 与 $\nabla\log\pi(a_t\mid s_t)$ 不相关，但它自己的噪声仍被乘进梯度。减掉 past，相当于丢掉一项均值为 0 的干扰。这不是控制变量（没引入新的 $b(s)$），是 **把恒为噪声的和项直接删掉**。
+$\mathrm{Var}(\nabla\log\pi\cdot R)=\mathrm{Var}(\nabla\log\pi\cdot(G_t+\text{past}))$。past 与 $\nabla\log\pi(a_t\mid s_t)$ 不相关，但它自己的噪声仍被乘进梯度。减掉 past，相当于丢掉一项均值为 0 的干扰。这不是控制变量（没引入新的 $b(s)$），是把恒为噪声的和项直接删掉。
 
 白板用两步 MDP：第一步 $r_0$ 很大、与 $a_1$ 无关。用整段 $R$ 更新 $a_1$ 时，幸运的 $r_0$ 会让所有第二步动作看起来都好；用 $G_1$ 则只剩从 $a_1$ 起的回报。LLM 里 prompt 不是动作、只在 response token 上加损失，是同一条因果性：别人已经吐出的 token、环境转移，都不进当前 score。
 
-它 **没有** 解决稀疏终局奖：若只有 $r_T$ 非零，$G_t=\gamma^{T-t}r_T$，每个前缀 token 仍乘同一个随机变量，方差随 $T$ 涨，见 `fund-pg-horizon-var`。下一步才是减 $V(s_t)$ 或组 baseline，见 `fund-optimal-baseline`。
+它没有解决稀疏终局奖：若只有 $r_T$ 非零，$G_t=\gamma^{T-t}r_T$，每个前缀 token 仍乘同一个随机变量，方差随 $T$ 涨，见 `fund-pg-horizon-var`。下一步才是减 $V(s_t)$ 或组 baseline，见 `fund-optimal-baseline`。
 
 ## 追问
 

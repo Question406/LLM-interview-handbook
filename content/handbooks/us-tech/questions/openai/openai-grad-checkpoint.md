@@ -36,7 +36,7 @@ OpenAI 规模的训练岗会问显存账，不一定点名某篇内部 wiki。�
 
 一次 Transformer 正向，每层要留下给反向用的激活，总量跟 $B\cdot T\cdot L\cdot d$ 走，长上下文时它比参数还胖。Activation checkpointing（也叫 recompute）：只在段界存一份，反向走进这一段时把中间激活当场再算出来。
 
-代价是 **多一次被 checkpoint 段的前向**。若每层都 checkpoint，粗算正向约占 fwd+bwd 的三分之一，墙钟常见 $+30\%$ 量级，换来激活显存掉一个档。切得更稀（每 $\sqrt{L}$ 层存一次）是论文里的亚线性方案，实现更烦，面试说结论即可。
+代价是多一次被 checkpoint 段的前向。若每层都 checkpoint，粗算正向约占 fwd+bwd 的三分之一，墙钟常见 $+30\%$ 量级，换来激活显存掉一个档。切得更稀（每 $\sqrt{L}$ 层存一次）是论文里的亚线性方案，实现更烦，面试说结论即可。
 
 选择性 checkpoint 更实际：重算贵的注意力 / FFN，LayerNorm、残差短连接留下。FlashAttention 已经不把完整 `[B,H,T,T]` 分值留在 HBM，和 checkpoint 是同一方向的「别存那么多激活」，但只覆盖注意力。
 
@@ -46,21 +46,21 @@ OpenAI 规模的训练岗会问显存账，不一定点名某篇内部 wiki。�
 
 ## 和 ZeRO 正交，叠的顺序按瓶颈
 
-ZeRO-1 分片优化器状态，ZeRO-2 再分片梯度，ZeRO-3 连参数也分片，用前 all-gather。它砍的是 **模型状态**，跟 $B,T$ 关系弱，跟参数量关系强。Checkpoint 砍的是 **激活**，跟 $B,T,L$ 强相关。
+ZeRO-1 分片优化器状态，ZeRO-2 再分片梯度，ZeRO-3 连参数也分片，用前 all-gather。它砍的是模型状态，跟 $B,T$ 关系弱，跟参数量关系强。Checkpoint 砍的是激活，跟 $B,T,L$ 强相关。
 
 典型演变：
 
 - 模型大、上下文短：先 ZeRO / 张量并行把参数放下，激活还好。
-- 上下文一长，ZeRO-3 之后单卡参数已经很少，HBM 仍爆 —— 那就是激活。这时加 checkpoint，而不是再加 ZeRO 级数。
+- 上下文一长，ZeRO-3 之后单卡参数已经很少，HBM 仍爆，那就是激活。这时加 checkpoint，而不是再加 ZeRO 级数。
 - 两者一起用时，ZeRO-3 的 gather 和重计算都会吃时间，MFU 掉是预期。要用通信重叠和更粗的 checkpoint 段把额外前向藏住。
 
-错法：把 ZeRO 说成「也能少激活」；把 checkpoint 说成「能少 Adam 的 12 字节/参数」。面试我画两列：左激活右状态，问评委现在炸的是哪一列，再选工具。
+错法：把 ZeRO 说成「也能少激活」；把 checkpoint 说成「能少 Adam 的 12 字节/参数」。面试画两列：左激活右状态，看现在炸的是哪一列，再选工具。
 
 数据并行下每张卡仍要一份当前 microbatch 的激活，所以纯堆 GPU 而不切 $T$（序列并行）也救不了超长上下文。那是第三条轴，点到即可。
 
 和 `openai-prefill-decode` 对照：训练没有 decode 循环，每步都是满 $T$ 的正向，所以激活峰值按最长文档走。packing 能降低 padding，但峰值仍由最长 packed 序列决定。checkpoint 解决的是峰值，不是平均浪费。
 
-时间不够就报一句：ZeRO 管状态分片，checkpoint 管用算力换激活；长上下文先看激活列，大参数先看状态列，两列都爆就两样都上。
+ZeRO 管状态分片，checkpoint 管用算力换激活；长上下文先看激活列，大参数先看状态列，两列都爆就两样都上。
 
 ## 追问
 

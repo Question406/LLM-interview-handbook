@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、届别、岗位与轮次明确）
 - 原始措辞：**“核心代码模式，写一下大模型预测token时，beam树如何构建，如何得到最终的结果(pytorch简单实现了一下，主要是还是讲明白)”**
 
-这块容易把 beam search 写成「每步取当前条件概率最大的 $k$ 个 token」，丢掉累计 log-prob 和父节点回溯。树的节点是整条前缀，不是孤立 token。最终从 `finished`（已写 EOS）里选，没有完成序列才回退活跃 beam。采样分布见 `code-sampling`；本题是搜索不是采样。
+错法：把 beam search 写成「每步取当前条件概率最大的 $k$ 个 token」，丢掉累计 log-prob 和父节点回溯。树的节点是整条前缀，不是孤立 token。最终从 `finished`（已写 EOS）里选，没有完成序列才回退活跃 beam。采样分布见 `code-sampling`；本题是搜索不是采样。
 
 ## 树怎么长：扩展、扁平 top-$k$、拆父索引
 
@@ -69,7 +69,7 @@ $$
 
 $\lambda\in[0.6,1]$。也可在 EOS 后不再扩展。重复 n-gram 屏蔽、坏 token mask 在加分之前做。最终：先比 `finished` 里惩罚后分数；全部顶到 `max_len` 仍无 EOS，才从活跃 beam 里选。不要返回「最后一步 logit 最大的那个 token 串起来」。
 
-真实实现还要：batch 内各条样本 beam 独立；pad 不扩展；cache 按 `parent` gather。面试把「累计 logp → 扁平 top-k → 拆 parent → EOS 分流」讲完，代码短于调 `generate`。
+真实实现还要：batch 内各条样本 beam 独立；pad 不扩展；cache 按 `parent` gather。面试把「累计 logp → 扁平 top-k → 拆 parent → EOS 分流」讲完即可，代码短于调 `generate`。
 
 ## 追问
 

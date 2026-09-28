@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-别把 OPD 讲成「普通 KD 换了个名字」，也别讲成「RL 换了个稠密奖励」。关键只有一句：学生自己采样状态，teacher 在这些状态上给 token 级分布，于是状态分布跟 RL 一样 on-policy，信号密度跟蒸馏一样密。教师若换成「同一套权重、多看特权 $y^\star$」，就是 OPSD / Self-OPD，见 `pt-opsd`、`pt-self-opd-family`；slime `--use-opd` 仍指外部教师这条，不是 OPSD。离线蒸馏的 CE 再小，也只说明学生在教师轨迹上像老师；一放到自己的 rollout 里，中间步一偏就没有监督。纯 RL 则相反：状态对了，但要等终局才知道好坏。OPD 卡在两者中间，所以代价也两边都有：要在线采样，还要持续查 teacher。
+别把 OPD 讲成「普通 KD 换了个名字」，也别讲成「RL 换了个稠密奖励」。学生自己采样状态，teacher 在这些状态上给 token 级分布：状态分布跟 RL 一样 on-policy，信号密度跟蒸馏一样密。教师若换成「同一套权重、多看特权 $y^\star$」，就是 OPSD / Self-OPD，见 `pt-opsd`、`pt-self-opd-family`；slime `--use-opd` 仍指外部教师这条，不是 OPSD。离线蒸馏的 CE 再小，也只说明学生在教师轨迹上像老师；一放到自己的 rollout 里，中间步一偏就没有监督。纯 RL 则相反：状态对了，但要等终局才知道好坏。OPD 卡在两者中间，所以代价也两边都有：要在线采样，还要持续查 teacher。
 
 ## 离线 SFT / KD 缺的是学生会走到的状态
 
@@ -38,17 +38,17 @@ $$
 
 ## 和 RL 比，密在哪里
 
-Outcome-only RL 的奖励往往在序列末才出现，credit assignment 要靠 advantage 把标量 smeared 到每个 token。OPD 的每个位置都有 teacher 分布，梯度直接走 $\log\pi_{\mathrm{student}}$，不需要等终局对错。这就是「稠密」：不是奖励更大，而是几乎每个 token 都有监督。
+Outcome-only RL 的奖励往往在序列末才出现，credit assignment 要靠 advantage 把标量 smeared 到每个 token。OPD 的每个位置都有 teacher 分布，梯度直接走 $\log\pi_{\mathrm{student}}$，不需要等终局对错。稠密指的是几乎每个 token 都有监督，不是奖励更大。
 
 和 RL 相同的部分是 state distribution：学生不会的格式、会走偏的中间步，只要自己采样到了，就能被纠正。这正是 `pt-cold-start-to-multistage-rl` 里 cold start 想提供的「可学习区域」，OPD 用在线教师代替静态示范。
 
-它不是免费的更强 RL。Teacher 错了，学生会更高效地继承；teacher 拒答或高熵时，硬拟合会把噪声当标签。序列级 KL 和 token 级 KL 的权重、是否在坏轨迹上截断，都要显式定义。Teacher 版本要钉死：训练中途换 checkpoint，等于监督分布跳变，loss 会假跌或假涨。和学生一样，teacher 也要记 `rollout_id` 式的版本，方便事后把「哪一版老师教出来的」拆开看。
+Teacher 错了，学生会更高效地继承；teacher 拒答或高熵时，硬拟合会把噪声当标签。序列级 KL 和 token 级 KL 的权重、是否在坏轨迹上截断，都要显式定义。Teacher 版本要钉死：训练中途换 checkpoint，等于监督分布跳变，loss 会假跌或假涨。和学生一样，teacher 也要记 `rollout_id` 式的版本，方便事后把「哪一版老师教出来的」拆开看。
 
 ## 实现与验收
 
 实现清单：teacher / student 的 tokenizer 与模板对齐；每次学生更新后 teacher 查询用哪一版权重；teacher 不确定时是 skip、降权还是回退到硬标签；是否混合少量离线演示防止漂移。Teacher 查询成本和版本记录是主开销，不是又一个超参故事。模板不对齐会把「看起来在蒸馏」变成噪声监督：同一句话两边切出来的 token 对不上，KL 仍可下降。工具调用场景还要锁工具列表和参数 schema，否则学生 rollout 出教师从未见过的工具名，teacher 分布没有意义。这些前置条件不满足时，先别上 OPD。
 
-验收不要只看 imitation loss：短 imitation 下降但长 rollout 成功率不动，说明仍有 exposure bias。我会把「学生自己的错前缀」举一个具体工具调用例子，不只背 KL 公式。
+验收不要只看 imitation loss：短 imitation 下降但长 rollout 成功率不动，说明仍有 exposure bias。举一个「学生自己的错前缀」工具调用例子，比只背 KL 公式更清楚。
 
 - 短 imitation 下降但长 rollout 成功率不动 → 仍有 exposure bias 或截断策略不对。
 - 对分布外前缀的恢复能力（故意打乱中间步再看能否接回）比 CE 更能说明 on-policy 的价值。
@@ -66,7 +66,7 @@ Outcome-only RL 的奖励往往在序列末才出现，credit assignment 要靠 
 | OPD | 学生自己 | 稠密的外部 teacher 分布 | 继承 teacher 偏差、查询成本 |
 | OPSD | 学生自己 | 同权重 + 特权 $y^\star$ 的分布 | 题太难则自教师没信号；$y^\star$ 泄漏 |
 
-我会说：谁采样，监督就覆盖谁的错。学生不会的中间步，只要自己走到了，就能被 teacher 拉回；从没走到的状态，OPD 和 RL 一样帮不上，仍要靠探索或更好的 seed。和 `pt-cold-start-to-multistage-rl` 搭配时，常用 OPD / 短 SFT 进可读区域，再用 RLVR 做可验证探索，而不是用 OPD 替代全部 RL。Teacher 查询可以隔 step 做，不必逐步都查：前缀已经很像教师时，边际信息少、成本高。隔多少步要看学生偏离速度，用和学生 rollout 的 KL 当触发，而不是固定常数。
+谁采样，监督就覆盖谁的错。学生不会的中间步，只要自己走到了，就能被 teacher 拉回；从没走到的状态，OPD 和 RL 一样帮不上，仍要靠探索或更好的 seed。和 `pt-cold-start-to-multistage-rl` 搭配时，常用 OPD / 短 SFT 进可读区域，再用 RLVR 做可验证探索，而不是用 OPD 替代全部 RL。Teacher 查询可以隔 step 做，不必逐步都查：前缀已经很像教师时，边际信息少、成本高。隔多少步要看学生偏离速度，用和学生 rollout 的 KL 当触发，而不是固定常数。
 
 Teacher 不确定时不要硬拟合：高熵位置降权或跳过，避免把「教师也不会」写成尖峰标签。坏轨迹是否截断，取决于你想教「如何从错误前缀恢复」还是「根本不要进入这种前缀」。前者保留，后者截断并给负的 outcome。恢复型更符合 on-policy 的初衷，但会消耗 teacher 查询；截断型更像带拒绝的 SFT，暴露偏置会回来。选题时按错误是否可恢复来分，不要全局一刀。
 

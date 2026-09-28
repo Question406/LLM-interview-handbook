@@ -56,7 +56,7 @@ Prefetch 的显存是「多驻留一个 unit 的未切分权」。70B 一层大�
 
 激活仍是 $O(B\cdot T\cdot L\cdot d)$。FULL_SHARD 切的是权、梯、Adam，**不切激活**。8k → 128k，激活先爆。该上的是：FlashAttention、activation checkpoint、序列并行（`sys-act-checkpoint`、`sys-seq-parallel`）。CPU offload 权救不了 128k 的激活。
 
-和 checkpoint 的经典坑：HuggingFace `gradient_checkpointing=True` 和 FSDP wrap 套在同一层上，backward 可能 **每层两次 all-gather**——重算 forward 一次、真正 backward 再一次。Issue 里 Llama 13B 单机就复现过。做法：关掉 HF 内置开关，用 `apply_activation_checkpointing` + `CheckpointImpl.NO_REENTRANT`，wrap 集合和 checkpoint 集合对齐到同一个 `LlamaDecoderLayer`。Reentrant checkpoint 和 FSDP 的参数视图更容易打架。
+和 checkpoint 的经典坑：HuggingFace `gradient_checkpointing=True` 和 FSDP wrap 套在同一层上，backward 可能 **每层两次 all-gather**：重算 forward 一次，正式 backward 再一次。Issue 里 Llama 13B 单机就复现过。做法：关掉 HF 内置开关，用 `apply_activation_checkpointing` + `CheckpointImpl.NO_REENTRANT`，wrap 集合和 checkpoint 集合对齐到同一个 `LlamaDecoderLayer`。Reentrant checkpoint 和 FSDP 的参数视图更容易打架。
 
 选择性 checkpoint：重算廉价的 RMSNorm / SwiGLU 逐元素，注意力若已经是 Flash、反向重算很贵，就别把整层一刀切。现场说「checkpoint 和 wrap 同边界，先对齐通信，再抠哪些子模块重算」。
 

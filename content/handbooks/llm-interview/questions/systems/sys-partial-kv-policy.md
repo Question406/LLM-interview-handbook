@@ -52,7 +52,7 @@ $$
 
 flush KV 的代价是 prefill 重算。长 CoT 上这很贵，所以 AReaL 才把「何时打断、打断后是否重算」当成系统旋钮，而不是默认永远复用。slime 的 `--mask-offpolicy-in-partial-rollout` 走的是训练侧 mask，默认并不宣称跨版本 KV 可复用。
 
-现场口令：同权续写可留 KV；换权必须重算或把旧段标成 off-policy。prefix cache 不是跨 checkpoint 的免费加速。
+同权续写可以留 KV；换权必须重算，或把旧段标成 off-policy。prefix cache 不能跨 checkpoint 白用。
 
 ## 追问
 
