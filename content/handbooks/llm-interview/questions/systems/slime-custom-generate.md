@@ -23,23 +23,23 @@ sources:
     type: primary
 ---
 
-错法：改 Megatron kernel 或 trainer step 去做工具循环。官方精神：Agent 就是数据生成，训练核不动。三档函数由浅到深，选错层会丢掉 continuous batching、dynamic sampling、partial rollout。字节那道「veRL 怎么魔改」用 slime 答：Reward Manager ↔ `--custom-rm-path`，Env / tool loop ↔ `--custom-generate-function-path`，自定义 rollout worker ↔ `--rollout-function-path`。请求打 router（`--sglang-router-ip/port`），不要绑死某一个 engine。`rollout_id` 保证续训顺序。评测另挂 `--eval-function-path`，别和 train generate 搅在一起。
+常见误区是：改 Megatron kernel 或 trainer step 去做工具循环。官方精神：Agent 就是数据生成，训练核不动。三档函数由浅到深，选错层会丢掉 continuous batching、dynamic sampling、partial 采样轨迹（rollout）。字节那道「veRL 怎么魔改」用 slime 答：Reward Manager ↔ `--custom-rm-path`，Env / tool loop ↔ `--custom-generate-function-path`，自定义 rollout worker ↔ `--rollout-function-path`。请求打 router（`--sglang-router-ip/port`），不要绑死某一个 engine。`rollout_id` 保证续训顺序。评测另挂 `--eval-function-path`，别和 train generate 搅在一起。
 
 ## 三档分别换什么
 
 | 你要改的 | slime | veRL 近似 |
 | --- | --- | --- |
-| 对错 / verifier | `--custom-rm-path` | Reward Manager |
+| 对错 / 验证器（verifier） | `--custom-rm-path` | Reward Manager |
 | 单条采样 + 工具循环 | `--custom-generate-function-path` | Env / tool loop |
 | 组采样、partial、eval 分流 | `--rollout-function-path` | 自定义 rollout worker |
 | 算法 | `--advantage-estimator` | `algorithm.adv_estimator` |
 
-只换打分：数学题、编译器、规则奖励，走 `--custom-rm-path`，默认 `sglang_rollout.generate_rollout` 仍管异步、dynamic sampling、abort。多轮 thought-action-obs：换 `--custom-generate-function-path` 的单条 `async generate`，仍享受外层调度。只有要改组策略、自己做 partial / eval 分流，才整段换 `--rollout-function-path`。`generate_rollout(args, rollout_id, data_source, evaluation)` 必须带回 `RolloutFnTrainOutput`。fully-async 下自定义 generate / RM 仍走这两条 path，不要为异步重写 loop，见 `slime-async-train`。
+只换打分：数学题、编译器、规则奖励，走 `--custom-rm-path`，默认 `sglang_rollout.generate_rollout` 仍管异步、dynamic sampling、abort。多轮 thought-action-obs：换 `--custom-generate-function-path` 的单条 `async generate`，仍享受外层调度。只有要改组策略、自己做 partial / eval 分流，才整段换 `--rollout-function-path`。`generate_rollout(args, rollout_id, data_source, evaluation)` 必须带回 `RolloutFnTrainOutput`。fully-async 下自定义 generate / 奖励模型（RM） 仍走这两条 path，不要为异步重写 loop，见 `slime-async-train`。
 
 ## Sample 字段是训练契约
 
-- `tokens` = prompt + response；多轮 `response_length` = 去掉首轮 prompt 后的长度。
-- `loss_mask` 和 `response_length` 同长，工具 observation 置 0，只训模型说出的 token。
+- `tokens` = 输入提示（prompt） + response；多轮 `response_length` = 去掉首轮 prompt 后的长度。
+- `loss_mask` 和 `response_length` 同长，工具 observation 对应位置置 0，只训练模型生成的 token。
 - `status`：`COMPLETED` / `TRUNCATED` / `ABORTED` / `FAILED`。partial rollout 靠 `data_source` 把半成品塞回去；`ABORTED` 与 `--partial-rollout` 回收语义要对齐。
 - 失败环境不要假装 `COMPLETED` 再给 0 分，否则 GRPO 组统计被脏样本污染。
 
@@ -47,7 +47,7 @@ sources:
 
 ## 不要绑 engine、不要改训练核
 
-多引擎时走 router，session 亲和见 `slime-router-session`。绑死 ip 会让 continuous batching 和 PD 分离失效。Megatron 里手写工具循环会丢掉 serving 的前缀缓存和页式 KV，墙钟和正确性一起崩。魔改顺序：reward → 单条 generate → 整段 rollout → advantage → 并行。和 veRL「先改 Reward Manager」同一精神。`--eval-function-path` 独立，避免 train 的 tool 超时污染评测。
+多引擎时走 router，session 亲和见 `slime-router-session`。绑死 ip 会让 continuous batching 和 PD 分离失效。Megatron 里手写工具循环会丢掉 serving 的前缀缓存和页式 KV，实际耗时和正确性一起崩。魔改顺序：奖励分数（reward） → 单条 generate → 整段 rollout → advantage → 并行。和 veRL「先改 Reward Manager」同一精神。`--eval-function-path` 独立，避免 train 的 tool 超时污染评测。
 
 ## 追问
 

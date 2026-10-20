@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：“Attention机制中为什么需要去除DK相关计算维度，核心作用是什么？”
 
-错法：把原帖的「去除 $d_k$ 相关计算维度」理解成删掉某一轴，或背「除一下比较好」却不会推方差。核心是数值稳定：点积尺度随维度变大，softmax 饱和，梯度消失。这不是「除掉一个维度」。QKV 来源见 `baichuan-attn-vs-selfattn`；矩阵形状见 `ali-attention-math`；softmax 饱和见 `fund-softmax-nll`。手写时写 `q @ k.T / math.sqrt(d_k)`（`pdd-attention-handwrite`）。FlashAttention 的 online softmax 不改变这个缩放（`ant-flash-attention`）。
+常见误区是：把原帖的「去除 $d_k$ 相关计算维度」理解成删掉某一轴，或背「除一下比较好」却不会推方差。核心是数值稳定：点积尺度随维度变大，softmax 饱和，梯度消失。这不是「除掉一个维度」。QKV 来源见 `baichuan-attn-vs-selfattn`；矩阵形状见 `ali-attention-math`；softmax 饱和见 `fund-softmax-nll`。手写时写 `q @ k.T / math.sqrt(d_k)`（`pdd-attention-handwrite`）。FlashAttention 的 online softmax 不改变这个缩放（`ant-flash-attention`）。
 
 ## 方差怎么来的
 
@@ -53,7 +53,7 @@ $$
 
 失败模式：把缩放说成「除一下让数值变小好看」；用 $d_{\mathrm{model}}$ 而不是 $d_k$ 做分母；认为 FlashAttention 可以省略缩放。
 
-实现里常见写法 `scores = q @ k.transpose(-2,-1) * (d_k ** -0.5)`，有人把系数预计算进 $W_Q$ 的初始化，效果等价，但白板仍应写出除 $\sqrt{d_k}$。FlashAttention 用 online softmax 减显存，数学上仍是同一个 $\mathrm{softmax}(QK^\top/\sqrt{d_k})$，内核融合不是省略除法（`ant-flash-attention`）。若不缩放：深层的注意力迅速变 one-hot，残差学的是几乎离散的路由，梯度穿过 softmax 变得极小，训练表现为 loss 难降或对位置极敏感。这是优化问题，不只是 fp16 overflow。
+实现里常见写法 `scores = q @ k.transpose(-2,-1) * (d_k ** -0.5)`，有人把系数预计算进 $W_Q$ 的初始化，效果等价，但白板仍应写出除 $\sqrt{d_k}$。FlashAttention 用 online softmax 减显存，数学上仍是同一个 $\mathrm{softmax}(QK^\top/\sqrt{d_k})$，内核融合不是省略除法（`ant-flash-attention`）。若不缩放：深层的注意力迅速变 one-hot，残差学的是几乎离散的路由，梯度穿过 softmax 变得极小，训练表现为 loss 难以下降或对位置极敏感。这是优化问题，不只是 fp16 overflow。
 
 ## 追问
 

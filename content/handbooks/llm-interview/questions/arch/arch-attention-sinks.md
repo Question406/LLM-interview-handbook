@@ -4,9 +4,7 @@ section: arch
 order: 20
 level: A
 title: Attention Sink 是什么？滑动窗口长上下文为什么不能简单删除最早 token？
-quick: >-
-  有些模型会持续给开头少数 token 分注意力质量，哪怕它们语义信息很少。直接裁掉这些锚点，softmax 分布可能失稳；streaming
-  方案常留少量 sink token，再滑近期窗口。
+quick: "部分模型会给开头少数 token 持续分配较大的注意力权重，即使它们没有多少语义信息。直接删掉这些位置，会改变注意力归一化后的分布并影响稳定性。流式方案因此保留少量 sink token，再对近期 token 滑动缓存。"
 tags:
   - Long Context
   - Attention
@@ -22,7 +20,7 @@ sources:
     type: legacy-reference
 ---
 
-错法：开头 token 语义最重要所以不能删。现象往往反过来：首 token / BOS / 特殊符号就算语义贡献小，也可能反复吸走较高 attention mass。无限流式输入里 KV cache 不能无限涨，朴素 FIFO 丢掉这些锚点后，softmax 分母突然少了一块长期质量，近期窗口内的分数会被拧歪，输出可能崩溃。
+常见误区是：开头 文本处理单位（token） 语义最重要所以不能删。现象往往反过来：首 token / BOS / 特殊符号就算语义贡献小，也可能反复吸走较高 attention mass。无限流式输入里 KV cache 不能无限涨，朴素 FIFO 丢掉这些锚点后，softmax 归一化的范围突然变化，近期窗口内的权重也会随之改变，输出可能崩溃。
 
 ## 现象与公式直觉
 

@@ -4,10 +4,7 @@ section: posttrain
 order: 141
 level: A
 title: 蚂蚁：DPO 的 loss 怎么写？
-quick: >-
-  DPO 的 loss 我直接写闭式：最优策略相对 frozen reference，再套进 Bradley-Terry，就是
-  $-\log\sigma\big(\beta(\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)})\big)$。$\beta$
-  管偏离 ref 的幅度，别说成学习率。
+quick: "把 KL 约束最优策略反解出的奖励代入 Bradley-Terry，得到 $-\\log\\sigma(\\beta[\\Delta_w-\\Delta_l])$，其中 $\\Delta=\\log\\pi_\\theta(y\\mid x)-\\log\\pi_{\\mathrm{ref}}(y\\mid x)$。"
 tags:
   - Ant Group
   - DPO
@@ -34,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“讲一下 DPO , PPO , GRPO 的原理和区别，写一下 DPO loss 函数”**
 
-错法：「再做一次 pairwise 交叉熵」，或者把 $\beta$ 说成学习率。DPO 是从反向 KL 约束 RL 的闭式最优策略反解奖励，再代入 Bradley-Terry，不是凭空发明的分类损失。方向写反，最优策略对不上，后面所有符号都会漂，见 `fund-kl-directions`。我会主动写出三样：冻结的 $\pi_{\mathrm{ref}}$、完成序列上的 $\log\pi$ 求和，以及优化的是 chosen 相对 rejected 的间隔，不是正例绝对似然。缺任何一项，面试官下一问就会拆穿。
+常见误区是：「再做一次 pairwise 交叉熵」，或者把 $\beta$ 说成学习率。DPO 从反向 KL 约束下强化学习目标的闭式最优策略反解奖励，再代入 Bradley-Terry，不是凭空发明的分类损失。方向写反，最优策略对不上，后续推导也会出错，见 `fund-kl-directions`。我会主动写出三样：冻结的 $\pi_{\mathrm{ref}}$、完成序列上的 $\log\pi$ 求和，以及优化的是 chosen 相对 rejected 的间隔，不是正例绝对似然。这些条件都需要在推导中说明。
 
 ## 从最优策略反解到分类损失
 
@@ -44,25 +41,25 @@ $$
 \max_\pi\ \mathbb{E}_{y\sim\pi}[r(x,y)]-\beta\,D_{\mathrm{KL}}\big(\pi(\cdot\mid x)\,\|\,\pi_{\mathrm{ref}}(\cdot\mid x)\big).
 $$
 
-期望在当前策略上取，所以是反向、mode-seeking：可以丢掉参考里不想要的峰，但不能跑到 $\pi_{\mathrm{ref}}\approx 0$ 处黑奖。闭式最优解是
+期望在当前策略上取，所以是反向、mode-seeking：可以丢掉参考里不想要的峰，但不能靠进入 $\pi_{\mathrm{ref}}\approx 0$ 的区域利用奖励漏洞。闭式最优解是
 
 $$
 \pi^*(y\mid x)\propto\pi_{\mathrm{ref}}(y\mid x)\exp\big(r(x,y)/\beta\big),
 $$
 
-反解奖励 $r(x,y)=\beta\log\frac{\pi^*(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}+Z(x)$。$Z(x)$ 只依赖 prompt，Bradley-Terry 做差时相消，于是奖励差变成策略对数比的差，得到只含 $\pi_\theta$ 与冻结 $\pi_{\mathrm{ref}}$ 的分类损失：
+反解奖励 $r(x,y)=\beta\log\frac{\pi^*(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}+Z(x)$。$Z(x)$ 只依赖输入提示，Bradley-Terry 做差时相消，于是奖励差变成策略对数比的差，得到只含 $\pi_\theta$ 与冻结 $\pi_{\mathrm{ref}}$ 的分类损失：
 
 $$
 \mathcal{L}_{\mathrm{DPO}}=-\mathbb{E}\log\sigma\Big(\beta\big(\log\tfrac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\log\tfrac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}\big)\Big).
 $$
 
-现场顺序必须是：先写约束目标 $\to$ 再写 $\pi^*$ $\to$ 再反解 $r$ $\to$ 最后写 $\sigma$。跳过反解，最常见的事故是把 $\beta$ 乘在 $\sigma$ 外面，或者漏掉 ref 只写 $\log\pi(y_w)-\log\pi(y_l)$。那就退化成没有锚的偏好 CE，最优策略不再对应原来的 RL 目标。
+现场顺序必须是：先写约束目标 $\to$ 再写 $\pi^*$ $\to$ 再反解 $r$ $\to$ 最后写 $\sigma$。跳过反解，最常见的事故是把 $\beta$ 乘在 $\sigma$ 外面，或者漏掉 ref 只写 $\log\pi(y_w)-\log\pi(y_l)$。那就退化成没有锚的偏好交叉熵损失（CE），最优策略不再对应原来的 RL 目标。
 
 ## 白板符号与失败模式
 
-$y_w/y_l$ 是 chosen / rejected；$\log\pi$ 对完成序列（response token）求和，prompt 要 mask 掉；$\pi_{\mathrm{ref}}$ 全程冻结，通常是 SFT 权重。$\beta$ 大则更贴 ref、间隔难拉开；$\beta$ 小则偏好信号强，但策略容易漂出参考支撑。梯度推的是 **margin**，不是 SFT 那种「正例似然单调上升」：chosen 与 rejected 的绝对 $\log\pi$ 可以双降，只要相对间隔在涨、下游胜率在涨，这仍可能是健康曲线，见 `baidu-dpo-chosen-curve`。
+$y_w/y_l$ 是 chosen / rejected；$\log\pi$ 对回答序列的 token求和，prompt 要 mask 掉；$\pi_{\mathrm{ref}}$ 全程冻结，通常使用监督微调（SFT）后的权重。$\beta$ 大则更贴 ref、间隔难拉开；$\beta$ 小则偏好信号强，但策略容易漂出参考支撑。梯度推的是 **margin**，不是 SFT 那种「正例似然单调上升」：chosen 与 rejected 的绝对 $\log\pi$ 可以双降，只要相对间隔在涨、下游胜率在涨，这仍可能是健康曲线，见 `baidu-dpo-chosen-curve`。
 
-失败模式我会主动报。长 chosen 天然占总 logprob 优势，模型学会啰嗦但偏好赢，需要长度归一、SimPO 或标注时控长。没有 online rollout 与显式 RM，偏好标签错了没法靠采样自纠；离线分布和线上用户一漂，间隔再漂亮也救不了。过拟合噪声 pair 会出现 offline 赢、online 崩。这些都不是「再加学习率」能修的。和 PPO / GRPO 我会差一句：DPO 离线吃 pair；PPO 有 RM + critic + clip；GRPO 用组相对优势，组大小必须 $n\gt 1$，见 `sys-rl-group-n`。
+失败模式我会主动报。长 chosen 天然占总 logprob 优势，模型学会啰嗦但偏好赢，需要长度归一、SimPO 或标注时控长。DPO 不在线采样，也没有显式奖励模型，因此偏好标签出错后，无法通过新采样自动纠正。离线数据与线上用户需求不同，即使训练中的偏好间隔变大，实际表现仍可能下降。过拟合噪声 pair 会出现 offline 赢、online 崩。这些都不是「再加学习率」能修的。和 PPO / GRPO 我会差一句：DPO 离线吃 pair；PPO 使用奖励模型、价值评估模型（critic）和裁剪目标；GRPO 用组相对优势，组大小必须 $n\gt 1$，见 `sys-rl-group-n`。
 
 ## 追问
 

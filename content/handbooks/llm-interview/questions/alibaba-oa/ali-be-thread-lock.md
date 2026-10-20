@@ -5,7 +5,7 @@ order: 51
 level: A
 title: 阿里研发面：线程池七参数，`synchronized` 和 `ReentrantLock` 怎么选？
 quick: >-
-  七参数是核心/最大/存活、队列、工厂、拒绝策略。`synchronized` 是 JVM 锁；`ReentrantLock` 能公平、可中断、多条件。AQS 用 CLH 变体排队。
+  线程池七参数分别控制核心线程数、最大线程数、空闲存活时间及单位、任务队列、线程工厂和拒绝策略。`synchronized` 是 JVM 内置锁；`ReentrantLock` 支持公平锁、可中断获取和多个条件队列。AQS 用 CLH 变体管理等待线程。
 tags:
   - Alibaba
   - 并发
@@ -25,9 +25,9 @@ sources:
 
 ## 定义
 
-线程池把「创建线程」和「执行任务」拆开。`ThreadPoolExecutor` 七参数按执行语义记，别背成单词表：`corePoolSize` 是常驻工人；`maximumPoolSize` 是峰值上限；`keepAliveTime` + `TimeUnit` 是非核心线程空闲回收；`workQueue` 是任务缓冲；`threadFactory` 决定线程名、守护属性，方便排查；`handler` 是队列和线程都满之后的拒绝策略。提交顺序必须说对：先把核心线程填满，再入队，队列满才开到最大线程，再满才拒绝。错法：把「先扩线程再入队」讲反，面试官会立刻打断。
+线程池把「创建线程」和「执行任务」拆开。`ThreadPoolExecutor` 七参数按执行语义记，别背成单词表：`corePoolSize` 是常驻工人；`maximumPoolSize` 是峰值上限；`keepAliveTime` + `TimeUnit` 是非核心线程空闲回收；`workQueue` 是任务缓冲；`threadFactory` 决定线程名、守护属性，方便排查；`handler` 是队列和线程都满之后的拒绝策略。提交顺序必须说对：先把核心线程填满，再入队，队列满才开到最大线程，再满才拒绝。常见误区是：把「先扩线程再入队」讲反，面试官会立刻打断。
 
-锁更简单：保护临界区，保证同一时刻只有约定数量的线程能改共享状态。`synchronized` 是 JVM 内置监视器锁，进入代码块或方法时获取，退出或异常时自动释放，可重入。`ReentrantLock` 是 JUC 里基于 AQS 的显式锁，必须在 `finally` 里 `unlock`。AQS 本体是一个 `state` 整数加一条 CLH 变体的双向等待队列：获取失败的线程入队停车，释放时唤醒后继；独占模式对应锁，共享模式对应 `CountDownLatch` / `Semaphore`。
+锁更简单：保护临界区，保证同一时刻只有约定数量的线程能改共享状态。`synchronized` 是 JVM 内置监视器锁，进入代码块或方法时获取，退出或异常时自动释放，可重入。`ReentrantLock` 是 JUC 里基于 AQS 的显式锁，必须在 `finally` 里 `unlock`。AQS 本体是一个 `state` 整数加一条 CLH 变体的双向等待队列：获取失败的线程进入队列等待，释放时唤醒后继；独占模式对应锁，共享模式对应 `CountDownLatch` / `Semaphore`。
 
 ## 对比 / 分层
 
@@ -39,7 +39,7 @@ sources:
 | 条件队列 | 一把锁一个 `wait/notify` 集合 | 多把 `Condition` |
 | 适用 | 短临界区、语法简单 | 需要取消、公平、多条件排队 |
 
-拒绝策略也要分层：`AbortPolicy` 抛异常，调用方能感知过载；`CallerRunsPolicy` 把任务打回提交线程，形成反向压；`DiscardPolicy` 静默丢新任务；`DiscardOldestPolicy` 丢队列头再试。交易、支付禁止静默丢。队列选型：CPU 密集用有界队列 + 较小最大线程；IO 密集（调下游 HTTP / DB）可以把最大线程抬高，但必须有界，无界 `LinkedBlockingQueue` 会把 OOM 藏到堆里。
+拒绝策略也要分层：`AbortPolicy` 抛异常，调用方能感知过载；`CallerRunsPolicy` 把任务打回提交线程，形成背压，让提交速度降下来；`DiscardPolicy` 静默丢新任务；`DiscardOldestPolicy` 丢队列头再试。交易、支付禁止静默丢。队列选型：CPU 密集用有界队列 + 较小最大线程；IO 密集（调下游 HTTP / DB）可以把最大线程抬高，但必须有界，无界 `LinkedBlockingQueue` 会把 OOM 藏到堆里。
 
 死锁四条件：互斥、持有并等待、不可抢占、环路等待。预防用固定加锁顺序、超时 `tryLock`、缩小锁粒度。阿里面经常把线程池和锁串起来：线程池耗尽是不是锁等下游超时引起的。
 

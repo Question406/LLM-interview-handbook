@@ -4,10 +4,7 @@ section: fundamentals
 order: 140
 level: A
 title: Forward / Reverse KL 后训练八股要准备哪些题？
-quick: >-
-  先分清方向（谁采样、mode-covering / mode-seeking），再对照 SFT 正向 vs RLHF
-  反向，然后拆 Trust-Region 与 Drift、蒸馏跨到 OPD / OPSD，最后才是 $k_1/k_2/k_3$、$\beta$
-  大小和自适应 controller。下面清单按这个顺序排。
+quick: "按顺序准备：KL 定义和采样方向，SFT 正向与 RLHF 反向，Trust-Region 与 Drift KL，OPD / OPSD 蒸馏，最后是 $k_1/k_2/k_3$ 和 $\\beta$ 的工程问题。"
 tags:
   - KL
   - Post-Training
@@ -70,4 +67,4 @@ sources:
 - 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
 - GRPO 的 KL 和 PPO 的 KL 是一模一样的吗？
 
-串法：方向看采样分布；Trust-Region 对 $\pi_{\mathrm{old}}$，Drift 对 $\pi_{\mathrm{ref}}$；外部 OPD 学生采样常是反向 KL；OPSD 还要再问下一 token 公式写的是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。
+串起来理解时，先看采样分布确定方向；Trust-Region 比较 $\pi_{\mathrm{old}}$，Drift 比较 $\pi_{\mathrm{ref}}$。外部 OPD 的学生采样常对应反向 KL；OPSD 还需要检查下一 token 的公式究竟是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。

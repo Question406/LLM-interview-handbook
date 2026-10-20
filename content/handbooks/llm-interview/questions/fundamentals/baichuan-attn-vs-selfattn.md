@@ -34,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“你知道最早的 attention 做机器翻译，它的注意力怎么得的吗？”**；**“这个 attention 和 self attention 的 QKV 怎么来的？”**
 
-错法：所有注意力都画成 Transformer 的 $Q,K,V$ 三投影。Bahdanau / Luong 时代的 seq2seq 没有「三个同型矩阵都乘在同一条序列上」。先画一张来源表，再写公式。缩放点积见 `meituan-attention-scale-dk`；矩阵形状见 `ali-attention-math`；手写实现见 `pdd-attention-handwrite`。
+常见误区是：所有注意力都画成 Transformer 的 $Q,K,V$ 三投影。Bahdanau / Luong 时代的 seq2seq 没有「三个同型矩阵都乘在同一条序列上」。先画一张来源表，再写公式。缩放点积见 `meituan-attention-scale-dk`；矩阵形状见 `ali-attention-math`；手写实现见 `pdd-attention-handwrite`。
 
 ## 经典对齐注意力
 

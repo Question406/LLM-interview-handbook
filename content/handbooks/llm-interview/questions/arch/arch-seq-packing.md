@@ -4,9 +4,7 @@ section: arch
 order: 17
 level: A
 title: Sequence Packing 如何减少 Padding 浪费？
-quick: >-
-  把多个短样本拼到同一个固定长度 sequence 里，提高有效 token 比例；关键是 attention mask、position/segment
-  boundary 和 loss mask 不能让不同样本互相泄漏。
+quick: "把多个短样本拼进同一个固定长度序列，提高有效 token 的比例。注意力掩码、位置与样本边界、损失计算范围都要正确处理，避免一个样本读取另一个样本的信息。"
 tags:
   - Training
   - Packing
@@ -21,7 +19,7 @@ sources:
     type: primary
 ---
 
-错法：只说「拼在一起提高 GPU 利用率」，却不提 mask。例如 max length $4096$，四条 $800$-token 样本各自 pad 会浪费约八成位置；packing 后可以放进同一 sequence。若不做隔离，样本 A 的 token 会看见样本 B，因果 LM 变成串味的跨文档注意力，loss 数字好看、任务却脏。
+常见误区是：只说「拼在一起提高 GPU 利用率」，却不提 mask。例如 max length $4096$，四条 $800$-token 样本各自 pad 会浪费约八成位置；packing 后可以放进同一 sequence。若不做隔离，样本 A 的 token 可能读取样本 B，形成意外的跨文档注意力。损失看起来下降了，训练任务却被改变。
 
 ## 必须对齐的三张 mask
 
@@ -34,7 +32,7 @@ M_{ij}=\begin{cases}
 \end{cases}
 $$
 
-RoPE 的 position id 可每段从 $0$ 重置，或沿 packed 序列连续编号，必须与模型实现一致；错了等于训练了一套推理对不上的相对位置 $R_i^\top R_j=R_{j-i}$。Loss mask 只在真实 token 上计 CE，padding 与段边界特殊符不计。文档级任务还要 segment id，防止把拼接当成长文。
+RoPE 的 position id 可每段从 $0$ 重置，或沿 packed 序列连续编号，必须与模型实现一致；错了等于训练了一套推理对不上的相对位置 $R_i^\top R_j=R_{j-i}$。损失计算范围 只在真实 token 上计 交叉熵损失（CE），padding 与段边界特殊符不计。文档级任务还要 segment id，防止把拼接当成长文。
 
 ## 吞吐涨了，统计口径会变
 
@@ -46,4 +44,4 @@ Packing 提高有效 token / 步，但「一个 batch 有多少样本」和「�
 
 - **position 连续编号有什么风险？** 模型可能学会「packed 后半段总是很大位置」，和推理单条短请求的位置分布不一致。
 - **和 gradient accumulation 什么关系？** Packing 减少 pad；accumulation 凑大 token batch。两者互补，不要互相替代。
-- **packing 能替代长上下文训练吗？** 不能。它吃的是短样本空隙，不提供跨样本的超长依赖。
+- **packing 能替代长上下文训练吗？** 不能。它利用的是短样本留下的空位，不提供跨样本的超长依赖。

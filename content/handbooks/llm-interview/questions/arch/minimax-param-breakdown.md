@@ -4,9 +4,7 @@ section: arch
 order: 202
 level: B
 title: MiniMax：大模型参数量在各部分大概怎么拆？
-quick: >-
-  按 Embedding、每层 Attention（QKV/O）、MLP（含 SwiGLU 三矩阵）、输出头估算；MoE
-  再乘专家数并说明路由不增加同量激活参数。我会给公式，不背某一发布会数字。
+quick: "先分别估算 Embedding、每层 Attention 的 QKV/O 矩阵、MLP 和输出头，再加总。SwiGLU 的 MLP 有三组矩阵；MoE 的总参数按全部专家计算，每个 token 的激活参数只算实际选中的专家。用公式代入配置，比背发布会数字更可靠。"
 tags:
   - MiniMax
   - Parameter Count
@@ -26,14 +24,14 @@ sources:
 - 公司：MiniMax（总结帖收录）
 - 原始措辞：**“大模型算法中模型参数量每个部分有多少？”**
 
-错法：背某一发布会的「70B / 456B」数字，或把总参数和每 token 激活参数混成一个数。我会给可复用的拆分：词表、注意力、MLP、输出头，再单独说 MoE。数字对不上公开技术报告就说「按公式估」，不要编造。
+常见误区是：背某一发布会的「70B / 456B」数字，或把总参数和每个 token 的激活参数混成一个数。我会给可复用的拆分：词表、注意力、MLP、输出头，再单独说 MoE。数字对不上公开技术报告就说「按公式估」，不要编造。
 
 ## 稠密 Transformer：四块加法
 
-记隐藏维 $d$、层数 $L$、词表 $V$、FFN 中间维 $d_{\mathrm{ff}}$。SwiGLU 常用 $d_{\mathrm{ff}}\approx 8d/3$，使激活后宽度接近旧版 $4d$。
+记隐藏维 $d$、层数 $L$、词表 $V$、FFN 中间维 $d_{\mathrm{ff}}$。SwiGLU 常用 $d_{\mathrm{ff}}\approx 8d/3$，使参数量接近使用 $4d$ 中间维的普通 FFN。
 
-- Token embedding：$\approx V\cdot d$。词表到十万级时，这一项已经是数 B，不可忽略。若 lm_head 与 embedding untied，输出头再加一份同量级。
-- 每层 Attention：标准 MHA 是 $W_Q,W_K,W_V,W_O$ 四块 $d\times d$，约 $4d^2$。GQA 把 $K,V$ 头数降到 $n_{\mathrm{kv}}$，参数按 $d\cdot d_{\mathrm{kv}}$ 打折，见 `pdd-attention-handwrite`、`arch-mla`。偏置、RoPE 频率表相对很小。
+- Token embedding：$\approx V\cdot d$。词表到十万级时，这一项已经是数 B，不可忽略。若 lm_head 与 embedding 不共享权重，输出头再加一份同量级。
+- 每层 Attention：标准 MHA 是 $W_Q,W_K,W_V,W_O$ 四块 $d\times d$，约 $4d^2$。GQA 把 $K,V$ 头数降到 $n_{\mathrm{kv}}$，K、V 投影的参数量变为 $d\cdot d_{\mathrm{kv}}$，见 `pdd-attention-handwrite`、`arch-mla`。偏置、RoPE 频率表相对很小。
 - 每层 MLP：SwiGLU 三矩阵（gate / up / down）约 $3d\cdot d_{\mathrm{ff}}$；ReLU FFN 是两矩阵 $2d\cdot d_{\mathrm{ff}}$。MLP 通常比 Attention 更大。
 - Norm / 其它：RMSNorm 只有 $d$ 级，可忽略。
 
@@ -43,7 +41,7 @@ $$
 N \approx Vd + L\bigl(4d^2 + 3d\,d_{\mathrm{ff}}\bigr)
 $$
 
-（GQA / tied head 时改对应项）。口算：7B 级 $d=4096,L=32$，一层 MLP 就接近注意力的两倍以上。我会先报公式，再代入一档公开配置做数量级核对。
+使用 GQA 或共享输出头权重时，需要调整对应项。口算时，7B 级 $d=4096,L=32$，一层 MLP 就接近注意力的两倍以上。我会先报公式，再代入一档公开配置做数量级核对。
 
 ## MoE：总参数可以涨，激活参数按 top-$k$
 
@@ -54,7 +52,7 @@ N_{\mathrm{total}}\approx Vd + L\bigl(4d^2 + E\cdot 3d\,d_{\mathrm{ff}}\bigr),\q
 N_{\mathrm{act}}\approx Vd + L\bigl(4d^2 + k\cdot 3d\,d_{\mathrm{ff}}\bigr).
 $$
 
-路由器是 $d\times E$ 量级，相对专家矩阵可忽略。回答必须拆两句话：容量跟 $E$ 走，算力跟 $k$ 走。不要说「MoE 参数少」，总参数往往更多，省的是激活 FLOPs。负载不均时有效 $k$ 还会漂，见 `tencent-moe-vs-dense`、`arch-moe-balance`。
+路由器是 $d\times E$ 量级，相对专家矩阵可忽略。专家数 $E$ 决定可存储的总参数量，而每个 token 选中的专家数 $k$ 决定主要计算量。不要说「MoE 参数少」，总参数往往更多，省的是激活 FLOPs。负载不均时，实际参与计算的专家数也可能变化，见 `tencent-moe-vs-dense`、`arch-moe-balance`。
 
 Embedding 在大词表、多语言模型里占比可到总参数的 10% 量级；只报「层内 $d^2$」会漏这块。若追问公司具体型号，回到公开技术报告的 $d,L,E,k$，用上面公式验算，对不上就承认未读到该版附录。
 

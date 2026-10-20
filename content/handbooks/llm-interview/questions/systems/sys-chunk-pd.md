@@ -4,9 +4,7 @@ section: systems
 order: 10
 level: A
 title: Chunked Prefill 与 Prefill–Decode Disaggregation 在解决什么？
-quick: >-
-  大 prefill 会长时间占 GPU，把对延迟敏感的 decode 堵住。Chunked prefill 把长 prompt 分块，跟
-  decode 混排；P/D 分离则把偏算力的 prefill 和偏带宽的 decode 放到不同资源池。两层可以叠，短单轮我一般不上 PD。
+quick: "两者都防止长 prefill 堵住 decode。Chunked prefill 在同卡把长 prompt 切块和 decode 混排；PD 分离把偏算力的 prefill 和偏带宽的 decode 放到不同资源池。"
 tags:
   - Serving
   - Prefill
@@ -25,13 +23,13 @@ sources:
     type: primary
 ---
 
-这块容易把两者说成一回事，或者以为上了 PD 就不需要切块。它们打的是同一类伤害：大 prefill 占满 SM、饿死 decode、TPOT 出尖刺。一层在**同卡调度**，一层在**跨池放置**。验收看 throughput、TTFT、TPOT、KV transfer cost 和利用率，不会只报「拆没拆」。见 `sys-prefill-decode`。
+这块容易把两者说成一回事，或者以为上了 PD 就不需要切块。它们打的是同一类伤害：大 输入预填充（prefill，即处理输入并建立缓存） 占满 SM、饿死 逐 token 生成（decode）、每个 token 的生成间隔突然变长。一层在**同卡调度**，一层在**跨池放置**。验收看 throughput、首个 token 的等待时间（TTFT）、TPOT、KV transfer cost 和利用率，不会只报「拆没拆」。见 `sys-prefill-decode`。
 
 ## Chunked prefill：同卡切块混排
 
-把超长 prompt 切成固定 token 块，块与正在进行的 decode step 交错。一条 $8\mathrm{k}$ prefill 不再一次占满几十到数百毫秒，decode 可以按步插入，P99 TPOT 不被单条长 prompt 打穿。**不需要跨机传 KV**，实现成本低，vLLM / SGLang 都有。
+把超长 输入提示（prompt） 切成固定 token 块，块与正在进行的 decode step 交错。一条 $8\mathrm{k}$ prefill 不再一次占满几十到数百毫秒，decode 可以按步插入，P99 TPOT 不被单条长 prompt 打穿。**不需要跨机传 KV**，实现成本低，vLLM / SGLang 都有。
 
-代价是同 GPU 上仍有调度权衡：块太大，decode 仍被饿；块太小，prefill GEMM 变瘦、TTFT 变差。适合单池、长短请求混部、还不想上两套集群。
+代价是同 GPU 上仍有调度权衡：块太大，decode 仍需等待；块太小，prefill GEMM 变瘦、TTFT 变差。适合单池、长短请求混部、还不想上两套集群。
 
 ## PD 分离：跨池各吃各的瓶颈
 
@@ -47,6 +45,6 @@ Prefill 算术强度高、偏 compute；decode 每步读整份权和历史 KV，
 
 - **PD 一定更快吗？** KV 传输和两套调度是税。短请求、弱网络上可能更慢。用 goodput 和 P99 说话。
 - **Chunked 会改变注意力结果吗？** 正确实现是 exact 的因果注意力，只是把 $QK^\top$ 按块算完。实现 bug 另说。
-- **为什么 PD 要 session affinity？** KV 在特定 decode 机上，下一轮或下一 token 必须打回去，见 `slime-router-session`。
+- **为什么 PD 要 session affinity？** KV 在特定 decode 机上，下一轮或下一 token 必须要求重新说明，见 `slime-router-session`。
 - **和 PagedAttention 什么关系？** Paging 管 KV 怎么存；chunk / PD 管 prefill 和 decode 谁先跑、跑在哪。三层不要混。
-- **KV transfer 用什么介质？** 同机 NVLink / 共享显存便宜；跨机要 IB 或专用 KV 通道。介质选错时，PD 的税会大于拆池的收益。
+- **KV transfer 用什么介质？** 同机 NVLink / 共享显存便宜；跨机要 IB 或专用 KV 通道。介质选错时，PD 的额外开销会超过拆池收益。

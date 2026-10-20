@@ -4,10 +4,7 @@ section: posttrain
 order: 252
 level: A
 title: DeepSeek 从 R1 到 V3.2，公开的 RL 改了什么？MoE RL 差在哪？
-quick: >-
-  公开主线仍是 GRPO，不是换成另一套缩写。R1 把规则奖励长思考写清楚；V3.2 仍用 GRPO，但把 reasoning / agent /
-  对齐并进同一段 RL，并加上无偏 $k_3$、负样本 off-policy mask、Keep Routing。架构侧 V3.2 是 DSA，不要把稀疏注意力说成
-  RL 算法。V4 的 RL 细节没有可靠官方报告，不要编。
+quick: "公开主线一直是 GRPO。R1 用规则奖励激励长思考；V3.2 把 reasoning、agent 和对齐并进一段 RL，并加了无偏 $k_3$、负样本 mask 和 MoE 的 Keep Routing。"
 tags:
   - DeepSeek
   - GRPO
@@ -35,13 +32,13 @@ sources:
 
 **DeepSeekMath / GRPO。** 组内相对优势，去掉 Critic，见 `pt-grpo`。
 
-**R1 / R1-Zero。** 规则奖励激励长 CoT 和自检。R1-Zero 从 base 直接 RL；产品 R1 仍常用冷启动再 RL。它说明 RL 能激励推理行为，不说明从零发明预训练里没有的知识，见 `pt-r1zero`、`pt-where-reasoning-comes-from`。
+**R1 / R1-Zero。** 规则奖励激励长 思维链（CoT，即分步推理过程） 和自检。R1-Zero 从 base 直接 强化学习（RL）；产品 R1 仍常用冷启动再 RL。它说明 RL 能激励推理行为，不说明从零发明预训练里没有的知识，见 `pt-r1zero`、`pt-where-reasoning-comes-from`。
 
 **V3。** 后训练存在，但公开叙事的重心是 MLA、无辅助负载均衡、DualPipe、MTP。不要把 V3 说成「没做 RL」。
 
 **V3.2（`2512.02556`）。** 架构相对 V3.1-Terminus 的可见改动是 DeepSeek Sparse Attention（DSA）：lightning indexer + 细粒度 token 选择，长上下文算力从二次降到近似线性。RL 侧仍写 GRPO，额外三点最常被追：
 
-1. **一段 RL 混三件事。** reasoning、agent、人类对齐并进同一阶段，避免多阶段互相遗忘。reasoning / agent 用规则结果奖 + 长度惩罚 + 语言一致性；开放任务用带题目级 rubric 的生成式 RM。
+1. **一段 RL 混三件事。** reasoning、agent、人类对齐并进同一阶段，避免多阶段互相遗忘。reasoning / agent 用规则结果奖 + 长度惩罚 + 语言一致性；开放任务用带题目级 rubric 的生成式 奖励模型（RM）。
 2. **稳住长训。** 用 $\pi/\pi_{\mathrm{old}}$ 修正 $k_3$，让 KL 梯度无偏；对负优势且相对采样策略 KL 过大的序列做 mask。数学域可以弱 KL 甚至去掉，和 DAPO 去 KL 不矛盾，见 `xiaohongshu-grpo-drop-kl`、`ant-grpo-kl-vs-ppo`。
 3. **Keep Routing。** 采样时的 expert 路由在训练图上重放。MoE 训推框架不一致、再叠加策略更新，同一输入会走到另一组 expert，等于优化空间跳变。报告写从 V3-0324 起这条就关键。和 R2 / R3 / GSPO 怎么分层见 `pt-r3-routing-replay`；训推路由不一致的一般讨论见 `sys-moe-train-infer-routing-mismatch`。
 
@@ -55,6 +52,6 @@ Dense 的 off-policy 主要是 $\rho$ 和数值隙。MoE 多一条**路由隙**�
 
 ## 追问
 
-- **V3.2-Speciale 是另一种算法吗？** 公开表述是同一套协议堆更多 RL 算力，不是换了 loss 名字。
+- **V3.2-Speciale 是另一种算法吗？** 公开表述是同一套协议堆更多 RL 算力，不是换了 损失（loss） 名字。
 - **Keep Routing 和 GSPO 谁先上？** 路由先对齐，再谈 ratio 粒度。路由都错了，序列级 $\rho$ 也是错专家上的数。
 - **和 ProRL 长训怎么一起讲？** V3.2 给的是 MoE 上可 scale 的 GRPO 稳定术；ProRL 给的是临界区数据 × 探索 × 步数，见 `pt-prorl-scale-boundary`。

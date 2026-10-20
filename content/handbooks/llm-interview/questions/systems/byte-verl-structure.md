@@ -4,10 +4,7 @@ section: systems
 order: 230
 level: S
 title: 字节 Agent 算法一面：讲讲 veRL 的结构、关键组件，怎么魔改？
-quick: >-
-  按 HybridFlow：Ray Trainer 编排数据流；`actor_rollout_ref` 同一组 GPU
-  上训练/采样/算参考 logp；Reward / Env 打分或跑工具；PPO 才加 Critic。魔改我先动 Reward 与
-  Env，再动 loss 与异步 rollout，不会一上来改 Megatron kernel。
+quick: "按数据流讲：Ray Trainer 编排，Actor/Rollout/Ref 在同一组 GPU 上换布局训练和采样，Reward/Env 打分，PPO 才有 Critic。魔改先动 Reward 和 Env，再动 loss。"
 tags:
   - ByteDance
   - VeRL
@@ -35,11 +32,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“讲讲verl的结构，关键组件，如何魔改,遇到的问题”**
 
-错法：按目录名报 `workers/`，或一上来讲 Megatron kernel。按数据流讲：Trainer 编排 → Actor/Rollout/Ref 在同一组 GPU 上换布局采样 → Reward/Env 打分 →（PPO 才有）Critic。魔改优先级是 Reward 与工具协议，再是 loss 与异步，最后才动内核。相关卡：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`didi-verl-metrics`。
+常见误区是：按目录名报 `workers/`，或一上来讲 Megatron kernel。按数据流讲：Trainer 编排 → Actor/Rollout/Ref 在同一组 GPU 上换布局采样 → Reward/Env 打分 →（PPO 才有）Critic。魔改优先级是 Reward 与工具协议，再是 损失（loss） 与异步，最后才动内核。相关卡：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`didi-verl-metrics`。
 
 ## 按数据流说组件
 
-1. **Trainer（单控）**：读 parquet / prompt，切 `rollout_batch`，用 Ray 调度 worker。
+1. **Trainer（单控）**：读 parquet / 输入提示（prompt），切 `rollout_batch`，用 Ray 调度 worker。
 2. **Actor + Rollout + Ref**：HybridEngine 把 FSDP/Megatron 分片权重原地换成 vLLM/SGLang 布局再采样；Ref 冻结算 KL 或参考 logp。
 3. **Reward / Verifier / Tool Env**：规则、代码沙箱、搜索 API；Agent 多轮走 SGLang multi-turn。
 4. **Critic**：只在 PPO/GAE；GRPO 没有。
@@ -48,7 +45,7 @@ sources:
 
 ## 魔改顺序与典型坑
 
-先自定义 reward manager 和工具超时 / schema；再动 `loss_agg_mode`、KL 估计器；然后才异步 rollout 与 staleness。不要一上来改 Megatron kernel。踩坑通常是：vLLM 与训练图 logp 不一致必须重算；权重同步卡死；`rollout.n` 与 micro-batch 对不齐导致空卡或 OOM。Agent 场景优先把 Env 的超时、重试和 observation 截断做对，否则后面的 loss 改动都在放大脏轨迹。用过 slime 时对照一句：Trainer 仍是 Ray 单控；Actor/Rollout 拆成 Megatron + SGLang，粘合是 Data Buffer 和 `update_weights`，不是 HybridEngine 换布局；魔改先换 `--custom-rm-path` / `--rollout-function-path`。
+先自定义 reward manager，处理工具超时并定义 schema；再动 `loss_agg_mode`、KL 估计器；然后才异步 采样轨迹（rollout） 与 staleness。不要一上来改 Megatron kernel。踩坑通常是：vLLM 与训练图 logp 不一致必须重算；权重同步卡死；`rollout.n` 与 micro-batch 对不齐导致空卡或 OOM。Agent 场景优先把 Env 的超时、重试和 observation 截断做对，否则后面的 loss 改动都在放大脏轨迹。用过 slime 时对照一句：Trainer 仍是 Ray 单控；Actor/Rollout 拆成 Megatron + SGLang，粘合是 Data Buffer 和 `update_weights`，不是 HybridEngine 换布局；魔改先换 `--custom-rm-path` / `--rollout-function-path`。
 
 ## 追问
 

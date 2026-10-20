@@ -4,9 +4,7 @@ section: arch
 order: 10
 level: S
 title: MLA 主要解决什么？和 GQA 有什么本质差别？
-quick: >-
-  MLA 通过低维 latent 压缩 K/V 相关信息来降低 KV Cache；GQA 则减少 KV head 数做 head sharing。二者都瞄准
-  decode memory/bandwidth，但压缩轴不同。
+quick: "MLA 把 K/V 相关信息压缩到低维潜在表示中，减少 KV Cache；GQA 则让多个查询头共享较少的 KV 头。两者都降低逐 token 生成（decode）时的存储和带宽开销，但压缩的是不同维度。"
 tags:
   - MLA
   - DeepSeek
@@ -22,7 +20,7 @@ sources:
     type: legacy-reference
 ---
 
-错法：把 MLA 说成「另一种 GQA」，或「把 K/V 随便压成一个小向量」。两者都为 decode 的 KV 带宽服务，压缩轴不同：GQA 减少独立 KV 头的个数；MLA 把每 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
+常见误区是：把 MLA 说成「另一种 GQA」，或「把 K/V 随便压成一个小向量」。两者都为 逐 token 生成（decode） 的 KV 带宽服务，压缩轴不同：GQA 减少独立 KV 头的个数；MLA 把每个 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
 
 ## 1. GQA：沿 head 数共享
 
@@ -38,7 +36,7 @@ $$
 c_t^{KV}=W^{DKV}h_t\in\mathbb{R}^{d_c},\qquad d_c\ll n_h d_h.
 $$
 
-训练时再上投影得到内容部分 $k^C,v^C$。若对整段 $k$ 做低秩又直接套 RoPE，旋转与低秩基不对齐，位置信息会被拧坏。MLA 因此把 RoPE 拆出去：另存一小段解耦的 $k_t^R=\mathrm{RoPE}(W^{KR}h_t)$（维 $d_h^R$ 往往只有几十），query 侧同样有 $q^R$。Cache 里每 token 主要是 $c_t^{KV}$ 加这段短 $k^R$，而不是 $n_h$ 份全长 K/V。
+训练时再上投影得到内容部分 $k^C,v^C$。若对整段 $k$ 做低秩又直接套 RoPE，旋转与低秩基不对齐，位置旋转会妨碍直接进行矩阵吸收。MLA 因此把 RoPE 拆出去：另存一小段解耦的 $k_t^R=\mathrm{RoPE}(W^{KR}h_t)$（维 $d_h^R$ 往往只有几十），query 侧同样有 $q^R$。Cache 里每 token 主要是 $c_t^{KV}$ 加这段短 $k^R$，而不是 $n_h$ 份全长 K/V。
 
 不能「随便压成一个小向量」：attention score 与 value 聚合仍要保留足够的 query-dependent 结构。$d_c$ 太小就是信息瓶颈；论文里的 $d_c$（如 $512$）是质量和流量的折中，不是越小越好。
 
@@ -52,7 +50,7 @@ $$
 (q^C)^\top k^C=(c^Q)^\top(W^{UQ})^\top W^{UK}c^{KV}.
 $$
 
-把 $(W^{UQ})^\top W^{UK}$ 吸进 query 侧，推理只需拿 $c^{KV}$ 做等价点积。Value 侧把 $W^{UV}$ 吸进输出投影。于是 decode 不必每步显式恢复大 $k,v$，算力和带宽都停在 latent 上。这是 MLA 相对「先低秩压缩、再解压再 attention」的关键工程差。
+把 $(W^{UQ})^\top W^{UK}$ 吸进 query 侧，推理只需拿 $c^{KV}$ 做等价点积。Value 侧把 $W^{UV}$ 吸进输出投影。于是 decode 不必每步显式恢复大 $k,v$，计算和读取可以围绕低维潜在表示进行。这是 MLA 相对「先低秩压缩、再解压再 attention」的关键工程差。
 
 | | GQA | MLA |
 | --- | --- | --- |

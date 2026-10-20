@@ -4,9 +4,7 @@ section: fundamentals
 order: 3
 level: S
 title: 从 logits 到 Softmax 再到交叉熵，梯度为什么是 $\hat{p}-y$？
-quick: >-
-  $p_i=\mathrm{softmax}(z)_i=e^{z_i}/\sum_j e^{z_j}$，$\ell=-\log p_y$。对正确类 logits
-  求导得 $p_y-1$，对其余类得 $p_i$，合起来 $\nabla_z\ell=\hat{p}-y$。所以 CE 在把概率质量从错误类搬到标签类。
+quick: "$\\ell=-z_y+\\log\\sum_j e^{z_j}$，对 $z_k$ 求导得 $p_k-\\mathbf{1}[k=y]$：正确类是 $p_y-1$，其余类是 $p_k$，合起来就是 $\\nabla_z\\ell=\\hat{p}-y$。"
 tags:
   - Math
   - Cross Entropy

@@ -62,7 +62,7 @@ def completion_logprobs(logits, input_ids):
 
 ## 优势
 
-PPO 的 $A$ 来自 critic。verl 的 `compute_gae_advantage_return` 在 response mask 为 0 的位置跳过 TD，最后对 advantage 做 masked whiten（减全局均值、除全局标准差）。outcome 奖励通常只加在最后一个有效 token 上。$\gamma=\lambda=1$ 时没有折扣，句末分会沿整段传回去。
+PPO 的 $A$ 来自 价值评估模型（critic）。verl 的 `compute_gae_advantage_return` 在 response mask 为 0 的位置跳过 TD，最后对 advantage 做 masked whiten（减全局均值、除全局标准差）。outcome 奖励通常只加在最后一个有效 token 上。$\gamma=\lambda=1$ 时没有折扣，句末分会沿整段传回去。
 
 ```python
 def masked_whiten(x, mask, eps=1e-8):
@@ -88,7 +88,7 @@ def gae_advantages(rewards, values, response_mask, gamma=1.0, lam=1.0):
     return masked_whiten(advantages, response_mask)
 ```
 
-GRPO 不训 $V$。verl `compute_grpo_outcome_advantage` 先把 token 奖励沿时间求和，得到每条回复一个标量，再按 prompt id 分组。`norm_adv_by_std_in_grpo=True` 时除组内标准差（原论文）；`False` 时只减均值，这是 Dr.GRPO。标量再乘 `response_mask` 广播回每个 response token，同一条回复上的 token 共享同一个 $A$。
+GRPO 不训 $V$。verl `compute_grpo_outcome_advantage` 先把 token 奖励沿时间求和，得到每条回复一个标量，再按 输入提示（prompt） id 分组。`norm_adv_by_std_in_grpo=True` 时除组内标准差（原论文）；`False` 时只减均值，这是 Dr.GRPO。标量再乘 `response_mask` 广播回每个 response token，同一条回复上的 token 共享同一个 $A$。
 
 组里只有 1 条时，这份源码把 mean 设成 0、std 设成 1，优势等于原始分数，不会变成 0。数学上 $n=1$ 减掉自己的均值才是 0。文档仍要求 `rollout.n>1`。`torch.std` 默认 `unbiased=True`（除 $G-1$）。
 
@@ -146,7 +146,7 @@ def asymmetric_clip_losses(logp, old_logp, adv, eps_low=0.2, eps_high=0.28):
     return torch.maximum(unclipped, clipped), rho
 ```
 
-verl 在对称 / 不对称 clip 之后还有 dual-clip（`clip_ratio_c`，默认 3.0，必须大于 1；GSPO 例子里设成 10）。只在 $A\lt 0$ 时生效：负优势且 $\rho$ 很大时，$-A\rho$ 会变成巨大的正损失，把这一步梯度吃掉。dual-clip 把这份损失封在 $-A\cdot c$。$A\ge 0$ 的样本保持普通 PPO clip。
+verl 在对称 / 不对称 clip 之后还有 dual-clip（`clip_ratio_c`，默认 3.0，必须大于 1；GSPO 例子里设成 10）。只在 $A\lt 0$ 时生效：负优势且 $\rho$ 很大时，$-A\rho$ 会变成巨大的正损失，使这一步的梯度由极端样本主导。dual-clip 把这份损失封在 $-A\cdot c$。$A\ge 0$ 的样本保持普通 PPO clip。
 
 ```python
 def dual_clip_losses(logp, old_logp, adv, eps_low=0.2, eps_high=0.2, clip_ratio_c=3.0):
@@ -261,7 +261,7 @@ TRL `loss_type` 和 verl 模式的对应。TRL 当前默认是 `"dapo"`，不是
 
 Dr.GRPO 在 verl 里要三处一起改，只改归约不够：`norm_adv_by_std_in_grpo=False`、`loss_agg_mode=seq-mean-token-sum-norm`、`use_kl_loss=False`。TRL 侧是 `scale_rewards=False` 加上 `loss_type="dr_grpo"`。
 
-KL 不进这张归约表。TRL `beta`（默认 0）大于 0 时，可导的 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 加在每个 token 的 $l_{i,t}$ 里，和 ratio 一起反传。`use_bias_correction_kl=True`（默认）还会再乘重要性比。verl 的 `use_kl_loss` 是 surrogate 旁边另加的一项，`kl_loss_type=low_var_kl` 即 Schulman $k_3$。PPO 也可以先把 KL 扣进 reward 再送 GAE，那会改优势的符号，见 `ant-grpo-kl-vs-ppo`。
+KL 不进这张归约表。TRL `beta`（默认 0）大于 0 时，可导的 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 加在每个 token 的 $l_{i,t}$ 里，和 ratio 一起反传。`use_bias_correction_kl=True`（默认）还会再乘重要性比。verl 的 `use_kl_loss` 是 surrogate 旁边另加的一项，`kl_loss_type=low_var_kl` 即 Schulman $k_3$。PPO 也可以先把 KL 扣进 奖励分数（reward） 再送 GAE，那会改优势的符号，见 `ant-grpo-kl-vs-ppo`。
 
 ## 对照着开
 

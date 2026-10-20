@@ -4,10 +4,7 @@ section: systems
 order: 33
 level: S
 title: Expert Parallel（EP）如何切分 MoE？与 TP/DP 组合时通信模式是什么？
-quick: >-
-  EP 按 expert 切卡，每卡只驻留一部分专家。前向是 router $\to$ all-to-all dispatch $\to$ 本地
-  GEMM $\to$ all-to-all combine。常和 TP（专家内部矩阵）、DP（数据）三维并行。墙钟瓶颈经常是动态
-  all-to-all，不是 GEMM。
+quick: "EP 让每卡只存一部分专家，前向是 router $\\to$ all-to-all dispatch $\\to$ 本地 GEMM $\\to$ all-to-all combine。瓶颈常在变长的 all-to-all，不在 GEMM。"
 tags:
   - MoE
   - Expert Parallel
@@ -25,7 +22,7 @@ sources:
     type: primary
 ---
 
-Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。MoE 有 $N$ 个 expert，$N$ 可以远大于卡数，再用 TP 把每个 expert 复制到所有卡会把显存吃满。EP 的定义是：**每张卡只存 $N/\mathrm{EP}$ 个 expert**，token 按路由结果搬家。
+Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。MoE 有 $N$ 个 expert，$N$ 可以远大于卡数，再用 TP 把每个 expert 复制到所有卡会把显存吃满。EP 的定义是：**每张卡只存 $N/\mathrm{EP}$ 个 expert**，token 按路由结果发送到对应专家所在的卡。
 
 ## 一步前向
 

@@ -4,10 +4,7 @@ section: posttrain
 order: 255
 level: S
 title: 异步 / partial rollout 里的 TIS，和 CISPO 截断 IS 是一回事吗？
-quick: >-
-  不是。TIS 修的是「这条轨迹是谁采的」：引擎 logp、旧权、半截 token 相对当前 $\pi_\theta$ 的
-  $\rho$，截断后当权重，避免假装 on-policy。CISPO 修的是 PPO clip 把越界 token 梯度打成
-  0，对象仍是 $\pi_\theta/\pi_{\mathrm{old}}$ 的 surrogate。一个管行为策略，一个管 clip 形状。
+quick: "不是。TIS 的分母是引擎采样时的行为策略 $\\mu$，截断后当权重，修正 off-policy 数据；CISPO 的分母是 $\\pi_{\\mathrm{old}}$，修的是 PPO clip 把越界 token 梯度打成 0。"
 tags:
   - TIS
   - CISPO
@@ -29,11 +26,11 @@ sources:
     type: primary
 ---
 
-异步、partial、量化 rollout 都会让采样分布 $\mu$ 不等于训练图上的 $\pi_{\mathrm{old}}$，见 `sys-partial-kv-policy`、`slime-dynamic-partial`。别把 `--use-tis` 说成「就是 CISPO」。先问 $\rho$ 的分母是引擎行为策略，还是 trainer 重算的旧策略。
+异步、partial、量化 采样轨迹（rollout） 都会让采样分布 $\mu$ 不等于训练图上的 $\pi_{\mathrm{old}}$，见 `sys-partial-kv-policy`、`slime-dynamic-partial`。别把 `--use-tis` 说成「就是 CISPO」。先问 $\rho$ 的分母是引擎行为策略，还是 trainer 重算的旧策略。
 
 ## TIS：校正行为策略
 
-Truncated importance sampling 来自 off-policy actor-critic（V-trace 把 IS 截断再 bootstrap，见 `fund-vtrace`）。LLM RL 里常简化成：对每个 token
+Truncated importance sampling 来自 off-policy actor-critic（V-trace 把 IS 截断再 bootstrap，见 `fund-vtrace`）。LLM 强化学习（RL） 里常简化成：对每个 token
 
 $$
 \rho_t=\mathrm{clip}\Big(\frac{\pi_\theta(a_t\mid s_t)}{\mu(a_t\mid s_t)},\,0,\,\bar\rho\Big),

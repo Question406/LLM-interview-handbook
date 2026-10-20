@@ -4,8 +4,7 @@ section: agent
 order: 208
 level: A
 title: 字节实习一面：ReAct 里怎么选工具，选错了怎么纠？
-quick: >-
-  先把用户目标拆成可验证子目标，再按 schema 和当前观察选最少工具。选错就用工具返回当观察，别硬编下一跳。候选工具多时做检索或分级披露，避免全量塞进 prompt。
+quick: "先明确当前缺少的信息或需要改变的状态，再根据工具 schema 和观察结果选择工具。选错后，把真实错误或空结果用于下一轮决策，换工具或参数，不能假装成功。目录很大时，先检索候选，再按需加载完整说明。"
 tags:
   - ByteDance
   - ReAct
@@ -27,7 +26,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“ReAct 框架下，Agent 如何选择工具？选错了怎么纠正？”**
 
-错法：「看到工具名字就调」，或选错之后在 Thought 里假装成功。ReAct（Yao 等，先推理再行动）里选工具是：Thought 写清当前缺口，Action 按 schema 和 Observation 选最少、最贴缺口的工具，Observation 用来校验成败。纠正信号来自环境，不是模型补一段「已经查到了」。结构总览见 `xiaohongshu-react-structure`。
+常见误区是：「看到工具名字就调」，或选错之后在 Thought 里假装成功。ReAct（Yao 等，先推理再行动）里选工具是：Thought 写清当前缺口，Action 按 字段和类型规范（schema） 和 Observation 选最少、最贴缺口的工具，Observation 用来校验成败。纠正信号来自环境，不是模型补一段「已经查到了」。结构总览见 `xiaohongshu-react-structure`。
 
 ## 按缺口选，不按名字选
 
@@ -41,11 +40,11 @@ Thought 要回答两件事：缺什么信息、要改变什么世界状态。缺
 
 纠正循环：失败或空结果进入下一轮 Thought，改工具或改参，禁止补「日志显示超时」。若 Observation 明确 404，应搜索路径或问用户，而不是换一个同名工具再赌。执行失败（超时、429）和选错工具是两类问题：前者见 `byte-tool-fail-retry`，后者是路由问题，盲着重跑同一错误调用没有意义。
 
-解析失败（模型产出的不是合法 tool call）应由 Harness 拒收并要求重填，不要把半截 JSON 当 Observation。步数上限要卡死，否则选错会变成无限「再试一个工具」。
+解析失败（模型产出的不是合法 工具调用）应由 Harness 拒收并要求重填，不要把半截 JSON 当 Observation。步数上限要卡死，否则选错会变成无限「再试一个工具」。
 
-## 候选很多时不要全量塞进 prompt
+## 候选很多时不要全量塞进 输入提示（prompt）
 
-工具目录是检索对象，不是一次性附件。按意图、权限、业务域过滤后，只暴露当前阶段一小撮短 schema；选中再加载完整文档。治理细节见 `jd-agent-tool-catalog-context`、`agent-tool-routing`。全量暴露会让选错率和 token 一起涨，也更容易被 prompt 注入成「去调那个高权限工具」。
+工具目录是检索对象，不是一次性附件。按意图、权限、业务域过滤后，只暴露当前阶段一小撮短 schema；选中再加载完整文档。治理细节见 `jd-agent-tool-catalog-context`、`agent-tool-routing`。全量暴露会让选错率和 文本处理单位（token） 一起涨，也更容易被 prompt 注入成「去调那个高权限工具」。
 
 评测看工具选择准确率、无效调用率、选错后是否在 $k$ 步内纠正，而不是只看最终答案。答对但乱调工具，工程上仍不合格，见 `jd-agent-eval-beyond-qa`。
 

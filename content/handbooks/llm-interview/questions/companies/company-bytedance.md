@@ -4,10 +4,7 @@ section: companies
 order: 2
 level: A
 title: 字节 Seed：Post-Training / Agent 岗重点是什么？
-quick: >-
-  重点是 Reasoning RL、Agent RL、Harness / Spec、Memory 与 Context Engineering、Agent
-  Eval 和 RL 系统。算法岗会追 MoE 路由、rollout 长尾和过程奖励；Agent 岗会追压缩有没有校验、记忆污染和错误
-  patch 怎么回滚。
+quick: "算法岗重点是 Reasoning / Agent RL，会追问 MoE 路由、rollout 长尾和过程奖励；Agent 岗重点是 Harness、Memory 和 Context Engineering，会追问压缩校验、记忆污染和 patch 回滚。"
 tags:
   - ByteDance
   - Seed
@@ -34,14 +31,14 @@ sources:
     type: candidate-first-hand
 ---
 
-别把 Agent 理解成「会 LangGraph」。公开面经已经问到 Harness、Spec、压缩有没有破坏任务、错误记忆怎么纠错。算法岗会把 GRPO 问到 MoE 路由和 rollout 工程。
+别把 Agent 理解成「会 LangGraph」。公开面经已经问到 Harness、Spec、压缩有没有破坏任务、错误记忆怎么纠错。算法岗会把 GRPO 问到 MoE 路由和 采样轨迹（rollout） 工程。
 
 ## 准备主线
 
-1. **失败归因**：model / tool / context / memory / harness / reward / data / eval，给对照实验。
+1. **失败归因**：model / tool / context / memory / harness / 奖励分数（reward） / data / eval，给对照实验。
 2. **Harness vs 调 API**：权限、调度、校验、回放。
 3. **记忆卫生**：过期摘要、错误结论入库、重复工具调用。
-4. **RL 系统**：组内零优势、rollout 长尾、过程分落到 token。
+4. **强化学习（RL） 系统**：组内零优势、rollout 长尾、过程分如何分配到 token。
 
 ## 本手册真题卡
 

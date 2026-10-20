@@ -39,15 +39,15 @@ FP8：E4M3 更准、范围更小；E5M2 范围更大、更粗。有指数位，�
 
 ## 训练侧
 
-主流仍是 BF16 GEMM + FP32 master / Adam。INT8 几乎不当全流程训练精度：量化和反量化会挡梯度，QAT 太贵。H100 以上可以 FP8 training（Transformer Engine），embedding、lm_head、归一化、MoE router logits 常留 BF16/FP32。scale / amax 漂了会 silent 坏收敛，先证明稳定再报吞吐。
+主流仍是 BF16 GEMM + FP32 master / Adam。INT8 几乎不当全流程训练精度：量化和反量化会挡梯度，QAT 太贵。H100 以上可以 FP8 training（Transformer Engine），embedding、lm_head、归一化、MoE router logits 常留 BF16/FP32。scale 或 amax 偏移可能悄悄破坏收敛，先证明稳定再报吞吐。
 
-RL 里 actor 训练图和 rollout 引擎 dtype 可以不同。BF16 训、FP8 采，必须在训练图重算 $\log\pi$，见 `meituan-verl-recompute-logprob`。不要把引擎 logp 直接当 $\pi_{\mathrm{old}}$。
+强化学习（RL） 里 actor 训练图和 采样轨迹（rollout） 引擎 dtype 可以不同。BF16 训、FP8 采，必须在训练图重算 $\log\pi$，见 `meituan-verl-recompute-logprob`。不要把引擎 logp 直接当 $\pi_{\mathrm{old}}$。
 
 ## 推理侧
 
-质量优先：BF16 或 FP8。成本优先：权 INT8 / INT4，激活 8 或 16。Decode 吃权带宽，weight-only 往往比 W8A8 更常见；prefill 已是 compute-bound，降 bit 不一定涨速。没有对应 kernel 就要 dequant 回 16 位，等于多一次读写。
+质量优先：BF16 或 FP8。成本优先：权 INT8 / INT4，激活 8 或 16。Decode 吃权带宽，weight-only 往往比 W8A8 更常见；输入预填充（prefill，即处理输入并建立缓存） 已是 compute-bound，降 bit 不一定涨速。没有对应 kernel 就要 dequant 回 16 位，等于多一次读写。
 
-KV cache 是存 K/V 不是存权：FP8 / INT8 KV 降的是 HBM 和带宽，和 GPTQ 无关。RL 长 CoT 上 KV 往往比权更先爆，见 `sys-rl-memory`。
+KV cache 是存 K/V 不是存权：FP8 / INT8 KV 降的是 HBM 和带宽，和 GPTQ 无关。RL 长 思维链（CoT，即分步推理过程） 上 KV 往往比权更先爆，见 `sys-rl-memory`。
 
 训练默认 BF16，有硬件再上 FP8；推理按质量和 kernel 在 FP8 / INT8 里选；INT8 训练不是默认答案。三套 dtype 分开报。
 

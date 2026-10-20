@@ -4,9 +4,7 @@ section: systems
 order: 34
 level: S
 title: Capacity Factor 与 Token Drop 如何影响质量与吞吐？怎么选型？
-quick: >-
-  每个 expert 每步最多接 $\mathrm{CF}\cdot T/N$ 量级的 token（再乘 top-$k$）。CF 过大浪费显存和算力，过小则
-  drop / 溢出，被丢掉的 token 等于这一层没走 MoE。我会用丢弃率、负载直方图和下游损失一起选，不会只看吞吐。
+quick: "每个 expert 每步最多接 $\\mathrm{CF}\\cdot T/N$ 量级的 token（再乘 top-$k$）。CF 过大浪费显存和算力，过小则 drop / 溢出，被丢掉的 token 等于这一层没走 MoE。我会用丢弃率、负载直方图和下游损失一起选，不会只看吞吐。"
 tags:
   - MoE
   - Capacity Factor
@@ -21,7 +19,7 @@ sources:
     type: primary
 ---
 
-Router 可以让所有 token 都想进同一个 expert，但那张卡的 buffer 和 GEMM 形状必须事先定。Capacity 就是这个硬上限。
+Router 可以让所有 token 都路由到同一个 expert，但那张卡的 buffer 和 GEMM 形状必须事先定。Capacity 就是这个硬上限。
 
 ## 公式
 
@@ -36,9 +34,9 @@ $\mathrm{CF}=1$ 是「刚好均匀」；$\mathrm{CF}=1.25$ 留 25% 余量给抖�
 ## 质量和吞吐
 
 - **CF 大**：drop $\approx 0$，质量接近「路由想去哪就去哪」，但每卡要按最坏容量分配 activation，显存和 padding 变多，all-to-all 也按上限备缓冲。
-- **CF 小**：吞吐好看、形状更紧，热点 expert 开始丢 token。训练 drop 率应接近 0；验证集 PPL 对 drop 很敏感。推理可以更激进，但要有质量门禁，不能把「吞吐涨了」当成成功。
+- **CF 小**：吞吐好看、形状更紧，热点 expert 开始丢 token。训练 drop 率应接近 0；验证集 PPL 对 drop 很敏感。推理可以更激进，但要有质量检查，不能把「吞吐涨了」当成成功。
 
-Aux loss / expert bias 把负载推均匀，才能把 CF 降下来。均衡没做好就硬降 CF，只是把质量问题从「热点排队」换成「静默丢 token」。
+辅助损失（Aux loss）或 expert bias 让专家之间的负载更均匀，才能把 CF 降下来。如果负载还不均匀就降低 CF，热门专家会从排队变成直接丢弃 token，质量问题仍然存在。
 
 ## 选型
 

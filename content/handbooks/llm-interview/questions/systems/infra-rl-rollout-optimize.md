@@ -4,9 +4,7 @@ section: systems
 order: 238
 level: A
 title: AI Infra 实习：RL rollout 有哪些优化？量化、异步分别换什么？
-quick: >-
-  吞吐：vLLM/SGLang、连续 batch、前缀缓存、动态过滤废组。显存：rollout 权重量化或 KV 量化，训练仍 bf16。时间线：异步
-  rollout 让生成和更新重叠，换来策略 stale。先画瓶颈再选，别三件一起开。
+quick: "吞吐：vLLM/SGLang、连续 batch、前缀缓存、动态过滤废组。显存：采样轨迹（rollout） 权重量化或 KV 量化，训练仍 bf16。时间线：异步 rollout 让生成和更新重叠，换来策略 stale。先画瓶颈再选，别三件一起开。"
 tags:
   - RL Infra
   - Rollout
@@ -30,23 +28,25 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“rl里rollout有哪些优化点（rollout量化 异步rollout等）”**
 
-错法：把量化、异步、动态过滤当成「三个都开就更快」。我会先画瓶颈：tokens/s 不够、显存爆、还是墙钟被最长样本拖死，再换对应的东西。三件一起开会把分布偏移、policy stale、半截轨迹缠在一起，出了问题没法归因。Continuous batching 是引擎内交错请求，没有策略版本差，不要和异步 RL 用同一个词。
+常见误区是：把量化、异步、动态过滤当成「三个都开就更快」。我会先画瓶颈：tokens/s 不够、显存爆、还是实际耗时被最长样本拖死，再换对应的东西。三件一起开会把分布偏移、policy stale、半截轨迹缠在一起，出了问题没法归因。Continuous batching 是引擎内交错请求，没有策略版本差，不要和异步 强化学习（RL） 用同一个词。
 
 ## 引擎：换吞吐，不换算法
 
-HF `generate` 是逐步同步、静态 batch，最长序列拖死整组。换成 vLLM / SGLang：continuous batching、PagedAttention、prefix cache。公共 system prompt 的 KV 能复用，但 key 必须带 `policy_version`，否则旧激活会续进新权。Agent 任务再开工具超时和 session 亲和，请求打 router 而不是绑死某一个 engine。验收看有效 tokens/s 和 KV 占用，不要报 MFU，decode 本就是 memory-bound。veRL 走 `actor_rollout_ref.rollout` 接 vLLM/SGLang；slime 默认 SGLang + `--sglang-router-ip/port`。引擎优化解决的是「同样 $n$ 条、同样长度，生成更快」，不解决全对/全错组没有梯度。
+HF `generate` 是逐步同步、静态 batch，最长序列拖死整组。换成 vLLM / SGLang：continuous batching、PagedAttention、prefix cache。公共 system 输入提示（prompt） 的 KV 能复用，但 key 必须带 `policy_version`，否则旧激活会续进新权。Agent 任务再开工具超时和 session 亲和，请求打 router 而不是绑死某一个 engine。验收看有效 tokens/s 和 KV 占用，不要报 MFU，逐 token 生成（decode） 本就是 memory-bound。veRL 走 `actor_rollout_ref.rollout` 接 vLLM/SGLang；slime 默认 SGLang + `--sglang-router-ip/port`。引擎优化解决的是「同样 $n$ 条、同样长度，生成更快」，不解决全对/全错组没有梯度。
 
 ## 量化：只动采样副本
 
 量化换的是 采样侧显存 / 带宽，不是训练精度。常见：BF16 训 + FP8/INT8 权或 KV 量化采。actor backward、Adam、reference 仍用训练精度。要主动补一句：量化引擎的 token logp 不能当 $\pi_{\mathrm{old}}$，ratio / KL 必须回 FSDP/Megatron 训练图重算，见 `meituan-verl-recompute-logprob`。slime 落地就是 BF16 Megatron + FP8 SGLang，再叠 `--use-tis` 修采样分布隙。量化引入的是分布偏移，不是免费的「同样策略更省」。holdout 掉了先 A/B 量化开关，再查异步 stale。
 
-## 异步与减废：换时间线，买 stale
+## 异步与过滤：重叠计算，同时处理策略滞后
 
-异步换的是 生成与 backward 重叠。veRL fully-async 用 staleness 阈值丢过期轨迹；slime 分清两档：挪 `train.py` 里的 `ray.get`（仍按 `rollout_id` 切步）和换 `train_async.py` + `generate_rollout_fully_async`（后台队列跨步交组）。`--colocate` 下 offload 把重叠窗口削掉，要吃异步先分卡。换来的是 $\pi$ stale，必须 TIS / freshness / 丢弃之一。算法侧减废：DAPO 丢掉 $\mathrm{std}(r)=0$ 的全对/全错组，slime 用 `--dynamic-sampling-filter-path`（如 `check_reward_nonzero_std`）+ `--over-sampling-batch-size`；半截走 `--partial-rollout`，旧 token 要 `--mask-offpolicy-in-partial-rollout` 或 `--use-tis`。截断过长、限制 `rollout.n` / `--n-samples-per-prompt` 也是减 KV，不是算法升级。验收：tokens/s、stale 比例、zero-std 组比例、eval，不看「开了异步」。周报写生成占墙钟多少、KV 峰值、stale 年龄分位数、zero-std 组比例、holdout；量化只动采样副本，异步分清挪 `ray.get` 和 `train_async.py`，同卡先承认叠不动。
+异步换的是 生成与 backward 重叠。veRL fully-async 用 staleness 阈值丢过期轨迹；slime 分清两档：挪 `train.py` 里的 `ray.get`（仍按 `rollout_id` 切步）和换 `train_async.py` + `generate_rollout_fully_async`（后台队列跨步交组）。`--colocate` 下 offload 把重叠窗口削掉，要获得异步收益，先让训推使用不同 GPU。换来的是 $\pi$ stale，必须 TIS / freshness / 丢弃之一。
+
+算法侧减废：DAPO 丢掉 $\mathrm{std}(r)=0$ 的全对/全错组，slime 用 `--dynamic-sampling-filter-path`（如 `check_reward_nonzero_std`）+ `--over-sampling-batch-size`；半截走 `--partial-rollout`，旧 token 要 `--mask-offpolicy-in-partial-rollout` 或 `--use-tis`。截断过长、限制 `rollout.n` / `--n-samples-per-prompt` 也是减 KV，不是算法升级。验收：tokens/s、stale 比例、zero-std 组比例、eval，不看「开了异步」。周报写生成占实际耗时多少、KV 峰值、stale 年龄分位数、zero-std 组比例、holdout；量化只动采样副本，异步分清挪 `ray.get` 和 `train_async.py`，同卡部署时要说明训推难以同时运行。
 
 ## 追问
 
-- **量化、异步、过滤能不能一起开？** 能，但必须按瓶颈排序。显存爆先量化采样副本；墙钟被生成占满先换引擎和连续 batch；最长样本或工具等待再异步 / partial。三件一起开，分布偏移、stale、半截轨迹缠在一起，出了问题无法归因。面试先报当前占比再报开关。
+- **量化、异步、过滤能不能一起开？** 能，但必须按瓶颈排序。显存爆先量化采样副本；实际耗时被生成占满先换引擎和连续 batch；最长样本或工具等待再异步 / partial。三件一起开，分布偏移、stale、半截轨迹缠在一起，出了问题无法归因。面试先报当前占比再报开关。
 - **量化 logp 能进 ratio 吗？** 不能。FP8 SGLang 与 FSDP/Megatron 差千分位，$\rho$ 会漂，clip 变假。训练图重算仍必要；`--use-tis` 只修采样分布隙，代替不了重算。BF16 训 + FP8 采是标准例子。
 - **挪 `ray.get` 算 fully-async 吗？** 不算。那一档仍按 `rollout_id` 切步，只是训推重叠。真正 fully-async 换 `train_async.py` + `generate_rollout_fully_async`，后台队列交组，必须管 trajectory age 和 TIS。
 - **`--colocate` 下异步有用吗？** 收益很小。`--offload-train` / `--offload-rollout` 让两边无法同时占 GPU，重叠窗口被物理削掉。要吃异步，先分卡。把一体部署说成异步会被拆穿。

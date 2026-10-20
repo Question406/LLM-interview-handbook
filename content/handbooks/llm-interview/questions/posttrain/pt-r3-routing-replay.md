@@ -4,10 +4,7 @@ section: posttrain
 order: 254
 level: S
 title: MoE RL 的 Routing Replay（R2 / R3）和 Keep Routing、GSPO 各修哪一层？
-quick: >-
-  训推两套图的 top-$k$ 对不上，$\rho$ 就不是同一条计算图上的比。Keep Routing / R3 把 rollout
-  引擎记下的专家路径在训练图重放，对准的是离散路由。GSPO 把 $\rho$ 提到序列级，减轻 token
-  级路由噪声，但对齐不了走错的专家。R2 重放的是训练引擎用旧策略算出的专家，修不了引擎数值隙。
+quick: "Keep Routing / R3 在训练图重放推理引擎记下的专家，对齐离散路由；R2 只重放训练引擎自己的旧路由。GSPO 用序列级 $\\rho$ 降噪，但修不了走错的专家。"
 tags:
   - MoE
   - Routing Replay
@@ -29,13 +26,13 @@ sources:
     type: primary
 ---
 
-MoE 训推不一致会怎样，见 `sys-moe-train-infer-routing-mismatch`。本题问的是 **RL 更新这一步怎么把路由钉住**。字节会从 GSPO 切入，见 `byte-moe-rollout-routing-gspo`；DeepSeek V3.2 写的是 Keep Routing。名字不同，先画三层：路由集合、token 级 $\rho$、策略版本。
+MoE 训推不一致会怎样，见 `sys-moe-train-infer-routing-mismatch`。本题问的是 **强化学习（RL） 更新这一步怎么把路由钉住**。字节会从 GSPO 切入，见 `byte-moe-rollout-routing-gspo`；DeepSeek V3.2 写的是 Keep Routing。名字不同，先画三层：路由集合、token 级 $\rho$、策略版本。
 
 ## 为什么 MoE 上 $\rho$ 特别脆
 
 Router 是离散 top-$k$。引擎（vLLM / SGLang、量化、不同 batch）和 trainer（Megatron / FSDP、另一套 kernel）对同一前缀可以选出不同 expert。后面的 hidden 已经不在同一个子网络上，$\log\pi$ 不是同一条函数。token 级 $\rho=\pi_\theta/\pi_{\mathrm{old}}$ 再连乘，局部路由翻转会被放大成训练崩。监控训推 KL、以及「$\rho$ 偏离 2 倍的 token 比例」，比只看 reward 更早报警。
 
-## 三条药，不要说成一种
+## 三种方法分别解决什么问题
 
 1. **Keep Routing / Rollout Routing Replay（R3）。** 采样时把推理引擎的专家 id（或路由 mask）记下来，训练 forward **强制走同一条 top-$k$**。同时修：引擎与训练图的实现隙，以及策略已更新带来的路由漂。DeepSeek 从 V3-0324 起把它当 MoE RL 稳定术，见 `pt-deepseek-rl-lineage`。Qwen（`2512.01374`）里 R3 对应 Ma et al. 的 Rollout Routing Replay。
 2. **Vanilla Routing Replay（R2）。** 重放的是 **训练引擎** 用旧策略自己算出的专家。能减 mini-batch 更新带来的 staleness，但 **假定训练图和引擎已经一致**。中等 off-policy 时 Qwen 实验里 R2 往往够；训推 KL 大、off-policy 再加大时必须 R3。

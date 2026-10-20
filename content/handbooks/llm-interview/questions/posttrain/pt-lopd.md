@@ -4,10 +4,7 @@ section: posttrain
 order: 243
 level: A
 title: LOPD 为什么把特权上下文改成可学习的 latent，而不是再手写一种 $y^\star$？
-quick: >-
-  OPSD 家族的差别几乎都在「教师多看什么」。LOPD 不再指定答案 / 技能 / 轨迹文本，而是检索经验、压成连续
-  latent token 条件自教师，学生仍只看任务状态。反向 KL 蒸学生；privileged-margin 防止 composer
-  把教师分布拉向学生。推理只留学生，检索和 latent 都丢掉。
+quick: "手写特权总被格式卡住。LOPD 检索成功经验，压成连续 latent token 只给自教师看，用反向 KL 蒸给学生；privileged-margin 防止教师塌成学生。"
 tags:
   - OPSD
   - Agent
@@ -42,22 +39,22 @@ $\bar{\theta}$ 冻住，但前向对 $\bm{c}_{\phi}$ 可微，所以梯度能回
 
 ## 为什么必须加 privileged-margin
 
-无约束时，composer 最小化 KL 的捷径是让 $p^{T}\to p^{S}$：特权变成无信息噪声，loss 假降。定义 token 级特权
+无约束时，composer 最小化 KL 的捷径是让 $p^{T}\to p^{S}$：特权变成无信息噪声，损失下降，却没有获得有效教师信息。定义 token 级特权
 
 $$
 \delta_{t,n}=\log\pi^{T}(a_{t,n}\mid\bm{s},\bm{c}_{\phi})-\operatorname{sg}[\log\pi^{S}(a_{t,n}\mid\bm{s})],
 $$
 
-再用轨迹验证 $A(\bm{\tau})=2 r(\bm{\tau})-1$ 加权，要求平均特权 $\Delta(\phi)\ge m$（论文 $m=0.05$）。对成功轨迹，教师应比学生更偏好实际采取的 token；失败轨迹则反向压。对偶 $\beta$ 在 $\Delta\lt m$ 时抬罚。再加一项把 $\bm{c}_{\phi}$ 锚在 cold-start $\phi_0$，防止 latent 漂飞。
+再用轨迹验证 $A(\bm{\tau})=2 r(\bm{\tau})-1$ 加权，要求平均特权 $\Delta(\phi)\ge m$（论文 $m=0.05$）。对成功轨迹，教师应比学生更偏好实际采取的 token；失败轨迹则反向压。对偶 $\beta$ 在 $\Delta\lt m$ 时抬罚。再加一项把 $\bm{c}_{\phi}$ 锚在 cold-start $\phi_0$，防止潜在表示偏移过大。
 
 这和 SR-OPSD 用 $\pi_{\mathrm{ref}}$ 插值是同一类「别让自教师塌成学生」，只是 LOPD 的塌缩发生在可学习上下文上，而不是 EMA 权重上。
 
 ## 和谁比、别背成新公式
 
-- 相对 OPSD：不必 gold CoT，特权从经验检索来，适合 agent / 代码这种「成功轨迹比标准解答好找」的域。
+- 相对 OPSD：不必 gold 思维链（CoT，即分步推理过程），特权从经验检索来，适合 agent / 代码这种「成功轨迹比标准解答好找」的域。
 - 相对 u-OPSD：不必可解析答案空间，也不把多数票当文本教师。
 - 相对 π-Distill：不必联合训一个会用文本 PI 的教师；教师骨干冻住，学的是 composer。
-- 相对 GRPO：仍要环境 $r$ 来算 margin，但密集监督在蒸馏 KL 上，rollout 预算可以更小。论文报过低于 GRPO / Skill-SD 约 $30\%$ 的 rollout。
+- 相对 GRPO：仍要环境 $r$ 来算 margin，但密集监督在蒸馏 KL 上，采样轨迹（rollout） 预算可以更小。论文报过低于 GRPO / Skill-SD 约 $30\%$ 的 rollout。
 
 检索本身不够：把同样轨迹当文本塞进教师，是又一种手写特权。消融要回答的是可学习压缩有没有比「检索 + 原文拼接」多出来。
 

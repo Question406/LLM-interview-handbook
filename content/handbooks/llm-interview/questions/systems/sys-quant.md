@@ -27,7 +27,7 @@ sources:
     type: primary
 ---
 
-量化我先问：PTQ 还是 QAT、W-only 还是 W8A8、误差补在权上还是迁到激活上。吞吐还取决于 kernel、dequant 开销和模型是否 memory-bound。硬件不吃这个 shape，INT4 也可能更慢。
+量化我先问：PTQ 还是 QAT、W-only 还是 W8A8、误差补在权上还是迁到激活上。吞吐还取决于 kernel、dequant 开销和模型是否 memory-bound。硬件无法高效处理这个形状，INT4 也可能更慢。
 
 ## 四条方法
 
@@ -38,17 +38,17 @@ sources:
 | SmoothQuant | PTQ W8A8 | 把 activation outlier 平滑迁到 weight scale |
 | QAT | 训练中量化 | forward 模拟 quant，让权适应误差 |
 
-GPTQ / AWQ 常用于 INT4 权、激活仍 16 位，省的是权带宽。SmoothQuant 针对 W8A8：激活 outlier 让 INT8 难编，把难度乘到权上，两边都变得可量化。QAT 贵，但要上低 bit 或敏感模型时，PTQ 不够再上。
+GPTQ / AWQ 常用于 INT4 权、激活仍 16 位，省的是权带宽。SmoothQuant 针对 W8A8：激活 outlier 让 INT8 难以表示，把难度乘到权上，两边都变得可量化。QAT 贵，但要上低 bit 或敏感模型时，PTQ 不够再上。
 
 ## 何时更快、何时只是更小
 
-权重量化在 decode（memory-bound、反复读权）上收益大；prefill 大 GEMM 已 compute-bound，降 bit 不一定涨速。没有对应 Tensor Core / INT kernel，就要 dequant 回 BF16 再算，等于多一次读写。batch / 头数不友好时同样。我会说「先看是不是读权瓶颈，再看有没有 kernel」。模型本来就小、batch 已经很大时，量化常常只缩小磁盘，不缩短 TPOT。
+权重量化在 逐 token 生成（decode）（memory-bound、反复读权）上收益大；输入预填充（prefill，即处理输入并建立缓存） 大 GEMM 已 compute-bound，降 bit 不一定涨速。没有对应 Tensor Core / INT kernel，就要 dequant 回 BF16 再算，等于多一次读写。batch / 头数不友好时同样。我会说「先看是不是读权瓶颈，再看有没有 kernel」。模型本来就小、batch 已经很大时，量化常常只缩小磁盘，不缩短 TPOT。
 
 KV 量化是另一条线（存 cache 不是存权），不要和 GPTQ 混，见 `sys-precision`、`sys-pagedattention`。
 
 ## 和训练精度的边界
 
-训练用 BF16/FP8 是为了稳定收敛；推理量化是在已收敛权上压部署成本。QAT 是中间地带：训练时看见量化噪声。RL rollout 若对采样用 FP8 / INT4，训练图仍 BF16，必须重算 logp，见 `slime-sglang-native`。
+训练用 BF16/FP8 是为了稳定收敛；推理量化是在已收敛权上压部署成本。QAT 是中间地带：训练时看见量化噪声。强化学习（RL） 采样轨迹（rollout） 若对采样用 FP8 / INT4，训练图仍 BF16，必须重算 logp，见 `slime-sglang-native`。
 
 ## 追问
 

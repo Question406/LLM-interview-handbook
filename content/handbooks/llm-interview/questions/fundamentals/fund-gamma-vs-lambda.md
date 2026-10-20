@@ -25,7 +25,7 @@ sources:
     type: secondary
 ---
 
-错法：看见 GAE 的 $(\gamma\lambda)^l$ 就说「两个数一个意思，设成 0.99 就行」。百度真题原话要的是 $\lambda$ 与偏差/方差，见 `baidu-gae-lambda`；本题把目标 vs 估计器拆开。公式：
+常见误区是：看见 GAE 的 $(\gamma\lambda)^l$ 就说「两个数一个意思，设成 0.99 就行」。百度真题原话要的是 $\lambda$ 与偏差/方差，见 `baidu-gae-lambda`；本题把目标 vs 估计器拆开。公式：
 
 $$
 J(\theta)=\mathbb{E}_{\pi_\theta}\Big[\sum_{t\ge 0}\gamma^t r_t\Big],\qquad
@@ -38,11 +38,11 @@ $\gamma$ 出现在两处，语义不同。第一处定义 $V^\pi,Q^\pi,A^\pi$ �
 
 把 $\gamma$ 从 $0.99$ 拧到 $0.9$，最优策略可以变：远期正确、近期啰嗦的思维链会变亏。这不是估计器偏差 $\mathbb{E}[\hat A]-A^\pi$，因为 $A^\pi$ 本身已经换成新 $\gamma$ 下的优势。把小 $\gamma$ 说成「有偏」，是把监督学习的 bias 套错了地方。
 
-LLM 里常取 $\gamma=1$（有限长度、终局 $0/1$），等于不打折。这时早期 token 的 $G_t$ 仍是完整 $r_T$，方差见 `fund-pg-horizon-var`。若因为「太吵」就偷偷把 $\gamma$ 降到 $0.95$，你优化的已经是短视任务：长推理的后期正确被打折，模型更爱早停。那是改题，不是降方差。
+LLM 里常取 $\gamma=1$（有限长度、终局 $0/1$），等于不打折。这时早期 token 的 $G_t$ 仍是完整 $r_T$，方差见 `fund-pg-horizon-var`。若因为估计噪声大而把 $\gamma$ 降到 $0.95$，你优化的已经是短视任务：长推理的后期正确被打折，模型更爱早停。因此它改变的是优化任务，而不仅是估计的方差。
 
 ## $\lambda$：只改 $\hat A$ 相对当前 $A^\pi$ 的偏差-方差
 
-$\lambda=0$：$\hat A_t=\delta_t$，完全信 $V$，高偏低方。$\lambda=1$：回到 MC 优势，低偏高方。中间值在同一个 $J$、同一套 $\gamma$ 下滑动估计器。$V$ 准可以更小 $\lambda$；$V$ 滞后或长 CoT 拟合差，把 $\lambda$ 推向 1，而不是去动 $\gamma$。推导见 `pt-gae`。
+$\lambda=0$：$\hat A_t=\delta_t$，完全信 $V$，偏差较高、方差较低。$\lambda=1$：回到 MC 优势，偏差较低、方差较高。中间值在同一个 $J$、同一套 $\gamma$ 下滑动估计器。$V$ 准可以更小 $\lambda$；$V$ 滞后或长 CoT 拟合差，把 $\lambda$ 推向 1，而不是去动 $\gamma$。推导见 `pt-gae`。
 
 实现上权重是 $(\gamma\lambda)^l$，所以 $\gamma=1,\lambda=0.95$ 与 $\gamma=0.95,\lambda=1$ 的递推系数碰巧接近，优化的 $J$ 完全不同。前者仍在最大化未折扣回报，只是估计更平滑；后者已经不在乎很远的 $r$。白板要写两行定义，不能只写一个乘积。
 

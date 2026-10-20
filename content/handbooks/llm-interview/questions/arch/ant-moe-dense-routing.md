@@ -4,9 +4,7 @@ section: arch
 order: 140
 level: A
 title: 蚂蚁实习：Dense 和 MoE 有何区别，路由怎么做？
-quick: >-
-  Dense 每层所有参数都参与每个 token；MoE 只激活少数专家，用路由器按 token 选 top-$k$。路由常见 softmax
-  门控再配负载均衡，不然专家会塌到少数热门上。
+quick: "Dense 的每个 token 都使用同一套层参数；MoE 则由路由器为 token 选择 top-$k$ 个专家，只计算这些专家。常用 softmax 计算门控权重，再配合负载均衡，避免大部分 token 都集中到少数专家。"
 tags:
   - Ant Group
   - MoE
@@ -30,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“分别讲一下 Dense 模型和 MoE 模型以及二者的区别”**；**“讲一下MoE的 路由机制是如何做的”**
 
-错法：把 MoE 说成「就是更大的 Dense」，或把路由讲成随便 argmax 一个专家。Dense Transformer 的 FFN 对每个 token 用同一套权重，容量和计算一起涨。MoE 把 FFN 换成一组专家，路由器只激活 top-$k$，总参数可以很大，但每 token 激活参数接近 Dense 的一小部分。
+常见误区是：把 MoE 说成「就是更大的 Dense」，或把路由讲成随便 argmax 一个专家。Dense Transformer 的 FFN 对每个 token 使用同一套权重，容量和计算一起涨。MoE 把 FFN 换成一组专家，路由器只激活 top-$k$，总参数可以很大，但每 token 激活参数接近 Dense 的一小部分。
 
 ## 路由怎么算
 
@@ -46,7 +44,7 @@ $E_i$ 通常仍是 SwiGLU 一类 FFN：$\mathrm{SwiGLU}(u)=(\mathrm{SiLU}(uW_1)\
 
 ## Dense vs MoE 要对哪几轴
 
-Dense 与 MoE 要对几轴，不能只说「MoE 更大」：激活参数（每 token 算力）、总参数（容量）、通信（all-to-all）、负载不均、训推路由是否一致。Dense 没有路由塌缩，但也没有「加专家不加倍 FLOPs」这条杠杆。蚂蚁后续面常追负载均衡损失，准备时把本卡和 `ant-moe-aux-load-balance` 连起来讲。
+比较 Dense 与 MoE 要看几个方面，不能只说「MoE 更大」：激活参数（每 token 算力）、总参数（容量）、通信（all-to-all）、负载不均、训推路由是否一致。Dense 没有路由塌缩，但也没有「加专家不加倍 FLOPs」这条杠杆。蚂蚁后续面常追负载均衡损失，准备时把本卡和 `ant-moe-aux-load-balance` 连起来讲。
 
 ## 追问
 

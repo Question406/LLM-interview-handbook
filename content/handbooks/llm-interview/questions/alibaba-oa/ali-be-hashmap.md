@@ -4,8 +4,7 @@ section: alibaba-oa
 order: 52
 level: A
 title: 阿里研发面：HashMap 和 ConcurrentHashMap 的结构差异？
-quick: >-
-  HashMap：数组 + 链表 / 红黑树，扩容 $2$ 倍，JDK 8 尾插。CHM：桶级 CAS + synchronized，没有全局大锁，`size` 是分基数计数。
+quick: "HashMap 使用数组加链表或红黑树，扩容通常翻倍，JDK 8 改为尾插。ConcurrentHashMap 用桶级 CAS 与 synchronized 支持并发写，不锁整个表；计数通过 CounterCell 分散累加。单次操作线程安全，不代表先 get 再 put 这样的组合操作也是原子的。"
 tags:
   - Alibaba
   - HashMap
@@ -39,7 +38,7 @@ sources:
 | 迭代 | fail-fast | 弱一致，不抛 CME | 枚举偏老 |
 | 选用 | 单线程、请求内局部 Map | 共享缓存、计数、去重 | 基本不推荐 |
 
-我记三件事。JDK 7 头插在并发扩容时可能成环，JDK 8 改尾插是正确性修复，不是性能炫技。树化有退化：哈希太差或容量太小会一直挨打，所以扰动函数和容量幂次都重要。`key` 的 `hashCode` / `equals` 必须稳定；用可变对象当 key，改字段后会丢映射，表现为「明明 put 过却 get 不到」。
+我记三件事。JDK 7 头插在并发扩容时可能成环，JDK 8 改尾插是正确性修复，不是性能炫技。树化不能解决所有问题：哈希分布差、容量太小仍会增加冲突，所以扰动函数和容量幂次都重要。`key` 的 `hashCode` / `equals` 必须稳定；用可变对象当 key，改字段后会丢映射，表现为「明明 put 过却 get 不到」。
 
 `LinkedHashMap` 在 HashMap 上加访问顺序，可做 LRU；`TreeMap` 是红黑树有序表，不是同一条赛道。面试只在被追问「有序 Map」时展开。
 

@@ -4,9 +4,7 @@ section: arch
 order: 21
 level: S
 title: DeepSeek-V3 无辅助负载均衡：expert bias 怎么更新，和 aux loss 差在哪？
-quick: >-
-  路由分数加上每个 expert 的 bias $b_i$ 再做 top-$k$；过载就减小 $b_i$，欠载就增大。Bias
-  不进主梯度，所以不会像 aux loss 那样和语言建模目标抢参数。门控权重仍用未加 bias 的 affinity。
+quick: "路由分数加上每个 expert 的 bias $b_i$ 再做 top-$k$；过载就减小 $b_i$，欠载就增大。Bias 不进主梯度，所以不会像 aux 损失（loss） 那样和语言建模目标抢参数。门控权重仍用未加 bias 的 affinity。"
 tags:
   - MoE
   - DeepSeek
@@ -21,11 +19,11 @@ sources:
     type: primary
 ---
 
-Aux loss 把「专家要平均」写进可反传的惩罚项，和 next-token loss 抢同一套 router 参数。DeepSeek-V3 把均衡控制挪到路由决策的外部偏置上，主损失尽量只做语言建模。
+Aux loss 把「专家要平均」写进可反传的惩罚项，与 next-token loss 一起更新同一套路由参数。DeepSeek-V3 把均衡控制挪到路由决策的外部偏置上，主损失尽量只做语言建模。
 
 ## 机制
 
-对 token $t$、expert $i$，先算 affinity（V3 用 sigmoid 门控）：
+对 token $t$、专家 $i$，先算 affinity（V3 用 sigmoid 门控）：
 
 $$
 s_{i,t}=\sigma(u_t^\top e_i).
@@ -37,7 +35,7 @@ $b_i$ 按 batch 负载做符号更新：expert $i$ 的 token 份额高于均值�
 
 ## 和 aux loss 的差别
 
-Switch Transformer 一类 aux loss 近似 $N\sum_i f_i P_i$（实际频率 $\times$ 平均门控概率）。$\lambda$ 太小热点仍在，$\lambda$ 太大 router 为了平均而牺牲语义匹配。无辅助方案把这个折中从 loss 里拿掉：主梯度不再被「必须均匀」污染。
+Switch Transformer 一类 aux loss 近似 $N\sum_i f_i P_i$（实际频率 $\times$ 平均门控概率）。$\lambda$ 太小热点仍在，$\lambda$ 太大 router 为了平均而牺牲语义匹配。无辅助方案把这个折中从 loss 里拿掉：负载均衡不再直接改变主损失的梯度。
 
 V3 仍保留一个极小的 sequence-wise complementary aux loss（论文量级 $\alpha=10^{-4}$），用来压极端不平衡，均衡没有完全交给主损失。面试别说成「完全没有任何均衡项」。
 

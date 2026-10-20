@@ -4,7 +4,7 @@ section: posttrain
 order: 39
 level: S
 title: 如何实验区分 RLVR 学到了新推理路径，还是只把 base model 原有正确路径重加权？
-quick: 先在 base model 上用大 K 测正确路径覆盖，再比较 RL 后路径是否已被 base rollout 包含；联合看 Pass@1 / Pass@K、路径相似度和跨分布泛化。只见 Pass@1 涨不能证明发现了新算法。
+quick: "先在 base model 上用大 K 测正确路径覆盖，再比较强化学习（RL）后的路径是否已被 base 采样轨迹（rollout） 包含；联合看 Pass@1 / Pass@K、路径相似度和跨分布泛化。只见 Pass@1 涨不能证明发现了新算法。"
 tags:
   - RLVR
   - Exploration
@@ -22,11 +22,11 @@ sources:
     type: primary
 ---
 
-RLVR 之后 `pass@1` 大涨，不等于模型发明了 base 不会的算法。一种机制是 discovery：出现了 base 在合理采样预算下几乎采不到的新成功路径。另一种是 reweighting：base 的长尾里本来就有正确轨迹，RL 只是把它们的概率从「偶尔」抬到「默认」。`pt-r1zero` 讲 search-selection-amplification 的正反馈；本题要你设计实验，避免把 amplification 误称为创造。错法：只看 `pass@1`，或只看平均 CoT 变长。
+基于可验证奖励的强化学习（RLVR） 之后 `pass@1` 大涨，不等于模型发明了 base 不会的算法。一种机制是 discovery：出现了 base 在合理采样预算下几乎采不到的新成功路径。另一种是 reweighting：base 的长尾里本来就有正确轨迹，强化学习（RL） 只是把它们的概率从「偶尔」抬到「默认」。`pt-r1zero` 讲 search-selection-amplification 的正反馈；本题要你设计实验，避免把 amplification 误称为创造。常见误区是：只看 `pass@1`，或只看思维链（CoT）平均变长。
 
 ## 先画 base 的可达成功集
 
-对每道题，用与训练一致的 prompt、`temperature`、token budget 和 verifier，在 base policy 上采很大的 $K$，得到它本来能触及的正确答案集合，以及过程模式集合（关键引理、代码骨架、工具调用序）。再在同一协议下采 RL policy 的成功轨迹，问两条 containment：
+对每道题，用与训练一致的 输入提示（prompt）、`temperature`、token 预算 和 验证器（verifier），在 base policy 上采很大的 $K$，得到它本来能触及的正确答案集合，以及过程模式集合（关键引理、代码骨架、工具调用序）。再在同一协议下采 RL policy 的成功轨迹，检查两种包含关系：
 
 - **answer-level**：RL 的正确答案是否已在 base 的成功答案集里。
 - **trace-level**：RL 的成功过程是否落在 base 成功 trace 的近邻（编辑距离、程序等价、关键步骤集合）。
@@ -37,7 +37,7 @@ RLVR 之后 `pass@1` 大涨，不等于模型发明了 base 不会的算法。�
 
 必须锁 prompt、温度、长度、$K$、verifier。否则「新路径」可能只是换了采样。比较时把 base 的计算预算给足：用过小的 $K$ 会把 base 不会的假象造出来。更稳的做法是画 base 的 $K$-coverage 曲线，直到边际覆盖接近平坦，再谈 RL 是否越出该平台。
 
-还要在与训练 reward 不同的分布上评估：新题型、更难组合、不同形式化。真实 discovery 更可能带来结构性泛化；纯 reweighting 常在原任务 `pass@1` 好看、换分布后回到 base 的覆盖上限。注意：泛化也不是充分条件，数据泄漏或更强的格式先验也能造成「看起来会迁移」。反向检查同样有用：若 OOD 升了但 containment 仍高，可能是 base 本来就会、只是默认解码不够敢。
+还要在与训练 奖励分数（reward） 不同的分布上评估：新题型、更难组合、不同形式化。真实 discovery 更可能带来结构性泛化；纯 reweighting 常在原任务 `pass@1` 好看、换分布后回到 base 的覆盖上限。注意：泛化也不是充分条件，数据泄漏或更强的格式先验也能造成「看起来会迁移」。反向检查同样有用：若 分布外数据（OOD，即与训练数据明显不同的数据） 升了但 containment 仍高，可能是 base 本来就会、只是默认解码不够敢。
 
 路径相似度要用过程特征，不要只比最终数字。两个证明答案相同、引理集合不同，才值得称为新路径。代码题可用「通过的是哪些测例 + 核心循环结构」做等价，避免把变量重命名当成 discovery。
 

@@ -31,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位、轮次与发帖时间明确，届别和面试日期未披露）
 - 原始措辞：**“如果工具调用超时或返回空值，你如何设计 Prompt 让 Agent 反馈用户？”**
 
-错法：让 prompt 把任何空 observation 都解释成「没查到」，或超时后直接对用户说「不存在」。快手应用开发三面问的是契约 + 策略，不是多写一句安慰。空集、超时、权限拒绝、上游故障的政策完全不同；写操作超时后盲着重试可能重复提交。字节侧按错误码分流见 `byte-tool-fail-retry`。评估 Agent 时超时 case 必须进集，见 `kuaishou-agent-eval-dims`。
+常见误区是：让 prompt 把所有空 observation 都解释成「没查到」，或超时后直接对用户说「不存在」。快手应用开发三面问的是契约 + 策略，不是多写一句安慰。空集、超时、权限拒绝、上游故障的政策完全不同；写操作超时后盲着重试可能重复提交。字节侧按错误码分流见 `byte-tool-fail-retry`。评估 Agent 时超时 case 必须进集，见 `kuaishou-agent-eval-dims`。
 
 ## 先把工具契约写清楚，再写 Prompt
 
@@ -40,12 +40,12 @@ sources:
 策略：
 
 - `timeout` / 限流：有限次指数退避；写操作先查最终状态，带幂等键；
-- `empty_result`：可缩小或改写查询一次，仍空则如实说「该条件下无记录」，不要补参知识；
+- `empty_result`：可缩小或改写查询一次，仍空则如实说「该条件下无记录」，不要用模型参数中的知识补出业务结论；
 - `permission_denied`：澄清或转人工，不重试同一调用；
 - `invalid_query`：修参数或问用户，见 `agent-ask-clarify`；
 - `upstream_failure`：降级缓存或人工渠道，不把故障说成业务空。
 
-schema 与错误码是合同，见 `agent-schema-contract`。model-readable 错误和 user-facing 文案必须分开：前者给策略，后者给用户。
+schema 和错误码约定了工具怎样返回结果，见 `agent-schema-contract`。model-readable 错误和 user-facing 文案必须分开：前者给策略，后者给用户。
 
 ## 对用户诚实，并能量化误报
 

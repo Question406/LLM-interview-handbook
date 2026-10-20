@@ -27,11 +27,11 @@ sources:
 
 传统为每个 request 预留 `max_len` 连续 KV buffer：内部浪费（实际长度 $\ll$ 预留）和外部碎片（空闲区凑不出一整段）。PagedAttention 把 cache 切成固定 size 的 block/page，逻辑 sequence 通过 **block table** 映射到非连续物理块。需要时分配一页，sequence 结束就回收，像 demand paging + free list。
 
-页表查找有开销，但碎片下降通常更值：同样 HBM 能并发更多请求，这才是 vLLM 吞吐的主因之一。decode 仍是 memory-bound，paging 不把 decode 变成 compute-bound。
+页表查找有开销，但碎片下降通常更值：同样 HBM 能并发更多请求，这才是 vLLM 吞吐的主因之一。逐 token 生成（decode） 仍是 memory-bound，paging 不把 decode 变成 compute-bound。
 
 ## 共享、增长、回收
 
-相同 prefix 的请求可以 copy-on-write / share 同一批物理页；beam 的共同前缀也可复用。新 token 写时再拆页，避免改共享前缀。这和 `sys-prefix-cache` 配套：命中的是物理页，不是字符串。
+相同 prefix 的请求可以 copy-on-write / share 同一批物理页；beam 的共同前缀也可复用。写入新 token 时再拆页，避免改共享前缀。这和 `sys-prefix-cache` 配套：命中的是物理页，不是字符串。
 
 动态增长：不必一开始按 `max_len` 占满。回收：请求结束页回池，连续 batching 才能立刻插入新请求。没有 paging，预留策略要么浪费，要么 OOM。并发从几十涨到上百时，碎片差的是整机 KV 容量，不是单条速度；我会把「更高并发」和「单步更快」分开说。
 

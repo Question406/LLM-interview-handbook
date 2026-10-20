@@ -4,9 +4,7 @@ section: posttrain
 order: 161
 level: S
 title: 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
-quick: >-
-  PPO 常把 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 加进奖励或当惩罚；GRPO 论文用无偏估计直接估
-  token 级 KL，也可以减弱 / 去掉。K1/K2/K3 是同一条反向 KL 的不同估计器，偏差和方差不一样，符号不能混着用。
+quick: "PPO 常把 $D_{\\mathrm{KL}}(\\pi_\\theta\\|\\pi_{\\mathrm{ref}})$ 加进奖励或当惩罚；GRPO 论文用无偏估计直接估计 token 级 KL，也可以减弱 / 去掉。K1/K2/K3 是同一条反向 KL 的不同估计器，偏差和方差不一样，符号不能混着用。"
 tags:
   - Ant Group
   - GRPO
@@ -33,11 +31,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GRPO的kl散度和PPO的kl散度区别？K1 K2 K3估计区别？”**；**“PPO的kl散度可以改成交叉熵吗？”**
 
-这块容易把「KL 加在奖励里还是损失上」和「估的是哪个方向」混成一件事。PPO 与 GRPO 约束的都是反向 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，期望在当前策略的 rollout 上取，属于 mode-seeking，见 `fund-kl-directions`。差别在工程位置：PPO 常先把 KL 减进 reward，再送进 GAE；GRPO 把组相对优势当主信号，KL 变成可选的 token 级正则，甚至可以被动态采样和 clip 替代。K1/K2/K3 是同一条反向 KL 的不同估计器，不是三种散度，也不是三种算法。方向写反或把 CE 当替换，整道题就穿了。
+这块容易把「KL 加在奖励里还是损失上」和「估的是哪个方向」混成一件事。PPO 与 GRPO 约束的都是反向 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$，期望在当前策略的 采样轨迹（rollout） 上取，属于 mode-seeking，见 `fund-kl-directions`。差别在工程位置：PPO 常先把 KL 减进 奖励分数（reward），再送进 GAE；GRPO 把组相对优势当主信号，KL 变成可选的 token 级正则，甚至可以被动态采样和 clip 替代。K1/K2/K3 是同一条反向 KL 的不同估计器，不是三种散度，也不是三种算法。方向写反或把 交叉熵损失（CE） 当替换，就无法正确解释目标函数。
 
 ## 加在奖励里，还是加在损失上
 
-PPO 典型写法是 $r_t\leftarrow r_t-\beta\,\widehat{\mathrm{KL}}_t$，或对近似 KL 做自适应 $\beta$。KL 进入 TD 残差 $\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)$ 之后，会被 GAE 沿轨迹平滑，价值网络会「看见」惩罚，于是 critic 和 actor 一起被这根锚拉动。采样必须来自 $\pi_\theta$，方向才是反向；若改成对 SFT 数据做惩罚，采样跑到参考上，就变成正向 covering。
+PPO 典型写法是 $r_t\leftarrow r_t-\beta\,\widehat{\mathrm{KL}}_t$，或对近似 KL 做自适应 $\beta$。KL 进入 TD 残差 $\delta_t=r_t+\gamma V(s_{t+1})-V(s_t)$ 之后，会被 GAE 沿轨迹平滑，价值网络会「看见」惩罚，于是 价值评估模型（critic） 和 actor 一起被这根锚拉动。采样必须来自 $\pi_\theta$，方向才是反向；若改成对 监督微调（SFT） 数据做惩罚，采样跑到参考上，就变成正向 covering。
 
 GRPO 主项是组相对优势 $\hat A_i=(r_i-\mathrm{mean}(r))/(\mathrm{std}+\varepsilon)$。KL 常直接加在损失上，不改 $r$，因此不进组标准化。DeepSeekMath 用 $k_3$ 一类无偏估计做 token 级惩罚。后续 DAPO 讨论过弱化甚至去掉显式 KL，改靠 clip-higher、动态丢掉零方差组和 token-level PG 管更新幅度。方向仍然是 $\pi_\theta$ 对冻结 $\pi_{\mathrm{ref}}$，不要写成 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi_\theta)$。组大小 $n\gt 1$ 是优势可定义的前提，和 KL 是两根旋钮，见 `sys-rl-group-n`。
 

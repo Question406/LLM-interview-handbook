@@ -4,7 +4,7 @@ section: posttrain
 order: 33
 level: S
 title: 什么时候应先做 rejection-sampling fine-tuning，什么时候必须进入 on-policy RL？
-quick: 先看 base policy 的正确候选覆盖率。若较小 K 已能产出足够多高质量样本，RS 简洁稳定；若正确轨迹稀少、需跨多步探索或 reward 依赖当前策略状态，RS 会 support 收缩，应转向 on-policy RL 或先改善 seed / verifier。
+quick: "先看 base policy 的正确候选覆盖率。若较小 K 已能产出足够多高质量样本，RS 简洁稳定；若正确轨迹稀少、需跨多步探索或 奖励分数（reward） 依赖当前策略状态，RS 会 support 收缩，应转向 on-policy 强化学习（RL） 或先改善 seed / 验证器（verifier）。"
 tags:
   - Rejection Sampling
   - RL
@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-Rejection sampling（RS）对每个 prompt 采 $K$ 个回答，用 reward、规则或人工过滤，再把成功样本当 SFT 数据。它计算简单、可离线审计，Llama 2 等配方用它回收高质量对话；R1 类流水线也用它在 RL 前后沉淀成功轨迹。这块容易把 RS 叫成「离线 RL」，或反过来觉得不上 on-policy 就不算做推理。分界线是 base policy 的正确候选覆盖率，以及 reward 是否依赖当前策略走到的状态。`pt-cold-start-to-multistage-rl` 讲多阶段怎么排；本题讲何时该从 RS 切到 RL。
+Rejection sampling（RS）对每个 prompt 采 $K$ 个回答，用 reward、规则或人工过滤，再把成功样本当作监督微调（SFT）数据。它计算简单、可离线审计，Llama 2 等配方用它回收高质量对话；R1 类流水线也用它在 强化学习（RL） 前后沉淀成功轨迹。这块容易把 RS 叫成「离线 RL」，或反过来觉得不上 on-policy 就不算做推理。分界线是 base policy 的正确候选覆盖率，以及 奖励是否依赖当前策略走到的状态。`pt-cold-start-to-multistage-rl` 讲多阶段怎么排；本题讲何时该从 RS 切到 RL。
 
 ## RS 在学什么
 
@@ -32,9 +32,9 @@ RS 学习的是「现有政策已经会生成的成功子集」。过滤后做 M
 
 ## 诊断：先画 $K$-success 曲线
 
-关键图是覆盖率随 $K$ 的变化，以及过滤后的有效条数、题型熵。若较小 $K$ 已有足够多样的高质量样本，RS 通常是正确的第一步。若只有极大 $K$ 才偶尔成功，继续 RS 会过拟合那几条幸运轨迹；应先改善 seed / teacher / verifier（`pt-reasoning-seed-data-quality`），或进入 on-policy RL，在当前政策附近持续采样、用相对奖励更新。
+关键图是覆盖率随 $K$ 的变化，以及过滤后的有效条数、题型熵。若较小 $K$ 已有足够多样的高质量样本，RS 通常是正确的第一步。若只有极大 $K$ 才偶尔成功，继续 RS 会过拟合那几条幸运轨迹；应先改善 seed / 教师模型（teacher） / 验证器（verifier）（`pt-reasoning-seed-data-quality`），或进入 on-policy RL，在当前政策附近持续采样、用相对奖励更新。
 
-On-policy RL 的代价是 rollout 成本、staleness（`pt-online-freshness`）和 reward hacking。没有可信 reward，上 RL 只是把 hacking 自动化。切换应由 held-out coverage、reward 可信度和总算力决定，不是由「现在都在讲 GRPO」决定。
+On-policy RL 的代价是 采样轨迹（rollout） 成本、staleness（`pt-online-freshness`）和 钻奖励规则的空子。没有可信 reward，上 RL 只是把 hacking 自动化。切换应由 held-out coverage、reward 可信度和总算力决定，不是由「现在都在讲 GRPO」决定。
 
 也可以把决策写成阈值：设 $C(K)$ 为过滤后有效且去重后的轨迹数。$C(K)$ 已够覆盖目标题型，且过程抽检干净，就 RS；$C(K)$ 随 $K$ 几乎不涨，或有效轨迹高度重复，就不要再烧采样，转改善 seed（`pt-reasoning-seed-data-quality`）或上 on-policy。RS 重复多轮时，每一轮的 support 都是上一轮政策的成功子集，会越滤越窄。这是和 on-policy 最关键的差别。
 

@@ -4,9 +4,7 @@ section: agentrl
 order: 15
 level: A
 title: Browser / GUI Agent 的 Observation 应怎么表示？
-quick: >-
-  通常组合 screenshot/vision、DOM/accessibility tree、structured element metadata 与
-  action history。纯截图泛化强但定位难；纯 DOM 高效但可能缺视觉状态；混合表示更实用。
+quick: "组合截图、DOM 或无障碍树、结构化元素信息和动作历史。截图能看到视觉状态，但定位和成本较难；DOM 高效，却可能漏掉 canvas、图标和弹层。混合使用能兼顾语义与几何，还要保证树、图和元素 ID 对应同一次观察。"
 tags:
   - GUI Agent
   - Observation
@@ -21,18 +19,18 @@ sources:
     type: primary
 ---
 
-GUI Agent 的 observation 不是「把网页塞进上下文」。错法二选一：只截图，定位漂、token 贵；只 DOM，canvas / 图标 / 弹层视觉状态全丢。实用做法是混合：screenshot + DOM / a11y 树 + 元素元数据 + action history。SeeClick 一类工作说明视觉 grounding 要单独训，不能假设截图里「模型自己会找按钮」。定位融合细节见 `cu-dom-a11y-visual-grounding`。
+GUI Agent 的 观测结果（observation） 不是「把网页塞进上下文」。只用截图，定位可能不稳定且 token 成本高；只用 DOM，又可能丢失 canvas、图标和弹层的视觉状态。实用做法是混合：screenshot + DOM / 无障碍信息 树 + 元素元数据 + action history。SeeClick 一类工作说明视觉 grounding 要单独训，不能假设截图里「模型自己会找按钮」。定位融合细节见 `cu-dom-a11y-visual-grounding`。
 
 ## 表征权衡：成本、可定位、动态一致性
 
 四路信号各管一块：
 
-- **截图：** 跨站点泛化强，能看见 CSS 绘制、遮挡、弹窗；坐标随分辨率 / DPR 漂，整屏视觉 token 贵。
-- **DOM / a11y 树：** 角色、名、`disabled`、层次便宜且可检索；虚拟列表、iframe、自定义绘制常缺节点或 bbox 为 0。
+- **截图：** 跨站点泛化强，能看见 CSS 绘制、遮挡、弹窗；坐标随分辨率 / 设备像素比（DPR） 漂，整屏视觉 token 贵。
+- **DOM / a11y 树：** 角色、名、`disabled`、层次便宜且可检索；虚拟列表、iframe、自定义绘制常缺节点或 目标框 为 0。
 - **结构化元数据：** 稳定 element id、可见 bbox、可聚焦性、当前 URL / frame。id 每次重绘都变，action grounding 会漂。
 - **Action history：** 上次点了什么、滚动了多少。没有它，模型看不到自己造成的状态差。
 
-关键工程约束：element id 必须在同一次观察内稳定，或改用角色 + 名 + 相对几何，而不是「第 17 个 div」。动态加载时 observation 要带「仍在加载」标记，否则模型会在空白树上瞎点。训练时 environment observation 不属于 policy loss：视觉 encoder 若冻结，图只是 $s_t$；若端到端训，也只在策略 token 上反传，不要对 DOM 文本做语言模型似然。
+关键工程约束：element id 必须在同一次观察内稳定，或改用角色 + 名 + 相对几何，而不是「第 17 个 div」。动态加载时 observation 要带「仍在加载」标记，否则模型会在空白树上瞎点。训练时 environment observation 不属于 policy 损失（loss）：视觉 encoder 若冻结，图只是 $s_t$；若端到端训，也只在策略 token 上反传，不要对 DOM 文本做语言模型似然。
 
 ## 评测必须覆盖单模态会翻车的场景
 
@@ -46,5 +44,5 @@ Eval 不要只测静态桌面点选。至少包括：动态加载、弹窗挡点
 
 - **为什么不把整页 HTML 当 observation？** Token 爆炸，且大量不可见节点；模型会拟合标记顺序而不是可见 UI。过滤可见 / 可聚焦节点，再按需截图确认。
 - **Set-of-Mark 编号每次变怎么办？** 编号是当步观察的局部坐标，不要跨步当稳定 id。下一步必须按新树重标，否则会点到别人。
-- **Observation 要不要进 SFT loss？** 不要当目标 token。它是状态，不是策略输出。对它算 CE 等于让模型背页面。
+- **Observation 要不要进 监督微调（SFT） loss？** 不要当目标 token。它是状态，不是策略输出。对它算 交叉熵损失（CE） 等于让模型背页面。
 - **和 computer-use 定位题？** 本题管 $s_t$ 怎么表示；`cu-dom-a11y-visual-grounding` 管树与视觉如何融合成点击点。没有稳定观测，融合管道无从评。

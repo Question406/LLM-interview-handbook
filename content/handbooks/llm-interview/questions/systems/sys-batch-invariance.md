@@ -30,7 +30,7 @@ sources:
     type: primary
 ---
 
-这块容易把「设了 seed」说成可复现。Seed 管的是 RNG。Batch invariance 管的是同一输入在不同邻居下数学是否同一条执行路径。RL 评测、温度 0 回归、以及「为什么这道题今天和昨天 token 不同」都会问到这里。
+这块容易把「设了 seed」说成可复现。Seed 管的是 RNG。Batch invariance 关注同一输入与不同请求放在一批时，计算结果是否一致。强化学习（RL）评测、温度 0 回归、以及「为什么这道题今天和昨天 token 不同」都会问到这里。
 
 ## 训练侧怎么开确定性
 
@@ -42,15 +42,15 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 ```
 
-并设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，再固定 Python / NumPy / CUDA seed。这仍不能保证每个算子都有确定实现：没有确定 kernel 的 op 会直接报错或走慢路径。分布式还要固定 NCCL、集合通信顺序。RL 里 rollout 引擎默认 **不** 保证可复现。
+并设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，再固定 Python / NumPy / CUDA seed。这仍不能保证每个算子都有确定实现：没有确定 kernel 的 op 会直接报错或走慢路径。分布式还要固定 NCCL、集合通信顺序。RL 中生成训练轨迹的 rollout 引擎默认 **不** 保证可复现。
 
 ## Batch invariance 是什么
 
-同一 prompt、同一权重、同一采样参数，输出不应取决于：
+同一输入提示、同一权重、同一采样参数，输出不应取决于：
 
-- 同一步 decode 里还有谁；
+- 同一步逐 token 生成（decode）时还在处理哪些请求；
 - `max_num_seqs` / 实际 batch；
-- prefill 切块边界、等待队列顺序。
+- 处理输入并建立缓存的 prefill 阶段如何分块、等待队列顺序。
 
 破坏它的是浮点非结合、reduction 树形状随 $B$ 变、softmax / RMSNorm 的 block 划分、以及原子操作的竞争。Continuous batching 几乎必然改变这些形状，见 `sys-cont-batch`。所以「离线 bs=1 过了、在线一上 serving 就漂」常常是执行路径变了，权重未必错。
 
@@ -58,7 +58,7 @@ vLLM 文档写得很直：默认不保证可复现。离线可关 V1 multiproces
 
 ## atomicAdd 帮不上忙
 
-多线程对同一地址 `atomicAdd` 浮点数，写入顺序不固定，和的 bit 级结果不同。这是非确定性来源，不是修复。要修：换成确定性 reduction（固定顺序、固定 tree）、batch-invariant kernel（对单个请求的归约不依赖邻居）、或 verify-rollback。原子加只保证「没有丢失更新」，不保证「两次加法同一 bit」。
+多线程对同一地址 `atomicAdd` 浮点数，写入顺序不固定，和的 bit 级结果不同。这是非确定性来源，不是修复。解决时可以使用固定顺序、固定树形结构的归约，或使用不受同批其他请求影响的 batch-invariant kernel，也可以验证结果并在不一致时回滚。原子加只保证「没有丢失更新」，不保证「两次加法同一 bit」。
 
 MoE 路由、FP8 动态 scale、非确定的 expert 负载均衡会再加一层漂移。评测和训练日志不要混用「温度 0 = 可复现」。
 

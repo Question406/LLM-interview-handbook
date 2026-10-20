@@ -70,4 +70,4 @@ $7\mathrm{B}$ 在 8 卡 ZeRO-3 上，参数状态可落到十几 GB/卡量级，
 
 - **没有 FP32 master 行不行？** 可以纯 BF16 Adam，状态少 $4$ bytes/param，但小 $\eta$ 下更新可能被舍入吃掉，大模型少见。
 - **ZeRO-3 为什么有时更慢？** 每层 gather 参数，算力没喂饱时通信占比上升；小模型 / 小 batch 更明显。
-- **推理 7B 为什么远小于 14GB 的「训练直觉」？** 推理无 grad / Adam，还可量化；但 decode 另有一份随 $T$ 涨的 KV Cache。
+- **推理 7B 为什么远小于 14GB 的「训练直觉」？** 推理无 grad / Adam，还可量化；但 逐 token 生成（decode） 另有一份随 $T$ 涨的 KV Cache。

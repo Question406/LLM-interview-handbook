@@ -5,8 +5,8 @@ order: 200
 level: S
 title: 字节 Agent 实习一面：什么是 Harness Engineering？和只调 LLM API 差在哪？
 quick: >-
-  Harness 是模型外的操作系统：权限、工具执行、状态、日志、校验与重试。调 API
-  只负责生成文本。复杂任务能完成，是因为每步被约束、可观测、失败可回放，不是模型更会聊天。
+  Harness 管理模型之外的权限、工具执行、状态、日志、校验和重试。调用 LLM API
+  得到模型输出后，还需要 Harness 检查和执行动作、验证结果，并处理失败，才能完成复杂任务。
 tags:
   - ByteDance
   - Harness
@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“什么是Harness Engineering”**；**“Harness的五个核心模块”**；**“你对 Agent Harness 怎么理解？它和单纯调用 LLM API 的区别是什么？”**
 
-错法：把 Harness 讲成「更好的 system prompt」或「SDK 再包一层 chat API」。模型只产出意图文本；复杂任务能跑完，是因为每一步被约束、可观测、失败可回放。同一权重换一套工具错误码和重试策略，成功率可以差一截。测的是 model + harness，不是「模型更会聊天」。概念总览见 `agent-harness`。
+常见误区是：把 Harness 讲成「更好的 system prompt」或「SDK 再包一层 chat API」。模型只产出意图文本；复杂任务能跑完，是因为每一步被约束、可观测、失败可回放。同一权重换一套工具错误码和重试策略，成功率可以差一截。测的是 model + harness，不是「模型更会聊天」。概念总览见 `agent-harness`。
 
 ## 五个控制面怎么切
 
@@ -38,17 +38,17 @@ sources:
 
 - **感知 / 上下文组装**：当前任务、仓库切片、工具观察、权限可见范围，决定窗口里放什么。
 - **规划**：把目标拆成可验证子步骤；规划仍是模型，但步数、终止、是否允许改计划由 Harness 卡死。
-- **受控工具执行**：schema 解析、鉴权、沙箱、超时、幂等；模型说「删文件」不等于真删。
+- **受控工具执行**：解析 schema、鉴权、沙箱、超时和幂等保护；模型说「删文件」不等于真删。
 - **记忆**：短记忆服务本轮，长记忆跨会话；写入要带来源和失效条件，见 `byte-short-long-memory`。
 - **观测与策略**：日志、trace、超时、重试、审批。失败按错误码分类，而不是一律再问一遍模型，见 `byte-tool-fail-retry`。
 
-Coding Agent 里「只有 shell」和「repo 检索 + 测试 + patch 回滚 + 结构化状态」是两套 Harness。权限与审计是执行层的一部分，不是 prompt 附录，见 `byte-team-agent-security`。
+Coding Agent 里「只有 shell」和「repo 检索 + 测试 + patch 回滚 + 结构化状态」是两套 Harness。权限与审计是执行层的一部分，不能仅作为 prompt 的补充说明，见 `byte-team-agent-security`。
 
 ## 和只调 LLM API 差在哪
 
-只调 API：无权限边界、无确定性回放、失败只能重问。Harness 决定能不能跑、跑在哪、结果怎么验。模型产出 tool call 文本；Harness 校验参数、查 ACL、在沙箱执行、把结构化 Observation 写回。没有 executor，所谓 Agent 只是多轮聊天。
+只调 API：无权限边界、无确定性回放、失败只能重问。Harness 决定能不能跑、跑在哪、结果怎么验。模型输出工具调用文本；Harness 校验参数、查 ACL、在沙箱执行、把结构化 Observation 写回。没有 executor，所谓 Agent 只是多轮聊天。
 
-可回放要求：同一输入、同一工具版本、同一工作区快照，应得到同一执行图。这依赖工具副作用可记录、观察规范化，而不是温度调到 0。预算与终止（最大步数、token、墙钟）也必须在环外，否则模型会把「再试一次」写成无限循环。
+可回放要求：同一输入、同一工具版本、同一工作区快照，应得到同一执行图。这依赖工具副作用可记录、观察规范化，而不是温度调到 0。预算与终止（最大步数、token 用量和实际耗时）也必须在环外，否则模型会把「再试一次」写成无限循环。
 
 ## Spec 是校验器，不是又一段 prompt
 

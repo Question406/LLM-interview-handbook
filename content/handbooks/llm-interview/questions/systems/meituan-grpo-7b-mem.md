@@ -4,9 +4,7 @@ section: systems
 order: 140
 level: A
 title: 美团：7B 做 GRPO 时显存开销从哪来，怎么降？
-quick: >-
-  显存主要在 actor 权重 / 梯度 / 优化器、reference 前向、以及 $n$ 条 rollout 的 KV 与 logits。先减
-  $n$、序列长和 micro-batch，再用 ZeRO、梯度检查点、LoRA 和 vLLM 卸载采样，别只报一个「大概 40G」。
+quick: "显存主要在 actor 权重 / 梯度 / 优化器、reference 前向、以及 $n$ 条 采样轨迹（rollout） 的 KV 与 logits。先减 $n$、序列长和 micro-batch，再用 ZeRO、梯度检查点、LoRA 和 vLLM 卸载采样，别只报一个「大概 40G」。"
 tags:
   - Meituan
   - GRPO
@@ -33,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“7B规模模型使用GRPO训练时的显存占用开销及优化方式”**
 
-错法：报一个脱离配置的「大概 40G」。7B bf16 权重大约 14GB 只是起点；我会拆账：参数、梯度、优化器、reference、rollout KV、logits / 激活。GRPO 虽无 critic，仍常驻 ref 做 KL，且同 prompt 生成 $n$ 条长 completion，KV 峰值往往压过参数本身。先问清：全参还是 LoRA、是否挂 ref、最大长度、`rollout.n` / `--n-samples-per-prompt`、rollout 是否与 trainer 同卡。同场阶段瓶颈卡讲墙钟，本题讲显存。
+常见误区是：报一个脱离配置的「大概 40G」。7B bf16 权重大约 14GB 只是起点；我会拆账：参数、梯度、优化器、reference、采样轨迹（rollout） KV、logits / 激活。GRPO 虽无 价值评估模型（critic），仍常驻 ref 做 KL，且同一输入提示 生成 $n$ 条长 completion，KV 峰值往往压过参数本身。先问清：全参还是 LoRA、是否挂 ref、最大长度、`rollout.n` / `--n-samples-per-prompt`、rollout 是否与 trainer 同卡。同场阶段瓶颈卡讲实际耗时，本题讲显存。
 
 ## 先拆账再优化
 
@@ -45,7 +43,7 @@ ref 前向：KL 要冻住的 $\pi_{\mathrm{ref}}$。同卡就再驻一份或 off
 
 采样侧（通常最划算）：更短 `max_response_len`、更小 $n$、vLLM/SGLang 卸载采样、KV 量化只动 rollout 副本。训练仍 bf16。更新侧：ZeRO-2/3 或 FSDP、梯度累计换小 micro-batch、activation checkpoint、只训 LoRA（优化器状态从全参降到 adapter）。HybridEngine / slime `--colocate` + `--offload-train` / `--offload-rollout` 让训推互斥占显存，峰值少一份整模或少一套常驻，但一步串行。动态 batch 用 `--max-tokens-per-gpu` / `ppo_max_token_len_per_gpu` 卡住每卡 token，避免最长那条撑爆。
 
-不要先上 ZeRO-3 幻想加速生成。生成是 decode，和参数分片不是同一瓶颈。阶段墙钟见 `meituan-grpo-stage-bottleneck`。
+不要先上 ZeRO-3 幻想加速生成。生成是逐 token 的 decode，和参数分片不是同一瓶颈。阶段实际耗时见 `meituan-grpo-stage-bottleneck`。
 
 ## 面试怎么报数字
 
@@ -55,6 +53,6 @@ ref 前向：KL 要冻住的 $\pi_{\mathrm{ref}}$。同卡就再驻一份或 off
 
 - **为什么不能只报 14GB？** 那只是 7B bf16 权重。全参 Adam 再加两倍状态，梯度一份，ref 前向，再加上 $n$ 条长 completion 的 KV 和 logits。峰值经常在采样侧而不是参数。不问配置就报「大概 40G」会被拆穿。
 - **GRPO 没 critic 是不是很省？** 省了 value 头和一份优化器，但 `--n-samples-per-prompt` / `rollout.n` 条长 KV 往往更贵。不要说「没 critic 所以显存只有一份 7B」。KL 还常驻 ref。
-- **LoRA 省在哪？** 优化器状态和梯度按 adapter 计。底模仍要一份给前向和采样，KV 仍随 $n$ 和长度走。LoRA 不是把 7B GRPO 变成「一张消费卡就能跑很大 $n$」。
+- **LoRA 省在哪？** 优化器状态和梯度按 adapter 计。基础模型仍要一份给前向和采样，KV 仍随 $n$ 和长度走。LoRA 不是把 7B GRPO 变成「一张消费卡就能跑很大 $n$」。
 - **同卡怎么放得下？** veRL HybridEngine 原地 reshard，少一份整模；slime `--colocate` 靠 `--offload-train` / `--offload-rollout` 轮转，进程仍是两套。都是时分，不是边 backward 边 decode。
 - **动态 batch 能省显存吗？** `--max-tokens-per-gpu` / `use_dynamic_bsz` 按 token 预算切 micro，避免最长序列定峰值。可能把 GRPO 组拆开，要和 `--balance-data` 一起谨慎。账本见 `slime-batch-accounting`。

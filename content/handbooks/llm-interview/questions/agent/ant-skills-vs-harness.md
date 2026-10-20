@@ -4,10 +4,7 @@ section: agent
 order: 181
 level: A
 title: 蚂蚁一面：Skills 怎么写？Spring AI 的调用更像 Claude Code 还是别的 Harness？
-quick: >-
-  Skill 是按需展开的程序化知识，步骤、约束、工具子集，不是又一堆 tool
-  schema。Harness 决定何时加载、如何隔离不可信输出。Spring AI 默认更像「注册工具加对话循环」；Claude Code
-  是渐进披露加 grep 工作区，二者别画等号。
+quick: "Skill 按需提供任务步骤、约束和可用工具；Tool Schema 则描述工具的参数。Harness 决定何时加载 Skill，以及如何隔离不可信输出。Spring AI 默认更接近注册工具后循环调用；Claude Code 还会按需读取资料并用 grep 搜索工作区，两者的运行方式不同。"
 tags:
   - Ant Group
   - Skills
@@ -30,11 +27,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“项目的skills是怎么实现的？你是怎么写skills的？”**；**“Spring AI框架的skills调用更像Claude Code还是其他Harness agent？”**
 
-同一面先问怎么写 Skill，再对比 Spring AI 和 Claude Code。错法：把 `@Tool` 注解当成 Skill，或把所有 harness 画等号。Skill vs Rule 见 `ali-skill-vs-rules-governance`；grep vs RAG 见 `ant-grep-vs-rag`；Skill 评测见 `agent-skill-eval`。
+同一面先问怎么写 Skill，再对比 Spring AI 和 Claude Code。常见误区是：把 `@Tool` 注解当成 Skill，或把所有 harness 画等号。Skill vs Rule 见 `ali-skill-vs-rules-governance`；grep vs 检索增强生成（RAG） 见 `ant-grep-vs-rag`；Skill 评测见 `agent-skill-eval`。
 
 ## Skill 怎么写
 
-写目标、前置条件、允许工具、检查清单、失败回退；正文短，细节文件按需读。省 token 来自「先目录后展开」，不是把说明书一次性塞进 system prompt。Skill 是程序性知识，不是又一份 tool schema：schema 描述参数，Skill 描述何时用、先做什么、失败怎么停。触发条件要窄，避免相邻任务误加载。写 procedure，不要把评测答案写进文档。
+写目标、前置条件、允许工具、检查清单、失败回退；正文短，细节文件按需读。节省 token 的方法是先读取目录，再按需展开具体内容，不是把说明书一次性塞进 system 输入提示（prompt）。Skill 是程序性知识，不是又一份 tool 字段和类型规范（schema）：schema 描述参数，Skill 描述何时用、先做什么、失败怎么停。触发条件要窄，避免相邻任务误加载。写 procedure，不要把评测答案写进文档。
 
 ## Harness 才决定怎么调用
 
@@ -42,7 +39,7 @@ Harness 负责何时加载 Skill、工具输出如何隔离、权限在哪执行
 
 ## 对比时怎么落到一句
 
-面试官要听的是你分得清三层：模型、Skill 文本、运行时 harness。同一模型换 harness，行为可以完全不同。Spring AI 也能做成渐进披露，把 Skill 当资源按需读、工具默认少暴露，但那是你的装配，不是框架默认。默认 tool-calling 循环没有工作区搜索，就不要声称「和 Claude Code 一样」。
+面试官要听的是你分得清三层：模型、Skill 文本、运行时 harness。同一模型换 harness，行为可以完全不同。Spring AI 也能做成渐进披露，把 Skill 当资源按需读、工具默认少暴露，但这需要项目自行配置，框架默认并不提供这套流程。默认 tool-calling 循环没有工作区搜索，就不要声称「和 Claude Code 一样」。
 
 ## 追问
 

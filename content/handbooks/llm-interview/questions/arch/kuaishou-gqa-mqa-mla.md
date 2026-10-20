@@ -4,9 +4,7 @@ section: arch
 order: 142
 level: A
 title: 快手：除了 MHA，GQA / MQA / MLA 原理是什么？Decoder 的 QKV 从哪来？
-quick: >-
-  Decoder 自回归里 Q 来自当前 token，K/V 来自已生成前缀（含 cache）。MQA 共享一套 KV 头，GQA 分组共享，MLA
-  用低秩联合压缩 KV。都是在质量与 KV 显存之间折中。
+quick: "Decoder 自回归时，当前 token 的隐状态生成 Q，本步 K/V 与缓存中的历史 K/V 一起用于注意力计算。MQA 让所有 Q 头共享 KV，GQA 分组共享，MLA 则低秩压缩 KV。这些方法在质量和 KV 显存之间取舍。"
 tags:
   - Kuaishou
   - GQA
@@ -30,15 +28,15 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“问kv cache相关”**；**“decoder的 qkv输入分别来自哪”**；**“除了MHA还知道哪些(GQA MQA MLA)讲原理”**
 
-错法：把 GQA / MQA / MLA 都说成「少算一点 attention」。Decode 往往受 KV 带宽限制，不是受 $T^2$ 训练 FLOPs 限制。先说清 QKV 从哪来，再谈压缩轴。
+常见误区是：把 GQA / MQA / MLA 都说成「少算一点 attention」。Decode 往往受 KV 带宽限制，不是受 $T^2$ 训练 FLOPs 限制。先说清 QKV 从哪来，再谈压缩轴。
 
 ## Decoder 的 Q、K、V
 
-自回归一步：当前隐状态 $h_t$ 乘 $W_Q$ 得 $q_t$；历史 $k_{1:t-1},v_{1:t-1}$ 已在 KV cache，本步只算 $k_t,v_t$ 并追加。Encoder-decoder 的 cross-attn 则 $q$ 来自 decoder、$k/v$ 来自 encoder 记忆，cache 的是 encoder 侧，不随 decode 步增长。RoPE 加在 $q,k$ 上：$(R_t q_t)^\top(R_s k_s)=q_t^\top R_{s-t}k_s$，cache 里存的是旋转后还是旋转前，实现必须和推理一致。
+自回归一步：当前隐状态 $h_t$ 乘 $W_Q$ 得 $q_t$；历史 $k_{1:t-1},v_{1:t-1}$ 已在 KV cache，本步只算 $k_t,v_t$ 并追加。Encoder-decoder 的 cross-attn 则 $q$ 来自 decoder、$k/v$ 来自 encoder 记忆，cache 的是 encoder 侧，不会随 decode 步数增长。RoPE 加在 $q,k$ 上：$(R_t q_t)^\top(R_s k_s)=q_t^\top R_{s-t}k_s$，cache 里存的是旋转后还是旋转前，实现必须和推理一致。
 
 ## 三种省 cache 的切法
 
-MHA：每头独立 KV，每 token 约 $2 n_h d_h$，质量最好、cache 最大。MQA：所有 Q 头共享一对 KV，$n_{\mathrm{kv}}=1$，cache 最小，头间独立性最差。GQA：$1\lt n_{\mathrm{kv}}\lt n_h$，若干 Q 头共享一组 KV，LLaMA / Qwen 常用中间点。
+MHA：每头独立 KV，每个 token 约 $2 n_h d_h$，质量最好、cache 最大。MQA：所有 Q 头共享一对 KV，$n_{\mathrm{kv}}=1$，cache 最小，头间独立性最差。GQA：$1\lt n_{\mathrm{kv}}\lt n_h$，若干 Q 头共享一组 KV，LLaMA / Qwen 常用中间点。
 
 MLA（DeepSeek）：沿表示维压，不（只）砍头数。隐状态先到低维 $c_t^{KV}=W^{DKV}h_t$，$d_c\ll n_h d_h$，RoPE 再拆出短的 $k^R$。推理用矩阵吸收，不必还原全长 K/V。这和 GQA 的压缩轴不同，见 `arch-mla`。
 

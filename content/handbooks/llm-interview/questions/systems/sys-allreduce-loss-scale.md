@@ -4,10 +4,7 @@ section: systems
 order: 271
 level: A
 title: 分布式训练时如果对 loss 多 AllReduce 几次，会发生什么？
-quick: >-
-  取决于 op 和这个 tensor 还参不参与 backward。SUM 且没除 world size，loss 和梯度放大 $n$ 倍，重复 $k$
-  次就是 $n^k$，等于学习率暴涨。AVG 在各 rank 已持有同一均值时再做，数值几乎不变，只浪费通信。最危险的是把日志用的全局
-  loss 又拿去反传。
+quick: "取决于 op 和这个 tensor 还参不参与 backward。SUM 且没除 world size，损失（loss） 和梯度放大 $n$ 倍，重复 $k$ 次就是 $n^k$，等于学习率暴涨。AVG 在各 rank 已持有同一均值时再做，数值几乎不变，只浪费通信。最危险的是把日志用的全局 loss 又拿去反传。"
 tags:
   - Distributed Training
   - AllReduce
@@ -25,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：答成「AllReduce 多次会数值错乱」。先问两个问题：这次 reduce 是 SUM 还是 AVG？这个 tensor `requires_grad` 吗？FSDP / ZeRO 的梯度通信是另一条路径，见 `sys-collectives`；本题说的是 loss 标量被误 reduce。
+常见误区是：答成「AllReduce 多次会数值错乱」。先问两个问题：这次 reduce 是 SUM 还是 AVG？这个 tensor `requires_grad` 吗？FSDP / ZeRO 的梯度通信是另一条路径，见 `sys-collectives`；本题说的是 损失（loss） 标量被误 reduce。
 
 ## 正确平均
 
@@ -45,9 +42,9 @@ AVG 在各 rank 已经拿到同一个 $L$ 之后再 AVG，期望不变：$\frac1
 
 ## 日志 loss 和训练 loss 必须拆开
 
-训练用的 loss 要能反传到 current $\log\pi$。logging 常再 reduce 一次得到全局均值，必须 `detach()`。把已经 AVG 过的 logging tensor 接回计算图，等于把通信结果又当目标。RL 里 old logprob、reward、advantage 本来就该 detach；再对标量 loss 多 reduce，会把「看起来在训」的 step 变成学习率彩票。
+训练用的 loss 要能反传到 current $\log\pi$。logging 常再 reduce 一次得到全局均值，必须 `detach()`。把已经 AVG 过的 logging tensor 接回计算图，等于把通信结果又当目标。强化学习（RL） 里 old logprob、奖励分数（reward）、advantage 本来就该 detach；再对标量 loss 多 reduce，会使每步的梯度尺度失控。
 
-DP 下 token 数不齐时，先对 local 有效 token 求和再全局除总 token，才是 token-mean。先各 rank 平均再 AVG，是样本等权，长序列被摊薄。这和 DAPO / Dr.GRPO 的归约之争是同一轴，见 `baidu-grpo-loss-agg`。多 AllReduce 不会修好错误的归约，只会放大它。
+DP 下 token 数不一致时，先对 local 有效 token 求和再全局除总 token，才是 token-mean。先各 rank 平均再 AVG，是样本等权，长序列被摊薄。这和 DAPO / Dr.GRPO 的归约之争是同一轴，见 `baidu-grpo-loss-agg`。多 AllReduce 不会修好错误的归约，只会放大它。
 
 ## 追问
 

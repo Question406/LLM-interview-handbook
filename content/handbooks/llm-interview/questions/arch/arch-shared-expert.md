@@ -4,10 +4,7 @@ section: arch
 order: 203
 level: A
 title: Shared expert 和 routed expert 怎么分工？什么时候必须留 shared？
-quick: >-
-  Shared 对每个 token 常开，承接公共变换；routed 走 top-$k$，承接长尾专长。细粒度 MoE（专家又多又小、$k/N$
-  很小）必须留 shared，否则公共知识被复制进所有专家或挤进少数热点。总参数按全部专家计，激活 FLOPs 只计
-  shared $+k$ 路。
+quick: "Shared 对每个 文本处理单位（token） 常开，承接公共变换；routed 走 top-$k$，承接长尾专长。细粒度 MoE（专家又多又小、$k/N$ 很小）必须留 shared，否则公共知识被复制进所有专家或挤进少数热点。总参数按全部专家计，激活 FLOPs 只计 shared $+k$ 路。"
 tags:
   - MoE
   - DeepSeek
@@ -25,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：把「671B 总参数」当成每 token FLOPs，或把 shared 说成又一个 routed expert。DeepSeekMoE / V3 把 FFN 拆成常开的共享专家和稀疏的路由专家。负载怎么均见 `arch-moe-balance`、`arch-moe-noaux`；专家怎么切卡见 `sys-expert-parallel`。本题只问分工和「什么时候不能省掉 shared」。
+常见误区是：把「671B 总参数」当成每 文本处理单位（token） FLOPs，或把 shared 说成又一个 routed expert。DeepSeekMoE / V3 把 FFN 拆成常开的共享专家和稀疏的路由专家。负载怎么均见 `arch-moe-balance`、`arch-moe-noaux`；专家怎么切卡见 `sys-expert-parallel`。本题只问分工和「什么时候不能省掉 shared」。
 
 ## 分工：公共通道 vs 长尾专家
 
@@ -53,12 +50,12 @@ DeepSeekMoE 还有细粒度切分：把原来一个大 FFN 切成很多小专家
 
 EP 布局也不同：routed 按专家切卡，token 要 all-to-all；shared 每 token 都要，通常复制在每张卡上（或只做 TP 切矩阵），不走 dispatch。面试若把 shared 也画进 EP all-to-all，通信模式就错了。通信与计算怎么叠见 `sys-expert-parallel`。
 
-shared 买的是与路由无关的稠密底；routed 买的是可扩展的专长容量。细粒度不留 shared，专长还没长出来，公共能力已经在抢热点。
+shared 提供不依赖路由选择的公共计算，routed 扩展专长容量。细粒度模型缺少共享通道时，公共计算可能重复占用专家容量，或形成路由热点。
 
 ## 追问
 
 - **shared 要不要进 top-$k$ 计数？** 不要。它在 $k$ 之外，激活路数是 $n_{\mathrm{s}}+k$。把「激活 8 专家」说成含 shared，和 V3 对不上。
 - **多条 shared 干什么？** 容量更大的公共底；一般仍远小于 routed 总数。不是再做一次稀疏路由。
-- **shared 会不会变成新的稠密瓶颈？** 会。它每 token 都算，decode 时带宽和 FLOPs 都在。过大就退回稠密 FFN，稀疏的好处被吃掉。
+- **shared 会不会变成新的稠密瓶颈？** 会。它每 token 都算，逐 token 生成（decode） 时带宽和 FLOPs 都在。过大就退回稠密 FFN，稀疏的好处被吃掉。
 - **和 aux loss 的关系？** 隔离公共流量后，routed 的均衡目标更干净。没有 shared 时 aux 往往既要均负载又要保住语言建模，和主损失抢参数，见 `arch-moe-balance`。
 - **手算激活 FFN 参数？** $(n_{\mathrm{s}}+k)\times$（单个专家参数），不要乘 $N$。总参数才乘 $N$。

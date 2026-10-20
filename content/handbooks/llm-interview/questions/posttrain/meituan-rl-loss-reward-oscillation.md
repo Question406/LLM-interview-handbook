@@ -4,9 +4,7 @@ section: posttrain
 order: 103
 level: S
 title: 美团：RL 过程中的 reward 或 loss 震荡严重，如何排查？
-quick: >-
-  先按数据、reward、policy 与系统四层拆监控：成功率、reward 分布/方差、KL、entropy、梯度范数、有效 token、
-  版本滞后和 NaN。用固定种子与小规模复现实验逐个关掉变量；不能只靠平滑曲线或盲目调低学习率。
+quick: "从数据、reward、策略和系统四层检查：任务成功率、奖励分布与方差、KL、熵、梯度范数、有效 token 数、策略版本滞后和 NaN。用固定种子在小规模环境中复现，每次只改一个因素，不能靠平滑曲线或盲目降低学习率。"
 tags:
   - Meituan
   - RL Training
@@ -30,14 +28,14 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位与发帖时间明确，届别和轮次未披露）
 - 原始措辞：**“RL 过程中 reward 或者 loss 震荡严重，怎么办？”**
 
-错法：只对曲线做滑动平均，或盲目把学习率砍半。先明确震荡的是 reward 还是 loss，以及它是否伤害最终 success。很多「震荡」来自组间难度不齐或 parser 偶发，平滑会把坏问题盖住。GRPO 里优势要除以组内 $\sigma$，loss 比 reward 更抖是预期，要用 holdout success 判决，不要用 $L$ 判决。排查要分层监控、单变量复现，别只背「把 lr 改小」。
+常见误区是：只对曲线做滑动平均，或盲目把学习率砍半。先明确震荡的是 reward 还是 loss，以及它是否伤害最终 success。很多「震荡」来自组间难度不齐或 parser 偶发，平滑会把坏问题盖住。GRPO 里优势要除以组内 $\sigma$，loss 比 reward 更抖是预期，要用 holdout success 判决，不要用 $L$ 判决。排查要分层监控、单变量复现，别只背「把 lr 改小」。
 
 ## 1. 四层监控，先定位哪一层在跳
 
-按 rollout 版本、任务桶和长度记录：reward 均值 / 方差、有效组比例、pass@k、KL、entropy、clip fraction、advantage 标准差、梯度范数、NaN / overflow、actor-rollout policy lag、有效 token 数。缺一项就不能说「已经排查过」。
+按 采样轨迹（rollout） 版本、任务桶和长度记录：奖励均值 / 方差、有效组比例、pass@k、KL、entropy、clip fraction、advantage 标准差、梯度范数、NaN / overflow、actor-rollout policy lag、有效 token 数。缺一项就不能说「已经排查过」。
 
-- **Reward 跳**：parser / verifier 不稳定（同一轨迹重打分不一致）、数据混入、长度分布变、偶发全对全错组让 $\sigma$ 起伏；
-- **Loss 跳**：reward 尺度没对齐、长尾 token、学习率、batch 过小、分布式 all-reduce 数值问题、$\rho$ 极端、advantage whitening 在小 $G$ 上很噪。
+- **Reward 跳**：parser / 验证器（verifier） 不稳定（同一轨迹重打分不一致）、数据混入、长度分布变、偶发全对全错组让 $\sigma$ 起伏；
+- **Loss 跳**：奖励尺度没对齐、长尾 token、学习率、batch 过小、分布式 all-reduce 数值问题、$\rho$ 极端、advantage whitening 在小 $G$ 上很噪。
 
 公式
 
@@ -49,7 +47,7 @@ $$
 
 ## 2. 复现实验：一次只关一个变量
 
-固定 prompt、seed、模型快照和单机小 batch 重现，再逐项：冻结数据和 verifier、固定温度、检查归一化 / whitening、缩小更新步长或增大有效 token batch、调 KL / clip / entropy、对极端 advantage 截断。最后放回异步 pipeline，看 policy lag 是否把已复现的稳定又打回去。失败：在异步大集群上同时改五个超参，永远不知道是谁修好的。只在复现确认是更新步长过大之后再降 lr；否则降 lr 只是把崩溃变慢。
+固定 输入提示（prompt）、seed、模型快照和单机小 batch 重现，再逐项：冻结数据和 verifier、固定温度、检查归一化 / whitening、缩小更新步长或增大有效 token batch、调 KL / clip / entropy、对极端 advantage 截断。最后放回异步 pipeline，看 policy lag 是否再次破坏稳定性。失败：在异步大集群上同时改五个超参，永远不知道是谁修好的。只在复现确认是更新步长过大之后再降 lr；否则降 lr 只是把崩溃变慢。
 
 系统层常被忽略：rollout 与 learner 版本不一致，logprob 和采样政策对不上，$\rho$ 会疯。先对齐版本再调算法。有效 token 过少时，token-mean 和 seq-mean 的切换也会让 loss 尺度跳一档，看起来像震荡。
 

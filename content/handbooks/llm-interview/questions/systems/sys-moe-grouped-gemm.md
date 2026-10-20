@@ -4,10 +4,7 @@ section: systems
 order: 36
 level: S
 title: MoE 专家计算为什么要用 Grouped GEMM，而不是 for-loop 或 pad 成 batched GEMM？
-quick: >-
-  各专家的 token 数 $n_i$ 不同。For-loop 每次 kernel 启动太碎；按 $\max n_i$ 或 capacity
-  $C$ padding 会白算空位。Grouped GEMM 一次 kernel 吃进一组变长 $(n_i,d,d_{\mathrm{ff}})$，把稀疏
-  MoE 重新变成高占用矩阵乘。负载不均时它救不了最慢专家，只救启动开销和 padding。
+quick: "各专家的 token 数 $n_i$ 不同：for-loop 的 kernel 启动太碎，pad 成 batched GEMM 会白算空位。Grouped GEMM 一次 kernel 处理变长的各组，既不 padding 也只启动一次。"
 tags:
   - MoE
   - Grouped GEMM
@@ -25,7 +22,7 @@ sources:
     type: primary
 ---
 
-这块容易把 MoE 前向画成「$N$ 个 `nn.Linear` 循环」。白板能过，上卡就死在 kernel launch 和空算。Permute 之后每个专家拿到一段连续 token，贵的是怎么喂进 Tensor Core。三种喂法对应三种浪费。
+这块容易把 MoE 前向画成「$N$ 个 `nn.Linear` 循环」。伪代码容易写，但实际运行会因频繁 kernel launch 和无效计算变慢。Permute 之后每个专家拿到一段连续 token，贵的是怎么喂进 Tensor Core。三种喂法对应三种浪费。
 
 ## 三种算子
 

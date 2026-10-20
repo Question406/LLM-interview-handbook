@@ -5,7 +5,7 @@ order: 7
 level: S
 title: 真题：Streaming Parser 中 think/tool tag 可能跨 chunk，怎么写？
 quick: >-
-  不能对整个缓冲做一次 replace 或 regex。需要有限状态机，外加 pending suffix buffer。只消费已经确定不可能构成 tag
+  不能对整个缓冲做一次 replace 或 regex。需要用有限状态机记录当前处于哪种内容，再用 pending suffix buffer 暂存可能尚未接收完整的标签。只消费已经确定不可能构成 tag
   的前缀，把最长「可能是 tag 前缀」的 suffix 留给下一个 chunk。
 tags:
   - Agent
@@ -20,7 +20,7 @@ sources:
     url: 'https://www.nowcoder.com/feed/main/detail/24952c828c59435abd3c302c97fa358d'
     type: legacy-reference
 ---
-<div class="quick"><div class="mini-title">30 秒回答</div><p>不能对整个缓冲做一次 replace 或 regex。需要有限状态机，外加 pending suffix buffer。只消费已经确定不可能构成 tag 的前缀，把最长「可能是 tag 前缀」的 suffix 留给下一个 chunk。</p></div>
+<div class="quick"><div class="mini-title">30 秒回答</div><p>不能对整个缓冲做一次 replace 或 regex。需要用有限状态机记录当前处于哪种内容，再用 pending suffix buffer 暂存可能尚未接收完整的标签。只消费已经确定不可能构成 tag 的前缀，把最长「可能是 tag 前缀」的 suffix 留给下一个 chunk。</p></div>
           <div class="full-answer"><div class="mini-title">完整答案</div><pre><code data-lang="python">class StreamParser:
     def __init__(self):
         self.state = &quot;NORMAL&quot;

@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-架构直觉见 `arch-swiglu`、美团口述见 `meituan-swiglu`。本题要能写前向、报形状、并推出为什么中间维不是 $4d$。错法：写成两矩阵 GELU FFN，或三矩阵仍用 $4d$ 把层做贵 1.5 倍。
+架构直觉见 `arch-swiglu`、美团口述见 `meituan-swiglu`。本题要能写前向、报形状、并推出为什么中间维不是 $4d$。常见误区是：写成两矩阵 GELU FFN，或三矩阵仍用 $4d$ 把层做贵 1.5 倍。
 
 ## 公式与形状
 

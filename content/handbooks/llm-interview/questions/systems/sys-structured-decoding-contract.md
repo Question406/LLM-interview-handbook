@@ -4,9 +4,7 @@ section: systems
 order: 21
 level: S
 title: JSON Schema / Grammar constrained decoding 能保证什么，不能保证什么？
-quick: >-
-  它能在解码阶段保证合法 token、JSON/grammar 和部分字段约束；不能保证业务语义、权限、SQL 安全或参数真的可执行。仍要服务端
-  validation、canonicalization、policy check，并量约束的延迟和吞吐代价。
+quick: "它能在解码阶段保证合法 token、JSON/grammar 和部分字段约束；不能保证业务语义、权限、SQL 安全或参数真的可执行。仍要服务端 validation、canonicalization、policy check，并量约束的延迟和吞吐代价。"
 tags:
   - Structured Output
   - Constrained Decoding
@@ -24,13 +22,13 @@ sources:
     type: primary
 ---
 
-Constrained decoding 只在 token 集合上干活：每一步把不在文法里的 logit 掩掉。它保证的是句法契约，不是业务契约。把这层和鉴权、对象归属、幂等、沙箱叠在一起讲，才像在设计执行器；只讲 grammar 编译和加速，像在背 serving 特性列表。合法空间里仍然什么都能装，追问通常会转到权限，而不是再问一个 JSON 库。
+Constrained decoding 只约束每一步允许生成的 token 集合：每一步把不在文法里的 logit 掩掉。它保证的是句法契约，不是业务契约。把这层和鉴权、对象归属、幂等、沙箱叠在一起讲，才像在设计执行器；只讲 grammar 编译和加速，像在背 serving 特性列表。合法空间里仍然什么都能装，追问通常会转到权限，而不是再问一个 JSON 库。
 
 ## 它能保证什么
 
 Grammar / JSON Schema / FSM / 正则在解码时维护一个合法下一 token 集合。因此可以保证：
 
-- 括号与逗号匹配、字段名落在 schema 里、类型是 string / number / boolean / enum
+- 括号与逗号匹配、字段名符合 schema、类型是 string / number / boolean / enum
 - 必填键出现、额外键被禁止（若 schema 这么写）
 - 工具名来自允许列表、枚举参数不会冒出新词
 
@@ -54,14 +52,14 @@ Schema drift 是另一类失败：线上工具已经加字段、模型还在旧 
 
 ## 上线要测的代价
 
-Constrained decode 不是免费的。每步编译 / 推进 FSM、构造 mask、与 CUDA graph / prefix cache 互动都会增加延迟。验收至少看：
+Constrained 逐 token 生成（decode） 不是免费的。每步编译 / 推进 FSM、构造 mask、与 CUDA graph / prefix cache 互动都会增加延迟。验收至少看：
 
-- 相对自由解码的 TTFT / TPOT / 吞吐
+- 相对自由解码的 首个 token 的等待时间（TTFT） / TPOT / 吞吐
 - mask 构建与 grammar 编译是否在请求路径上
 - fallback / repair 率（约束失败或模型卡在死状态）
 - 结构化字段的业务通过率，而不是 JSON parse 率
 
-Grammar 应在服务启动或 schema 变更时编译好缓存，不要每请求从文本现场构建。CUDA graph 与动态 mask 冲突时，要么放弃 graph、要么把合法 token 集合分桶。测延迟要用真实 schema，玩具 JSON 看不出嵌套 enum 的 mask 成本。上线前用同一流量回放自由解码当基线，避免把模型变慢误当成约束的锅。
+Grammar 应在服务启动或 schema 变更时编译好缓存，不要每请求从文本现场构建。CUDA graph 与动态 mask 冲突时，要么放弃 graph、要么把合法 token 集合分组统计。测延迟要用真实 schema，玩具 JSON 看不出嵌套 enum 的 mask 成本。上线前用同一流量回放自由解码当基线，避免把模型变慢误当成约束的锅。
 
 死状态（prefix 合法但无法闭合）要有超时和降级：放宽 schema、改异步、或返回可诊断错误，而不是无限生成空白填充。
 

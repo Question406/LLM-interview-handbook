@@ -4,9 +4,7 @@ section: arch
 order: 24
 level: A
 title: Router z-loss 惩罚的是什么？和 aux load-balance 为什么不是同一个旋钮？
-quick: >-
-  Z-loss 惩罚每个 token 上 router logits 的 log-sum-exp 平方，把分数压在不大的范围，避免 softmax/sigmoid
-  溢出和「自信到只认一个专家」。Aux 惩罚的是专家之间的流量不均。一个管数值幅度，一个管负载直方图，系数要分开扫。
+quick: "Z-loss 惩罚每个 token 的 router logits 的 log-sum-exp 平方，限制分数幅度，减少数值溢出和门控过度集中的问题。Aux loss 约束专家之间的流量差异。二者分别控制数值幅度和负载，系数要单独调。"
 tags:
   - MoE
   - Router
@@ -25,7 +23,7 @@ sources:
     type: primary
 ---
 
-错法：把 z-loss 说成「又一种负载均衡」。面试官若追问「那和 $N\sum_i f_i P_i$ 有何不同」，答成同一件事就漏了。ST-MoE 把 logits 幅度单独正则掉，因为 MoE 训练后期 router 分数容易涨到极大，softmax 变成 one-hot，FP16 下还溢出。
+常见误区是：把 z-loss 说成「又一种负载均衡」。面试官若追问「那和 $N\sum_i f_i P_i$ 有何不同」，答成同一件事就漏了。ST-MoE 把 logits 幅度单独正则掉，因为 MoE 训练后期 router 分数容易涨到极大，softmax 变成 one-hot，FP16 下还溢出。
 
 ## 公式
 
@@ -36,7 +34,7 @@ $$
 =\frac1T\sum_{t=1}^{T}\mathrm{LSE}(z_t)^2.
 $$
 
-$\mathrm{LSE}$ 就是 softmax 的分母的对数。它大，说明这一行 logits 整体偏大或极度尖锐。平方后对「已经很大」的 token 惩罚更重。实现用 `logsumexp`，不要先 `exp` 再 `sum` 再 `log`。系数 $\alpha_z$ 通常远小于 aux（ST-MoE 量级 $10^{-3}$ 到 $10^{-2}$ 量级，以论文为准），加在主 CE 上：
+$\mathrm{LSE}$ 就是 softmax 的分母的对数。它大，说明这一行 logits 整体偏大或极度尖锐。平方后对「已经很大」的 token 惩罚更重。实现用 `logsumexp`，不要先 `exp` 再 `sum` 再 `log`。系数 $\alpha_z$ 通常远小于 aux（ST-MoE 量级 $10^{-3}$ 到 $10^{-2}$ 量级，以论文为准），加在主交叉熵损失（CE）上：
 
 $$
 \mathcal{L}=\mathcal{L}_{\mathrm{LM}}+\lambda\mathcal{L}_{\mathrm{aux}}+\alpha_z\mathcal{L}_z.

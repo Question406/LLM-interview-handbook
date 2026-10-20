@@ -5,7 +5,7 @@ order: 211
 level: A
 title: 腾讯混元：除了 DeepSpeed，训练还能靠哪些优化？
 quick: >-
-  并行切 Megatron 式 TP/PP/SP；内存切 activation checkpoint、CPU/NVMe
+  并行可用 Megatron 式 TP/PP/SP；减少内存占用可用 activation checkpoint、CPU/NVMe
   offload、LoRA；算子切 FlashAttention / fused kernel；框架切 FSDP2。先说瓶颈是算力、显存还是通信，再点名对应手段。
 tags:
   - Tencent
@@ -37,7 +37,7 @@ sources:
 
 ## 先按瓶颈分层
 
-- **放不下**：ZeRO / FSDP 分状态；activation checkpoint 用重算换显存；CPU / NVMe offload；减序列或开序列并行 / 上下文并行。ZeRO 不切 activation，长序列仍会 OOM，见 `sys-memory`。把「开了 ZeRO-3」当成显存问题的终点，下一问 8k SFT 仍会炸。
+- **放不下**：ZeRO / FSDP 分状态；activation checkpoint 用重算换显存；CPU / NVMe offload；减序列或开序列并行 / 上下文并行。ZeRO 不切 activation，长序列仍会 OOM，见 `sys-memory`。把「开了 ZeRO-3」当成显存问题的终点，下一问 8k 监督微调（SFT） 仍会出现数值异常。
 - **算不满**：FlashAttention、fused softmax / LayerNorm、更大有效 micro-batch、通信重叠。MFU 低先看是否在等 all-reduce、是否被 padding 稀释、data loader 是否 stall。算子优化改变的是同一层算得快不快，不是切参数。
 - **跨节点慢**：减 PP bubble（1F1B、更合理的 micro-batch 数）、TP size 不要跨过节点、小模型别过早上 ZeRO-3（每层 gather 比计算还贵）。通信是瓶颈时再堆分片会更慢。
 - **微调场景**：LoRA / QLoRA 往往比再堆并行更划算。可训参数掉两个数量级，优化器状态跟着掉。底座冻结后，DeepSpeed 可能根本不是第一杠杆。

@@ -4,11 +4,7 @@ section: rl-coding
 order: 11
 level: S
 title: Miles 里 GRPO / GSPO / PPO 的代码从 train.py 走到哪？
-quick: >-
-  Miles 是 slime 的分支：SGLang 采样，Megatron 或 FSDP2 训练。组内减均值发生在
-  `train_data_conversion._normalize_rewards_by_rollout`，进 loss 之前。GSPO 不换
-  `compute_policy_loss`，只把 `ppo_kl` 改成整段 log-ratio 的平均再广播。Clip 和 dual-clip
-  都在 `math_utils.compute_policy_loss`。
+quick: "组内标准化在 rollout 打包阶段的 `_normalize_rewards_by_rollout` 完成，loss 前就已改好 reward。Clip 都在 `compute_policy_loss`，GSPO 只把送进去的 `ppo_kl` 换成序列平均。"
 tags:
   - Miles
   - slime
@@ -38,7 +34,7 @@ sources:
 `train.py` 的 `train()` 是同步环。异步环在 `train_async.py`，开头就断言 `--fully-async` 不能进 `train.py`。
 
 1. `create_rollout_components` 拉起 SGLang 引擎和 `RolloutExecutor`。
-2. `create_training_models` 建 actor；`--advantage-estimator ppo` 时 `arguments.py` 把 `use_critic` 设成真，才会有 critic。
+2. `create_training_models` 建 actor；`--advantage-estimator ppo` 时 `arguments.py` 把 `use_critic` 设成真，才会有 价值评估模型（critic）。
 3. 第一次 `update_weights`，把训练权重推到 SGLang，再开始采样。
 4. 每个 `rollout_id`：`inference_controller.prepare_rollout` → `rollout_executor.get` 拿到这一批轨迹。colocate 时按 `--offload-rollout` / `--offload-train` 把 KV、权重在推理和训练之间腾挪。
 5. 有 critic：先 `critic_model.train`，把它的 value 当 `external_data` 传给 `actor_model.train`。没有 critic：actor 单独 `train`。
@@ -46,11 +42,11 @@ sources:
 
 奖励的组内标准化不在 actor 的 backward 里。`ray/rollout/train_data_conversion.py` 的 `_post_process_rewards` 在样本打包进训练之前就改好 `reward`。
 
-## 优势：先改标量 reward，再铺到 token
+## 优势：先处理标量奖励，再分配到 token
 
 `_normalize_rewards_by_rollout` 只对 `grpo`、`gspo`、`reinforce_plus_plus_baseline` 且 `rewards_normalization` 为真时运行（关掉用 `--disable-rewards-normalization`）。分组优先用样本上的 `group_index`；没有的话，若条数正好是 `rollout_batch_size * n_samples_per_prompt`，就按 `--n-samples-per-prompt` 切块。
 
-同一条 rollout 的多段（多轮切出来的 sibling）必须共享一个 reward，否则直接报错。组内先减均值。再除标准差要同时满足：估计器是 `grpo` 或 `gspo`、`grpo_std_normalization` 为真（默认真，`--disable-grpo-std-normalization` 关掉，注释写明这是 Dr.GRPO）、以及组长度大于 1。标准差用 `tensor.std()`（无偏，除 $G-1$），分母是 `std + 1e-6`，且 `std > 0` 才除。`n_samples_per_prompt == 1` 时参数解析会把 `grpo_std_normalization` 强制改成假。
+同一条 采样轨迹（rollout） 的多段（多轮切出来的 sibling）必须共享一个 reward，否则直接报错。组内先减均值。再除标准差要同时满足：估计器是 `grpo` 或 `gspo`、`grpo_std_normalization` 为真（默认真，`--disable-grpo-std-normalization` 关掉，注释写明这是 Dr.GRPO）、以及组长度大于 1。标准差用 `tensor.std()`（无偏，除 $G-1$），分母是 `std + 1e-6`，且 `std > 0` 才除。`n_samples_per_prompt == 1` 时参数解析会把 `grpo_std_normalization` 强制改成假。
 
 进 trainer 之后，`loss.py` 的 `compute_advantages_and_returns` 只在 pipeline 最后一阶跑。它先算 actor logprob 相对 ref 的 KL（`kl_coef == 0` 或没有 logprob 时 KL 张量是 0），再进 `advantages.py` 的 `compute_advantages`：
 

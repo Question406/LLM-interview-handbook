@@ -33,5 +33,5 @@ sources: []
                 await backoff(attempt)
                 continue
             raise
-    raise RuntimeError(&quot;retry budget exhausted&quot;)</code></pre><p>GET、search 这类幂等 read 通常可以安全重试。send_money、send_email、delete 或 create resource，可能产生重复副作用。理想 API 在服务端用 idempotency key 建唯一执行记录，客户端重复请求拿到同一结果。</p><p>错误至少要分成：4xx invalid argument 或 permission，通常不该重试；429/5xx/transient，可以退避；unknown outcome，先查状态；semantic failure，需要模型改 action，而不是把原调用再打一遍。</p></div>
+    raise RuntimeError(&quot;retry budget exhausted&quot;)</code></pre><p>GET、search 等幂等读操作通常可以安全重试。send_money、send_email、delete 或 create resource 可能产生重复副作用。服务端应按 idempotency key 保存唯一执行记录，让客户端重复请求时获得同一个结果。</p><p>错误至少要分成：4xx invalid argument 或 permission，通常不该重试；429/5xx/transient，可以退避；unknown outcome，先查状态；semantic failure，需要模型改 action，而不是把原调用再打一遍。</p></div>
           <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>Exactly-once 真能严格做到吗？</summary><div class="follow-answer"><p>跨分布式系统里所谓 exactly once，常常是靠幂等的 side effect 加可持久化的 transaction state，做成可观察上的一次。网络层仍可能是 at-least-once delivery。我会把 transport 和业务语义分开讲。</p></div></details></div>

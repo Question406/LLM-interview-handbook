@@ -4,8 +4,7 @@ section: posttrain
 order: 147
 level: S
 title: 小红书 Hi lab：DAPO 相对 GRPO 优化了什么？
-quick: >-
-  DAPO 针对 GRPO 的熵崩、过长响应和 clip 不对称等问题，引入 clip-higher、动态采样、token 级损失解耦等工程改动。面试应讲清改的是哪类失败，而不是背缩写。
+quick: "DAPO 针对 GRPO 的熵崩、过长响应和 clip 不对称等问题，引入 clip-higher、动态采样、token 级损失解耦等工程改动。面试应讲清改的是哪类失败，而不是背缩写。"
 tags:
   - Xiaohongshu
   - DAPO
@@ -32,11 +31,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“DAPO 相对于GRPO 的优化”**
 
-错法：把 DAPO 答成「更好的 GRPO」，或和「去 KL」混成一件事。GRPO 省 critic 之后，长链 RL 仍会在 clip、采样和长度上翻车；DAPO 改的是这些工程失败，不是换了一个新的优势公式。条目以论文为准，针对哪种 GRPO 病来讲。
+常见误区是：把 DAPO 答成「更好的 GRPO」，或和「去 KL」混成一件事。GRPO 省 价值评估模型（critic） 之后，很长的推理过程 强化学习（RL） 仍会在 clip、采样和长度上翻车；DAPO 改的是这些工程失败，不是换了一个新的优势公式。条目以论文为准，针对哪种 GRPO 病来讲。
 
 ## GRPO 实务上会踩哪些坑
 
-组相对优势 $A_i=(r_i-\bar r)/\sigma_r$ 能去掉 value model，但常见失败是：响应越训越长、熵掉、clip 上界过紧把稀有正向 token 卡死、组内全对 / 全错浪费样本。这些不是「没 critic」造成的，而是 clip 对称、序列等权损失和硬截断奖励叠在一起。先点名病，再对药。相关卡：`pt-grpo`、`pt-dapo`。
+组相对优势 $A_i=(r_i-\bar r)/\sigma_r$ 能去掉 value model，但常见失败是：响应越训越长、熵掉、clip 上界过紧把稀有正优势 token 的更新裁掉、组内全对 / 全错浪费样本。这些不是「没 critic」造成的，而是 clip 对称、序列等权损失和硬截断奖励叠在一起。先说明失败原因，再解释对应改动。相关卡：`pt-grpo`、`pt-dapo`。
 
 ## DAPO 四类改动分别治什么
 
@@ -54,6 +53,6 @@ sources:
 ## 追问
 
 - **Clip-Higher 和熵崩有什么关系？** 稀有好 token 的正向提升若很快被上界裁掉，策略更容易锁进已有高概率模式。
-- **Dynamic Sampling 会不会偏科？** 会。只保留当前可解 prompt 可能丢掉超难题，要用覆盖配额和再探测。
+- **Dynamic Sampling 会不会偏科？** 会。只保留当前可解 输入提示（prompt） 可能丢掉超难题，要用覆盖配额和再探测。
 - **去掉 KL 算不算 DAPO？** 不算。那是另一条取舍，见去 KL 卡；不要把后续工作的开关都贴到 DAPO 上。
-- **如何证明改动有效？** 按失败模式消融：无效 group 比例、平均长度、熵、clip fraction，而不是只报一个平均 reward。
+- **如何证明改动有效？** 按失败模式消融：无效 group 比例、平均长度、熵、clip fraction，而不是只报一个平均 奖励分数（reward）。

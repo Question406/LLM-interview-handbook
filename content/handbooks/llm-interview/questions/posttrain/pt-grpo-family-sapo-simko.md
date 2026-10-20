@@ -4,10 +4,7 @@ section: posttrain
 order: 246
 level: S
 title: 相对 GRPO，SAPO / MaxRL / SimKO 各改哪一层？
-quick: >-
-  都还用组相对优势，改的不是 baseline。SAPO 用温度控制的软门替代硬 clip，序列连贯且 token 可自适应。MaxRL
-  把期望奖励看成似然的一阶近似，用更多采样逼近 $\log p(\mathrm{correct})$。SimKO 在高熵 token 上把正梯度摊到
-  top-$K$ 候选、把负梯度打向 top-1，防止 pass@1 涨、pass@K 塌。
+quick: "三者都保留组相对优势。SAPO 把硬 clip 换成软门；MaxRL 把目标从 $\\mathbb{E}[p]$ 推向 $\\mathbb{E}[\\log p]$；SimKO 在高熵 token 上把正梯度摊给 top-$K$ 候选，防 pass@K 塌。"
 tags:
   - SAPO
   - MaxRL
@@ -35,7 +32,7 @@ DAPO / GSPO / CISPO / Dr.GRPO 手册里已有独立卡。面试若一次抛出 S
 
 | 方法 | 改的旋钮 | 被修的病 |
 | --- | --- | --- |
-| DAPO | 不对称 clip、动态采样、token-mean、overlong | 零方差组、稀有正 token、长度假标签，见 `pt-dapo` |
+| DAPO | 不对称 clip、动态采样、token-mean、overlong | 零方差组、稀有的正优势 token、长度假标签，见 `pt-dapo` |
 | GSPO | 序列 likelihood ratio | token 级 $\rho$ 方差、MoE 路由噪声，见 `pt-gspo` |
 | CISPO | detach 后截断 IS 权重 | 越界 token 梯度变 0，见 `pt-cispo` |
 | Dr.GRPO | 指出 std / 长度归一化的偏置 | 「默认 whitening 无偏」，见 `pt-drgrpo` |
@@ -59,11 +56,11 @@ $r\approx 1$ 时梯度几乎全留；偏离时平滑衰减，而不是像 PPO $\
 
 ## MaxRL：期望奖励只是似然的一阶
 
-任务奖励是终局 0/1 时，模型其实定义了 $p_\theta(\mathrm{correct}\mid x)$。标准 RL 最大化 $\mathbb{E}_x[p_\theta(x)]$；最大似然最大化 $\mathbb{E}_x[\log p_\theta(x)]$，等价于把梯度再乘 $1/p_\theta(x)$，更打困难题。MaxRL 用可调的采样计算在「期望奖励」和「真最大似然」之间插值，实现往往是对现有 GRPO / RLOO 改一行加权。它吃的是可验证二元反馈和额外 rollout；开放式 RM 任务不要硬套。
+任务奖励是终局 0/1 时，模型其实定义了 $p_\theta(\mathrm{correct}\mid x)$。标准强化学习（RL） 最大化 $\mathbb{E}_x[p_\theta(x)]$；最大似然最大化 $\mathbb{E}_x[\log p_\theta(x)]$，等价于把梯度再乘 $1/p_\theta(x)$，更打困难题。MaxRL 用可调的采样计算在「期望奖励」和「真最大似然」之间插值，实现往往是对现有 GRPO / RLOO 改一行加权。它吃的是可验证二元反馈和额外 采样轨迹（rollout）；开放式奖励模型（RM） 任务不要硬套。
 
 ## SimKO：保的是 next-token 的 top-$K$ support
 
-RLVR 之后常见 pass@1 涨、大 $K$ 的 pass@K 掉：每个位置的 top-1 候选把质量吸干，候选分布塌成一条链。SimKO（arxiv `2510.14807`，页面上也出现过 CaSP 这个名字）不改 reward，改高熵「分叉」token 上的梯度：
+基于可验证奖励的强化学习（RLVR） 之后常见 pass@1 涨、大 $K$ 的 pass@K 掉：每个位置的 top-1 候选把质量吸干，候选分布塌成一条链。SimKO（arxiv `2510.14807`，页面上也出现过 CaSP 这个名字）不改 奖励分数（reward），改高熵「分叉」token 上的梯度：
 
 - 答对：正梯度在 top-$K$ 候选之间摊，而不是只强化被采样的那一个。
 - 答错：更狠地打 top-1，把质量挤回其它候选。
@@ -75,7 +72,7 @@ RLVR 之后常见 pass@1 涨、大 $K$ 的 pass@K 掉：每个位置的 top-1 �
 ## 追问
 
 - **和 CISPO 谁更像？** CISPO 仍是硬截断权重，只是越界后还有 $\nabla\log\pi$。SAPO 连截断都变成连续门。一个改 clip 对象，一个改 clip 形状。
-- **MaxRL 是不是 pass@K loss？** 不是同一条公式。它逼近的是 $\log p(\mathrm{correct})$，采样越多越接近似然；pass@K 目标直接优化「$K$ 次里至少一次对」。两者都在纠正「只最大化平均 0-1 奖励」。
+- **MaxRL 是不是 pass@K 损失（loss）？** 不是同一条公式。它逼近的是 $\log p(\mathrm{correct})$，采样越多越接近似然；pass@K 目标直接优化「$K$ 次里至少一次对」。两者都在纠正「只最大化平均 0-1 奖励」。
 - **SimKO 要改采样吗？** 不必。还是 GRPO 式组采样，动的是正确 / 错误轨迹上 top 候选的梯度分配，尤其高熵位置。
 - **MoE 优先哪篇？** token 级 $\rho$ 方差大，先 GSPO / SAPO；多样性塌了再看 SimKO。不要三篇一起开。
 - **和 GFPO？** GFPO 先滤掉灌水回复再算组优势，动的是谁进梯度，见 `pt-gfpo`。SimKO 动的是留下的 token 上 top-$K$ 怎么分梯度。一个管长度，一个管候选 support。

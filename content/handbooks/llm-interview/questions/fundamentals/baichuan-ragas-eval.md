@@ -4,8 +4,7 @@ section: fundamentals
 order: 120
 level: A
 title: 百川智能：RAGAS 评估指标、流程和数据如何获取？
-quick: >-
-  RAGAS 这类指标把 RAG 拆成忠实度、答案相关性、上下文精确 / 召回，能用来回归管线，但不能替代业务成功。数据来自带证据的问答对，或线上抽样后再人工改。流程是固定检索快照、跑生成、算指标，再用一小批人标校准。
+quick: "RAGAS 从忠实度、答案相关性、上下文精确率和召回率等方面评估 RAG，适合检查版本变化，但还要单独测业务任务是否完成。数据可来自带证据的问答对，或经人工整理的线上样本。固定检索快照后跑生成、计算指标，再用人审样本校准。"
 tags:
   - Baichuan
   - RAGAS
@@ -32,7 +31,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“ragas评估指标 评估流程 数据如何获取”**
 
-错法：RAGAS 分数等于业务成功，或者每次改 prompt 偷偷改评测集。RAGAS 一类框架用 LLM-as-judge / 启发式，从一次调用的 query、contexts、answer 拆维度，适合回归检索到生成这条管线，但 judge 自己会漂，必须用小规模人工金标校准（`fund-judge`）。检索组合见 `fund-rag`；搜索与推荐不要混金标见 `baichuan-search-vs-rec`。同类拆分思路见 `ali-rag-eval`、`jd-rag-accuracy-eval`。
+常见误区是：RAGAS 分数等于业务成功，或者每次修改 prompt 时也改动评测集。RAGAS 一类框架用 LLM-as-judge / 启发式，从一次调用的 query、contexts、answer 拆维度，适合回归检索到生成这条管线，但 judge 自己会漂，必须用小规模人工金标校准（`fund-judge`）。检索组合见 `fund-rag`；搜索与推荐不要混金标见 `baichuan-search-vs-rec`。同类拆分思路见 `ali-rag-eval`、`jd-rag-accuracy-eval`。
 
 ## 指标拆什么
 

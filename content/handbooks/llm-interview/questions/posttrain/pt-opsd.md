@@ -4,10 +4,7 @@ section: posttrain
 order: 238
 level: S
 title: OPSD 和 OPD 差在哪？同一套权重怎么当自己的老师？
-quick: >-
-  OPD 是学生采样、外部教师给 token 级分布。OPSD（Self-Distilled Reasoner）教师和学生是同一套参数：学生只看题
-  $p_S(\cdot\mid x)$，教师多看特权正解 $p_T(\cdot\mid x,y^\star)$；在学生自己的前缀上最小化
-  $D(p_T\|p_S)$，梯度只走学生。不要说成「没有老师、自己 SFT 自己」。
+quick: "OPD 的教师是外部模型；OPSD 的教师是同一套权重，只是多看了正解 $y^\\star$。在学生自己采样的前缀上最小化 $D(p_T\\|p_S)$，梯度只回学生。"
 tags:
   - OPD
   - OPSD
@@ -33,7 +30,7 @@ sources:
 
 ## 三个角色，一套参数
 
-给定题 $x$ 和训练时可见的正解 / 标准 CoT $y^\star$，同一网络切成两个条件分布：
+给定题 $x$ 和训练时可见的正解 / 标准 思维链（CoT，即分步推理过程） $y^\star$，同一网络切成两个条件分布：
 
 $$
 p_S(\cdot\mid x)=\pi_{\theta}(\cdot\mid x),\qquad p_T(\cdot\mid x,y^\star)=\bar{\pi}(\cdot\mid x,y^\star).
@@ -45,13 +42,13 @@ $$
 \hat{y}\sim p_S(\cdot\mid x),
 $$
 
-然后在学生前缀 $\hat{y}_{\lt n}$ 上同时算下一 token 分布。教师不生成：只对同一前缀做一次前向，把「已经知道答案的自己」的分布写给学生。轨迹平均散度
+然后在学生前缀 $\hat{y}_{\lt n}$ 上同时算下一个 token 的分布。教师不生成：只对同一前缀做一次前向，把「已经知道答案的自己」的分布写给学生。轨迹平均散度
 
 $$
 D(p_T\|p_S)(\hat{y}\mid x)=\frac{1}{|\hat{y}|}\sum_n D\Big(p_T(\cdot\mid x,y^\star,\hat{y}_{\lt n})\,\Big\|\,p_S(\cdot\mid x,\hat{y}_{\lt n})\Big).
 $$
 
-$D$ 可以是 KL 或 $\mathrm{JSD}_\beta$。论文默认 $\beta=0$，即在该前缀上的全词表正向 $D_{\mathrm{KL}}(p_T\|p_S)$。梯度只回学生 logits。这和 STaR 不同：STaR 要教师显式写出 rationalization，再对答对的硬标签做 SFT；OPSD 即使学生终局错了，前缀上仍有稠密分布信号。对照卡 `pt-star-vs-opsd`。无 GT 时走 `pt-u-opsd`；多轮只有动作示范走 `pt-pi-distill`；特权本身要可学走 `pt-lopd`。
+$D$ 可以是 KL 或 $\mathrm{JSD}_\beta$。论文默认 $\beta=0$，即在该前缀上的全词表正向 $D_{\mathrm{KL}}(p_T\|p_S)$。梯度只回学生 logits。这和 STaR 不同：STaR 要教师显式写出 rationalization，再对答对的硬标签做 监督微调（SFT）；OPSD 即使学生终局错了，前缀上仍有稠密分布信号。对照卡 `pt-star-vs-opsd`。无 GT 时走 `pt-u-opsd`；多轮只有动作示范走 `pt-pi-distill`；特权本身要可学走 `pt-lopd`。
 
 谁采样（学生）决定状态 on-policy；谁进上下文（$y^\star$）决定教师比学生强；梯度只走没特权的那一侧。
 
@@ -59,8 +56,8 @@ $D$ 可以是 KL 或 $\mathrm{JSD}_\beta$。论文默认 $\beta=0$，即在该�
 
 | | 教师是谁 | 状态从哪来 | 每个 token 的信号 | 没有有效组时 |
 | --- | --- | --- | --- | --- |
-| 离线 KD / SFT | 外部或演示 | 教师轨迹 | 稠密，off-policy | 仍有 CE |
-| OPD | 通常更大的外部模型 | 学生 rollout | 稠密分布 | 仍有 KL |
+| 离线 KD / SFT | 外部或演示 | 教师轨迹 | 稠密，off-policy | 仍有 交叉熵损失（CE） |
+| OPD | 通常更大的外部模型 | 学生 采样轨迹（rollout） | 稠密分布 | 仍有 KL |
 | OPSD | 同权重 + $y^\star$ | 学生 rollout | 稠密分布 | 仍有 KL |
 | GRPO | 无教师 | 学生 rollout | 序列标量 $A$ | 全对/全错梯度没了 |
 
@@ -73,11 +70,11 @@ slime 的 `--use-opd` 是外部教师 KL 叠加在 advantage 上，不是 OPSD�
 ## 实现陷阱
 
 - **KL 方向。** Thinking Machines OPD 常把采样写在学生上，目标近 $D_{\mathrm{KL}}(\pi_S\|\pi_T)$（反向 / mode-seeking）。Zhao 的 OPSD 在学生前缀上算全词表 $D_{\mathrm{KL}}(p_T\|p_S)$，期望在教师下一 token 上，是正向 covering，但前缀仍是学生的。状态 on-policy 不等于下一 token KL 一定是反向。拼多多原问若说的是外部 OPD，先答反向；若说的是 OPSD 论文公式，先写 $D(p_T\|p_S)$。见 `pt-kd-forward-vs-reverse`、`pdd-forward-reverse-kl`。
-- **风格 token 霸榜。** `wait` / `think` / `therefore` 上的逐点 KL 往往远大于数学 token。不做 per-token pointwise clip，loss 会被连接词劫持，几百 step 就塌。仓库默认 clip 不是可选美化。
+- **风格 token 霸榜。** `wait` / `think` / `therefore` 上的逐点 KL 往往远大于数学 token。不做 per-token pointwise clip，损失可能主要由连接词贡献，几百 step 后训练就可能退化。仓库默认 clip 不是可选美化。
 - **全词表还是采样 token。** 默认全词表 $D(p_T\|p_S)$；`--use_tinker_loss` 只在采到的 token 上用 $r_n=\log p_T-\log p_S$，更省显存、更像 PG，也更依赖 clip。面试先报用的是哪一种，再谈 KL 方向。
 - **Thinking 开关。** 作者早期实验里 TM-off 学生 + TM-on 教师，数学 token 上的 KL 更大、下游更好。师生生成风格要显式配对，不要默认同一模板。
 - **师生共漂。** 教师若跟当前 $\theta$ 一起更新，特权分布会追着学生走，监督变软。冻初始策略或 EMA，等于隐式 $\pi_{\mathrm{ref}}$。SR-OPSD 把这件事做成显式插值，见 `pt-self-opd-family`。
-- **泄漏。** $y^\star$ 绝不能出现在学生上下文或评测 prompt。模板字段名、分隔符泄漏等于开卷考试。
+- **泄漏。** $y^\star$ 绝不能出现在学生上下文或评测 输入提示（prompt）。模板字段名、分隔符泄漏等于开卷考试。
 
 验收仍看去掉 $y^\star$ 之后的 pass@1 / pass@k，不要只看蒸馏 loss。loss 降、无特权准确率不动，说明在拟合「看答案时的口吻」，没有把能力迁到 $p_S$。
 

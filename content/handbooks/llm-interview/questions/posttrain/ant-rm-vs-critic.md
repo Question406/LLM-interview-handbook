@@ -4,9 +4,7 @@ section: posttrain
 order: 140
 level: S
 title: 蚂蚁：有了 Reward Model 为什么还需要 Critic？
-quick: >-
-  RM 给整段或可验证结果打标量奖励，不估计状态价值；Critic / value 预测 $V(s)$，给 GAE 做基线以降方差。没有
-  Critic，PPO 仍能跑，但优势估计更噪，长轨迹尤其不稳。
+quick: "奖励模型（RM） 给整段或可验证结果打标量奖励，不估计状态价值；Critic / value 预测 $V(s)$，给 GAE 做基线以降方差。没有 Critic，PPO 仍能跑，但优势估计更噪，长轨迹尤其不稳。"
 tags:
   - Ant Group
   - PPO
@@ -34,7 +32,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“为什么有了reward model还需要critic model？critic model作用是什么？”**
 
-错法：「RM 已经会估价值，所以不需要 critic」。RM（或规则 verifier）回答的是「这条轨迹好不好」，输出标量 $r(x,y)$；它不回答「在这个前缀状态下，当前策略的期望回报是多少」。PPO 更新用的是优势 $A_t$，没有基线就只剩高方差的 Monte Carlo 回报，长思维链尤其不稳。GRPO 用同题组均值代替 learned $V$，那是另一条估计器，不能反过来说 PPO 里的 RM 已经包含 critic，见 `sys-rl-group-n`。两个模型的标签、更新频率和故障模式都不同，混成一个「打分模型」当场穿帮。
+常见误区是：「RM 已经会估价值，所以不需要 critic」。奖励模型（RM）或规则验证器回答的是「这条轨迹好不好」，输出标量 $r(x,y)$；它不回答「在这个前缀状态下，当前策略的期望回报是多少」。PPO 更新用的是优势 $A_t$，没有基线就只剩高方差的 Monte Carlo 回报，长思维链尤其不稳。GRPO 用同题组均值代替 learned $V$，那是另一条估计器，不能反过来说 PPO 里的 RM 已经包含 价值评估模型（critic），见 `sys-rl-group-n`。两个模型的标签、更新频率和故障模式都不同，混成一个「打分模型」当场穿帮。
 
 ## 两个模型，两种标签
 
@@ -51,7 +49,7 @@ $$
 
 ## 谁可以弱化 Critic
 
-可验证、同一 prompt 能采到对错混合时，GRPO 用
+可验证、同一输入提示 能采到对错混合时，GRPO 用
 
 $$
 \hat A_i=\frac{r_i-\mathrm{mean}(r)}{\mathrm{std}(r)+\varepsilon}

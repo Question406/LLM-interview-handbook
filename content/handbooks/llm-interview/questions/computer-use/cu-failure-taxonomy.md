@@ -23,7 +23,7 @@ sources:
 
 ## 五层切分
 
-把 run 切成：observation（截图 / DOM / a11y 是否完整）、state interpretation（OCR、图标、当前页语义）、plan（下一步意图是否对）、action grounding（元素 / 坐标是否对）、execution verification（动作回执与业务状态是否一致）。环境层单独计：弹窗、超时、登录过期、站点改版。不要把环境故障记成 grounding 失败。关键控件不在截图也不在树里，应归观测 / 环境，而不是模型点不准。点击 API 成功不算 execution 成功，还要看焦点、URL、表单值和业务 oracle。每层都要有可检查的中间产物，不能只看最后一屏。
+按五层检查一次运行：observation 看截图、DOM 和无障碍信息是否完整；state interpretation 看 OCR、图标和页面语义是否理解正确；plan 看下一步意图是否正确；action grounding 看元素或坐标是否正确；execution verification 看动作回执与业务状态是否一致。环境层单独计：弹窗、超时、登录过期、站点改版。不要把环境故障记成 grounding 失败。关键控件不在截图也不在树里，应归观测 / 环境，而不是模型点不准。点击 API 成功不算 execution 成功，还要看焦点、URL、表单值和业务 oracle。每层都要有可检查的中间产物，不能只看最后一屏。
 
 ## 要记的字段
 

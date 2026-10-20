@@ -4,10 +4,7 @@ section: posttrain
 order: 21
 level: S
 title: CISPO 为什么 clip 的是 IS 权重，而不是 PPO 那样 clip surrogate？
-quick: >-
-  CISPO 把 $r_t=\pi_\theta/\pi_{\mathrm{old}}$ 截断后 detach 成常数系数，损失仍是
-  $\mathrm{sg}(\hat r_t)\hat A_t\log\pi_\theta$。每个 token 都有 $\nabla\log\pi$ 梯度；PPO/GRPO
-  的 $\min(\rho A,\mathrm{clip}(\rho)A)$ 会让越出 clip 区间的 token 梯度变 0。
+quick: "PPO 的 clipped surrogate 会让越界 token 梯度变 0。CISPO 只把 IS 权重截断并 detach，损失是 $\\mathrm{sg}(\\hat r_t)\\hat A_t\\log\\pi_\\theta$，每个 token 仍有梯度。"
 tags:
   - CISPO
   - GRPO
@@ -22,7 +19,7 @@ sources:
     type: primary
 ---
 
-错法：背成第四种完全无关的算法。CISPO 仍是 REINFORCE / GRPO 组优势，只是 off-policy 权重的截断方式换了。
+常见误区是：背成第四种完全无关的算法。CISPO 仍是 REINFORCE / GRPO 组优势，只是 off-policy 权重的截断方式换了。
 
 ## 它在修 PPO clip 的哪个缺陷
 
@@ -32,7 +29,7 @@ $$
 \min\big(\rho_t A_t,\;\mathrm{clip}(\rho_t,1-\varepsilon,1+\varepsilon)A_t\big).
 $$
 
-$\rho_t$ 一旦越出区间且处在「有利方向」，该项对 $\theta$ 的梯度为 0：这个 token 本轮被扔掉。长 CoT、多轮 off-policy reuse 时，低概率但关键的推理 token 更容易被 clip 掉，熵和探索会塌。
+$\rho_t$ 一旦越出区间且处在「有利方向」，该项对 $\theta$ 的梯度为 0：这个 token 本轮不贡献该项梯度。长 思维链（CoT，即分步推理过程）、多轮 off-policy reuse 时，低概率但关键的推理 token 更容易被 clip 掉，熵和探索会塌。
 
 CISPO 回到带 IS 校正的 REINFORCE，只截断权重：
 
@@ -46,7 +43,7 @@ $$
 
 $\mathrm{sg}(\cdot)$ 让 $\hat r$ 当常数。梯度始终走 $\log\pi$，所有 token 都贡献；过大的 $\rho$ 只是把系数封顶，避免方差爆炸。MiniMax-M1 实验里常把 $\varepsilon_{\mathrm{low}}^{\mathrm{IS}}$ 放得很宽，主要调上界。
 
-没有 clip 时，上式就是 token-level 的 IS-REINFORCE。Advantage 仍用 GRPO 组相对；loss 按 token 平均（和 DAPO / Dr.GRPO 的 token-level 聚合一致）。论文里默认不加 KL。
+没有 clip 时，上式就是 token-level 的 IS-REINFORCE。Advantage 仍用 GRPO 组相对；损失（loss） 按 token 平均（和 DAPO / Dr.GRPO 的 token-level 聚合一致）。论文里默认不加 KL。
 
 ## 和 GSPO 怎么分
 
@@ -56,7 +53,7 @@ $\mathrm{sg}(\cdot)$ 让 $\hat r$ 当常数。梯度始终走 $\log\pi$，所有
 | GSPO | sequence likelihood ratio | 序列 | 局部 token 噪声被几何平均压掉 |
 | CISPO | IS 权重 $\rho$，且 detach | token | 只封顶系数，梯度仍在 |
 
-现场口诀：GSPO 换 ratio 的粒度；CISPO 换 clip 的对象。slime 里 `--advantage-estimator cispo` 只是同一套 rollout 换 loss，不是另一套采样。
+GSPO 改变 ratio 的计算粒度，CISPO 改变 clip 的对象。slime 里 `--advantage-estimator cispo` 只是同一套 采样轨迹（rollout） 换 loss，不是另一套采样。
 
 ## 追问
 

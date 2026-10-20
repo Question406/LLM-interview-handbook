@@ -4,10 +4,7 @@ section: agent
 order: 205
 level: A
 title: 字节实习一面：RAG、Memory、Context Engineering 各解决什么，Coding Agent 里怎么配合？
-quick: >-
-  RAG 挂外部只读知识；Memory 存跨任务状态与偏好；Context Engineering
-  决定当前窗口放什么。Coding Agent 里仓库检索是 RAG，已确认约束是 Memory，当前 diff
-  与测试日志是精心挑选的上下文。三者别合成一个向量库。
+quick: "检索增强生成（RAG）提供外部只读资料；Memory 保存跨任务的状态和偏好；Context Engineering 决定当前上下文放什么。Coding Agent 用 RAG 检索仓库，用 Memory 保存已确认约束，再选择当前相关的 diff 和测试日志放进窗口。三者要分别管理。"
 tags:
   - ByteDance
   - RAG
@@ -30,7 +27,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“你怎么看 RAG、Memory 和 Context Engineering？这三者分别解决什么问题？在你的 Coding Agent 里是怎么配合的？”**
 
-错法：把三者塞进同一个向量库，或者把对话摘要既当检索证据又当长期事实。RAG、Memory、Context Engineering 解决的问题不同：外部只读知识、跨任务可写状态、当前窗口的预算与选择。混用后污染无法归因，分不清是索引脏、记忆写错，还是窗口塞错了。概念对照也可看 `meituan-memory-vs-rag`；Agent 与 RAG 的原理差见 `jd-agent-vs-rag`。
+常见误区是：把三者塞进同一个向量库，或者把对话摘要既当检索证据又当长期事实。检索增强生成（RAG）、Memory、Context Engineering 解决的问题不同：外部只读知识、跨任务可写状态、当前窗口的预算与选择。混用后污染无法归因，分不清是索引脏、记忆写错，还是窗口塞错了。概念对照也可看 `meituan-memory-vs-rag`；Agent 与 RAG 的原理差见 `jd-agent-vs-rag`。
 
 ## 三者分别解决什么
 
@@ -48,11 +45,11 @@ RAG 回答「去哪读」，Memory 回答「什么必须记住」，Context 回�
 
 顺序通常是：权限与任务目标 → 检索相关代码 → 把命中切片和硬约束装进窗口 → 改 → 跑测试 → 观察进短记忆。长记忆只在检索命中或任务类型匹配时注入，避免每次都把用户偏好清单顶满窗口。
 
-## 混用的病和评测怎么拆
+## 混用会出什么问题，怎样分别评测
 
-典型病：把对话摘要当 RAG 证据（摘要没有行号，无法跳转）；把检索到的 README 当长期记忆（文档改了摘要不过期）；把整个检索结果当 Context（噪声挤掉当前 diff）。污染纠错见 `byte-memory-pollution`。
+常见问题包括：把对话摘要当 RAG 证据（摘要没有行号，无法跳转）；把检索到的 README 当长期记忆（文档改了摘要不过期）；把整个检索结果当 Context（噪声挤掉当前 diff）。污染纠错见 `byte-memory-pollution`。
 
-评测必须分开：检索看命中率与证据 ID；Memory 看约束是否在后续任务仍被遵守、过期是否失效；Context 看窗口 token、硬约束是否还在、无关文件占比。合成一个「问答准确率」会把三种失败糊在一起。评测分三条曲线看，不拿向量库当主答案。
+评测必须分开：检索看命中率与证据 ID；Memory 看约束是否在后续任务仍被遵守、过期是否失效；Context 看窗口的 token 用量、是否保留硬约束，以及无关文件占比。合成一个「问答准确率」会把三种失败糊在一起。因此要分别评测三者，才能定位失败发生在哪一步。
 
 ## 追问
 

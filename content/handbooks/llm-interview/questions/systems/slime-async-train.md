@@ -4,11 +4,7 @@ section: systems
 order: 259
 level: S
 title: slime 的异步训练怎么开？挪 `ray.get` 和 `train_async.py` 是一回事吗？
-quick: >-
-  不是。默认 `train.py` 把训练循环摊开，同步点就是 `ray.get`：往后挪可以让下一轮 generate 和本轮
-  train 重叠，仍按 rollout 边界对齐。真正的 fully-async 要换 `train_async.py`，并设
-  `--rollout-function-path slime.rollout.fully_async_rollout.generate_rollout_fully_async`，后台队列跨
-  rollout 保活，不等最慢那条。换来策略 stale，要配 TIS / freshness。
+quick: "不是。挪 `ray.get` 只让下一轮 generate 和本轮 train 重叠，仍按 rollout 边界对齐；`train_async.py` 用后台队列跨 rollout 交组，不等最慢那条，但要用 TIS 等手段管 stale。"
 tags:
   - slime
   - Async RL
@@ -26,11 +22,11 @@ sources:
     type: primary
 ---
 
-错法：把「开了 `--colocate`」或「挪了一下 `ray.get`」说成已经做了异步 RL。官方故意不包一层 Trainer：`train.py` 就是时间线。我会画清 两种异步：一种仍按 `rollout_id` 切步，只是训推重叠；一种后台队列跨步保活，真正不等最慢那条。后者才叫 fully-async，换来的是 policy stale。Continuous batching 是第三层，只在引擎内部交错请求，见 `sys-cont-batch`，不要三层用同一个词。被追问「异步了没有」时，我先答是哪一层、stale 怎么管、卡是分的还是一体的。一体加 offload 时二、三层几乎叠不动，先分卡才有物理重叠窗口。吞吐涨而正确率掉，优先查 trajectory age 和 KL，而不是把 fully-async 当作免费加速器。
+常见误区是：把「开了 `--colocate`」或「挪了一下 `ray.get`」说成已经做了异步 强化学习（RL）。官方故意不包一层 Trainer：`train.py` 就是时间线。我会画清 两种异步：一种仍按 `rollout_id` 切步，只是训推重叠；一种后台队列跨步保活，真正不等最慢那条。后者才叫 fully-async，换来的是 policy stale。Continuous batching 是第三层，只在引擎内部交错请求，见 `sys-cont-batch`，不要三层用同一个词。被追问「异步了没有」时，我先答是哪一层、stale 怎么管、卡是分的还是一体的。一体加 offload 时二、三层几乎叠不动，先分卡才有物理重叠窗口。吞吐涨而正确率掉，优先查 trajectory age 和 KL，而不是把 fully-async 当作免费加速器。
 
 ## 轻量：挪 `ray.get`
 
-默认 `train.py` 里，generate 的 `ray.get` 是硬同步点：本轮轨迹没齐，train 不开始；train 没结束，下一轮 generate 不发。把 `ray.get` 往后挪，可以让下一轮 generate 和本轮 train 重叠。语义仍是：按 rollout 边界对齐，最慢那条 completion 仍决定这一步何时「齐」。
+默认 `train.py` 里，generate 的 `ray.get` 是硬同步点：本轮轨迹没齐，train 不开始；train 没结束，下一轮 generate 不发。把 `ray.get` 往后挪，可以让下一轮 generate 和本轮 train 重叠。语义仍是：按 采样轨迹（rollout） 边界对齐，最慢那条 completion 仍决定这一步何时「齐」。
 
 这适合中等长度、想先叠吞吐、还不想引入跨步 stale 的场景。轨迹相对 $\pi_{\mathrm{now}}$ 最多差半步到一步，ratio 还比较接近 1。colocate + offload 时 overlap 空间很小：训练要把 SGLang 挤出显存，物理上叠不动。分卡才吃得开这一档异步。别说「一体部署就是异步」。挪 `ray.get` 的正确位置是：本轮 train 启动之后、下轮 generate 的结果在用之前再 wait。挪得太早，仍是串行；挪过了「用结果」的点，会读到未完成的 future。我会读 `train.py`，不背 flag，因为官方就是让你看见这条时间线。
 
@@ -42,7 +38,7 @@ sources:
 
 后台 `AsyncRolloutWorker` 维持 in-flight 池，凑满 `rollout_batch_size` 组就交，不等「这一 rollout_id 的所有请求结束」。默认 generate 仍是 `sglang_rollout.generate_rollout`，两条路径不要混。Agent / 工具长尾时，最慢样本不再拖死一步，这才是换入口的理由。
 
-自定义 generate / RM 在 fully-async 下仍走 `--custom-generate-function-path` / `--custom-rm-path`，不要为了异步重写整个 loop。水位常见于 `sglang_server_concurrency`：队列太浅叠不上，太深则轨迹相对当前 $\theta$ 过旧。
+自定义 generate / 奖励模型（RM） 在 fully-async 下仍走 `--custom-generate-function-path` / `--custom-rm-path`，不要为了异步重写整个 loop。水位常见于 `sglang_server_concurrency`：队列太浅叠不上，太深则轨迹相对当前 $\theta$ 过旧。
 
 换来的是 stale：交上来的组可能生于 $k$ 步之前的权。要配 TIS（`--use-tis`）或 freshness / mask，盯 KL、$\rho$ 分位数、trajectory age。吞吐涨而 holdout 掉，就是异步把 off-policy 买过头了。veRL 用 staleness 阈值丢轨迹；slime 用队列水位和 IS / mask，见 `sys-rl-infra`。in-flight 池太深时，最旧的样本可能落后数十步，clip 也救不了 $\rho$ 偏离。可以设最大 age：超了就丢、重采，或只 mask 旧 token。Agent 长尾是 fully-async 的主场：工具调用 10 秒的那条不应堵住已经写完的 32 组。但环境失败、重试、session 状态要和队列语义对齐，否则会把半截 tool 轨迹当完整 episode。
 

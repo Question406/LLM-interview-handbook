@@ -4,10 +4,7 @@ section: arch
 order: 25
 level: A
 title: Dropless MoE（MegaBlocks）如何避免 token drop？和 capacity padding 差在哪？
-quick: >-
-  不按固定 $C$ 截断，而是让每个专家吃下路由给它的全部 token，用 block-sparse / grouped GEMM 吃变长
-  $n_i$。没有「这一层被静默 skip 的 token」，代价是动态 shape、更难 CUDA graph、热点专家仍会拖尾。Capacity
-  padding 是另一极端：形状固定但空位白算。
+quick: "Dropless 不按固定 $C$ 截断，而是让每个专家处理路由给它的全部 token，用块稀疏或分组 GEMM 处理变长的 $n_i$。这样不会因超容量跳过 token，但动态形状更难配合 CUDA graph，热点专家仍会增加尾延迟。Capacity padding 则固定形状，代价是空位也占用计算。"
 tags:
   - MoE
   - MegaBlocks
@@ -26,7 +23,7 @@ sources:
     type: primary
 ---
 
-错法：把 dropless 说成「没有容量限制所以一定更快」，或当成「把 CF 开到很大」。Switch 风格 MoE 为了静态 buffer，给每个专家一个上限 $C$，多出来的 token 丢掉；为了不 drop 又把 $C$ 开很大，则按上限 padding，空位照样占显存和通信。MegaBlocks 的 dMoE 走第三条路：ragged 专家规模 + 稀疏/分组 GEMM，token 按路由结果全算，不补齐到 $C$。
+常见误区是：把 dropless 说成「没有容量限制所以一定更快」，或当成「把 CF 开到很大」。Switch 风格 MoE 为了静态 buffer，给每个专家一个上限 $C$，丢掉超出容量的 token；为了不 drop 又把 $C$ 开很大，则按上限 padding，空位照样占显存和通信。MegaBlocks 的 dMoE 走第三条路：ragged 专家规模 + 稀疏/分组 GEMM，token 按路由结果全算，不补齐到 $C$。
 
 ## 三种实现的形状
 
@@ -40,9 +37,9 @@ MegaBlocks 把「token 按专家堆叠」看成一块 block-sparse 矩阵乘：�
 
 ## 仍要付的代价
 
-动态 shape。 $n_i$ 每步变，CUDA graph 捕获失败或频繁 recapture；和 EP all-to-all 的 overlap 一样，变长是根因，见 `sys-moe-alltoall-overlap`。推理 decode 更碎，往往另写 fused kernel，而不是训练这套 dMoE 图，见 `sys-moe-infer-prefill-decode`。
+动态 shape。 $n_i$ 每步变，CUDA graph 捕获失败或频繁 recapture；和 EP all-to-all 的 overlap 一样，变长是根因，见 `sys-moe-alltoall-overlap`。推理 逐 token 生成（decode） 更碎，往往另写 fused kernel，而不是训练这套 dMoE 图，见 `sys-moe-infer-prefill-decode`。
 
-热点仍然贵。 不 drop 只是不把质量问题藏成 skip：expert $3$ 拿到 $40\%$ token，那张卡的 grouped GEMM 和 dispatch 照样是 P99。Dropless 取消的是静默质量损失，不是取消负载均衡。Aux / bias 在 dMoE 里照样要，否则墙钟被最慢专家绑死。
+热点仍然贵。 不 drop 只是不把质量问题藏成 skip：expert $3$ 拿到 $40\%$ token，那张卡的 grouped GEMM 和 dispatch 照样是 P99。Dropless 取消的是静默质量损失，不是取消负载均衡。Aux / bias 在 dMoE 里照样要，否则实际耗时仍取决于最慢的专家。
 
 显存峰值随 $n_i$ 抖。 按 $C$ 预分配的实现峰值可预测；dropless 若按本步最大值分配，极端 batch 可能 OOM。工程上仍会设一个 soft cap：超过则 drop 或重路由，于是「dropless」在生产里常是「几乎 dropless」。
 
@@ -54,5 +51,5 @@ MegaBlocks 把「token 按专家堆叠」看成一块 block-sparse 矩阵乘：�
 
 - **Dropless 还要不要 capacity 这个变量？** 作为 soft 上限和显存预算要；作为「超出即丢、不进 backward」的硬开关尽量不要。
 - **和 expert-choice？** Expert-choice 用固定 $C$ 从另一头保证均衡，天然 pad-friendly，和 dMoE 的动机相反，见 `arch-moe-token-vs-expert-choice`。
-- **反向梯度？** 没有 drop 则每个被路由的 token 都进对应专家的 wgrad；热点专家梯度范数更大，要配均衡或专家级 lr 缩放，否则那几套权重先炸。
+- **反向梯度？** 没有 drop 则每个被路由的 token 都进对应专家的 wgrad；热点专家梯度范数更大，要配均衡或专家级 lr 缩放，否则这些专家的权重可能先出现不稳定。
 - **面试怎么收？** Drop 换质量；pad 换算力；dropless 换动态 shape。先说清换的是什么，再报框架名。

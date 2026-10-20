@@ -4,9 +4,7 @@ section: coding
 order: 181
 level: A
 title: 拼多多应用开发：如何手写交叉熵，数值上要防什么？
-quick: >-
-  对 logits 做 log-softmax 再按目标 token gather 取负。禁止先 softmax 再 $\log$，会下溢。实现上用
-  `logsumexp` 或 `log_softmax`，padding 位置 mask 掉再按有效 token 平均。
+quick: "对 logits 做 log-softmax 再按目标 token gather 取负。禁止先 softmax 再 $\\log$，会下溢。实现上用 `logsumexp` 或 `log_softmax`，padding 位置 mask 掉再按有效 token 平均。"
 tags:
   - PDD
   - Cross Entropy
@@ -30,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写交叉熵”**
 
-错法：先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。必须 log 域：减行最大值再 `logsumexp`。同面 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
+常见误区是：先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。必须 log 域：减行最大值再 `logsumexp`。同面 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
 
 ## 公式：NLL = $-z_y + \mathrm{logsumexp}(z)$
 
@@ -41,7 +39,7 @@ $$
 \mathrm{logsumexp}(z)=\max_j z_j+\log\sum_j e^{z_j-\max z}.
 $$
 
-减 max 不改变 softmax，但让指数落在 $(0,1]$。label smoothing 时目标不再 one-hot，变成对平滑分布的交叉熵。均匀初始化时 $\ell\approx\log V$：十万词表约 $11.5$，用来判断起步 loss 是否离谱。
+减 max 不改变 softmax，但让指数落在 $(0,1]$。label smoothing 时目标不再 one-hot，变成对平滑分布的交叉熵。均匀初始化时 $\ell\approx\log V$：十万词表约 $11.5$，用来判断初始 loss 是否离谱。
 
 ```python
 import torch
@@ -69,5 +67,5 @@ fp16 下 `exp` 仍可能溢，max 之后通常安全；极端值可升 fp32。�
 - **起步 loss 多少算正常？** 均匀约 $\log V$。7 万词表 $\approx 11.2$。若一开始是 0.1，多半 label 全是 ignore 或 logits 泄漏了答案。
 - **为什么 clamp target？** ignore 下标不能进 `gather`；clamp 后靠 mask 丢掉这些 NLL。
 - **label smoothing？** $q=(1-\varepsilon)e_y+\varepsilon/V$，loss 是 $-q\cdot\log\pi$，不是只取 $y$ 一列。
-- **和 KL？** 对 one-hot 的 CE 等于相对均匀基线的 KL 差一个常数。平滑后是对 $q$ 的 CE。
+- **和 KL？** 对 one-hot 的交叉熵损失（CE） 等于相对均匀基线的 KL 差一个常数。平滑后是对 $q$ 的 CE。
 - **分母用 batch 还是有效 token？** 必须有效 token。pad 多的 batch 否则 loss 被人为缩小。

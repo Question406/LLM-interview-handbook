@@ -4,10 +4,7 @@ section: systems
 order: 14
 level: A
 title: TTFT、TPOT、Throughput、Goodput 分别是什么？
-quick: >-
-  TTFT 是请求到第一个 token 的时间；TPOT 是后续 token 间平均时间；Throughput 是单位时间总
-  tokens/requests；Goodput 是满足 latency SLO 的有效吞吐。产品比较看 goodput 和 P99，不要只报
-  tokens/s。
+quick: "TTFT 是请求到达至输出第一个 token 的等待时间；TPOT 是后续 token 的平均间隔；Throughput 是单位时间生成的 token 数或处理的请求数；Goodput 只计算满足延迟 SLO 的有效吞吐。比较产品时要看 goodput 和 P99，不能只报 tokens/s。"
 tags:
   - Serving
   - Metrics
@@ -25,11 +22,11 @@ sources:
     type: primary
 ---
 
-这块容易只报 tokens/s。产品比较的是给定 TTFT / TPOT SLO 下还有多少有效吞吐。把 batch 开到最大，throughput 很好看，尾延迟已经打穿 SLA，这个数只是空转的繁忙。四个词要能画到同一条请求的时间轴上：到达 → 排队 → prefill（首 token）→ decode 循环（后续 token）。TTFT 覆盖前三段，TPOT 覆盖最后一段的平均，throughput 数所有段的 token，goodput 只数 SLO 内的请求。内部优化用 tokens/s 看引擎有没有喂饱，对外 SLA 用 goodput。回答「系统好不好」时我先报 goodput 和 P99，再报峰值吞吐。
+这块容易只报 tokens/s。产品比较的是给定 首个 token 的等待时间（TTFT） / TPOT SLO 下还有多少有效吞吐。把 batch 开到最大，throughput 很好看，尾延迟已经打穿 SLA，这个数只是空转的繁忙。四个词要能画到同一条请求的时间轴上：到达 → 排队 → 输入预填充（prefill，即处理输入并建立缓存）（首 token）→ 逐 token 生成（decode） 循环（后续 token）。TTFT 覆盖前三段，TPOT 覆盖最后一段的平均，throughput 数所有段的 token，goodput 只数 SLO 内的请求。内部优化用 tokens/s 看引擎有没有喂饱，对外 SLA 用 goodput。回答「系统好不好」时我先报 goodput 和 P99，再报峰值吞吐。
 
 ## TTFT 和 TPOT
 
-**TTFT**（time to first token）：请求到达服务，到第一个输出 token 离开。它叠了排队 + 取权重 / 调度 + **prefill**。长 prompt、chunked prefill 切得不好、队列里塞满 decode，TTFT 都会涨。vLLM 里常见直方图 `vllm:time_to_first_token_seconds`，口径要从 `arrival_time` 算起，含前端 tokenize，不只是 kernel 时间。
+**TTFT**（time to first token）：请求到达服务，到第一个输出 token 离开。它叠了排队 + 取权重 / 调度 + **prefill**。长 输入提示（prompt）、chunked prefill 切得不好、队列里塞满 decode，TTFT 都会涨。vLLM 里常见直方图 `vllm:time_to_first_token_seconds`，口径要从 `arrival_time` 算起，含前端 tokenize，不只是 kernel 时间。
 
 **TPOT**（time per output token）：第一个 token 之后，后续 token 的平均间隔，有时和 ITL（inter-token latency）混用。它主要受 decode：有效 batch、KV / 权重带宽、是否被一条大 prefill 打断。vLLM 用 `vllm:inter_token_latency_seconds`。输出只有 1 个 token 时 TPOT 无定义，benchmark 里常记 0，算 goodput 时要约定。
 

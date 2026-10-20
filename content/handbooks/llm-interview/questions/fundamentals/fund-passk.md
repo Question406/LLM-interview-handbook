@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法两处：把「$n$ 次里出现过一次正确」当成 $\mathrm{pass@}k$（那是 $\mathrm{pass@}n$）；以及用 $1-(1-\hat p)^k$ 当无偏估计。HumanEval / Codex 用的是无放回组合估计：从已采的 $n$ 条里随机抽 $k$ 条、至少一条正确的概率。
+常见错误有两处：把「$n$ 次里出现过一次正确」当成 $\mathrm{pass@}k$（那是 $\mathrm{pass@}n$）；以及用 $1-(1-\hat p)^k$ 当无偏估计。HumanEval / Codex 用的是无放回组合估计：从已采的 $n$ 条里随机抽 $k$ 条、至少一条正确的概率。
 
 ## 无偏公式
 
@@ -50,13 +50,13 @@ $\mathrm{pass@}1$ 升、$\mathrm{pass@}k$ 不动，常常是多样性塌了、�
 
 ## 评测协议
 
-跨题汇总仍要置信区间；题数少时点估计会抖。`temperature`、`top_p`、是否允许相同 completion 去重，都会改 $c$。去重后 $n$ 变小，必须用去重后的 $n,c$ 重算，不能拿去重前的分母。Best-of-$N$、verifier rerank、majority vote 是选择器，应另列，不要塞进同一个 $\mathrm{pass@}k$（后者假设 $k$ 次独立采样、命中即可）。
+跨题汇总仍要置信区间；题数少时点估计波动较大。`temperature`、`top_p`、是否允许相同 completion 去重，都会改 $c$。去重后 $n$ 变小，必须用去重后的 $n,c$ 重算，不能拿去重前的分母。Best-of-$N$、验证器（verifier） rerank、majority vote 是选择器，应另列，不要塞进同一个 $\mathrm{pass@}k$（后者假设 $k$ 次独立采样、命中即可）。
 
-GRPO 进场前看 $\mathrm{pass@}k-\mathrm{pass@}1$：缺口还在，组内才可能有相对优势。缺口已经是 0，再加大 $G$ 也是全对组，见 `meituan-sft-to-rl-gate`。
+开始 GRPO 训练前，检查 $\mathrm{pass@}k-\mathrm{pass@}1$：缺口还在，组内才可能有相对优势。缺口已经是 0，再加大 $G$ 也是全对组，见 `meituan-sft-to-rl-gate`。
 
 ## 追问
 
 - **$n\lt k$ 怎么办？** 定义要求 $n\ge k$。采不够就不要报那个 $k$，或继续采满。
 - **和 avg@32？** avg@32 是 32 次独立作答的平均准确率，近似 $\mathrm{pass@}1$ 的低方差估计，不是 $\mathrm{pass@}32$。DAPO 在 AIME 上用 avg@32，口径不要混。
 - **无偏相对什么？** 相对「从这 $n$ 条有限样本里再抽 $k$ 条」的成功概率，不是相对真实生成分布的 $k$ 次独立试验，后者还依赖温度是否与训练一致。
-- **代码题 $c$ 怎么数？** 以单元测试 / 官方 checker 为准，不要用 LLM judge 冒充 $c$，否则 $\mathrm{pass@}k$ 量的是「像对」，见 `fund-judge`。
+- **代码题 $c$ 怎么数？** 以单元测试 / 官方 checker 为准，不要用 LLM judge 冒充 $c$，否则 $\mathrm{pass@}k$ 衡量的只是答案看起来是否正确，见 `fund-judge`。

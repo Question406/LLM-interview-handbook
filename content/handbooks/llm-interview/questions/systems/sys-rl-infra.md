@@ -4,10 +4,7 @@ section: systems
 order: 16
 level: S
 title: 为什么 RL Systems 比 SFT 复杂？
-quick: >-
-  SFT 是 dataset 进 forward/backward。RL 还要 rollout engine、environment/verifier/RM、trajectory
-  buffer、policy/reference/value、weight sync 和 freshness。Agent RL 再加 sandbox/browser/API 和长
-  episode。
+quick: "监督微调（SFT）主要是读取固定数据，做前向和反向。强化学习（RL）还需要轨迹采样引擎、环境或评分器、轨迹缓存、策略与参考模型、可选的价值模型，以及权重同步和样本新鲜度管理。Agent RL 还要处理沙箱、浏览器、API 和长回合。"
 tags:
   - RL Infra
   - Post-training
@@ -22,7 +19,7 @@ sources:
     type: primary
 ---
 
-这块容易把 RL 训练画成「换一个 loss 的 SFT」。SFT 的数据在磁盘上已经写死，一步就是取 batch、前向、反向。On-policy RL 的数据是**当前策略刚生成的轨迹**，还要打分、对齐版本、再写回推理引擎。系统多出来的是一条带状态的环，而不只是一行公式。
+这块容易把 强化学习（RL） 训练画成「换一个 loss 的 SFT」。监督微调（SFT） 的数据在磁盘上已经写死，一步就是取 batch、前向、反向。On-policy RL 的数据是**当前策略刚生成的轨迹**，还要打分、对齐版本、再写回推理引擎。系统多出来的是一条带状态的环，而不只是一行公式。
 
 ## 1. 典型 loop 比 SFT 多四类组件
 
@@ -33,17 +30,17 @@ $$
 | 组件 | SFT | RL |
 | --- | --- | --- |
 | 数据面 | 静态 dataset | 在线 generation，长度随机、可中止 |
-| 打分 | token NLL | verifier / RM / 环境，常在 EOS 才出标量 |
-| 模型角色 | 一份可训权重 | policy + 冻结 reference（+ 可选 critic / RM） |
-| 版本 | checkpoint 即可 | rollout 必须知道自己在用哪一版 $\theta$ |
+| 打分 | token NLL | 验证器（verifier） / 奖励模型（RM） / 环境，常在 EOS 才出标量 |
+| 模型角色 | 一份可训权重 | policy + 冻结 reference（+ 可选 价值评估模型（critic） / RM） |
+| 版本 | checkpoint 即可 | 采样轨迹（rollout） 必须知道自己在用哪一版 $\theta$ |
 
-HybridFlow（veRL）把这套拆成可组合的 dataflow：generation、reward、advantage、update 可以换引擎、换并行，而不把「算法公式」和「谁占哪张卡」焊死。讲清 multi-controller + 混合部署即可，不必背框架 API。
+HybridFlow（veRL）把这套拆成可组合的 dataflow：generation、奖励分数（reward）、advantage、update 可以换引擎、换并行，而不把「算法公式」和「谁占哪张卡」焊死。讲清 multi-controller + 混合部署即可，不必背框架 API。
 
 Agent RL 再叠加 sandbox / browser / 搜索 API：一步动作的延迟从毫秒变成秒，失败要重试，episode 远长于单轮 chat。此时 rollout 往往才是吞吐瓶颈。
 
-## 2. 墙钟往往卡在 generation，不是 backward
+## 2. 实际耗时往往卡在 generation，不是 backward
 
-长 CoT 是自回归、decode 偏 memory-bound；工具调用还要等外部世界。Trainer 可能闲等一批 $G$ 条完成。同步 on-policy 最干净：采完立刻训，freshness 好，GPU 利用差。异步能把 rollout 与训练重叠，但轨迹相对 $\pi_{\mathrm{now}}$ 变旧，重要性比 $\rho$ 偏离 $1$，方差和偏差一起来。
+长 思维链（CoT，即分步推理过程） 是自回归、逐 token 生成（decode） 偏 memory-bound；工具调用还要等外部世界。Trainer 可能闲等一批 $G$ 条完成。同步 on-policy 最干净：采完立刻训，freshness 好，GPU 利用差。异步能把 rollout 与训练重叠，但轨迹相对 $\pi_{\mathrm{now}}$ 变旧，重要性比 $\rho$ 偏离 $1$，方差和偏差一起来。
 
 两种拓扑：
 
@@ -54,7 +51,7 @@ Agent RL 再叠加 sandbox / browser / 搜索 API：一步动作的延迟从毫�
 
 ## 3. 还要管 freshness 与正确性
 
-Buffer 里每条轨迹应带 `policy_version`。Gap 过大就降权、丢弃，或换更能容忍 off-policy 的算法。监控 KL、`logratio`、组内 reward 方差、超时与工具失败率。SFT 没有「这批数据已经不是当前策略」这个问题；RL 有。
+Buffer 里每条轨迹应带 `policy_version`。Gap 过大就降权、丢弃，或换更能容忍 off-policy 的算法。监控 KL、`logratio`、组内 奖励方差、超时与工具失败率。SFT 没有「这批数据已经不是当前策略」这个问题；RL 有。
 
 ## 追问
 

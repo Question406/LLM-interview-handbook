@@ -4,11 +4,7 @@ section: systems
 order: 264
 level: A
 title: 多轮 Agent 在 slime 里为什么要把 router 改成 session affinity？
-quick: >-
-  默认 `--router-policy cache_aware` 按前缀缓存切流，单轮够用。多轮必须让同一
-  `sample.session_id` 打到同一 worker，否则每轮 prefill 重算整段 history。设
-  `--router-policy consistent_hashing`，请求头 `X-SMG-Routing-Key`。PD 分离时更要开，否则 decode
-  机没有你的 KV。
+quick: "多轮要让同一 `session_id` 一直打到同一 worker，否则每轮都要重新 prefill 整段 history。用 `consistent_hashing` 钉住 worker；PD 分离时不钉，decode 机上就没有这段 KV。"
 tags:
   - slime
   - Agent RL
@@ -26,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：多轮 Agent 仍用默认 `cache_aware`，或把「router 粘 session」和「`loss_mask` 掩 observation」说成一件事。前者是 KV / 前缀缓存落在哪张卡；后者是梯度算不算这段 token。政策错了，每轮把整段 history 重 prefill，工具史一长墙钟翻倍。PD 分离时更致命：decode 机上没有你的 KV。
+常见误区是：多轮 Agent 仍用默认 `cache_aware`，或把「router 粘 session」和「`loss_mask` 掩 observation」说成一件事。前者是 KV / 前缀缓存落在哪张卡；后者是梯度算不算这段 token。政策错了，每轮把整段 history 重新 prefill，工具史一长实际耗时翻倍。PD 分离时更致命：逐 token 生成（decode） 机上没有你的 KV。
 
 ## 为什么必须钉住 worker
 
@@ -44,7 +40,7 @@ sources:
 
 ## 和 veRL、梯度掩码分开说
 
-veRL 的 SGLang multi-turn 同样吃 session；若用 vLLM 则靠 prefix cache + sticky，能力取决于后端。面试把两句话拆开：`loss_mask` 掩 observation 是训练图；router 粘 session 是推理 KV。只做掩码、路由是 round-robin，采样已经贵了，梯度再正确也救不了墙钟。
+veRL 的 SGLang multi-turn 同样吃 session；若用 vLLM 则靠 prefix cache + sticky，能力取决于后端。面试把两句话拆开：`loss_mask` 掩 观测结果（observation） 是训练图；router 粘 session 是推理 KV。只做掩码、路由是 round-robin，采样已经贵了，梯度再正确也救不了实际耗时。
 
 ## 追问
 

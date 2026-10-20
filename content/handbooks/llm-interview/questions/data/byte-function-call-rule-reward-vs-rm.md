@@ -4,8 +4,7 @@ section: data
 order: 101
 level: S
 title: 字节 AI 数据技术：Function Call 有标准答案，为什么还要 Reward Model？
-quick: >-
-  schema、执行结果或 business oracle 能精确验证的部分，我优先用 rule-based reward：便宜、可审计、噪声低。Reward Model 只补规则盖不住的歧义、多目标质量和偏好。两者分项组合，不能用 RM 替代本可验证的正确性。
+quick: "schema、执行结果或业务判定规则能准确检查的部分，优先用规则奖励，成本低、可审计，也更少噪声。Reward Model 用于评价规则难以覆盖的歧义、软约束和偏好。两类信号分项组合，不能让 RM 代替已经能够直接验证的正确性。"
 tags:
   - ByteDance
   - Function Calling
@@ -30,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“Function Call这类偏封闭式的任务，入参/格式都有标准答案，为什么不直接用rule-based奖励信号做RL，而要训一个Reward Model？”**
 
-对 tool 名、schema、类型、权限、可执行性和确定性业务结果，应优先用 deterministic verifier。它让 RLVR 的核心正确性可复现，也更容易定位 reward hacking。题干问「为什么还要 RM」，不是否定规则，而是问 RM 补哪一层。用 RM 替代本可验证的正确性，是这题最大的设计错误。
+对 tool 名、schema、类型、权限、可执行性和确定性业务结果，应优先用 确定性验证器（verifier）。它让基于可验证奖励的强化学习（RLVR）的核心正确性可复现，也更容易定位 钻奖励规则的空子。题干问「为什么还要 RM」，不是否定规则，而是问 奖励模型（RM） 补哪一层。用 RM 替代本可验证的正确性，是这题最大的设计错误。
 
 ## 规则做硬门，RM 只打软质量
 

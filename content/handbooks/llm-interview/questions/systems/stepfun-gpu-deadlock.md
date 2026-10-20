@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“GPU死锁是什么？”**
 
-错法：把 OOM、单卡 kernel 长尾或 NCCL 超时都叫死锁。死锁是循环等待：一组 rank 互相等对方的通信或同步，谁也无法前进，GPU 利用率掉到接近 0。训练里最常见的是集合通信契约破了：`allreduce` / `allgather` 要求全员到达，有一个 rank 走了不同分支，其余卡一直等。同面 DeepSpeed / BF16 已有卡，这题要落到「集体通信契约」，见 `sys-distributed-hang`。
+常见误区是：把 OOM、单卡 kernel 长尾或 NCCL 超时都叫死锁。死锁是循环等待：一组 rank 互相等对方的通信或同步，谁也无法前进，GPU 利用率掉到接近 0。训练里最常见的是集合通信契约破了：`allreduce` / `allgather` 要求全员到达，有一个 rank 走了不同分支，其余卡一直等。同面 DeepSpeed / BF16 已有卡，这题要落到「集体通信契约」，见 `sys-distributed-hang`。
 
 ## 集合通信死锁长什么样
 

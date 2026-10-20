@@ -4,7 +4,7 @@ section: agentrl
 order: 194
 level: A
 title: Agent 分层 Policy（Manager-Worker）怎样划分动作与 credit？
-quick: Manager 选子目标/技能，Worker 选原子工具调用。信用在边界用 option 终止与子目标达成信号分配；接口必须是可验证的状态断言。
+quick: "Manager 选择子目标或技能，Worker 执行具体工具调用。子目标要写成能验证的状态断言，在达成或超时时结束一个 option，再分别结算高层和低层的奖励。否则两层只互相聊天，很难判断失败责任。"
 tags:
   - Hierarchical RL
   - Options
@@ -19,17 +19,17 @@ sources:
     type: primary
 ---
 
-错法：两层都用自由文本聊天。Manager 说「你看着办」，Worker 回一段散文，任务失败后两边同时吃到同一个 $+1$ 或 $-1$。分层的意义是缩短有效决策时长，并给出可审计边界。Options 把技能写成 $o=(I,\pi_o,\beta)$：发起条件、内部策略、终止函数。Agent 里 Manager 选 $o$ 或子目标，Worker 执行原子 tool-call。接口必须是可验证状态断言（「单测已绿」「表单字段已填」），否则 Manager 的奖励是另一层不可执行 shaping。若把分层说成「再加一个规划模型」，多半还没碰到 credit 边界。
+常见误区是：两层都用自由文本聊天。Manager 说「你看着办」，Worker 回一段散文，任务失败后两边同时吃到同一个 $+1$ 或 $-1$。分层的意义是缩短有效决策时长，并给出可审计边界。Options 把技能写成 $o=(I,\pi_o,\beta)$：发起条件、内部策略、终止函数。Agent 里 Manager 选 $o$ 或子目标，Worker 执行原子 tool-call。接口必须是可验证状态断言（「单测已绿」「表单字段已填」），否则 Manager 的奖励是另一层不可执行 shaping。若把分层说成「再加一个规划模型」，多半还没碰到 credit 边界。
 
 ## 动作怎么切，信用在哪一层结算
 
-Manager 动作空间：子目标 / skill / option，而不是具体 `patch_file` 参数。Worker：工具名与参数。终止 $\beta(s)$ 在断言满足或预算耗尽时触发，把半开 option 的回报结算给 Manager：
+Manager 动作空间：子目标 / skill / option，而不是具体 `patch_file` 参数。Worker：工具名与参数。终止 $\beta(s)$ 在断言满足或预算耗尽时触发，把当前 option 的回报结算给 Manager：
 
 $$
 R^{\mathrm{mgr}}=\mathbf{1}[\text{subgoal achieved}]-\lambda\cdot\mathbf{1}[T_{\mathrm{opt}}\gt B]
 $$
 
-Worker 用模仿 + 局部 RL（子目标达成、单测、artifact verifier）；Manager 用稀疏任务奖励。不要两层同时对同一 token 灌 team $+1$。失败归因：子目标达成但任务失败 → Manager 拆错或漏约束；子目标未达成 → Worker 执行差，或子目标本身不可行（该罚 Manager 的目标生成，而不是只打工人）。这和 `arl-multi-credit` 同一逻辑：那题是多 **人** 之间分 team reward；本题是同一 Agent 的 **时间层次**。都可以冻一层先训另一层，减少非平稳。Manager 的动作应短、离散、可计数，否则 option 边界会糊成又一段 CoT，分层名存实亡。
+Worker 用模仿 + 局部 强化学习（RL）（子目标达成、单测、artifact 验证器（verifier））；Manager 用稀疏任务奖励。不要两层同时对同一 文本处理单位（token） 灌 team $+1$。失败归因：子目标达成但任务失败 → Manager 拆错或漏约束；子目标未达成 → Worker 执行差，或子目标本身不可行（该罚 Manager 的目标生成，而不是只打工人）。这和 `arl-multi-credit` 同一逻辑：那题是多 **人** 之间分 team 奖励分数（reward）；本题是同一 Agent 的 **时间层次**。都可以冻一层先训另一层，减少非平稳。Manager 的动作应短、离散、可计数，否则 option 边界会糊成又一段 思维链（CoT，即分步推理过程），分层名存实亡。
 
 ## 接口可验证，通信不要变成第二套聊天室
 

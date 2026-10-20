@@ -4,11 +4,7 @@ section: systems
 order: 263
 level: A
 title: slime 怎么同时 serve 会更新的 actor 和冻住的 ref / reward？
-quick: >-
-  `--sglang-config` 里写多个 model：`actor` 设 `update_weights: true`，`ref` /
-  reward 设 `false` 并给自己的 `model_path`。每个模型独立 router，自定义 generate 用
-  `get_model_url(args, "ref")` 分流。不要把冻住的模型写进 Megatron `--ref-load` 却又让 SGLang
-  跟着 actor 热更新。
+quick: "在 `--sglang-config` 里写多个 model：actor 设 `update_weights: true`，ref 和 reward 设 `false` 并用各自的 `model_path`；自定义 generate 按模型名分流。"
 tags:
   - slime
   - SGLang
@@ -26,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：把「训练图里的 ref」和「采样期当 judge 的冻住模型」写成同一份，并让 SGLang 跟着 actor 热更新。结果是 KL / 过滤用的其实是新权，$\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$ 接近 0，约束 silently 消失。两套 ref 不要混，卡账也不要只报 actor。
+常见误区是：把「训练图里的 ref」和「采样期当 judge 的冻住模型」写成同一份，并让 SGLang 跟着 actor 热更新。结果是 KL / 过滤用的其实是新权，$\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$ 接近 0，约束 silently 消失。两套 ref 不要混，卡账也不要只报 actor。
 
 ## 两套 ref，两条路径
 

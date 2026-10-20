@@ -4,9 +4,7 @@ section: systems
 order: 35
 level: A
 title: 训练和推理的 MoE 路由不一致会怎样？怎么检测？
-quick: >-
-  训练开 noisy top-$k$ / expert bias 更新，推理关掉；router 用 FP、推理用量化；RL 的 rollout
-  engine 和 trainer 各算一遍路由。同一输入会进不同 expert，表现为负载直方图漂移和输出 KL。要对齐开关、精度和实现，调温度救不了。
+quick: "噪声、bias、精度或 capacity 任一处不一致，同一输入就会走不同 expert。用固定 prompt 对比两边的专家份额直方图和输出 KL，修法是对齐配置，调温度没用。"
 tags:
   - MoE
   - Routing
@@ -28,12 +26,12 @@ MoE 的「哪几个 expert 干活」是离散 top-$k$。训练图和推理图只
 - **训练专用噪声**：jitter / noisy top-$k$ 只在 train 开，eval 关。这是刻意的，但要冻结一份「推理路由」做回归，不能拿带噪声的 train 直方图当上线基线。
 - **Expert bias**：训练逐步更新 $b_i$，推理若清零或用另一套 checkpoint，top-$k$ 集合会变。应把末期 bias 写进权重，或明确推理不再更新。
 - **精度**：训练 FP16/BF16 router，推理 INT8/FP8。Affinity 排序对小扰动敏感，top-$k$ 容易翻盘。Router 常单独保高精度。
-- **Capacity / drop 策略**：训练 CF 大、几乎不丢；推理为吞吐把 CF 砍小。被 drop 的 token 等于这一层 MoE 被跳过。
-- **RL 两套引擎**：rollout 用 vLLM/SGLang 融合 kernel，trainer 用 Megatron 自己的 dispatch。这是字节 GSPO 卡（`byte-moe-rollout-routing-gspo`）的工程背景：算法用 sequence-level ratio 降局部路由噪声，系统仍要对齐实现。本题强调一致性工程，不是再讲一遍 GSPO。
+- **Capacity / drop 策略**：训练 CF 大、几乎不丢；推理为吞吐把 CF 砍小。被丢弃的 token 等于这一层 MoE 被跳过。
+- **强化学习（RL） 两套引擎**：采样轨迹（rollout） 用 vLLM/SGLang 融合 kernel，trainer 用 Megatron 自己的 dispatch。这是字节 GSPO 卡（`byte-moe-rollout-routing-gspo`）的工程背景：算法用 sequence-level ratio 降局部路由噪声，系统仍要对齐实现。本题强调一致性工程，不是再讲一遍 GSPO。
 
 ## 检测
 
-固定一批 prompt，分别在 trainer eval 模式和 serving 上记录：
+固定一批 输入提示（prompt），分别在 trainer eval 模式和 serving 上记录：
 
 1. 每层每个 expert 的 token 份额直方图（JS / TV 距离）。
 2. 最终 logits 或 hidden 的 KL / cosine。

@@ -4,9 +4,7 @@ section: posttrain
 order: 250
 level: S
 title: DPO 的隐式奖励是什么？还会 reward hacking 吗？
-quick: >-
-  DPO 不训独立 RM。从 KL 约束 RL 的最优解反解出隐式奖励 $r_\theta(x,y)=\beta\log(\pi_\theta(y\mid x)/\pi_{\mathrm{ref}}(y\mid x))$。
-  Bradley-Terry 只约束 chosen 相对 rejected 的间隔。没有显式 RM 不等于不会 hacking：长度、套话、谄媚仍能抬间隔。
+quick: "DPO 的隐式奖励是 $\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})$，只约束 chosen 相对 rejected 的间隔。没有显式 RM 也会 hacking，长度和套话都能抬高间隔。"
 tags:
   - DPO
   - Reward Hacking
@@ -24,17 +22,17 @@ sources:
     type: primary
 ---
 
-推导链见 `pt-dpo-derive`。本题只钉两件事：**奖励函数写出来是什么**，以及**关掉 RM 头之后还会不会黑奖**。把 DPO 说成「没有奖励所以不会 hacking」，下一问长度膨胀就会空。
+推导链见 `pt-dpo-derive`。本题只钉两件事：**奖励函数写出来是什么**，以及**关掉 奖励模型（RM） 头之后还会不会黑奖**。把 直接偏好优化（DPO） 说成「没有奖励所以不会 hacking」，下一问长度膨胀就会空。
 
 ## 隐式奖励从哪来
 
-KL 约束 RL 的最优策略满足 $\pi^\star\propto\pi_{\mathrm{ref}}e^{r/\beta}$。反过来，任意策略 $\pi_\theta$ 都对应一个隐式奖励
+KL 约束 强化学习（RL） 的最优策略满足 $\pi^\star\propto\pi_{\mathrm{ref}}e^{r/\beta}$。反过来，任意策略 $\pi_\theta$ 都对应一个隐式奖励
 
 $$
 r_\theta(x,y)=\beta\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}+Z(x).
 $$
 
-$Z(x)$ 对同一 prompt 的两条回复相同，在 Bradley-Terry 里消掉。于是偏好损失只看间隔
+$Z(x)$ 对同一输入提示 的两条回复相同，在 Bradley-Terry 里消掉。于是偏好损失只看间隔
 
 $$
 r_\theta(x,y_w)-r_\theta(x,y_l)=\beta\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\beta\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}.

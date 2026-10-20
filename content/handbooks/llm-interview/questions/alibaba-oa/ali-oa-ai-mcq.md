@@ -23,21 +23,21 @@ sources:
 ## 真题记录
 
 - 公司 / 场次：阿里 AI 研发 2026.03.25 选择（约 20 题，一半 AI）
-- 公开出现过：teacher forcing 训推差异；MHA/MQA/GQA；LangChain vs LangGraph；ReAct 边界；单 Agent vs multi-agent；长期记忆；tool 参数排错；多任务混合 RL；提示词注入；MCP tool vs resource。
+- 公开出现过：teacher forcing 的训练与推理差异；MHA/MQA/GQA；LangChain vs LangGraph；ReAct 边界；单 Agent vs multi-agent；长期记忆；tool 参数排错；多任务混合强化学习（RL）；提示词注入；MCP tool vs resource。
 
 这类题我靠项目口吻选，不背框架官网标题。下面四条按「可选题干 + 正确口径」展开。
 
 ## Teacher forcing
 
-自回归训练时，下一步的条件不是模型刚才吐出的 token，而是金标前缀。时刻 $t$ 的输入是 $y_{<t}^{\star}$，损失是 $-\log p_\theta(y_t^{\star}\mid y_{<t}^{\star})$。推理时没有金标，只能把 $\hat y_{t-1}$ 喂回去。这条训推不一致叫 exposure bias：训练从未见过自己的错误前缀，一错就偏。
+自回归训练时，下一步的条件不是模型刚才生成的 token，而是金标前缀。时刻 $t$ 的输入是 $y_{<t}^{\star}$，损失是 $-\log p_\theta(y_t^{\star}\mid y_{<t}^{\star})$。推理时没有金标，只能把 $\hat y_{t-1}$ 喂回去。这条训推不一致叫 exposure bias：训练从未见过自己的错误前缀，一错就偏。
 
 | | 训练（Teacher forcing） | 推理 |
 | --- | --- | --- |
 | 前缀 | 金标 $y^{\star}$ | 模型自己的 $\hat y$ |
-| 并行 | 可并行算全序列 CE | 必须逐步解码 |
+| 并行 | 可并行计算全序列交叉熵损失（CE） | 必须逐步解码 |
 | 风险 | 学得快，暴露偏差 | 误差累积 |
 
-Scheduled sampling 以概率把金标换成模型输出，是折中，不是默认。DPO / RL 阶段用自己采样的轨迹，本身就在补这块偏差。
+Scheduled sampling 以概率把金标换成模型输出，是折中，不是默认。直接偏好优化（DPO） / RL 阶段用自己采样的轨迹，本身就在补这块偏差。
 
 可选题干：关于 Teacher forcing，下列哪一项正确？
 
@@ -46,9 +46,9 @@ Scheduled sampling 以概率把金标换成模型输出，是折中，不是默�
 - C. Teacher forcing 只用于编码器，解码器必须 scheduled sampling
 - D. 只要加了 KL 正则，Teacher forcing 的训推差异就会消失
 
-正确口径：选 B。A 把训练说成了自回归 rollout，那是推理或 on-policy RL。C 无中生有。D 的 KL 约束的是策略别离参考太远，不消灭「训练喂金标、推理喂自己」这条结构差异。
+正确口径：选 B。A 把训练说成了自回归采样轨迹（rollout），那是推理或 on-policy RL。C 无中生有。D 的 KL 约束的是策略别离参考太远，不消灭「训练喂金标、推理喂自己」这条结构差异。
 
-阿里场景：Qwen 对话 SFT 用 Teacher forcing 并行打 CE，吞吐高；线上解码是自回归，用户一说口语化，模型若在训练里没见过类似前缀就会飘。淘天客服若只用 SFT，要靠解码约束和检索把输出拉回；要真补暴露偏差，用 on-policy 采样再 RL。笔试如果出现「为什么推理比训练胡话多」，先答这条，再答解码温度。多轮客服还有另一层：训练时历史轮次也是金标，推理时上一轮可能已经答偏，后面轮会沿着错历史走，这是跨 turn 的暴露偏差。
+阿里场景：Qwen 对话监督微调（SFT） 用 Teacher forcing 并行打 CE，吞吐高；线上解码是自回归，用户一说口语化，模型若在训练里没见过类似前缀就会飘。淘天客服若只用 SFT，要靠解码约束和检索把输出拉回；要真补暴露偏差，用 on-policy 采样再 RL。笔试如果出现「为什么推理比训练胡话多」，先答这条，再答解码温度。多轮客服还有另一层：训练时历史轮次也是金标，推理时上一轮可能已经答偏，后面轮会沿着错历史走，这是跨 turn 的暴露偏差。
 
 追问：为什么不全程不用 Teacher forcing？因为逐步训练太慢，梯度还不稳定。Free-running 训练和推理一致但难收敛。评测 teacher forcing 的 token acc 会虚高，要以生成指标为准。和「标签泄漏」怎么区分？泄漏是特征里看见了答案，Teacher forcing 是合法地看见金标前缀，二者不要混。
 
@@ -82,7 +82,7 @@ Scheduled sampling 以概率把金标换成模型输出，是折中，不是默�
 
 ReAct 把轨迹写成交错的 Thought / Action / Observation，不是「先想完整计划再一次性调完所有工具」。Thought 写当前缺口，Action 按 schema 调工具，Observation 写回真实返回，再进入下一轮 Thought。选错工具或参数时，必须用 Observation 纠偏，禁止在 Thought 里假装成功。
 
-| | 纯 CoT | 先计划后执行 | ReAct |
+| | 纯思维链（CoT） | 先计划后执行 | ReAct |
 | --- | --- | --- | --- |
 | 工具 | 无 | 计划阶段一次性列完 | 逐步交错 |
 | 纠错 | 只能改文字 | 计划错了后面全错 | 每步看 Observation |
@@ -93,7 +93,7 @@ LangChain 偏链式组件拼装；LangGraph 偏有状态图、循环和分支。
 可选题干：下列哪一项最符合 ReAct？
 
 - A. 模型先输出完整计划，再按计划并行调用全部工具，最后一次性总结
-- B. 思考文本与 tool call 交替进行，每一步以工具返回作为下一轮观察
+- B. 思考文本与工具调用交替进行，每一步以工具返回作为下一轮观察
 - C. 只允许调用一次工具，否则就算 prompt 注入
 - D. ReAct 等于把检索结果全部塞进系统提示，不再调用工具
 

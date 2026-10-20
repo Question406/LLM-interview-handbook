@@ -4,10 +4,7 @@ section: rl-coding
 order: 10
 level: S
 title: verl 里优势在 driver、clip 在 worker，代码怎么接？
-quick: >-
-  `RayPPOTrainer.fit` 在 driver 上跑。生成用 `rollout.n` 把 prompt 重复开，奖励打成
-  `token_level_scores`，`compute_advantage` 再分到 `core_algos`。GRPO 按 `uid` 分组，组大小为 1
-  时 mean=0、std=1。Policy loss 在 actor worker：`vanilla` 含 dual-clip，`gspo` 把序列比 detach。
+quick: "优势在 driver 的 `RayPPOTrainer.fit` 里算，GRPO 按 `uid` 分组；clip 在 actor worker 的 policy loss 里，`vanilla` 模式含 dual-clip。"
 tags:
   - verl
   - GRPO
@@ -36,15 +33,15 @@ sources:
 Driver 不跑模型前向。它通过 Ray 调 worker，优势在 driver 上算，注释写明 advantage 很轻。
 
 1. DataLoader 取出 prompt batch。给每条 prompt 一个 `uid`（`uuid4`）。这个 id 是后面 GRPO 分组的键，不是 sample 下标。
-2. `batch.repeat(repeat_times=rollout.n, interleave=True)`，同一 prompt 的 $n$ 条在 batch 里交错排开。`n` 就是组大小。
+2. `batch.repeat(repeat_times=rollout.n, interleave=True)`，同一输入提示 的 $n$ 条在 batch 里交错排开。`n` 就是组大小。
 3. `async_rollout_manager.generate_sequences`。REMAX 会在同一次请求里再拼一条 greedy baseline（`__do_sample__=False`），避免引擎 sleep 之后再发第二次。
-4. reward：可选 colocated RM，然后 `extract_reward` 得到 `reward_tensor`。
-5. 旧 logprob 有两条路。默认重算：`_compute_old_log_prob`，训练图上再跑一遍 actor，得到 `old_log_probs`。`algorithm.rollout_correction.bypass_mode` 为真时不重算，直接把 rollout 引擎的 logprob 当成 old。注释把前者叫三策略（$\pi_{\mathrm{rollout}}$、$\pi_{\mathrm{old}}$、$\pi_\theta$），后者叫两策略。
+4. 奖励分数（reward）：可选 colocated 奖励模型（RM），然后 `extract_reward` 得到 `reward_tensor`。
+5. 旧 logprob 有两条路。默认重算：`_compute_old_log_prob`，训练图上再跑一遍 actor，得到 `old_log_probs`。`algorithm.rollout_correction.bypass_mode` 为真时不重算，直接把 采样轨迹（rollout） 引擎的 logprob 当成 old。注释把前者叫三策略（$\pi_{\mathrm{rollout}}$、$\pi_{\mathrm{old}}$、$\pi_\theta$），后者叫两策略。
 6. 有 reference 就 `_compute_ref_log_prob`。`use_critic` 时 `_compute_values`。
 7. `token_level_scores = reward_tensor`。`algorithm.use_kl_in_reward` 为真则 `apply_kl_penalty`，把 KL 扣进 token reward，再用自适应 $\beta$；否则 `token_level_rewards = token_level_scores`。
 8. 非 bypass 且 batch 里有 `rollout_log_probs` 时，`compute_rollout_correction_and_add_to_batch` 写出 IS 权重。这层乘在后面的 policy loss 上，不替代 PPO clip。
 9. `compute_advantage(...)`。
-10. 有 critic 先 `_update_critic`。`trainer.critic_warmup` 还没过完就只更新 rollout 权重、不更新 actor。过了才 `_update_actor`。
+10. 有 Critic 时先 `_update_critic`。`trainer.critic_warmup` 还没过完就只更新 rollout 权重、不更新 actor。过了才 `_update_actor`。
 
 `adv_estimator=gae` 才会走 critic。GRPO 配置把估计器设成 `grpo`，这条 fit 里 values / critic update 都不进。
 

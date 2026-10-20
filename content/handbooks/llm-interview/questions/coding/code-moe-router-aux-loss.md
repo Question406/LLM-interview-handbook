@@ -69,5 +69,5 @@ def moe_router_aux(x, W_r, k=1):
 ## 追问
 
 - **$f$ 要不要 detach？** Switch 原文 $f$ 当经验频率；实现里常对 one-hot 用 STE 或直接当常数。我会说「$f$ 统计负载，$P$ 可导」即可。
-- **和 CE 怎么加？** $\mathcal{L}=\mathcal{L}_{\mathrm{LM}}+\lambda\mathcal{L}_{\mathrm{aux}}$，$\lambda$ 过大伤语义路由。
+- **和交叉熵损失（CE）怎么加？** $\mathcal{L}=\mathcal{L}_{\mathrm{LM}}+\lambda\mathcal{L}_{\mathrm{aux}}$，$\lambda$ 过大伤语义路由。
 - **测什么？** 均匀输入下 $f$ 应接近 $1/N$；构造一个 expert 分数恒大的输入，aux 应明显大于 1。

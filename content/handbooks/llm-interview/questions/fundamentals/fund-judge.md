@@ -4,10 +4,7 @@ section: fundamentals
 order: 17
 level: S
 title: LLM-as-Judge 有哪些常见 Bias？怎么缓解？
-quick: >-
-  常见 position bias、verbosity bias、style bias、self/family preference、prompt
-  sensitivity。可做 swap consistency、random position、rubric 分维度、multiple
-  judges、human calibration 与 adversarial examples。
+quick: "常见偏差包括偏爱某个展示位置、冗长答案、特定文风，以及自己或同家族模型的输出；评分也可能对提示词敏感。可以交换答案顺序检查一致性、随机安排位置、按维度评分、使用多个评委，并用人工校准和对抗样例检验。"
 tags:
   - Eval
   - LLM Judge
@@ -22,7 +19,7 @@ sources:
     type: primary
 ---
 
-错法：把 judge win-rate 当成能力。LLM-as-Judge 带着位置、篇幅和「像自己」的偏好；用它排模型、筛数据、甚至当 RL reward 却不做对抗检验，等于评委和选手穿同一件衣服。Zheng et al. 的 MT-Bench / Chatbot Arena 工作已经把这些偏差写成必须处理的工程问题。
+常见误区是：把 judge win-rate 当成能力。LLM-as-Judge 带着位置、篇幅和「像自己」的偏好；用它排模型、筛数据、甚至当 强化学习（RL） 奖励分数（reward） 却不做对抗检验，会把评委自身的偏好当成模型能力。Zheng et al. 的 MT-Bench / Chatbot Arena 工作已经把这些偏差写成必须处理的工程问题。
 
 ## 位置、冗长、自我偏好
 
@@ -36,7 +33,7 @@ Pointwise 可独立标量化、便于回归和阈值，但尺度漂、跨题不�
 
 ## 同一 judge 不能直接当 RL reward
 
-若同一 judge（或同家族）给 RL 打分，policy 会优化 judge 的口味：更长、更客气、更像某模型文风，而不是任务成功。这是 reward hacking 的快捷通道。没有独立 verifier、单元测试、人类抽检和持续 red-team（对抗冗长、奉承、格式游戏、位置翻转），就宣称「用 LLM 当 reward」，面试里应直接否决。换 judge 家族、监控 swap 稳定性、把 judge 分数当筛子而不是唯一标量，是最低配置。
+若同一 judge（或同家族）给 RL 打分，policy 会优化 judge 的口味：更长、更客气、更像某模型文风，而不是任务成功。这是 钻奖励规则的空子 的快捷通道。没有独立 验证器（verifier）、单元测试、人类抽检和持续 red-team（对抗冗长、奉承、格式游戏、位置翻转），就宣称「用 LLM 当 reward」，面试里应直接否决。换 judge 家族、监控 swap 稳定性、把评委分数用于筛选，而不是作为唯一奖励，是最低配置。
 
 上线协议我会压成三件事：每条 pairwise 必做 swap 并报 flip 率；每周用固定 human set 估 judge-human agreement，掉了就停用自动排名；RL 若吃 judge 分，必须另有任务成功或单测，且有人专门红队「写长一点就能赢」。缺任何一条，都不要把 LLM-as-Judge 写成金标。
 

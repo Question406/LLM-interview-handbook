@@ -4,9 +4,7 @@ section: agentrl
 order: 121
 level: S
 title: 阶跃星辰：以 ReAct 为例，Plan / Action / Observation 的输入输出是什么？
-quick: >-
-  Plan 吃任务与历史，输出下一步意图；Action 是对工具 schema 的结构化调用；Observation
-  是环境返回的原始或摘要结果，必须写回上下文。三者要有固定日志字段，才能训练和回放。
+quick: "Plan 根据任务和历史轨迹提出下一步意图；Action 按工具 schema 输出结构化调用；Observation 是执行后的原始结果或摘要，要写回上下文供下一步使用。日志中分别记录这三部分，才能用于训练和回放。"
 tags:
   - StepFun
   - ReAct
@@ -50,7 +48,7 @@ Observation
 - 输出：写回上下文的文本或结构化摘要，带来源 ID；超长则抽字段、留句柄。
 - 形状：`{"ok": true, "results": [...], "error": null}`。必须区分空结果、超时、权限失败，否则模型会学坏，见 `arl-retry`。
 
-三者串起来：Plan 决定意图，Action 落地为环境转移，Observation 成为下一步的 $s_{t+1}$。缺固定字段就无法 SFT 合法转移，也无法 RL 回放。
+三者串起来：Plan 决定意图，Action 落地为环境转移，Observation 成为下一步的 $s_{t+1}$。没有固定的记录字段，就难以用合法转移做监督微调（SFT），也无法回放强化学习（RL）轨迹。
 
 ## 训练与回放只认这些字段
 

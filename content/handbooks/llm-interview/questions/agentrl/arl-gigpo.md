@@ -5,7 +5,7 @@ order: 122
 level: S
 title: 多轮 Agent 上 GRPO 不够用时，GiGPO 的两层组相对优势在比什么？
 quick: >-
-  单轮数学 GRPO 比的是同一题的整条回复。多轮 Agent 终局 $0/1$ 会灌进几十步工具调用，分不清哪一步值钱。GiGPO
+  单轮数学 GRPO 比的是同一题的整条回复。多轮 Agent 如果把终局 $0/1$ 奖励分配给几十步工具调用，就难以区分哪一步真正有贡献。GiGPO
   外层仍按整条轨迹做组相对优势，内层把不同轨迹里重复出现的环境状态收成一组，对从该状态出发的动作再比一次。不另训
   Critic，但前提是状态能哈希对齐。
 tags:
@@ -26,7 +26,7 @@ sources:
     type: secondary
 ---
 
-原帖 35 题没把 LLM RL 和 Agentic RL 拆开，但同一问在 Agent 上答案会变。普通 GRPO 把结局奖励广播到所有 action token，50 步工具轨迹上这就是粗信用，见 `arl-credit`、`arl-vs-reasoning`。GiGPO（`2505.10978`）要在不训 Critic、不多采一套 rollout 的前提下，给逐步相对优势。
+原帖 35 题没把 LLM 强化学习（RL） 和 Agentic RL 拆开，但同一问在 Agent 上答案会变。普通 GRPO 把结局奖励广播到所有 action 文本处理单位（token），50 步工具轨迹上很难区分各步的贡献，见 `arl-credit`、`arl-vs-reasoning`。GiGPO（`2505.10978`）要在不训 Critic、不多采一套 采样轨迹（rollout） 的前提下，估计每一步的相对优势。
 
 ## 两层组
 
@@ -40,7 +40,7 @@ $$
 \hat A=\hat A_E+\omega\hat A_S.
 $$
 
-$\omega$ 管逐步信号有多响。$\gamma$ 仍是逐步折扣，不要和外层组均值拧成一个超参。默认 agent 基准上逐步项甚至可以不做 std 归一（`fnorm=none`），避免小锚点组把噪声放大，对照 `fund-adv-norm-bias`。
+$\omega$ 控制逐步优势的权重。$\gamma$ 仍是逐步折扣，不要和外层组均值拧成一个超参。默认 agent 基准上逐步项甚至可以不做 std 归一（`fnorm=none`），避免小锚点组把噪声放大，对照 `fund-adv-norm-bias`。
 
 ## 什么时候别用
 
@@ -52,7 +52,7 @@ PRM / 逐步规则分是另一条 dense 路，见 `pt-prm-orm-critic`、`byte-ag
 
 ## 追问
 
-- **和 GAE / Critic？** Critic 估 $V(s)$，要多一个头、多一份 stale。GiGPO 用组统计代替 $V$，换的是必须能对齐状态。
+- **和 GAE / Critic？** Critic 估 $V(s)$，要增加一个价值头，也会遇到估计随策略更新而过时的问题。GiGPO 用组统计代替 $V$，换的是必须能对齐状态。
 - **工具返回要不要进组？** 观察是环境，动作才进 $\pi$。token mask 见 `pt-agent-grpo-token-mask`。哈希应对齐环境状态，不要把思维链文本算进 state id。
-- **多 Agent？** GiGPO 论文是单 Agent 多步。多人还要分谁的动作，见 `arl-multi-credit`。不要把 GiGPO 说成已经解决 team reward。
-- **和过程奖励怎么选？** 有可验证事件先写门；有重复状态再分组。选型见 `arl-process-vs-gigpo`。
+- **多 Agent？** GiGPO 论文是单 Agent 多步。多人还要分谁的动作，见 `arl-multi-credit`。不要把 GiGPO 说成已经解决 team 奖励分数（reward）。
+- **和过程奖励怎么选？** 有可验证的事件时先设计过程评分规则；有重复状态再分组。选型见 `arl-process-vs-gigpo`。

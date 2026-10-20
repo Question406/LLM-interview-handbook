@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-这块容易按 `max_seq_len` 给每条请求预留一段连续 KV。生成长度事先不知道，beam / Best-of-N / 树采样还会分叉：短请求浪费，长请求在碎片缝里分配失败，共享的 prompt 前缀被复制多份。Serving 的 KV 管理更像操作系统的虚拟内存，而不是「一张大 tensor 切条」。
+这块容易按 `max_seq_len` 给每条请求预留一段连续 KV。生成长度事先不知道，beam / Best-of-N / 树采样还会分叉：短请求浪费，长请求在碎片缝里分配失败，共享的 输入提示（prompt） 前缀被复制多份。Serving 的 KV 管理更像操作系统的虚拟内存，而不是「一张大 tensor 切条」。
 
 ## 1. 为什么要 page / block
 
@@ -29,7 +29,7 @@ PagedAttention 把 KV 切成固定大小的 block（例如 $16$ 或 $64$ 个 tok
 
 1. **动态增长：** 只为已经写出的 token 付费，而不是为 `max_new_tokens` 预留空洞。
 2. **减少外部碎片：** 空闲页可以给任意序列；失败条件变成「没有空闲页」，而不是「没有足够长的连续段」。
-3. **前缀共享：** 同一 prompt、同一 system 前缀可以让多条请求的 table 指向同一组物理页，靠引用计数活着。
+3. **前缀共享：** 同一输入提示、同一 system 前缀可以让多条请求的 table 指向同一组物理页，靠引用计数活着。
 
 没有这层间接寻址，continuous batching 很难把不同长度的序列紧排在一起：要么 pad 到最长（假占用），要么频繁拷贝整段 KV。
 
@@ -47,11 +47,11 @@ KV 池是硬上限（可与模型权重争 HBM）。调度器在页用尽时通�
 
 | 策略 | 做法 | 代价 |
 | --- | --- | --- |
-| Recompute | 丢掉受害者 KV，以后从 prompt 重算 | 算力换内存，TTFT / 中断延迟升 |
-| Swap | 页换到 host / 更远存储 | PCIe 流量，decode 步抖动 |
+| Recompute | 丢掉受害者 KV，以后从 prompt 重算 | 算力换内存，首个 token 的等待时间（TTFT） / 中断延迟升 |
+| Swap | 页换到 host / 更远存储 | PCIe 流量，逐 token 生成（decode） 步抖动 |
 | Preempt | 整条请求暂停或踢出，让给更高优先级 | 公平性与尾延迟；可能级联重试 |
 
-没有绝对最优。短请求被长 CoT 占满页会饿死；只保吞吐则大 tenant 挤占。同时看 KV OOM 次数、碎片率（有空字节却分不出页）、preempt 率、recompute token、P99 TPOT、每完成请求的有效 token。只报 GPU utilization 会掩盖「算力很忙、页已经不公平」。
+没有绝对最优。长思维链（CoT）占满页时，短请求会长时间无法运行；只保吞吐则大 tenant 挤占。同时看 KV OOM 次数、碎片率（有空字节却分不出页）、preempt 率、recompute token、P99 TPOT、每完成请求的有效 token。只报 GPU utilization 会掩盖「算力很忙、页已经不公平」。
 
 优先级与长度感知的 admission（先估计剩余页、限制并发 $G$）比事后抢占更稳。公平性可以按 token、按请求或按租户配额，三种目标互相冲突，要在 SLA 里写死。
 

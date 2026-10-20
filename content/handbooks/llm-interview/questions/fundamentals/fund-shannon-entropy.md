@@ -36,7 +36,7 @@ $-\log p(x)$ 是「看到 $x$ 有多意外」：概率越接近 $0$，码长越�
 
 最小：$p$ 是 one-hot，$p(x^\star)=1$，其余为 $0$。则 $H= -1\cdot\log 1=0$。没有不确定性。
 
-最大：在 $|\mathcal{X}|=V$ 的单纯形上，$H$ 在均匀分布 $u(x)=1/V$ 处最大，值为 $\log V$。证明写进下一张「CE / KL」卡：把 $H(p)$ 改写成 $\log V-D_{\mathrm{KL}}(p\|u)$，KL 非负立刻给出上界。直觉：每个 token 机会均等，最难压。
+最大：在 $|\mathcal{X}|=V$ 的单纯形上，$H$ 在均匀分布 $u(x)=1/V$ 处最大，值为 $\log V$。证明写进下一张「CE / KL」卡：把 $H(p)$ 改写成 $\log V-D_{\mathrm{KL}}(p\|u)$，KL 非负立刻给出上界。直觉：每个 token 的概率相同，因此最难压缩编码。
 
 二值情况 $p=\mathrm{Bernoulli}(\theta)$：
 
@@ -48,7 +48,7 @@ $$
 
 ## 接到 LLM
 
-词表大小 $V$ 时，完全瞎猜的 next-token 分布接近均匀，$H\approx\log V$。训练把质量堆到正确答案上，熵下降。RL 里监控的 policy entropy 是同一条定义，只是 $p=\pi_\theta(\cdot\mid s)$。熵到 $0$ 就是 collapse：每个 state 几乎只输出一个 token。
+词表大小 $V$ 时，完全瞎猜的 next-token 分布接近均匀，$H\approx\log V$。训练将更多概率集中到正确答案上，熵随之下降。强化学习（RL）里监控的 policy entropy 是同一条定义，只是 $p=\pi_\theta(\cdot\mid s)$。熵到 $0$ 就是 collapse：每个 state 几乎只输出一个 token。
 
 ## 白板别漏
 

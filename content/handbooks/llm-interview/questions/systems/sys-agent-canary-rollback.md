@@ -4,7 +4,7 @@ section: systems
 order: 26
 level: A
 title: 如何为模型、system prompt、tool schema 与 retrieval index 的组合变更做 canary 和一键回滚？
-quick: 把每个组件显式版本化。先过离线 golden / 对抗切片，再 shadow 和小流量 canary；发布阈值同时覆盖 task success、安全拒绝、格式率、P95 latency 和成本，并保留兼容 schema 与完整回滚 artifact。
+quick: "把每个组件显式版本化。先过离线 golden / 对抗切片，再 shadow 和小流量 canary；发布阈值同时覆盖 task success、安全拒绝、格式率、P95 latency 和成本，并保留兼容的 schema 和完整的回滚发布包。"
 tags:
   - Canary
   - Rollback
@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-错法：只记录 model ID，把一次「模型升级」当成单变量发布。Agent 线上同时改 prompt、tool schema、retrieval index、policy 和 evaluator。回归时无法回答「是模型坏了还是 index 坏了」。每个组件要有不可变版本，请求和 trace 携带组合版本。回滚必须整组还原，而不是只把模型指针拨回去。
+常见误区是：只记录 model ID，把一次「模型升级」当成单变量发布。Agent 发布时可能同时改 prompt、tool schema、retrieval index、policy 和 evaluator。回归时无法回答「是模型坏了还是 index 坏了」。每个组件要有不可变版本，请求和 trace 携带组合版本。回滚必须整组还原，而不是只把模型指针拨回去。
 
 ## 先版本化，再谈流量
 
@@ -29,13 +29,13 @@ sources:
 
 ## 发布门：离线 → shadow → canary
 
-顺序：离线 golden 与安全对抗集 → shadow replay（不对外生效）→ 小流量 canary → 逐步扩大。gate 同时比：task completion、格式/工具错误、安全拒绝、人工升级率、P95 latency、每任务成本。只看平均 win rate 会漏掉「更会答但更会乱调工具、更贵、更不安全」。
+顺序：离线 golden 与安全对抗集 → shadow replay（不对外生效）→ 小流量 canary → 逐步扩大。发布检查要同时比较：task completion、格式/工具错误、安全拒绝、人工升级率、P95 latency、每任务成本。只看平均 win rate 会漏掉「更会答但更会乱调工具、更贵、更不安全」。
 
-阈值要预设回滚线，而不是上线后再投票。SRE canary 的核心是自动比较 + 自动停，不是人工盯盘。流量要从 1% 扩到 10% 再扩全量，每档都复用同一组 gate；中途某一档破线就停，不要「再观察一下」把坏组合放更大。
+阈值要预设回滚线，而不是上线后再投票。SRE canary 的核心是自动比较 + 自动停，不是人工盯盘。流量要从 1% 扩到 10% 再扩全量，每档都复用同一组 gate；中途某一档超过回滚阈值就停止，不要「再观察一下」把坏组合放更大。
 
 ## 一键回滚与副作用
 
-回滚 artifact 包括整组版本、index snapshot、schema adapter。有外部副作用的 tool（下单、写库）使用幂等键、审计和 kill switch，避免半发布状态继续执行。只回滚模型、index 仍是新的，用户会看到「旧模型 + 新检索」的第三种组合，比不回滚更难查。发布记录里要能一键切回上一组已签名的 artifact，而不是靠人肉改四五个配置项。canary 期间的写操作最好打上版本标签，回滚后可按标签补偿或冻结。
+回滚 artifact 包括整组版本、index snapshot、schema adapter。有外部副作用的 tool（下单、写库）使用幂等键、审计和 kill switch，避免半发布状态继续执行。只回滚模型、index 仍是新的，用户会看到「旧模型 + 新检索」的第三种组合，比不回滚更难查。发布记录里要能一键切回上一组已签名的 artifact，而不是靠人工修改四五个配置项。canary 期间的写操作最好打上版本标签，回滚后可按标签补偿或冻结。
 
 ## 追问
 

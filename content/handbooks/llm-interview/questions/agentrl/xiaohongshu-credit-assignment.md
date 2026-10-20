@@ -4,9 +4,7 @@ section: agentrl
 order: 140
 level: S
 title: 小红书：Credit assignment 怎么做？
-quick: >-
-  把最终奖励归因到关键错误 / 成功步：能验证的中间状态给过程分，不能验证的不要乱打。轨迹级 outcome + 工具合法门 + 稀疏终局，用
-  GAE 或组相对优势传到 token，并做反例防止刷过程分。
+quick: "以最终结果为主奖励，只对可验证的中间状态增加过程分，并用工具合法性检查排除违规轨迹。有逐步奖励时用 GAE，只有轨迹奖励时可用组相对优势，再对应到需要训练的 token。用反例检查模型是否靠无用步骤刷过程分。"
 tags:
   - Xiaohongshu
   - Credit Assignment
@@ -30,13 +28,13 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“credit assignment怎么实施的”**
 
-单轮 outcome RL 把整段 completion 当一个动作，credit 很粗。Agent 轨迹更长：选错工具可能在第 2 步，成功却在最后。小红书这问要听实施顺序：先定可观测里程碑，再传到 token，再用替换实验验证。不要给不可验证 CoT 打「漂亮分」。背景差异见 `xiaohongshu-agentic-rl-diff`，通用方法见 `arl-credit`。
+单轮 outcome 强化学习（RL） 把整段 completion 当一个动作，credit 很粗。Agent 轨迹更长：选错工具可能在第 2 步，成功却在最后。小红书这问要听实施顺序：先定可观测里程碑，再把信号传到 token，再用替换实验验证。不要因为不可验证的思维链（CoT）写得好就给分。背景差异见 `xiaohongshu-agentic-rl-diff`，通用方法见 `arl-credit`。
 
 ## 先钉可验证里程碑，再谈优势
 
-实施上先固定能自动判定的中间事件：检索是否命中、schema 是否合法、子目标是否达成。只对这些给 dense 信号；最终任务成功仍作主奖励。不可验证的 Thought 流畅度不要进 reward。合成时用门槛：合法门未过则 outcome 为零，防止「业务碰巧过、调用全错」。这和 `arl-reward`、`ali-function-call-grpo-process-reward` 同一约束。
+实施上先固定能自动判定的中间事件：检索是否命中、调用是否符合 schema、子目标是否达成。只对这些给 dense 信号；最终任务成功仍作主奖励。不可验证的 Thought 流畅度不要计入 reward。合成时用门槛：合法门未过则 outcome 为零，防止「业务碰巧过、调用全错」。这和 `arl-reward`、`ali-function-call-grpo-process-reward` 同一约束。
 
-传到 token：同一步内的 thought / action 共享步级优势；有逐步 $r_k$ 时用 GAE；GRPO 则在同任务多条轨迹间对比。广播与 mask 的细节按 `byte-agent-token-credit`：observation、prompt、padding 不进梯度。诊断看哪一步奖励开始分叉；用替换实验（改某步 observation 或删除某次调用）验证归因，见 `arl-hindsight`。原帖还问指标。credit 方案本身要进评测：过程分是否与最终成功相关，相关掉了就关 shaping。小红书业务里「笔记审核 / 检索改写」这类轨迹，中间步是否可验证，比换一个更炫的优势估计器更决定能不能训动。
+传到 token：同一步内的 thought / action 共享步级优势；有逐步 $r_k$ 时用 GAE；GRPO 则在同任务多条轨迹间对比。广播与 mask 的细节按 `byte-agent-token-credit`：观测结果（observation）、输入提示（prompt）、padding 不进梯度。诊断看哪一步奖励开始分叉；用替换实验（改某步 observation 或删除某次调用）验证归因，见 `arl-hindsight`。原帖还问指标。credit 方案本身要进评测：过程分是否与最终成功相关，相关掉了就关 shaping。小红书业务里「笔记审核 / 检索改写」这类轨迹，中间步是否可验证，比换一个更炫的优势估计器更决定能不能训动。
 
 ## 防刷过程分
 

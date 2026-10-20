@@ -4,10 +4,7 @@ section: arch
 order: 22
 level: S
 title: Mixtral 的 softmax+TopK 和 DeepSeek 的 sigmoid 门控差在哪？门控何时再归一？
-quick: >-
-  Mixtral 对 router logits 先 Top-$k$ 再只在选中的 $k$ 个上 softmax；DeepSeek-V3 用
-  $\sigma(u^\top e_i)$ 当亲和，选谁可以加 bias，加权仍用未加 bias 的分数再归一。先全量
-  softmax 再 Top-$k$ 会把质量分摊到未选专家上，选中的门控和不必为 $1$。
+quick: "Mixtral 先对 router logits 取 Top-$k$，再只在选中专家上 softmax。DeepSeek-V3 用 sigmoid 亲和度，选专家时加 bias，加权时用原分数在选中集合内归一。"
 tags:
   - MoE
   - Router
@@ -26,11 +23,11 @@ sources:
     type: primary
 ---
 
-错法：把「softmax 路由」写成先对 $N$ 个专家 softmax、再取 Top-$k$ 当权重。那 $k$ 个门控之和小于 $1$，未选中专家仍分走了概率质量，combine 等于把一层 MoE 乘了一个小于 $1$ 的系数。实现上要分清：用什么分数做离散选择，用什么分数做加权，这两步可以不是同一张表。
+常见误区是：把「softmax 路由」写成先对 $N$ 个专家 softmax、再取 Top-$k$ 当权重。那 $k$ 个门控之和小于 $1$，未选中专家仍分走了概率质量，combine 等于把一层 MoE 乘了一个小于 $1$ 的系数。实现上要分清：用什么分数做离散选择，用什么分数做加权，这两步可以不是同一张表。
 
 ## Mixtral：先截断，再在 $k$ 个上 softmax
 
-$N$ 个专家，router $W_g\in\mathbb{R}^{d\times N}$，token $x$：
+$N$ 个专家，router $W_g\in\mathbb{R}^{d\times N}$，文本处理单位（token） $x$：
 
 $$
 z=xW_g,\qquad
@@ -38,7 +35,7 @@ G(x)=\mathrm{softmax}\bigl(\mathrm{TopK}(z)\bigr),\qquad
 y=\sum_{i=1}^{N}G(x)_i\,E_i(x).
 $$
 
-$\mathrm{TopK}$ 把未选中位置打成 $-\infty$（或先取出 $k$ 维再 softmax）。于是只有选中专家有非零门控，且这 $k$ 个数和为 $1$。$k=2$、$N=8$ 时就是 Mixtral-8x7B 的稀疏 FFN：每 token 激活 $2$ 个 SwiGLU 专家，没有 shared expert，论文也不靠 aux loss 做均衡。
+$\mathrm{TopK}$ 把未选中位置打成 $-\infty$（或先取出 $k$ 维再 softmax）。于是只有选中专家有非零门控，且这 $k$ 个数和为 $1$。$k=2$、$N=8$ 时就是 Mixtral-8x7B 的稀疏 FFN：每 token 激活 $2$ 个 SwiGLU 专家，没有 shared expert，论文也不靠 aux 损失（loss） 做均衡。
 
 手写时常见两种等价实现：`topk(logits)` 得到 `[T,k]` 再 `softmax(val, dim=-1)`；或把未选位置填 `-inf` 后对整行 softmax。不要对已经 softmax 过的 $N$ 维再 top-$k$ 当权重，那是 Switch 的「选谁」步骤，不是 Mixtral 的「加权」步骤。
 

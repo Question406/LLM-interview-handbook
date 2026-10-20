@@ -5,7 +5,7 @@ order: 216
 level: A
 title: 手写 Tool JSON Schema 校验器：type、required、additionalProperties
 quick: >-
-  服务端递归校验，不要信模型。核对 `type`、`required` 缺键、以及
+  服务端递归校验，不要信模型。检查 `type` 是否匹配、`required` 中是否有缺失的键、以及
   `additionalProperties: false` 拒多余字段。Python 里 `bool` 是 `int` 子类，必须先排除。契约题见
   `agent-schema-contract`。
 tags:
@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：「模型会按 schema 生成，不必再验」或只查顶层 type。Agent 工具调用必须服务端拒绝合法 JSON 但缺必填、多字段、类型错的参数，见 `agent-schema-contract`。本题子集：`type`、`properties`、`required`、`additionalProperties`（`true` / `false` / 嵌套 schema）。`$ref` 是加分，现场可以声明不支持。返回 `errors: [(path, msg)]`，path 用 `$.a[0].b`，方便模型改参。
+常见误区是：「模型会按 schema 生成，不必再验」或只查顶层 type。Agent 工具调用必须服务端拒绝合法 JSON 但缺必填、多字段、类型错的参数，见 `agent-schema-contract`。本题子集：`type`、`properties`、`required`、`additionalProperties`（`true` / `false` / 嵌套 字段和类型规范（schema））。`$ref` 是加分，现场可以声明不支持。返回 `errors: [(path, msg)]`，path 用 `$.a[0].b`，方便模型改参。
 
 ## 实现要点
 
@@ -65,7 +65,7 @@ def validate(inst, schema, path="$"):
     return errors
 ```
 
-测三例：缺 `required`；多一个未声明键且 `additionalProperties` 为 false；`"count": true` 不得当成 integer。Nested object 递归即可。不要在校验器里做单位换算或权限，那是业务契约，schema 只挡结构。
+测三例：缺 `required`；多一个未声明键且 `additionalProperties` 为 false；`"count": true` 不得当成 integer。Nested object 递归即可。不要在校验器里做单位换算或权限，那是业务契约，Schema 只检查数据结构。
 
 ## 失败怎么回给模型
 

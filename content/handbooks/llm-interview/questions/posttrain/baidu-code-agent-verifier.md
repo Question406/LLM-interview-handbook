@@ -4,9 +4,7 @@ section: posttrain
 order: 101
 level: S
 title: 百度文心一言：Code Agent 的 verifier 怎样设计？
-quick: >-
-  我会把 verifier 做成分层、可执行的判定器：先 sandbox、编译和单测，再做隐藏测试、属性测试、静态安全检查和
-  resource limit，输出结构化 failure reason。既要低 false positive，也要挡住 reward hacking，而且训练和评测集必须严格隔离。
+quick: "验证器分层执行检查：先把代码放进限制资源的 sandbox，编译并跑单测，再跑隐藏测试、属性测试和静态安全检查。每次返回结构化失败原因。还要单独测误判和投机通过的情况，并严格隔离训练与评测用例。"
 tags:
   - Baidu
   - Code Agent
@@ -31,11 +29,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、轮次与面试日期明确，岗位和届别未披露）
 - 原始措辞：**“Code Agent verifier 怎么设计”**
 
-错法：「再训一个打分模型」或「让 LLM 当 judge」。第一职责是判定可执行事实：编译过不过、测试过不过、有没有越权、有没有超时。自然语言评语既不可复现，也极易被拍马，不能当唯一奖励。GRPO / RLVR 的优势完全建立在这张 $r$ 上，整组同奖励则 $\hat A=0$，见 `sys-rl-group-n`，所以 verifier 的洞会直接变成策略。训练用的 judge 和最终 holdout 必须隔离，否则模型学的是公开测试的漏洞，不是写对代码。
+常见误区是：「再训一个打分模型」或「让 LLM 当 judge」。第一职责是判定可执行事实：编译过不过、测试过不过、有没有越权、有没有超时。自然语言评语既不可复现，也极易被拍马，不能当唯一奖励。GRPO / 基于可验证奖励的强化学习（RLVR） 的优势完全建立在这张 $r$ 上，整组同奖励则 $\hat A=0$，见 `sys-rl-group-n`，所以 验证器（verifier） 的洞会直接变成策略。训练用的 judge 和最终 holdout 必须隔离，否则模型学的是公开测试的漏洞，不是写对代码。
 
 ## 分层判定，输出结构化原因
 
-把候选放进隔离 sandbox：断网、限文件系统、CPU、内存和 wall time，防止训练时打到评测机或读隐藏文件。按语言分层执行：编译 → 公开测试 → 隐藏测试 → 属性测试或 differential testing → 静态安全检查。输出结构化原因，例如 `compile_error`、`wrong_answer`、`timeout`、`security`，不要只给 $0/1$。Repository / Agent 任务还要验证 diff 范围、测试命令、依赖锁定和不可修改文件。失败原因可以回灌纠错 SFT，但不能把隐藏测试细节写进给模型看的反馈，否则策略学会读题面而不是写实现。
+把候选放进隔离 sandbox：断网、限文件系统、CPU、内存和 wall time，防止训练时打到评测机或读隐藏文件。按语言分层执行：编译 → 公开测试 → 隐藏测试 → 属性测试或 differential testing → 静态安全检查。输出结构化原因，例如 `compile_error`、`wrong_answer`、`timeout`、`security`，不要只给 $0/1$。Repository / Agent 任务还要验证 diff 范围、测试命令、依赖锁定和不可修改文件。失败原因可以回灌纠错监督微调（SFT），但不能把隐藏测试细节写进给模型看的反馈，否则策略学会读题面而不是写实现。
 
 奖励可以做成分层标量：编译过给小正、单测过给中等、隐藏测试过给 1。过程奖容易变成刷模板（先打印「通过」再乱写），先用终局奖把正确率做起来，再决定要不要过程项。反向 KL 挡的是参考支撑外的胡话，挡不住「参考里就有的假通过」，见 `fund-kl-directions`。
 

@@ -4,10 +4,7 @@ section: fundamentals
 order: 144
 level: S
 title: Schulman 的 $k_1/k_2/k_3$ 各估什么？数值无偏和梯度正确是一回事吗？
-quick: >-
-  从 $q$ 采样、$r=p/q$。$k_1=-\log r$ 无偏、方差大、可负；$k_2=\frac12(\log r)^2$ 低方差、有偏；$k_3=r-1-\log r$
-  无偏、非负、方差更小。PPO 常把 $k_1$ 扣进 reward；GRPO 常把 $k_3$ 当 loss。当 loss 反传时 $k_3$
-  的梯度并不等于反向 KL，蚂蚁面经会追到这一层。
+quick: "$r=p/q$ 时，$k_1=-\\log r$ 无偏但方差大，$k_2=\\frac12(\\log r)^2$ 有偏，$k_3=r-1-\\log r$ 无偏且非负。数值无偏不等于梯度对：$k_3$ 直接当 loss 反传，梯度不是反向 KL 的梯度。"
 tags:
   - KL
   - GRPO
@@ -28,7 +25,7 @@ sources:
     type: secondary
 ---
 
-蚂蚁一面原话：「GRPO 的 KL 和 PPO 的 KL 区别？K1 K2 K3 估计区别？」先把符号钉死，再把「无偏」两个字拆开。估的是反向
+蚂蚁一面原话：「GRPO 的 KL 和 PPO 的 KL 区别？K1 K2 K3 估计区别？」先把符号明确固定下来，再把「无偏」两个字拆开。估的是反向
 
 $$
 D_{\mathrm{KL}}(q\|p)=\mathbb{E}_{x\sim q}\Big[\log\frac{q(x)}{p(x)}\Big],
@@ -46,15 +43,15 @@ $$
 k_1=-\log r,\qquad k_2=\tfrac12(\log r)^2,\qquad k_3=(r-1)-\log r.
 $$
 
-## 1. 三个估计各担保什么
+## 1. 三个估计分别具有什么性质
 
 - $k_1$。$\mathbb{E}_q[k_1]=D_{\mathrm{KL}}(q\|p)$，朴素无偏。$r\gt 1$ 时为负，单次采样可以报「负 KL」，方差大，日志难看，但作为随机量期望是对的。
 - $k_2$。$x\mapsto\frac12(\log x)^2$ 是 $r\approx 1$ 处 KL 的二阶近似，恒非负、平滑、方差小，期望一般不等于 KL（有偏）。适合画曲线，不适合当无偏目标。
-- $k_3$：对 $k_1$ 用 $r-1$ 做控制变量：$\mathbb{E}_q[r-1]=0$，故 $\mathbb{E}_q[k_3]$ 仍是 KL。又因 $x-\ln x-1\ge 0$（$x\gt 0$），样本几乎总是非负，方差通常小于 $k_1$。这是「看起来像距离、期望还对」的那一档。
+- $k_3$：对 $k_1$ 用 $r-1$ 做控制变量：$\mathbb{E}_q[r-1]=0$，故 $\mathbb{E}_q[k_3]$ 仍是 KL。又因 $x-\ln x-1\ge 0$（$x\gt 0$），样本几乎总是非负，方差通常小于 $k_1$。因此它既保证单个样本值非负，也保持期望等于 KL。
 
 白板可以补一句：$f(x)=x-1-\log x$ 在 $x=1$ 取 $0$，二阶导 $1/x^2$，与 KL 在 $r=1$ 的曲率一致，所以 $k_3$ 既无偏又比 $k_1$ 稳。
 
-## 2. PPO 扣 reward，GRPO 挂 loss：梯度不是同一条
+## 2. PPO 扣 奖励分数（reward），GRPO 挂 损失（loss）：梯度不是同一条
 
 实现分叉，蚂蚁要的是这一层。
 

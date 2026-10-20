@@ -4,9 +4,7 @@ section: companies
 order: 4
 level: A
 title: 百度 AIDU：大模型与 Agent 岗该怎么定向准备？
-quick: >-
-  Post-training 我会重点准备 SFT、RLHF、DPO 动力学、GRPO、SimPO、Reasoning、MoE、Latent
-  Attention、投机解码和分布式训练。Agent 岗还要覆盖 Tool、API、Memory、RAG 加 Agent、Multi-Agent 和评测。
+quick: "后训练方向重点准备监督微调（SFT）、RLHF、DPO 的训练行为、GRPO、SimPO，以及推理能力、MoE、Latent Attention、推测解码和分布式训练。Agent 岗还需覆盖工具与 API、记忆、RAG 与 Agent 的结合、多 Agent 和评测。"
 tags:
   - Baidu
   - AIDU
@@ -25,14 +23,14 @@ sources:
     type: legacy-reference
 ---
 
-百度公开面经很少停在「DPO 是什么」。错法：背公式，却说不清 chosen 概率是不是一定升、length issue、SimPO 相对 DPO 改了哪一项、Base 模型怎么增强 reasoning。我准备的单位是追问树，不是词条：推导 → $\beta$ → chosen/rejected likelihood → 长度偏置 → hard negatives → SimPO/KTO → offline vs online RL。Agent 岗另加指令冲突和代码 verifier，不会用「会调工具」收尾。
+百度公开面经很少停在「DPO 是什么」。常见误区是：背公式，却说不清 chosen 概率是不是一定升、length issue、SimPO 相对 直接偏好优化（DPO） 改了哪一项、Base 模型怎么增强 reasoning。准备时按相关追问串起来：推导 → $\beta$ → chosen/rejected likelihood → 长度偏置 → hard negatives → SimPO/KTO → 离线与在线强化学习（RL）。Agent 岗另加指令冲突和代码验证器（verifier），不会用「会调工具」收尾。
 
 ## 准备主线
 
 1. **DPO 动力学**：chosen 概率不必单调上升。要能画对齐曲线，并解释 reference 和 $\beta$。见 `baidu-dpo-chosen-curve`、`pt-dpo-derive`、`pt-dpo-chosen`、`pt-dpo-beta`。
-2. **长度与 SimPO**：隐式奖励含长度项时怎么 hack；SimPO 去掉 reference、用长度归一。见 `baidu-simpo-vs-dpo-length`。
-3. **PPO / GAE / GRPO**：clip 在 $A\gt 0$ / $A\lt 0$ 各限制哪一侧（`baidu-ppo-clip-sign`、`code-ppo-clip`）；$\lambda$ 的偏差和方差（`baidu-gae-lambda`、`code-gae`）；组内优势和 loss 聚合（`baidu-grpo-loss-agg`、`pt-grpo`）；off-policy 角色（`baidu-grpo-policy-roles-offpolicy`）；样本量和收敛（`baidu-rl-sample-size-convergence`）。
-4. **系统与推理**：MoE / Latent Attention（`arch-moe`、`arch-mla`）、投机解码（`sys-specdecode`）、Qwen2 SFT 实现（`baidu-qwen2-sft-implementation`）。
+2. **长度与 SimPO**：要解释模型如何利用隐式奖励中的长度偏置提高得分；SimPO 则去掉 reference，并做长度归一化。见 `baidu-simpo-vs-dpo-length`。
+3. **PPO / GAE / GRPO**：clip 在 $A\gt 0$ / $A\lt 0$ 各限制哪一侧（`baidu-ppo-clip-sign`、`code-ppo-clip`）；$\lambda$ 的偏差和方差（`baidu-gae-lambda`、`code-gae`）；组内优势和损失聚合（`baidu-grpo-loss-agg`、`pt-grpo`）；off-policy 角色（`baidu-grpo-policy-roles-offpolicy`）；样本量和收敛（`baidu-rl-sample-size-convergence`）。
+4. **系统与推理**：MoE / Latent Attention（`arch-moe`、`arch-mla`）、投机解码（`sys-specdecode`）、Qwen2 监督微调（SFT） 实现（`baidu-qwen2-sft-implementation`）。
 5. **Agent**：指令冲突（`baidu-agent-instruction-conflict`）、代码 Agent 的 verifier（`baidu-code-agent-verifier`）。
 
 ## 本手册真题卡
@@ -53,5 +51,5 @@ sources:
 ## 追问
 
 - **chosen 概率一定升吗？** 不一定。相对 rejected 的间隔可以升，绝对 $p(y_w)$ 仍可能降。把曲线画出来。
-- **为什么还要 SimPO？** DPO 的 implicit reward 和长度共线时会写长。SimPO 用长度归一和目标间隔，见对应卡。
-- **Agent 岗少准备什么会挂？** 只背 post-training，说不清冲突指令和可执行校验。按上面 id 刷追问树。
+- **为什么还要 SimPO？** DPO 的隐式奖励分数如果与长度高度相关，模型就可能通过写长回答提高得分。SimPO 用长度归一和目标间隔，见对应卡。
+- **Agent 岗少准备什么会挂？** 只背 post-training，说不清冲突指令和可执行校验。可以按上面的 id 逐题准备相关追问。

@@ -4,11 +4,7 @@ section: systems
 order: 265
 level: A
 title: slime 的 `--use-dynamic-batch-size` 和 veRL `use_dynamic_bsz` 怎么对？开 `--balance-data` 会拆 GRPO 组吗？
-quick: >-
-  都是按每卡 token 预算拼 micro-batch，不再固定条数。slime 开 `--use-dynamic-batch-size
-  --max-tokens-per-gpu`；logp 路径用更大的 `--log-probs-max-tokens-per-gpu`。有 CP 时预算按
-  `max_response_len // cp_size` 估。`--balance-data` 会把同一 prompt 的不同 response 分到不同
-  step，GRPO 组统计可能坏。
+quick: "两者都按每卡 token 预算拼 micro-batch，logp 路径要单独设上限。`--balance-data` 可能把同一 prompt 的 response 拆到不同 step，GRPO 组优势会算错。"
 tags:
   - slime
   - VeRL
@@ -26,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：把动态 batch 说成「把 `--micro-batch-size` 改大一点」。开关打开后条数不再是常数，拼的是每卡 token 预算；只改训练帽、忘了 logp 帽，会在重算 $\log\pi$ 时 OOM。更大的坑是 `--balance-data`：它为了匀负载，可能把同一 prompt 的 $n$ 条 response 拆进不同 training step，GRPO 组内相对优势直接坏掉。
+常见误区是：把动态 batch 说成「把 `--micro-batch-size` 改大一点」。开关打开后条数不再是常数，拼的是每卡 token 预算；只修改训练 token 上限，忘了 logp 的上限，会在重算 $\log\pi$ 时 OOM。更大的坑是 `--balance-data`：它为了匀负载，可能把同一输入提示 的 $n$ 条 response 拆进不同 training step，GRPO 组内相对优势直接坏掉。
 
 ## 按 token 拼，不按条数
 
@@ -46,11 +42,11 @@ sources:
 
 ## `--balance-data` 会拆 GRPO 组
 
-`--balance-data` 文档写明：同一 prompt 的多条 response 可能进不同 training step。GRPO / 组相对优势要求 $n$ 条同窗统计；拆开后 $\mathrm{std}(r)$ 和 advantage 对不上。要组内相对优势，先确认组还在同一统计窗口，再开均衡。flops 均衡可以开，data 均衡对 GRPO 要谨慎。
+`--balance-data` 文档写明：同一输入提示 的多条 response 可能进不同 training step。GRPO / 组相对优势要求 $n$ 条同窗统计；拆开后 $\mathrm{std}(r)$ 和 advantage 对不上。要组内相对优势，先确认组还在同一统计窗口，再开均衡。flops 均衡可以开，data 均衡对 GRPO 要谨慎。
 
 ## 追问
 
-- **固定 micro-batch 为什么在长 CoT 会炸？** 显存随最长序列走，$m$ 条里一条 $8\mathrm{k}$ 就把整步顶满。按 token 拼可以让短的先凑满预算。
+- **固定 micro-batch 为什么在长 思维链（CoT，即分步推理过程） 会出现数值异常？** 显存随最长序列走，$m$ 条里一条 $8\mathrm{k}$ 就把整步顶满。按 token 拼可以让短的先凑满预算。
 - **为什么 logp 帽往往更大？** 重算 logp 没有优化器状态，但变长 packing 后单步 token 可能比训练 backward 更尖，单独设帽。
 - **`--balance-by-flops` 安全吗？** 更匀，但允许某个 batch 超过 token 帽。OOM 后先关它，不要先怪动态开关。
 - **和 `--balance-data` 一起开吗？** 对 GRPO 先不要。均衡负载和组统计是两件事，组散了优势为 0 或算错。

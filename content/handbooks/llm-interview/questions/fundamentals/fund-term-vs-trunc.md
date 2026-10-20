@@ -24,11 +24,11 @@ sources:
     type: primary
 ---
 
-错法：把框架里的 `done` 一律当「没有下一状态」。很多实现一个 `done` 既表示任务成功/失败，又表示打到 `max_tokens`。两者对 $V(s')$ 的处理相反。手写递推见 `code-gae`；本题只钉偏倚方向。
+常见误区是：把框架里的 `done` 一律当「没有下一状态」。很多实现一个 `done` 既表示任务成功/失败，又表示打到 `max_tokens`。两者对 $V(s')$ 的处理相反。手写递推见 `code-gae`；本题重点说明偏差的方向。
 
 ## Terminal：未来是 0，再 bootstrap 是正的幻觉
 
-任务自然结束：EOS、verifier 已判定、环境进入吸收态。真实 $V^\pi(s_{\mathrm{term}})=0$（没有尚未发生的奖励）。GAE / TD 应
+任务自然结束：EOS、验证器（verifier） 已判定、环境进入吸收态。真实 $V^\pi(s_{\mathrm{term}})=0$（没有尚未发生的奖励）。GAE / TD 应
 
 $$
 \delta_{T-1}=r_{T-1}+\gamma\cdot 0-V(s_{T-1}),
@@ -38,7 +38,7 @@ $$
 
 ## Truncation：假装结束是负偏
 
-`max_new_tokens`、time-limit、partial rollout 切一刀时，环境并没有说「以后都是 0」。正确答案往往还在后面。此时 $G_t$ 的尾巴被砍掉。若不 bootstrap：
+`max_new_tokens`、time-limit、partial 采样轨迹（rollout） 切一刀时，环境并没有说「以后都是 0」。正确答案往往还在后面。此时 $G_t$ 的尾巴被砍掉。若不 bootstrap：
 
 $$
 \hat G_t=\sum_{k=0}^{T-t-1}\gamma^k r_{t+k}
@@ -52,13 +52,13 @@ $$
 \delta_{T-1}=r_{T-1}+\gamma V(s_T)-V(s_{T-1}),
 $$
 
-承认「后面我没采，用 critic 估」。这重新引入 bootstrap 偏差，但是比「谎称结束」更诚实。Pardo et al. 的 time-limit 结论就是：训练用的时间帽应视为 truncation，不应写入环境动力学当 terminal。
+承认「后面我没采，用 critic 估」。这重新引入 bootstrap 偏差，但是比「谎称结束」更诚实。Pardo et al. 的 time-limit 结论就是：训练时的时间上限应视为 truncation，不应写入环境动力学当 terminal。
 
-LLM 实务：EOS 是 terminal；打到长度帽、`--partial-rollout` 的半截、异步 abort 是 truncation。半截还要叠 off-policy：旧 prefix 该 mask 或 TIS，见 `fund-vtrace`。把 truncation 当负例（超长直接 $r=0$）是又一层目标扭曲，DAPO 用 overlong shaping 就是为了避免这种假标签，见 `pt-dapo`。
+LLM 实务：EOS 是 terminal；达到长度上限、`--partial-rollout` 的半截、异步 abort 是 truncation。半截还要叠 off-policy：旧 prefix 该 mask 或 TIS，见 `fund-vtrace`。把 truncation 当负例（超长直接 $r=0$）是又一层目标扭曲，DAPO 用 overlong shaping 就是为了避免这种假标签，见 `pt-dapo`。
 
 ## 追问
 
 - **$\gamma=1$ 时截断更致命吗？** 是。没有折扣，砍掉的尾巴权重是 1，负偏更大。
-- **没有 critic 的 GRPO 怎么 truncation？** 没有 $V(s_T)$ 可接。常见是：不训半截、mask 掉未完成 token、或给长度惩罚但不把「没写完」等同「答错」。不要发明一个 0 当 bootstrap。
+- **没有 价值评估模型（critic） 的 GRPO 怎么 truncation？** 没有 $V(s_T)$ 可接。常见是：不训半截、mask 掉未完成的 token、或给长度惩罚但不把「没写完」等同「答错」。不要发明一个 0 当 bootstrap。
 - **成功但超长呢？** 任务可能已经对。当 terminal 并给对的 $r$，同时用 shaping 罚长度；不要只因截断把 $r$ 打成 0。
 - **两个 mask 为什么都要？** `terminated` 断 bootstrap 与 trace；`truncated` 只断采样、不断 bootstrap。合成一个 `done` 是经典 bug。

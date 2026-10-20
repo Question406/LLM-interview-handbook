@@ -4,7 +4,7 @@ section: mcp-security
 order: 1
 level: S
 title: MCP 的 OAuth Resource Indicator 和 canonical server URI 为什么必要？Token passthrough 如何造成 confused deputy，服务端应怎样验证并换取下游 token？
-quick: token 必须面向具体 MCP server。我会让 client 在授权和换 token 时声明 `resource`，server 校验 audience；绝不能把上游 token 原样转给下游。需要下游访问时，由可信 broker 用最小 scope 换取独立、短期 token。
+quick: "token 必须签发给具体 MCP server。我会让 client 在授权和换 token 时声明 `resource`，server 校验 audience；绝不能把上游 token 原样转给下游。需要下游访问时，由可信 broker 用最小 scope 换取独立、短期 token。"
 tags:
   - MCP
   - OAuth
@@ -23,7 +23,7 @@ sources:
 
 ## 为什么要 resource 与 canonical URI
 
-授权和换 token 时 client 声明 `resource`（目标 MCP server 的规范 URI）。MCP server 校验 issuer、签名、expiry、audience / resource、scope；audience 不匹配必须拒绝。Canonical URI 避免 `localhost`、IP、带尾斜杠的别名让同一服务发出或接受错 token。Token 不是登录态饼干，不能在任意内部 HTTP 头里转发。resource 回答「能对谁做」，scope 回答「能做什么」；缺 audience 时 scope 再小也会被拿去打别的服务。日志记录 audience 校验结果，拒绝时不要把 token 原文打进日志。
+授权和换 token 时 client 声明 `resource`（目标 MCP server 的规范 URI）。MCP server 校验 issuer、签名、expiry、audience / resource、scope；audience 不匹配必须拒绝。Canonical URI 避免 `localhost`、IP、带尾斜杠的别名让同一服务发出或接受错 token。token 不能像登录 cookie 一样在任意内部 HTTP 请求头里转发。resource 回答「能对谁做」，scope 回答「能做什么」；缺 audience 时 scope 再小也会被拿去打别的服务。日志记录 audience 校验结果，拒绝时不要把 token 原文打进日志。
 
 ## Passthrough 与 confused deputy
 
@@ -31,7 +31,7 @@ sources:
 
 ## 评测要记什么
 
-对抗用例：audience 为 A 的 token 打 B；server 把 Authorization 头转发给第三方；exchange 后 scope 被放大。记录：校验失败码、是否发生转发、下游 token 的 audience 与 TTL。token 面向具体 server；下游另换短票；passthrough 就是 confused deputy。代码门禁可以搜入站 `Authorization` 是否被写入出站请求。评测最小集：错 audience 拒绝、透传拦截、exchange 后 audience 与 TTL 符合预期。resource 回答「能对谁做」，scope 回答「能做什么」。
+对抗用例：audience 为 A 的 token 打 B；server 把 Authorization 头转发给第三方；exchange 后 scope 被放大。记录：校验失败码、是否发生转发、下游 token 的 audience 与 TTL。token 面向具体 server；下游访问要换取独立的短期 token；passthrough 就是 confused deputy。代码门禁可以搜入站 `Authorization` 是否被写入出站请求。评测最小集：错 audience 拒绝、透传拦截、exchange 后 audience 与 TTL 符合预期。resource 回答「能对谁做」，scope 回答「能做什么」。
 
 ## 追问
 

@@ -31,15 +31,15 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“如果 Agent 在执行代码修改时生成了错误 patch，你怎么做回滚、验证和再尝试？”**；**“如果让你把这个本地 Coding Agent 做成团队内部工具，你会怎么处理权限、安全和审计？比如文件读写、命令执行、敏感信息泄露。”**
 
-错法：「让模型再生成一次」或「system prompt 里写不要改错文件」。harness 才是答案：每次尝试钉在明确基准 commit 上，失败就丢掉脏树，再带失败日志重规划。做成内部工具时，权限、沙箱和审计是运行时策略，不是 prompt。模型不能直接拿生产凭据。相关卡：`byte-tool-fail-retry`、`moonshot-desktop-local-file-permission`。
+常见误区是：「让模型再生成一次」或「system prompt 里写不要改错文件」。harness 才是答案：每次尝试绑定明确的基准 commit，失败就丢掉脏树，再带失败日志重规划。做成内部工具时，权限、沙箱和审计是运行时策略，不是 输入提示（prompt）。模型不能直接拿生产凭据。相关卡：`byte-tool-fail-retry`、`moonshot-desktop-local-file-permission`。
 
-## 回滚与再试：脏树上禁止叠幻觉
+## 回滚到基准，再根据失败证据重试
 
-patch 应用前记录 tree / commit。测试红了就 `git checkout --` 或丢掉 worktree，回到基准，禁止在半成功改动上叠下一次补丁。再试只把失败断言、相关 hunk 和最小复现命令送回模型，不要整仓再读一遍，那会把 token 和无关文件一起送进下一轮幻觉。验证闭环是：应用 → 定向测试 → 通过才允许下一张 patch；失败即回滚。并行尝试用独立 worktree，不要共享工作区。基准要不可变：同一 `attemptId` 对应同一起点，方便审计「哪一次尝试改坏了什么」。测绿之后才允许 `git add`；Agent 不得在未验证时直接 commit 到共享分支。
+patch 应用前记录 tree / commit。测试红了就 `git checkout --` 或丢掉 worktree，回到基准，禁止在半成功改动上叠下一次补丁。再试只把失败断言、相关 hunk 和最小复现命令送回模型，不要整仓再读一遍，那会增加 token 消耗，并把无关文件带入下一轮上下文。验证闭环是：应用 → 定向测试 → 通过才允许下一张 patch；失败即回滚。并行尝试用独立 worktree，不要共享工作区。基准要不可变：同一 `attemptId` 对应同一起点，方便审计「哪一次尝试改坏了什么」。测绿之后才允许 `git add`；Agent 不得在未验证时直接 commit 到共享分支。
 
 ## 内部工具：沙箱、白名单、审计
 
-可写目录限制在仓库与临时 workspace；禁读 `.env`、密钥文件和同机其他 repo。命令走策略引擎：白名单 `pytest` / `git` 子集，禁 `curl | sh`、禁任意网络、禁提权。密钥扫描放在 observation 出沙箱之前，命中则脱敏或拒绝回传模型。审计日志至少包含：谁、何时、对哪条 repo / commit、执行了什么命令、读写了哪些路径、测试结果、是否回滚。这是 harness 职责。鉴权按人 + 仓库 ACL，Agent 服务账号不能持有生产 deploy key。内部工具还要把「谁能对哪条 repo 发起尝试」做成审批或组权限，避免任意同事对核心库连打 patch。相关卡：`agent-tool-permissions`。
+可写目录限制在仓库与临时 workspace；禁读 `.env`、密钥文件和同机其他 repo。命令走策略引擎：白名单 `pytest` / `git` 子集，禁 `curl | sh`、禁任意网络、禁提权。密钥扫描放在 观测结果（observation） 出沙箱之前，命中则脱敏或拒绝回传模型。审计日志至少包含：谁、何时、对哪条 repo / commit、执行了什么命令、读写了哪些路径、测试结果、是否回滚。这是 harness 职责。鉴权按人 + 仓库 ACL，Agent 服务账号不能持有生产 deploy key。内部工具还要把「谁能对哪条 repo 发起尝试」做成审批或组权限，避免任意同事对核心库连打 patch。相关卡：`agent-tool-permissions`。
 
 ## 追问
 

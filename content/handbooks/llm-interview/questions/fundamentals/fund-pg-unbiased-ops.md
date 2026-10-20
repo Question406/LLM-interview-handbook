@@ -28,7 +28,7 @@ sources:
     type: primary
 ---
 
-错法：把「无偏」当成道德词，好像 MC 一定比 GAE 高级、clip 一定是作弊。先钉死无偏相对哪条期望，再把操作分成两类。相对的是 on-policy 策略梯度
+常见误区是：把「无偏」当成道德词，好像 MC 一定比 GAE 高级、clip 一定是作弊。先说清无偏是相对于哪条期望，再把操作分成两类。相对的是 on-policy 策略梯度
 
 $$
 \nabla_\theta J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}\Big[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t\Big],
@@ -52,8 +52,8 @@ $$
 
 | 操作 | 偏在哪 | 换来什么 |
 | --- | --- | --- |
-| TD / GAE $\lambda\lt 1$ | 用 $V(s')$ bootstrap 截断回报 | 低方差；吃 critic 误差 |
-| PPO / GRPO clip surrogate | 越界 token 梯度变 0 | 近似 trust-region |
+| TD / GAE $\lambda\lt 1$ | 用 $V(s')$ bootstrap 截断回报 | 低方差；依赖 Critic 的估计质量 |
+| PPO / GRPO clip surrogate | 越界 token 的梯度变为 0 | 近似 trust-region |
 | 截断 IS、V-trace、CISPO 封顶 $\rho$ | $\mathbb{E}[\mathrm{clip}(\rho)f]\neq\mathbb{E}_\pi[f]$ | 挡住爆炸权重 |
 | Self-normalized IS | 分母是随机的，有限样本有偏 | 更稳、ESS 可读 |
 | 组 / batch 除 $\sigma$ | 题目、batch 被重新加权 | 尺度统一，改 calibration |
@@ -64,7 +64,7 @@ GAE 的偏差来自 bootstrap，不是来自「减了 $V$」。把 $G_t-V$ 和 $
 
 ## 怎么收
 
-先写目标 $\nabla J$，再指着配方说：哪几步还在无偏族，哪几步已经换目标。可验证短答案可以偏左（MC、大 $\lambda$、少 clip）；开放生成 + 噪 RM 必须偏右，再用金标看有没有优化到长度或套话。不要声称某一个 $\lambda$ 或 $\varepsilon$ 普遍最优。
+先写目标 $\nabla J$，再指着配方说：哪几步还在无偏族，哪几步已经换目标。可验证短答案可以偏左（MC、大 $\lambda$、少 clip）；开放生成且奖励模型（RM）噪声较大时 必须偏右，再用金标看有没有优化到长度或套话。不要声称某一个 $\lambda$ 或 $\varepsilon$ 普遍最优。
 
 ## 追问
 

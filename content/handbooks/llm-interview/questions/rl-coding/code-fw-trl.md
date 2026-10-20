@@ -4,10 +4,7 @@ section: rl-coding
 order: 9
 level: S
 title: TRL 的 GRPOTrainer 把变体都收进 loss_type，代码怎么分支？
-quick: >-
-  生成、打分、组内优势都在 `_generate_and_score_completions`。`_compute_loss` 先决定 token 还是序列
-  $\rho$，再按 `loss_type` 写 clip。默认 `loss_type` 是 `dapo`（全局 token 等权），不是论文的
-  `grpo`。GSPO 把 `importance_sampling_level` 设成 `sequence`，并且要配 `loss_type="grpo"`。
+quick: "优势在 `_generate_and_score_completions` 里算完；`_compute_loss` 先选 token 级或序列级 $\\rho$，再按 `loss_type` 分支 clip 和归约。默认是 `dapo`，不是 `grpo`。"
 tags:
   - TRL
   - GRPO
@@ -27,7 +24,7 @@ sources:
     type: primary
 ---
 
-开关和公式见 `code-ppo-grpo-gspo`。TRL 没有 verl 那种 driver / worker 分界，也没有 Miles 那种先把 reward 标准化再送进 Megatron。一条 `GRPOTrainer` 自己生成、自己算优势、自己反传。没有 GAE、没有 value head。PPO+critic 不在这个类里。
+开关和公式见 `code-ppo-grpo-gspo`。TRL 没有 verl 那种 driver / worker 分界，也没有 Miles 那种先把 奖励分数（reward） 标准化再送进 Megatron。一条 `GRPOTrainer` 自己生成、自己算优势、自己反传。没有 GAE、没有 value head。PPO+价值评估模型（critic） 不在这个类里。
 
 ## 生成缓存：为什么 old logprob 有时就是当前 logprob 的 detach
 
@@ -39,7 +36,7 @@ sources:
 
 `_generate_and_score_completions` 后半：
 
-1. 多个 `reward_funcs` 的输出拼成 `rewards_per_func`，并且跨进程聚合。组内标准化必须看见同一 prompt 的全部 $G$ 条，而 $G$ 可能被切到不同 GPU。
+1. 多个 `reward_funcs` 的输出拼成 `rewards_per_func`，并且跨进程聚合。组内标准化必须看见同一输入提示 的全部 $G$ 条，而 $G$ 可能被切到不同 GPU。
 2. 某个样本上所有奖励函数都返回 `None`，记进 `unscorable_mask`。不把它们 `nansum` 成 0，否则会把「没打分」当成奖励 0，拉偏组均值。
 3. `multi_objective_aggregation="sum_then_normalize"`（默认）：先按 `reward_weights` 求和。`rewards.view(-1, num_generations)` 上 `nanmean` 得到组均值，再 `repeat_interleave` 铺回每一条。`scale_rewards`：
    - `"group"`（默认）：组内 `nanstd`。
@@ -54,7 +51,7 @@ sources:
 
 ## _compute_loss：先造 ρ，再按 loss_type 分叉
 
-输入是 prompt ids 和 completion ids 拼起来的序列。`logits_to_keep` 等于 completion 长度，只对回复位置取 logprob。`mask` 是 `completion_mask`；有工具返回时再乘 `tool_mask`，工具文本不进损失。
+输入是 输入提示（prompt） ids 和 completion ids 拼起来的序列。`logits_to_keep` 等于 completion 长度，只对回复位置取 logprob。`mask` 是 `completion_mask`；有工具返回时再乘 `tool_mask`，工具文本不进损失。
 
 `log_ratio = per_token_logps - old_per_token_logps`。
 
@@ -94,4 +91,4 @@ clip 指标只对硬 clip 那一组 loss 记录：`coef_1 < 1-epsilon_low` 且 $
 
 ## 和另外两个框架
 
-TRL 的组标准化和 clip 在同一个类里，优势是 `[B]` 的标量，到 `_compute_loss` 才 `unsqueeze`。Miles 在 rollout 转换时就把组均值减掉。verl 在 Ray driver 上按 `uid` 分组，loss 在 worker。TRL 的 GSPO 梯度穿过长度平均；verl 把那段 detach。TRL 的默认归约已经是 DAPO 的 token 等权，要对齐 DeepSeekMath 的「每条回复先平均」必须把 `loss_type` 改成 `grpo`。
+TRL 的组标准化和 clip 在同一个类里，优势是 `[B]` 的标量，到 `_compute_loss` 才 `unsqueeze`。Miles 在 采样轨迹（rollout） 转换时就把组均值减掉。verl 在 Ray driver 上按 `uid` 分组，loss 在 worker。TRL 的 GSPO 梯度穿过长度平均；verl 把那段 detach。TRL 的默认归约已经是 DAPO 的 token 等权，要对齐 DeepSeekMath 的「每条回复先平均」必须把 `loss_type` 改成 `grpo`。

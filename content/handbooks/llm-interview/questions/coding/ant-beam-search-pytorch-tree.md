@@ -4,9 +4,7 @@ section: coding
 order: 101
 level: A
 title: 蚂蚁 26 秋招：如何用 PyTorch 构建 LLM token 预测的 Beam Search 树？
-quick: >-
-  每个 beam 保存 token 前缀、累计 log-prob、结束标记和 cache；每步把 k 条 beam 扩展为 k×V 个候选，
-  加上累计分数和长度惩罚后做 top-k，EOS 候选移入 finished 集合。最终比较完成序列，不能只拿最后一步概率最大的 token。
+quick: "每个 beam 保存 token 前缀、累计 log-prob、结束标记和 cache。每步将 k 条 beam 扩展为 k×V 个候选，按累计分数和长度惩罚选 top-k，并把 EOS 候选放进 finished 集合。最终比较完整序列的分数，不能只看最后一步的概率。"
 tags:
   - Ant Group
   - 2026 Campus Recruiting
@@ -31,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、届别、岗位与轮次明确）
 - 原始措辞：**“核心代码模式，写一下大模型预测token时，beam树如何构建，如何得到最终的结果(pytorch简单实现了一下，主要是还是讲明白)”**
 
-错法：把 beam search 写成「每步取当前条件概率最大的 $k$ 个 token」，丢掉累计 log-prob 和父节点回溯。树的节点是整条前缀，不是孤立 token。最终从 `finished`（已写 EOS）里选，没有完成序列才回退活跃 beam。采样分布见 `code-sampling`；本题是搜索不是采样。
+常见误区是：把 beam search 写成「每步取当前条件概率最大的 $k$ 个 token」，丢掉累计 log-prob 和父节点回溯。树的节点是整条前缀，不是孤立的 token。最终从 `finished`（已写 EOS）里选，没有完成序列才回退活跃 beam。采样分布见 `code-sampling`；本题是搜索不是采样。
 
 ## 树怎么长：扩展、扁平 top-$k$、拆父索引
 
@@ -73,7 +71,7 @@ $\lambda\in[0.6,1]$。也可在 EOS 后不再扩展。重复 n-gram 屏蔽、坏
 
 ## 追问
 
-- **为什么不用概率相乘？** 长序列下溢成 0。log 域加法稳定，和 CE 的 log-softmax 一致，见 `pdd-ce-handwrite`。
+- **为什么不用概率相乘？** 长序列下溢成 0。log 域加法稳定，与交叉熵损失（CE）中的 log-softmax 一致，见 `pdd-ce-handwrite`。
 - **$k=1$ 是什么？** 贪心。没有树，也不需要 parent。
 - **和 top-p 能一起用吗？** 能，但那是每步先截核再在核上扩 beam，分布变了。蚂蚁这题先写标准 beam。
 - **cache 不 reorder 会怎样？** 子节点用错历史 KV，分数全错。`parent` 必须 gather 每一层 cache。

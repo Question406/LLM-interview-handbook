@@ -26,5 +26,5 @@ sources: []
     sin = sin[None, None, :, :]
     ye = xe * cos - xo * sin
     yo = xe * sin + xo * cos
-    return torch.stack((ye, yo), dim=-1).flatten(-2)</code></pre><p>不同实现会用 rotate_half 或复数乘法，只要二维配对和 frequency index 一致就行。Position IDs 如果不是连续的，比如 packed sequences 或 KV cache decode，必须用真实 position 去索引 cos/sin。</p></div>
-          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>KV cache 中 K 要重复做 RoPE 吗？</summary><div class="follow-answer"><p>历史 K 在写入 cache 时已经旋转并保存。decode 新 token 只对新增的 Q/K，用当前 position 做 RoPE。</p></div></details></div>
+    return torch.stack((ye, yo), dim=-1).flatten(-2)</code></pre><p>不同实现会用 rotate_half 或复数乘法，只要二维配对和 frequency index 一致就行。Position IDs 如果不是连续的，比如 packed sequences 或 KV cache 逐 token 生成（decode），必须用真实 position 去索引 cos/sin。</p></div>
+          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>KV cache 中 K 要重复做 RoPE 吗？</summary><div class="follow-answer"><p>历史 K 在写入 cache 时已经旋转并保存。decode 时，新 token 只对新增的 Q/K 使用当前位置做 RoPE。</p></div></details></div>

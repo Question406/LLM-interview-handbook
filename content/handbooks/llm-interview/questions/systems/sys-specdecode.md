@@ -4,9 +4,7 @@ section: systems
 order: 11
 level: S
 title: Speculative Decoding 为什么能保持 Target Distribution？
-quick: >-
-  Draft model 便宜提出多个 tokens，target model 并行验证，再用 acceptance/rejection
-  correction，让最终采样分布等价于 target policy。速度来自一次 target forward 接受多个 token。
+quick: "Draft model 便宜提出多个 tokens，target model 并行验证，再用 acceptance/rejection correction，让最终采样分布等价于 target policy。速度来自一次 target forward 接受多个 token。"
 tags:
   - Speculative Decoding
   - Inference
@@ -49,7 +47,7 @@ $$
 
 ## 3. 速度从哪来，tradeoff 是什么
 
-Target 是大模型，decode 偏读权重。一次验证前向摊到 $k$ 个位置，等于用较大的「有效 batch」提高算术强度。加速比大约
+Target 是大模型，逐 token 生成（decode） 偏读权重。一次验证前向摊到 $k$ 个位置，等于用较大的「有效 batch」提高算术强度。加速比大约
 
 $$
 \frac{\text{每轮接受的 token 数}}{1 + c_{\mathrm{draft}}/c_{\mathrm{target}}}.

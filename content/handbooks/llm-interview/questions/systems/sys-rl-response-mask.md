@@ -24,21 +24,29 @@ sources:
     type: primary
 ---
 
-这块容易把一条样本看成整段可训文本：prompt 也进 CE / ratio，等于拿用户题干当动作。策略梯度里「动作」是模型当时选出来的 token；prompt 是环境给的观测，它的 logprob 再变也不会改变「当时选了什么」。SFT 只对 label 段算 CE，RL 同一道理，只是把 label 换成了 completion。漏掉 `response_mask`，优势再准、clip 再漂亮，也是在改错位置。我会先说清「谁是动作」，再谈 `token-mean` 还是按序列均。后一个是另一张卡。
+这块容易把一条样本看成整段可训文本：输入提示（prompt） 也进 交叉熵损失（CE） / ratio，等于拿用户题干当动作。策略梯度里「动作」是模型当时选出来的 token；prompt 是环境给的观测，它的 logprob 再变也不会改变「当时选了什么」。监督微调（SFT） 只对 label 段算 CE，强化学习（RL） 同一道理，只是把 label 换成了 completion。漏掉 `response_mask`，优势再准、clip 再漂亮，也是在改错位置。我会先说清「谁是动作」，再谈 `token-mean` 还是按序列均。后一个是另一张卡。
 
 ## 动作是谁选出来的
 
-把序列写成 $\text{prompt}+\text{response}$。对 prompt 位置 $t$，token 来自数据集或用户，不是 $\pi_\theta$ 的采样结果；对 response 位置，$a_t\sim\pi_\theta(\cdot\mid s_t)$，这才是策略梯度的 $a_t$。PPO / GRPO 的 ratio $\rho_t=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$ 和优势 $\hat A_t$ 只应乘在这些 $a_t$ 上。把 prompt 的 $\log\pi$ 乘进损失，梯度在「改题干的似然」，方向与「让好答案更常出现」无关；严重时会把系统提示词往奖励高的方向扭曲，看起来像 reward 在涨、holdout 却垮。KL 同样只应约束生成段：prompt 上的 KL 没有策略意义，还会把均值拉偏，让你误判「KL 已经很大该降学习率」。组内优势是序列标量再广播到生成 token，广播的目的地也必须是 mask=1 的位置，见 `sys-rl-grpo-loop-roles`。$n$ 条对比的是 completion，不是题干；题干相同才成组，见 `sys-rl-group-n`。
+把序列写成 $\text{prompt}+\text{response}$。对 prompt 位置 $t$，token 来自数据集或用户，不是 $\pi_\theta$ 的采样结果；对 response 位置，$a_t\sim\pi_\theta(\cdot\mid s_t)$，这才是策略梯度的 $a_t$。PPO / GRPO 的 ratio $\rho_t=\pi_\theta(a_t\mid s_t)/\pi_{\mathrm{old}}(a_t\mid s_t)$ 和优势 $\hat A_t$ 只应乘在这些 $a_t$ 上。把 prompt 的 $\log\pi$ 乘进损失，梯度在「改题干的似然」，方向与「让好答案更常出现」无关；严重时会把系统提示词往奖励高的方向扭曲，看起来 reward 在涨、holdout 却垮。
+
+KL 同样只应约束生成段：prompt 上的 KL 没有策略意义，还会把均值拉偏，让你误判「KL 已经很大该降学习率」。组内优势是序列标量再广播到生成 token，广播的目的地也必须是 mask=1 的位置，见 `sys-rl-grpo-loop-roles`。$n$ 条对比的是 completion，不是题干；题干相同才成组，见 `sys-rl-group-n`。
 
 ## 实现上就是一条 mask
 
-veRL 里是 `response_mask`：loss / entropy / KL 只在 mask $=1$ 的位置求平均。`loss_agg_mode`（`token-mean` 还是按序列再平均）也只在这些位置上算，见 `baidu-grpo-loss-agg`。padding、EOS 之后的无效位必须为 0，否则短答案被 pad 稀释，长答案被虚假 token 拉偏，长度奖励会从 pad 里漏出来。EOS 本身通常要训（它是「停」这个动作）；EOS 之后的 pad 不要训。实现上先生成 `attention_mask`，再与「第一个 response token 起」的区间做与，不要靠「非 pad 全训」偷懒。那会把 prompt 和 pad 一起放进来。Agent 轨迹里 Thought / Action 为 1，工具返回 / observation 为 0。日志里抽一条样本核对 mask 的 0/1 边界，比看平均 loss 更能发现漏 mask。Dr.GRPO / 长度归一是 mask 之后的事，先保证 prompt 没漏进，见 `pt-drgrpo`。
+veRL 里是 `response_mask`：loss / entropy / KL 只在 mask $=1$ 的位置求平均。`loss_agg_mode`（`token-mean` 还是按序列再平均）也只在这些位置上算，见 `baidu-grpo-loss-agg`。padding、EOS 之后的无效位必须为 0，否则短答案被 pad 稀释，长答案被虚假 token 拉偏，长度奖励会从 pad 里漏出来。EOS 本身通常要训（它是「停」这个动作）；EOS 之后的 pad 不要训。
+
+实现上先生成 `attention_mask`，再与「第一个 response token 起」的区间做与，不要靠「非 pad 全训」偷懒。那会把 prompt 和 pad 一起放进来。Agent 轨迹里 Thought / Action 为 1，工具返回 / 观测结果（observation） 为 0。日志里抽一条样本核对 mask 的 0/1 边界，比看平均 loss 更能发现漏 mask。Dr.GRPO / 长度归一是 mask 之后的事，先保证 prompt 没漏进，见 `pt-drgrpo`。
 
 ## Agent 多轮不要训 Observation
 
-多轮里模型自己写的 Thought / function call 是动作；搜索引擎、代码沙箱、浏览器返回的 observation 是环境。把整段轨迹当 completion 一起反传，等于让模型去「学」搜索引擎说了什么，credit 会漏到不可控文本上，工具格式稍变梯度就抖。正确做法是只对模型发出的 token 置 1，工具结果当条件。和「只训 response」是同一条原则，只是 response 被切成了多段。组内优势仍按整条轨迹的标量奖励广播到这些 mask=1 的位置。环境延迟往往超过 decode，一步墙钟不再能用 MFU 解释，见 `sys-rl-infra`；但那是调度问题，不能反过来成为「所以 observation 也该训」的理由。多轮 mask 写错更难查：loss 看着正常，策略却在模仿检索片段。从 batch 抽一条，打印 prompt 长度、response 长度、mask 为 1 的个数，对不上就是实现 bug。曲线上若「reward 不动、KL 却在涨」或系统提示被改得像高分答案，优先查 mask。长度奖励、EOS 惩罚、format reward 都挂在同一条 mask 上，mask 错了它们一起错。
+多轮里模型自己写的 Thought / function call 是动作；搜索引擎、代码沙箱、浏览器返回的 observation 是环境。把整段轨迹当 completion 一起反传，等于让模型去「学」搜索引擎说了什么，credit 会漏到不可控文本上，工具格式稍变梯度就抖。正确做法是只对模型发出的 token 置 1，工具结果当条件。和「只训 response」是同一条原则，只是 response 被切成了多段。
 
-更隐蔽的写法：用 `attention_mask` 直接当 loss mask。attention 必须看见 prompt，loss 不能更新 prompt，两套 mask 差在「从哪一格开始是 1」。tokenize 后 prompt 长度和字符串切分差 1、BOS 或 chat template 的 special token 被算进 response，都会把系统提示最后几个 token 训进去。对账：decode mask=1 的片段，看是不是模型写的那一段；对不上就停训修管线。padding 进平均或 EOS 之后仍为 1，也会让长度从 pad 里漏出来，先修边界再看 `sys-rl-longer-after-rl`。
+组内优势仍按整条轨迹的标量奖励广播到这些 mask=1 的位置。环境延迟往往超过 逐 token 生成（decode），一步实际耗时不再能用 MFU 解释，见 `sys-rl-infra`；但那是调度问题，不能反过来成为「所以 observation 也该训」的理由。多轮 mask 写错更难查：loss 看着正常，策略却在模仿检索片段。从 batch 抽一条，打印 prompt 长度、response 长度、mask 为 1 的个数，对不上就是实现 bug。
+
+曲线上若「reward 不动、KL 却在涨」或系统提示被改得像高分答案，优先查 mask。长度奖励、EOS 惩罚、format reward 都挂在同一条 mask 上，mask 错了它们一起错。
+
+更隐蔽的写法：用 `attention_mask` 直接当 损失计算范围。attention 必须看见 prompt，loss 不能更新 prompt，两套 mask 差在「从哪一格开始是 1」。tokenize 后 prompt 长度和字符串切分差 1、BOS 或 chat template 的 special token 被算进 response，都会把系统提示最后几个 token 训进去。对账：decode mask=1 的片段，看是不是模型写的那一段；对不上就停训修管线。padding 进平均或 EOS 之后仍为 1，也会让长度从 pad 里漏出来，先修边界再看 `sys-rl-longer-after-rl`。
 
 ## 追问
 

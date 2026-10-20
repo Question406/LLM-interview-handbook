@@ -30,7 +30,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写attention”**
 
-错法：只写 `nn.MultiheadAttention`，或因果 / padding 的 True-False 反了。同面还可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状与 `deepseek-mha-handwrite` 同构，拼多多要的是口述 broadcast。
+常见误区是：只写 `nn.MultiheadAttention`，或因果 / padding 的 True-False 反了。同面还可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状与 `deepseek-mha-handwrite` 同构，拼多多要的是口述 broadcast。
 
 ## 白板顺序与形状
 
@@ -58,9 +58,9 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
 
 `view` 前 `contiguous`。GQA 只改 $K,V$ 头数，公式骨架不变。
 
-## 易错与同面 CE
+## 易错与同面 交叉熵损失（CE）
 
-bool mask：`True` 表示「盖住」还是「可见」必须说清，和 `masked_fill` 一致。整行全 mask 时 softmax 出 NaN。应用岗也要能讲 KV cache：decode 步 $T_q=1$，$K,V$ 沿 $T$ 增长。不要把 dropout 当重点。交叉熵用 logsumexp，禁止 softmax 再 log，见 `pdd-ce-handwrite`。
+bool mask：`True` 表示「盖住」还是「可见」必须说清，和 `masked_fill` 一致。整行全 mask 时 softmax 出 NaN。应用岗也要能讲 KV cache：逐 token 生成（decode） 步 $T_q=1$，$K,V$ 沿 $T$ 增长。不要把 dropout 当重点。交叉熵用 logsumexp，禁止 softmax 再 log，见 `pdd-ce-handwrite`。
 
 ## 追问
 

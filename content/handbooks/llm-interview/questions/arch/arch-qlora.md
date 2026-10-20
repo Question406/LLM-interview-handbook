@@ -21,7 +21,7 @@ sources:
     type: legacy-reference
 ---
 
-错法：把 QLoRA 说成「整个训练都是 INT4 算术」，或「和 GPTQ 一样是推理量化」。核心节省来自冻结基座用 4-bit 存、不为 full base 保存 Adam 状态；前向通常仍把量化权重解到更高精度再乘激活。LoRA 更新仍是 $\Delta W=\frac{\alpha}{r}BA$，只是 $W$ 以 NF4 驻留。
+常见误区是：把 QLoRA 说成「整个训练都是 INT4 算术」，或「和 GPTQ 一样是推理量化」。核心节省来自冻结基座用 4-bit 存、不为 full base 保存 Adam 状态；前向通常仍把量化权重解到更高精度再乘激活。LoRA 更新仍是 $\Delta W=\frac{\alpha}{r}BA$，只是 $W$ 以 NF4 驻留。
 
 ## NF4：按正态分位数摆 levels
 
@@ -37,7 +37,7 @@ Adam 一类优化器对每个可训练参数存 $m,v$，全参微调时状态是
 
 ## 和普通 LoRA / 推理量化的边界
 
-QLoRA 是训练期显存技巧：基座冻、4-bit 存、低秩可训。GPTQ / AWQ 是推理权重量化，服务期不必有 LoRA。合并 adapter 后若要再量化，是另一步，不要说成 QLoRA 自动给出 4-bit 部署模型。
+QLoRA 是训练期显存技巧：冻结基座，用 4-bit 保存权重，只训练低秩适配器。GPTQ / AWQ 是推理权重量化，服务期不必有 LoRA。合并 adapter 后若要再量化，是另一步，不要说成 QLoRA 自动给出 4-bit 部署模型。
 
 ## 追问
 

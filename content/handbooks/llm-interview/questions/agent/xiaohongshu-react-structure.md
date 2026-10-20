@@ -31,19 +31,19 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“了解ReAct结构吗，介绍一下?”**
 
-错法：把任何 Agent 都叫 ReAct。没有显式 Thought 或没有环境反馈，只是 function calling 循环。ReAct（Yao et al.）把「只想」和「只做」拼起来：Thought 决定假设与下一步，Action 调用检索 / 工具，Observation 把结果接回，再进入下一轮，直到给出最终答案。它是策略骨架，不是训练算法。多轮检索何时停，见 `xiaohongshu-deep-research-stop`。
+常见误区是：把任何 Agent 都叫 ReAct。没有显式 Thought 或没有环境反馈，只是 function calling 循环。ReAct（Yao et al.）把「只想」和「只做」拼起来：Thought 决定假设与下一步，Action 调用检索 / 工具，Observation 把结果接回，再进入下一轮，直到给出最终答案。它是策略骨架，不是训练算法。多轮检索何时停，见 `xiaohongshu-deep-research-stop`。
 
 ## Thought / Action / Observation
 
-比纯 CoT 多了外部证据，比纯 tool-call 多了可检查的中间理由。Action 必须可解析（名字 + 参数），Observation 是环境事实，不应被模型改写成「我认为成功了」。循环要有终止：最终答案、硬预算或校验失败。校验层决定哪一跳能往下走，商汤那题把这一层说成最重要，见 `sensetime-agent-three-modules`。Thought 对用户是否可见是产品决策：内部审计要留，对 C 可能只展示行动摘要。
+比纯 思维链（CoT，即分步推理过程） 多了外部证据，比纯 tool-call 多了可检查的中间理由。Action 必须可解析（名字 + 参数），Observation 是环境事实，不应被模型改写成「我认为成功了」。循环要有终止：最终答案、硬预算或校验失败。校验层决定哪一跳能往下走，商汤那题把这一层说成最重要，见 `sensetime-agent-three-modules`。Thought 对用户是否可见是产品决策：内部审计要留，对 C 可能只展示行动摘要。
 
 ## 上线必须补的工程
 
-生产不能只复述论文三元组。要补：Action 解析失败怎么办、最大步数、Observation 过长如何摘要、工具超时 / 空结果如何重试、日志是否可回放。训练或 SFT 时要对齐这三块的 schema，别只拟合最终答案。Observation 进上下文会迅速涨 token，压缩顺序见 `pdd-context-overflow`。权限和副作用不能写在 Thought 里「注意安全」，要在工具层强制。
+生产不能只复述论文三元组。要补：Action 解析失败怎么办、最大步数、Observation 过长如何摘要、工具超时 / 空结果如何重试、日志是否可回放。训练或 监督微调（SFT） 时要对齐这三块的 字段和类型规范（schema），别只拟合最终答案。Observation 进上下文会迅速涨 文本处理单位（token），压缩顺序见 `pdd-context-overflow`。权限和副作用不能写在 Thought 里「注意安全」，要在工具层强制。
 
 ## 和 function calling、多 Agent 的界限
 
-现代 API 的 tool call 可以没有自然语言 Thought，仍是 ReAct 的亲戚：模型选动作、环境返回、再决策。差别在于：ReAct 论文强调可检查的推理痕迹；生产可以结构化 Thought。没有环境反馈的多步自说自话不是 ReAct。多 Agent 只是把某些 Action 交给另一个策略，协作协议见 `pdd-multi-vs-single-agent`。LangGraph、MCP、Skill 不是 ReAct，那些是图、协议和操作知识，见 `xiaohongshu-mcp-skill-token-efficiency`。介绍时按循环画一遍，再补工程补丁。
+现代 API 的 工具调用 可以没有自然语言 Thought，仍是 ReAct 的亲戚：模型选动作、环境返回、再决策。差别在于：ReAct 论文强调可检查的推理痕迹；生产可以结构化 Thought。没有环境反馈的多步自说自话不是 ReAct。多 Agent 只是把某些 Action 交给另一个策略，协作协议见 `pdd-multi-vs-single-agent`。LangGraph、MCP、Skill 不是 ReAct，那些是图、协议和操作知识，见 `xiaohongshu-mcp-skill-token-efficiency`。介绍时按循环画一遍，再补工程补丁。
 
 ## 追问
 

@@ -5,8 +5,8 @@ order: 12
 level: A
 title: Memory Retrieval 怎么评估？
 quick: >-
-  不能只看 Recall@K。要同时测该记忆该不该被召回、召回后任务有没有变好、错误或过期 memory 会不会伤任务，并拆成
-  read/write 两个子问题评。
+  除了 Recall@K，还要测是否召回了不该用的记忆、召回后任务是否改善，以及错误或过期记忆是否导致失败。评测要分别检查
+  记忆写入和记忆读取。
 tags:
   - Memory
   - Eval
@@ -21,7 +21,7 @@ sources:
     type: primary
 ---
 
-错法：把 Memory 当成普通 RAG，只报 Recall@$K$。Memory 至少有 write policy、storage/compaction、retrieval、usage 四步；评测必须拆开读写，并问「召回了不该召的」会不会伤任务。LoCoMo 把长对话记忆评成跨会话事实一致性，不是单轮检索命中。分类与冲突处理见 `agent-memory`。
+常见误区是：把 Memory 当成普通 检索增强生成（RAG），只报 Recall@$K$。Memory 至少有 write policy、storage/compaction、retrieval、usage 四步；评测必须拆开读写，并问「召回了不该召的」会不会伤任务。LoCoMo 把长对话记忆评成跨会话事实一致性，不是单轮检索命中。分类与冲突处理见 `agent-memory`。
 
 ## 拆成 read / write 两个子问题
 
@@ -31,13 +31,13 @@ Write：该不该写入、字段是否带 timestamp / source / confidence / scop
 
 ## 指标不要只看 Recall@$K$
 
-同时报：retrieval recall / precision；downstream success delta（有无 memory 的任务差）；false-memory harm（错误或过期条目导致的失败、违规、错误承诺）；freshness accuracy；token overhead；privacy violation rate。Recall 很高但总把无关历史塞进 context 的系统可能更差：挤掉当前指令、引入过期制度、把网页里的「新系统指令」当记忆。污染与注入路径见 `byte-memory-pollution`、`agent-prompt-injection`。
+同时报：retrieval recall / precision；downstream success delta（有无 memory 的任务差）；false-memory harm（错误或过期条目导致的失败、违规、错误承诺）；freshness accuracy；额外 token 开销；privacy violation rate。Recall 很高但总把无关历史塞进 context 的系统可能更差：挤掉当前指令、引入过期制度、把网页里的「新系统指令」当记忆。污染与注入路径见 `byte-memory-pollution`、`agent-prompt-injection`。
 
 ## 评测协议
 
 固定模型与 harness，只改 memory 模块。时间切分：写入发生在 $t_0$，查询在 $t_1$，中间插入冲突更新或用户更正。Poisoning：把 tool / RAG 输出里的指令写入后，新会话是否执行高风险动作。还要测 compaction：摘要是否丢掉关键约束、是否把低置信推断写成事实。没有 write 评测的 retrieval 数字，不能说明系统可上线。
 
-同时报「该不该写」「该不该召」「召了之后任务变好还是变坏」。Recall@$K$ 只是 read 子问题的一个切片。把无关历史塞满窗口的系统，即使 recall 好看，也会在 distractor 和过期事实上输给「少而准」的记忆。
+评测结果应分别说明是否写入了合适的记忆、是否召回了合适的条目，以及这些条目对任务结果的影响。Recall@$K$ 只反映读取环节的一部分；无关历史和过期事实即使命中，也可能干扰当前任务。
 
 ## 追问
 

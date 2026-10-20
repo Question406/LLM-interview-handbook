@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“手写 Multi-Head Attention”**
 
-错法：调用 `F.scaled_dot_product_attention` 交差。混元一面要的是形状、mask 语义和 `contiguous`，不是库名。同场常接着括号生成，十分钟内必须先画张量再写主干。骨架与 `code-attention` / `deepseek-mha-handwrite` 相同，但这场绑定混元，先保证能口述完 $[B,T,D]\to[B,H,T,d_h]\to[B,H,T,T]$ 再拼回。
+常见误区是：调用 `F.scaled_dot_product_attention` 交差。混元一面要的是形状、mask 语义和 `contiguous`，不是库名。同场常接着括号生成，十分钟内必须先画张量再写主干。骨架与 `code-attention` / `deepseek-mha-handwrite` 相同，但这场绑定混元，先保证能口述完 $[B,T,D]\to[B,H,T,d_h]\to[B,H,T,T]$ 再拼回。
 
 ## 形状与 mask 必须先画
 
@@ -37,7 +37,7 @@ $$
 \mathrm{Attention}(Q,K,V)=\mathrm{softmax}\Big(\frac{QK^\top}{\sqrt{d_h}}+M\Big)V
 $$
 
-检查清单：$d_{\mathrm{model}}$ 整除 $H$，$d_h=D/H$。$Q,K,V$ 投影后 `view(B,T,H,d_h).transpose(1,2)` 得到 $[B,H,T,d_h]$；scores 为 $[B,H,T,T]$。因果 mask 常用上三角 `True` 表示「看不见」，`masked_fill` 成 $-\infty$；padding 若 `True=valid`，则对 key 维 `~mask[:,None,None,:]` broadcast。True/False 与加减不要反：softmax 后再置零会破坏归一化。Cross-attn 时 $T_q\neq T_k$，不要写死方阵。拼头后 `transpose(1,2).contiguous().view(B,T,D)`：没有 `contiguous`，`view` 会报错或 silently 错位。fp16 softmax 升 fp32 再回写，避免一行全 $-\infty$ 出 `NaN`。
+检查清单：$d_{\mathrm{model}}$ 整除 $H$，$d_h=D/H$。$Q,K,V$ 投影后 `view(B,T,H,d_h).transpose(1,2)` 得到 $[B,H,T,d_h]$；scores 为 $[B,H,T,T]$。因果 mask 常用上三角 `True` 表示「看不见」，`masked_fill` 成 $-\infty$；padding 若 `True=valid`，则对 key 维 `~mask[:,None,None,:]` broadcast。True/False 与加减不要反：softmax 后再置零会破坏归一化。Cross-attn 时 $T_q\neq T_k$，不要写死方阵。拼头后 `transpose(1,2).contiguous().view(B,T,D)`：没有 `contiguous`，`view` 会报错或发生未被及时发现的错位。fp16 softmax 升 fp32 再回写，避免一行全 $-\infty$ 出 `NaN`。
 
 ## 短实现：十分钟主干
 

@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-Router 只给出「谁、多重」。真正把矩阵乘喂饱的是一次按专家重排。现场允许伪代码，但必须能说清：展平 → 排序 → 分段 GEMM → 逆重排加权。形状错了后面 Grouped GEMM 全废，见 `sys-moe-grouped-gemm`。
+Router 只给出专家选择和对应权重。按专家重排后，同一专家的输入才能集中进行矩阵乘法。现场允许伪代码，但必须能说清：展平 → 排序 → 分段 GEMM → 逆重排加权。形状错误会使后续 Grouped GEMM 无法正确执行，见 `sys-moe-grouped-gemm`。
 
 ## 形状
 

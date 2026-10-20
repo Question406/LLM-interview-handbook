@@ -4,7 +4,7 @@ section: agent
 order: 215
 level: A
 title: Tool Schema 升级时如何保持旧 Agent / 旧轨迹兼容？
-quick: Schema 要版本化，给一段兼容窗口：只加可选字段、废弃字段双读。破坏性变更走新 tool 名。运行时校验并返回可机器读的错误，让模型改参。
+quick: Schema 要记录版本，并设置兼容期。新增字段尽量设为可选，废弃字段在过渡期继续接受；改变语义时使用新的 tool 名称。运行时返回结构化错误，告诉模型该怎样修正参数。
 tags:
   - Tool Schema
   - Compatibility
@@ -19,11 +19,11 @@ sources:
     type: primary
 ---
 
-错法：「schema 要写单位和副作用」，那是 `agent-schema-contract`。这里问的是版本化：权重、prompt、离线轨迹都绑在旧字段名和旧语义上。静默丢掉未知字段，或把 `amount` 从元改成分子而不改名，线上工具与离线数据一起漂，旧轨迹会变成看起来合法的错样本。MCP 把协议版本写进 initialize，就是承认客户端和服务器会长期共存。
+常见误区是：「schema 要写单位和副作用」，那是 `agent-schema-contract`。这里问的是版本化：权重、输入提示（prompt）、离线轨迹都绑在旧字段名和旧语义上。静默丢掉未知字段，或把 `amount` 从元改成分子而不改名，线上工具和离线数据的含义都会发生变化，旧轨迹会变成看起来合法的错样本。MCP 把协议版本写进 initialize，就是承认客户端和服务器会长期共存。
 
 ## 兼容窗口：加可选、双读废弃、破坏性换名
 
-向前兼容（新服务读旧调用）：只新增 optional 字段；缺省必须无副作用，或显式默认并写进 changelog。向后兼容（旧服务读新调用）：一段时间内双读旧字段名。语义变了不要原地改：金额单位、枚举含义、默认重试次数，都属于破坏性变更，应发 `tool_v2` / 新 tool name，catalog 声明迁移截止时间。旧名在窗口内仍接受，但标 deprecated，窗口外拒绝并返回可机器读错误。兼容窗口要有明确截止 $t_{\mathrm{sunset}}$：过期后不再接受低于 $v_{\min}$ 的调用，
+向前兼容（新服务读旧调用）：只新增 optional 字段；缺省必须无副作用，或显式默认并写进 changelog。向后兼容（旧服务读新调用）：一段时间内双读旧字段名。语义变了不要原地改：改变金额单位、枚举含义或默认重试次数，都属于破坏性变更，应发 `tool_v2` / 新 tool name，catalog 声明迁移截止时间。旧名在窗口内仍接受，但标 deprecated，窗口外拒绝并返回可机器读错误。兼容窗口要有明确截止 $t_{\mathrm{sunset}}$：过期后不再接受低于 $v_{\min}$ 的调用，
 
 $$
 \mathrm{accept}(call)=\mathbf{1}[\mathrm{ver}(call)\ge v_{\min}]\cdot\mathbf{1}[t \lt t_{\mathrm{sunset}}]
@@ -35,7 +35,7 @@ $$
 
 ## 旧轨迹怎么搬家，失败不要硬训
 
-训练与评测数据是最大的兼容负担。写重写脚本：旧字段映射到新 schema，能证明语义不变才入库。映射失败则丢弃或标成负例，不要用新 schema 的解码器去「尽量解析」旧 JSON。那会制造虚假成功轨迹，见 `arl-trajectories`。评测集按 schema 版本切片：v1 轨迹只在 v1 harness 上回归，混跑会把兼容 bug 当成模型退步。迁移脚本本身要版本化：同一批旧轨迹用不同脚本会得到不同正例，后续 RL 无法复现。
+训练与评测数据是最大的兼容负担。写重写脚本：把旧字段映射到新 schema，能证明语义不变才入库。映射失败则丢弃或标成负例，不要用新 schema 的解码器去「尽量解析」旧 JSON。那会制造虚假成功轨迹，见 `arl-trajectories`。评测集按 schema 版本切片：v1 轨迹只在 v1 harness 上回归，混跑会把兼容 bug 当成模型退步。迁移脚本本身要版本化：同一批旧轨迹用不同脚本会得到不同正例，后续强化学习（RL）训练就无法复现。
 
 发布清单：catalog 版本、兼容窗口、双读字段表、轨迹迁移成功率、影子 diff。缺一项就不要切主流量。在飞的 durable 工作流还绑着旧 tool 名，升级要与 `agent-durable-execution` 的 workflow 版本一起排空，不能只改 catalog。`agent-schema-contract` 管字段该有什么；本题管旧调用和旧轨迹如何活过升级。
 

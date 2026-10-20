@@ -4,10 +4,7 @@ section: systems
 order: 273
 level: S
 title: partial / 异步 rollout 能不能把旧 policy 的 KV cache 接着用？
-quick: >-
-  KV 是权重的函数。同一条轨迹、同一个 rollout 版本接着写，保存 KV 是对的。权重一旦更新还想用新 $\pi$ 续写，必须重算
-  prefix KV，否则 logits / logprob 都不是新策略的。工程上可以留着旧 KV，但要把这段标成旧版本，mask 或 TIS，不能当 on-policy
-  prefix。
+quick: "KV 是权重的函数。同版本续写可以留着 KV；权重更新后要用新 $\\pi$ 续写，就得重算 prefix KV，否则 logprob 不是新策略的，旧段也要 mask 或用 TIS。"
 tags:
   - Partial Rollout
   - KV Cache
@@ -29,7 +26,7 @@ sources:
     type: primary
 ---
 
-partial rollout 怎么 abort / 回收半截，见 `slime-dynamic-partial`。那张卡强调半截 **token** 不是新的 on-policy。本题再问一层：**半截的 KV 能不能留给下一版权重**。
+partial 采样轨迹（rollout） 怎么 abort / 回收半截，见 `slime-dynamic-partial`。那张卡强调半截 **token** 不是新的 on-policy。本题再问一层：**半截的 KV 能不能留给下一版权重**。
 
 ## KV 跟的是 $\theta$，不是文本
 
@@ -42,7 +39,7 @@ $$
 
 所以：
 
-- **同版本续写**：同一 episode 仍由 $\theta_{\mathrm{old}}$ 生成，KV 留下，decode 从断点接着走。这是 partial 的吞吐收益。
+- **同版本续写**：同一 episode 仍由 $\theta_{\mathrm{old}}$ 生成，KV 留下，逐 token 生成（decode） 从断点接着走。这是 partial 的吞吐收益。
 - **换版本接着生成**：AReaL 的 interruptible worker 在 `update_weights` 时丢掉旧 KV，用新权重算 prefix，再继续未完成序列。轨迹会由两段不同 $\theta$ 拼起来，必须按 token 记版本。
 - **换版本但拿去训练、不再续写**：KV 可以扔。训练图会重新 forward 整段（或 mask 掉旧前缀）。留着旧 KV 也帮不上 trainer。
 
@@ -50,7 +47,7 @@ $$
 
 异步系统为了利用率，会让未完成请求活过一次权重同步。合法处理只有三条：重算 KV 后当新政策续写；把旧前缀 mask 掉只训新 token；对旧 token 做截断 IS。三条都关 = 用错误的条件分布采样，再假装 $\rho=1$。
 
-flush KV 的代价是 prefill 重算。长 CoT 上这很贵，所以 AReaL 才把「何时打断、打断后是否重算」当成系统旋钮，而不是默认永远复用。slime 的 `--mask-offpolicy-in-partial-rollout` 走的是训练侧 mask，默认并不宣称跨版本 KV 可复用。
+flush KV 需要重新 prefill，重建前缀缓存。长 思维链（CoT，即分步推理过程） 上这很贵，所以 AReaL 才把「何时打断、打断后是否重算」当成系统旋钮，而不是默认永远复用。slime 的 `--mask-offpolicy-in-partial-rollout` 走的是训练侧 mask，默认并不宣称跨版本 KV 可复用。
 
 同权续写可以留 KV；换权必须重算，或把旧段标成 off-policy。prefix cache 不能跨 checkpoint 白用。
 

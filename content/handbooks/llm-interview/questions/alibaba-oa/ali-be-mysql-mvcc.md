@@ -5,7 +5,7 @@ order: 57
 level: S
 title: 阿里研发面：InnoDB MVCC、redo/undo/binlog 怎么串？
 quick: >-
-  MVCC 用 undo 链 + Read View 读历史版本。redo 保崩溃恢复，undo 回滚/MVCC，binlog 保复制和备份。两阶段提交让 redo 与 binlog 一致。
+  MVCC 根据 Read View 判断行版本是否可见，并沿 undo 链查找历史版本。redo 用于崩溃恢复，undo 用于回滚和 MVCC，binlog 用于复制和备份。两阶段提交让 redo 与 binlog 的提交状态保持一致。
 tags:
   - Alibaba
   - MySQL
@@ -41,7 +41,7 @@ InnoDB 用 MVCC 让读大多不加锁。每行藏着 `trx_id`（最后改它的�
 | 形态 | 物理页改动 | 逻辑反向操作 | 逻辑行 / 语句 |
 | 丢了会怎样 | 提交成功也可能丢（看刷盘） | 长事务 / 读旧版本失败 | 主从断层 |
 
-隔离级别分层：RC 每条语句新建 Read View，所以能看到语句开始前已提交的更新，仍有不可重复读。RR 在事务第一次读时建 View，之后保持，配合 MVCC 解决大部分不可重复读。幻读在 RR 下靠 **next-key 锁**（记录锁 + 间隙锁）堵写入，不是单靠 MVCC。错法：「RR 防幻读全靠 MVCC」，会扣分。
+隔离级别分层：RC 每条语句新建 Read View，所以能看到语句开始前已提交的更新，仍有不可重复读。RR 在事务第一次读时建 View，之后保持，配合 MVCC 解决大部分不可重复读。幻读在 RR 下靠 **next-key 锁**（记录锁 + 间隙锁）堵写入，不是单靠 MVCC。常见误区是：「RR 防幻读全靠 MVCC」，会扣分。
 
 刷盘分层：`innodb_flush_log_at_trx_commit=1` 每次提交刷 redo，`sync_binlog=1` 每次提交刷 binlog，双 $1$ 最安全、最慢。双十一有人会改成 $2$ 换吞吐，接受宕机丢最后一秒。口述必须把「性能」和「丢多少」一起说。
 
@@ -51,7 +51,7 @@ InnoDB 用 MVCC 让读大多不加锁。每行藏着 `trx_id`（最后改它的�
 
 主从延迟也要串日志：binlog 没及时送到从库，读从库会读到旧库存。交易里「写后立刻读」要走主库或用写后读自己的位点。crash 恢复故事：机器掉电，redo 重放把脏页补齐，undo 把未提交事务滚掉，binlog 位点决定从库从哪续。对账发现主库有单、从库没有，优先查提交时 binlog 是否刷盘、是否中途切主。
 
-长事务是 DBA 高压线。一个没提交的后台任务拿着旧 Read View，undo 不能清，ibd 膨胀，purge 落后，最后把磁盘打满。下单链路事务要短：算出价、写行、提交，不要在事务里调 HTTP。
+长事务会带来较大的运维风险。一个没提交的后台任务拿着旧 Read View，undo 不能清，ibd 膨胀，purge 落后，最后把磁盘打满。下单链路事务要短：算出价、写行、提交，不要在事务里调 HTTP。
 
 ## 追问
 

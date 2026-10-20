@@ -4,10 +4,7 @@ section: systems
 order: 27
 level: S
 title: LLM RL 面试入门会问哪些「系统向」题？
-quick: >-
-  算法岗很少追 NCCL / 1F1B。更常问：一步 GRPO 谁采样谁打分谁更新、为什么 rollout 用
-  vLLM、为什么重算 logprob、组大小 $n$、只训 response、训练看哪些曲线。先把这一圈讲顺，再提
-  HybridEngine。
+quick: "算法岗很少追 NCCL / 1F1B。更常问：一步 GRPO 谁采样谁打分谁更新、为什么 采样轨迹（rollout） 用 vLLM、为什么重算 logprob、组大小 $n$、只训 response、训练看哪些曲线。先把这一圈讲顺，再提 HybridEngine。"
 tags:
   - LLM RL
   - GRPO
@@ -35,12 +32,12 @@ sources:
 按时间轴走，不要先默写 loss。先能在白板上画出五个角色，再允许被追公式。推荐顺序就是下面这串 id：
 
 - 一步里 Actor / Ref / Reward / Rollout 各干什么、谁写权重：`sys-rl-grpo-loop-roles`。这张是总图，其它卡都从这里长出来。
-- 为什么 rollout 用 vLLM / SGLang，而不是训练图自己 generate：`sys-rl-why-vllm-rollout`。问的是吞吐，不是「引擎 logp 更准」。
+- 为什么 采样轨迹（rollout） 用 vLLM / SGLang，而不是训练图自己 generate：`sys-rl-why-vllm-rollout`。问的是吞吐，不是「引擎 logp 更准」。
 - 美团二面：为什么要重新 forward 算 logprob：`meituan-verl-recompute-logprob`。和上一张是一对：一个问快，一个问数。
 - 美团二面：GRPO 哪个阶段最耗时：`meituan-grpo-stage-bottleneck`。先 profile 再改，不要默认 backward 慢。
-- 损失为什么只回传到 response token：`sys-rl-response-mask`。prompt 是观测，不是动作。
+- 损失为什么只回传到 response 文本处理单位（token）：`sys-rl-response-mask`。输入提示（prompt） 是观测，不是动作。
 - 组大小 $n$ 为什么必须 $\gt 1$：`sys-rl-group-n`。$n=1$ 不是方差大一点，是优势未定义。
-- 为什么 RL 之后回答越来越长：`sys-rl-longer-after-rl`。奖励形状和长度偏置，不是「模型更会思考」这么顺。
+- 为什么 强化学习（RL） 之后回答越来越长：`sys-rl-longer-after-rl`。奖励形状和长度偏置，不是「模型更会思考」这么顺。
 
 我会说：采样是推理、更新是训练、KL 看 Ref、分看 Reward。中间差一本账（logprob / 权重版本），不要把引擎打出来的数直接当 $\pi_{\mathrm{old}}$。三个 $\pi$ 必须分开：old 进 ratio，ref 进 KL，$\theta$ 在训练图上更新。漏掉「只训 response」或「组内才有优势」，后面每张专题卡都会穿。
 
@@ -53,7 +50,7 @@ sources:
 - 百度：$\pi_\theta$ / $\pi_{\mathrm{old}}$ / $\pi_{\mathrm{rollout}}$ 是谁：`baidu-grpo-policy-roles-offpolicy`；序列级损失怎么落到 token：`baidu-grpo-loss-agg`
 - 滴滴：veRL 看哪些指标判断训练在走：`didi-verl-metrics`
 - 美团：7B GRPO 显存花在哪：`meituan-grpo-7b-mem`，总账 `sys-rl-memory`；clip 为什么存在：`meituan-grpo-why-clip`
-- 为什么 RL Systems 比 SFT 复杂：`sys-rl-infra`；权重怎么同步到引擎：`infra-rl-weight-sync`
+- 为什么 RL Systems 比 监督微调（SFT） 复杂：`sys-rl-infra`；权重怎么同步到引擎：`infra-rl-weight-sync`
 - HybridEngine 解决什么：`sys-verl-hybridengine`。先讲放置，再讲 reshard，不要一上来背这个词。
 - 2026 社区 35 题（算法 + Infra）对照：`pt-rl-algo-infra-bench-index`
 

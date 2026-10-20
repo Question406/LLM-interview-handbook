@@ -29,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“多 agent如何如何做的协作”**
 
-错法：「多个 chatbot 互聊」。多 Agent 只在单模型上下文或技能过载时才值得拆。先写共享 state、角色接口和唯一写者，再选拓扑。评的是端到端任务成功，不是轮数。对照 `arl-multiagent`、`pdd-multi-vs-single-agent`、`xiaohongshu-multiagent-quality`。同一面表格 / SQL 是天然流水线。
+常见误区是：「多个 chatbot 互聊」。多 Agent 只在单模型上下文或技能过载时才值得拆。先定义共享任务状态、各角色的输入输出，以及每项资源由谁负责写入，再选择协作方式。评的是端到端任务成功，不是轮数。对照 `arl-multiagent`、`pdd-multi-vs-single-agent`、`xiaohongshu-multiagent-quality`。同一面表格 / SQL 是天然流水线。
 
 ## 先协议，后拓扑
 
@@ -43,7 +43,7 @@ sources:
 
 ## 什么时候不该拆
 
-上下文装得下、工具面不大、角色边界糊时，拆开会增加交接错误和重复调用。单 Agent 加清晰 Skill 往往更稳。评测看最终任务成功、冲突次数、重复调用、越权、延迟。表格场景里：一个 Agent 理解用户意图，一个写受限 SQL，一个解释结果，比三个通用助手清楚。权限仍在网关，角色提示不能提权，见 `agent-tool-permissions`。
+上下文装得下、工具面不大、角色职责不清楚时，拆开会增加交接错误和重复调用。单 Agent 加清晰 Skill 往往更稳。评测看最终任务成功、冲突次数、重复调用、越权、延迟。表格场景里：一个 Agent 理解用户意图，一个写受限 SQL，一个解释结果，比三个通用助手清楚。权限仍在网关，角色提示不能提权，见 `agent-tool-permissions`。
 
 ## 追问
 

@@ -4,9 +4,7 @@ section: fundamentals
 order: 145
 level: A
 title: RL 方差、无偏 / 有偏估计面试要准备哪些题？
-quick: >-
-  先钉死「无偏」是对哪个目标：策略梯度、回报、还是 KL 标量。再按操作分类，减 state baseline / reward-to-go
-  仍无偏；bootstrap、clip、除组标准差、自归一化 IS 用偏差换方差。下面按这条链排。
+quick: "先明确「无偏」针对哪个目标：策略梯度、回报、还是 KL 标量。再按操作分类，减 state baseline / reward-to-go 仍无偏；bootstrap、clip、除组标准差、自归一化 IS 用偏差换方差。下面按这条链排。"
 tags:
   - RL
   - Bias-Variance

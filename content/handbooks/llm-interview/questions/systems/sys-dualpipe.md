@@ -58,5 +58,5 @@ DeepSeek-V3 的 DualPipe 做两件事，不要并成一句「更好的 1F1B」�
 - **和 `sys-parallel` 那句 1F1B 差在哪？** 那题是五维对照，PP 只点到 bubble。本题要画空等，并说出对向流水和 comm-compute overlap。
 - **加 $M$ 能不能代替 DualPipe？** $M$ 摊薄比例，但激活涨、调度碎。DualPipe 针对的是 $P$ 大、且 PP 与 EP 通信都在关键路径上的 MoE 大模型。
 - **气泡为零了吗？** 没有。依赖还在，只是空槽被对向工作和重叠通信填掉大部分。负载不均、kernel 切不细、流同步过重，气泡会重新露出来。
-- **显存呢？** 对向在途更多，往往高于 1F1B。省墙钟、费激活，和 checkpoint 是同一类交换。
+- **显存呢？** 对向在途更多，往往高于 1F1B。省实际耗时、费激活，和 checkpoint 是同一类交换。
 - **没有 MoE 还有没有用？** 对向仍能填 PP warmup。V3 的点是 **PP P2P 和 EP all-to-all 一起藏进 GEMM**，稠密模型收益主要在 PP 通信。

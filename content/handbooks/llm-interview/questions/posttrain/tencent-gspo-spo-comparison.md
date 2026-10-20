@@ -38,7 +38,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、团队、流程和轮次明确；届别未披露）
 - 原始措辞：**“介绍GSPO的优化，腾讯最近出的SPO有关注吗”**
 
-不要把不同论文里同名的 SPO 混成一个算法，也不要把 GSPO 说成「GRPO 去掉 KL」。GSPO 改的是 **importance ratio / clip 的粒度**：从 token 提到 sequence。腾讯 Single-stream Policy Optimization（SPO）改的是 **baseline 与是否依赖 group**：单条 rollout 也要有学习信号。比较应落在 baseline、粒度、吞吐，而不是谁更新。
+不要把不同论文里同名的 SPO 混成一个算法，也不要把 GSPO 说成「GRPO 去掉 KL」。GSPO 改的是 **importance ratio / clip 的粒度**：从 token 提到 sequence。腾讯 Single-stream Policy Optimization（SPO）改的是 **baseline 与是否依赖 group**：单条 采样轨迹（rollout） 也要有学习信号。比较应说明基线、优化粒度和吞吐的差别，而不是只看发布时间。
 
 ## GSPO：序列级 ratio，稳住长生成 / MoE
 
@@ -48,7 +48,7 @@ GSPO 保留 group-relative advantage，但把 token likelihood ratio 的优化�
 
 ## 腾讯 SPO：去掉 group，单条也有信号
 
-SPO 从另一路径消除 group 的同步等待和退化 group（全对全错零梯度）。它用持续的、KL-adaptive value tracker 作为 baseline，并在 batch 范围归一化 advantage，使单个 rollout 也能提供信号。吞吐上不再等同 prompt 采满 $G$ 条，长 horizon 更友好；代价是 baseline 变成 tracker 的偏置 / 方差问题，而不再是无偏的组均值。
+SPO 从另一路径消除 group 的同步等待和退化 group（全对全错零梯度）。它用持续的、KL-adaptive value tracker 作为 baseline，并在 batch 范围归一化 advantage，使单个 rollout 也能提供信号。吞吐上不再等同一输入提示 采满 $G$ 条，长 horizon 更友好；代价是 baseline 变成 tracker 的偏置 / 方差问题，而不再是无偏的组均值。
 
 「关注了没有」应答到：它解决 GRPO 的 group 成本与空组，而不是复述 GSPO 的序列 clip。
 
@@ -60,11 +60,11 @@ SPO 从另一路径消除 group 的同步等待和退化 group（全对全错零
 | 粒度 | 序列级 ratio/clip | 单流，不依赖 group |
 | 吞吐 | 仍要等组 | 单条即可更新 |
 
-现场按项目痛点选：MoE / 长链 ratio 炸 → GSPO；group 等不起、空组多 → SPO。两者都可以和可验证奖励一起用。不要把较早文献里其它 SPO（如某种 self-play）当成这一篇。
+现场按项目痛点选：MoE / 很长的推理过程 ratio 出现极端值 → GSPO；group 等不起、空组多 → SPO。两者都可以和可验证奖励一起用。不要把较早文献里其它 SPO（如某种 self-play）当成这一篇。
 
 ## 追问
 
 - **GSPO 还要不要 KL？** 要监控漂移。它没宣称取消 $\pi_{\mathrm{ref}}$ 约束。
-- **SPO 还是无 critic 吗？** tracker 是轻量基线，不是完整 PPO critic，但已不是纯组均值。
+- **SPO 还是无 价值评估模型（critic） 吗？** tracker 是轻量基线，不是完整 PPO critic，但已不是纯组均值。
 - **能叠在一起吗？** 序列级 clip 与单流 baseline 正交，理论上可组合，但实现和调参会变复杂，面试说清正交即可。
 - **同名 SPO？** 先问论文年份与「single-stream」；不要把别家 SPO 背进来。

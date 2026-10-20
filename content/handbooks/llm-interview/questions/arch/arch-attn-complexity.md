@@ -4,9 +4,7 @@ section: arch
 order: 2
 level: A
 title: Self-Attention 的时间和显存复杂度是什么？
-quick: >-
-  $QK^\top$ 与 $\mathrm{attention}\times V$ 是 $O(T^2 d)$，显式 attention matrix 是 $O(T^2)$ memory；Q/K/V/O
-  projections 还有 $O(Td^2)$。短序列可能 projection 主导，长序列 $T^2$ 项主导。
+quick: "$QK^\\top$ 与 $\\mathrm{attention}\\times V$ 计算量为 $O(T^2 d)$，显式保存注意力矩阵需要 $O(T^2)$ 显存。Q/K/V/O 投影还需要 $O(Td^2)$。因此短序列可能主要花在投影，长序列则由 $T^2$ 项主导。"
 tags:
   - Transformer
   - Complexity
@@ -21,7 +19,7 @@ sources:
     type: primary
 ---
 
-错法：只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
+常见误区是：只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
 
 ## 时间：两段不要混
 

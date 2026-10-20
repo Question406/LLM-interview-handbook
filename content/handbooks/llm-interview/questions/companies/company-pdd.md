@@ -4,9 +4,7 @@ section: companies
 order: 11
 level: A
 title: 拼多多：大模型算法岗应重点准备什么？
-quick: >-
-  电商落地很重：SFT 去模板化与 train/test 去重、Prompt 版本化回滚、可执行离线评测、Long Context
-  成本折中。算法侧会追 Pretrain vs SFT、PPO clip 后为什么还要 min、正向和反向 KL。手撕常见 top-k / BPE。
+quick: "电商落地很重：监督微调（SFT） 去模板化与 train/test 去重、Prompt 版本化回滚、可执行离线评测、Long Context 成本折中。算法侧会追 Pretrain vs SFT、PPO clip 后为什么还要 min、正向和反向 KL。手撕常见 top-k / BPE。"
 tags:
   - PDD
   - 真题导航
@@ -31,7 +29,7 @@ sources:
 
 ## 准备主线
 
-1. **数据与评测**：避免 SFT 模板化；lexical + semantic 去重防泄漏；离线集覆盖语言和类目。
+1. **数据与评测**：避免 监督微调（SFT） 模板化；lexical + semantic 去重防泄漏；离线集覆盖语言和类目。
 2. **上线工程**：Prompt / 模板不可变 release、canary、按任务桶监控。训练不稳定要有排查树。
 3. **算法公式**：Pretrain vs SFT；PPO 为什么 clip 后仍取 min；正向 KL / 反向 KL 的优化含义。
 4. **上下文成本**：Long Context 常见路径，以及「能看长文本但不太贵」的折中。

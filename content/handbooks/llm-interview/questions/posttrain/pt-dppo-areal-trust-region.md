@@ -4,10 +4,7 @@ section: posttrain
 order: 251
 level: S
 title: TRPO、DPPO、AReaL 各自怎么给 RL 目标加 trust region？
-quick: >-
-  TRPO 对 $D_{\mathrm{KL}}(\pi_{\mathrm{old}}\|\pi_\theta)$ 硬约束，二阶、难 scale。PPO clip 用单点
-  $\rho$ 冒充总变差，词表长尾上会过罚低频 token、欠约束高频 token。2026 的 DPPO（Divergence PPO）改成估 TV / KL
-  再 mask。AReaL 的约束在样本年龄：过旧轨迹过滤或降权，不是改 clip 公式。
+quick: "TRPO 对整份分布的 KL 加硬约束，要二阶计算；DPPO（Divergence PPO）用估出的 TV / KL 代替单点 $\\rho$ 来 mask 更新；AReaL 约束的是样本年龄，过旧轨迹过滤或降权。"
 tags:
   - TRPO
   - DPPO
@@ -46,13 +43,13 @@ $|\rho-1|\le\varepsilon$ 相当于用一个被采样 token 的比去估总变差
 
 ## DPPO：直接估散度再 mask
 
-Divergence PPO 仍用策略梯度 surrogate，但进出信任域的判据换成 TV 或 KL 的估计，而不是 $|\rho-1|$。词表太大，精确散度吃显存，论文用 **Binary**（把质量拆成「被采样 token vs 其余」）和 **Top-$K$** 近似。mask 是非对称的：只挡「已经在往域外走」的更新，不挡把 $\rho$ 往 1 拉回来的步。VeRL 文档里有 Binary-TV / Binary-KL 实现。
+Divergence PPO 仍用策略梯度 surrogate，但进出信任域的判据换成 TV 或 KL 的估计，而不是 $|\rho-1|$。词表太大，精确散度吃显存，论文用 **Binary**（把概率分成「被采样 token」和「其余 token」两部分）和 **Top-$K$** 近似。mask 是非对称的：只挡「已经在往域外走」的更新，不挡把 $\rho$ 往 1 拉回来的步。VeRL 文档里有 Binary-TV / Binary-KL 实现。
 
-两句口令：trust region 必须锚在**行为策略 / 引擎采样分布** $\mu$，不要锚在训练图重算出来的 $\pi_{\mathrm{old}}$；没有信任域的 CISPO / 纯 IS，训推 mismatch 会累积到崩。Drift KL 相对冻结 $\pi_{\mathrm{ref}}$，仍是另一列，不要和 DPPO 的一步约束合成一个 $\beta$。
+实现时注意：trust region 必须锚在**行为策略 / 引擎采样分布** $\mu$，不要锚在训练图重算出来的 $\pi_{\mathrm{old}}$；没有信任域的 CISPO / 纯 IS，训练与推理分布的差异可能不断累积，导致训练不稳定。Drift KL 相对冻结 $\pi_{\mathrm{ref}}$，仍是另一列，不要和 DPPO 的一步约束合成一个 $\beta$。
 
 ## AReaL：约束的是样本有多旧
 
-AReaL 要解的是同步 RL 等长尾、生成与训练互斥，见 `sys-areal-vs-slime`。Fully async 之后，一个 batch 里混多个 policy 版本。它的「trust region」是**staleness-aware**：版本差太大的轨迹丢掉或降权，打断生成时 flush KV，见 `sys-partial-kv-policy`、`sys-staleness`。改的是数据准入，不是把 $\rho$ 换成 TV。
+AReaL 要解的是同步强化学习（RL）需要等待最慢轨迹、生成与训练不能同时进行的问题，见 `sys-areal-vs-slime`。Fully async 之后，一个 batch 里混多个 policy 版本。它的「trust region」是**staleness-aware**：版本差太大的轨迹丢掉或降权，打断生成时 flush KV，见 `sys-partial-kv-policy`、`sys-staleness`。改的是数据准入，不是把 $\rho$ 换成 TV。
 
 | | 约束对象 | 典型实现 |
 | --- | --- | --- |
@@ -64,5 +61,5 @@ AReaL 要解的是同步 RL 等长尾、生成与训练互斥，见 `sys-areal-v
 ## 追问
 
 - **DPPO 和 CISPO 谁还留着信任域？** CISPO 越界后仍回传 $\nabla\log\pi$，等于放弃近端。DPPO 认为这正是 mismatch 累积的原因。一个救低频 token 的梯度，一个救分布约束。
-- **低学习率还要信任域吗？** DPPO 论文的 takeaway 是要。$10^{-6}$ 挡不住训推数值隙在多步里叠起来。
+- **低学习率还要信任域吗？** DPPO 论文的 takeaway 是要。$10^{-6}$ 无法阻止训练与推理的数值差异在多步更新中累积。
 - **Distributed PPO 怎么讲？** 那是系统：采样和更新并行。放到框架题，见 `sys-llm-rl-framework-index`。别和 Divergence PPO 抢缩写。

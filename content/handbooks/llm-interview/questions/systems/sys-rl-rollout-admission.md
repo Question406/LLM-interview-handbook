@@ -4,9 +4,7 @@ section: systems
 order: 266
 level: S
 title: RL 训练如何准入、丢弃或重试 rollout，而不是把轨迹一股脑塞进 batch？
-quick: >-
-  这不是 API 过载的 429。训练环要决定轨迹进不进本步更新：超长截断或丢掉、全对/全错组丢掉重采、policy
-  stale 降权或丢弃、verifier 超时重试而不是当 0 分。优化的是吞吐、freshness 和有效梯度，不是 SLO。
+quick: "这不是 API 过载的 429。训练环要决定轨迹进不进本步更新：超长截断或丢掉、全对/全错组丢掉重采、policy stale 降权或丢弃、验证器（verifier） 超时重试而不是当 0 分。优化的是吞吐、freshness 和有效梯度，不是 SLO。"
 tags:
   - RL Infra
   - Admission Control
@@ -21,13 +19,13 @@ sources:
     type: primary
 ---
 
-这块容易讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 TTFT / error budget，容量单位是 token 与 KV。本题在 RL 训练环：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步墙钟和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
+这块容易讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 首个 token 的等待时间（TTFT） / error budget，容量按 token 与 KV 核算。本题在 强化学习（RL） 训练环：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步实际耗时和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
 
-## 四类闸门：长度、零方差组、stale、verifier
+## 四类闸门：长度、零方差组、stale、验证器（verifier）
 
-先画时间轴，见 `sys-rl-grpo-loop-roles`：rollout $\to$ reward $\to$ advantage $\to$ update。每一段都可以把样本挡在 batch 外。
+先画时间轴，见 `sys-rl-grpo-loop-roles`：采样轨迹（rollout） $\to$ reward $\to$ advantage $\to$ update。每一段都可以把样本挡在 batch 外。
 
-- **长度。** 长 CoT / 长 episode 占满 KV，一步墙钟跟最长那条走。超过 `max_response_len` 应截断并打 `truncated`，不要假装 EOS；再长就丢掉或拆到下一 micro-batch，按每卡 token 帽拼，见 `sys-verl-dynamic-bsz`。短任务可以填气泡，但不要为了填满而把未完成的超长轨迹提前当负例。
+- **长度。** 长 思维链（CoT，即分步推理过程） / 长 episode 占满 KV，一步实际耗时跟最长那条走。超过 `max_response_len` 应截断并打 `truncated`，不要假装 EOS；再长就丢掉或拆到下一 micro-batch，按每卡 token 帽拼，见 `sys-verl-dynamic-bsz`。短任务可以填气泡，但不要为了填满而把未完成的超长轨迹提前当负例。
 - **全对 / 全错组。** GRPO 的 $\hat A_i=(r_i-\mathrm{mean}(r))/(\mathrm{std}(r)+\varepsilon)$ 在 $\mathrm{std}(r)=0$ 时为 0，这步白算，见 `sys-rl-group-n`。准入应丢掉零方差组并重采（DAPO 动态采样），而不是把 $n$ 条满分轨迹送进 backward。名义组数和有效组数要对账。
 - **Stale policy。** 异步栈里轨迹带 `policy_version`。Gap 过大则 $\rho=\pi_\theta/\pi_{\mathrm{old}}$ 偏离 1，方差爆炸。按最大 gap 丢弃或按 age 降权，盯 KL 与 $\rho$ 分位数，见 `sys-rl-infra`。Freshness 是算法约束，不是「旧数据也能当 SFT」。
 - **Verifier / 环境超时。** Sandbox、编译器、裁判没在 deadline 返回，不能默默当 $r=0$。那会学到「超时=失败」。应 retry、标 `unknown` 不进 batch，或走部分信用；超时杀死要记原因，避免把环境故障写成策略差。

@@ -32,11 +32,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“什么是SDD（规范驱动开发）”**；**“什么是Spec-kit”**；**“什么是OpenSpec”**；**“OpenSpec 和Spec-kit 的区别？”**；秋招帖还问 **“如何理解Spec Coding和Harness？”**
 
-错法：背营销名、编一套没用过的 CLI。这面要的是：规格先于实现、对错可判定；工具链只是把规格、任务、验证落成仓库约定。没亲手用过就说「同类物是规格文件 + 任务拆解 + 自动验证」，不要假装跑过某条命令。和 Harness 的分工见 `byte-harness-engineering`；同类「先规格再编码」也可对照 `pdd-openclaw-spec-driven`。
+常见误区是：背营销名、编一套没用过的 CLI。这面要的是：规格先于实现、对错可判定；工具链只是把规格、任务、验证落成仓库约定。没亲手用过就说「同类物是规格文件 + 任务拆解 + 自动验证」，不要假装跑过某条命令。和 Harness 的分工见 `byte-harness-engineering`；同类「先规格再编码」也可对照 `pdd-openclaw-spec-driven`。
 
 ## SDD：先写可验收规格再改代码
 
-SDD（spec-driven development）把需求写成测试、接口契约或验收清单，再让模型改实现。规格是预言机：这一步过不过，不靠「看起来对」。没有规格时 Agent 只能靠观感，长任务会在中间步骤静默跑偏。
+SDD（spec-driven development）把需求写成测试、接口契约或验收清单，再让模型改实现。规格提供检查依据，让程序能判断这一步是否通过，而不只看结果是否像是正确的。没有规格时 Agent 只能靠观感，长任务会在中间步骤静默跑偏。
 
 规格要可执行或至少可检查：单测、类型、禁止改的路径、API 兼容断言。纯散文「做一个更好的登录」不是 SDD，因为它不能告诉 Harness 何时停。Coding Agent 里常见落地是：先补失败测试或 OpenAPI，再允许改业务代码；测试红着合入等于没有规格。
 
@@ -52,7 +52,7 @@ SDD（spec-driven development）把需求写成测试、接口契约或验收清
 
 ## Spec 判定对错，Harness 负责执行
 
-Spec Coding 解决「对错可判定」；Harness 解决「判定之后谁执行、失败怎么回放」。Harness 吃的是规格：跑测试、比 diff、失败按错误码重试或升级。规格写在 prompt 里只是又一段话，模型仍可忽略；规格写进测试和策略引擎，执行层才能拒绝「看起来能编译」的错误 patch。
+Spec Coding 解决「对错可判定」；Harness 解决「判定之后谁执行、失败怎么回放」。Harness 根据规格运行测试、比较 diff，并在失败时按错误码决定重试或升级处理。规格写在 输入提示里只是又一段话，模型仍可忽略；规格写进测试和策略引擎，执行层才能拒绝「看起来能编译」的错误 patch。
 
 配合方式：Agent 读规格 → 改代码 → Harness 跑验收 → 失败观察写回短记忆 → 再改。没有 Harness，规格只是文档；没有规格，Harness 只能做超时和权限，不能做正确性。权限与沙箱仍在 Harness，见 `byte-team-agent-security`；工具失败分类见 `byte-tool-fail-retry`。
 

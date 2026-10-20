@@ -4,10 +4,7 @@ section: systems
 order: 234
 level: A
 title: 滴滴一面：用 veRL 做 RL 时，看哪些指标判断训练在走？
-quick: >-
-  别只看 policy loss。一组最低配：reward / 正确率、KL 到 $\pi_{\mathrm{ref}}$、熵、clip
-  fraction、回复长度、组内奖励方差。loss 降而 KL 炸、长度暴涨，多半在 hacking 或数值不对。评测用 holdout
-  Pass@$k$，不看训练组。
+quick: "不能只看 policy loss。至少同时看 reward 和正确率、KL 到 $\\pi_{\\mathrm{ref}}$、熵、clip fraction、回复长度、组内奖励方差。loss 降而 KL 炸、长度暴涨，多半在 hacking 或数值不对。评测用 holdout Pass@$k$，不看训练组。"
 tags:
   - Didi
   - VeRL
@@ -32,11 +29,11 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“在用verl做强化学习时，你是根据什么指标来查看训练的进度的。”**
 
-错法：只报 policy loss 下降。Loss 在 PPO/GRPO 里几乎不能单独当进度：clip 之后 loss 变小可能只是 ratio 被卡住，或在刷长度。最低配要同时看任务有没有变好、策略有没有漂、引擎有没有在干活。评测用 holdout Pass@$k$，不要看当前训练组的平均 reward。相关卡：`byte-verl-structure`、`pt-grpo-variance`、`meituan-rl-loss-reward-oscillation`。会看这三桶，比会背 veRL 配置项更像真的训过。
+常见误区是：只报 policy loss 下降。Loss 在 PPO/GRPO 里几乎不能单独当进度：clip 之后 loss 变小可能只是 ratio 被卡住，或在刷长度。最低配要同时看任务有没有变好、策略有没有漂、引擎有没有在干活。评测用 holdout Pass@$k$，不要看当前训练组的平均 reward。相关卡：`byte-verl-structure`、`pt-grpo-variance`、`meituan-rl-loss-reward-oscillation`。会看这三桶，比会背 veRL 配置项更像真的训过。
 
 ## 任务桶：是不是真的更会做
 
-verifier 正确率、格式合法率、工具成功率；按难度切片，避免易题把均值拉满。训练组 reward 涨而 holdout 不动，多半泄漏、过拟合或 hacking。GRPO 还要看有效 group 比例：全对全错组没有优势，算力打在空转上。事实 / 代码任务把「可解析但错」和「格式崩」分开，否则会把崩格式当成不会做题。veRL 里这些数通常从 reward manager 打出来，不要只盯 actor loss 面板。
+验证器（verifier） 正确率、格式合法率、工具成功率；按难度切片，避免易题把均值拉满。训练组 reward 涨而 holdout 不动，多半泄漏、过拟合或 hacking。GRPO 还要看有效 group 比例：全对全错组没有优势，算力打在空转上。事实 / 代码任务把「可解析但错」和「格式崩」分开，否则会把崩格式当成不会做题。veRL 里这些数通常从 reward manager 打出来，不要只盯 actor loss 面板。
 
 ## 策略桶：KL、熵、clip、长度
 
@@ -44,7 +41,7 @@ KL 到 $\pi_{\mathrm{ref}}$、熵、clip fraction、advantage 标准差、序列
 
 ## 系统桶：引擎是否在干活
 
-rollout tokens/s、等待工具时间、重算 logp 占比、OOM / drop-last、GPU idle。长尾 group 会让利用率很差，见 `byte-grpo-rollout-tail-gpu`。系统指标差时先修调度，再解释算法不收敛。一次 standup 最少带三张图：holdout 正确率、KL 与长度、rollout tokens/s，避免只贴 loss 曲线。
+采样轨迹（rollout） tokens/s、等待工具时间、重算 logp 占比、OOM / drop-last、GPU idle。长尾 group 会让利用率很差，见 `byte-grpo-rollout-tail-gpu`。系统指标差时先修调度，再解释算法不收敛。一次 standup 最少带三张图：holdout 正确率、KL 与长度、rollout tokens/s，避免只贴 loss 曲线。
 
 ## 追问
 

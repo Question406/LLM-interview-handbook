@@ -4,9 +4,7 @@ section: posttrain
 order: 24
 level: S
 title: DPO 后模型分布变尖，还能直接接 GRPO 吗？
-quick: >-
-  可以，但先确认当前 policy 还有足够 rollout diversity。若同题采样几乎相同，组内 reward 方差接近 0，GRPO
-  的相对优势会失去信号；应先恢复可控探索并监控能力漂移。
+quick: "可以，但先确认当前 policy 还有足够的采样多样性。若同题采样几乎相同，组内奖励方差接近 0，GRPO 的相对优势会失去信号；应先恢复可控探索并监控能力漂移。"
 tags:
   - DPO
   - GRPO
@@ -28,23 +26,23 @@ sources:
     type: legacy-reference
 ---
 
-错法：两句口号：「DPO 之后熵一定崩，不能接 GRPO」或「DPO 是更好的初始化，直接上就行」。DPO 可以当 warm start，把策略推进偏好更好的区域；GRPO 再靠当前策略的在线组采样挖相对优势。接不接得上，看同题 $G$ 条候选是否还存在可被 verifier 分开的差异，不是看「DPO 三个字母」。
+常见误区是：两句口号：「DPO 之后熵一定崩，不能接 GRPO」或「DPO 是更好的初始化，直接上就行」。直接偏好优化（DPO） 可以当 warm start，把策略推进偏好更好的区域；GRPO 再靠当前策略的在线组采样挖相对优势。接不接得上，看同题 $G$ 条候选是否还存在可被 验证器（verifier） 分开的差异，不是看「DPO 三个字母」。
 
 ## 1. GRPO 吃的是组内方差
 
-同一 prompt 采 $o_1,\ldots,o_G$，标量奖励 $r_i$，
+同一输入提示 采 $o_1,\ldots,o_G$，标量奖励 $r_i$，
 
 $$
 \hat{A}_i=\frac{r_i-\mu}{\sigma+\epsilon},\qquad \mu=\frac1G\sum_j r_j.
 $$
 
-若 DPO 后温度采样几乎字面相同，或一组全对 / 全错，则 $\sigma\approx 0$，$\hat{A}\approx 0$，这一批是空梯度。DPO 的 Bradley-Terry 目标会压低 rejected、抬高 chosen，有可能把分布变尖，但这既不是定理也不是总发生：数据覆盖、$\beta$、过拟合程度都会改熵。要量的是 rollout，别臆测熵。
+若 DPO 后温度采样几乎字面相同，或一组全对 / 全错，则 $\sigma\approx 0$，$\hat{A}\approx 0$，这一批是空梯度。DPO 的 Bradley-Terry 目标会压低 rejected、抬高 chosen，有可能把分布变尖，但这既不是定理也不是总发生：数据覆盖、$\beta$、过拟合程度都会改熵。要量的是 采样轨迹（rollout），别臆测熵。
 
-建议先看：组内 reward std、unique response 比例、`pass@k` 与 `pass@1` 的缺口、token 熵、以及 DPO 的 chosen/rejected log-margin。`pass@k` 仍明显高于 `pass@1`，说明搜索空间里还有被漏掉的成功轨迹，GRPO 才有东西 amplify。
+建议先看：组内 reward 的标准差、unique response 比例、`pass@k` 与 `pass@1` 的缺口、token 熵、以及 DPO 的 chosen/rejected log-margin。`pass@k` 仍明显高于 `pass@1`，说明搜索空间里还有被漏掉的成功轨迹，GRPO 才有东西 amplify。
 
 ## 2. 可以接，但先恢复可控探索
 
-温度 / `top-p` 略抬、加熵奖励或熵下界、减小 GRPO 学习率、clip 更紧，都是把「还能采到不同答案」找回来，而不是把模型打回随机。必要时装一小部分 SFT 或 DPO replay，锁格式与通用能力，避免 online RL 在长回复上只学灌水。
+温度 / `top-p` 略抬、加熵奖励或熵下界、减小 GRPO 学习率、clip 更紧，都是把「还能采到不同答案」找回来，而不是把模型打回随机。必要时装一小部分 监督微调（SFT） 或 DPO replay，锁格式与通用能力，避免 online 强化学习（RL） 在长回复上只学灌水。
 
 Reference 锚点要显式选：
 

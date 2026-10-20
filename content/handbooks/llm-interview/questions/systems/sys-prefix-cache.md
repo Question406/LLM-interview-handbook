@@ -37,12 +37,12 @@ Cache key 至少包含：token IDs（不是原文）、model / 版本、adapter�
 
 ## 风险与淘汰
 
-风险：错命中、租户串页、热点 prefix 占满显存、eviction 抖动。淘汰用 LRU / LFU / size-aware，并限制单前缀占比。验收看 hit rate、因 miss 多出来的 prefill token、以及有没有跨租户命中。Cache 不是免费的：页占着 KV 池，会挤掉在飞请求的 decode 容量。命中率高但 P99 TPOT 变差，往往是热点系统提示词把在飞 decode 的页赶走了。
+风险：错命中、租户串页、热点 prefix 占满显存、eviction 抖动。淘汰用 LRU / LFU / size-aware，并限制单前缀占比。验收看 hit rate、因 miss 多出来的 输入预填充（prefill，即处理输入并建立缓存） token、以及有没有跨租户命中。Cache 不是免费的：页占着 KV 池，会挤掉正在生成的请求可用的 KV 容量。命中率高但 P99 TPOT 变差，往往是热点系统提示词把正在生成的请求所用的 KV 页淘汰了。
 
 ## 追问
 
 - **改了 system prompt 一个字？** 应从第一个不同 token 断开，整段旧 KV 不能用。若仍命中，key 设计错了。
 - **LoRA 切换能复用 base 的 prefix 吗？** 一般不能。adapter 改了有效权重，K/V 不同。
 - **和 prompt cache 磁盘方案？** 磁盘 / 跨请求持久化是另一层，仍要用同一套 key；只是介质从 HBM 换成存储。
-- **命中率很高但 TPOT 变差？** 热点前缀占满 KV，在飞 decode 被挤。要 size-aware 淘汰，不能只追 hit。
+- **命中率很高但 TPOT 变差？** 热点前缀占满 KV，正在生成的请求可用的 KV 空间被挤占。要 size-aware 淘汰，不能只追 hit。
 - **chunked prefill 和 prefix cache 冲突吗？** 不冲突。切块算完的稳定前缀仍可落页；冲突来自模板/权变了，不是来自切块。

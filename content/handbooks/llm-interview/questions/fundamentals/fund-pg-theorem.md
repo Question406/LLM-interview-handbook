@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-后面 PPO / GRPO 的所有公式都从这一条期望梯度长出来。先把目标钉死：参数化策略 $\pi_\theta$，一条轨迹 $\tau=(s_0,a_0,\ldots,s_T,a_T)$，回报 $R(\tau)=\sum_{t=0}^T\gamma^t r_t$，优化
+后续 PPO / GRPO 的公式都以这条期望梯度为基础。先把目标明确固定下来：参数化策略 $\pi_\theta$，一条轨迹 $\tau=(s_0,a_0,\ldots,s_T,a_T)$，回报 $R(\tau)=\sum_{t=0}^T\gamma^t r_t$，优化
 
 $$
 J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}\big[R(\tau)\big]=\sum_\tau \pi_\theta(\tau)\,R(\tau).
@@ -73,7 +73,7 @@ $$
 \nabla_\theta J(\theta)=\mathbb{E}\left[\sum_{t=0}^T \nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t\right].
 $$
 
-这就是 REINFORCE。采样一条轨迹，每个 token / action 的梯度是 $\nabla\log\pi$ 乘「从这里往后看起来有多好」。
+这就是 REINFORCE。采样一条轨迹，每个 token 或动作的梯度是 $\nabla\log\pi$ 乘「从这里往后看起来有多好」。
 
 ## 现场补三句
 

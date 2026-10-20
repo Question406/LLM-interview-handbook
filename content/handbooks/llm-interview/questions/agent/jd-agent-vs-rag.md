@@ -4,9 +4,7 @@ section: agent
 order: 166
 level: A
 title: 京东：Agent 和 RAG 的原理有何不同？
-quick: >-
-  RAG 是「检索一块知识再生成」的单步或浅循环；Agent
-  是带状态的决策环，可多次选工具、改计划、拒答。RAG 常是 Agent 的一个工具，两者可以叠，不必二选一。
+quick: "检索增强生成（RAG） 是「检索一块知识再生成」的单步或浅循环；Agent 是带状态的决策环，可多次选工具、改计划、拒答。RAG 常是 Agent 的一个工具，两者可以叠，不必二选一。"
 tags:
   - JD
   - Agent
@@ -30,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“解释Agent和RAG原理”**
 
-错法：「Agent 就是更好的 RAG」。RAG 是检索一块知识再生成，目标是降低参数记忆造成的过时和幻觉；Agent 是带状态的决策环，可多次选工具、改计划、拒答。RAG 常常只是 Agent 动作集合里的一种。没有状态机和副作用控制，就只是 RAG 管道。场景选择见 `jd-agent-beyond-guide`，评测差异见 `jd-agent-eval-beyond-qa`。
+常见误区是：「Agent 就是更好的 RAG」。检索增强生成（RAG） 是检索一块知识再生成，目标是降低参数记忆造成的过时和幻觉；Agent 是带状态的决策环，可多次选工具、改计划、拒答。RAG 常常只是 Agent 动作集合里的一种。没有状态机和副作用控制，就只是 RAG 管道。场景选择见 `jd-agent-beyond-guide`，评测差异见 `jd-agent-eval-beyond-qa`。
 
 ## RAG：检索约束生成
 

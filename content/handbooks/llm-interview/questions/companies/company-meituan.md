@@ -4,9 +4,7 @@ section: companies
 order: 10
 level: A
 title: 美团 / 北斗：大模型应用与算法应重点准备什么？
-quick: >-
-  业务闭环导向：SFT 到 RL 的门禁、字段抽取多维 Reward、Workflow vs Agent、Memory vs
-  RAG、LoRA/QLoRA 稳定性，以及 Thinking 开关对 SFT 的影响。公开面经同时覆盖 Reasoning 数据和应用八股。
+quick: "重点准备业务中的训练与评估：什么时候从 SFT 转到 RL、字段抽取如何设计多维奖励、Workflow 与 Agent 的选择、Memory 与 RAG 的区别、LoRA/QLoRA 稳定性，以及 Thinking 开关对 SFT 的影响。公开面经同时涉及推理数据和应用基础题。"
 tags:
   - Meituan
   - Beidou
@@ -31,13 +29,13 @@ sources:
     type: candidate-first-hand
 ---
 
-美团题更贴业务闭环：标注质量怎么量化、简单和困难样本怎么配比、Thinking 开关对 SFT 的影响、RL 初期 reward 先降后升怎么解释。准备时我会选一个字段抽取或到店助手项目，从数据到 SFT、RL、线上延迟完整讲通，比背更多论文名有用。
+美团题更关注业务中的训练和评估：标注质量怎么量化、简单和困难样本怎么配比、Thinking 开关对监督微调（SFT）的影响，以及强化学习（RL）初期奖励分数（reward）先降后升的原因。准备时我会选一个字段抽取或到店助手项目，从数据到 SFT、RL、线上延迟完整讲通，比背更多论文名有用。
 
 ## 准备主线
 
-1. **SFT / RL 门禁**：已有 Reasoning SFT 为什么还要 RL。格式合法率、verifier 稳定、组内对错混合之后才切 RL。
-2. **业务 Reward**：字段抽取要拆精确匹配、类型合法、必填、冲突、schema 和编造惩罚。会追 Reward Hacking。
-3. **Agent 边界**：Workflow vs Agent、Memory vs RAG。下单、退款这类强约束链路不要空喊 Agent。
+1. **SFT / RL 门禁**：已有 Reasoning SFT 为什么还要 RL。切换前应检查格式合法率和验证器（verifier）的稳定性，并确认同组回答中既有正确也有错误样本。
+2. **业务 Reward**：字段抽取的奖励要分别检查精确匹配、类型是否合法、必填字段是否完整、字段之间是否冲突，以及是否符合 schema，并惩罚编造。会追 Reward Hacking。
+3. **Agent 边界**：Workflow vs Agent、Memory vs 检索增强生成（RAG）。下单、退款这类强约束链路不要空喊 Agent。
 4. **训练稳定性**：LoRA 为什么挂 Linear 而不是 LayerNorm 之后。组内采样全错、reward/loss 震荡、过程监督信号。
 
 ## 本手册真题卡
@@ -45,8 +43,8 @@ sources:
 点击下面每条即可跳到对应题。
 
 - 美团：已有 Reasoning SFT 数据，为何还要 RL？何时才切 RL
-- 美团：组内采样 RL 的 on-policy rollout 没有正确答案怎么办
-- 美团：RL 过程中的 reward 或 loss 震荡严重，如何排查
+- 美团：组内采样 RL 的 on-policy 采样轨迹（rollout） 没有正确答案怎么办
+- 美团：RL 过程中的 reward 或 损失（loss） 震荡严重，如何排查
 - 美团北斗：过程监督信号怎么设计，还能用在哪
 - 美团：字段提取业务应设计哪些维度的 Reward
 - 美团：Workflow 和 Agent 的核心差异与适用场景
@@ -56,12 +54,12 @@ sources:
 - 美团：7B 做 GRPO 时显存开销从哪来，怎么降
 - 美团：业务里如何量化标注数据质量
 - 美团：SFT 时如何平衡简单任务和复杂任务的权重
-- 美团北斗：项目里为什么选 GRPO 而不是 PPO 或 DPO
+- 美团北斗：项目里为什么选 GRPO 而不是 PPO 或 直接偏好优化（DPO）
 - 美团：Attention 为什么要除以 $\sqrt{d_k}$
 - 美团：RMSNorm 相对 LayerNorm 有何优势
 - 美团：SFT 阶段如何防止过拟合
 - [[meituan-langgraph-vs-prompt|美团北斗：LangGraph 比手写 prompt 流程强在哪]]
-- 美团北斗：PPO/GRPO 后如何防止 OOD 崩塌
+- 美团北斗：PPO/GRPO 后如何防止 分布外数据（OOD，即与训练数据明显不同的数据） 崩塌
 - 美团秋招二面：SwiGLU 的公式是什么，相对 ReLU / GELU 强在哪？
 - 美团秋招二面：10 万词表时，交叉熵起步大概是多少？
 - 美团秋招二面：GRPO 为什么还要 clip？SFT 后直接上会不会仍不稳定？

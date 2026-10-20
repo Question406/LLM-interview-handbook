@@ -4,9 +4,7 @@ section: companies
 order: 12
 level: A
 title: 京东：大模型 / Agent 研发应重点准备什么？
-quick: >-
-  Agent 工程题密度高：工具目录治理、MCP / Skill 分层、Reflection 归因、工具权限和 AI IDE
-  隔离、RAG 幻觉兜底。电商场景还要把导购以外的用例，以及 Redis、压测讲清楚。
+quick: "Agent 工程题密度高：工具目录治理、MCP / Skill 分层、Reflection 归因、工具权限和 AI IDE 隔离、检索增强生成（RAG） 幻觉兜底。电商场景还要把导购以外的用例，以及 Redis、压测讲清楚。"
 tags:
   - JD
   - 真题导航
@@ -39,14 +37,14 @@ sources:
     type: candidate-first-hand
 ---
 
-京东相关岗分两条线。大模型算法会追 Toolformer、Reflection、PPO/GRPO 和复读机；Agent 研发会追工具目录、RAG 幻觉、意图识别评测和电商场景。准备时我不会把「会调工具」当成终点。
+京东相关岗分两条线。大模型算法会追 Toolformer、Reflection、PPO/GRPO 和复读机；Agent 研发会追工具目录、检索增强生成（RAG） 幻觉、意图识别评测和电商场景。准备时我不会把「会调工具」当成终点。
 
 ## 准备主线
 
 1. **工具、协议与隔离**：MCP 只解决连接；Skill 解决流程；执行权在 Host。AI IDE / 工作区要防「幻读」式过期快照。
-2. **训练范式**：Toolformer 自监督 vs RLHF；什么时候 PPO、什么时候 GRPO。
+2. **训练范式**：Toolformer 自监督 vs 基于人类反馈的强化学习（RLHF）；什么时候 PPO、什么时候 GRPO。
 3. **生成病态**：复读机、重复解码怎么从数据、解码和训练三侧处理。
-4. **RAG 生产**：幻觉不能只靠 prompt，要有检索归因、拒答和人工兜底。
+4. **RAG 生产**：幻觉不能只靠 输入提示（prompt），要有检索归因、拒答和人工兜底。
 
 ## 本手册真题卡
 
@@ -61,7 +59,7 @@ sources:
 - 京东：意图识别用什么模型，准确率怎么测
 - 京东：向量检索里 IVF / HNSW 和暴力有何差异
 - 京东：输入不标准时，混合检索权重怎么配
-- 京东：SFT 和 PEFT 训练有哪些实用 trick
+- 京东：监督微调（SFT） 和 PEFT 训练有哪些实用 trick
 - 京东：Agent 为什么不能只看问答准确率，还要评什么
 - 京东：如何评测 RAG 系统的准确率
 - 京东：什么时候加缓存，为什么不能只用 MySQL

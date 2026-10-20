@@ -6,7 +6,7 @@ level: S
 title: FlashAttention 的 Online Softmax 怎么在分块后仍保持精确？
 quick: >-
   每一行维护当前最大值 $m$ 和归一化和 $\ell$。读到新 block 后更新 $m'=\max(m,m_{\mathrm{block}})$，并把旧分子/分母按
-  $\exp(m-m')$ 重标定，再累加新 block。因此不必 materialize 全部 attention matrix，结果仍和整行一次算完等价。
+  $\exp(m-m')$ 重标定，再累加新 block。因此不必在显存中构造完整注意力矩阵，结果仍和整行一次算完等价。
 tags:
   - FlashAttention
   - Softmax

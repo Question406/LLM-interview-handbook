@@ -4,7 +4,7 @@ section: computer-use
 order: 2
 level: S
 title: 云服务、网页和 GUI 都会变化：怎样发布一条可复现、可比较的 Computer-use benchmark run？
-quick: 版本化的不只是模型。我会锁定 VM / 容器、账号和 fixture、任务资产、外部服务 mock、harness、模型快照、seed、动作和时间预算；保存 trace 和环境版本，多次重跑再报方差。
+quick: 除了模型版本，还要固定 VM 或容器、账号与预置数据、任务资料、外部服务模拟、Harness、随机种子，以及动作和时间预算。保存执行轨迹和环境版本，多次重跑后报告方差。
 tags:
   - Benchmark
   - Reproducibility
@@ -23,19 +23,19 @@ GUI 评测不可复现，多半不是模型，而是页面改版、登录态、D
 
 ## 必须冻结的清单
 
-一条 run 标出：task ID 与任务版本、初始 VM / 容器 image digest、账号 fixture 与种子数据、浏览器与 OS 版本、外部 API 是 mock 还是 live、harness 与 oracle 版本、模型 snapshot、prompt / tool schema hash、sampling seed、动作步数与墙钟预算。分辨率、DPR、语言 locale、时区也要进合同，否则同一坐标协议都会漂。真实云服务只属于 live 轨；frozen 轨必须用 snapshot 或 mock，禁止评测时打未版本化的生产站点。登录态用预置 cookie / 本地账号，不要每次走验证码。时钟可冻的任务要冻，否则「今天的邮件」无法复现。
+一条 run 标出：task ID 与任务版本、初始 VM / 容器 image digest、账号 fixture 与种子数据、浏览器与 OS 版本、外部 API 是 mock 还是 live、harness 与 oracle 版本、模型 snapshot、输入提示（prompt） / tool 字段和类型规范（schema） hash、sampling seed、动作步数与实际耗时预算。分辨率、设备像素比（DPR）、语言 locale、时区也要进合同，否则相同坐标也可能指向不同的位置。真实云服务只属于 live 轨；frozen 轨必须用 snapshot 或 mock，禁止评测时打未版本化的生产站点。登录态用预置 cookie / 本地账号，不要每次走验证码。时钟可冻的任务要冻，否则「今天的邮件」无法复现。
 
 ## 记什么、怎么报方差
 
-每次执行保存 observation、action、tool result、屏幕 / DOM checkpoint、oracle 逐条结果、失败原因（`timeout` / `oracle_fail` / `env_crash` / `auth_expired`）。有随机性的环境至少多次重跑，报告均值、方差、超时率，而不是单次百分点。动画、焦点、通知仍会抖，seed 不够，所以要多 seed。artifact 与环境 digest 绑定存放，缺 checkpoint 的 run 不能进正式对比。环境崩溃与模型失败必须分列，否则 harness 一抖，模型分数就跟着抖。
+每次执行保存 观测结果（observation）、action、tool result、屏幕 / DOM checkpoint、oracle 逐条结果、失败原因（`timeout` / `oracle_fail` / `env_crash` / `auth_expired`）。有随机性的环境至少多次重跑，报告均值、方差、超时率，而不是单次百分点。动画、焦点、通知仍会抖，seed 不够，所以要多 seed。artifact 与环境 digest 绑定存放，缺 checkpoint 的 run 不能进正式对比。环境崩溃与模型失败必须分列，否则 harness 一抖，模型分数就跟着抖。
 
 ## Frozen 与 live 不要混
 
-Live benchmark 反映新鲜性与站点漂移，有价值，但不能和冻结分加总成一个 headline。分别报 frozen reproducible score 与 live robustness score。评测上能刷的是：对着会变的网站调到绿再截图发论文、不报超时、把环境崩溃算模型失败或反过来全甩给环境、只跑一次。
+Live benchmark 反映新鲜性与站点漂移，有价值，但不能与冻结环境的分数加总成一个总分。分别报 frozen reproducible score 与 live robustness score。评测上能刷的是：对着会变的网站调到绿再截图发论文、不报超时、把环境崩溃算模型失败或反过来全甩给环境、只跑一次。
 
 发布数字时附上重跑次数、失败归因表和环境 digest。可发表的是带版本包和方差的 frozen 分；live 分用来看是否过时，不是用来刷榜。提交结果时附环境 digest、重跑次数、超时率、env_crash 率。缺这四项，百分点没有对照物。比较两个模型必须用同一任务版本包；换过 mock 或 DPI 的数字不能直接减。
 
-发布页面把 frozen 包的下载地址和环境 digest 放在分数旁边。没有包就没有分数。Live 轨用不同的表，避免读者把漂移当退化。网页会变不是放弃复现的理由，而是必须分 frozen / live。
+发布页面把 frozen 包的下载地址和环境 digest 放在分数旁边。缺少版本包的分数无法用于可复现的比较。Live 轨用不同的表，避免读者把漂移当退化。网页会变不是放弃复现的理由，而是必须分 frozen / live。
 
 ## 追问
 

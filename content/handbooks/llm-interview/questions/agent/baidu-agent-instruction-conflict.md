@@ -5,7 +5,7 @@ order: 108
 level: S
 title: 百度文心一言：Agent 如何处理前后指令冲突？
 quick: >-
-  先按权限层级和 scope 解析：system / policy 优先于 developer、user 和不可信网页或工具内容。同层以更具体、更新且不违背上层约束者为准。冲突不能安全消解时，保留硬约束、拒绝危险分支并向用户澄清。
+  先判断指令的权限层级和适用范围：system / policy 优先于 developer、user，网页和工具内容默认是不可信数据。同层指令通常采用更具体、更新且不违背上层约束的要求。仍有冲突时保留硬约束，拒绝危险操作，并向用户澄清。
 tags:
   - Baidu
   - Agent
@@ -29,17 +29,17 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、轮次与面试日期明确，岗位和届别未披露）
 - 原始措辞：**“前后指令冲突怎么处理”**
 
-错法：「听最后一句」或「让模型自己权衡」。按 authority 分层：policy / system 压过 developer、user，更压过网页和 tool 输出。不能安全消解就拒绝危险分支并澄清。间接注入见 `agent-prompt-injection`，执行点权限见 `agent-tool-permissions`，多 Agent 政策冲突见 `byte-multiagent-policy-conflict-recovery`。
+常见误区是：「听最后一句」或「让模型自己权衡」。按 authority 分层：policy / system 压过 developer、user，更压过网页和 tool 输出。不能安全消解就拒绝危险分支并澄清。间接注入见 `agent-prompt-injection`，执行点权限见 `agent-tool-permissions`，多 Agent 政策冲突见 `byte-multiagent-policy-conflict-recovery`。
 
-## 先标 authority，再比具体性
+## 先判断权限层级，再比较具体程度
 
-每条指令标 authority、scope、时效、可信来源。安全 policy 与 system 约束不可被后续用户、网页、检索内容或 tool output 覆盖。同一 authority 下，针对当前资源更具体且更新的约束通常优先。「只改当前目录」覆盖同层更早的「改这些文件」，但不能覆盖「禁止删除」。Retrieved text 默认是 data 不是 instruction；只有经过显式转换与授权才影响计划。
+记录每条指令的权限层级、适用范围、时效和可信来源。安全 policy 与 system 约束不可被后续用户、网页、检索内容或 tool output 覆盖。同一 authority 下，针对当前资源更具体且更新的约束通常优先。「只改当前目录」覆盖同层更早的「改这些文件」，但不能覆盖「禁止删除」。Retrieved text 默认是 data 不是 instruction；只有经过显式转换与授权才影响计划。
 
 ## 实现要落在 planner 和网关
 
 Planner 输出「采用/拒绝的约束及理由」，tool gateway 独立重做权限检查。出现「删除所有文件」与「仅修改当前目录」等不可协调冲突时，选择更安全的解释、保持只读或请求澄清，而不是猜测。把冲突类型、来源、被拒 action 和用户是否纠正记下来，既能监控 prompt injection，也能改善规则与 UI。模型在思维链里「和解」了不算数，执行点没放行才算。
 
-产品上把 tool observation 标成 data，切断「数据 → 新工具授权」。用户更正自己的前一句，可以更新同层意图；用户更正系统安全规则，不行。
+产品应把工具返回的 observation 标成数据，防止它被当成新的工具授权。用户更正自己的前一句，可以更新同层意图；用户更正系统安全规则，不行。
 
 ## 追问
 

@@ -38,11 +38,15 @@ sources:
 
 ## 参数状态先按 bytes/param 拆
 
-全参 mixed-precision AdamW 常见五份：BF16 权重 $2$、梯度 $2$、FP32 master $4$、Adam $m/v$ 各 $4$，合计约 $16$ bytes/param。对 $N$ 参数，未分片约 $16N$ 字节；7B 量级约 $112\,\mathrm{GB}$，远不是「$7\mathrm{B}\times 2=14\,\mathrm{GB}$」。LoRA 时这份账按可训参数算，底座仍可能占一份 BF16。然后必须加 activation（$\propto B\cdot T\cdot L\cdot d$，checkpoint 可换重算）、attention 临时量、embedding / logits、通信 buffer、allocator 碎片。ZeRO-1 只分优化器，ZeRO-3 / FSDP 连参数也分，但 activation 仍按本地 micro-batch 全量在。不说 world size 和策略，每卡数字没有定义。SFT 还多一个 packing / padding 口径：名义 batch 相同，有效 token 可以差一倍，显存峰值跟最长序列走。我会把「参数量」和「训练显存」拆开说：前者是 $N$ 和 dtype，后者是状态 + 激活 + 碎片。混元 72B 的代入例见 `tencent-zero3-qwen72b-mem`。
+全参 mixed-precision AdamW 常见五份：BF16 权重 $2$、梯度 $2$、FP32 master $4$、Adam $m/v$ 各 $4$，合计约 $16$ bytes/param。对 $N$ 参数，未分片约 $16N$ 字节；7B 量级约 $112\,\mathrm{GB}$，远不是「$7\mathrm{B}\times 2=14\,\mathrm{GB}$」。LoRA 时这份账按可训参数算，底座仍可能占一份 BF16。然后必须加 activation（$\propto B\cdot T\cdot L\cdot d$，checkpoint 可换重算）、attention 临时量、embedding / logits、通信 buffer、allocator 碎片。
+
+ZeRO-1 只分优化器，ZeRO-3 / FSDP 连参数也分，但 activation 仍按本地 micro-batch 全量在。不说 world size 和策略，每卡数字没有定义。监督微调（SFT） 还多一个 packing / padding 口径：名义 batch 相同，有效 token 数可以差一倍，显存峰值跟最长序列走。我会把「参数量」和「训练显存」拆开说：前者是 $N$ 和 dtype，后者是状态 + 激活 + 碎片。 混元 72B 的代入例见 `tencent-zero3-qwen72b-mem`。
 
 ## 利用率不是显存占用率
 
-显存利用率只是 `allocated / capacity`，高不代表快，碎片高还会假高；等通信时占用也可以 90%。计算侧用 MFU：实测 FLOPs 对 GPU 峰值。Transformer 粗估每 token 前反向约 $6N$ FLOPs（再加 attention 的 $O(T^2)$）。结合 tokens/s、step time、SM occupancy、all-reduce 等待、data loader stall、loss scale overflow。padding / 变长会让名义 batch 下的有效 token 差一截，packing 才能把 MFU 从「看起来在算」拉到「有效算」。回答给闭环：理论 token FLOPs → profiler 核对 → 指出是通信、数据还是激活在拖。低于 20% 先查这三件事，而不是先加卡。SFT 和预训练的差在序列不齐、常有 mask；LoRA 时优化器很小，MFU 可能被小 kernel 开销打掉，不要用预训练的「正常区间」硬套。除了 DeepSpeed 还能靠哪些手段把瓶颈拆开，见 `tencent-beyond-deepspeed`。
+显存利用率只是 `allocated / capacity`，高不代表快，碎片高还会假高；等通信时占用也可以 90%。计算侧用 MFU：实测 FLOPs 对 GPU 峰值。Transformer 粗估每 token 前反向约 $6N$ FLOPs（再加 attention 的 $O(T^2)$）。结合 tokens/s、step time、SM occupancy、all-reduce 等待、data loader stall、loss scaling 的溢出。
+
+padding / 变长会让名义 batch 下的有效 token 差一截，packing 才能把 MFU 从「看起来在算」拉到「有效算」。回答给闭环：理论 token FLOPs → profiler 核对 → 指出是通信、数据还是激活在拖。低于 20% 先查这三件事，而不是先加卡。SFT 和预训练的差在序列不齐、常有 mask；LoRA 时优化器很小，MFU 可能被小 kernel 开销打掉，不要用预训练的「正常区间」硬套。 除了 DeepSpeed 还能靠哪些手段把瓶颈拆开，见 `tencent-beyond-deepspeed`。
 
 白板顺序我一般固定：先报 $N$ 和 dtype，再写 16 bytes/param 表，再问 $D$ 和 ZeRO stage，再加 activation 的 $B,T,L$，最后才谈 MFU。颠倒顺序就会被追「那你这个 40GB 包不包含激活」。SFT 特有的坑是变长：同一名义 batch，pack 前后峰值和有效 token 都可以差一倍，所以「每卡几条」不能当利用率的分母。分母用有效 token 或实测 FLOPs。loss 在降但 tokens/s 很低，优先查 pad、checkpoint 过密、通信；占用 90% 但 MFU 20%，优先查等待而不是再买更贵的卡。
 

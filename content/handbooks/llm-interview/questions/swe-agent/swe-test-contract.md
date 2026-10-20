@@ -4,7 +4,7 @@ section: swe-agent
 order: 2
 level: S
 title: SWE benchmark 的 fail-to-pass / pass-to-pass tests 各在验证什么？如何阻止 Agent 通过删测试或改无关行为刷分？
-quick: fail-to-pass 验证 issue 修复的目标行为，pass-to-pass 保护原有行为不回归。还要保护测试完整性、限制 patch scope、加入隐藏测试和人工抽检；编译通过或单测变绿都不是唯一 verdict。
+quick: fail-to-pass 验证 issue 修复的目标行为，pass-to-pass 保护原有行为不回归。还要保护测试完整性、限制 patch scope、加入隐藏测试和人工抽检；编译或单测通过，都不足以单独判定修复成功。
 tags:
   - SWE-bench
   - Testing
@@ -27,7 +27,7 @@ sources:
 
 ## 评测器必须冻结与记录
 
-冻结：base SHA、评测用 test commit、测试命令、超时、容器 digest。记录：应用 patch 前后测试文件与 fixture 的 hash、每个测试的状态转移、patch 触及的路径、是否改了 `tests/`、`tox.ini`、CI workflow。评测器应拒绝修改测试、断言、fixture、快照和 CI 配置；对允许修改的生产路径做 allowlist。Hidden tests 不进 Agent 可见工作区，跑在独立阶段。再加 mutation：故意破坏正确断言或删除一个 F2P，看 Agent 是否靠「删测试 / 改 `assert` 为 `pass`」过关。日志里要能回答「这个绿是修了行为，还是测试被改了」。
+冻结：base SHA、评测用 test commit、测试命令、超时、容器 digest。记录：应用 patch 前后测试文件与 fixture 的 hash、每个测试的状态转移、patch 触及的路径、是否改了 `tests/`、`tox.ini`、CI workflow。评测器应拒绝修改测试、断言、fixture、快照和 CI 配置；对允许修改的生产路径做 allowlist。Hidden tests 不进 Agent 可见工作区，跑在独立阶段。再加 mutation：故意破坏正确断言或删除一个 F2P，看 Agent 是否靠「删测试 / 改 `assert` 为 `pass`」过关。日志里要能说明，测试通过是因为修复了行为，还是因为测试被改了。
 
 ## 失败模式与分报
 
@@ -35,7 +35,7 @@ sources:
 
 评测报告把 resolved 写成布尔不够：要附状态转移表、测试 hash 是否变化、越权路径列表。评审时抽 10 条「全绿」样本做人审，专门找删断言和硬编码。没有抽检的自动分，默认当成可刷。
 
-绿测试只是合同的一项；测试文件没被动、路径没越权、hidden 也过，才叫 resolved。这句话要对应到日志字段。
+测试通过只是验收的一项；测试文件未被篡改、修改路径未越权、隐藏测试也通过，才判为 resolved。这句话要对应到日志字段。
 
 ## 追问
 

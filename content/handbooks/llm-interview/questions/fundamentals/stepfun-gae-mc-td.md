@@ -33,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：“GAE是什么？”；“蒙特卡洛模拟和时序差分估计的区别？”；“偏差和方差是什么？”
 
-错法：把 GAE 说成「就是 advantage」，或不写 $\lambda$ 如何插值。MC 无偏方差大、TD 有偏方差小，GAE 用 $\lambda$ 对多步 TD 残差做指数加权。偏差是估计期望相对真值的偏移，方差是估计本身的波动。
+常见误区是：把 GAE 说成「就是 advantage」，或不写 $\lambda$ 如何插值。MC 无偏方差大、TD 有偏方差小，GAE 用 $\lambda$ 对多步 TD 残差做指数加权。偏差是估计期望相对真值的偏移，方差是估计本身的波动。
 
 ## MC、TD 与 $n$ 步优势
 
@@ -67,16 +67,16 @@ $$
 
 第二式由交换求和得到，实现上从后往前递推：$\hat A_t=\delta_t+\gamma\lambda\hat A_{t+1}$。$\lambda=0$ 只留 $\delta_t$，近 TD；$\lambda=1$ 变成 $\sum\gamma^l\delta_{t+l}$，在 $V$ 一致时近 MC。PPO 几乎标配这套 $\hat A$ 再做标准化。
 
-LLM 里 token 当步，$r$ 常只在句末非零，GAE 仍能把终局分沿 $(\gamma\lambda)^l$ 往回传；$\gamma$ 接近 1 时主要靠 $\lambda$ 控方差。GRPO 不用 learned $V$，组内相对分数替代 advantage，「偏差方差」以组大小 $n$ 的形式回来：组太小，基线噪；组太大，算力换方差。
+LLM 中把 token 作为一步，$r$ 常只在句末非零，GAE 仍能把终局分沿 $(\gamma\lambda)^l$ 往回传；$\gamma$ 接近 1 时主要靠 $\lambda$ 控方差。GRPO 不用 learned $V$，组内相对分数替代 advantage，「偏差方差」以组大小 $n$ 的形式回来：组太小时基线噪声大；增大组需要更多算力，但能降低基线方差。
 
-推导交换求和时，把 $\hat A_t^{(n)}=\delta_t+\gamma\delta_{t+1}+\cdots+\gamma^{n-1}\delta_{t+n-1}$ 代入 $(1-\lambda)\sum_n\lambda^{n-1}\hat A_t^{(n)}$，固定某个 $\delta_{t+l}$ 的系数为 $(1-\lambda)\lambda^l\sum_{k=0}^{\infty}(\gamma\lambda)^k$ 再整理，即得 $(\gamma\lambda)^l$。实现从尾部递推：最后一步 $\hat A_{T-1}=\delta_{T-1}$，向前 $\hat A_t=\delta_t+\gamma\lambda\hat A_{t+1}$。这和「先算完整 $G_t$ 再减 $V$」不同：中途就可以写完一段的优势，适合截断 rollout。偏差是 $\mathbb{E}[\hat A]-A^\pi$，来自错误的 $V$ 或过早 bootstrap；方差是 $\mathrm{Var}(\hat A)$，来自轨迹噪声。被问「偏差方差是什么」不要答成机器学习课本的 U 形曲线，要落到这条估计器上。
+推导交换求和时，把 $\hat A_t^{(n)}=\delta_t+\gamma\delta_{t+1}+\cdots+\gamma^{n-1}\delta_{t+n-1}$ 代入 $(1-\lambda)\sum_n\lambda^{n-1}\hat A_t^{(n)}$，固定某个 $\delta_{t+l}$ 的系数为 $(1-\lambda)\lambda^l\sum_{k=0}^{\infty}(\gamma\lambda)^k$ 再整理，即得 $(\gamma\lambda)^l$。实现从尾部递推：最后一步 $\hat A_{T-1}=\delta_{T-1}$，向前 $\hat A_t=\delta_t+\gamma\lambda\hat A_{t+1}$。这和「先算完整 $G_t$ 再减 $V$」不同：中途就可以写完一段的优势，适合截断 采样轨迹（rollout）。偏差是 $\mathbb{E}[\hat A]-A^\pi$，来自错误的 $V$ 或过早 bootstrap；方差是 $\mathrm{Var}(\hat A)$，来自轨迹噪声。被问「偏差方差是什么」不要答成机器学习课本的 U 形曲线，要落到这条估计器上。
 
-稀疏奖励的直观：只有 $r_T$ 非零时，$\delta$ 主要在最后几步非零（若 $V$ 还没学会终局），GAE 把它们按 $(\gamma\lambda)^l$ 涂回前面的 token。$\lambda$ 太小，前面的思考 token 几乎分不到优势，模型只学最后几个字；$\lambda$ 太大，一整段噪声都灌进早期 token。PPO 再对 $\hat A$ 做 batch 标准化，那是另一层方差控制，会再引入「相对本 batch」的偏差。和 `fund-biasvariance` 同一根轴：稳是用偏换来的。
+稀疏奖励的直观：只有 $r_T$ 非零时，$\delta$ 主要在最后几步非零（若 $V$ 还没学会终局），GAE 把它们按 $(\gamma\lambda)^l$ 传回前面的 token。$\lambda$ 太小，前面的思考 token 几乎分不到优势，模型只学最后几个字；$\lambda$ 太大，一整段噪声都灌进早期 token。PPO 再对 $\hat A$ 做 batch 标准化，那是另一层方差控制，会再引入「相对本 batch」的偏差。和 `fund-biasvariance` 同一根轴：稳是用偏换来的。
 
 ## 追问
 
-- **$V$ 错了 GAE 还能用吗？** 能，但$\lambda$ 越小越吃 $V$ 的偏差；$\lambda$ 接近 1 更信轨迹。Value 系统性低估长链时，低 $\lambda$ 会压掉长思考。
+- **$V$ 错了 GAE 还能用吗？** 能，但$\lambda$ 越小越吃 $V$ 的偏差；$\lambda$ 接近 1 更信轨迹。Value 系统性低估很长的推理过程时，低 $\lambda$ 会压掉长思考。
 - **和 $G_t-V(s_t)$？** 那是 MC advantage；GAE 用残差链，不必等整段结束也能递推，截断轨迹也能用。
 - **$\gamma$ 和 $\lambda$ 谁管折扣？** $\gamma$ 是环境折扣，改的是任务目标；$\lambda$ 是估计器的偏差-方差旋钮，不改变真实回报定义。
 - **句末稀疏奖励要不要 $\lambda=1$？** 不必。$\lambda=1$ 方差往往不可接受；0.95 到 0.99 更常见。先保证 $V$ 能拟合终局，再降 $\lambda$。
-- **GRPO 还要 GAE 吗？** 通常不要 learned $V$。组内减均值是另一条降方差，bias 是抹掉 prompt 间绝对难度。
+- **GRPO 还要 GAE 吗？** 通常不要 learned $V$。组内减均值是另一条降方差，bias 是抹掉 输入提示（prompt） 间绝对难度。

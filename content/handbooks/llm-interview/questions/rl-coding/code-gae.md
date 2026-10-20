@@ -30,5 +30,5 @@ sources: []
         running = delta + gamma * lam * bootstrap * running
         adv[t] = running
     returns = adv + values[:-1]
-    return adv, returns</code></pre><p>如果只是时间上限截断，环境并没有真正进 absorbing terminal，通常还应允许从 $V(s_T)$ bootstrap。如果是任务自然结束，next value 应看成 0。很多 RL 实现的 bug，就是把这两件事混成一个 done。</p></div>
+    return adv, returns</code></pre><p>如果只是时间上限截断，环境并没有真正进 absorbing terminal，通常还应允许从 $V(s_T)$ bootstrap。如果是任务自然结束，next value 应看成 0。很多 强化学习（RL） 实现的 bug，就是把这两件事混成一个 done。</p></div>
           <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>为什么 returns=adv+V？</summary><div class="follow-answer"><p>因为 advantage 定义是 $A=Q-V$，所以用估出来的 $\hat{A}$ 加上 baseline $V$，得到 value target 或 return 的估计。</p></div></details></div>

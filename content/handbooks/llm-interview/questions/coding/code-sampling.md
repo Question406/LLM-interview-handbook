@@ -4,9 +4,7 @@ section: coding
 order: 12
 level: S
 title: 手写 Temperature + Top-p Sampling：顺序、数值稳定性和边界怎么处理？
-quick: >-
-  先按 temperature 缩放 logits，再做稳定 softmax；Top-p 应按概率从高到低累积，保留最小的累计质量不少于 $p$ 的 token
-  集合后重新归一化并采样。要处理 $T\to 0$、$p$ 边界、NaN/Inf 和至少保留一个 token。
+quick: "先按 temperature 缩放 logits，再做稳定 softmax；Top-p 应按概率从高到低累积，保留最小的累计质量不少于 $p$ 的 token 集合后重新归一化并采样。要处理 $T\\to 0$、$p$ 边界、NaN/Inf 和至少保留一个 token。"
 tags:
   - Coding
   - Sampling
@@ -21,7 +19,7 @@ sources:
     type: primary
 ---
 
-错法：先 top-p 再除 $T$，或直接 `exp(logits)` 再归一化。顺序必须是先 temperature，再 top-p：温度改 softmax 尖锐程度，nucleus 在已经温度化的分布上切。数值用减最大值的 log-softmax，并显式处理 $p=0$、全 mask。白板上比公式更容易翻的是顺序、logsumexp 减 max、以及裁空 / `NaN`；边界要能测。
+常见误区是：先 top-p 再除 $T$，或直接 `exp(logits)` 再归一化。顺序必须是先 temperature，再 top-p：温度改 softmax 尖锐程度，nucleus 在已经温度化的分布上切。数值用减最大值的 log-softmax，并显式处理 $p=0$、全 mask。白板上比公式更容易翻的是顺序、logsumexp 减 max、以及裁空 / `NaN`；边界要能测。
 
 ## 顺序：温度整形分布，nucleus 再截尾
 

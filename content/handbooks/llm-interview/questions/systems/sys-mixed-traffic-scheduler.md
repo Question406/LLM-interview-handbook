@@ -4,10 +4,7 @@ section: systems
 order: 22
 level: S
 title: 长 prompt 把聊天请求 TTFT 打爆时，continuous batching 与 chunked prefill 怎么设计 / 调参？
-quick: >-
-  Prefill 和 decode 抢同一块 GPU token budget。我会用 chunked prefill 把长输入切块，跟 decode
-  交错，再设 max batched tokens、partial-prefill 上限、抢占和防饥饿。验收按流量切片看 P50/P95
-  TTFT、TPOT 和 goodput。
+quick: "Prefill 和 decode 抢同一份 token 预算。用 chunked prefill 把长输入切块和 decode 交错，限制每步 token 数并加抢占规则，再按流量类型分别看 TTFT 和 TPOT 尾部。"
 tags:
   - Scheduling
   - Continuous Batching
@@ -25,13 +22,13 @@ sources:
     type: primary
 ---
 
-别把 continuous batching 理解成「批次越大越好」。Prefill 和 decode 抢的是同一块 GPU token budget：长 prompt 的 prefill 是大 GEMM、算得动但占得久；短聊天的 decode 每步只吃一个 token，却对调度间隙和 KV 驻留极度敏感。任由一条长 prefill 跑完，后面所有短请求的 TTFT 一起爆炸。算力特性见 `sys-prefill-decode`。这题考的是 **队头阻塞**：平均吞吐可以很好看，交互 SLO 已经死了。调参报告如果只有 token/s，没有按长度桶切的 TTFT/TPOT，等于没做混跑验收。
+别把 continuous batching 理解成「批次越大越好」。Prefill 和 逐 token 生成（decode） 抢的是同一块 GPU token 预算：长 prompt 的 prefill 是大 GEMM、算得动但占得久；短聊天的 decode 每步只吃一个 token，却对调度间隙和 KV 驻留极度敏感。任由一条长 prefill 跑完，后面所有短请求的 首个 token 的等待时间（TTFT） 一起爆炸。算力特性见 `sys-prefill-decode`。这题考的是 **队头阻塞**：平均吞吐可以很好看，交互 SLO 已经死了。调参报告如果只有 token/s，没有按长度桶切的 TTFT/TPOT，等于没做混跑验收。
 
 ## 为什么长短混跑会伤 TTFT
 
 TTFT = 排队 + 本次 prefill。短请求本身的 prefill 很短，排队却可能卡在一条数万 token 的文档摘要后面。Decode 侧的 TPOT 同时被拖累：若调度器把整段长 prefill 当成一个不可打断的 step，正在生成的对话会停住等这块算完。用户感知是「打字突然卡一下」，根因常常是 scheduler 把预算一次性给了邻居的长 prefill，decode kernel 未必变慢。日志里要能把这一步的 prefill token 占比打出来，否则线上只能猜。
 
-Continuous batching 解决的是「有请求结束立刻补进新序列」，避免短序列空等。它不自动解决「补进来的是一条超长 prefill」。没有切块时，新来的长请求仍会独占接下来若干毫秒到数秒的计算。这和 `sys-rl-why-vllm-rollout` 里引擎快的原因是同一套调度，只是在线服务还要面对交互 SLO。RL rollout 可以容忍更高的平均延迟，在线聊天不行：同一套引擎、两套 SLO，调度参数不能直接抄训练集群。把 serving 的 chunked prefill 默认值搬进 RL 或反过来，都会在错误的尾巴上优化。
+Continuous batching 解决的是「有请求结束立刻补进新序列」，避免短序列空等。它不自动解决「补进来的是一条超长 prefill」。没有切块时，新来的长请求仍会独占接下来若干毫秒到数秒的计算。这和 `sys-rl-why-vllm-rollout` 里引擎快的原因是同一套调度，只是在线服务还要面对交互 SLO。强化学习（RL） 采样轨迹（rollout） 可以容忍更高的平均延迟，在线聊天不行：同一套引擎、两套 SLO，调度参数不能直接抄训练集群。把 serving 的 chunked prefill 默认值搬进 RL 或反过来，都会在错误的尾巴上优化。
 
 ## chunked prefill 怎么交错
 

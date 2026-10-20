@@ -52,7 +52,7 @@ sources:
 - AI Infra 实习：RL rollout 有哪些优化？量化、异步分别换什么？
 - AI Infra 实习：训练完的权重怎么同步到推理引擎？
 - AI Infra 实习：Megatron TP 切 MLP 时，两个矩阵怎么切、通信是什么？
-- 百度后训练一面：GRPO 序列级损失怎么落到每个 token？
+- 百度后训练一面：GRPO 序列级损失怎么落到每个 文本处理单位（token）？
 
 ## 机制对照
 
@@ -81,7 +81,7 @@ sources:
 - slime 的 rollout / global / micro batch 怎么对到 veRL 那套字段？
 - slime 什么时候上 PD 分离？
 - slime 怎么接已经拉起来的 SGLang？
-- slime 怎么同时 serve actor 和冻住的 ref / reward？
+- slime 怎么同时 serve actor 和冻住的 ref / 奖励分数（reward）？
 - 多轮 Agent 在 slime 里为什么要把 router 改成 session affinity？
 - slime 的 `--use-dynamic-batch-size` 和 veRL `use_dynamic_bsz` 怎么对？
 - AReaL 和 slime 对 rollout bottleneck 的理解差在哪？

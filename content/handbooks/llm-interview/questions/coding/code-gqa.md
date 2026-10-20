@@ -25,7 +25,7 @@ MHA：$H_q=H_{\mathrm{kv}}$。MQA：$H_{\mathrm{kv}}=1$。GQA 取中间：若干
 
 ## 对齐方式
 
-$g=H_q/H_{\mathrm{kv}}$ 必须整除。`repeat_kv` 把 `[B, H_kv, S, D]` 沿 head 维每个头复制 $g$ 次，得到 `[B, H_q, S, D]`，然后当普通 MHA：
+$H_q$ 必须能被 $H_{\mathrm{kv}}$ 整除，组大小为 $g=H_q/H_{\mathrm{kv}}$。`repeat_kv` 把 `[B, H_kv, S, D]` 沿 head 维每个头复制 $g$ 次，得到 `[B, H_q, S, D]`，然后按普通 MHA 计算：
 
 $$
 \mathrm{Attn}(Q,\;\mathrm{repeat}(K),\;\mathrm{repeat}(V)).
@@ -56,7 +56,7 @@ def gqa_attn(q, k, v):
     return F.softmax(att, dim=-1) @ v
 ```
 
-Decode 一步：只 repeat 当前和新 concat 后的 cache KV，Q 仍是 $H_q$ 个。
+每个 decode 步先把新的 KV 拼入历史 cache，再对这些 KV 做 repeat，Q 仍有 $H_q$ 个头。
 
 ## 追问
 

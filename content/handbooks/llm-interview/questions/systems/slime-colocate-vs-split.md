@@ -23,17 +23,17 @@ sources:
     type: primary
 ---
 
-错法：说「slime 也有 HybridEngine」。HybridEngine 追求 同卡、同进程、换布局、少一份整模。slime `--colocate` 追求 同卡、两进程、offload 轮流上班。分离时 slime 更像 OpenRLHF 的分池，再用 NCCL / 磁盘 / delta 同步。说成一回事会被拆穿，见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。面试官若追问「那为什么还叫训推一体」，我会答：一体指的是 放置（同一批 GPU 时分复用），不是 运行时融合。进程边界、CUDA context、通信组都还是两套。资源账本先写启动参数：分离是加法，一体是时分复用加 offload 税。profile 拷贝气泡，若已经接近 generate，省卡是假省。
+常见误区是：说「slime 也有 HybridEngine」。HybridEngine 追求 同卡、同进程、换布局、少一份整模。slime `--colocate` 追求 同卡、两进程、offload 轮流上班。分离时 slime 更像 OpenRLHF 的分池，再用 NCCL / 磁盘 / delta 同步。说成一回事会被拆穿，见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。面试官若追问「那为什么还叫训推一体」，我会答：一体指的是 放置（同一批 GPU 时分复用），不是 运行时融合。进程边界、CUDA context、通信组都还是两套。资源账本先写启动参数：分离是加法，一体是时分复用加 offload 的搬运开销。profile 拷贝气泡，若已经接近 generate，省下的卡可能不足以抵消额外时间成本。
 
 ## 分离怎么配
 
 资源账本先写在启动参数上，不要事后在 Ray 里猜。默认训推分离：
 
 - Megatron actor：`--actor-num-nodes × --actor-num-gpus-per-node`
-- SGLang rollout：`--rollout-num-gpus`
+- SGLang 采样服务（rollout）：`--rollout-num-gpus`
 - `--rollout-num-gpus-per-engine` 是 一个 SGLang engine 的世界卡数。多机 serving 填总卡，不是「单机 tp 再乘节点」。填错会让 router 和 engine 的世界大小对不上。
 
-分离的好处是生成池可以按 decode 瓶颈单独扩、训练卡不用卸 KV。坏处是 两份权驻留，每步 `update_weights`，见 `infra-rl-weight-sync`、`slime-weight-sync`。`--rollout-num-gpus 0` 只起 router，接外部 engine，适合已经有独立 SGLang 集群。
+分离的好处是生成池可以根据逐 token 生成（decode）的瓶颈独立扩容、训练卡不用卸 KV。坏处是 两份权驻留，每步 `update_weights`，见 `infra-rl-weight-sync`、`slime-weight-sync`。`--rollout-num-gpus 0` 只起 router，接外部 engine，适合已经有独立 SGLang 集群。
 
 ## `--colocate` 在做什么
 
@@ -44,7 +44,7 @@ sources:
 
 `--sglang-mem-fraction-static` 常降到 0.8 左右，给两边各留一点，否则两套权在切换瞬间叠爆。Offload 的代价是 PCIe / NVLink 上把优化器状态和 KV 来回搬，一步里会出现两段拷贝气泡。卡内带宽够时可以接受；跨 NUMA 或 PCIe 代差大时，colocate 可能比分卡还慢。选放置要 profile 拷贝，不要只比「省不省卡」。
 
-一体时训推仍 串行：同一张卡不能边 backward 边 decode。别把 `--colocate` 说成异步 RL，见 `slime-async-train`。Offload 没配对是最常见的 OOM：只开 `--offload-rollout` 却在训练阶段忘了把 SGLang 的 KV / CUDA graph 卸掉，两套权叠在同一张卡上。反过来，采样阶段 Megatron 优化器状态还在 HBM，SGLang 的 `mem-fraction-static` 再按 0.9 预留，切换瞬间爆。官方 `--colocate` 默认打开双边 offload，就是为了避免这种「以为一体、其实双驻留」。手动拆开关时必须按阶段互斥。拷贝气泡要单独 profile：H100 上 NVLink 搬 70B 分片和 PCIe 搬优化器状态完全不是一个数量级，跨 NUMA 再降一档。选 colocate 之前用一次空跑看 offload 占比，若已经接近 generate 时间，分卡可能更便宜。
+一体时训推仍 串行：同一张卡不能边 backward 边 decode。别把 `--colocate` 说成异步强化学习（RL），见 `slime-async-train`。Offload 没配对是最常见的 OOM：只开 `--offload-rollout` 却在训练阶段忘了把 SGLang 的 KV / CUDA graph 卸掉，两套权叠在同一张卡上。反过来，采样阶段 Megatron 优化器状态还在 HBM，SGLang 的 `mem-fraction-static` 再按 0.9 预留，切换瞬间爆。官方 `--colocate` 默认打开双边 offload，就是为了避免这种「以为一体、其实双驻留」。手动拆开关时必须按阶段互斥。拷贝气泡要单独 profile：H100 上 NVLink 搬 70B 分片和 PCIe 搬优化器状态完全不是一个数量级，跨 NUMA 再降一档。选 colocate 之前用一次空跑看 offload 占比，若已经接近 generate 时间，分卡可能更便宜。
 
 ## 和 HybridEngine 差在哪
 
@@ -60,7 +60,7 @@ sources:
 ## 追问
 
 - **一体能不能重叠 generate 和 train？** 默认不能。`--offload-train` / `--offload-rollout` 把对方赶出显存，物理上串行。要重叠先分卡，再谈挪 `ray.get` 或 `train_async.py`。把 `--colocate` 说成异步会被拆穿。
-- **rollout 卡多于 actor 时多的卡干什么？** rollout-only，不参与 Megatron。适合 decode 比 backward 更吃卡的长 CoT。少报「多出来的卡也在训练」，账本会错。
+- **rollout 卡多于 actor 时多的卡干什么？** rollout-only，不参与 Megatron。适合 decode 比 backward 更吃卡的长分步推理（CoT）。少报「多出来的卡也在训练」，账本会错。
 - **为什么要降 `mem-fraction-static`？** 静态预留太大，offload 回来的训练状态没地方放，OOM 发生在切换瞬间而不是稳态。常降到 0.8，给两边各留一点。
 - **外部 engine 还算 colocate 吗？** 不算。`--rollout-num-gpus 0` 只起 router，接外部 SGLang，是分池的极端。同步协议和 KV flush 要单独设计，一体开关管不到那套卡。
 - **`--rollout-num-gpus-per-engine` 填错会怎样？** 它是一个 engine 的世界卡数，多机 serving 填总卡不是单机 tp。填错则 router 和 engine 世界大小对不上，部分空转、部分 OOM。

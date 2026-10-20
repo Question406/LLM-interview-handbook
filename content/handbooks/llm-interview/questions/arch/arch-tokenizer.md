@@ -5,8 +5,8 @@ order: 15
 level: A
 title: BPE、WordPiece、SentencePiece、Byte-level BPE 大致区别？
 quick: >-
-  BPE 迭代合并高频 symbol pairs；WordPiece 选择更偏 likelihood 增益的 subword；SentencePiece
-  是可直接在 raw text 上训练的 tokenizer framework；byte-level BPE 从 bytes 出发，几乎无 OOV。
+  BPE 反复合并高频相邻符号；WordPiece 按似然增益选择子词；SentencePiece
+  是直接用原始文本训练分词器的工具框架；byte-level BPE 从字节开始，因此几乎没有词表外字符（OOV）。
 tags:
   - Tokenizer
   - Basics
@@ -24,7 +24,7 @@ sources:
     type: primary
 ---
 
-错法：把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
+常见误区是：把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
 
 ## 四种东西各管什么
 

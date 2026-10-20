@@ -5,7 +5,7 @@ order: 12
 level: S
 title: Tool Timeout 能不能自动 Retry？
 quick: >-
-  先判断 side effect 与 idempotency。GET/search 一般可重试；send_money/send_email/delete
+  先检查操作是否会产生副作用，以及重复调用是否幂等。GET/search 一般可重试；send_money/send_email/delete
   等非幂等操作在不知道第一次是否成功时不能直接重复。
 tags:
   - Failure Recovery
@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-错法：把 HTTP 超时当成「没执行，再来一次」。Timeout 只说明「没在时限内听到回音」，不说明服务器没做成。对 `send_email` / 转账 / 删除，盲目 replay 会双发。Agent 实践指南把工具失败恢复写成状态机问题，而不是「模型再试一次」的生成问题。
+常见误区是：把 HTTP 超时当成「没执行，再来一次」。Timeout 只说明「没在时限内听到回音」，不说明服务器没做成。对 `send_email` / 转账 / 删除，盲目 replay 会双发。Agent 实践指南把工具失败恢复写成状态机问题，而不是「模型再试一次」的生成问题。
 
 ## 先问副作用与幂等，超时先查状态
 
@@ -39,7 +39,7 @@ Schema 必须把「超时后查单」写成契约，并给出 `status_url` / `UN
 
 Retry 是同一意图下确认状态或改参；re-plan 是目标分解变了（见 `agent-when-to-replan`）。把两者混成「模型自己看着办」，高风险动作会在超时循环里被执行多次。评测应注入「第一次其实已成功但响应丢失」，看 Agent 是否去查而不是再发。
 
-训练标签也要按此切：幂等读超时后重试可以标正；`send_email` 超时后不查直接再发应标危险负例。Harness 应提供 `get_status(idempotency_key)`，否则模型没有合法下一跳。产品上超时默认 pending，不要失败重放。用户看到「发送中」比收到两封同样的信便宜得多。把 retry 写进系统提示而不做幂等键，等于没做。
+训练标签也要按此切：幂等读超时后重试可以标正；`send_email` 超时后不查直接再发应标危险负例。Harness 应提供 `get_status(idempotency_key)`，否则模型没有合法下一跳。产品上超时默认 pending，不要失败重放。这样可以向用户显示「发送中」，避免重复发送同一封邮件。把 retry 写进系统提示而不做幂等键，等于没做。
 
 ## 追问
 

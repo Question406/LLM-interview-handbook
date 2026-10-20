@@ -4,9 +4,7 @@ section: systems
 order: 181
 level: B
 title: 蚂蚁智能体优化一面：Dify 和 ms-swift 各解决什么问题？
-quick: >-
-  Dify 管应用编排，工作流、知识库、Agent 可视化，偏上线和运营。ms-swift
-  管训练、微调、评测，SFT、LoRA、RLHF 这些，偏改权重。面试各说一句边界就行，别把它们说成同一个平台。
+quick: "Dify 管应用编排，工作流、知识库、Agent 可视化，偏上线和运营。ms-swift 管训练、微调、评测，监督微调（SFT）、LoRA、基于人类反馈的强化学习（RLHF） 这些，偏改权重。面试各说一句边界就行，别把它们说成同一个平台。"
 tags:
   - Ant Group
   - Dify
@@ -36,7 +34,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“介绍Dify平台”**；**“介绍Ms-swift平台”**
 
-错法：「都是大模型平台」，或者展开成产品广告。先划边界：一个管编排和上线，一个管改权重；交接物是 checkpoint / 推理服务，不是把训练框架嵌进工作流画布。各给一句输入输出，再落到项目里用了哪一层。智能体优化岗两者都可能碰到：线上改路由走 Dify，领域话术不够走 swift，别用其中一个去覆盖另一个的职责。
+常见误区是：「都是大模型平台」，或者展开成产品广告。先划边界：一个管编排和上线，一个管改权重；交接物是 checkpoint / 推理服务，不是把训练框架嵌进工作流画布。各给一句输入输出，再落到项目里用了哪一层。智能体优化岗两者都可能碰到：线上改路由走 Dify，领域话术不够走 swift，别用其中一个去覆盖另一个的职责。
 
 ## Dify：编排应用，不改基座
 
@@ -44,15 +42,15 @@ Dify 把 prompt、知识库、工具和工作流配成可发布应用，适合�
 
 ## ms-swift：改权重的训练工具链
 
-ms-swift 是 ModelScope 侧的轻量训练框架，把数据格式、LoRA / 全参、多卡、部分 SFT / RLHF / GRPO 收成命令行和配置。输入是数据集与模型，输出是 checkpoint 和评测指标。强项是把常见微调路径跑通；弱项是不管线上工作流、权限和知识库。蚂蚁问它，是因为智能体优化经常要 LoRA 改工具格式或领域话术，不是要用它替代 Dify。训练并行、ZeRO 细节若追问，转到 `baichuan-deepspeed`，别在这题里展开内核。
+ms-swift 是 ModelScope 侧的轻量训练框架，把数据格式、LoRA / 全参、多卡、部分 监督微调（SFT） / 基于人类反馈的强化学习（RLHF） / GRPO 收成命令行和配置。输入是数据集与模型，输出是 checkpoint 和评测指标。强项是把常见微调路径跑通；弱项是不管线上工作流、权限和知识库。蚂蚁问它，是因为智能体优化经常要 LoRA 改工具格式或领域话术，不是要用它替代 Dify。训练并行、ZeRO 细节若追问，转到 `baichuan-deepspeed`，别在这题里展开内核。
 
 ## 二者如何交接
 
-swift 产出可部署权重 → 推理服务（vLLM 等）→ Dify 只引用 endpoint 与 prompt / 工具配置。版本要钉死：哪个 checkpoint、哪套模板、哪版工具 schema。别在 Dify 里「再训一版」，也别指望 swift 给你会话记忆。评测也不要混：swift 侧看 SFT/RL 指标，Dify 侧看工作流完成率、检索命中和工具失败码。Dify 解决怎么把模型用起来，ms-swift 解决怎么把模型改得更听话，中间隔着推理网关。
+swift 产出可部署权重 → 推理服务（vLLM 等）→ Dify 只引用 endpoint 与 prompt / 工具配置。要固定版本：哪个 checkpoint、哪套模板、哪版工具 schema。别在 Dify 里「再训一版」，也别指望 swift 给你会话记忆。评测也不要混：swift 侧看 SFT/RL 指标，Dify 侧看工作流完成率、检索命中和工具失败码。Dify 解决怎么把模型用起来，ms-swift 解决怎么把模型改得更听话，中间隔着推理网关。
 
 ## 追问
 
 - **只用 Dify 能不能优化智能体？** 能优化编排和检索，改不了权重；格式和领域能力不够时仍要微调。
-- **ms-swift 和 Megatron / veRL 什么关系？** swift 偏中小规模微调；大规模预训练或 RL 编排常换 Megatron / veRL。
+- **ms-swift 和 Megatron / veRL 什么关系？** swift 偏中小规模微调；大规模预训练或 强化学习（RL） 编排常换 Megatron / veRL。
 - **知识库该放哪？** 索引与 ACL 在检索系统；Dify 是接入层。质量问题不在画布上解决。
 - **如何避免两套 prompt？** 训练模板与 Dify 应用模板同一版本库，推理侧做一致性检查。上线 checklist 里要把「swift 产出的 chat template」和「Dify 系统提示」对拍一次。

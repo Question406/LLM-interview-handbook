@@ -4,10 +4,7 @@ section: posttrain
 order: 241
 level: A
 title: OPSD 和 STaR / Rejection Sampling 差在哪？为什么错解还能提供梯度？
-quick: >-
-  STaR / RS 是硬蒸馏：只保留终局对的轨迹，再在那些前缀上做 SFT，错的样本梯度为零。OPSD
-  是软蒸馏：教师不生成，只在学生自己的前缀（对错都算）上给下一 token 分布。错解的中间步仍然有 $r_n=\log
-  p_T-\log p_S$。
+quick: "STaR / RS 是硬蒸馏：只保留终局对的轨迹，再在那些前缀上做 监督微调（SFT），错的样本梯度为零。OPSD 是软蒸馏：教师不生成，只在学生自己的前缀（对错都算）上给下一 token 的分布。错解的中间步仍然有 $r_n=\\log p_T-\\log p_S$。"
 tags:
   - OPSD
   - STaR
@@ -32,7 +29,7 @@ sources:
 
 ## STaR：显式合理化 + 对了才留
 
-STaR 让模型先写 rationale $r$ 再给答案 $y$，用 $R=\mathbf{1}[y=y^\star]$ 过滤，只对成功样本做 SFT。梯度近似序列级政策梯度
+STaR 让模型先写 rationale $r$ 再给答案 $y$，用 $R=\mathbf{1}[y=y^\star]$ 过滤，只对成功样本做 监督微调（SFT）。梯度近似序列级政策梯度
 
 $$
 \nabla J_{\mathrm{STaR}}\propto\mathbb{E}_{(r,y)\sim\pi_{\theta}}\big[\mathbf{1}[y=y^\star]\,\nabla\log\pi_{\theta}(r,y\mid x)\big].
@@ -40,7 +37,7 @@ $$
 
 错的 rationale **整段扔掉**。每条成功轨迹里所有 token 共享同一个 $0/1$，没有中间 credit。后续 rationalization 还要模型把 $y^\star$ 写进上下文再 **生成** 一段解释，再决定是否留下。这是硬蒸馏：目标是一条离散文本。
 
-Rejection sampling SFT 更粗：不要求先写解释，只筛成功 completion 再 CE。同样是「对了才学、在成功前缀上模仿」。覆盖已经够时便宜、可审计；覆盖不够时 support 越滤越窄。
+Rejection sampling SFT 更粗：不要求先写解释，只筛成功 completion 再 交叉熵损失（CE）。同样是「对了才学、在成功前缀上模仿」。覆盖已经够时便宜、可审计；覆盖不够时 support 越滤越窄。
 
 ## OPSD：教师不说话，错前缀也有分布
 
@@ -67,6 +64,6 @@ STaR 把错的扔掉；OPSD 把错的当成要纠正的前缀。题太难、教�
 
 ## 追问
 
-- **先 STaR 再 OPSD？** 可以。RS / STaR 先把格式和可读 CoT 拉进 support，再用 OPSD 在学生自己的错前缀上补恢复。不要颠倒成「OPSD 替代全部冷启动」。
+- **先 STaR 再 OPSD？** 可以。RS / STaR 先把格式和可读思维链（CoT） 拉进 support，再用 OPSD 在学生自己的错前缀上补恢复。不要颠倒成「OPSD 替代全部冷启动」。
 - **为什么 OPSD 不必 $G$ 条？** 不靠组内相对优势。一条学生轨迹 + 一次教师前向就有逐 token 信号。u-OPSD 才重新引入 $G$，那是为了投票，见 `pt-u-opsd`。
 - **STaR 的 rationalization 能不能当 $y^\star$？** 能，那是 OPSD 的特权上下文来源之一。别把「生成解释」和「用解释当教师条件」说成同一步。
