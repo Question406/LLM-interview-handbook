@@ -21,6 +21,9 @@ test("the generated handbook has stable, complete metadata", () => {
   assert.equal(new Set(questions.map((question) => question.id)).size, files.length);
   assert.equal(handbook.stats.questions, files.length);
   assert.ok(questions.every((question) => !Object.hasOwn(question, "titleHtml") && !Object.hasOwn(question, "quickHtml")));
+  assert.ok(Array.isArray(handbook.companies));
+  assert.ok(questions.every((question) => Array.isArray(question.companies)));
+  assert.ok(questions.some((question) => question.companies.includes("alibaba")));
 });
 
 test("published questions are standalone Markdown sources", () => {
@@ -45,6 +48,17 @@ test("Markdown code keeps math delimiters literal", () => {
   assert.match(html, /<code>\$x\$<\/code>/);
   assert.match(html, /<code>\\\(y\\\)<\/code>/);
   assert.match(html, /\$HOME/);
+});
+
+test("coding answers keep comparisons and HTML examples literal while prose HTML stays forbidden", () => {
+  const html = renderMarkdown('```python\nif 0 <= y < h and x > 0:\n    print("<button onclick=\\"run()\\" style=\\"color:red\\">x</button>")\n```');
+  const visible = html.replace(/<[^>]+>/g, "");
+  assert.match(visible, /&lt; h/);
+  assert.match(visible, /onclick=/);
+  assert.match(visible, /style=/);
+  assert.equal(/<button\b/.test(html), false);
+  assert.doesNotThrow(() => renderMarkdown('Use `<script>alert(1)</script>` literally.'));
+  assert.throws(() => renderMarkdown('A list:\n\n- <img src=x onerror=alert(1)>'), /cannot contain raw HTML/);
 });
 
 test("fenced code is syntax-highlighted at build time", () => {

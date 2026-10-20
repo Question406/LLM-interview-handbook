@@ -49,3 +49,13 @@ export function questionMatchesQuery(question: HandbookQuestion, normalizedQuery
     .toLocaleLowerCase()
     .includes(normalizedQuery);
 }
+
+export function questionMatchesCompany(question: HandbookQuestion, companyId: string | null): boolean {
+  if (!companyId) return true;
+  return question.companies.includes(companyId);
+}
+
+export function handbookHasCompanies(handbook: Handbook): boolean {
+  if (handbook.companies.length > 0) return true;
+  return handbook.sections.some((section) => section.questions.some((question) => question.companies.length > 0));
+}

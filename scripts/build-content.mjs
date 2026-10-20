@@ -5,6 +5,7 @@ import matter from "gray-matter";
 import hljs from "highlight.js";
 import katex from "katex";
 import { marked } from "marked";
+import { companyFacetsForQuestions, loadCompanyRegistry, resolveQuestionCompanies } from "../lib/company-facets.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const handbooksRoot = resolve(projectRoot, "content/handbooks");
@@ -415,7 +416,11 @@ function shieldCodeDelimiters(markdown) {
 }
 
 export function renderMarkdown(markdown) {
-  if (/<\/?[a-z][^>]*>/i.test(markdown)) {
+  let containsRawHtml = false;
+  marked.walkTokens(marked.lexer(markdown), (token) => {
+    if (token.type === "html") containsRawHtml = true;
+  });
+  if (containsRawHtml) {
     throw new Error("Markdown questions cannot contain raw HTML. Use normal Markdown or a legacy-html migration file.");
   }
 
@@ -435,14 +440,17 @@ export function renderMarkdown(markdown) {
   let html = marked.parse(source, { gfm: true, breaks: false });
   // Sanitize Markdown HTML before substituting KaTeX. KaTeX layout depends on
   // inline height/width styles; stripping them after insertion collapses every formula.
-  html = html
+  // Code is already escaped by marked. Sanitizing its literal contents would
+  // corrupt examples containing HTML attributes, comparison operators or URLs.
+  html = html.split(/(<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>)/gi)
+    .map((fragment, index) => index % 2 ? fragment : fragment
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/\s(?:on[a-z]+|style)=("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/href="([^"]*)"/gi, (_match, href) => (isAllowedHref(href) ? `href="${href}"` : "href=\"#\""))
     .replace(
       /<a href="(\?(?:book=[a-z0-9-]+(?:&amp;|&))?section=[a-z0-9-]+(?:&amp;|&)question=([a-z0-9-]+))"/gi,
       '<a class="question-link" href="$1" data-question-id="$2"',
-    );
+    )).join("");
   for (const replacement of replacements) {
     const token = escapeRegExp(replacement.token);
     if (replacement.block) html = html.replace(new RegExp(`<p>${token}</p>`, "g"), () => replacement.html);
@@ -502,7 +510,7 @@ function renderAnswer(question, catalog, book) {
   }
 }
 
-function parseQuestion(filePath, sectionIds) {
+function parseQuestion(filePath, sectionIds, registry) {
   const { data, body } = readMarkdown(filePath);
   const id = asString(data.id, filePath, "id");
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) fail(filePath, "id must use lowercase letters, numbers, and hyphens");
@@ -513,6 +521,11 @@ function parseQuestion(filePath, sectionIds) {
   const quick = asString(data.quick, filePath, "quick");
   if (!Array.isArray(data.tags) || !data.tags.length || data.tags.some((tag) => typeof tag !== "string" || !tag.trim())) {
     fail(filePath, "tags must be a non-empty list of strings");
+  }
+  if (data.companies !== undefined) {
+    if (!Array.isArray(data.companies) || data.companies.some((value) => typeof value !== "string" || !value.trim())) {
+      fail(filePath, "companies must be a list of slugs");
+    }
   }
   if (typeof data.realInterview !== "boolean") fail(filePath, "realInterview must be true or false");
   if (data.status !== "published" && data.status !== "draft" && data.status !== "review") fail(filePath, "status must be draft, review, or published");
@@ -531,6 +544,18 @@ function parseQuestion(filePath, sectionIds) {
   }) : [];
   if (data.format === "markdown" && !sources.length) fail(filePath, "new Markdown questions need at least one source");
 
+  const tags = data.tags.map((tag) => tag.trim());
+  let companies;
+  try {
+    companies = resolveQuestionCompanies({
+      companies: data.companies === undefined ? undefined : data.companies.map((value) => value.trim()),
+      sectionId,
+      tags,
+    }, registry);
+  } catch (error) {
+    fail(filePath, error instanceof Error ? error.message : String(error));
+  }
+
   return {
     filePath,
     id,
@@ -538,7 +563,8 @@ function parseQuestion(filePath, sectionIds) {
     level,
     title,
     quick,
-    tags: data.tags.map((tag) => tag.trim()),
+    tags,
+    companies,
     isRealInterview: data.realInterview,
     status: data.status,
     format: data.format,
@@ -631,12 +657,12 @@ function toCatalogEntry(handbook) {
   };
 }
 
-function buildHandbook(handbookFile, { write = true } = {}) {
+function buildHandbook(handbookFile, registry, { write = true } = {}) {
   const handbook = loadHandbook(handbookFile);
   const sectionIds = handbook.sectionIds;
   const files = walkMarkdown(join(handbook.root, "questions"));
   if (!files.length) throw new Error("No published question files found");
-  const questions = files.map((filePath) => parseQuestion(filePath, sectionIds));
+  const questions = files.map((filePath) => parseQuestion(filePath, sectionIds, registry));
   const ids = new Set();
   for (const question of questions) {
     if (question.status !== "published") fail(question.filePath, "questions/ may only contain published questions; keep drafts under drafts/");
@@ -671,8 +697,9 @@ function buildHandbook(handbookFile, { write = true } = {}) {
         title: question.title,
         quick: question.quick,
         tags: question.tags,
+        companies: question.companies,
         isRealInterview: question.isRealInterview,
-        searchText: `${question.title.replace(/\$/g, "")} ${question.quick.replace(/\$/g, "")} ${question.tags.join(" ")}`.replace(/\s+/g, " ").trim(),
+        searchText: `${question.title.replace(/\$/g, "")} ${question.quick.replace(/\$/g, "")} ${question.tags.join(" ")} ${question.companies.join(" ")}`.replace(/\s+/g, " ").trim(),
         answerPath: `/content/${handbook.id}/${section.id}/${question.id}.json`,
       })),
     };
@@ -696,6 +723,7 @@ function buildHandbook(handbookFile, { write = true } = {}) {
       realInterviews: allQuestions.filter((question) => question.isRealInterview).length,
       sources: sourceUrls.size,
     },
+    companies: companyFacetsForQuestions(allQuestions, registry),
     sections,
   };
 
@@ -736,7 +764,8 @@ function removeStaleIndexes(expected) {
 export function buildContent({ write = true } = {}) {
   const handbookFiles = findHandbookFiles();
   if (!handbookFiles.length) throw new Error("No handbook directories found under content/handbooks");
-  const results = handbookFiles.map((filePath) => buildHandbook(filePath, { write }));
+  const registry = loadCompanyRegistry();
+  const results = handbookFiles.map((filePath) => buildHandbook(filePath, registry, { write }));
   const ids = new Set();
   for (const result of results) {
     if (ids.has(result.handbook.id)) throw new Error(`Duplicate handbook id: ${result.handbook.id}`);

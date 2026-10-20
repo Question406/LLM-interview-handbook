@@ -1,5 +1,11 @@
 export type QuestionLevel = "S" | "A" | "B" | string;
 
+export interface HandbookCompanyFacet {
+  id: string;
+  title: string;
+  questionCount: number;
+}
+
 export interface HandbookQuestion {
   id: string;
   level: QuestionLevel;
@@ -7,6 +13,7 @@ export interface HandbookQuestion {
   title: string;
   quick: string;
   tags: string[];
+  companies: string[];
   isRealInterview: boolean;
   searchText: string;
   answerPath: string;
@@ -63,6 +70,7 @@ export interface Handbook {
   description: string;
   updatedAt: string;
   stats: HandbookStats;
+  companies: HandbookCompanyFacet[];
   sections: HandbookSection[];
 }
 

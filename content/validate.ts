@@ -11,7 +11,17 @@ export function validateHandbook(candidate: Handbook): Handbook {
     throw new Error(`Invalid handbook content: ${candidate.id}`);
   }
 
-  return candidate;
+  return {
+    ...candidate,
+    companies: Array.isArray(candidate.companies) ? candidate.companies : [],
+    sections: candidate.sections.map((section) => ({
+      ...section,
+      questions: section.questions.map((question) => ({
+        ...question,
+        companies: Array.isArray(question.companies) ? question.companies : [],
+      })),
+    })),
+  };
 }
 
 export function validateCatalog(candidate: HandbookCatalogEntry): HandbookCatalogEntry {

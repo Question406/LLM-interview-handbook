@@ -20,6 +20,20 @@ const catalog: HandbookCatalogEntry[] = [
   },
   {
     schemaVersion: 1 as const,
+    id: "us-tech-interview",
+    slug: "us-tech",
+    title: "US Tech",
+    shortTitle: "US Tech",
+    edition: "V1",
+    audience: "",
+    description: "",
+    updatedAt: "2026-08-01",
+    stats: { questions: 1, mustKnow: 1, realInterviews: 0, sources: 1 },
+    indexPath: "/content/us-tech-interview/index.json",
+    sections: [{ id: "xai", title: "xAI", description: "", questionCount: 1 }],
+  },
+  {
+    schemaVersion: 1 as const,
     id: "leetcode-150",
     slug: "leetcode-150",
     title: "LeetCode",
@@ -41,10 +55,28 @@ test("handbook search round-trips book, section, and question", () => {
     section: "array-string",
     question: "lc-1",
     view: null,
+    company: null,
+    axis: null,
   });
   assert.equal(
     serializeHandbookSearch(parsed, catalog),
     "?book=leetcode-150&section=array-string&question=lc-1",
+  );
+});
+
+test("handbook search round-trips company facet and axis", () => {
+  const parsed = parseHandbookSearch("?book=us-tech&axis=company&company=xai");
+  assert.deepEqual(parsed, {
+    book: "us-tech",
+    section: null,
+    question: null,
+    view: null,
+    company: "xai",
+    axis: "company",
+  });
+  assert.equal(
+    serializeHandbookSearch(parsed, catalog),
+    "?book=us-tech&axis=company&company=xai",
   );
 });
 
