@@ -4,9 +4,7 @@ section: posttrain
 order: 3
 level: S
 title: Snorkel：五条回复取最好和最差，做三轮 DPO
-quick: >-
-  只用 UltraFeedback 的 prompt，Mistral-7B 自己生成 5 条，PairRM 排序，最好对最差做 DPO，重复三轮。
-  AlpacaEval 2.0 从 14.72 到 30.22。他们写明裁判偏长回答，奖励模型可能把这个偏差学进去了。
+quick: "只用 UltraFeedback 的 输入提示（prompt），Mistral-7B 自己生成 5 条，PairRM 排序，最好对最差做 直接偏好优化（DPO），重复三轮。 AlpacaEval 2.0 从 14.72 到 30.22。他们写明裁判偏长回答，奖励模型可能把这个偏差学进去了。"
 tags:
   - Snorkel
   - DPO
@@ -33,11 +31,11 @@ sources:
 
 ## 题怎么来的
 
-这不是一则候选人复盘。Snorkel 把配方写在模型卡和两篇博客里，RL Training 的科研岗位则点名 GRPO、RLHF、RLAIF、DPO、奖励模型和 credit assignment。面他们的后训练岗，这套循环就是他们自己的例子。`realInterview: false`。
+这不是一则候选人复盘。Snorkel 把配方写在模型卡和两篇博客里，强化学习（RL） Training 的科研岗位则点名 GRPO、基于人类反馈的强化学习（RLHF）、RLAIF、直接偏好优化（DPO）、奖励模型和 credit assignment。面他们的后训练岗，这套循环就是他们自己的例子。`realInterview: false`。
 
 模型卡上的循环：
 
-1. 从 UltraFeedback 取 prompt，不用里面别人生成的回答。子集大约 2 万条。
+1. 从 UltraFeedback 取 输入提示（prompt），不用里面别人生成的回答。子集大约 2 万条。
 2. 当前模型为每条 prompt 生成 5 个回答。起点是 Mistral-7B-Instruct-v0.2。
 3. 用 PairRM 排序。
 4. 最高分当 chosen，最低分当 rejected，做 DPO。
@@ -60,7 +58,7 @@ def pair_from_scores(texts, scores):
     return texts[best], texts[worst]
 ```
 
-他们还写了直接做 RLHF 时 loss 炸过，输出变重复。同一批偏好改走 DPO 之后曲线稳定。算力是他们选 DPO 的理由，不是「DPO 在所有目标上都更强」。要探索、要细到步骤的 credit 时，岗位文本把 GRPO 和 RLHF 放回来，见 `scale-process-outcome`。
+他们还写了直接做 RLHF 时 loss 出现过数值异常，输出变重复。同一批偏好改走 DPO 之后曲线稳定。算力是他们选 DPO 的理由，不是「DPO 在所有目标上都更强」。要探索、要细到步骤的 credit 时，岗位文本把 GRPO 和 RLHF 放回来，见 `scale-process-outcome`。
 
 ## 长度
 

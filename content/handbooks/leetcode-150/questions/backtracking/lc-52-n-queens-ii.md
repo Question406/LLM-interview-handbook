@@ -4,9 +4,7 @@ section: backtracking
 order: 5
 level: A
 title: LC 52 · N 皇后 II
-quick: >-
-  返回解的个数。按行放皇后，列、主对角 $r-c$、副对角 $r+c$
-  占用则跳。放到第 $n$ 行方案加一。
+quick: "按行放皇后；尝试位置 $(r,c)$ 时，检查列、主对角 $r-c$ 和副对角 $r+c$ 是否已被占用。合法就递归下一行，返回时撤销。放完第 $n$ 行，方案数加一。"
 tags:
   - Backtracking
   - Hard

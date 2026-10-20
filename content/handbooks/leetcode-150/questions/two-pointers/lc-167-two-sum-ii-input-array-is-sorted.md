@@ -4,9 +4,7 @@ section: two-pointers
 order: 3
 level: S
 title: LC 167 · 两数之和 II - 输入有序数组
-quick: >-
-  有序数组对撞：和小了左移，大了右移。命中后返回 $1$-index。时间 $O(n)$，额外空间
-  $O(1)$。
+quick: "左右指针从有序数组两端向中间移动：两数和偏小，左指针右移；偏大，右指针左移。找到后返回从 $1$ 开始的下标。时间 $O(n)$，额外空间 $O(1)$。"
 tags:
   - Two Pointers
   - Medium

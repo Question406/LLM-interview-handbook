@@ -114,7 +114,7 @@ def permuteUnique(nums):
     return ans
 ```
 
-- **只要第 $k$ 个排列（LC 60）？** 不必生成 $n!$ 个串。数字为 $1..n$，按字典序。第 $1$ 位：剩下 $n-1$ 个数有 $(n-1)!$ 种排法，下标 $\lfloor (k-1)/(n-1)! \rfloor$ 就是该位该选的数，然后 $k \leftarrow (k-1)\bmod (n-1)!$，从剩余数字里删掉它，继续下一位。时间 $O(n^2)$（每次从 list 按下落）。
+- **只要第 $k$ 个排列（LC 60）？** 不必生成 $n!$ 个串。数字为 $1..n$，按字典序。第 $1$ 位：剩下 $n-1$ 个数有 $(n-1)!$ 种排法，下标 $\lfloor (k-1)/(n-1)! \rfloor$ 就是该位该选的数，然后 $k \leftarrow (k-1)\bmod (n-1)!$，从剩余数字里删掉它，继续下一位。时间 $O(n^2)$（每次按下标从 list 删除元素需要移动后续元素）。
 
 ```python
 from math import factorial

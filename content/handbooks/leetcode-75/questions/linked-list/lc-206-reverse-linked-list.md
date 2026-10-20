@@ -31,7 +31,7 @@ sources:
 
 迭代时维护一个不变式：`prev` 是已反转部分的头，`cur` 是未处理部分的头。每步先 `nxt = cur.next` 存住后继，否则改指针后就丢了；再 `cur.next = prev`，然后 `prev, cur` 各前进一步。`cur` 为空时整条链反转完，`prev` 是原尾、新头。
 
-递归版：先反转 `head.next` 之后的部分，拿到新头；此时 `head.next` 是反转段的尾，令 `head.next.next = head`、`head.next = None`。递归栈 $O(n)$，$n$ 到 $5000$ 时 Python 默认递归上限 $1000$ 会爆，所以面试我默认写迭代，递归当追问。改节点值来「反转」不算数。
+递归版：先反转 `head.next` 之后的部分，拿到新头；此时 `head.next` 是反转段的尾，令 `head.next.next = head`、`head.next = None`。递归栈 $O(n)$，$n$ 到 $5000$ 时 Python 默认递归上限 $1000$ 会爆，所以面试我默认写迭代，递归当追问。需要改变节点连接顺序，只改节点值不能满足要求。
 
 ## 参考代码
 

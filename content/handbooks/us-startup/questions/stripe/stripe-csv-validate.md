@@ -6,7 +6,7 @@ level: S
 title: Stripe：多行 CSV 做数据集校验，店面三 part
 quick: >-
   输入是一整段多行 CSV 字符串。先逐行拒绝空字段，再按 banned word 滤掉，再用 stop word 对其中两列做 tokenize。
-  题干很长，先跟面试官收成可测的规则再写。
+  题干很长，先和面试官整理成能测试的规则，再写实现。
 tags:
   - Stripe
   - Coding

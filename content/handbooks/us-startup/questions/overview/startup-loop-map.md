@@ -32,13 +32,13 @@ sources:
 
 ## 题怎么来的
 
-这一张不是某一家的原题。我把 2025–2026 还能对上帖子的美国 startup SWE 面经放在一起之后，轮次长得像。公司还是私营、候选人仍把它当 startup 面的，收在后面各章。已经上市的（Coinbase、Datadog、Snowflake、DoorDash）没放进来。
+这一张不是某一家的原题。我把 2025–2026 还能对上帖子的美国 startup SWE 面经放在一起之后，发现它们的轮次安排比较相似。公司还是私营、候选人仍把它当 startup 面的，收在后面各章。已经上市的（Coinbase、Datadog、Snowflake、DoorDash）没放进来。
 
 ## 轮次
 
 招聘官电话很短，会问为什么是这家。技术电面通常一道题，题干很长，分成几 part，过了测试再开下一 part。数据结构就是 map、区间、字符串、图上的环。复杂度很少是得分点，写不完、写不干净会挂。
 
-Onsite 里至少有一轮不是白纸算法。Stripe 叫 Bug Bash 和 Integration：仓库不是你的，或者 API 文档现查。Scale 把一段能调他们模型的代码给你，让你查为什么没有输出。Headway、Notion 的设计题按他们自己的产品缩一圈，不让你画 Twitter。
+Onsite 里至少有一轮不是白纸算法。Stripe 叫 Bug Bash 和 Integration：仓库不是你的，或者 API 文档现查。Scale 把一段能调他们模型的代码给你，让你查为什么没有输出。Headway、Notion 的设计题围绕他们自己的产品限定范围，不让你画 Twitter。
 
 行为面在 startup 里经常变成项目深挖。Harvey 的 hiring manager 会在一个项目上待满一小时。Anduril 会追「为什么是国防」。
 
@@ -52,7 +52,7 @@ Onsite 里至少有一轮不是白纸算法。Stripe 叫 Bug Bash 和 Integratio
 
 ## 后训练
 
-MLE 岗和 SWE 岗不是同一套。Scale 2026 年初有一篇博士挂经，第一面被写成 post-training 八股，题面本身在帖子里没公开，见 `scale-posttrain-oral`。Snorkel 和 Fireworks 没有对得上的候选人原话，收的是他们自己发表的做法：迭代 DPO，以及只给一个打分函数的强化微调。
+MLE 岗和 SWE 岗不是同一套。Scale 2026 年初有一篇博士挂经，第一面被写成 post-training 八股，题面本身在帖子里没公开，见 `scale-posttrain-oral`。Snorkel 和 Fireworks 没有对得上的候选人原话，收的是他们自己发表的做法：迭代式直接偏好优化（DPO），以及只给一个打分函数的强化微调。
 
 ## 这次没收成题的
 

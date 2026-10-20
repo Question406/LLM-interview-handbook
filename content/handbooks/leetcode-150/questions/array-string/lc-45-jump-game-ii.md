@@ -4,9 +4,7 @@ section: array-string
 order: 10
 level: A
 title: LC 45 · 跳跃游戏 II
-quick: >-
-  保证能到终点。BFS 分层：`end` 是本跳覆盖右端，`farthest` 是下一跳最远。越过 `end` 时步数加一。时间
-  $O(n)$，额外空间 $O(1)$。
+quick: "把相同跳数能到达的区间看作 BFS 一层。end 记录当前层右端，farthest 记录这一层各位置再跳一次能到的最远位置。扫描到 end 就完成一层，跳数加一。题目保证可达，时间 $O(n)$，额外空间 $O(1)$。"
 tags:
   - Array
   - Greedy
@@ -30,7 +28,7 @@ sources:
 
 ## 思路
 
-把「一次跳跃能落到的区间」看成 BFS 的一层。扫 $i$，用 `i + nums[i]` 更新下一层最远 `farthest`。当 $i$ 走到本层右端 `end`，必须再跳一次：`steps += 1`，`end = farthest`。
+把相同跳跃次数能够到达的位置看作 BFS 的一层。遍历这一层时，用 `i + nums[i]` 记录再跳一次的最远位置 `farthest`。扫到本层右端 `end` 后，当前层已经处理完，将跳数加一，并把 `end` 更新为 `farthest`，开始下一层。
 
 不要在每个位置枚举落点做 $O(n^2)$ DP。把「一次跳跃能落到的区间」当 BFS 一层讲清楚，再写 `end` / `farthest`。循环只需扫到倒数第二个：站在终点不必再跳。
 

@@ -4,9 +4,7 @@ section: backtracking
 order: 1
 level: A
 title: LC 17 · 电话号码的字母组合
-quick: >-
-  数字到字母映射。回溯：第 $i$ 位枚举对应字母，拼到长度等于
-  `digits`。空串返回空列表。
+quick: "先建立数字到字母的映射。回溯时，每层为一个数字选择一个对应字母；处理完所有数字就保存组合。空输入返回空列表。"
 tags:
   - Backtracking
   - Medium

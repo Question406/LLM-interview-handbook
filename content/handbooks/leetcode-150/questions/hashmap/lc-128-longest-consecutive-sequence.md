@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-- **要输出具体序列而不是长度？** 扫描时除了 `best` 长度，再记下该段起点 `best_start`。只在 $x-1$ 不在集合时才向右延伸，和求长度同一套 $O(n)$。答案用 `range(best_start, best_start + best_len)` 展开即可。若有多段同样长，题面没要求就返回任意一段。重复数字已被 `set` 吃掉，展开时不会出现重复值。
+- **要输出具体序列而不是长度？** 扫描时除了 `best` 长度，再记下该段起点 `best_start`。只在 $x-1$ 不在集合时才向右延伸，和求长度同一套 $O(n)$。答案用 `range(best_start, best_start + best_len)` 展开即可。若有多段同样长，题面没要求就返回任意一段。重复数字已被 `set` 去掉，展开时不会出现重复值。
 
 ```python
 def longestConsecutiveSeq(nums):

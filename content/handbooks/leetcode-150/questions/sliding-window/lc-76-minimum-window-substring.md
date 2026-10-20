@@ -4,9 +4,7 @@ section: sliding-window
 order: 4
 level: S
 title: LC 76 · 最小覆盖子串
-quick: >-
-  `need` 记 `t` 的缺额。右扩让 `valid` 升到 `required`，再尽可能左缩，并记录最短窗口。时间
-  $O(|s|+|t|)$。
+quick: "用 `need` 记录 `t` 各字符的所需次数。向右扩张窗口，直到 `valid` 达到 `required`，表示所有字符都已足够；再尽量收缩左端并记录最短窗口。时间 $O(|s|+|t|)$。"
 tags:
   - Sliding Window
   - Hard

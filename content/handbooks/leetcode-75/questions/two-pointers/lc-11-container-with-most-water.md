@@ -5,7 +5,7 @@ order: 3
 level: S
 title: LC 11 · 盛最多水的容器
 quick: >-
-  两端对撞，面积 $\min(h[l],h[r])\cdot(r-l)$。每次把较矮一侧内移，才可能换来更高的边。时间
+  两个指针从两端向中间移动，面积 $\min(h[l],h[r])\cdot(r-l)$。每次把较矮一侧内移，才可能换来更高的边。时间
   $O(n)$，额外空间 $O(1)$。
 tags:
   - Two Pointers

@@ -4,9 +4,7 @@ section: backtracking
 order: 4
 level: A
 title: LC 39 · 组合总和
-quick: >-
-  可重复选，下标不回退。回溯：选 `candidates[i]` 后下一层仍从 $i$
-  开始；按序枚举避免同一组合不同排列。
+quick: "回溯时维护剩余目标和与起始下标。选了 `candidates[i]` 后，下一层仍可从 $i$ 开始，因此同一个数可以重复使用；不回到更小下标，就能避免把不同排列重复计为组合。"
 tags:
   - Backtracking
   - Medium

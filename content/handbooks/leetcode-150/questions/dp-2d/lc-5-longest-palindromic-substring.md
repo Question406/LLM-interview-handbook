@@ -4,9 +4,7 @@ section: dp-2d
 order: 4
 level: S
 title: LC 5 · 最长回文子串
-quick: >-
-  中心扩展：每个位置扩奇数心，相邻两位扩偶数心，记录最长区间。也可
-  $dp[l][r]=s[l]=s[r]\land dp[l+1][r-1]$。时间 $O(n^2)$。
+quick: "分别以每个字符、每对相邻字符为中心，向两侧扩展回文并记录最长区间。也可用 $dp[l][r]=s[l]=s[r]\\land dp[l+1][r-1]$ 判断区间是否回文。两种方法时间都是 $O(n^2)$。"
 tags:
   - DP
   - Two Pointers

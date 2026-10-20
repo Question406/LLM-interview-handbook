@@ -4,9 +4,7 @@ section: scale
 order: 1
 level: A
 title: Scale AI：一段能调模型的代码，输出空了，查 prompt 的 hash
-quick: >-
-  新卒流程先是 HackerRank，再是 60 分钟技术面，然后设计和 debug 连着做。
-  Debug 给了大约 150 到 200 行模块化的代码和他们模型的 key。候选人对出来的原因是 prompt 的 hash 流程，hash 用来少花 token。
+quick: "新卒流程先是 HackerRank，再是 60 分钟技术面，然后设计和 debug 连着做。 Debug 给了大约 150 到 200 行模块化的代码和他们模型的 key。候选人对出来的原因是 prompt 的 hash 流程，hash 用来减少 token 花费。"
 tags:
   - Scale AI
   - Debugging
@@ -25,7 +23,7 @@ sources:
 
 Exponent 上 2026 年的 Scale AI 新卒 SWE。海投之后第一封是 HackerRank，没有招聘电话。隔了几周，60 分钟技术面，接着系统设计和 debug 背靠背，作者把这两轮当成 onsite。之后被拒，没走到他猜测的文化面。
 
-Debug 的材料：大约 150 到 200 行，结构清楚，外加一个 key，打的是 Scale 自己的模型接口。现象是系统不返回模型输出。代码不乱，难在看清谁调用谁。作者用 print 缩小范围，结论是问题在 prompt 的 hashing 流程里。他们用 hash 减少 token 花费。
+Debug 的材料：大约 150 到 200 行，结构清楚，外加一个 key，打的是 Scale 自己的模型接口。现象是系统不返回模型输出。代码不乱，难在看清谁调用谁。作者用 print 缩小范围，结论是问题在 输入提示（prompt） 的 hashing 流程里。他们用 hash 减少 token 花费。
 
 作者还写了一句文化：问到工作时，面试官说有点像 996。这是一个人的转述。
 

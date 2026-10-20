@@ -4,9 +4,7 @@ section: array-string
 order: 8
 level: S
 title: LC 334 · 递增的三元子序列
-quick: >-
-  维护 `first`（最小的一元结尾）和 `second`（最小的二元递增结尾）。遇到比 `second` 大的数就找到三元组。时间
-  $O(n)$，额外空间 $O(1)$。
+quick: "维护目前最小的元素 `first`，以及递增二元组中最小的结尾 `second`。后续遇到比 `second` 更大的元素，就存在递增三元组。时间 $O(n)$，额外空间 $O(1)$。"
 tags:
   - Array
   - Greedy

@@ -4,9 +4,7 @@ section: binary-tree
 order: 11
 level: S
 title: LC 124 · 二叉树中的最大路径和
-quick: >-
-  DFS 返回「单边贡献」$\max(0,\text{左},\text{右})+\text{根}$。全局用「左贡献 $+$ 右贡献 $+$ 根」更新答案。负边丢弃。时间
-  $O(n)$，额外空间 $O(h)$。
+quick: "DFS 向父节点返回单边路径的贡献：$\\max(0,\\text{左},\\text{右})+\\text{根}$。同时用「左贡献 $+$ 右贡献 $+$ 根」更新全局答案，因为完整路径可以在当前节点连接两侧。负贡献不选。时间 $O(n)$，额外空间 $O(h)$。"
 tags:
   - Tree
   - DFS

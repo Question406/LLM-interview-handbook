@@ -4,9 +4,7 @@ section: array-string
 order: 5
 level: S
 title: LC 169 · 多数元素
-quick: >-
-  Boyer-Moore 投票：候选人和计数对消。出现次数 $\gt n/2$ 的那个最后一定留下。时间 $O(n)$，额外空间
-  $O(1)$。也可以排序或哈希。
+quick: "Boyer-Moore 投票维护一个候选元素和计数：遇到相同元素加一，不同元素减一，归零时换候选。超过半数的元素抵消后一定留下。时间 $O(n)$，额外空间 $O(1)$；也可以排序或哈希计数。"
 tags:
   - Array
   - Boyer-Moore

@@ -4,9 +4,7 @@ section: array-string
 order: 4
 level: A
 title: LC 80 · 删除有序数组中的重复项 II
-quick: >-
-  有序数组，每个值最多留两次。慢指针写入：`slow < 2` 或 `nums[slow-2] !=` 当前才写。时间
-  $O(n)$，额外空间 $O(1)$。
+quick: "有序数组中，每个值最多留两次。慢指针指向下一写入位置：`slow < 2` 时直接写；否则当前值与 `nums[slow-2]` 不同才写。时间 $O(n)$，额外空间 $O(1)$。"
 tags:
   - Array
   - Two Pointers

@@ -4,9 +4,7 @@ section: binary-search
 order: 7
 level: S
 title: LC 4 · 寻找两个正序数组的中位数
-quick: >-
-  在较短数组上二分划分，使左半总数 $(m+n+1)//2$，且
-  $\max(A_L,B_L)\le \min(A_R,B_R)$。奇数取左最大，偶数再均右最小。时间 $O(\log(\min(m,n)))$。
+quick: "在较短数组中二分切点，让两个数组左侧共有 $(m+n+1)//2$ 个元素，并满足 $\\max(A_L,B_L)\\le \\min(A_R,B_R)$。总长度为奇数时，取左侧最大值；偶数时，取它与右侧最小值的平均。时间 $O(\\log(\\min(m,n)))$。"
 tags:
   - Binary Search
   - Hard

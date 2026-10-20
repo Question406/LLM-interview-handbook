@@ -4,9 +4,7 @@ section: binary-tree
 order: 4
 level: S
 title: LC 101 · 对称二叉树
-quick: >-
-  比左右镜像：外侧对外侧、内侧对内侧，值相等且结构对称。不是 `isSameTree(left,
-  right)`。时间 $O(n)$，额外空间 $O(h)$。
+quick: "从根的左右子树开始成对比较。节点值相同，还要递归比较左侧的左孩子与右侧的右孩子、左侧的右孩子与右侧的左孩子。两个都空算对称，只有一个空则失败。时间 $O(n)$，额外空间 $O(h)$。"
 tags:
   - Tree
   - DFS
@@ -30,9 +28,9 @@ sources:
 
 ## 思路
 
-单独写 `mirror(a, b)`：都空为真；一个空或值不同为假；否则 `a.left` 对 `b.right`、`a.right` 对 `b.left`。根调用 `mirror(root.left, root.right)`。
+用 `mirror(a, b)` 比较两个应当互为镜像的节点。两个都空则对称；只有一个空，或值不同，则不对称。否则继续交叉比较 `a.left` 与 `b.right`、`a.right` 与 `b.left`，因为镜像会交换左右。整棵树从 `mirror(root.left, root.right)` 开始。
 
-错法：拿左右子树当「相同树」比。对称比的是镜像，不是同构拷贝。
+常见误区是：拿左右子树当「相同树」比。对称比的是镜像，不是同构拷贝。
 
 ## 参考代码
 
