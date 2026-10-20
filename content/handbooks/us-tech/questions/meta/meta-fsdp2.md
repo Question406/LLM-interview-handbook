@@ -44,7 +44,7 @@ Meta 训练栈岗（PyTorch / Llama pretrain / Recsys 大模型）默认讲 FSDP
 
 FSDP 的 `FULL_SHARD` 对齐 ZeRO-3；`SHARD_GRAD_OP` 对齐 ZeRO-2（forward 期间参数是完整的，省掉一次 all-gather，显存更高）。面试先说这张表，再谈 API 名字。不要答「FSDP 是另一种流水线并行」。
 
-每张卡稳态大约持有 $P/N$ 的参数分片，外加**当前正在算的那一个 FSDP unit 的完整参数缓冲**。所以 wrap 粒度决定峰值：整网一个 unit，all-gather 一次就炸；每层一个 unit，通信次数变多但峰值低。激活还是 $O(B\cdot T\cdot L\cdot d)$，FSDP 不替你解决激活，该上 checkpoint / FlashAttention 还是要上。
+每张卡稳态大约持有 $P/N$ 的参数分片，外加**当前正在算的那一个 FSDP unit 的完整参数缓冲**。所以 wrap 粒度决定峰值：整网一个 unit，一次 all-gather 就可能超出显存；每层一个 unit，通信次数变多但峰值低。激活还是 $O(B\cdot T\cdot L\cdot d)$，FSDP 不替你解决激活，该上 checkpoint / FlashAttention 还是要上。
 
 ## 通信何时发生
 

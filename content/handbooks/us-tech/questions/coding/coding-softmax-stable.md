@@ -4,9 +4,9 @@ section: coding
 order: 1
 level: S
 title: 白板：数值稳定 softmax，为什么减 max，轴怎么选
-quick: >-
-  沿分类轴减该轴 max 再 exp、归一化。减 max 不改变 softmax，但让指数落在 $(0,1]$，避免 overflow。轴必须和「谁跟谁比概率」一致：分类是最后一维，注意力是 key 长。
+quick: "沿「谁和谁比概率」的那一维减去该行最大值，再 exp 归一化：分布不变，指数落在 $(0,1]$ 不会溢出；分类是最后一维，注意力是 key 维。"
 tags:
+  - 完整编程练习
   - Coding
   - Softmax
   - OpenAI
@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: torch.nn.functional.softmax
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html
@@ -24,57 +24,153 @@ sources:
     type: primary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + NumPy，CPU 上验证。
+
+### 题面、接口与约束
+
+- `softmax(x, axis=-1)`：沿指定轴做数值稳定的 softmax，输出形状和输入相同。
+- `log_softmax(x, axis=-1)`：沿指定轴做数值稳定的 log-softmax。
+- 输入里允许出现 `-inf`，表示这个位置被屏蔽，对应概率精确为 0。
+- 整行都是 `-inf`（全屏蔽）、含 NaN 或 `+inf`、归一化的轴长度为 0 时，抛 `ValueError`。
+- 不修改输入；内部用 float64 计算。
+
+### 输入输出示例
+
+```text
+softmax([1000, 1000])    -> [0.5, 0.5]
+softmax([0, -inf])       -> [1, 0]
+softmax([-inf, -inf])    -> ValueError（全屏蔽行）
+```
+
+### 解题思路与正确性
+
+沿归一化的那一维减去该行的最大值，再做 `exp` 和归一化。分子分母同时乘了 $e^{-m}$，分布不变；每行最大的一项变成 $e^0=1$，其余都在 $(0,1]$，不会上溢，分母也至少是 1。
+
+如果对整个 tensor 减同一个常数，在精确算术下分布同样不变，所以不能说它「数学上错了」。问题在数值上：logits 远小于全局最大值的那些行，所有指数可能一起下溢成 0，分母变成 0。逐行减 max 保证每行至少有一项等于 1。
+
+全屏蔽行的最大值是 `-inf`，此时没有任何位置可以分到概率，这份练习选择直接报错。
+
+### 完整参考实现（Python 3）
+
+```python
+import numpy as np
+
+
+def _shift_by_row_max(x, axis):
+    """检查输入，返回沿 axis 减去最大值后的 float64 副本（不修改输入）。"""
+    x = np.asarray(x, dtype=np.float64)
+    if x.shape[axis] == 0:
+        raise ValueError(f"cannot normalize over empty axis {axis}")
+    if np.isnan(x).any() or np.isposinf(x).any():
+        raise ValueError("input contains NaN or +inf")
+    row_max = x.max(axis=axis, keepdims=True)
+    if np.isneginf(row_max).any():
+        raise ValueError("a row is fully masked (all -inf)")
+    return x - row_max
+
+
+def softmax(x, axis=-1):
+    """沿 axis 的数值稳定 softmax；-inf 表示屏蔽，输出形状与输入相同。"""
+    shifted = _shift_by_row_max(x, axis)
+    exps = np.exp(shifted)  # 每行最大的一项是 e^0 = 1，不会溢出
+    return exps / exps.sum(axis=axis, keepdims=True)
+
+
+def log_softmax(x, axis=-1):
+    """沿 axis 的数值稳定 log-softmax：shifted - log(sum(exp(shifted)))。"""
+    shifted = _shift_by_row_max(x, axis)
+    return shifted - np.log(np.exp(shifted).sum(axis=axis, keepdims=True))
+```
+
+### 可执行测试
+
+```python
+def expect_value_error(fn, *args, **kwargs):
+    try:
+        fn(*args, **kwargs)
+    except ValueError:
+        return
+    raise AssertionError(f"{fn.__name__} accepted invalid input {args}")
+
+
+logits = np.array([[1000.0, 1001.0], [-1000.0, -999.0]])
+
+# 大正数、大负数都不溢出；两行差值相同，所以分布相同
+probs = softmax(logits)
+assert np.allclose(probs[0], probs[1])
+
+# 每行各自加一个常数，分布不变
+assert np.allclose(softmax(logits + np.array([[500.0], [-700.0]])), probs)
+
+# 示例：[1000, 1000] -> [0.5, 0.5]
+assert np.allclose(softmax([1000.0, 1000.0]), [0.5, 0.5])
+
+# axis=0 时沿列归一化
+assert np.allclose(softmax(logits, axis=0).sum(axis=0), 1)
+
+# log_softmax 和 softmax 一致
+assert np.allclose(np.exp(log_softmax(logits)), probs)
+
+# -inf 表示屏蔽，对应概率精确为 0
+assert np.array_equal(softmax([0.0, -np.inf]), [1.0, 0.0])
+
+# 不修改输入
+original = logits.copy()
+softmax(logits)
+log_softmax(logits)
+assert np.array_equal(logits, original)
+
+# 非法输入：全屏蔽行、NaN、+inf、空轴，两个函数都报错
+for bad in ([-np.inf, -np.inf], [np.nan, 1.0], [np.inf, 0.0], np.zeros((2, 0))):
+    expect_value_error(softmax, bad)
+    expect_value_error(log_softmax, bad)
+```
+
+### 复杂度与追问
+
+设输入有 N 个元素。时间 O(N)，输出和中间结果的空间 O(N)。
+
+- 追问「全屏蔽行应该报错还是输出全 0」：要和上游 attention 的约定保持一致。有的实现约定全屏蔽 query 输出 0（比如 `apple-mha-code` 的练习），这份练习选择报错，让问题尽早暴露。
+
 ## 题怎么来的
 
-OpenAI / Apple / Meta 的 ML coding 几乎都会碰到 softmax：手写一层、改带 bug 的 Transformer、或者算 entropy。公开 debug 卷里最常见的植入就是轴写错和直接 `exp` 溢出。生产路径已经走 `scaled_dot_product_attention`，白板要能把 fused kernel 里那步拆开。相关真题形态见 `openai-transformer-debug`、`openai-entropy-l1`。
+OpenAI、Apple、Meta 的 ML coding 几乎都会碰到 softmax：手写一层 attention，修一份带 bug 的 Transformer，或者算 entropy。公开 debug 题里最常见的植入就是轴写错，以及直接 `exp` 导致溢出。生产代码早就走 `scaled_dot_product_attention` 了，但白板上要能把融合 kernel 里的这一步拆开讲清楚。相关真题见 `openai-transformer-debug`、`openai-entropy-l1`。
 
-## 减 max：平移不变，数值不炸
+## 减 max：平移不变，避免数值溢出
 
 $$
 \mathrm{softmax}(z)_i=\frac{e^{z_i}}{\sum_j e^{z_j}}=\frac{e^{z_i-m}}{\sum_j e^{z_j-m}},\quad m=\max_j z_j.
 $$
 
-减的是同一条比较轴上的 max，不是整个 tensor 一个标量。$e^{z-m}\in(0,1]$，fp16 里原始 logits 到几十就会 `inf`，一归一化全是 NaN。减 max 不改分布，只改中间量级。
+减的是同一条比较轴上的最大值，不是整个 tensor 的一个标量。减完后 $e^{z-m}\in(0,1]$。fp16 里原始 logits 到十几（$e^{12}$ 已经超过 fp16 的最大值 65504）就会得到 `inf`，归一化之后全是 NaN。减 max 不改变分布，只改变中间结果的量级。
 
-我会主动写 `keepdims=True`：否则 `[B, T]` 的 max 对不上 `[B, T, D]`，NumPy 会 silent 广播到错误的轴。
+写的时候要带上 `keepdims=True`。否则 `[B, T]` 的 max 和 `[B, T, D]` 的输入对不上，NumPy 可能悄悄广播到错误的轴上。
 
-```python
-import numpy as np
+后面要接交叉熵时，优先保留 `log_softmax`，不要先 softmax 再取 `log`，见 `coding-cross-entropy`。
 
-def softmax(x, axis=-1):
-    x = np.asarray(x, dtype=np.float64)
-    m = np.max(x, axis=axis, keepdims=True)
-    z = np.exp(x - m)
-    return z / np.sum(z, axis=axis, keepdims=True)
+## 轴：在哪一维归一化概率
 
-def log_softmax(x, axis=-1):
-    x = np.asarray(x, dtype=np.float64)
-    z = x - np.max(x, axis=axis, keepdims=True)
-    return z - np.log(np.sum(np.exp(z), axis=axis, keepdims=True))
+先把 shape 写出来，再选 `axis`：
 
-if __name__ == "__main__":
-    a = np.array([[1.0, 2.0, 3.0], [1000.0, 1000.0, 1001.0]])
-    p = softmax(a, axis=-1)
-    assert np.allclose(p.sum(axis=-1), 1.0)
-    assert np.all(np.isfinite(p))
-```
+- 分类 logits `[B, T, V]`：沿词表维 $V$。
+- 注意力 scores `[B, H, T, S]`：沿 key 长度 $S$，也就是最后一维。写成 `dim=0` 或沿 head 维，是 OpenAI 题里的经典 bug。
 
-后续要接交叉熵时优先留 `log_softmax`，不要先 softmax 再 `log`，见 `coding-cross-entropy`。
+mask 必须在 softmax 之前填成 $-\infty$，不能填 $0$，因为 $e^0=1$，填 0 的位置仍然会分到概率。全部位置都是 $-\infty$ 时最大值也是 $-\infty$，相减得到 NaN，所以要先检查每行有没有有限值。温度 $z/T$ 也要在 softmax 之前除，顺序见 `coding-topk-nucleus`。
 
-## 轴：谁和谁抢概率
-
-Shape 先写死再选 `axis`：
-
-- 分类 logits `[B, T, V]`：沿 $V$。
-- 注意力 scores `[B, H, T, S]`：沿 key 长 $S$，也就是最后一维。`dim=0` 或沿 head 是 OpenAI 卷里的经典 bug。
-- 不要对整个 batch 减同一个 max：那不是 softmax 的平移不变，只是碰巧没炸。
-
-Mask 必须在 softmax 之前打成 $-\infty$，不能打 $0$。$0$ 仍吃正质量。全位置都是 $-\infty$ 时 max 是 $-\infty$，`exp` 变 NaN，要先检查有没有有限值。温度 $z/T$ 也在 softmax 之前，顺序见 `coding-topk-nucleus`。
-
-NVIDIA 口味会追：reduction 沿最后一维才能走 warp 连续读写；轴在中间会多一次 transpose。白板先写对，再提 fused SDPA 把 mask、scale、softmax 糊在一块。
+NVIDIA 的面试官可能会追问：约简沿最后一维时，warp 可以连续读写；轴在中间就要多做一次 transpose。白板上先把逻辑写对，再提融合的 SDPA 会把 mask、缩放和 softmax 放进同一个 kernel。
 
 ## 追问
 
-- **为什么不能对整个 batch 减一个标量？** 平移必须发生在每条分布自己的轴上。全局 max 只是运气好没 overflow，语义已经偏了。
-- **fp16 还要升精度吗？** 减 max 之后多数情况够。极端 logits 或 entropy 这种 reduction，我会把这一步放到 fp32，再 cast 回去。
-- **和 log-sum-exp 的关系？** $\log\sum e^{z}=m+\log\sum e^{z-m}$。softmax 的分母就是它；CE 直接吃 log-sum-exp，不必物化 $p$。
+- **为什么不对整个 batch 减一个标量？** 减一个全局常数不改变精确的数学分布，风险在于其他行的指数可能全部下溢。逐行减 max 能保证每行至少有一个指数等于 1。
+- **fp16 还要升精度吗？** 减 max 之后大多数情况够用。遇到极端 logits，或者 entropy 这类约简，可以把这一步放到 fp32 里算，再转回去。
+- **和 log-sum-exp 的关系？** $\log\sum e^{z}=m+\log\sum e^{z-m}$，softmax 的分母就是它的指数。交叉熵损失（CE）直接用 log-sum-exp 计算，不需要把 $p$ 算出来，见 `coding-logsumexp`。
+
+## 相关题
+
+- [[coding-logsumexp]]：同一个减 max 技巧放到 log 域，用来直接算 CE 而不先算概率。
+- [[coding-online-softmax]]：把这里一次性减全局 max 改成流式的 running max，是 FlashAttention 的基础。
+- [[openai-softmax-bug]]：OpenAI debug 题，softmax 轴选错、mask 填 0 时注意力会怎样，这张的「轴」一节是它的前置。
+- [[openai-entropy-l1]]：OpenAI 真题，先用稳定 softmax 得到概率再算熵，追问把损失换成 L1 时梯度怎么传。
+- [[coding-gumbel-max]]：从 softmax 分布采样的另一种写法，顺带区分采样温度和 Gumbel-softmax 的温度。

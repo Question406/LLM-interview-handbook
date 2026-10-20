@@ -4,9 +4,7 @@ section: design
 order: 15
 level: A
 title: 设计：长文档问答（检索 vs 长上下文 vs 分层摘要）
-quick: >-
-  先问文档是否单份、是否日更、是否要句级引用、p95 预算。单份能塞进窗口且要全局推理：长上下文。库大、权限、新鲜：检索。
-  要廉价总览：分层摘要。多数生产是检索再在短窗口上生成，很少整库塞进一百万 token。
+quick: "先问文档是否单份、是否日更、是否要句级引用、p95 预算。单份能塞进窗口且要全局推理：长上下文。库大、权限、新鲜：检索。 要廉价总览：分层摘要。多数生产是检索再在短窗口上生成，很少整库塞进一百万 token。"
 tags:
   - Anthropic
   - Microsoft
@@ -28,13 +26,13 @@ sources:
     type: secondary
 ---
 
-Anthropic 长窗口、Microsoft 长上下文、Amazon 企业知识库都会问长文档 QA。Lost in the Middle 说明中间证据会被丢掉；RAG 论文给检索加生成骨架。白板要三选一的决策树，别背窗口数字。生产 RAG 纪律见 `design-prod-rag`；公司长上下文见 `anthropic-long-context`、`msft-long-context`。权限和引用仍是硬约束。
+Anthropic 长窗口、Microsoft 长上下文、Amazon 企业知识库都会问长文档 QA。Lost in the Middle 说明中间证据会被丢掉；检索增强生成（RAG） 论文给检索加生成骨架。白板要三选一的决策树，别背窗口数字。生产 RAG 纪律见 `design-prod-rag`；公司长上下文见 `anthropic-long-context`、`msft-long-context`。权限和引用仍是硬约束。
 
 ## 决策树：三种形状
 
 我会先问：一份合同还是十万份政策、更新频率、ACL、要不要句级引用、p95、是否要跨章推理。
 
-1. **长上下文。** 用户就这一份（或几份）PDF，需要全文对照、条款互斥、全局指代。把文档塞进窗口，引用页码。代价：prefill 随 token 涨，中间证据容易丢，见 Lost in the Middle。适合交互式「读这一本」。不适合整库。
+1. **长上下文。** 用户就这一份（或几份）PDF，需要全文对照、条款互斥、全局指代。把文档塞进窗口，引用页码。代价：输入预填充（prefill，即处理输入并建立缓存） 随 token 数增长，中间证据容易丢，见 Lost in the Middle。适合交互式「读这一本」。不适合整库。
 2. **检索。** 语料大、多租户、日更、ACL。切片 + 元数据过滤 + 混合检索，答案必须带 `chunk_id`。细节见 `design-prod-rag`。适合「哪条政策适用」。跨很多文档的综合题召回会漏，要多跳或先路由再检索。
 3. **分层摘要。** 先 map 每章摘要，再 reduce 成目录 + 问题相关的细读。适合「这本五百页讲什么」和预算紧的离线。摘要会丢数字和例外条款，不能当唯一证据；最终回答仍要回原文块。
 

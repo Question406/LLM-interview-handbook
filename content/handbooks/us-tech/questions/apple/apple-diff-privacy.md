@@ -62,11 +62,11 @@ Foundation model 公开原则：不用用户私有个人数据或交互来训练
 
 ## 个性化 LM 里 $\varepsilon$ 怎么开口
 
-产品目标若是「Siri 知道我下周的会」：证据留在设备，生成条件是 $(q,E_{\mathrm{local}})$，评测接地，见 `apple-siri-grounded`。没有上传，就不编一个 $\varepsilon$。
+产品目标若是「Siri 知道我下周的会」：证据留在设备，生成条件是 $(q,E_{\mathrm{local}})$，评测回答是否由本地证据支持，见 `apple-siri-grounded`。没有上传，就不编一个 $\varepsilon$。
 
-产品目标若是「改进全球 QuickType / 发现新俚语」：沿用 CMS / SFP，报告 per-event $\varepsilon$、每日 $n$、opt-in。SFP 用来在未知词典里拼高频新词，仍然是频率，不是把用户句子原文送去 SFT。
+产品目标若是「改进全球 QuickType / 发现新俚语」：沿用 CMS / SFP，报告 per-event $\varepsilon$、每日 $n$、opt-in。SFP 用来在未知词典里拼高频新词，仍然是频率，不是把用户句子原文送去 监督微调（SFT）。
 
-若有人逼问「用户 adapter 能不能上传」：要么完全不上（设备侧训、设备侧存），要么对梯度做 DP-SGD 并按用户合成预算。$\varepsilon$ 要按用户级不是按 token 级报，否则长对话把预算打爆。Apple 公开 AFM 训练叙述里没有这条路径，面试里把它标成「若做，约束是这些」，不要假装已经上线。
+若有人逼问「用户 adapter 能不能上传」：要么完全不上（设备侧训、设备侧存），要么对梯度做 DP-SGD 并按用户合成预算。$\varepsilon$ 要按用户级不是按 token 级报告，否则长对话把预算打爆。Apple 公开 AFM 训练叙述里没有这条路径，面试里把它标成「若做，约束是这些」，不要假装已经上线。
 
 和 `apple-ondevice-quant` 连一句：量化、端侧推理是为了让个性化上下文根本不必离开设备；DP 是为了那些你决定发布的聚合统计。两条杠杆，不要用一条口号代替。
 

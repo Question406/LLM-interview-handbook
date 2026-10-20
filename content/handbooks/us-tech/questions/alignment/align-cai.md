@@ -4,9 +4,7 @@ section: alignment
 order: 3
 level: S
 title: 对齐：Constitutional AI 人从偏好标注挪到原则+抽查
-quick: >-
-  RLHF 的偏好来自人逐条标 chosen/rejected。CAI 用书面 constitution 让模型批评 / 改写，再对 AI 反馈做
-  RL（RLAIF）。人改成写原则、改条款、抽查失败模式。不取消人，也不等于没有奖励模型。
+quick: "基于人类反馈的强化学习（RLHF） 的偏好来自人逐条标 chosen/rejected。CAI 用书面 constitution 让模型批评 / 改写，再对 AI 反馈做 强化学习（RL）（RLAIF）。人改成写原则、改条款、抽查失败模式。不取消人，也不等于没有奖励模型。"
 tags:
   - Anthropic
   - Constitutional AI
@@ -28,7 +26,7 @@ sources:
     type: primary
 ---
 
-Anthropic 研究 / 对齐岗把这篇当 harmlessness 背景，不一定照读提问。和 InstructGPT 对照最清楚：人都在环里，但人做的事从「每条偏好」变成「原则 + 抽查」。HH-RLHF 已经写过 helpful 和 harmless 会打架；CAI 是他们把 harmless 标注从人手里挪走的一条工程路径。分层实现见 `anthropic-constitutional-ai`。RLAIF 的隔离和反例见 `align-rlaif`。
+Anthropic 研究 / 对齐岗把这篇当 harmlessness 背景，不一定照读提问。和 InstructGPT 对照最清楚：人都在环里，但人做的事从「每条偏好」变成「原则 + 抽查」。HH-RLHF 已经写过 有帮助与无害两个目标可能冲突；CAI 是他们把 harmless 标注从人手里挪走的一条工程路径。分层实现见 `anthropic-constitutional-ai`。RLAIF 的隔离和反例见 `align-rlaif`。
 
 ## 人挪到哪去了
 
@@ -37,26 +35,26 @@ HH-RLHF 要标注员反复看有害内容、在 helpful vs harmless 上做两两
 1. 写一份可版本化的 constitution（人权、非歧视、合法、避免过度拒绝、不谄媚等）。
 2. 抽查模型按条款改写 / 比较之后仍然失败的 case，回头改条款，而不是加一百万条偏好。
 
-人没有退出。人从高吞吐标注员变成原则作者和红队抽查。面试说「CAI 没人了」直接偏题。条款会冲突：无害 vs 有帮助、诚实 vs 不提供犯罪细节。要能举一条冲突并说打破规则：通常无害优先，但过度拒绝必须单独写条款压回去，否则模型学会凡是沾边就拒，见 `align-over-refuse`。
+人没有退出。人从高吞吐标注员变成原则作者和红队抽查。面试说「CAI 没人了」直接偏题。条款会冲突：无害 vs 有帮助、诚实 vs 不提供犯罪细节。要能举一条冲突并说明裁决规则：通常无害优先，但过度拒绝必须单独写条款压回去，否则模型学会凡是沾边就拒，见 `align-over-refuse`。
 
-Constitution 是给人审的规则列表，不是藏起来的 system prompt。Claude 后来公开 constitution，面试可以当「原则要可审计」的例子，不必背条款全文。
+Constitution 是给人审的规则列表，不是藏起来的 system 输入提示（prompt）。Claude 后来公开 constitution，面试可以当「原则要可审计」的例子，不必背条款全文。
 
 ## 两段训练，别合成一句「自己训自己」
 
 论文流程：
 
 1. **监督阶段。** 对有害或越界回答，模型按条款批评自己，再改写成更无害的版本。用改写做 SL，得到更 harmless、尽量还 helpful 的策略。
-2. **RL 阶段。** 用模型（最好另有一套）按同一套原则比较两条回答，产生偏好，训偏好模型，再 PPO。这就是 RLAIF：反馈来自 AI，原则来自人。
+2. **强化学习（RL） 阶段。** 用模型（最好另有一套）按同一套原则比较两条回答，产生偏好，训偏好模型，再 PPO。这就是 RLAIF：反馈来自 AI，原则来自人。
 
 仍然有偏好模型和 RL。答成「完全没有 RM」就偏了。它解决的是 harmlessness 标注贵、人不愿反复看有害内容，不是把对齐变成无监督。
 
 和 InstructGPT 对照：
 
-| | RLHF (InstructGPT / HH) | CAI |
+| | 基于人类反馈的强化学习（RLHF） (InstructGPT / HH) | CAI |
 | --- | --- | --- |
 | 偏好来源 | 人标 chosen/rejected | 模型按条款比较 |
 | 人的工作 | 持续标注 | 写 / 改条款，抽查失败 case |
-| 主要风险 | 标注员偏好、讨好 | 模型自嗨、条款漏洞、过度拒绝 |
+| 主要风险 | 标注员偏好、讨好 | 模型自我强化偏见、条款漏洞、过度拒绝 |
 | 规模 | 标注吞吐限制 | 原则写好后反馈更便宜 |
 
 Helpfulness 仍常走人偏好，harmlessness 走 CAI。不要说 CAI 替换了全部 RLHF。两条目标分开训、再混合采样，比塞进一个标量更可控。
@@ -73,3 +71,9 @@ Helpfulness 仍常走人偏好，harmlessness 走 CAI。不要说 CAI 替换了�
 - **constitution 写进 system prompt 算 CAI 吗？** 不算。CAI 是用条款造训练数据。prompt 没有新偏好分布。
 - **人还干什么？** 写条款、改冲突条款、抽查原则失败（过度拒绝、谄媚、条款被模型曲解），不是全量偏好。
 - **为什么 harmless 比 helpful 更适合 CAI？** 有害内容对人标注不友好，原则更容易写成可检查的禁区；helpful 更依赖任务成功，人偏好仍难替代。
+
+## 相关题
+
+- [[anthropic-hh-rlhf]]：CAI 之前的做法：helpful 和 harmless 都靠人逐条标，两轴冲突也由人裁决。
+- [[anthropic-pref-collect]]：人工偏好采集的完整协议，可以对照看 CAI 把人挪到了哪一步。
+- [[align-llm-judge]]：RLAIF 由模型给反馈，模型当裁判时的位置、长度和自偏好偏差会一起带进来。

@@ -32,7 +32,7 @@ verl issue 2996 报的是：GRPO 把 `train_batch_size` 设成等于 `ppo_mini_b
 
 采样时的 temperature、top-p 必须和重算 logprob 时相同。采样用了 temperature，重算用裸 logits，每个 token 的对数概率都会偏，而且偏的方向随 token 变，不是一个全局常数。
 
-两边的 micro batch 要一样。issue 的临时办法是让 rollout 算 logprob 的 `log_prob_micro_batch_size_per_gpu` 等于训练的 `ppo_micro_batch_size_per_gpu`。batch 形状不同，padding 和变长序列的归约会差一截。
+两边的 micro batch 要一样。issue 的临时办法是让 采样轨迹（rollout） 算 logprob 的 `log_prob_micro_batch_size_per_gpu` 等于训练的 `ppo_micro_batch_size_per_gpu`。batch 形状不同，padding 和变长序列的归约会差一截。
 
 `logprobs_mode` 要一致。有的实现存的是被 temperature 除过、再经过 top-p 截断后的分布，有的是训练前向的完整词表 log_softmax。用错一份，clip 的区间仍然围着 1，但比值已经不在 1 附近。
 
@@ -56,6 +56,13 @@ def importance_ratio(new_logp, old_logp, mask):
 
 ## 追问
 
-**能不能直接用 rollout 引擎吐出的 logprob，不再重算？** 可以，verl 用 `calculate_log_probs` 打开这条路。前提是那份 logprob 的定义和 loss 里的一致。省一次前向，少一次对账的机会。
+**能不能直接用 rollout 引擎吐出的 logprob，不再重算？** 可以，verl 用 `calculate_log_probs` 打开这条路。前提是那份 logprob 的定义和 损失（loss） 里的一致。省一次前向，少一次对账的机会。
 
 **差在 1e-3，要不要停？** bf16 上最后几位可以差。差到比值均值明显离开 1，或随序列位置变大，就是 mask、shift 或权重版本错了，不是舍入。
+
+## 相关题
+
+- [[anthropic-grpo-debug]]：Anthropic 调试题修完 bug 后会问 ratio 为什么不是 1，这张就是那个追问的排查顺序。
+- [[p3a-anthropic-rl-fundamentals-grpo-debug]]：同一道 Anthropic 题的另一份整理，追问 on-policy 和 off-policy 时 ratio 为什么偏离 1。
+- [[coding-tis-mismatch]]：排除了 bug 之后剩下的真实 mismatch，用截断重要性权重 $\min(\pi_{\mathrm{old}}/\mu, C)$ 修正。
+- [[coding-token-logprob]]：训练端重算 logprob 的白板题，shift 和温度正是这里要先排除的两项。

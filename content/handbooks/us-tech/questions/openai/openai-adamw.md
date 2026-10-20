@@ -69,11 +69,11 @@ $$
 - **$\beta_2$。** 语言模型常用 $0.95$ 而不是默认 $0.999$，让二阶矩跟得上非平稳的 token 梯度。这和是否 decouple 正交，但常被一起问。
 - **和 clip。** grad clip 发生在进 $m,v$ 之前；weight decay 仍走参数侧。不要把 grad clip 当成 decay。
 
-错法：把 AdamW 说成「Adam + 更大的 $L_2$」；把 $\varepsilon$ 说成 weight decay。$\varepsilon$ 只是防除零。
+常见误区是：把 AdamW 说成「Adam + 更大的 $L_2$」；把 $\varepsilon$ 说成 weight decay。$\varepsilon$ 只是防除零。
 
 ## 追问
 
 - **为什么 GPT 不用纯 SGD？** 大 batch、稀疏 token 梯度上 Adam 类自适应更稳。有人用 Lion 等替代，不是 OpenAI 公开默认。
 - **decay 要不要对 embedding？** 有的实现 decay，有的排除。选一种并在消融里固定，不要现场发明。
-- **和 L2 正则到 loss 上？** 那就是耦合进梯度的版本，Adam 下不等价于 AdamW。
+- **和 L2 正则加到 loss 上？** 那就是耦合进梯度的版本，Adam 下不等价于 AdamW。
 - **ZeRO 改 AdamW 公式吗？** 不改。只是 $m,v$ 分片存储。语义仍是 decoupled decay。

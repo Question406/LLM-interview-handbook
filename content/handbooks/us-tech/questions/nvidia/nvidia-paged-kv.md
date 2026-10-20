@@ -4,10 +4,7 @@ section: nvidia
 order: 9
 level: A
 title: NVIDIA：PagedAttention / KV block table，碎片和 prefix 共享
-quick: >-
-  别按 max length 给每条请求预留一整段 KV。把 cache 切成固定 token 块，block table
-  把逻辑块号映到物理页，像虚拟内存。内部碎片只剩最后一块的半截；外部碎片和「短请求占用长槽」基本消失。相同
-  prefix 可以 refcount 共享物理块，写下一段时再拷。
+quick: "别按 max length 给每条请求预留一整段 KV。把 cache 切成固定 token 块，block table 把逻辑块号映到物理页，像虚拟内存。内部碎片只剩最后一块的半截；外部碎片和「短请求占用长槽」基本消失。相同 prefix 可以 refcount 共享物理块，写下一段时再拷。"
 tags:
   - NVIDIA
   - PagedAttention
@@ -51,7 +48,7 @@ $$
 
 碎片：
 
-- 内部：只有最后一块平均空 $B/2$ 个 token。$B=16$ 时浪费可忽略；$B=256$ 时短请求开始肉疼。
+- 内部：只有最后一块平均空 $B/2$ 个 token。$B=16$ 时浪费可忽略；$B=256$ 时短请求的浪费开始明显。
 - 外部：页大小一致，几乎没有。这是分页的本意。
 - kernel 效率：$B$ 太小，gather 不规则，Tensor Core tile 不饱；$B$ 太大，内部碎片涨。16-64 是常见折中，要用 Nsight 看注意力 kernel 的 HBM 吞吐，不要拍脑袋。
 
@@ -59,9 +56,9 @@ FlashAttention 在 paged 布局上仍能做，只是 $K/V$ tile 要从非连续�
 
 ## Prefix 共享
 
-系统提示、同一份 RAG 前缀、beam 的公共前缀：逻辑上前面若干块的内容相同。物理上可以让多条序列的 table 指向同一组页，refcount 大于 1。新 token 要写、而该页还被别人指着，就 copy-on-write：拷一页再写，避免污染共享前缀。
+系统提示、同一份 检索增强生成（RAG） 前缀、beam 的公共前缀：逻辑上前面若干块的内容相同。物理上可以让多条序列的 table 指向同一组页，refcount 大于 1。新 token 要写、而该页还被别人指着，就 copy-on-write：拷一页再写，避免污染共享前缀。
 
-失效条件：前缀其实不一致（多一个空格、不同 system prompt）、或从中间插入。共享省的是 HBM 容量和第一次 prefill 的写；decode 时各请求的新 KV 仍然分叉，带宽按各自 $T$ 走。不要承诺「共享 prefix 之后 decode 也快一倍」。
+失效条件：前缀其实不一致（多一个空格、不同 system 输入提示（prompt））、或从中间插入。共享省的是 HBM 容量和第一次 输入预填充（prefill，即处理输入并建立缓存） 的写；逐 token 生成（decode） 时各请求的新 KV 仍然分叉，带宽按各自 $T$ 走。不要承诺「共享 prefix 之后 decode 也快一倍」。
 
 和 GQA 叠加：页里 $H_{\mathrm{kv}}$ 已经比较小，分页管的是变长和并发，GQA 管的是每 token 字节，两者正交。head 怎么选见 `google-gqa-mqa`。
 
@@ -71,3 +68,10 @@ FlashAttention 在 paged 布局上仍能做，只是 $K/V$ tile 要从非连续�
 - **和 CUDA 虚拟内存 API 是一回事吗？** 想法同源，这里的「页」是应用层 KV 块，不是 `cuMemMap` 的 GPU 页。TensorRT-LLM 可以在底下再用 CUDA 虚拟内存，面试先把 block table 讲清。
 - **抢页失败？** 抢占：暂停最长或优先级最低的请求，把页还回去（swap 到 CPU 或直接 kill）。这是调度策略，不是 attention 公式。
 - **多 LoRA 的 KV 能共享 prefix 吗？** 权重不同，同一段 token 的 K/V 一般不同，不能因为字符串相同就共享。Adapter 见 `nvidia-lora-serve`。
+
+## 相关题
+
+- [[sys-paged-attn]]：几乎是同一道题的系统版，块表、CoW、前缀共享都讲到，可以当同题复习。
+- [[coding-paged-table]]：白板写 block table 和 append，验收逻辑页到物理块的映射。
+- [[kv-prefix-paged-cow]]：把 refcount 共享和写时复制完整写出来，还要求分配失败时回滚。
+- [[meta-vllm]]：Meta 问法，把分页和 continuous batching、GQA 放在一起讲。

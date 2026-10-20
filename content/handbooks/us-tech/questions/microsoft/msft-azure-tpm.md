@@ -4,9 +4,7 @@ section: microsoft
 order: 5
 level: A
 title: Microsoft：Azure OpenAI TPM/RPM 限流，产品层排队和降级
-quick: >-
-  TPM 管每分钟 token，RPM 管每分钟请求，429 是配额墙不是模型坏了。产品层要有队列、退避、缓存，以及降到小模型或抽取式答案。别把限流当成「再调一次
-  temperature」。
+quick: "TPM 管每分钟 token 数，RPM 管每分钟请求，429 是配额墙不是模型坏了。产品层要有队列、退避、缓存，以及降到小模型或抽取式答案。别把限流当成「再调一次 temperature」。"
 tags:
   - Microsoft
   - Azure OpenAI
@@ -34,14 +32,14 @@ Azure / Copilot 产品岗会把限流问成系统设计，不是「429 怎么 re
 
 订阅在某一 region、某一模型上有一份配额。创建部署时把 TPM 切给这个 deployment，推理就按这个上限准入。RPM 通常按容量单元成比例（老聊天模型常见大约每 1000 TPM 配 6 RPM，推理模型比例不同，别背死数字）。文档还写：服务会在 **1 秒或 10 秒** 的短窗上看速率，所以即使「这一分钟平均没超」，尖峰仍会 429。
 
-计入 TPM 的是 **prompt + completion**，不是只算输出。把整份仓库塞进上下文，账单和限流一起炸，这和 `msft-copilot-ground`、`msft-long-context` 是同一条预算。流式请求照样占 token，不会因为 chunk 多就另算一套魔法配额。
+计入 TPM 的是 **输入提示（prompt） + completion**，不是只算输出。把整份仓库塞进上下文，账单和限流一起炸，这和 `msft-copilot-ground`、`msft-long-context` 是同一条预算。流式请求照样占 token 配额，不会因为 chunk 多就另算一套魔法配额。
 
 429 的产品含义：
 
 - **Standard（按量）：** 共享池，可能被动态削；看 `Retry-After` / `retry-after-ms`，指数退避，但退避不是无限队列。
 - **Provisioned（PTU）：** 买的是预留容量。打满就是硬顶，文档建议按 header 等满再试，而不是瞎 jitter。溢出可以 spillover 到 Standard，那是明确的降级，不是偷偷多用预留。
 
-错法：把 429 当「模型抽风」去换 prompt。先看是 TPM 还是 RPM：短 prompt 高 QPS 先撞 RPM；长文档摘要先撞 TPM。
+常见误区是：把 429 当「模型抽风」去换 prompt。先看是 TPM 还是 RPM：短 prompt 高 QPS 先撞 RPM；长文档摘要先撞 TPM。
 
 ## 产品层：排队、削峰、降级，不要让用户直接撞墙
 
@@ -68,3 +66,9 @@ PTU 适合基线可预测的生产流量（Copilot 工作时间）；突发和�
 - **为什么重试会让 429 更糟？** 无 jitter 的同步重试会叠成惊群。要尊重 `Retry-After`，客户端合并，服务端排队。
 - **多部署负载均衡？** 可以，但配额是 region+模型总和。两个部署各一半 TPM，不是两份配额。跨区要考虑合规。
 - **和模型质量 A/B？** 限流降级会污染质量实验。流量标记「是否降级」，分析时拆开，否则你会以为新 prompt 变差了。
+
+## 相关题
+
+- [[anthropic-rate-limit]]：站在 API 提供方设计 RPM/TPM 限流器，本题是调用方撞上这堵墙之后怎么办。
+- [[p3a-xai-rate-limiter-design]]：出站限流保护下游供应商额度，和本题产品层的排队、退避是同一侧的问题。
+- [[design-chat-serving]]：服务方的整体设计，限流只是入口一环，后面还有优先级队列和前缀缓存。

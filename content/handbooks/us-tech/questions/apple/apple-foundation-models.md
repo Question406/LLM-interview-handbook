@@ -48,23 +48,23 @@ Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了
 
 2025 更新写得很直：端侧擅长 summarization、entity extraction、短对话、创意短文本；不是 chatbot for general world knowledge。现场我会把「不会做什么」说成设计：
 
-- 会：用户眼前的邮件 / 通知 / 屏幕；格式稳定的任务（靠功能 adapter，见 `apple-rank-adapter`）；工具调用（日历、本地检索）。接地契约同 `apple-siri-grounded`。
-- 不会默认做：开放世界长知识问答、把私人语料拿去训基础模型、把全量上下文上传做云端 RAG。后者是 `amazon-bedrock-rag` 那条路，这里默认不成立。
+- 会：用户眼前的邮件 / 通知 / 屏幕；格式稳定的任务（靠功能 adapter，见 `apple-rank-adapter`）；工具调用（日历、本地检索）。证据约束同 `apple-siri-grounded`。
+- 不会默认做：开放世界长知识问答、把私人语料拿去训基础模型、把全量上下文上传做云端 检索增强生成（RAG）。后者是 `amazon-bedrock-rag` 那条路，这里默认不成立。
 - 多模态。端侧视觉编码器更小（公开 ViTDet 量级），server 更大。屏幕理解见 `apple-multimodal`，不要把 Image Playground 的扩散模型和 AFM 文本模型说成同一个 checkpoint。
 
 评测也要按边界报。人评、locale、feature adapter（邮件摘要 vs 通知）比把 3B 丢进开放 chatbot 竞技场更贴近产品。只报 BLEU / MMLU 会被追「那通知摘要为什么还要单独 adapter」，见 `apple-afm-eval`。
 
-错法：把 AFM 讲成「苹果的 GPT，小的在手机、大的在云」。权重、数据、压缩、评测、产品任务四套都不一样。另一错法：声称端侧能做任意 agent。公开叙事是专用工具加热插拔 adapter，不是通用自主代理。
+常见误区是：把 AFM 讲成「苹果的 GPT，小的在手机、大的在云」。权重、数据、压缩、评测、产品任务四套都不一样。另一常见误区是：声称端侧能做任意 agent。公开叙事是专用工具加热插拔 adapter，不是通用自主代理。
 
 ## 我会怎么收设计题
 
 先问用户数据能不能离开设备、任务是格式还是事实、延迟是语音还是静默文本。再给三条路径：本地 3B + 检索 / adapter；PCC + 最小切片；拒答或走非生成 UI。量化、KV、采样是实现细节，分别见 `apple-ondevice-quant`、`apple-ondevice-kv`、`apple-topk-sample`。语音通路还要拆首包，见 `apple-siri-latency`。
 
-训练数据公开口径：许可数据、Applebot 爬取（可 opt out）、合成数据；不用用户私有数据和交互训基础模型。改进全球模型走这条；改进「我的摘要口吻」走端上 adapter 或 few-shot 证据，不要把邮箱当 SFT。
+训练数据公开口径：许可数据、Applebot 爬取（可 opt out）、合成数据；不用用户私有数据和交互训基础模型。改进全球模型走这条；改进「我的摘要口吻」走端上 adapter 或 few-shot 证据，不要把邮箱当 监督微调（SFT）。
 
 ## 追问
 
 - **为什么不把 70B 量化后塞进手机？** 权能压，KV、激活、功耗、热、ANE 静态图不一定压得动。公开选择是 3B 加压缩加 adapter，难的上 PCC。
 - **PCC 和「端侧隐私」矛盾吗？** 不矛盾，如果切片最小、不落盘、不拿去训。矛盾的是「为了方便把整个用户画像同步上去」。
-- **开发者微调会不会把私有数据送回苹果？** 公开 toolkit 是在开发者侧训 adapter，且要跟底模版本绑定。产品路径仍应假设用户数据默认不出设备。
-- **和 Siri 的关系？** AFM 是生成底座；Siri 还有 ASR、工具、TTS、接地。不要把「Foundation Model 很快」说成整条语音 SLO，见 `apple-siri-latency`。
+- **开发者微调会不会把私有数据送回苹果？** 公开 toolkit 是在开发者侧训 adapter，且要跟基础模型版本绑定。产品路径仍应假设用户数据默认不出设备。
+- **和 Siri 的关系？** AFM 是生成底座；Siri 还有 ASR、工具、TTS、有实际证据支持。不要把「Foundation Model 很快」说成整条语音 SLO，见 `apple-siri-latency`。

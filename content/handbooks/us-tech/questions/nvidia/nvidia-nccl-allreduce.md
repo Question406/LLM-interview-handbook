@@ -6,8 +6,8 @@ level: S
 title: NVIDIA：NCCL all-reduce 环/树，带宽瓶颈 vs 计算重叠
 quick: >-
   大消息走环：约 $2(N-1)/N\cdot S/B$ 的带宽项，延迟 $O(N)$。小消息走树：延迟 $O(\log N)$。训练里先问这
-  次 reduce 在不在关键路径上——DP 梯度可以和前几层反向重叠，TP 层内 all-reduce 往往叠不掉。Nsight
-  上看 NCCL kernel 是和 GEMM 并着跑，还是中间一条缝。
+  次 reduce 在不在关键路径上。DP 梯度可以和前几层反向重叠，TP 层内 all-reduce 往往叠不掉。Nsight
+  上看 NCCL kernel 是和 GEMM 并着跑，还是出现等待通信的空档。
 tags:
   - NVIDIA
   - NCCL
@@ -43,11 +43,11 @@ $$
 
 $B$ 是单链路有效带宽。$N$ 大时约等于传两遍 $S$。延迟项 $2(N-1)\alpha$，和卡数线性，所以小 tensor、大 $N$ 时环很亏。
 
-树（NCCL 用双二叉树一类）：跳数 $O(\log N)$，小消息的启动延迟好看。大消息上，树的带宽效率一般不如环，链路更容易闲着。NCCL 会按消息大小、NVLink / PCIe / IB 拓扑自己挑，还有 NVLS（Hopper 上 NVLink SHARP）走硬件规约。白板不要发誓「我们固定用环」；要说小消息延迟墙走树，大消息带宽墙走环。
+树（NCCL 用双二叉树一类）：跳数 $O(\log N)$，小消息的启动延迟好看。大消息上，树的带宽效率一般不如环，链路更容易闲着。NCCL 会按消息大小、NVLink / PCIe / IB 拓扑自己挑，还有 NVLS（Hopper 上 NVLink SHARP）走硬件规约。白板不要发誓「我们固定用环」；要说小消息受启动延迟限制时考虑树，大消息受带宽限制时考虑环。
 
 跨节点几乎一定分层：先机内 NVLink reduce 成一份，再机间 IB all-reduce，再机内 broadcast / all-gather。把 64 卡画成一个大环，IB 跳数和延迟都会很难看。这和「TP 留在 NVLink 域」是同一句话。
 
-## 什么时候是带宽墙
+## 什么时候受带宽限制
 
 比较的是时间，不是名词。层内激活 all-reduce：$S=B_{\mathrm{mb}}\cdot T\cdot D\cdot 2$ 字节（bf16）。MLP 计算大约 $16\cdot B_{\mathrm{mb}}\cdot T\cdot D^2$ FLOPs（上下两个 GEMM）。$D$ 大、NVLink 快时，计算时间往往大于通信，TP 看起来「免费」。$D$ 不够大、或者 $B$ 变成 IB 的几十 GB/s，通信反超，MFU 掉。这就是带宽瓶颈：kernel 自己很快，卡在等 NCCL。
 
@@ -70,4 +70,4 @@ Nsight Systems：看 `ncclDevKernel` 和 MMA kernel 是交错还是一条缝。�
 - **all-gather / reduce-scatter 和 all-reduce 差在哪？** all-reduce 等价于 reduce-scatter 再 all-gather，字节数大约两倍于其中一次。FSDP、序列并行、TP 反向，面试要能指出实际发的是哪一个。OpenAI 把 all-gather 当噪声信道载体的题见 `openai-allgather-noise`。
 - **tensor 只有几 KB 为什么很慢？** 走延迟项。树、$N$ 小、或者干脆不要做那么碎的集合（把 bucket 拼大）。
 - **NCCL 会帮你把梯度噪声纠回来吗？** 不会。链路当可靠（IB/RoCE 有 CRC）。数值误差来自 fp16 累加顺序，要用 fp32 accumulate，不是 ECC。
-- **占用率很低的 NCCL kernel 要不要调 occupancy？** 先看是不是延迟墙。小消息的 NCCL 本来就不是靠占满 SM 取胜。
+- **占用率很低的 NCCL kernel 要不要调 occupancy？** 先看是不是受启动延迟限制。小消息的 NCCL 本来就不是靠占满 SM 取胜。

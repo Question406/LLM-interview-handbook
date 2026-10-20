@@ -27,7 +27,7 @@ sources:
     type: secondary
 ---
 
-Google 搜索质量、Microsoft Bing、Amazon 商品搜、Apple Spotlight 都会问混合检索。DPR / RAG 论文证明 dense 能补上词汇鸿沟；生产里专有名词、货号、错误拼写和新鲜度会把纯向量打死。若结果还要生成答案，契约升级为 `design-prod-rag`；这里先把「找对文档」讲完。
+Google 搜索质量、Microsoft Bing、Amazon 商品搜、Apple Spotlight 都会问混合检索。Dense Passage Retrieval（DPR） / 检索增强生成（RAG） 论文证明 dense 能补上词汇鸿沟；生产里专有名词、货号、错误拼写和新鲜度会把暴露纯向量检索的局限。若结果还要生成答案，契约升级为 `design-prod-rag`；这里先把「找对文档」讲完。
 
 ## 查询理解和双路检索
 

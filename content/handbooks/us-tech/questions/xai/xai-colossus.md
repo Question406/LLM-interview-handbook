@@ -66,7 +66,7 @@ xAI 训练系统 / 基础设施岗会问：十万卡量级怎么跑起来、挂�
 
 重同步：所有存活 rank 必须同意同一个 step、同一份 RNG、同一段数据偏移。错一步数据，loss 表面还在降，checkpoint 已经脏。集合通信句柄不能复用已经死掉的 rank。恢复后先做一次短的 dummy all-reduce 当探活，再进正式 step。
 
-错法：把 Colossus 答成「卡多所以快」；报无法核对的内部数字；把 Dojo 和 Colossus 混成一个集群。
+常见误区是：把 Colossus 答成「卡多所以快」；报无法核对的内部数字；把 Dojo 和 Colossus 混成一个集群。
 
 ## 追问
 

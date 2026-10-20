@@ -4,9 +4,7 @@ section: openai
 order: 13
 level: A
 title: OpenAI：MoE 辅助损失和负载均衡，路由塌缩怎么发现
-quick: >-
-  辅助损失把 token 分数 $f_i$ 和平均路由概率 $P_i$ 对齐，逼专家均匀吃 token。塌缩是几乎所有质量进同一个专家，
-  其它专家梯度消失。看专家占用直方图、路由熵、drop 率，不要只看 loss 下降。
+quick: "辅助损失把 token 分配比例 $f_i$ 和平均路由概率 $P_i$ 对齐，逼专家均匀吃 token。塌缩是几乎所有质量进同一个专家， 其它专家梯度消失。看专家占用直方图、路由熵、drop 率，不要只看 loss 下降。"
 tags:
   - OpenAI
   - MoE
@@ -30,7 +28,7 @@ sources:
 
 ## 题怎么来的
 
-万亿稀疏模型的公开教科书是 Switch / GShard / ST-MoE，不是某篇 OpenAI 技术报告里的结构图。GPT-4 是否 MoE 没有官方确认，面试里不当事实。问到负载均衡，我按 Switch 的 aux loss 答，并声明这是训练稳定性，不是推理 cache。并行大图见 `nvidia-trillion-train`。
+万亿稀疏模型的公开教科书是 Switch / GShard / ST-MoE，不是某篇 OpenAI 技术报告里的结构图。GPT-4 是否 MoE 没有官方确认，面试里不当事实。问到负载均衡，我按 Switch 的 aux 损失（loss） 答，并声明这是训练稳定性，不是推理 cache。并行大图见 `nvidia-trillion-train`。
 
 ## aux loss 在惩罚什么
 
@@ -62,7 +60,7 @@ ST-MoE 还加了 router z-loss，压 logits 的绝对值，减少 fp16 下的不
 3. dropped token 比例。capacity 太紧时「均衡」是靠扔掉 token 装出来的。
 4. 验证集 vs FLOP 匹配的 dense 基线。稀疏模型不赢，先怀疑路由而不是数据。
 
-错法：把 aux 加进 eval loss 一起报；用训练 batch 的 $f_i$ 当推理负载（推理 top-1 更尖，要单独测）。推理若做 expert parallelism，还要看 decode 步的 all-to-all 延迟，那是 `openai-prefill-decode` 的 MoE 版。
+常见误区是：把 aux 加进 eval loss 一起报；用训练 batch 的 $f_i$ 当推理负载（推理 top-1 更尖，要单独测）。推理若做 expert parallelism，还要看 逐 token 生成（decode） 步的 all-to-all 延迟，那是 `openai-prefill-decode` 的 MoE 版。
 
 ## 追问
 
@@ -70,3 +68,9 @@ ST-MoE 还加了 router z-loss，压 logits 的绝对值，减少 fp16 下的不
 - **均衡一定均匀最好？** 不一定。数据本身就偏领域时，完全均匀会伤害质量。aux 是防死专家，不是业务 SLO。
 - **和 dropout 的差别？** dropout 随机遮激活；塌缩是离散路由的赢家通吃，梯度根本到不了冷专家。
 - **共享专家？** DeepSeek 一类把一部分 FFN 做成 always-on，减轻对 aux 的依赖。要声明这是另一条实现。
+
+## 相关题
+
+- [[google-gemini-moe]]：Google 版的 MoE 路由和容量题，aux loss 只是其中一环，更多讲 capacity 丢 token 和 decode 成本。
+- [[google-moe-routing]]：路由、容量因子的实现细节，追问里也问到 aux 权重 $\alpha$ 怎么调。
+- [[sys-ep-dispatch]]：负载不均落到推理时的样子，aux 只在训练生效，推理靠 EPLB 和部署表压热点。

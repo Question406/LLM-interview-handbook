@@ -4,9 +4,7 @@ section: openai
 order: 19
 level: A
 title: OpenAI：pretrain 数据配比，web / code / math、epoch 和过滤怎么答
-quick: >-
-  公开能引用的 OpenAI 数字停在 GPT-3：crawl 降权后仍占六成 token，WebText2 / 书 / 百科上采样。code 和 math
-  是后来默认要单列的域，不是 GPT-3 表里的行。配比是采样权重，不是磁盘占比。重复有用但有上限；过滤要防把方言和考题一起洗掉。
+quick: "公开能引用的 OpenAI 数字停在 GPT-3：crawl 降权后仍占六成 token，WebText2 / 书 / 百科上采样。code 和 math 是后来默认要单列的域，不是 GPT-3 表里的行。配比是采样权重，不是磁盘占比。重复有用但有上限；过滤要防把方言和考题一起洗掉。"
 tags:
   - OpenAI
   - Pretraining
@@ -49,7 +47,7 @@ DoReMi 先训一个小 proxy 学域权重，再放到大模型上。用来说明
 
 ## epoch、重复、过滤的边界
 
-Chinchilla 的 $D$ 默认当成独立 token。数据不够时你会重复。Muennighoff et al. 的公开结论大致是：重复到约 4 个 epoch，和新鲜数据差不多；再往上边际很快掉，十几 epoch 明显亏。所以「缺数据就多扫几遍」只在短区间成立。重复之前仍要去重：同一网页 20 次不算 20 倍信息，还容易把 eval 题干刷进记忆。
+Chinchilla 的 $D$ 默认当成独立 token。数据不够时可能重复使用已有样本。Muennighoff et al. 的公开结论大致是：重复到约 4 个 epoch，和新鲜数据差不多；再往上边际很快掉，十几 epoch 明显亏。所以「缺数据就多扫几遍」只在短区间成立。重复之前仍要去重：同一网页 20 次不算 20 倍信息，还容易把 eval 题干刷进记忆。
 
 过滤不是越狠越好。按模型 perplexity 砍尾巴，常把代码、小语种、口语砍掉，留下「像百科的英语」。分类器在正例里如果全是 WebText，风格会朝那偏。毒性过滤和 PII 是产品约束，和 perplexity 过滤分开报。
 
@@ -57,7 +55,7 @@ epoch 和配比会耦合：百科权重 3% 但扫 3 个 epoch，有效暴露远�
 
 和质量相对的另一头是 compute-optimal：在固定 $C$ 下先把 $D$ 当独立高质量 token 来算，再谈重复，见 `openai-scaling-laws`。脏数据上谈 20 token/参数没有意义。
 
-我会主动报一个错法：把「高质量多看几遍」和「垃圾 crawl 也多看几遍」说成同一件事。前者是 GPT-3 表里的上采样；后者是在烧 FLOPs 背重复噪声。
+一个常见误区是：把「高质量多看几遍」和「垃圾 crawl 也多看几遍」说成同一件事。前者是 GPT-3 表里的上采样；后者是在烧 FLOPs 背重复噪声。
 
 白板我还会画一条简单的采样循环：每个 step 先抽域（web / code / math），再从该域的 shard 里抽文档，再 pack 到上下文长度。权重改的是第一步；epoch 改的是 shard 要不要重开。把这两步说成一个旋钮，后面的消融会解释不清。
 

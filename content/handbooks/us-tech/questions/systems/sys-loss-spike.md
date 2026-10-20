@@ -48,7 +48,7 @@ OpenAI / NVIDIA 训大模型的 debug 轮，loss 突然跳十倍再掉回来，�
 
 ## 数据、并行、精度、落盘四条线
 
-**数据。** 万亿 token 管道里，spike 的第一嫌疑是样本而不是学习率：超长 pack 把无关文档粘在一起且文档边界 token 丢了、二进制垃圾、重复高 loss 域、某 epoch shuffle 把同一脏 shard 再喂一次。dataloader 状态没和模型一起 ckpt，resume 后有的 rank 重复、有的跳过，曲线会在恢复点附近跳。查法：复放该 step 的 sample id；单卡 greedy 重算同一 pack，尖还在就是数据/数值，尖没了才查通信。管道本身见 `sys-data-pipeline`。
+**数据。** 万亿 token 数据管道里，spike 的第一嫌疑是样本而不是学习率：超长 pack 把无关文档粘在一起且文档边界 token 丢了、二进制垃圾、重复高 loss 域、某 epoch shuffle 把同一脏 shard 再喂一次。dataloader 状态没和模型一起 ckpt，resume 后有的 rank 重复、有的跳过，曲线会在恢复点附近跳。查法：复放该 step 的 sample id；单卡 greedy 重算同一 pack，尖还在就是数据/数值，尖没了才查通信。管道本身见 `sys-data-pipeline`。
 
 **并行布局。** TP 的 dropout mask / RNG 没按设备广播；SP 的 all-gather 和列并行顺序反了；PP 最后一档 loss 平均漏了某个 microbatch；CP 的因果块没 zigzag，个别 rank 的注意力统计炸掉。这类 bug 往往 **一开某种并行就稳定复现**，不像数据那样偶发。MoE 热点专家会让部分 token drop，loss 跳的同时还伴 all-to-all P99，见 `sys-expert-parallel`。
 
@@ -64,8 +64,12 @@ OpenAI / NVIDIA 训大模型的 debug 轮，loss 突然跳十倍再掉回来，�
 
 - **尖刺之后 loss 回来了还要停吗？** 偶发 skip / 单条脏样本可以记计数；grad norm 也炸、权重范数上台阶，就该停下来复放，不能当噪声。
 - **为什么只看 rank 0 不够？** 平均会把单卡 inf 稀释。要 per-rank max，以及 inf 标志的 all-reduce。
-- **和 straggler 怎么区分？** Straggler 是墙钟尾巴、集体通信等不到人。Spike 是标量跳、作业仍在步进。两者可以共存：脏 pack 又慢又炸。
+- **和 straggler 怎么区分？** Straggler 是实际耗时尾巴、集体通信等不到人。Spike 是标量跳、作业仍在步进。两者可以共存：脏 pack 又慢又炸。
 - **换 TP 度数曲线就跳，是系统还是数值？** 先查 RNG、dropout、LN 布局、FP16 规约顺序。确认前向 bit-exact 对不上，再谈优化器。
 - **FP8 刚升温就尖，先怪 LR 吗？** 先看 delayed amax 是否还是 warmup 的旧值。分布一变，过期 scale 会打 inf，这是系统计数器，不是学习率。
 - **异步 ckpt 恢复点附近尖，先怪优化器吗？** 先对 dataloader 游标、RNG、amax 历史是否和权重同一 iteration。撕裂快照见 `sys-async-ckpt`。
 - **只一台机器能复现、换机不能，是什么？** 优先怀疑静默数据损坏或坏页。同一 pack 换机仍炸才是数据/数值。
+
+## 相关题
+
+- [[openai-loss-spike]]：同一现象的数值面，按数据、学习率、并行同步、精度、坏 batch 五层查，并要求定位到卡、step 和样本。

@@ -4,10 +4,7 @@ section: nvidia
 order: 25
 level: A
 title: NVIDIA：Medusa / EAGLE 多头草稿，和经典投机解码差在哪
-quick: >-
-  经典投机是另一份小模型自回归写 $\gamma$ 个 token，大模型一次验证，拒绝采样保证无损。Medusa 在同一套骨干上加
-  $K$ 个独立头，一次前向出一棵候选树。EAGLE 在特征层自回归草稿，用移位 token 补不确定性。验证核仍是一次
-  target forward；变的是草稿从哪来、KV 怎么回滚。
+quick: "验证都是目标模型一次前向加拒绝采样，差在草稿从哪来：经典投机用另一个小模型，Medusa 在骨干上挂 $K$ 个并行头出候选树，EAGLE 在特征层做浅层自回归。"
 tags:
   - NVIDIA
   - Speculative Decoding
@@ -38,9 +35,9 @@ TensorRT-LLM 文档把草稿来源写成两类：独立 draft 模型，以及 Me
 
 ## 经典投机：两套权重，一条链
 
-Leviathan / Chen：草稿模型 $q$ 自回归写出 $x_1,\ldots,x_\gamma$，目标 $p$ 一次前向得到这 $\gamma$ 个位置的 logits。位置 $i$ 抽 $u\sim U[0,1]$，若 $u \lt p(x_i)/q(x_i)$ 则接受，否则从修正分布再抽一个并截断后面。期望接受长度决定加速比，不是草稿 FLOPs。GPU 小 batch 时 decode 吃不满，一次验证摊掉 $\gamma$ 步的权重读取，这才是投机的 roofline，见 `nvidia-flash-decode`。
+Leviathan / Chen：草稿模型 $q$ 自回归写出 $x_1,\ldots,x_\gamma$，目标 $p$ 一次前向得到这 $\gamma$ 个位置的 logits。位置 $i$ 抽 $u\sim U[0,1]$，若 $u \lt p(x_i)/q(x_i)$ 则接受，否则从修正分布再抽一个并截断后面。期望接受长度决定加速比，不是草稿 FLOPs。GPU 小 batch 时 逐 token 生成（decode） 吃不满，一次验证摊掉 $\gamma$ 步的权重读取，这才是投机的 roofline，见 `nvidia-flash-decode`。
 
-代价：再驻留一个模型，两套 KV，两套调度。草稿太强则自身也慢；太弱则 $\gamma$ 全拒，验证白做。拒绝后 target 和 draft 的 KV 都要截回接受前缀，否则注意力盯幽灵 token。Paged 上就是把多出来的页 refcount 减掉，见 `nvidia-paged-kv`。
+代价：再驻留一个模型，两套 KV，两套调度。草稿太强则自身也慢；太弱则 $\gamma$ 全拒，验证白做。拒绝后 target 和 draft 的 KV 都要截回接受前缀，否则注意力会继续读到已被丢弃的 token。Paged 上就是把多出来的页 refcount 减掉，见 `nvidia-paged-kv`。
 
 ## Medusa：同一隐状态上的独立头
 
@@ -50,10 +47,10 @@ Medusa（Cai et al.）不另训小 Transformer。骨干最后一层隐状态 $h_
 
 - 草稿 FLOPs 极小（几个线性层），没有第二份 KV。
 - 草稿质量通常更差，因为第 $k$ 个头看不到自己前面的草稿 token，误差不复合在自回归里，但也不享受自回归纠错。
-- Medusa-1：冻骨干只训头，接近无损加速。Medusa-2：骨干和头一起训，接受率更高，有把原模型打歪的风险。
+- Medusa-1：冻骨干只训头，接近无损加速。Medusa-2：骨干和头一起训，接受率更高，有改变原模型行为的风险。
 - TRT-LLM 要在配置里写 `medusa_choices`（树的叉法），IFB 路径必须显式给这棵静态树。早期文档只官宣 Vicuna 一类，别的骨架要自己接同样的头。
 
-树验证一步的 $Q$ 长度是候选节点数，不是 1，attention 更像短 prefill，占位和 CUDA Graph 档位都要按树大小留，见 `nvidia-cuda-graph`。
+树验证一步的 $Q$ 长度是候选节点数，不是 1，attention 更像一段短 prefill，占位和 CUDA Graph 档位都要按树大小留，见 `nvidia-cuda-graph`。
 
 ## EAGLE：特征层自回归
 
@@ -72,4 +69,11 @@ EAGLE 观察：在倒数第二层特征上做自回归，比在 token 上更容�
 - **无损还在吗？** 验证仍按 $p$ 做拒绝采样就在。改成「头的 greedy 直接当输出」就不在。Medusa-2 若改了骨干权重，那是另一个模型，不是原 $p$ 的无损加速。
 - **草稿 KV？** 独立 draft 有自己的 cache。Medusa 头没有逐步 KV。EAGLE 的浅层草稿若逐步跑，要一小段特征侧状态，拒绝时同样截。
 - **和 GQA / KV FP8？** 正交。投机减的是前向次数；量化减的是每次前向的字节。
-- **$\gamma$ 越大越好？** 不是。期望接受大约随 $q$ 与 $p$ 的靠近程度掉。测的是产出 token/s 和 TBT，拒绝掉的草稿不要算进吞吐。
+- **$\gamma$ 越大越好？** 不是。期望接受长度会受到 $q$ 与 $p$ 相似程度的影响。测的是产出 token/s 和 TBT，拒绝掉的草稿不要算进吞吐。
+
+## 相关题
+
+- [[google-spec-decode]]：从无损性讲起，Medusa / EAGLE 只占一节，适合先打基础。
+- [[meta-multi-token]]：同样是在主干上挂多个未来头，但 Meta 是预训练时就用多步 CE 训练。
+- [[sys-spec-sys]]：草稿长度 $\gamma$ 和吞吐测量的系统视角，和本卡末尾的追问一致。
+- [[coding-spec-accept]]：验证这一步的接受规则代码，经典投机和 Medusa 共用。

@@ -42,15 +42,15 @@ TensorRT-LLM 是引擎。模型定义（现在也走 PyTorch 路径）编成执�
 
 vLLM 是另一套引擎加 serving。PagedAttention 论文从那边来；continuous batching 和 TRT-LLM 的 in-flight 是同一调度粒度。强项是改 kernel、改调度都在 Python/CUDA 栈里，迭代快。NVIDIA 面不要贬 vLLM；要说「语义对齐，编译器和 plugin 是 TRT-LLM 的差」。分页对比见 `nvidia-paged-kv`。
 
-Triton Inference Server 是网关：动态 batch、ensemble、多后端、metrics。LLM 路径上它把请求送进 TensorRT-LLM backend，真正的 GPU 占用由引擎 scheduler 决定。Triton 的 `max_queue_delay` 是把形状相同的请求拼成一次 launch，要求一起进、一起出。LLM decode 长度差几个数量级，这套对不上。Triton 怎么配见 `nvidia-triton-infer`。
+Triton Inference Server 是网关：动态 batch、ensemble、多后端、metrics。LLM 路径上它把请求送进 TensorRT-LLM backend，真正的 GPU 占用由引擎 scheduler 决定。Triton 的 `max_queue_delay` 是把形状相同的请求拼成一次 launch，要求一起进、一起出。LLM 逐 token 生成（decode） 长度差几个数量级，这套对不上。Triton 怎么配见 `nvidia-triton-infer`。
 
 Triton 管进出；TRT-LLM / vLLM 管一步 transformer 怎么跑。
 
 ## Plugin 在补什么
 
-朴素 TensorRT 吃固定形状 CNN / Encoder 很稳。自回归 LLM 每步 query 长度是 1、KV 变长、还要 RoPE / 量化 / paged gather，图里会炸成一串小核。Plugin 把这些收成自定义 op：
+朴素 TensorRT 吃固定形状 CNN / Encoder 很稳。自回归 LLM 每步 query 长度是 1、KV 变长、还要 RoPE / 量化 / paged gather，计算图会被拆成一串小 kernel。Plugin 把这些操作融合成自定义 op：
 
-- **GPT Attention plugin**：context 走 FMHA（FlashAttention 一类，不物化 $[T, T]$），generation 走 masked MHA，原地写 KV。RoPE、QKV bias、KV 的量化 / 反量化可以在核里做。关掉 context FMHA 会把 $QK^{\top}$ 写回 HBM，长 prompt 显存和带宽一起爆。
+- **GPT Attention plugin**：context 走 FMHA（FlashAttention 一类，不物化 $[T, T]$），generation 走 masked MHA，原地写 KV。RoPE、QKV bias、KV 的量化 / 反量化可以在核里做。关掉 context FMHA 会把 $QK^{\top}$ 写回 HBM，长 prompt 会大幅增加显存占用和带宽需求。
 - **GEMM plugin**：cuBLAS / 量化 GEMM，Hopper 上 FP8 走 Tensor Core。
 - **remove_input_padding**：变长序列 packed，不再为对齐 pad 到 `max_seq_len`。
 
@@ -68,3 +68,7 @@ In-flight batching：每个 iteration 结束的序列立刻腾槽，新请求插
 - **和 vLLM 怎么选？** 要 NVIDIA 编译栈、FP8 / FP4、Triton / NIM 生产网关，走 TRT-LLM。要快改 kernel、社区模型，走 vLLM。面试两者的调度名词要对得上。
 - **Plugin 和 CUDA Graph 谁先？** Plugin 决定图里有哪些大核；Graph 把 decode 那串 launch 收成一次 replay，见 `nvidia-cuda-graph`。先融合再捕获。
 - **NeMo 在哪？** 训练 / 对齐走 NeMo + Megatron-Core，导出 TRT-LLM 或 NIM。NeMo 不是推理引擎。
+
+## 相关题
+
+- [[nvidia-w4a8]]：本题「量化」那一层的展开，讲 TRT-LLM 里权重、激活、KV 三个量化开关分别省什么。

@@ -4,9 +4,7 @@ section: microsoft
 order: 6
 level: A
 title: Microsoft：LLaVA 类图文投影，视觉 token 数和上下文预算
-quick: >-
-  CLIP 网格投影进 LLM 词嵌入，视觉 token 数是 $(H/P)\times(W/P)$。224px 大约 256，336px 大约
-  576。它们和文本抢同一条上下文。高分辨率靠切块，token 近线性涨，先算预算再谈「看清字」。
+quick: "CLIP 网格投影进 LLM 词嵌入，视觉 token 数是 $(H/P)\\times(W/P)$。224px 大约 256，336px 大约 576。它们和文本抢同一条上下文。高分辨率靠切块，token 近线性涨，先算预算再谈「看清字」。"
 tags:
   - Microsoft
   - LLaVA
@@ -55,7 +53,7 @@ AnyRes / 动态切块：把大图切成 $g$ 块，每块再走一遍 336 编码�
 - 截图里的按钮文字、表格：必须切块或更高分辨率编码器，然后 **减文本、减多图、或先 OCR**。
 - 多图对比：每张图一份 $N_{\mathrm{vis}}$，三张 576 就 1728，生成还没开始。
 
-错法：把视觉 token 和文本 token 当成两个池子。在 LLaVA 类架构里它们抢同一条 KV cache，decode 带宽跟总长度走。量化、GQA 省的是 KV，减不掉已经占掉的视觉前缀。另一错法：训练用 224、推理用 4k 切块还不做适配：位置和投影统计都会漂。
+常见误区是：把视觉 token 和文本 token 当成两个池子。在 LLaVA 类架构里它们抢同一条 KV cache，逐 token 生成（decode） 带宽跟总长度走。量化、GQA 省的是 KV，减不掉已经占掉的视觉前缀。另一常见误区是：训练用 224、推理用 4k 切块还不做适配：位置和投影统计都会漂。
 
 Phi-3-Vision 等小模型更狠：参数少，上下文也不是无限。产品上可以「图先变成短 OCR + 少量缩略 token」，把 LLaVA 纯像素前缀当成高质量路径而不是唯一路径。Azure 上还要算这些视觉 token 进 TPM，见 `msft-azure-tpm`。
 

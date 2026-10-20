@@ -4,9 +4,7 @@ section: systems
 order: 59
 level: B
 title: 系统：一条回答在 EOS 之后的 token，还进不进后训练 loss？
-quick: >-
-  不进。EOS 本身进不进要和采样、奖励对齐，全队用同一个约定。
-  EOS 之后的垫片若进 loss，模型会被推向把 pad id 的概率抬高，长度和奖励都会歪。
+quick: "不进。EOS 本身进不进要和采样、奖励对齐，全队用同一个约定。 EOS 之后的垫片若计入 loss，模型会被推向把 pad id 的概率抬高，长度和奖励都会歪。"
 tags:
   - Post-train
   - Mask
@@ -55,3 +53,10 @@ def response_mask(token_ids, prompt_len, eos_id, include_eos=True):
 ## 追问
 
 **pack 好几条回答到一条序列里呢？** 每条自己的 EOS 和文档边界都要切断注意力，也要切断 loss。用一条序列的最后一个 EOS 当全部回答的结尾，前面几条的 pad 会进损失。边界见 `coding-packed-lm`。
+
+## 相关题
+
+- [[sys-adv-bcast]]：同一条 response mask，那题问序列级优势怎么乘到 token 上、prompt 和工具返回为什么是 0。
+- [[p3a-openai-masked-cross-entropy-loss]]：NumPy 手写带 mask 的交叉熵，练的是 SFT 侧「只在有效 token 上求平均」。
+- [[coding-packed-lm]]：追问里多条回答 pack 在一起时，注意力边界怎么用 `cu_seqlens` 和块对角 mask 切。
+- [[meta-pack-seq]]：packing 时文档之间为什么要隔离，以及拼上 EOS 为什么不等于隔离。

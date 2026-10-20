@@ -4,9 +4,7 @@ section: systems
 order: 16
 level: A
 title: 系统：万亿 token 数据管道，shuffle、checkpoint、坏样本
-quick: >-
-  文档级 shuffle 再 pack 成定长，不要在 token 上流式洗。消费进度、shuffle epoch、混合比 RNG 必须和模型一起
-  ckpt，否则 resume 会重复或空洞。坏样本跳过要所有 rank 同一票，不能一张卡自己 continue。
+quick: "文档级 shuffle 再 pack 成定长，不要对 token 逐个随机打乱。消费进度、shuffle epoch、混合比 RNG 必须和模型一起 ckpt，否则 resume 会重复或空洞。坏样本跳过要所有 rank 同一票，不能一张卡自己 continue。"
 tags:
   - NVIDIA
   - Megatron
@@ -41,7 +39,7 @@ NVIDIA Megatron 训万亿 token、Meta / Microsoft 的数据岗，都会问管�
 
 万亿 token 不能先展开再洗：索引比数据还大，IO 随机打满盘。Megatron 常见路径是 indexed dataset（`.bin` / `.idx` mmap）：文档或样本一条条顺序可读，shuffle 的是 **文档 id 列表**，不是每个 token。每个 epoch 用固定种子洗一遍 id，再按 DP rank 切 shard。混合语料按权重抽样（blend），权重进 checkpoint，否则 resume 后配比漂。
 
-Packing 把变长文档拼到训练长度 $T$，文档边界要留特殊 token。丢边界等于把两篇无关文章粘成一句，loss 局部爆炸，看起来像训练不稳。Padding 浪费 FLOPs；packing 提高有效 token 比例，但让「一个 batch 里有哪些文档」更难复放，所以 sample id 日志要记 pack 里的文档列表，不只记 batch 号。
+Packing 把变长文档拼到训练长度 $T$，文档边界要留特殊 token。丢边界等于把两篇无关文章粘成一句，损失（loss） 局部爆炸，看起来像训练不稳。Padding 浪费 FLOPs；packing 提高有效 token 比例，但让「一个 batch 里有哪些文档」更难复放，所以 sample id 日志要记 pack 里的文档列表，不只记 batch 号。
 
 在线流式（WebDataset / Mosaic Streaming）适合数据还在写、不想预建 index。权衡是跨 epoch 精确去重和精确 resume 更烦：要记 shard 名、字节偏移、本 epoch 已消费计数。预建 index 适合稳态预训练；流式适合持续进数据的后训练。CPU tokenize / 解压跟不上时，GPU 在等 H2D，MFU 掉在数据面，Nsight 上是 loader 空窗而不是 NCCL。
 

@@ -6,7 +6,7 @@ level: S
 title: 系统：FlashInfer 推理核库，append、sampling、调度器接口
 quick: >-
   FlashInfer 是核库不是调度器。调度器管 batch、页表、谁进谁出；核只吃 indptr、indices、last_page_len
-  做 attention / append / sampling。页表没先留好坑，append 会写飞。CUDA graph 要求这些元数据形状固定。
+  做 attention / append / sampling。页表没先留好坑，append 可能写入错误位置。CUDA graph 要求这些元数据形状固定。
 tags:
   - NVIDIA
   - vLLM
@@ -33,14 +33,14 @@ sources:
 
 ## 题怎么来的
 
-vLLM、SGLang、TensorRT-LLM、TGI 都把注意力、paged KV、采样从 Python 调度器里拆出去。NVIDIA kernel 岗爱问：decode / prefill / append 三个阶段的瓶颈分别是什么、采样为什么不要先 sort。OpenAI serving 岗爱问：CUDA graph 捕获之后，调度器还能不能每步改 batch。FlashInfer 的公开博客把 self-attention 拆成 prefill、decode、append 三阶段，正好当这张接口图。分页语义见 `sys-paged-attn`；调度见 `sys-cont-batch` 和 `sys-decode-batch`。
+vLLM、SGLang、TensorRT-LLM、TGI 都把注意力、paged KV、采样从 Python 调度器里拆出去。NVIDIA kernel 岗爱问：逐 token 生成（decode） / 输入预填充（prefill，即处理输入并建立缓存） / append 三个阶段的瓶颈分别是什么、采样为什么不要先 sort。OpenAI serving 岗爱问：CUDA graph 捕获之后，调度器还能不能每步改 batch。FlashInfer 的公开博客把 self-attention 拆成 prefill、decode、append 三阶段，正好当这张接口图。分页语义见 `sys-paged-attn`；调度见 `sys-cont-batch` 和 `sys-decode-batch`。
 
 ## 核库吃什么、不吃什么
 
 我会先画边界：调度器持有请求状态（哪些序列在飞、每条的 block table、本步是 prefill 块还是 decode、采样参数）。核库拿到的是已经摊平的 GPU 张量。
 
 - **Attention：** $Q$ 加上 paged $K/V$。Decode 是 $T_q=1$ 的 memory-bound；prefill 是长 $T_q$ 的 compute-bound；append（已有前缀再吃一段新 token，chunked prefill 或多轮续写）介于两者之间。
-- **Page 元数据：** `kv_indices`、`kv_indptr`（CSR 式，形状 `[B+1]`）、`kv_last_page_len`。页可以是 NHD `[max_pages, page_size, n_{\mathrm{kv}}, d_h]` 或 HND。SGLang 一类为了 radix 灵活性常用 `page_size=1`，FlashInfer 把页表预取进 shared memory，避免页太碎时间接访问把核打死。
+- **Page 元数据：** `kv_indices`、`kv_indptr`（CSR 式，形状 `[B+1]`）、`kv_last_page_len`。页可以是 NHD `[max_pages, page_size, n_{\mathrm{kv}}, d_h]` 或 HND。SGLang 一类为了 radix 灵活性常用 `page_size=1`，FlashInfer 把页表预取进 shared memory，避免页太碎时，间接访问成为性能瓶颈。
 - **Append：** 新 $K/V$ 写入已经分配好的页。文档写明：调用前 `kv_indices` / `indptr` / `last_page_len` 必须已经包含新 token 的坑。核不会帮你 malloc。
 - **Sampling：** 另一组核。logits `[B, V]` 上 fused temperature、top-$k$、top-$p$，拒绝采样、尽量不全局 sort。和注意力不是一个 launch。
 
@@ -79,5 +79,5 @@ NVIDIA 岗可能追 Nsight：decode 步是 HBM SOL 还是 launch 太碎。答案
 - **为什么 append 不负责分配？** 分配是调度器和页池的事，可能还要抢占、卸到 CPU。核只写字节。
 - **Sampling 为什么尽量不 sort？** $V$ 十万级，逐步 decode 每步全排序比 GEMM 还贵。拒绝采样在核内多轮，blog 有公开推导。
 - **和调度器谁拥有 block table？** 调度器。核拿的是拷到 GPU 的视图。树结构（radix）在 CPU，见 `sys-radix-tree`。
-- **CUDA graph 和动态 $B$ 怎么共存？** 捕获几档上限，pad 到最近档；有效条数用 `last_page_len` / mask。每步 $B$ 变就重捕获，启动税吃掉 decode。
+- **CUDA graph 和动态 $B$ 怎么共存？** 捕获几档上限，pad 到最近档；有效条数用 `last_page_len` / mask。每步 $B$ 变就重捕获，启动开销吃掉 decode。
 - **page_size=1 会不会很慢？** 朴素 kernel 会。FlashInfer 预取页号，SGLang 用 1 是为了树节点灵活，不是因为 1 在 roofline 上最优。

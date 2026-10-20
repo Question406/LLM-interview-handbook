@@ -4,9 +4,7 @@ section: meta
 order: 23
 level: A
 title: Meta：Llama 评测套件——别只报 MMLU，污染和套餐
-quick: >-
-  MMLU 只是知识选择题的一个点。Herd 把能力拆成知识、推理、代码、指令、多语言、长窗、工具，再加人评。污染用 8-gram
-  重叠估增益；后训练对 prompt 做 exact match。数据团队和组织隔离写进论文，不是口头「我们去重了」。
+quick: "MMLU 只是知识选择题的一个点。Herd 把能力拆成知识、推理、代码、指令、多语言、长窗、工具，再加人评。污染用 8-gram 重叠估增益；后训练对 输入提示（prompt） 做 exact match。数据团队和组织隔离写进论文，不是口头「我们去重了」。"
 tags:
   - Meta
   - Llama
@@ -31,7 +29,7 @@ sources:
     type: secondary
 ---
 
-Llama 岗听「我们 MMLU $80$」会追问：几 shot、要不要 CoT、污染怎么测、人评谁有权看。Herd 第 5 节和后训练章节把套餐摊开了。通用污染手法见 `align-eval-contam`；本题收 Meta 公开怎么做。
+Llama 岗听「我们 MMLU $80$」会追问：几 shot、要不要 思维链（CoT，即分步推理过程）、污染怎么测、人评谁有权看。Herd 第 5 节和后训练章节把套餐摊开了。通用污染手法见 `align-eval-contam`；本题收 Meta 公开怎么做。
 
 ## 不要只报 MMLU
 
@@ -43,7 +41,7 @@ MMLU 是 $57$ 科 5-shot 选择题，Herd 报宏平均、**不用 CoT**。它测
 - **指令：** IFEval；
 - **多语言：** MGSM、内部翻译版 MMLU（指令留英语）；
 - **工具 / 长窗：** Nexus、BFCL；ZeroSCROLLS、haystack、InfiniteBench；
-- **人评：** 按能力 taxonomy 收约 $7000$ prompt，难度偏硬，**建模同学不能碰题面**。
+- **人评：** 按能力 taxonomy 收约 $7000$ 输入提示（prompt），难度偏硬，**建模同学不能碰题面**。
 
 Llama 2 时代就同时报 MMLU、代码、人评 win rate。只刷 MMLU 过不了「有没有读论文」这关。选择题还要做格式鲁棒：换选项顺序、换标签字母、换 prompt 模板。Herd 专门画了 MMLU 对这些扰动的敏感性。数字随模板抖，就不要把 $0.5$ 个点的涨当能力。
 
@@ -53,7 +51,7 @@ Llama 2 时代就同时报 MMLU、代码、人评 win rate。只刷 MMLU 过不�
 
 预训练：Herd 跟 Singh et al. 2024，用 **8-gram 重叠**。一条评测样本，若其中比例 $\mathcal{T}_D$ 的 token 属于训练集里出现过的 8-gram，就算污染。$\mathcal{T}_D$ 按数据集选，让「干净子集 vs 全集」的分数差（估计增益）最大。结果因榜而异：有的榜污染率高且增益高（论文举 PiQA、HellaSwag）；有的污染率看起来高但增益几乎为零（Natural Questions）。所以**不要报一个全局污染百分比**，要分榜：污染率、估计增益、干净子集分数。
 
-后训练：对每个 benchmark 的 **prompt 做 exact match** 去污染。合成 SFT 特别容易把题面洗进来，见 `meta-synth-sft`。退火实验把 GSM8k / MATH 训练集加进去，8B 大涨、405B 几乎不涨。这是「背题」和「真会」的对照，面试要主动讲。
+后训练：对每个 benchmark 的 **prompt 做 exact match** 去污染。合成 监督微调（SFT） 特别容易把题面洗进来，见 `meta-synth-sft`。退火实验把 GSM8k / MATH 训练集加进去，8B 大涨、405B 几乎不涨。这是「背题」和「真会」的对照，面试要主动讲。
 
 组织措施论文写得很硬：预训练数据由**单独团队**采和洗，激励就是挡住外部 benchmark；人评只有不参与训练的一小撮人能碰。这不是 HR 废话，是防建模同学用测试集调 mix。
 
@@ -61,7 +59,7 @@ Llama 2 时代就同时报 MMLU、代码、人评 win rate。只刷 MMLU 过不�
 
 我会三列：公开榜、去污染后、内部 / 人评。长窗单独一列：短任务有没有回归 + haystack，不要用 haystack 代替推理。安全单独一列：Guard 的 FPR / 拒答，见 `meta-llama-guard`，不要和 MMLU 加总成一个「综合分」。
 
-错法：用训练中的验证 PPL 代替下游。PPL 跌、MMLU 不动，可能是格式或污染。错法二：在同一套合成数据上既训又测。错法三：只报 instruct 模型的 MMLU，不报 base：后训练会改选择题行为，两套都要。
+常见误区是：用训练中的验证 PPL 代替下游。PPL 跌、MMLU 不动，可能是格式或污染。错法二：在同一套合成数据上既训又测。错法三：只报 instruct 模型的 MMLU，不报 base：后训练会改选择题行为，两套都要。
 
 ## 追问
 

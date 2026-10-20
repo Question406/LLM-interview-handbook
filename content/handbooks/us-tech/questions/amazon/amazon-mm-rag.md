@@ -5,7 +5,7 @@ order: 18
 level: A
 title: Amazon：图 / PDF RAG，OCR 和视觉检索怎么选？
 quick: >-
-  条款、表格、ASIN 用 OCR / Textract 进文本索引，词法能打中。图表、版式、商标、扫描件用多模态嵌入或页图检索。混合不是每页都跑两遍大模型：query
+  条款、表格、ASIN 用 OCR / Textract 进文本索引，便于关键词精确匹配。图表、版式、商标、扫描件用多模态嵌入或页图检索。混合不是每页都跑两遍大模型：query
   类型决定走哪路，引用要带页码和框。别把整本 PDF 当一张图塞进 Nova。
 tags:
   - Amazon
@@ -49,9 +49,9 @@ BDA 公开叙事：图做 OCR / 描述，音频转写，视频出场景摘要。
 
 500 万 PDF 在 `amazon-bedrock-rag` 已是千万块。每页再存一张图嵌入，索引翻倍。做法：文本块全量；图嵌入只对「有图 / 扫描 / 无字」页。元数据仍要 marketplace、生效日期。过期靠元数据作废，像素相似不会自己过期。
 
-p95 预算：检索 300–500ms 量级含 rerank，见 `amazon-rerank-llm`；生成不要塞整页像素。需要看清表时，只把 top 页的图或 Textract JSON 进 prompt，不要 50 页 PNG。
+p95 预算：检索 300–500ms 量级含 rerank，见 `amazon-rerank-llm`；生成不要塞整页像素。需要看清表时，只把 top 页的图或 Textract JSON 进 输入提示（prompt），不要 50 页 PNG。
 
-错法：只 OCR，流程图全瞎；只视觉检索，条款编号全丢；用 caption 模型给每页写一段散文当唯一索引——散文会丢否定句。安全：身份证扫描进 KB 要单独策略，Guardrails 对图可能是 text only，见 `amazon-nova-mm`。
+常见误区是：只做 OCR，无法理解流程图结构；只视觉检索，条款编号全丢；用 caption 模型给每页写一段散文当唯一索引：描述可能遗漏否定句。安全：身份证扫描进 KB 要单独策略，Guardrails 对图可能是 text only，见 `amazon-nova-mm`。
 
 混排页（上半条款、下半图）按块类型拆：文字进 BM25，图进多模态嵌入，检索后按页码拼回。生成只看 top 页，避免整本 PDF 像素进 Nova。路由见 `amazon-nova-mm`。引用必须带页码；视觉块还要框。口播和点击对不上算幻觉。不要整页当一种模态。
 

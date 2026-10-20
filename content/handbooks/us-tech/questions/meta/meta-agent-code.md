@@ -5,7 +5,7 @@ order: 30
 level: A
 title: Meta：代码 agent——仓库索引、补丁评测，和 AI coding 面试差在哪
 quick: >-
-  面试轮 `meta-ai-coding` 考你怎么指挥现成助手把测试跑绿。本题考系统设计：索引要权限和新鲜，agent
+  面试轮 `meta-ai-coding` 考你怎么指挥现成助手把测试跑绿。本题考系统设计：索引要检查权限并及时更新，agent
   循环是读 / 搜 / 补丁 / 沙箱测试，评测用 fail-to-pass 而不是 HumanEval。公开锚点是 Code Llama 和
   SWE-bench，不要编内部代码助手架构。
 tags:
@@ -46,11 +46,11 @@ sources:
 
 ## Agent 循环和沙箱
 
-产品不是行内补全。补全 SLO 是几十到一百多毫秒，见 `design-code-assistant`；仓库 agent 的 SLO 是任务完成和误改，墙钟可以秒到分钟。工具要少而硬：读文件、搜（grep / 符号）、打补丁、跑测试。循环写在宿主，模型只出结构化调用，见 `design-tool-prod`、`design-agent-harness`。
+产品不是行内补全。补全 SLO 是几十到一百多毫秒，见 `design-code-assistant`；仓库 agent 的 SLO 是任务完成和误改，实际耗时可以秒到分钟。工具数量应少，行为应明确可靠：读文件、搜（grep / 符号）、打补丁、跑测试。循环写在宿主，模型只出结构化调用，见 `design-tool-prod`、`design-agent-harness`。
 
-沙箱：无网或白名单、只读镜像加可写工作树、CPU / 内存配额、短 TTL。写操作先出 diff 再应用。失败模式：改测试来「通过」、删断言、把 flake 标 skip。隐藏测试和只读测试树防这个。超时要能杀进程，不要让 decode 槽位空等。
+沙箱：无网或白名单、只读镜像加可写工作树、CPU / 内存配额、短 TTL。写操作先出 diff 再应用。失败模式：改测试来「通过」、删断言、把 flake 标 skip。隐藏测试和只读测试树防这个。超时要能杀进程，不要让 逐 token 生成（decode） 槽位空等。
 
-Code Llama 公开故事是专用代码基座（填充 infilling、长窗、Python 特化），Herd 把代码当 mix 的一档并报 HumanEval / MBPP。Agent 题不要停在 HumanEval：那是函数补全，不是修 issue。工具调用的自监督前史见 `meta-toolformer`；生产 schema 仍要宿主校验。
+Code Llama 公开故事是专用代码基座（填充 infilling、长窗、Python 特化），Herd 把代码当 mix 的一档并报 HumanEval / MBPP。Agent 题不要停在 HumanEval：那是函数补全，不是修 issue。工具调用的自监督前史见 `meta-toolformer`；生产中的调用 schema 仍要由宿主检查。
 
 ## 评测：fail-to-pass，不要口头 resolved
 
@@ -62,7 +62,7 @@ SWE-bench：给定 issue 文本和仓库快照，系统交补丁，跑作者测�
 
 ## 追问
 
-- **为什么不把 monorepo 塞长上下文？** 权限和新鲜做不到，p95 也做不到。索引 + 定点读是默认。
+- **为什么不把 monorepo 塞长上下文？** 难以保证权限隔离和内容及时更新，p95 也做不到。索引 + 定点读是默认。
 - **HumanEval 高就能发代码助手？** 不能。那是单函数合成；产品失败在多文件、环境、权限。
 - **和 AI-enabled coding 轮重复吗？** 不。那轮评候选人怎么用助手；本题评你怎么设计助手。
 - **测试可见怎么办？** 产品上可以跑测；评测要声明是否可见。隐藏测试防改测试作弊。

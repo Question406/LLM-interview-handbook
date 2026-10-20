@@ -4,11 +4,7 @@ section: microsoft
 order: 8
 level: A
 title: Microsoft：ONNX / 导出动态轴，训练图和推理图不一致的坑
-quick: >-
-  动态轴要显式声明 batch 和序列维，否则 ORT 按 dummy 形状写死。训练图有 dropout、teacher forcing、Python
-  控制流；推理图要 eval、自回归和 KV
-  cache。导出前先对齐数值，再谈加速。ONNX 是微软和 Facebook 一起推的交换格式，面试要能讲坑不是背
-  `torch.onnx.export`。
+quick: "batch 和序列维要显式声明为动态轴，否则按 dummy 形状写死。训练图是整段 teacher forcing，推理还要 eval 模式和带 KV cache 的 decode 图；先对齐 logits 再谈加速。"
 tags:
   - Microsoft
   - ONNX
@@ -37,22 +33,22 @@ NLP 常见：
 
 - 输入 `input_ids`、`attention_mask`：维 0 batch、维 1 序列。
 - 输出 logits：同样两维要动态，否则 ORT 按导出时的词表×长度分配。
-- KV cache：维里还有层、头、过去长度。过去长度必须是动态的，否则 decode 第二步就炸。
+- KV cache：维里还有层、头、过去长度。过去长度必须是动态的，否则逐 token 生成（decode）的第二步就会失败。
 
-只标 batch、忘了序列，是最常见的半吊子导出。CNN 只标 batch 往往够；Transformer 不够。动态维也不是免费：有的算子 shape 推断会失败，要升 opset，或把 `reshape` 写成由输入尺寸算出来的表达式，不要在 Python 里写死 `x.view(1, -1)`。
+只标 batch、忘了序列，是最常见的不完整导出。CNN 只标 batch 往往够；Transformer 不够。动态维也不是免费：有的算子 shape 推断会失败，要升 opset，或把 `reshape` 写成由输入尺寸算出来的表达式，不要在 Python 里写死 `x.view(1, -1)`。
 
 导出前 `model.eval()`。文档写得很直：dropout 和 BatchNorm 在 train/eval 行为不同。带着 dropout 导出，推理会随机掉单元，和 eval 数值永远对不齐。这不是 ORT 的 bug。
 
 ## 训练图 ≠ 推理图
 
-LLM 训练一步：teacher forcing，整段 `[B, T]` 进模型，loss 对所有位置。图里没有「按 token 循环」，也没有 KV cache。推理是自回归：每步一个 token，cache 沿长度维 concat。你把训练用的 `forward(input_ids)` 直接 export，ORT 里仍是 **整段一次前向**。那只能当 prefill，不能当 decode。要 decode 就得导出带 cache 输入输出的图，或拆成 prefill / decode 两份。
+LLM 训练一步：teacher forcing（训练时用真实的前文预测下一个 token），整段 `[B, T]` 进模型，损失（loss） 对所有位置。图里没有「按 token 循环」，也没有 KV cache。推理是自回归：每步生成一个 token，cache 沿长度维 concat。你把训练用的 `forward(input_ids)` 直接 export，ORT 里仍是 **整段一次前向**。那只能用于输入预填充（prefill，即处理输入并建立缓存），不能当 decode。要 decode 就得导出带 cache 输入输出的图，或拆成 prefill / decode 两份。
 
 其它会静默分叉的点：
 
 - **控制流。** Python `if` 在 trace 里按 dummy 走的那条分支冻住。变长 decode、early exit、MoE 路由要用 script / dynamo 能看见的算子，或拆成多图。
 - **原地操作和 view。** 训练能跑，ONNX 图可能非法或和自动微分假设冲突。
 - **精度。** 训练 bf16，导出 fp32 或反过来，layernorm 和 softmax 会漂。对齐时用同一 dtype。
-- **自定义核。** FlashAttention 在 PyTorch 里，ORT 未必有等价 EP。导出常退回标准 attention，速度故事要重写。
+- **自定义核。** FlashAttention 在 PyTorch 里，ORT 未必有等价 EP。导出常退回标准 attention，需要重新测量和说明速度。
 
 我会先在 PyTorch eval 和 ORT 上用同一组输入比 logits（允许 $10^{-4}$～$10^{-3}$ 级差），再谈 EP（CUDA / TensorRT）。数值不对就优化，是在优化一张错图。ORTModule 训练走的是训练图，和推理 ORT session 不是同一份文件，别说「我们训练已经用了 ORT 所以导出一定对齐」。
 

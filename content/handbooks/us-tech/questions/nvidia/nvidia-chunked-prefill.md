@@ -4,10 +4,7 @@ section: nvidia
 order: 20
 level: A
 title: NVIDIA：chunked prefill 把长 prompt 切开和 decode 混部
-quick: >-
-  一条 8k prompt 整段 prefill 会把正在飞的 decode 卡住，TPOT 出尖刺。Chunked prefill 按 token
-  budget 把 prompt 切成块，每步一块 context 加上这一步的 decode。算力墙和带宽墙在同一步里互相填。TensorRT-LLM
-  叫 chunked context，块大小要对齐 KV page。这不是把 prefill 和 decode 拆到两台机器。
+quick: "长输入一次性处理完，会让正在逐 token 生成的请求等太久。Chunked prefill 把输入切成小块，与其他请求的生成步骤放在同一批里处理。块大小受每批 token 预算限制，并要对齐 KV 缓存页；它仍在同一套设备上执行。"
 tags:
   - NVIDIA
   - Chunked Prefill
@@ -32,39 +29,51 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+大模型推理分成两个阶段：prefill 一次处理输入，decode 每一步生成一个新 token。长输入如果必须在一次调度中全部处理完，就可能占住 GPU，让其他正在生成的请求停下来等。
 
-In-flight 解决「人进出」，见 `nvidia-inflight-batch`。长 prompt 进来之后，一步里的 token 数仍可能被单条 context 打满。vLLM 叫 chunked prefill，TensorRT-LLM 叫 chunked context。论文是 Sarathi / Sarathi-Serve 的 stall-free batching。NVIDIA 岗要听 token budget 和 KV page 对齐，不要只说「把 prompt 切开」。
+Chunked prefill 的做法是把长输入切成块。每轮处理一块输入，同时推进其他请求的 decode。vLLM 使用 chunked prefill 这个名称，TensorRT-LLM 称为 chunked context。Sarathi 和 Sarathi-Serve 讨论了这种减少生成停顿的调度方式。
 
-## 整段 prefill 为什么卡住 decode
+## 为什么长输入会影响其他请求
 
-Prefill：一条序列的 $Q,K,V$ 都是 $[T_{\mathrm{in}}, D]$，GEMM / FMHA 算术强度随 $T$ 涨，算力墙，墙钟可以到几十到几百毫秒。Decode：每条 $Q$ 长度 1，反复读权重和历史 KV，带宽墙，一步往往一两毫秒量级，见 `nvidia-flash-attn`。
+Prefill 中，一条序列的 $Q,K,V$ 都是 $[T_{\mathrm{in}}, D]$。输入长度增加时，矩阵乘法可以利用更多计算能力，但整轮执行也可能达到几十至几百毫秒。
 
-IFB 若仍「新请求的整段 context 必须在一步里做完」，那一步的墙钟跟最长 prompt 走。正在飞的 decode 全部停等，TPOT / TBT 出现尖刺。更糟：`max_num_tokens` 必须不小于最长 prompt，这个预算从 KV 池里抢 HBM，并发反而下降。短请求的 TTFT 也可能被排队抬起来。不是模型慢，是队头一条长 context。
+Decode 每条请求的 $Q$ 长度为 1，每步要读取权重和历史 KV，通常更受内存带宽限制；一步往往是一两毫秒量级，见 `nvidia-flash-attn`。
 
-## 切块以后一步里有什么
+如果新请求的整段输入必须在一轮完成，这一轮的时间就由最长输入决定。其他请求的 token 间隔（TPOT / TBT）会突然变长。短请求也可能排队更久，增加首个 token 的等待时间（TTFT）。
 
-设每步 token 预算 $U$（TRT-LLM 的 `max_num_tokens`）。Scheduler 典型顺序（Sarathi-Serve）：
+此外，`max_num_tokens` 必须容纳最长输入时，每轮工作集会占用更多 HBM 显存，挤压 KV 缓存可用空间，降低并发。请求动态进入和退出批次的机制见 `nvidia-inflight-batch`。
 
-1. 先把正在 decode 的请求各放 1 个 token 进这一批（保 TPOT）。
-2. 若有半截 prefill，继续啃它的下一块，块长不超过 $U - B_{\mathrm{decode}}$。
-3. 还有空位再 admit 新请求，新 prompt 同样只吃一块。
+## 一轮里怎么安排请求
 
-Attention：这一块的 $Q$ 只覆盖新 token，形状大约 $[B_{\mathrm{mix}}, T_{\mathrm{chunk}}, \ldots]$；$K,V$ 是前缀 cache 加上当前块。因果仍成立，因为前缀已经在 paged KV 里。除最后一块外，TRT-LLM 要求 chunk 长度是 KV block size（常见 64）的整数倍，否则对不齐 page，见 `nvidia-paged-kv`。
+设每轮 token 预算为 $U$，对应 TRT-LLM 的 `max_num_tokens`。Sarathi-Serve 的典型安排是：
 
-混部的 roofline：decode 行提供 HBM 流量和瘦 GEMM；chunk 提供能喂满 Tensor Core 的 $T_{\mathrm{chunk}}$。同一步里两堵墙都有东西吃，GPU 利用率比纯 decode 高，又不会像整段 8k prefill 那样把步长拉到几百毫秒。$U$ 太大：步长又被 chunk 主导，stall 回来。$U$ 太小：prefill 切太碎，TTFT 变差、kernel 变短、CUDA Graph 更难套，见 `nvidia-cuda-graph`。
+1. 先为正在 decode 的请求各安排 1 个 token，尽量保持稳定的生成间隔。
+2. 若有尚未处理完的输入，安排它的下一块，长度不超过 $U - B_{\mathrm{decode}}$。
+3. 还有剩余预算时，接收新请求，但也只处理其输入的一块。
 
-显存：每步工作集跟 $U$ 走，不再跟「本服务支持的最大 prompt」走。于是 `max_num_tokens` 可以远小于 128k，省下的 HBM 给 KV，inflight 并发上去。这是官方 long-sequence 文档强调的第二点。
+当前块的 $Q$ 只对应新 token，形状大约为 $[B_{\mathrm{mix}}, T_{\mathrm{chunk}}, \ldots]$；$K,V$ 包含已缓存的前缀和当前块。历史前缀在 KV 缓存里，因此分块仍能遵守因果关系。
 
-代价：幸运的那条短 prompt 本来一步就能出首 token，现在可能被切、被 decode 同行稀释，平均 TTFT 往往更好，某几条「本来能秒出」的 TTFT 可能变差。NVIDIA 文档把这句写进了推荐理由：生产看排队和最坏 TTFT，不看幸运样本。
+除最后一块外，TRT-LLM 要求块长度是 KV block size 的整数倍，常见块大小为 64，以便对齐缓存页，见 `nvidia-paged-kv`。
 
-## 不是分离部署
+## 块大小为什么需要权衡
 
-Chunked prefill 仍在同一张 GPU、同一个 iteration 里混 context 和 generation。Prefill / decode 分池是把两阶段拆到两套机器，KV 要跨机搬。混部切块是调度；分池是拓扑。面试问「长 prompt 怎么办」先答 chunk；问「prefill 机器和 decode 机器」再答搬 KV。引擎怎么挂进 Triton 见 `nvidia-trt-llm`、`nvidia-triton-infer`。
+Decode 的小矩阵运算需要大量读内存，prefill 块则提供更大的矩阵计算。放在同一轮，可以改善 GPU 利用率，同时避免完整 8k 输入让一轮持续几百毫秒。
 
-## 追问
+$U$ 太大时，单个输入块仍会让生成请求等待；$U$ 太小时，输入被切得太碎，首 token 延迟会变差，内核执行太短，CUDA Graph 也更难使用，见 `nvidia-cuda-graph`。块应大到能有效执行矩阵乘法，又小到每轮时间满足 token 间隔要求。
 
-- **chunk 写成 1 行不行？** 等于把 prefill 退化成逐步 decode，算术强度塌掉，TTFT 极差。chunk 要大到 GEMM 饱和，又小到步长满足 TBT SLO。
-- **和 CUDA Graph？** 混合步的 token 数在变，整图难捕获；常 decode-only 走 graph，带 chunk 的步 eager 或 piecewise。
-- **必须 paged KV 吗？** 实际要。切块 + inflight 让每条序列的 KV 间断增长，连续预留又回到碎片。
-- **只服务长文档、没有交互 decode？** 切块仍能降低峰值工作集；混部收益小。那时更该把 $U$ 开大，或直接上分离 prefill 池。
+每轮工作集由 $U$ 决定后，就不必按服务支持的最大输入长度预留。因此，`max_num_tokens` 可以远小于 128k，把更多 HBM 留给 KV 缓存，提高并发。
+
+这不保证每条请求都更快。某条短输入原本一轮就能处理完，现在可能需要与 decode 请求分享预算，TTFT 反而变长。评估应看排队、平均和最坏延迟，不能只看原本最快的请求。
+
+## 和 prefill/decode 分离部署有什么区别
+
+分块调度仍在同一张 GPU、同一轮里混合输入处理和生成。分离部署则把 prefill 与 decode 放在不同设备池，必须跨设备传输 KV。
+
+所以一个是调度方式，一个是部署方式。引擎与 Triton 的集成见 `nvidia-trt-llm` 和 `nvidia-triton-infer`。
+
+## 面试追问
+
+- **每块只放一个 token 行不行？** 会让 prefill 接近逐 token 的 decode，难以利用大矩阵计算，首 token 延迟很差。
+- **如何使用 CUDA Graph？** 混合批次的 token 数会变化，完整图较难捕获。常见做法是纯 decode 使用图，带输入块的批次用普通执行或分段图。
+- **为什么需要分页 KV？** 分块和动态批处理使各请求的缓存逐步增长。继续按最大长度连续预留，会重新引入浪费与碎片问题。
+- **只有长文档，没有交互式生成呢？** 分块仍可降低峰值工作集，但混合调度收益较小，可以考虑更大的 $U$ 或独立 prefill 池。

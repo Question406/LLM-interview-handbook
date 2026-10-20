@@ -33,7 +33,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA Megatron Core 的 `context_parallel_size`、Ring Attention、长上下文预训练都会问：单卡装不下 $T$ 时注意力怎么切。名字容易和 `sys-seq-parallel` 撞车。先划清：Megatron SP 是 TP 的配套布局，LN / dropout 按 $T$ 切开，进列并行前仍 all-gather 完整序列；CP 切的是注意力本身，Q 分段驻留，KV 在 CP 组里搬家。四维切分里 CP 和 TP/PP/DP 怎么配，见 `sys-3d-parallel`；超长序列还要叠哪几味，见 `sys-overlong`。
+NVIDIA Megatron Core 的 `context_parallel_size`、Ring Attention、长上下文预训练都会问：单卡装不下 $T$ 时注意力怎么切。名字容易和 `sys-seq-parallel` 撞车。先划清：Megatron SP 是 TP 的配套布局，LN / dropout 按 $T$ 切开，进列并行前仍 all-gather 完整序列；CP 切的是注意力本身，Q 分段驻留，KV 在 CP 组里搬家。四维切分里 CP 和 TP/PP/DP 怎么配，见 `sys-3d-parallel`；超长序列还要结合哪些优化，见 `sys-overlong`。
 
 NVIDIA 岗还会追因果 mask 下环是否负载均衡、KV 交换能不能和 Flash kernel overlap。不提 zigzag 和 overlap，评委会当只背过名词。
 
@@ -45,19 +45,19 @@ NVIDIA 岗还会追因果 mask 下环是否负载均衡、KV 交换能不能和 
 
 和 TP 正交：CP 组是「同一套 TP 坐标、不同序列块」的那些卡。总卡数 $\mathrm{TP}\times\mathrm{CP}\times\mathrm{PP}\times\mathrm{DP}$。KV 交换发生在不同 TP 组的对应 rank 之间。节点内优先 NVLink；跨 IB 做大 CP，环上每跳延迟会翻出来。层次做法是节点内 all-to-all、跨节点再 ring，见 `sys-ulysses`。
 
-## 因果 mask 会把环打歪
+## 因果 mask 会导致环上负载不均
 
 Decoder 下，靠前的 query 合法 KV 短，靠后的长。按连续切片排环，末段那张卡每圈都在算大块，前面的卡很闲，step time 等于最忙的那张。Megatron CP 把序列切成 $2P$ 块，让每卡同时拿一块靠前、一块靠后（zigzag / load-balanced），有用的 FLOPs 拉齐。面试不提负载均衡，评委会以为你只看过环的示意图。
 
 Flash / cuDNN 注意力可以按块喂，不必自己写 $T\times T$ 分数矩阵。CP 省的是激活和 KV 工作区，不是把 $O(T^2)$ 的 FLOPs 变没；总计算仍在，只是摊到 $P$ 张卡。checkpoint 仍然要，见 `sys-act-checkpoint`。不要说「开了 CP 就可以关 SP」：SP 处理的是 TP 复制的 LN 激活，CP 处理的是注意力的序列轴，长上下文经常两件一起开。
 
-一个数量级：$T=128\mathrm{k}$，$P=8$，BF16，GQA 下 $n_{\mathrm{kv}}=8$、$d_h=128$。每卡驻留 $16\mathrm{k}$ token 的 KV；环上转 7 圈，每圈搬一块，总量接近一份完整 KV，大约 $2\cdot 128\mathrm{k}\cdot 8\cdot 128\cdot 2$ 字节量级，百 MB 而不是 GB。若改 all-gather 齐再算，HBM 峰值回到完整 $T$ 的 KV，CP 的显存意义没了。Nsight 上若 p2p 和 attention kernel 串行，就是通信墙，不是「环传很便宜」。
+一个数量级：$T=128\mathrm{k}$，$P=8$，BF16，GQA 下 $n_{\mathrm{kv}}=8$、$d_h=128$。每卡驻留 $16\mathrm{k}$ 个 token 的 KV；环上转 7 圈，每圈搬一块，总量接近一份完整 KV，大约 $2\cdot 128\mathrm{k}\cdot 8\cdot 128\cdot 2$ 字节量级，百 MB 而不是 GB。若改 all-gather 齐再算，HBM 峰值回到完整 $T$ 的 KV，CP 的显存意义没了。Nsight 上若 p2p 和 attention kernel 串行，就是通信墙，不是「环传很便宜」。
 
 反向对称：对 KV 的梯度沿环 reduce，Q 的梯度留本地。通信体积仍是 KV 块量级，同样要和本地 dgrad overlap。GQA 让反向也变轻。和 PP 叠时，每个 stage 内部自己环；不要让 CP 环跨过 pipeline 边界，否则 P2P 激活和 KV 环抢同一条 IB。
 
 错误说法：CP 等于把 batch 切开（那是 DP）；环传的是 Q（Q 本地才对，传 Q 体积还随头数更大）；不 overlap 也能当免费的。
 
-推理侧不要把训练环原样搬到 decode：在线 batch 不齐、$T$ 每步在涨，环的负载均衡假设会碎。Serving 更常是分页 KV、chunked prefill 或 PD 分离。训练 CP 解决的是「单卡装不下这一条长序列的注意力工作区」。
+推理侧不要把训练环原样搬到逐 token 生成（decode）：在线 batch 不齐、$T$ 每步在涨，环的负载均衡假设不再成立。Serving 更常是分页 KV、分块输入预填充（chunked prefill） 或 PD 分离。训练 CP 解决的是「单卡装不下这一条长序列的注意力工作区」。
 
 ## 追问
 
@@ -67,4 +67,4 @@ Flash / cuDNN 注意力可以按块喂，不必自己写 $T\times T$ 分数矩�
 - **decode 也用训练这套环吗？** 训练 prefill 形状齐、好环。在线 decode 每步 $T$ 在涨、batch 不齐，serving 更常是分页 KV 和分离部署，见 `sys-paged-attn`、`sys-prefill-decode-disagg`。
 - **和 PP 的环会打架吗？** CP 环应停在 stage 内。跨 stage 会和 pipeline P2P 抢链路。
 - **GQA 对环体积意味着什么？** $n_{\mathrm{kv}}$ 下降，环上字节线性降。长上下文爱 GQA 的系统理由之一。
-- **不 overlap 还能开 CP 吗？** 能装下更长 $T$，但墙钟可能更差。Nsight 上环和 kernel 串行就是在买显存、付通信税。
+- **不 overlap 还能开 CP 吗？** 能装下更长 $T$，但实际耗时可能更差。Nsight 上环和 kernel 串行就是以通信开销换取更低的显存占用。

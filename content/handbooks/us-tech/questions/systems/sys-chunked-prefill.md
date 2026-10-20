@@ -4,10 +4,7 @@ section: systems
 order: 19
 level: A
 title: 系统：chunked prefill 和 decode 混部
-quick: >-
-  长 prompt 一次打满 SM，会把正在飞的 decode 流水拆碎，TPOT 出尖刺。切成 token 块，每 iteration 一块
-  prefill 加上当前 decode，块大小卡在还能喂饱 Tensor Core、又不让一步过长。单池折中；两阶段 SLO 仍打架再
-  上 PD 分离。
+quick: "把长 prompt 切成 token 块，每步先让在飞的 decode 走一步，再塞一块 prefill，一步耗时就被块大小封顶。块要大到喂饱 Tensor Core，又不能让 decode 卡顿。"
 tags:
   - vLLM
   - DistServe
@@ -34,9 +31,9 @@ sources:
 
 ## 题怎么来的
 
-vLLM 的 chunked prefill、Microsoft SARATHI / Sarathi-Serve、DistServe 论文里当「不拆池的基线」，问的是同一件事：prefill 和 decode 的 roofline 不同，混在一张卡上怎么少互相伤害。PD 分离见 `sys-prefill-decode-disagg`；iteration 调度见 `sys-cont-batch`。本题只谈单池切块混部。
+vLLM 的 chunked 输入预填充（prefill，即处理输入并建立缓存）、Microsoft SARATHI / Sarathi-Serve、DistServe 论文里当「不拆池的基线」，问的是同一件事：prefill 和 逐 token 生成（decode） 的 roofline 不同，混在一张卡上怎么少互相伤害。PD 分离见 `sys-prefill-decode-disagg`；iteration 调度见 `sys-cont-batch`。本题只谈单池切块混部。
 
-评委若问「为什么不直接分离」，短 prompt、卡少时搬 KV 的税比同卡切块更大。先讲切块，再讲什么时候切块不够。
+评委若问「为什么不直接分离」，短 输入提示（prompt）、卡少时搬运 KV 的额外开销比同卡切块更大。先讲切块，再讲什么时候切块不够。
 
 切块之后每一步的 token 预算要封顶，否则又退化成整段 prefill。这和 `max_num_seqs` 是两道闸。
 
@@ -44,9 +41,9 @@ vLLM 的 chunked prefill、Microsoft SARATHI / Sarathi-Serve、DistServe 论文�
 
 Prefill 算术强度随 prompt 长度涨，一条 $8\mathrm{k}$ 的 prompt 可以占满 SM 几十到几百毫秒。同一 GPU 上的 decode batch 是 memory-bound 的瘦 GEMM，被这次大 kernel 打断，TPOT 出现尖刺。Orca 式 continuous batching 允许新请求在 iteration 边界插入，但插入的是 **整段** prefill 的话，调度粒度仍被最长那次 prefill 绑住。
 
-SARATHI 的修法：把 prefill 切成大约等计算量的 token 块（常见 512-2048，跟 GPU 和 $d$ 走）。每个 iteration 先保证在飞的 decode 都走一步，再塞一块未完成的 prefill，使本步 token 数靠近一个预算。一步墙钟被块大小封顶，和整段 prompt 多长解耦。这就是 stall-free：decode 不用等别人的 8k 算完。
+SARATHI 的修法：把 prefill 切成大约等计算量的 token 块（常见 512-2048，跟 GPU 和 $d$ 走）。每个 iteration 先保证在飞的 decode 都走一步，再塞一块未完成的 prefill，使本步 token 数靠近一个预算。一步实际耗时被块大小封顶，和整段 prompt 多长解耦。这就是 stall-free：decode 不用等别人的 8k 算完。
 
-块太小：prefill 变瘦，GEMM 喂不饱，TTFT 变差（同一 prompt 要更多步、每步还有 kernel 启动）。块太大：又接近整段 prefill，decode 尖刺回来。预算要对着「这一步还剩多少 decode token」调，不是固定切 2048 就结束。混合 batch 的形状：24 条 decode + 1 条 512-token 的 prefill 块，比 24 条 decode 等一条 8k prefill 的 P99 好看。
+块太小：prefill 变瘦，GEMM 喂不饱，首个 token 的等待时间（TTFT） 变差（同一输入提示 要更多步、每步还有 kernel 启动）。块太大：又接近整段 prefill，decode 尖刺回来。预算要对着「这一步还剩多少 decode token」调，不是固定切 2048 就结束。混合 batch 的形状：24 条 decode + 1 条 512-token 的 prefill 块，比 24 条 decode 等一条 8k prefill 的 P99 好看。
 
 ## 混部仍在抢 KV 和带宽
 
@@ -59,7 +56,7 @@ SARATHI 的修法：把 prefill 切成大约等计算量的 token 块（常见 5
 ## 追问
 
 - **块大小怎么选？** 对着 decode SLO 和 prefill 能否喂饱 Tensor Core。先定一步最大毫秒，再反推 token 预算。块太小喂不饱 Tensor Core，TTFT 变差；块太大又接近整段 prefill，decode 尖刺回来。
-- **TTFT 会不会更差？** 常会。同一 prompt 拆多步，中间还插入别人的 decode。换的是别人的 TPOT。两头都要紧就分离。
+- **TTFT 会不会更差？** 常会。同一输入提示 拆多步，中间还插入别人的 decode。换的是别人的 TPOT。两头都要紧就分离。
 - **和 continuous batching 是一层吗？** 不是。Continuous batching 是 iteration 插入/退出；chunked prefill 是插入时 prefill 不许一次吃完。要一起开。
 - **pipeline 上为什么也爱切块？** 各 microbatch 计算量齐，气泡小。SARATHI 论文把这当成第二收益，见 `nvidia-pipeline-bubble`。
 - **切块改注意力数值吗？** 不应改。已完成块的 KV 留下，下一块当带 cache 的 prefill。数值漂了是实现 bug。

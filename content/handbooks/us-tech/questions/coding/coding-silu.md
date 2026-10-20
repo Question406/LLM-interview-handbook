@@ -5,10 +5,9 @@ order: 24
 level: A
 title: 白板：SiLU / Swish 手写，数值上哪里会炸
 quick: >-
-  $\mathrm{SiLU}(x)=x\cdot\sigma(x)$，即 $\beta=1$ 的 Swish。$\sigma$ 在大负数上
-  $e^{-x}$ 会 overflow，要按正负分支或 `tanh` 形式写。它不是奇函数。Llama 的 SwiGLU 只把它放在
-  gate 支路。
+  $\mathrm{SiLU}(x)=x\cdot\sigma(x)$，即 $\beta=1$ 的 Swish；大负数上 $e^{-x}$ 会溢出，$\sigma$ 要按正负分支或用 `tanh` 形式写。Llama 的 SwiGLU 只在 gate 支路用它。
 tags:
+  - 完整编程练习
   - Coding
   - SiLU
   - Swish
@@ -16,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: torch.nn.functional.silu
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.silu.html
@@ -29,9 +28,109 @@ sources:
     type: primary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
+
+### 题面、接口与约束
+
+- `sigmoid_stable(x)`：数值稳定的 sigmoid，任何有限输入都不溢出，返回 float32。
+- `silu(x)`：$x\cdot\sigma(x)$，用 `sigmoid_stable` 实现。
+- `silu_tanh(x)`：用恒等式 $\sigma(x)=\tfrac12(1+\tanh(x/2))$ 实现的 SiLU，作为独立对照。
+- 输入是有限的浮点张量，可以包含 ±1000 这样的极端值。两个 SiLU 都在 float32 里计算，输出的形状和 dtype 与输入一致；前向和梯度都不能出现 inf/NaN。
+
+### 输入输出示例
+
+```text
+silu(0)     = 0
+silu(1000)  ≈ 1000
+silu(-1000) ≈ 0      # 朴素写法前向碰巧也是 -0，但反向梯度是 NaN
+```
+
+### 解题思路与正确性
+
+稳定版 sigmoid 只算 $z=e^{-|x|}$。$|x|$ 非负，所以 $z\in(0,1]$，永远不会溢出。$x\ge 0$ 时 $\sigma(x)=1/(1+z)$；$x<0$ 时 $\sigma(x)=e^{x}/(1+e^{x})=z/(1+z)$。
+
+`torch.where` 会把两个分支都算出来再挑选，没被选中的分支也参与计算，反向时它的梯度虽然乘了 0，但如果那个分支本身是 inf，$0\cdot\infty$ 仍然是 NaN。所以两个分支都必须对所有输入安全，这里两个分支都只用 $z$，满足这个要求。
+
+`silu_tanh` 走的是另一条公式，`tanh` 本身对大输入是饱和的，不会溢出。两个实现和 `F.silu` 三方对照，前向和梯度都一致，才说明稳定写法是对的。
+
+### 完整参考实现（Python 3）
+
+```python
+import torch
+import torch.nn.functional as F
+
+
+def sigmoid_stable(x):
+    """数值稳定的 sigmoid：只计算 exp(-|x|)，任何有限输入都不溢出。返回 float32。"""
+    x = x.float()
+    z = torch.exp(-torch.abs(x))  # z ∈ (0, 1]
+    return torch.where(x < 0, z / (1 + z), 1 / (1 + z))
+
+
+def silu(x):
+    """SiLU(x) = x * sigmoid(x)，在 float32 里计算，输出转回输入 dtype。"""
+    return (x.float() * sigmoid_stable(x)).to(x.dtype)
+
+
+def silu_tanh(x):
+    """用 sigmoid(x) = (1 + tanh(x / 2)) / 2 计算 SiLU，作为独立对照。"""
+    x32 = x.float()
+    return (x32 * (0.5 * (1.0 + torch.tanh(0.5 * x32)))).to(x.dtype)
+```
+
+### 可执行测试
+
+```python
+torch.set_num_threads(1)
+
+x = torch.tensor([-1000.0, -40.0, -2.0, 0.0, 2.0, 40.0, 1000.0], requires_grad=True)
+
+# 前向：极端值也有限，和 F.silu 一致
+ours = silu(x)
+reference = F.silu(x)
+assert torch.isfinite(ours).all()
+assert torch.allclose(ours, reference, atol=1e-6)
+
+# 反向：梯度和 F.silu 一致，没有 NaN
+grad_ours, = torch.autograd.grad(ours.sum(), x)
+grad_reference, = torch.autograd.grad(reference.sum(), x)
+assert torch.isfinite(grad_ours).all()
+assert torch.allclose(grad_ours, grad_reference, atol=1e-6)
+
+# tanh 形式作为独立对照
+assert torch.allclose(silu_tanh(x), reference, atol=1e-5)
+
+# 题面示例
+assert silu(torch.tensor(0.0)).item() == 0
+assert abs(silu(torch.tensor(1000.0)).item() - 1000) < 1e-3
+assert abs(silu(torch.tensor(-1000.0)).item()) < 1e-6
+
+# sigmoid_stable 在两侧都不溢出，且 sigma(-x) = 1 - sigma(x)
+grid = torch.linspace(-50, 50, 101)
+assert torch.isfinite(sigmoid_stable(grid)).all()
+assert torch.allclose(sigmoid_stable(-grid), 1 - sigmoid_stable(grid), atol=1e-6)
+
+# 半精度输入：输出 dtype 不变，-20 处结果约为 0 而不是 NaN
+half = torch.tensor([-20.0, 0.0, 3.0], dtype=torch.float16)
+assert silu(half).dtype == torch.float16
+assert torch.allclose(silu(half).float(), F.silu(half.float()), atol=1e-2)
+assert torch.isfinite(silu(half)).all()
+
+# 输出形状不变
+assert silu(torch.randn(2, 3, 4)).shape == (2, 3, 4)
+```
+
+### 复杂度与追问
+
+设元素个数为 N。时间和输出空间都是 O(N)；float32 中间结果也是 O(N)。
+
+- 追问「为什么不能只在一个分支里用 `exp(-x)`」：`torch.where` 两个分支都会算，没选中的分支溢出成 inf，反向时也会把 NaN 带进梯度。所以两侧都必须数值安全。
+
 ## 题怎么来的
 
-Llama MLP 的门控是 SiLU，不是 ReLU / GELU。Meta 会让你手写；Apple 端侧会问 fp16 下大负值。SwiGLU 怎么接三张权重见 `coding-swiglu`。PyTorch 的 `F.silu` 是这条，白板不要调用完事，要能写出稳定的 $\sigma$。
+Llama MLP 的门控用的是 SiLU，不是 ReLU 或 GELU。Meta 会让你手写；Apple 端侧会问 fp16 下大负值会怎样。SwiGLU 怎么接三个权重矩阵见 `coding-swiglu`。PyTorch 的 `F.silu` 就是这个函数，但白板上不能调用一下就完事，要能写出稳定的 $\sigma$。
 
 ## 定义和稳定 sigmoid
 
@@ -40,9 +139,9 @@ $$
 \sigma(x)=\tfrac12\big(1+\tanh(x/2)\big).
 $$
 
-Swish$_\beta(x)=x\,\sigma(\beta x)$；SiLU 就是 $\beta=1$。$x\to+\infty$ 时 SiLU $\to x$；$x\to-\infty$ 时 $\to 0$。过原点：$\mathrm{SiLU}(0)=0$，小正数区域略大于 $0$，像「平滑 ReLU」。它不是奇函数：$\mathrm{SiLU}(-x)=-x\sigma(-x)=-x(1-\sigma(x))$，和 $-\mathrm{SiLU}(x)$ 差一项 $x$。
+Swish$_\beta(x)=x\,\sigma(\beta x)$，SiLU 就是 $\beta=1$ 的情况。$x\to+\infty$ 时 SiLU $\to x$；$x\to-\infty$ 时 SiLU $\to 0$。它过原点，$\mathrm{SiLU}(0)=0$，在小正数区域略大于 $0$，像一个「平滑的 ReLU」。它不是奇函数：$\mathrm{SiLU}(-x)=-x\sigma(-x)=-x(1-\sigma(x))=\mathrm{SiLU}(x)-x$，和 $\mathrm{SiLU}(x)$ 差一项 $x$；奇函数则要求它等于 $-\mathrm{SiLU}(x)$。
 
-直接 `x / (1 + exp(-x))`：大正 $x$ 时 $e^{-x}$ 下溢成 $0$，结果是 $x$，没问题；大负 $x$ 时 $-x$ 为正，$e^{-x}$ overflow 成 inf，分母 inf，得到 NaN。按符号拆：
+直接写 `x / (1 + exp(-x))` 会怎样：$x$ 是大正数时，$e^{-x}$ 下溢成 $0$，结果是 $x$，没问题；$x$ 是大负数时，$-x$ 是大正数，$e^{-x}$ 溢出成 inf，分母变成 inf。前向结果是 $x/\infty=-0$，碰巧接近正确值，但反向的梯度里会出现 $\infty/\infty$，得到 NaN。所以要按符号拆开：
 
 $$
 \sigma(x)=\begin{cases}
@@ -51,42 +150,19 @@ e^{x}/(1+e^{x}) & x<0.
 \end{cases}
 $$
 
-或全程用 $\tanh$ 形式。乘法 $x\cdot\sigma(x)$ 在 $x$ 极负、$\sigma\approx 0$ 时是 $0$，不要先 overflow 再乘。
+或者全程用 $\tanh$ 形式。$x$ 极负时 $\sigma(x)\approx 0$，乘积 $x\cdot\sigma(x)$ 自然是 $0$，关键是计算过程中不能先溢出再乘。
 
-```python
-import torch
-import torch.nn.functional as F
+`F.silu` 对半精度有融合的 kernel。自己写时先升到 fp32 计算，再转回原 dtype，和 RMSNorm 是同一个习惯，见 `coding-rmsnorm`。
 
-def sigmoid_stable(x):
-    x = x.float()
-    neg = x < 0
-    z = torch.exp(-torch.abs(x))
-    return torch.where(neg, z / (1 + z), 1 / (1 + z))
+## 和 GELU 的关系、在 MLP 里的位置
 
-def silu(x):
-    return x * sigmoid_stable(x)
+GELU 是 $x\Phi(x)$（$\Phi$ 是标准正态分布的 CDF），形状和 SiLU 很接近，GPT-2 用的是 GELU。Llama 把 SiLU 放在 gate 支路上：`silu(x W_g) * (x W_u)`，而不是 `silu(x W)` 之后再接一个线性层。
 
-def silu_tanh(x):
-    x32 = x.float()
-    return x * (0.5 * (1.0 + torch.tanh(0.5 * x32)))
-
-def check():
-    x = torch.tensor([0.0, 2.0, -2.0, 40.0, -40.0])
-    y = silu(x)
-    assert torch.allclose(y, F.silu(x.float()), atol=1e-5)
-    assert torch.isfinite(y).all()
-    assert silu(x[:1]).item() == 0.0
-```
-
-`F.silu` 对半精度有 fused kernel。自己写时先升 fp32 再 cast 回，和 RMSNorm 同一习惯，见 `coding-rmsnorm`。
-
-## 和 GELU、在 MLP 里的位置
-
-GELU 是 $x\Phi(x)$，形状接近 SiLU，GPT-2 用 GELU。Llama 把 SiLU 放在 gate：`silu(x W_g) * (x W_u)`，不是 `silu(x W)` 再线性。导函数 $\mathrm{SiLU}'(x)=\sigma(x)+x\sigma(x)(1-\sigma(x))$，反向手推时别漏第二项。面试若问「为什么不用 ReLU」：门控需要光滑、非零负半轴，dead ReLU 和 GLU 不搭。
+导数是 $\mathrm{SiLU}'(x)=\sigma(x)+x\sigma(x)(1-\sigma(x))$，手推反向时别漏掉第二项。面试如果问「为什么不用 ReLU」：门控需要光滑、负半轴梯度不为零的激活；ReLU 在负半轴梯度为零，会出现 dead ReLU，和 GLU 结构不搭。
 
 ## 追问
 
-- **`x * sigmoid(x)` 在 fp16 里 $-20$ 会怎样？** 不稳定实现会在 `exp(20)` 炸掉。稳定分支应给出 $\approx 0$。
-- **SiLU 和 Swish 要不要当成两个函数？** 论文里 Swish 带 $\beta$；实现和 Llama 说的 SiLU 就是 $\beta=1$。别答成无关激活。
-- **能 inplace 吗？** $x$ 还要给 backward 用 $\sigma(x)$。除非 fused backward 存了中间件，否则别 `silu_` 掉唯一的一份。
-- **和 z-loss 有关吗？** 无关。z-loss 钉 logits 的 log-partition，见 `coding-z-loss`。SiLU 是 MLP 非线性。
+- **fp16 里朴素的 `x * sigmoid(x)` 在 $-20$ 处会怎样？** fp16 最大约 65504，`exp(20)` 约为 $4.9\times10^8$，会溢出成 inf。前向结果碰巧是 0，但反向梯度是 NaN。稳定写法前向给出 $\approx 0$，梯度也有限。
+- **SiLU 和 Swish 要不要当成两个函数？** 论文里的 Swish 带参数 $\beta$；实现里和 Llama 说的 SiLU 就是 $\beta=1$ 的 Swish。别把它答成另一个不相关的激活函数。
+- **能不能 inplace？** 反向要用 $x$ 来算 $\sigma(x)$。除非融合的 backward 自己存了中间结果，否则不要用 `silu_` 把唯一一份 $x$ 覆盖掉。
+- **和 z-loss 有关吗？** 无关。z-loss 约束的是 logits 的 log-partition，见 `coding-z-loss`；SiLU 是 MLP 里的非线性。

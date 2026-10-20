@@ -4,10 +4,7 @@ section: nvidia
 order: 24
 level: A
 title: NVIDIA：KV 卸到 CPU / NVMe，何时带宽还不如量化
-quick: >-
-  热 KV 每步都要从 HBM 读，H100 大约 3 TB/s；PCIe 5.0 x16 大约 64 GB/s，NVMe 再低一截。Decode
-  工作集走卸载，墙钟会被 PCIe 打死。卸载只适合冷前缀、暂停请求、多轮里暂时不飞的块。容量问题先
-  FP8 KV / GQA / 分页，热路径量化几乎总比搬去 CPU 快。
+quick: "HBM 约 3 TB/s，PCIe 5.0 x16 只有约 64 GB/s，正在 decode 的热 KV 必须留在 HBM，先用 FP8 KV、GQA 压容量。卸载只适合冷前缀和暂停的请求。"
 tags:
   - NVIDIA
   - KV Cache
@@ -34,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-长上下文一上，评委就会问「HBM 不够把 KV 丢 CPU 行不行」。TensorRT-LLM 的 KV 文档有 `host_cache_size`：GPU 页淘汰前可以卸到 pinned host，命中再搬回来。官方 issue 写过：原生是 host DRAM，不是 GDS 直打 NVMe；NVMe / 远端要用 KV connector 自己写。FlexGen 是单卡吞吐路线，把层间权重和缓存在 GPU / CPU / 盘之间切，和在线 decode 的 SLO 不是同一题。我会先报带宽数字，再画热 / 温 / 冷。
+长上下文一上，评委就会问「HBM 不够把 KV 丢 CPU 行不行」。TensorRT-LLM 的 KV 文档有 `host_cache_size`：GPU 页淘汰前可以卸到 pinned host，命中再搬回来。官方 issue 写过：原生是 host DRAM，不是 GDS 直打 NVMe；NVMe / 远端要用 KV connector 自己写。FlexGen 是单卡吞吐路线，把层间权重和缓存在 GPU / CPU / 盘之间切，和在线 逐 token 生成（decode） 的 SLO 不是同一题。我会先报带宽数字，再画热 / 温 / 冷。
 
 ## 三层带宽差的是数量级
 
@@ -48,7 +45,7 @@ $$
 
 HBM 到 PCIe 大约快 $50\times$；到 NVMe 再差几倍，而且是顺序峰值，随机 16-64 token 的页更惨。设一层 KV 每 token $c$ 字节（含 K 和 V、所有 kv head）。读 $T$ 个 token 的时间下界 $Tc/B_{\mathrm{bus}}$。$T=32\mathrm{k}$、$c=256\,\mathrm{B}$ 量级时，HBM 是几十微秒，PCIe 是毫秒，NVMe 可以到十毫秒。Decode 的 TBT SLO 若是 50 ms 量级，**热路径每步从 CPU 流一遍 KV** 会直接打穿。
 
-所以卸载不是「把 cache 变大就加速」。它只增加 **容量**。命中冷页时，你在用一次 PCIe 拷贝换一次重算 prefill。拷贝划得来，当且仅当这块 KV **不是每 token 都读**。
+所以卸载不是「把 cache 变大就加速」。它只增加 **容量**。命中冷页时，你在用一次 PCIe 拷贝换一次重算 输入预填充（prefill，即处理输入并建立缓存）。拷贝划得来，当且仅当这块 KV **不是每 token 都读**。
 
 TRT-LLM：`host_cache_size` 分配 pinned host 二级池；GPU 页按优先级淘汰。`secondary_offload_min_priority` 以下的块不卸、直接丢，避免低价值块把 PCIe 打满。演示脚本把 GPU `max_tokens` 故意设很小，才能看见 reused blocks；生产上若 GPU 池已经装得下工作集，卸载路径不该被踩热。
 
@@ -58,12 +55,12 @@ TRT-LLM：`host_cache_size` 分配 pinned host 二级池；GPU 页按优先级�
 
 经验规则我面试就这么说：
 
-1. **正在飞的 decode 工作集** 必须留在 HBM。先 GQA / FP8 KV / 更小 page 碎片，见 `nvidia-paged-kv`。
+1. **正在生成的请求 工作集** 必须留在 HBM。先 GQA / FP8 KV / 更小 page 碎片，见 `nvidia-paged-kv`。
 2. **量化把热集装进 HBM 了**，就不要为这批请求开 host offload。PCIe 再快也快不过半精度变 FP8 的那一倍 HBM。
 3. **卸载留给冷数据：** 共享 system prefix 的二级副本、刚结束但可能多轮接着来的会话、被抢占暂停的请求、disagg 里 prefill 节点做好等 decode 节点来拉的块。
 4. **NVMe** 只当「比重算 prefill 便宜的归档」。128k 会话的冷前缀可以落盘；当前生成那 4k 窗口不行。LMCache 一类社区方案走这条，TRT-LLM 要自己接 connector。
 
-错法：把 FlexGen 的「单卡跑 175B、追求 token/s」搬到在线 chat。FlexGen 用大 batch、层间换入换出换吞吐，TTFT / TBT 不是目标。在线 IFB 每步都有活着的 $B$ 条序列，它们的 KV 全是热的，见 `nvidia-inflight-batch`。
+常见误区是：把 FlexGen 的「单卡跑 175B、追求 token/s」搬到在线 chat。FlexGen 用大 batch、层间换入换出换吞吐，首个 token 的等待时间（TTFT） / TBT 不是目标。在线 IFB 每步都有活着的 $B$ 条序列，它们的 KV 全是热的，见 `nvidia-inflight-batch`。
 
 ## 和重算比一笔账
 
@@ -77,3 +74,11 @@ UVM（`use_uvm`）看起来省事，缺页延迟不可控，serving 很少当主
 - **block 很小更好卸吗？** 页太小，PCIe 事务碎、随机 I/O 更差。卸载粒度往往比 attention tile 更粗。
 - **和 chunked prefill？** 切块降低的是一步工作集，不是把 KV 赶出 GPU。两件事可以叠，但热 KV 还在卡上，见 `nvidia-chunked-prefill`。
 - **TRT-LLM 能直接打 NVMe 吗？** 文档路径是 host pinned；盘 / 远端走 KV connector。面试不要吹 GDS 是内置开关。
+
+## 相关题
+
+- [[sys-kv-quant]]：本题说「先量化」的那条路怎么走，讲 KV 的 outlier 和 INT8/FP8 scale 怎么定。
+- [[nvidia-fp8-kv]]：TRT-LLM 里 FP8 KV 的显存账和开关，和本题的卸载开关是同一套引擎里的两个选项。
+- [[apple-ondevice-kv]]：同样从 KV 字节和带宽算起，但场景是手机端，没有卸载这条路，只能靠 GQA 和 8-bit。
+- [[sys-kv-offload]]：同一机制的系统题，侧重 HBM/CPU/盘三层怎么分工、命中率什么时候值钱，和本题几乎可以当一题复习。
+- [[openai-continuous-batching]]：调度那一侧：抢占长请求时 KV 必须能卸载或丢弃，本题回答卸到哪才划算。

@@ -38,11 +38,11 @@ NVIDIA 推理岗现在会把「你用过 FlashAttention 吗」升级成「FlashI
 
 ## 不是又一个 FlashAttention
 
-FlashAttention 解决的是「别把 $[T,T]$ 写进 HBM」，训练 / 连续 prefill 最赚，见 `nvidia-flash-attn`。Serving 的 KV 不是连续的：页大小固定、序列长短不一、还有共享前缀。FlashInfer 把 KV 看成 **block-sparse**，核直接按 page index gather，不必先 gather 成连续缓冲再跑 FA。论文还写 JIT 模板：causal、sliding window、GQA、MLA，一种调度多种变体。
+FlashAttention 解决的是「别把 $[T,T]$ 写进 HBM」，训练 / 连续 输入预填充（prefill，即处理输入并建立缓存） 最赚，见 `nvidia-flash-attn`。Serving 的 KV 不是连续的：页大小固定、序列长短不一、还有共享前缀。FlashInfer 把 KV 看成 **block-sparse**，核直接按 page index gather，不必先 gather 成连续缓冲再跑 FA。论文还写 JIT 模板：causal、sliding window、GQA、MLA，一种调度多种变体。
 
-调度和 CUDA Graph 的缝：IFB 每步 $T_i$ 都在变，Graph 要静态配置。FlashInfer 把 **tile 尺寸** 留在编译期，把 **各请求的 KV 长度** 留在运行期调度，用 load-balanced 的 split 让长序列多拿 CTA、短序列少拿，和 `nvidia-flash-decode` 的 split-K 是同一类 occupancy 药。Wrapper 名字面试能说即可：`BatchDecodeWithPagedKVCacheWrapper`、`BatchPrefillWithPagedKVCacheWrapper`。POD-Attention 把同一步里的 prefill 行和 decode 行融进一个核，对应 chunked / inflight 混部，见 `nvidia-chunked-prefill`、`nvidia-inflight-batch`。
+调度和 CUDA Graph 的缝：IFB 每步 $T_i$ 都在变，Graph 要静态配置。FlashInfer 把 **tile 尺寸** 留在编译期，把 **各请求的 KV 长度** 留在运行期调度，用 load-balanced 的 split 让长序列多拿 CTA、短序列少拿，和 `nvidia-flash-decode` 的 split-K 是同一类 occupancy 药。Wrapper 名字面试能说即可：`BatchDecodeWithPagedKVCacheWrapper`、`BatchPrefillWithPagedKVCacheWrapper`。POD-Attention 把同一步里的 prefill 行和 逐 token 生成（decode） 行融进一个核，对应 chunked / inflight 混部，见 `nvidia-chunked-prefill`、`nvidia-inflight-batch`。
 
-Cascade attention：共享 system prompt 的页只算一次，再和各请求私有后缀拼 softmax。这是 kernel 支持 prefix 共享，物理页怎么 refcount 仍是 vLLM 的 block table，见 `nvidia-paged-kv`。
+Cascade attention：共享 system 输入提示（prompt） 的页只算一次，再和各请求私有后缀拼 softmax。这是 kernel 支持 prefix 共享，物理页怎么 refcount 仍是 vLLM 的 block table，见 `nvidia-paged-kv`。
 
 ## Append KV 为什么单独成核
 
@@ -54,7 +54,7 @@ RoPE 必须在写入页之前做：cache 里存的是旋转后的 $K$，下一�
 
 ## Sampler：词汇表排序才是税
 
-一步 transformer 结束之后还要从 $[B, V]$ 的 logits 里抽 token。$V=128\mathrm{k}$ 时 GPU 上做完整 sort 的墙钟可以碰到 attention 同量级，尤其是小 batch decode。FlashInfer 的博客：过滤（top-$k$ / top-$p$ / min-$p$）加采样可以 **sorting-free**，用 dual-pivot rejection，最坏对数级，而不是 $V\log V$。数值上要保持和「先滤再多项式」同一分布，不能图快改采样定义。
+一步 transformer 结束之后还要从 $[B, V]$ 的 logits 里抽 token。$V=128\mathrm{k}$ 时 GPU 上做完整 sort 的实际耗时可以碰到 attention 同量级，尤其是小 batch decode。FlashInfer 的博客：过滤（top-$k$ / top-$p$ / min-$p$）加采样可以 **sorting-free**，用 dual-pivot rejection，最坏对数级，而不是 $V\log V$。数值上要保持和「先滤再多项式」同一分布，不能图快改采样定义。
 
 投机路径另有 `chain_speculative_sampling`：草稿 token 和两套概率进一个核，按 $p/q$ 拒绝采样，输出接受前缀再加一个 bonus token。这是采样核，不是草稿怎么生成。Medusa / EAGLE 见 `nvidia-spec-medusa`。
 

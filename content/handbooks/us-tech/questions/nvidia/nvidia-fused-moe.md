@@ -4,10 +4,7 @@ section: nvidia
 order: 26
 level: S
 title: NVIDIA：fused MoE 的 permute、grouped GEMM、unpermute
-quick: >-
-  路由之后 token 还按序列排，GEMM 吃不到同一 expert。Permute 按 expert 把行聚齐，grouped GEMM
-  一次核吃完 $E$ 组不同 $M_i$，unpermute 加 top-$k$ 权重写回原序。Fused 指 gather / SwiGLU /
-  scatter 尽量不回 HBM。Decode 的 $M_i$ 更碎，没有 inflight 就融不动。
+quick: "Permute 按 expert 把 token 行聚齐，grouped GEMM 一次处理各组不同的 $M_i$，unpermute 乘 top-$k$ 权重写回原序。fused 指 gather、激活和 scatter 不回 HBM。"
 tags:
   - NVIDIA
   - MoE
@@ -65,9 +62,9 @@ Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核。Megatron 训练侧常
 
 TRT-LLM 的 Triton / CUTLASS / DeepGEMM 后端都走这套骨架。Triton 核注释写得很直：`sorted_token_ids` 按 expert 聚齐并 pad 到 `BLOCK_M` 的倍数，无效 pad 行要 mask，否则脏数据进累加器。
 
-## Decode 把 $M_i$ 撕碎
+## Decode 时各专家的 $M_i$ 很小
 
-Prefill：$N=B\cdot T$ 可以到几千，即使 $E=64$、$k=2$，$M_i$ 的均值还能喂满 tile。Decode：$N\approx B_{\mathrm{inflight}}$，再除 $E$，很多 expert 的 $M_i$ 是 0 或 1。Grouped 仍比 Python 循环强，但 Tensor Core 利用率差。药是 IFB 把瞬时 $B$ 抬上去，见 `nvidia-inflight-batch`。没有足够的 $M$，融不融合都慢。
+Prefill：$N=B\cdot T$ 可以到几千，即使 $E=64$、$k=2$，$M_i$ 的均值还能喂满 tile。Decode：$N\approx B_{\mathrm{inflight}}$，再除 $E$，很多 expert 的 $M_i$ 是 0 或 1。Grouped 仍比 Python 循环强，但 Tensor Core 利用率差。可以用 IFB 提高瞬时 $B$，见 `nvidia-inflight-batch`。没有足够的 $M$，融不融合都慢。
 
 EP 大于 1：permute 之前先 all-to-all，每卡只看到自己那 $E/\mathrm{EP}$ 个 expert 的 token。NVIDIA 博客写过：naive 实现给每个 expanded token 起一个 CTA，大 EP 时大量 CTA 发现自己是无效 token 直接退出，launch 税比计算还大。后来改成只给有效行起 block。热点 expert 让某 rank 的 $M$ 爆炸，别人空转，这是负载问题不是 GEMM 公式，见 `nvidia-moe-gemm`。
 
@@ -82,6 +79,12 @@ FP8 / W4 的 grouped 路径还要带 per-group scale，tile 对齐更烦。质�
 ## 追问
 
 - **不 permute 行不行？** 行，变成 gather GEMM，几乎总更慢。permute 的代价是一次读写，换的是规整 $M_i$。
-- **pad 到 `BLOCK_M` 算不算浪费？** Decode 上浪费比例高，这是小 $M$ 的税。减小 block 会伤 prefill。常两套核或按 $N$ 分发。
+- **pad 到 `BLOCK_M` 算不算浪费？** Decode 上浪费比例高，这是小 $M$ 带来的额外开销。减小 block 会伤 输入预填充（prefill，即处理输入并建立缓存）。常两套核或按 $N$ 分发。
 - **top-$k$ 权重何时乘？** 乘在 down-proj 之后、unpermute 之时，避免门控缩放到中间激活再进第二段 GEMM 的量化范围。有的核融进 epilogue。
-- **和 dense MLP 比 FLOPs？** 每 token 只算 $k$ 个 expert，算术上 $k/E$。墙钟还要加 permute + 不规则 $M$ + all-to-all，MFU 按 dense 套会骗人。
+- **和 dense MLP 比 FLOPs？** 每 token 只算 $k$ 个 expert，算术上 $k/E$。实际耗时还要加 permute + 不规则 $M$ + all-to-all，MFU 按 dense 套会骗人。
+
+## 相关题
+
+- [[nvidia-moe-gemm]]：本题的前篇，和本题大量重合，讲训练侧为什么不能按专家循环 $E$ 次 GEMM，没有展开融合。
+- [[google-moe-routing]]：permute 之前的路由和容量，top-$k$ 选完怎么排 token、超出容量怎么 drop。
+- [[xai-moe-decode]]：本题「decode 时 $M_i$ 很小」一节的产品侧版本，专家不齐和连续 batch 碎片。

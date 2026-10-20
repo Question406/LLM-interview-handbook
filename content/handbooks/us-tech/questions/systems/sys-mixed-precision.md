@@ -4,9 +4,7 @@ section: systems
 order: 17
 level: S
 title: 系统：BF16/FP8 训练，master weights，和推理量化分开
-quick: >-
-  训练混合精度是 GEMM 走窄格式，更新走 FP32 master。BF16 指数够，通常不用全局 loss scale；FP16 要。FP8
-  再加每张量 amax。推理量化是冻住的整数或 FP8 部署，没有反向、没有 master，不要和训练配方并成一套。
+quick: "训练混合精度是 GEMM 走窄格式，更新走 FP32 master。BF16 指数够，通常不用全局 loss scaling；FP16 要。FP8 再加每张量 amax。推理量化是冻住的整数或 FP8 部署，没有反向、没有 master，不要和训练配方并成一套。"
 tags:
   - NVIDIA
   - Mixed Precision
@@ -42,7 +40,7 @@ KV 量化、权重量化是部署带宽问题，不要在这题里展开成同�
 2017 混合精度的做法：前向/反向 GEMM 走 FP16 或 BF16，**一份 FP32 master 权重**给优化器。小更新在 FP16 尾数里会冲掉；Adam 的一阶二阶矩更需要宽累加。典型一步：
 
 1. Master $W_{32}$ 转成 $W_{16}$ 做 GEMM。
-2. 反向得到窄格式梯度，升到 FP32，除 loss scale（若有），Adam 更新 $W_{32}$。
+2. 反向得到窄格式梯度，升到 FP32，除以 loss scale（若有），Adam 更新 $W_{32}$。
 3. 再拷回 $W_{16}$ 给下一步。
 
 BF16 指数和 FP32 同宽，动态范围够，LLM 预训练默认它，通常 **不需要** 全局 loss scale。FP16 指数窄，小梯度下溢成 0，才乘 $S$；$S$ 太大就 overflow，要 skip step，见 `nvidia-loss-scale`。LN、softmax、残差累加仍常留 FP32，和「整网都是 BF16」不是一句话。
@@ -69,3 +67,8 @@ FP8 训练（Transformer Engine）：E4M3 正向、E5M2 梯度常见；每张量
 - **删了 master 长训会怎样？** 小更新在窄尾数里冲掉，表面 loss 还在动，过长距离质量掉。这是静默的，不是立刻 NaN。
 
 - **通信用 BF16 规约行不行？** 能更快，但换 DP 度数后累加顺序变，曲线可能对不上。要对齐再谈数值。
+
+## 相关题
+
+- [[nvidia-fp8]]：和本题高度重合的 NVIDIA 版，更细地讲 FP8 每张量 scale 和延迟缩放，master weights 讲得少。
+- [[sys-fp8-gemm]]：本题刻意不展开的推理侧 FP8，讲权重 GEMM 的 scale 粒度和核。

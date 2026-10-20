@@ -4,9 +4,7 @@ section: design
 order: 20
 level: S
 title: 设计：Agent 评测平台——任务图、重放、非确定性
-quick: >-
-  Agent 对错不是一条字符串匹配。任务是图：子目标、工具副作用、终态检查。重放必须钉死模拟器、种子、工具夹具。
-  模型采样、网页、时钟三路随机要拆开报，否则成功率不可比。通用 LLM 评测见 `design-eval-platform`。
+quick: "Agent 对错不是一条字符串匹配。任务是图：子目标、工具副作用、终态检查。重放必须固定模拟器、随机种子和模拟或录制的工具响应。 模型采样、网页、时钟三路随机要拆开报，否则成功率不可比。通用 LLM 评测见 `design-eval-platform`。"
 tags:
   - Evals
   - Agent
@@ -28,13 +26,13 @@ sources:
     type: primary
 ---
 
-OpenAI / Anthropic / Google 的 agent 岗会问「你怎么知道新 harness 能发」。WebArena 把指标写成功能成功；GitHub evals 只是 runner。白板要的是任务图、可重放、把非确定性关进笼子。污染和 A/B 纪律见 `design-eval-platform`；浏览器环境见 `design-browser-agent`。
+OpenAI / Anthropic / Google 的 agent 岗会问「你怎么知道新 harness 能发」。WebArena 把指标写成功能成功；GitHub evals 只是 runner。白板要的是任务图、可重放、控制和区分非确定性来源。污染和 A/B 纪律见 `design-eval-platform`；浏览器环境见 `design-browser-agent`。
 
 ## 任务是图，不是一道题的 BLEU
 
 每条 case 有起始状态、允许工具、金标终态、以及可选的中间节点（必须访问某页、必须调用某只读工具、禁止调用支付）。成功可以是终态谓词，进度可以是图上覆盖的节点比例。只报「最后一句像不像」会把会说话不会干活的策略选上去。
 
-节点类型要写进 schema：`assert_state`（数据库/页面）、`assert_tool`（曾经以合法参数调用）、`forbid_tool`、`human_grade`。可验证节点走程序；价值判断走人和指南。RFT 的 grader 应对着同一份 schema，见 `align-rft`。
+节点类型要写进字段和类型规范（schema）：`assert_state`（数据库/页面）、`assert_tool`（曾经以合法参数调用）、`forbid_tool`、`human_grade`。可验证节点走程序；价值判断走人和指南。RFT 的 grader 应对着同一份 schema，见 `align-rft`。
 
 ```python
 def score(trace, graph):
@@ -46,7 +44,7 @@ def score(trace, graph):
     return len(hit & graph.partial) / max(len(graph.partial), 1), "partial"
 ```
 
-部分分用来诊断，发版门禁仍以终态 + 政策违规为主。平均步数、美元成本、p95 墙钟、确认取消率一起上表，否则「更成功」来自贵 10 倍的乱试。成本写「USD / 任务」，不要在文里用货币符号。
+部分分用来诊断，发版门禁仍以终态 + 政策违规为主。平均步数、美元成本、p95 实际耗时、确认取消率一起上表，否则「更成功」来自贵 10 倍的乱试。成本写「USD / 任务」，不要在文里用货币符号。
 
 ## 重放：没有夹具就没有回归
 
@@ -60,7 +58,7 @@ Trace 存：模型消息、工具名与参数、工具结果哈希、截屏或�
 
 三路噪声：
 
-1. **策略。** 温度、top-p、隐藏思考预算。对比模型时钉死；要报方差就多次采样，写均值和分位数，不要一次 rollouts 定生死。
+1. **策略。** 温度、top-p、隐藏思考预算。对比模型时固定这些设置；要报方差就多次采样，写均值和分位数，不要一次 rollouts 定生死。
 2. **环境。** 广告、A/B、时间、检索索引。用冻结镜像消灭；消灭不了就当不同环境版本。
 3. **基础设施。** 超时、限流、工具 5xx。重试策略要算进成本，且评测里应对失败注入，看会不会死循环。
 
@@ -68,7 +66,7 @@ LLM-as-judge 打「轨迹漂不漂亮」只能当筛子。主指标是功能谓�
 
 ## 追问
 
-- **温度 0 就确定了吗？** 没有。并列 token、工具时间、隐藏预算仍会漂。环境不冻，温度 0 也不可比。
-- **为什么要任务图而不是一个布尔？** 布尔太稀，调不了 harness。图上的部分分告诉你是检索挂了还是最后确认挂了。
-- **模拟器会不会过拟合？** 会。定期用活网抽查和人红队打假绿，见 `align-red-team`。
+- **温度 0 就确定了吗？** 没有。概率接近的候选 token、工具时间、隐藏预算仍会漂。环境不冻，温度 0 也不可比。
+- **为什么要任务图而不是一个布尔？** 布尔太稀，调不了 harness。图上的部分得分能说明是检索失败，还是最后确认失败。
+- **模拟器会不会过拟合？** 会。定期用实时网页抽查和人工红队发现虚假的通过结果，见 `align-red-team`。
 - **和离线 chat eval 能否共用平台？** 共享血缘、权限、污染扫描；执行器、超时、夹具是 agent 专用列。

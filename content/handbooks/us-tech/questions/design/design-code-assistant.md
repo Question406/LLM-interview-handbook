@@ -28,7 +28,7 @@ sources:
     type: secondary
 ---
 
-Microsoft Copilot、Meta 内部代码助手、OpenAI 评测岗会问代码产品。SWE-bench 给的是「issue + 仓库快照 + 补丁 + 测试」口径；Verified 说明原集有题面噪声。白板要索引、权限、延迟、评测。不是某次现场逐字题。接地见 `msft-copilot-ground`；检索骨架见 `design-prod-rag`；对话服务见 `design-chat-serving`。不要把推荐广告架构套过来。
+Microsoft Copilot、Meta 内部代码助手、OpenAI 评测岗会问代码产品。SWE-bench 给的是「issue + 仓库快照 + 补丁 + 测试」口径；Verified 说明原集有题面噪声。白板要索引、权限、延迟、评测。不是某次现场逐字题。有实际证据支持见 `msft-copilot-ground`；检索骨架见 `design-prod-rag`；对话服务见 `design-chat-serving`。不要把推荐广告架构套过来。
 
 ## 索引和权限
 
@@ -43,7 +43,7 @@ Microsoft Copilot、Meta 内部代码助手、OpenAI 评测岗会问代码产品
 两条产品：
 
 - 行内补全。 预算极紧：键入到建议出现。小模型或 speculative、FIM、只读当前文件 + 近邻窗口。前缀缓存打文件头和 import，见 `sys-prefix-cache`。p95 是几十到一百多毫秒量级的交互，不是对话那套首 token。错建议的代价是打断，宁可不弹。
-- 仓库 agent。 读 issue、改多文件、跑测。SLO 是任务完成和误改，墙钟可以秒到分钟。工具：读文件、搜、补丁、测试沙箱。沙箱无网、只读镜像、CPU 配额，见 `design-agent-harness`、`design-tool-prod`。写操作要 diff 确认。
+- 仓库 agent。 读 issue、改多文件、跑测。SLO 是任务完成和误改，实际耗时可以秒到分钟。工具：读文件、搜、补丁、测试沙箱。沙箱无网、只读镜像、CPU 配额，见 `design-agent-harness`、`design-tool-prod`。写操作要 diff 确认。
 
 不要用同一 70B 模型、同一批处理池伺候两种 SLO。补全走专用低延迟池；agent 走工具循环池。索引构建本身也是产品：增量按 commit、删文件立刻下线、标识符拼写上符号表和 BM25 往往比 embedding 更要紧。embedding 升级要双写，新旧向量不能混排，见 `design-prod-rag`。
 
@@ -55,7 +55,7 @@ SWE-bench：给定 issue 文本和代码库快照，系统交补丁，跑作者�
 
 污染：公开 PR 和解法博客会进预训练，见 `align-eval-contam`。内部代码助手不要只刷 SWE-bench 当发版。私有「内部 issue → 补丁 → CI」才是产品集，口径仍要 fail-to-pass 定义清楚。
 
-评测平台：冻结仓库镜像、测试命令、超时、随机性。和 `design-offline-eval` 同一套版本钉死。人评看 diff 是否最小、是否改测试作弊。
+评测平台：冻结仓库镜像、测试命令、超时、随机性。和 `design-offline-eval` 同一套版本管理。人评看 diff 是否最小、是否改测试作弊。
 
 指标：补全接受率要小心虚荣（乱接受）；加上回退率、编译失败、CI 红。Agent：resolved、步数、误改文件数、沙箱逃逸零容忍。内部评测用真实 PR 抽样，口径仍写 fail-to-pass，不要只报「程序员觉得有用」。
 

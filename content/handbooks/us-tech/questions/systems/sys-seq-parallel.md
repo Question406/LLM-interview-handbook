@@ -59,7 +59,7 @@ Li et al. 的 Sequence Parallelism、Ring Attention、NVIDIA 后来的 context p
 
 评委说「sequence parallel 减 activation」，NVIDIA 语境默认第一句；Google 长上下文和 2105.13120 默认第二句。问清再往下画。三维切分怎么给 SP/CP 留位置，见 `sys-3d-parallel`；和 TP 的列/行切法对着看 `nvidia-tensor-parallel`。
 
-一个常见错觉：开了 SP，层内通信量「消失了」。没有。AG+RS 的字节量和原来的 all-reduce 同阶，只是内存布局变了。Nsight 上 NCCL 时间不会 magically 归零；省下的是 HBM 里那份复制的 LN 激活。
+一个常见错觉：开了 SP，层内通信量「消失了」。没有。AG+RS 的字节量和原来的 all-reduce 同阶，只是内存布局变了。Nsight 上 NCCL 时间不会自动归零；省下的是 HBM 里那份复制的 LN 激活。
 
 错误配对：只开 SP 不开 TP（Megatron 会直接拒）；把 SP 当 DP（样本没切）；以为 SP 能替代 PP（深度放不下仍要切层）。EP 和 TP 同时开时，Megatron 会警告最好打开 SP，否则 expert 路径上的激活复制更难看，见 `sys-expert-parallel`。
 
@@ -68,4 +68,4 @@ Li et al. 的 Sequence Parallelism、Ring Attention、NVIDIA 后来的 context p
 - **SP 省的通信还是内存？** 主收益是内存。集体通信从 all-reduce 换成 all-gather 加 reduce-scatter，字节量相近，延迟特征略不同。
 - **为什么必须和 TP 一组？** 布局切换的 gather/scatter 对端就是 TP ranks。换一组对不齐 hidden 切分。
 - **超长上下文只加 SP 够吗？** Megatron SP 不拆注意力计算。$T$ 大到单卡注意力放不下，要 context parallel 或 ring，或把 $T$ 再切。
-- **和 ZeRO 谁先开？** 激活爆开 SP 加 checkpoint；状态爆开 ZeRO。两味药对两类病，见 `sys-zero-stages`。
+- **和 ZeRO 谁先开？** 激活爆开 SP 加 checkpoint；状态爆开 ZeRO。两者解决不同的瓶颈，见 `sys-zero-stages`。

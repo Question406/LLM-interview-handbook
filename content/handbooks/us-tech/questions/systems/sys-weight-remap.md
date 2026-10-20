@@ -26,7 +26,7 @@ sources:
 
 ## 题怎么来的
 
-这道是按 verl 的权重加载说明拟的。配置里 `load_format` 要选和训练后端匹配的 loader：Megatron 的分片、FSDP 的 DTensor、或 Hugging Face 的整模。选错了，名字对得上，切分对不上，生成的下一 token 是乱的，loss 还可能看起来正常。
+这道是按 verl 的权重加载说明拟的。配置里 `load_format` 要选和训练后端匹配的 loader：Megatron 的分片、FSDP 的 DTensor、或 Hugging Face 的整模。选错了，名字对得上，切分对不上，生成的下一 token 可能错误，loss 还可能看起来正常。
 
 ## 两套切分
 

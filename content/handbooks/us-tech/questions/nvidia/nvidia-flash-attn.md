@@ -31,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 岗把注意力当 kernel 题，不是当 Transformer 名词题。论文是 FlashAttention 的 IO 分析；产品侧 Megatron / Transformer Engine / TensorRT-LLM 都接了同类 kernel。我会先写标准注意力在 HBM 上写了什么，再画 SRAM tile，最后说明 decode 为什么不能抄 prefill 的加速比。
+NVIDIA 岗把注意力当 kernel 题，不是当 Transformer 名词题。论文是 FlashAttention 的 IO 分析；产品侧 Megatron / Transformer Engine / TensorRT-LLM 都接了同类 kernel。我会先写标准注意力在 HBM 上写了什么，再画 SRAM tile，最后说明 逐 token 生成（decode） 为什么不能抄 输入预填充（prefill，即处理输入并建立缓存） 的加速比。
 
 ## 标准注意力的 IO
 
@@ -68,3 +68,12 @@ Decode 要吃满 GPU，得把 KV 沿 $T$ 切开并行（FlashDecoding / split-K�
 - **GQA 的 K/V head 更少，FlashAttention 还值不值？** Prefill 仍值，因为 $S$ 还是 $[T, T]$ 对每个 query head。Decode 更是 KV 带宽墙，GQA 本身往往比换注意力 kernel 更划算，见 `google-gqa-mqa`。
 - **FlashAttention-2/3？** 2 改 work partitioning，减少 split-K 式的无效同步；3 吃 Hopper 的 TMA / WGMMA。面试主线仍是 IO：HBM 上不要放 $[T, T]$。
 - **窗口注意力 / 压缩 KV 还要不要 FA？** 要。稀疏只是少算一些块；剩下的块照样不该把 $S$ 写回 HBM。
+
+## 相关题
+
+- [[google-flash-attention]]：和本题几乎是同一题的 Google 问法，IO 公式和 decode 结论相同，多了 TPU（VMEM、Pallas/Splash）怎么落地。
+- [[nvidia-flash-decode]]：本题最后一节的续问，decode 时怎么沿 KV 做 split-K，并和训练核对照网格与切分轴。
+- [[openai-flash-decode]]：同样问 FlashDecoding，侧重什么时候 $BH$ 已经够大、不必切，以及和 split-K GEMM 的类比。
+- [[coding-flash-decode]]：把 split-K 的分段统计和合并写成代码，带空段和单测。
+- [[coding-online-softmax]]：本题 SRAM tiling 里 online softmax 的白板实现，running max 和 sumexp 怎么 rescale。
+- [[google-block-attn]]：把 FlashAttention 和 blockwise、Ring Attention 放在一起，分清三层各省哪一份 IO。

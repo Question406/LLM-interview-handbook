@@ -26,7 +26,7 @@ sources:
 
 ## 题怎么来的
 
-这是预训练和后训练都会问的记账题，没有一份「某公司原话」。verl 的 issue 1524 把后训练里三层数写得很清楚：`train_batch_size` 是 prompt 数，乘上 `rollout.n` 才是回答条数；`ppo_mini_batch_size` 决定这一批数据里优化器更新几次；`ppo_micro_batch_size_per_gpu` 只决定一张卡一次前向装几条，不改变更新次数。预训练里同一套名字换成 global batch、gradient accumulation、micro batch。
+这是预训练和后训练都会问的计算 batch 大小的题，没有一份「某公司原话」。verl 的 issue 1524 把后训练里三层数写得很清楚：`train_batch_size` 是 prompt 数，乘上 `rollout.n` 才是回答条数；`ppo_mini_batch_size` 决定这一批数据里优化器更新几次；`ppo_micro_batch_size_per_gpu` 只决定一张卡一次前向装几条，不改变更新次数。预训练里同一套名字换成 global batch、gradient accumulation、micro batch。
 
 ## 三个数
 
@@ -61,6 +61,6 @@ def accum_step(model, micro_batches, opt):
 
 ## 追问
 
-**显存不够，先加 $K$ 还是开激活重计算？** 先加 $K$，global batch 和优化器步数不变，只是一步更慢。重计算是用算力换激活，和 batch 无关。两个都用的时候，先把 batch 账写下来，再谈重计算。
+**显存不够，先加 $K$ 还是开激活重计算？** 先加 $K$，global batch 和优化器步数不变，只是一步更慢。重计算是用算力换激活，和 batch 无关。两个都用的时候，先把 batch 大小的计算写下来，再谈重计算。
 
 **$K$ 很大，BN 或 dropout 怎么办？** LLM 预训练不用 batch norm。dropout 若开着，每次 micro batch 的 mask 不同，这是预期的。不要为了「和单次大 batch 逐位一致」去关 dropout。

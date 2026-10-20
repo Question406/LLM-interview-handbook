@@ -50,7 +50,7 @@ MMStar 定义 multimodal gain $MG=S_v-S_{wv}$，leakage $ML=\max(0,S_{wv}-S_t)$�
 - **题面自包含。** 「图中是哪种已灭绝的鸟？」选项里只有一种是鸟。不看图也能猜。
 - **选项印在图上。** 模型 OCR 出 A/B/C 旁边的文字，再当阅读理解。这是 OCR，不是空间推理。
 - **训练见过题。** 网页、教材、MMMU 原图进了预训练。n-gram 扫文本不够，图还要哈希 / 近邻。Canary 同 `openai-eval-harness`。
-- **开发见过图。** 对着公开测试图调分辨率、裁切、prompt。「换了 high-detail 涨 3 点」可能是刷协议，不是模型变强。
+- **开发见过图。** 对着公开测试图调分辨率、裁切、输入提示（prompt）。「换了 high-detail 涨 3 点」可能是刷协议，不是模型变强。
 
 Holdout 必须是从未用来选 checkpoint 的图。公开 MMMU 只能沟通，不能当唯一升模型信号。
 
@@ -64,7 +64,7 @@ Holdout 必须是从未用来选 checkpoint 的图。公开 MMMU 只能沟通，
 
 协议锁死：分辨率（low vs high，见 `openai-mm-gpt`）、是否把选项画进图、解码温度、是否允许工具。GPT-4V 系统卡自己也按类别谈局限；内部 harness 要按类切片，不要一个 macro。判分：选择题对选项顺序敏感；开放描述不要用被测模型当法官，法官隔版本，同 `openai-eval-harness`。
 
-错法：用带图的 CoT prompt 和别人的盲文比；把 OCR 榜当 MMMU；不跑 $S_{wv}$。指令遵循仍要单独测，见 `openai-if-eval`：「用 JSON 列出图中物体」失败可能是格式，不是没看见。
+常见误区是：用带图的思维链（CoT）prompt 和别人的盲文比；把 OCR 榜当 MMMU；不跑 $S_{wv}$。指令遵循仍要单独测，见 `openai-if-eval`：「用 JSON 列出图中物体」失败可能是格式，不是没看见。
 
 ## 追问
 

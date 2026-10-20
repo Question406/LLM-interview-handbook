@@ -4,9 +4,7 @@ section: openai
 order: 20
 level: A
 title: OpenAI：tool / function calling 的 schema、失败、并行，和 JSON mode 差在哪
-quick: >-
-  Schema 是宿主合同，模型只提议调用。JSON mode 只保证 content 是合法 JSON 对象，不路由、不校验字段。Function
-  calling 走 `tool_calls`；Structured Outputs 再用约束解码把参数钉在 schema 上。并行只适用于无依赖的多调用；失败要回传错误而不是让模型直接碰凭证。
+quick: "JSON mode 只保证 content 是合法 JSON；function calling 返回 `tool_calls`，由宿主校验并执行；Structured Outputs 用约束解码让参数符合 schema。并行只用于互不依赖的调用。"
 tags:
   - OpenAI
   - Function calling
@@ -37,17 +35,17 @@ sources:
 
 ## 三条通道不要并成一句「会输出 JSON」
 
-JSON mode（`response_format` 为 json object）：模型在助手 content 里吐一个能 `json.loads` 的对象。文档写明 prompt 里还得要求 JSON，否则可能空转。它不选工具、不保证有哪些键、不保证类型。适合「抽字段进对象」。不适合「去查天气」。
+JSON mode（`response_format` 为 json object）：模型在助手 content 里吐一个能 `json.loads` 的对象。文档写明 输入提示里还得要求 JSON，否则可能空转。它不选工具、不保证有哪些键、不保证类型。适合「抽字段进对象」。不适合「去查天气」。
 
-Function calling：你提供一组工具，每项有 `name`、`description`、`parameters`（JSON Schema）。模型若要行动，返回的是 `tool_calls`：名字加参数字符串，不是最终用户可见的答案。宿主解析、校验、执行，再把工具结果贴回对话。`tool_choice` 可以放权（auto）、强迫用工具、或钉死某一个。这是路由，不只是语法。
+Function calling：你提供一组工具，每项有 `name`、`description`、`parameters`（JSON Schema）。模型若要行动，返回的是 `tool_calls`：名字加参数字符串，不是最终用户可见的答案。宿主解析、校验、执行，再把工具结果贴回对话。`tool_choice` 可以放权（auto）、强迫用工具、或明确固定下来某一个。这是路由，不只是语法。
 
-Structured Outputs：在 json schema 或 `strict` 工具上做约束解码，合法前缀才允许下一步 token。它消灭「参数不是 JSON / 少字段」这一类，消灭不了「字段合法但用户 id 是别人的」。政策检查仍在宿主。
+Structured Outputs：在 json schema 或 `strict` 工具上做约束解码，只允许生成能延续合法前缀的 token。它消灭「参数不是 JSON / 少字段」这一类，消灭不了「字段合法但用户 id 是别人的」。政策检查仍在宿主。
 
-Schema 要让错误形状难出现：枚举代替自由字符串、数字带范围、副作用工具把「预览」和「提交」拆开。一个自由字符串命令字段等于把 shell 交给模型。描述里写何时不要调，和相近工具的差别；模型是靠 docstring 做 ACI，不是靠你心里想的语义。
+Schema 要让错误形状难出现：枚举代替自由字符串、数字带范围、副作用工具把「预览」和「提交」拆开。一个自由字符串命令字段等于把 shell 交给模型。描述里写何时不要调，和相近工具的差别；模型通过工具说明理解如何调用工具接口（ACI），不是靠你心里想的语义。
 
 ## 并行、失败、循环
 
-并行调用：同一助手步里多个 `tool_calls`，适用于互相不依赖的读，比如三个城市的天气。第二个调用需要第一个的返回值时，不能并行，要走「调一次 → 结果进上下文 → 再调」。API 上的并行开关管的是「允许模型一次提议多个」，不是自动拆依赖图。依赖拆错的签名是：第二个工具吃到空 id 或幻觉 id。
+并行调用：同一助手步里多个 `tool_calls`，适用于互相不依赖的读，比如三个城市的天气。第二个调用需要第一个的返回值时，不能并行，要走「调一次 → 结果进上下文 → 再调」。API 上的并行开关管的是「允许模型一次提议多个」，不是自动拆依赖图。依赖关系处理错误的表现是：第二个工具吃到空 id 或幻觉 id。
 
 失败分三类，回传方式不同：
 
@@ -74,5 +72,5 @@ def dispatch(call, registry, policy):
 
 - **为什么参数当初是字符串？** 早期生成不一定是合法 JSON，字符串让 API 能先把 token 收回来再 parse。strict 之后可以当对象看，宿主仍要 parse 失败分支。
 - **强迫 `tool_choice` 某函数？** 抽取型任务可以。对话助手用 auto，否则模型不能直接用自然语言收尾。
-- **并行会打乱顺序吗？** 执行可并发，写回对话时要带 tool call id 对齐，不要按结束时间乱序张冠李戴。
+- **并行会打乱顺序吗？** 执行可并发，写回对话时要带 工具调用 id 对齐，不要按结束时间乱序张冠李戴。
 - **和 JSON mode 能互替吗？** 抽结构用 JSON mode 或 json schema；要执行副作用必须走工具加宿主。

@@ -28,10 +28,10 @@ sources:
 
 ## 同一道题，三级答法
 
-以 decode 显存为例。
+以 逐 token 生成（decode） 显存为例。
 
 - **偏新毕业 / L3-L4：** 写出 $KV \propto H_{\mathrm{kv}} \cdot T \cdot d$，能手写一步 cache，知道 GQA 是减 $H_{\mathrm{kv}}$。公式对、代码对，就过线。
-- **中级：** 主动提 batch、paged attention、量化 cache、prefill/decode 分离。能说「这里优化带宽而不是 FLOPs」。会把「正确性不变量」先钉死再谈加速。
+- **中级：** 主动提 batch、paged attention、量化 cache、prefill/decode 分离。能说「这里优化带宽而不是 FLOPs」。先说清正确性不变量，再谈加速。
 - **更高级：** 会问产品约束：最长上下文、并发会话、SLA、回滚策略。能设计评测（有 cache vs 无 cache greedy 对齐），能讲容量规划，能指出谁该做 kernel、谁该做调度。
 
 系统设计同理。初级画出检索-生成；中级加上新鲜度、权限、引用；高级加上多租户配额、评测切片、失败时的人工升级。

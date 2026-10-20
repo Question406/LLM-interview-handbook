@@ -4,10 +4,7 @@ section: nvidia
 order: 15
 level: A
 title: NVIDIA：in-flight batching，iteration-level 调度
-quick: >-
-  静态 batch 等最长那条，短请求的槽位是空洞。In-flight / continuous batching 把调度改到每个 decode
-  iteration：结束的立刻腾 KV 页，waiting 里补进新请求，context 和 generation 可以同一步。吞吐来自少空等，不是更大的静态矩阵。没有
-  paged KV，变长 append 会把预留打满。
+quick: "静态 batch 要等最长那条，短请求的槽位空着。In-flight batching 每个 decode iteration 都重新调度：结束的立刻释放 KV 页，新请求马上补进，吞吐来自少空等。"
 tags:
   - NVIDIA
   - TensorRT-LLM
@@ -34,17 +31,17 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 把这套叫 in-flight batching（IFB），vLLM / TGI 叫 continuous batching，论文原点是 Orca 的 iteration-level 调度。TensorRT-LLM 岗位常从「为什么静态 batch 吃不满 H100」进到这一题。我会先画一步 decode 的时间线，再补一句：没有 paged KV，inflight 只是把碎片从时间挪到显存。引擎定位见 `nvidia-trt-llm`。
+NVIDIA 把这套叫 in-flight batching（IFB），vLLM / TGI 叫 continuous batching，论文原点是 Orca 的 iteration-level 调度。TensorRT-LLM 岗位常从「为什么静态 batch 吃不满 H100」进到这一题。我会先画一步 逐 token 生成（decode） 的时间线，再补一句：没有 paged KV，inflight 只是把碎片从时间挪到显存。引擎定位见 `nvidia-trt-llm`。
 
 ## 静态 batch 的空洞
 
-$B$ 条请求一起 generate，长度可以差一个数量级。请求级调度：凑齐、pad 到这个 batch 的 $\max T$，一起步进，直到最慢那条 EOS。三条税：
+$B$ 条请求一起 generate，长度可以差一个数量级。请求级调度：凑齐、pad 到这个 batch 的 $\max T$，一起步进，直到最慢那条 EOS。三类额外开销：
 
 1. **Padding。** 长度 20 和 200 坐一桌，短的每步都在算废行。
 2. **队头阻塞。** 先结束的行仍占计算槽和按 `max_seq_len` 预留的 KV，等到整桌散场。
-3. **Prefill 霸占。** 一条 8k prompt 进来，整个静态 batch 要么等它算完，要么根本不和 decode 混。
+3. **Prefill 霸占。** 一条 8k 输入提示（prompt） 进来，整个静态 batch 要么等它算完，要么根本不和 decode 混。
 
-GPU 看起来在做 $[B, D]\times[D, D]$，有的行已经 mask 掉。LLM 生成长度方差远大于分类模型，这个税更重。Triton 那种等几毫秒拼 `preferred_batch_size` 的动态 batch，解决的是「形状相同的一次 launch」，不是「每步换人」，见 `nvidia-triton-infer`。
+GPU 看起来在做 $[B, D]\times[D, D]$，有的行已经 mask 掉。LLM 生成长度方差远大于分类模型，这类开销更明显。Triton 那种等几毫秒拼 `preferred_batch_size` 的动态 batch，解决的是「形状相同的一次 launch」，不是「每步换人」，见 `nvidia-triton-infer`。
 
 ## Iteration-level 在换什么
 
@@ -56,7 +53,7 @@ GPU 看起来在做 $[B, D]\times[D, D]$，有的行已经 mask 掉。LLM 生成
 
 吞吐涨的原因是 SM 和 HBM 对着「这一步还活着的 token」，不是矩阵变大了。静态 $B=32$ 里可能只有 8 条真在写；inflight 的瞬时 $B$ 一直贴着 KV 水位。NVIDIA 博客写过真实流量上 IFB 加 kernel 优化，H100 吞吐可以翻倍量级；面试用数量级，不要背具体倍数。
 
-Context 和 generation 同一步：prefill 是算力墙，decode 是带宽墙。混在一起能填 decode 的计算空洞，但一条超长 context 仍可能把这一步的墙钟拉长，TPOT 出尖刺。这就是 chunked prefill 要切 prompt 的原因，见 `nvidia-chunked-prefill`。IFB 解决「人进出」；chunking 解决「一次 context 太大」。
+Context 和 generation 同一步：输入预填充（prefill，即处理输入并建立缓存） 是算力墙，decode 是带宽墙。混在一起能填 decode 的计算空洞，但一条超长 context 仍可能把这一步的实际耗时拉长，每个 token 的生成间隔突然变长。这就是 chunked prefill 要切 prompt 的原因，见 `nvidia-chunked-prefill`。IFB 解决「人进出」；chunking 解决「一次 context 太大」。
 
 ## 调度器和显存是一对
 

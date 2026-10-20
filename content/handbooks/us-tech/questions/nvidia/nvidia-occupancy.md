@@ -54,14 +54,14 @@ sources:
 进核以后我按这个顺序说：
 
 1. Speed of Light：SM 吞吐 vs Memory 吞吐。谁先到 70% 以上，谁就是墙。两边都低，才是 occupancy / 指令问题，或者根本没吃到 Tensor Core。
-2. Theoretical vs Achieved Occupancy。Theoretical 低：寄存器或 shared memory 预算。Achieved 明显低于 theoretical：warp 在 barrier 上等、block 太少、grid 太瘦（decode 一步那种）。
+2. Theoretical vs Achieved Occupancy。Theoretical 低：寄存器或 shared memory 预算。Achieved 明显低于 theoretical：warp 在 barrier 上等、block 太少、grid 太瘦（逐 token 生成（decode） 一步那种）。
 3. Registers Per Thread、Local Memory / Spill Stores。Spill 一出现，优先减寄存器压力，不要先改算法故事。
 4. Warp Stall Reason：long scoreboard（等内存）、short scoreboard（管道）、MIO、barrier、not selected。Decode 读 KV 几乎一定是 long scoreboard；这时 GQA / 量化 cache 比「提高 occupancy」对症。
 5. Tensor Core 利用率、L1/L2 hit。MMA 没发出来，是 tile 形状 / dtype / alignment；不是 occupancy 开关。
 
 Roofline 和 SOL 是同一句话：先定性墙，再动资源。面试如果一上来「我把 occupancy 从 40% 调到 70%」，评委会问「SOL 哪根柱子动了」。
 
-Grid 太小是 serving decode 的常见坑：batch 小、query 长度 1，活跃 warp 填不满 GPU。FlashDecoding 沿 KV 切开，就是在造 occupancy。这和训练 prefill 大 GEMM 完全两副药。
+Grid 太小是 serving decode 的常见坑：batch 小、query 长度 1，活跃 warp 填不满 GPU。FlashDecoding 沿 KV 切开，就是在造 occupancy。这和训练 输入预填充（prefill，即处理输入并建立缓存） 大 GEMM 完全两副药。
 
 ## 追问
 

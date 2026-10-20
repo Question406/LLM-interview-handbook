@@ -4,10 +4,7 @@ section: nvidia
 order: 16
 level: A
 title: NVIDIA：CUDA Graph 在 decode 上的收益和动态 shape 限制
-quick: >-
-  Decode 每步是一串短核（QKV、attention、MLP、采样），单核活太短，CPU launch 和间隙能占墙钟。CUDA Graph
-  把固定拓扑录下来一次 replay。限制是捕获时形状和缓冲地址要稳。In-flight 的 $B$ 在变、KV 的 $T$ 在变，所以只给一组
-  batch size 建图，不够就 pad；prefill 和变长 attention 常常不进图。
+quick: "decode 每步是一串短核，CPU launch 的间隙能占不少耗时；CUDA Graph 把这串核录下来一次 replay。图要求形状和地址固定，所以按几档 batch size 建图，不够就 pad。"
 tags:
   - NVIDIA
   - CUDA Graph
@@ -34,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA serving / CUDA 岗问 decode 延迟，常从 Nsight Systems 上「核与核之间一条缝」进到 CUDA Graph。这不是 occupancy 计算器题；occupancy 管 SM 上能藏多少延迟，见 `nvidia-occupancy`。本题是 host 侧 launch 把一步 decode 切碎。TensorRT-LLM 只给 decode 建图，文档写明：prefill 的形状是序列长度的函数，很难捕获一张图。
+NVIDIA serving / CUDA 岗问 逐 token 生成（decode） 延迟，常从 Nsight Systems 上「核与核之间一条缝」进到 CUDA Graph。这不是 occupancy 计算器题；occupancy 管 SM 上能藏多少延迟，见 `nvidia-occupancy`。本题是 host 侧 launch 把一步 decode 切碎。TensorRT-LLM 只给 decode 建图，文档写明：输入预填充（prefill，即处理输入并建立缓存） 的形状是序列长度的函数，很难捕获一张图。
 
 ## 为什么 decode 吃 launch
 
@@ -53,9 +50,9 @@ CUDA Graph 捕获的是：核的 launch 配置、固定（或更新受限）的�
 1. **In-flight 的瞬时 batch。** 每步进出请求，$B$ 不是常数，见 `nvidia-inflight-batch`。
 2. **KV 长度 $T$。** 每步加一格。Attention 的 grid、block table、有效长度都在变。Paged KV 让容量池的基址可以稳住，但「这一步 gather 哪些页」仍是动态的，见 `nvidia-paged-kv`。
 
-TensorRT-LLM 的做法：开工前按一组 `batch_sizes` 各捕获一张 decode 图（文档提醒每张图可能到一两百 MB 额外显存）。padding 打开时，真实 $B$ pad 到下一个已捕获尺寸，空槽浪费算力。默认若按 2 的幂跳，高并发区间相邻尺寸能差到几百，padding 税很痛；官方后来把默认间隔收紧。面试落到「图是离散桶，IFB 是连续整数，$B$ 对不上就 pad 或退回 eager」。
+TensorRT-LLM 的做法：开工前按一组 `batch_sizes` 各捕获一张 decode 图（文档提醒每张图可能到一两百 MB 额外显存）。padding 打开时，真实 $B$ pad 到下一个已捕获尺寸，空槽浪费算力。默认若按 2 的幂跳，高并发区间相邻尺寸能差到几百，padding 的浪费很大；官方后来把默认间隔收紧。面试落到「图是离散桶，IFB 是连续整数，$B$ 对不上就 pad 或退回 eager」。
 
-Prefill / 混合步：token 数随 prompt 变，一张图罩不住。Piecewise CUDA Graph 把 attention 留在 eager（变长、paged、MLA 分支），前后 GEMM 分段捕获；attention 写成 in-place，输出缓冲由 graph 段预分配，指针才稳。动态维只放行 `num_tokens`。这是在承认。不是整模型都能进图。Chunked prefill 的混合步更是如此，见 `nvidia-chunked-prefill`。
+Prefill / 混合步：token 数随 输入提示（prompt） 变，一张图罩不住。Piecewise CUDA Graph 把 attention 留在 eager（变长、paged、MLA 分支），前后 GEMM 分段捕获；attention 写成 in-place，输出缓冲由 graph 段预分配，指针才稳。动态维只放行 `num_tokens`。这承认了动态部分的限制，并非整模型都能进入图。Chunked prefill 的混合步更是如此，见 `nvidia-chunked-prefill`。
 
 不要每步 recapture。捕获本身要把那条路径跑一遍，成本远高于一次 replay。形状漂了就换桶或 eager，不要现场录。
 

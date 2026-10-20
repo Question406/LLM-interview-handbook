@@ -4,9 +4,7 @@ section: systems
 order: 10
 level: S
 title: 系统：专家并行，token 调度不均和 all-to-all
-quick: >-
-  EP 按专家切卡，每卡只驻留一部分 expert。前向是 router 之后 all-to-all 把 token 搬走，本地 GEMM，再
-  all-to-all 送回。墙钟经常卡在动态 all-to-all 和热点专家，不是 GEMM。Aux loss / 容量 / 偏置在打负载，不是装饰。
+quick: "EP 按专家切卡，每卡只驻留一部分 expert。前向是 router 之后 all-to-all 把 token 发送到对应专家，本地 GEMM，再 all-to-all 送回。实际耗时经常卡在动态 all-to-all 和热点专家，不是 GEMM。Aux loss / 容量 / 偏置在打负载，不是装饰。"
 tags:
   - Google
   - NVIDIA
@@ -33,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-Google Switch / GShard、NVIDIA Megatron-MoE、Meta Mixtral 推理、DeepSeek 的 EP，问的都是：专家怎么切、token 怎么搬家。和 dense 三维并行（见 `sys-3d-parallel`）不是同一张图。Google 侧 MoE 产品直觉见 `google-gemini-moe`。OpenAI 会追不均衡时 all-to-all 的尾延迟；NVIDIA 会追 kernel 和 NVLink 域。
+Google Switch / GShard、NVIDIA Megatron-MoE、Meta Mixtral 推理、DeepSeek 的 EP，问的都是：专家怎么切、token 如何发送到对应专家。和 dense 三维并行（见 `sys-3d-parallel`）不是同一张图。Google 侧 MoE 产品直觉见 `google-gemini-moe`。OpenAI 会追不均衡时 all-to-all 的尾延迟；NVIDIA 会追 kernel 和 NVLink 域。
 
 ## 切的是专家，搬的是 token
 
@@ -50,7 +48,7 @@ Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。M
 
 ## 不均和 all-to-all 才是墙
 
-Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子：每个 expert 只收 $C\cdot T/E$ 个 token，超出的 drop 或溢出到 backup。容量太小，质量掉；太大，热点卡照样拖尾。Auxiliary load-balancing loss、DeepSeek 的 bias 修正、专家 dropout，目的都是让直方图平一点，让 all-to-all 可预测。面试把这些说成「训练技巧」不够，要说到 **它们是在给通信减 P99**。
+Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子：每个 expert 只收 $C\cdot T/E$ 个 token，超出的 drop 或溢出到 backup。容量太小，质量掉；太大，热点卡照样拖尾。Auxiliary load-balancing 损失（loss）、DeepSeek 的 bias 修正、专家 dropout，目的都是让直方图平一点，让 all-to-all 可预测。面试把这些说成「训练技巧」不够，要说到 **它们是在给通信减 P99**。
 
 和 DP / TP 叠：
 
@@ -60,7 +58,7 @@ Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子�
 
 常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP 吞吐会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批。记住：**同批 dispatch 叠不上该批 GEMM**。
 
-推理侧 prefill 的 $T$ 大，all-to-all 有体积；decode 每步 token 少，all-to-all 变成小消息延迟墙。所以 MoE serving 经常 prefill / decode 用不同 EP 度，或 decode 把 expert 复制一份换通信。不要把训练拓扑原样搬到 decode。
+推理侧 输入预填充（prefill，即处理输入并建立缓存） 的 $T$ 大，all-to-all 有体积；逐 token 生成（decode） 每步 token 少，all-to-all 变成小消息延迟墙。所以 MoE serving 经常 prefill / decode 用不同 EP 度，或 decode 把 expert 复制一份换通信。不要把训练拓扑原样搬到 decode。
 
 监控：tokens/s、all-to-all 等待、每 expert 的 token 直方图、P99 步时。只报平均 MFU 会掩盖热点卡在等。
 
@@ -70,3 +68,10 @@ Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子�
 - **和 TP 的 all-reduce 差在哪？** TP 尺寸固定、对端固定；EP all-to-all 变长、目的 rank 随 router 变。尾部由热点 expert 决定。
 - **Token drop 为什么伤 overlap？** 每步 shape 变，静态 CUDA graph 失效；部分 token 走 skip，计算更不齐。
 - **为什么训练和推理路由不能各搞一套？** 训练看到的 expert 负载和推理不一致，质量会漂。Serving 可以改并行度，不该偷偷改 router。
+
+## 相关题
+
+- [[sys-ep-dispatch]]：本题的续篇，和本题部分重合，把镜头推到 dispatch 这一跳的负载直方图、EPLB 和 decode 低延迟核。
+- [[google-gemini-moe]]：Google 版的产品直觉题，路由、容量和 decode 为什么不会便宜 $E$ 倍。
+- [[meta-llama-moe]]：Llama 4 服务侧的 EP 和 batch，公开架构下专家权重全驻留、小 batch 时 all-to-all 比 GEMM 慢。
+- [[nvidia-moe-gemm]]：EP all-to-all 之后本地那一步怎么算，permute 加一次 grouped GEMM。

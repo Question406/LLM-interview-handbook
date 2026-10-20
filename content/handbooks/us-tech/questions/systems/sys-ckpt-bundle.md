@@ -25,7 +25,7 @@ sources:
 
 ## 题怎么来的
 
-恢复训练对不上 loss，多半不是优化器坏了，是状态没存全。按 PyTorch DCP 和 TorchTitan 的做法拟的。异步写盘的一致性见 `sys-async-ckpt`。
+恢复训练对不上 损失（loss），多半不是优化器坏了，是状态没存全。按 PyTorch DCP 和 TorchTitan 的做法拟的。异步写盘的一致性见 `sys-async-ckpt`。
 
 ## 最少要有的
 

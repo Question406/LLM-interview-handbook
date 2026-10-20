@@ -4,9 +4,7 @@ section: google
 order: 6
 level: S
 title: Google/DeepMind 岗：FlashAttention 省的是 HBM 往返，不是 FLOPs 公式变了
-quick: >-
-  Attention 的 FLOPs 仍是 $O(T^2 d)$。标准实现把 $[T,T]$ 的分数矩阵写进 HBM 再读回来做 softmax，墙钟砸在带宽上。FlashAttention
-  在 SRAM 里分块、在线 softmax，HBM 流量降到大约 $O(T^2 d^2/M)$，输出仍是精确注意力。
+quick: "Attention 的 FLOPs 仍是 $O(T^2 d)$。标准实现把 $[T,T]$ 的分数矩阵写进 HBM 再读回来做 softmax，实际耗时主要受带宽限制。FlashAttention 在 SRAM 里分块、在线 softmax，HBM 流量降到大约 $O(T^2 d^2/M)$，输出仍是精确注意力。"
 tags:
   - Google
   - DeepMind
@@ -25,7 +23,7 @@ sources:
     type: primary
 ---
 
-论文是 Dao 等人的 IO 感知精确注意力，不是 Google 出品。Google / DeepMind 训练和推理岗仍会问，因为你们在 TPU 上一样会被 把 $[T,T]$ 物化进 HBM 打死。开口先钉：公式没变，变的是存储层次上的往返次数。KV head 数那条杠杆见 `google-gqa-mqa`。
+论文是 Dao 等人的 IO 感知精确注意力，不是 Google 出品。Google / DeepMind 训练和推理岗仍会问，因为你们在 TPU 上同样会受到把 $[T,T]$ 分数矩阵写入 HBM 的开销限制。开口先钉：公式没变，变的是存储层次上的往返次数。KV head 数那条杠杆见 `google-gqa-mqa`。
 
 ## 标准注意力慢在写回，不在乘加次数
 
@@ -37,9 +35,9 @@ $$
 
 FLOPs 仍是 $\Theta(T^2 d)$ 量级。朴素实现会把 $S$ 和 $P$ 以 $[T,T]$ 落到 HBM（GPU 上的高带宽显存；TPU 上对应片外 HBM）。现代加速器算力涨得比 HBM 快，attention 经常是 memory-bound：时间 $\approx$ 字节 / 带宽，不是 FLOPs / 峰值算力。
 
-论文给的 HBM 访问量级：标准实现 $\Omega(Td + T^2)$；FlashAttention $O(T^2 d^2 / M)$，其中 $M$ 是片上 SRAM 容量。$d$ 和 $M$ 取 A100 一类常见值时，HBM 往返能少数倍。这就是墙钟。
+论文给的 HBM 访问量级：标准实现 $\Omega(Td + T^2)$；FlashAttention $O(T^2 d^2 / M)$，其中 $M$ 是片上 SRAM 容量。$d$ 和 $M$ 取 A100 一类常见值时，HBM 往返能少数倍。这就是实际耗时。
 
-具体数量级：$T=4096$ 时 $[T,T]$ 的 $P$ 仅 bf16 就要约 32MB 量级，还要写再读、正向再反向。A100 片上 SRAM 只有约 192KB/SM，HBM 带宽大约 1.5–2 TB/s，算力却是几百 TFLOP。把 32MB 来回搬几次，时间就被带宽吃掉。近似注意力论文爱报「FLOPs 从二次变线性」，但若仍把中间矩阵换来换去，墙上时钟不一定赢。FlashAttention 的对比对象就是这类「降 FLOPs 却不降 IO」的工作。
+具体数量级：$T=4096$ 时 $[T,T]$ 的 $P$ 仅 bf16 就要约 32MB 量级，还要写再读、正向再反向。A100 片上 SRAM 只有约 192KB/SM，HBM 带宽大约 1.5–2 TB/s，算力却是几百 TFLOP。把 32MB 来回搬几次，时间就被带宽吃掉。近似注意力论文爱报「FLOPs 从二次变线性」，但若仍把中间矩阵换来换去，实际运行时间不一定更短。FlashAttention 的对比对象就是这类「降 FLOPs 却不降 IO」的工作。
 
 ## 算法：分块 + 在线 softmax + 反向重算
 
@@ -56,15 +54,20 @@ Softmax 不是分块可结合的普通求和：每一行需要全局 max 和全�
 Google 面不会要你默 CUDA。要你迁移这个层次模型：
 
 - Prefill / 训练长上下文：激活里那个 $[T,T]$ 先爆，Flash 式核把注意力激活从二次降到近似线性（仍存 $O,Q,K,V$ 和统计量）。
-- Decode：每步 $T_{\mathrm{q}}=1$，主要 IO 是读历史 KV，不是物化 $T\times T$。这时 GQA / 量化 cache 比 Flash 更一等；Flash 仍避免多余写回。
-- TPU 没有和 GPU 一样的 CUDA 编程模型，但 XLA 融合、Pallas / Splash Attention 一类，做的是同一件事：tile 留在 VMEM，别把完整注意力矩阵吐到 HBM。mesh 切分见 `google-tpu-mesh`。
+- Decode：每步 $T_{\mathrm{q}}=1$，主要 IO 是读历史 KV，不是物化 $T\times T$。这时 GQA / 量化 cache 通常比 Flash 更重要；Flash 仍避免多余写回。
+- TPU 没有和 GPU 一样的 CUDA 编程模型，但 XLA 融合、Pallas / Splash Attention 一类，做的是同一件事：tile 留在 VMEM，别把完整注意力矩阵写回 HBM。mesh 切分见 `google-tpu-mesh`。
 
-错法：说 FlashAttention 把复杂度降到 $O(T)$；说它改变了 $QK^\top V$ 的数学；把它和 MoE 稀疏混成「都是少算」。MoE 少的是 FFN 激活参数，见 `google-gemini-moe`。
+常见误区是：说 FlashAttention 把复杂度降到 $O(T)$；说它改变了 $QK^\top V$ 的数学；把它和 MoE 稀疏混成「都是少算」。MoE 少的是 FFN 激活参数，见 `google-gemini-moe`。
 
 ## 追问
 
 - **和梯度检查点什么关系？** 检查点在层间丢激活、反向重算整层。Flash 在注意力内部不存 $P$，粒度更细，专门打 $[T,T]$ 这块 IO。
 - **数值会不会和朴素实现不一致？** 在线 softmax 与分块浮点顺序不同，会有 ulp 级差。评测应用下游指标，不要用 bit exact 当回归。
 - **窗口注意力还需要 Flash 吗？** 需要。窗口已经降了 FLOPs，但小块上仍不该把局部 $S$ 写到 HBM 再读。
-- **为什么近似注意力墙上不一定更快？** 它们降的是算术次数，往往增加不规则访存。Flash 针对的是带宽，算术几乎不少。
-- **Decode 一步还吃 Flash 红利吗？** $T_q=1$ 时主要 IO 是读 KV cache。Flash 仍避免多余写回，但长 decode 的一等杠杆是 GQA / 量化 cache，不是再融一次 softmax。
+- **为什么近似注意力实际运行不一定更快？** 它们降的是算术次数，往往增加不规则访存。Flash 针对的是带宽，算术几乎不少。
+- **Decode 一步还吃 Flash 红利吗？** $T_q=1$ 时主要 IO 是读 KV cache。Flash 仍避免多余写回，但长序列 decode 的主要优化手段是 GQA / 量化 cache，不是再融一次 softmax。
+
+## 相关题
+
+- [[nvidia-flash-attn]]：和本题几乎是同一题的 NVIDIA 问法，同样的 IO 分析，多讲了 decode 要靠 split-K 填满 SM。
+- [[google-block-attn]]：Google 长序列的后续追问，FlashAttention 之上再叠 blockwise 和 Ring Attention，各自切掉哪份开销。

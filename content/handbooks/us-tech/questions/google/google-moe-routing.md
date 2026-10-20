@@ -4,10 +4,7 @@ section: google
 order: 16
 level: S
 title: Google：MoE 路由、容量因子和 decode 专家并行怎么落地
-quick: >-
-  路由器出 $[n,E]$ 分数，top-$k$ 之后按容量 $C$ 做 dispatch；塞不下就 drop。训练 all-to-all
-  有体积，decode 一步 $n\approx B$、$T=1$，墙钟变成小消息延迟和热点专家。实现要讲 permute、padding、EP
-  轴，不是再背一遍「稀疏所以便宜」。
+quick: "路由器取 top-$k$ 后按 permute 把 token 排到各专家，pad 到容量 $C$，超出的 drop。decode 时每步 token 很少，all-to-all 变成小消息延迟，常要降 EP 度或复制热点专家。"
 tags:
   - Google
   - MoE
@@ -32,7 +29,7 @@ sources:
     type: primary
 ---
 
-`google-gemini-moe` 讲的是 Gemini 公开叙事：稀疏、容量、decode 不是折扣券。这题往下抠一层：token 怎么搬家、容量怎么变成静态 shape、专家并行在 decode 为什么反而不划算。Google 训练代码在 TPU 上跑，XLA 要静态 shape，动态路由是税。Mesh 轴见 `google-tpu-mesh`，SPMD 见 `google-jax-pjit`。
+`google-gemini-moe` 讲的是 Gemini 公开叙事：稀疏、容量、逐 token 生成（decode） 不是折扣券。这题往下抠一层：token 怎样发送到对应专家、容量怎么变成静态 shape、专家并行在 decode 为什么反而不划算。Google 训练代码在 TPU 上跑，XLA 要静态 shape，动态路由是税。Mesh 轴见 `google-tpu-mesh`，SPMD 见 `google-jax-pjit`。
 
 ## 路由一步：分数、top-$k$、permute
 
@@ -63,7 +60,7 @@ $$
 
 $\gamma$ 常见 $1.0$：$1.25$。专家 $i$ 只收 $C$ 个槽。分数低的 token drop：这层 FFN 输出走残差或零。$\gamma$ 太小，质量掉；太大，padding 和通信体积涨，稀疏红利没了。
 
-TPU 上 $C$ 必须是编译期上界。真实直方图每步都变，你仍按 $C$ pad。平均利用率在 $1/\gamma$ 以下，MXU 在算零。这就是「稀疏理论 FLOPs」和墙钟对不上的主要来源之一，和 `google-tpu-llm` 的 MXU 利用率是同一笔账。
+TPU 上 $C$ 必须是编译期上界。真实直方图每步都变，你仍按 $C$ pad。平均利用率在 $1/\gamma$ 以下，MXU 在算零。这就是「稀疏理论 FLOPs」和实际耗时对不上的主要来源之一，和 `google-tpu-llm` 的 MXU 利用率是同一笔账。
 
 Drop 的梯度：被丢掉的 token 这层没有专家梯度，路由器仍可能收到「你把我分到满员专家」的信号，取决于实现。面试说清「我假设 drop 后走残差、aux loss 仍按 dispatch 计数」即可，不要现场发明 Gemini 的 kernel。
 
@@ -79,7 +76,7 @@ Decode：每步 $T=1$，$n$ 等于并发请求数。若 $B=16$、$E=64$、$k=2$�
 - All-to-all 变成短消息，延迟墙，不是带宽墙。
 - 单 token 可能跨芯片取专家，比稠密 FFN 更慢。
 
-所以 serving 常常降低 EP 度、复制热专家、prefill 和 decode 用不同拓扑。训练图原样搬来 decode，是常见错法。路由权重本身必须和训练一致，改的是并行，不是 router。
+所以 serving 常常降低 EP 度、复制热专家、输入预填充（prefill，即处理输入并建立缓存） 和 decode 用不同拓扑。训练图原样搬来 decode，是常见错法。路由权重本身必须和训练一致，改的是并行，不是 router。
 
 分组 GEMM、把空专家 skip 掉，能救 GPU；TPU 更爱 pad 成规整块，空槽照算。面试要自己切硬件。MXU 为什么讨厌瘦矩阵，见 `google-tpu-llm`。
 
@@ -89,3 +86,11 @@ Decode：每步 $T=1$，$n$ 等于并发请求数。若 $B=16$、$E=64$、$k=2$�
 - **为什么训练和推理不能各用一套 router？** 负载统计会漂，质量对不齐。Serving 可以改 EP / 复制，不该偷偷改门控。
 - **共享专家干什么？** 所有 token 都过的稠密 FFN，给路由器减负。公开 Gemini 没写成必选项，当工程开关。
 - **aux loss 权重 $\alpha$ 怎么调？** 先看专家直方图和 drop 率，再看下游。$\alpha$ 太大，路由变均匀但任务专家化被压死；太小，塌缩成几个稠密 FFN。
+
+## 相关题
+
+- [[google-gemini-moe]]：同为 Google 的 MoE 题，和本题高度重合；那题偏口答产品直觉，讲稀疏为什么不让 decode 便宜 $E$ 倍。
+- [[openai-moe-aux-loss]]：本题追问 $\alpha$ 怎么调的展开，aux loss 的公式和塌缩的监控指标。
+- [[nvidia-fused-moe]]：本题路由一步里的 permute 落到 kernel 上，讲 grouped GEMM 和 unpermute 怎么融合。
+- [[sys-ep-dispatch]]：decode 专家并行的 dispatch 负载，一步耗时由收 token 最多的卡决定，以及 EPLB 复制热专家。
+- [[xai-grok-moe]]：同样讲 prefill 和 decode 应该用不同 EP 宽度，以 Grok-1 为例。

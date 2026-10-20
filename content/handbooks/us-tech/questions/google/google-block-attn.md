@@ -6,7 +6,7 @@ level: S
 title: Google：长序列注意力的 blockwise / ring IO，和 FlashAttention 什么关系
 quick: >-
   FlashAttention 在单芯片上把 $QK^\top$ tile 留在 SRAM，HBM 流量从 $O(T^2)$ 降到大约 $O(T^2 d/M)$，数学仍是精确注意力。Blockwise
-  按块算注意力再立刻做 FFN，砍的是层激活。Ring 把 KV 块在设备环上转，切的是 $T$。三件叠，不是三个互斥名词。
+  按块算注意力再立刻做 FFN，砍的是层激活。Ring 把 KV 块在设备环上转，切的是 $T$。这三种方法可以叠加使用。
 tags:
   - Google
   - Attention
@@ -35,7 +35,7 @@ Gemini 长上下文要训练和 serving 都碰到 $T$ 到百万。FlashAttention
 
 ## 三层 IO，别并成一句「我们用了 Flash」
 
-标准注意力物化 $S=QK^\top$，形状 $[T,T]$，HBM 和激活爆掉。精确注意力的 FLOPs 仍是 $\Theta(T^2 d)$，谁也没改公式。
+标准注意力物化 $S=QK^\top$，形状 $[T,T]$，中间激活会占满 HBM。精确注意力的 FLOPs 仍是 $\Theta(T^2 d)$，谁也没改公式。
 
 FlashAttention：在片上 SRAM（TPU 叫 VMEM）里对 $Q,K,V$ 分块，在线 softmax，不把 $S$ 写回 HBM。HBM 访问大约 $O(T^2 d^2/M)$，$M$ 是片上容量。反向重算 $P$ 而不是存它。它解决的是单设备上注意力核的带宽。TPU 上 Splash / Pallas 做同一件事。
 
@@ -45,28 +45,33 @@ Ring Attention：把序列沿设备切，$T/N$ 每卡。每卡拿自己的 $Q$�
 
 所以关系是包含，不是替代：Ring 的一跳里跑 blockwise 的一块，一块里跑 Flash tile。面试说「Ring 取代了 Flash」是错的；说「有了 Flash 就不需要切 $T$」也是错的。单卡 HBM 仍按 $T$ 线性（KV）或按激活策略走。
 
-## 和训练 / decode 怎么对表
+## 和训练 / 逐 token 生成（decode） 怎么对表
 
-训练 / prefill：$T$ 大，二次项和激活都痛。顺序通常是：先 Flash 式核（否则 $[T,T]$ 先炸），再 remat / scan 砍层激活，见 `google-jax-transformer`；再长就切 $T$（序列并行或 ring）。TPU mesh 上这是再加一条 `seq` 轴，见 `google-tpu-mesh`。
+训练 / 输入预填充（prefill，即处理输入并建立缓存）：$T$ 大，二次复杂度和激活显存占用都很高。顺序通常是：先 Flash 式核（否则 $[T,T]$ 分数矩阵会先导致显存不足），再 remat / scan 砍层激活，见 `google-jax-transformer`；再长就切 $T$（序列并行或 ring）。TPU mesh 上这是再加一条 `seq` 轴，见 `google-tpu-mesh`。
 
-Decode：$T_q=1$，没有 $[T,T]$ 可物化。Flash 仍避免多余写回，但一等杠杆是 KV 头数和量化 cache，见 `google-gqa-mqa`。Ring 在 decode 上变成「历史 KV 分在多卡、每步收集」，通信是小消息，延迟墙。很多系统 prefill 切序列、decode 把 KV 收拢或按层流水，不要训练拓扑原样搬。
+Decode：$T_q=1$，没有 $[T,T]$ 可物化。Flash 仍避免多余写回，但主要优化手段是 KV 头数和量化 cache，见 `google-gqa-mqa`。Ring 在 decode 上变成「历史 KV 分在多卡、每步收集」，通信多为小消息，延迟容易成为瓶颈。很多系统 prefill 切序列、decode 把 KV 收拢或按层流水，不要训练拓扑原样搬。
 
 块大小是超参：太小，kernel 启动和 ring 同步压过计算；太大，VMEM / HBM 又塞不下。TPU 还要对齐 128 的 MXU，见 `google-tpu-llm`。XLA 静态 shape，块大小在编译期定死，变长请求靠 pad。
 
-Ring 一圈的通信量大约是整段 KV 扫过每个设备：每跳 $O((T/N) d)$，共 $N$ 跳，总量 $O(T d)$，和把 KV all-gather 一遍同阶，但可以和本地注意力重叠。重叠不够时，ring 只是把 HBM 爆换成 ICI 延迟，没有白捡的带宽。
+Ring 一圈的通信量大约是整段 KV 扫过每个设备：每跳 $O((T/N) d)$，共 $N$ 跳，总量 $O(T d)$，和把 KV all-gather 一遍同阶，但可以和本地注意力重叠。重叠不够时，ring 只是把 HBM 容量瓶颈换成 ICI 通信延迟瓶颈，没有白捡的带宽。
 
 ## 别和近似注意力混
 
-Linformer、稀疏窗、线性注意力改的是数学，FLOPs 可以降到近线性，但不规则访存经常让墙钟输给精确 + Flash。Google 长上下文的公开叙事（Gemini 1.5）是能在百万 token 上做检索式任务，面试默认先讲精确注意力的 IO 栈，再谈要不要上稀疏 / 分层。窗口注意力仍然需要 Flash：局部 $S$ 也不该写回 HBM。
+Linformer、稀疏窗、线性注意力改的是数学，FLOPs 可以降到近线性，但不规则访存经常让实际耗时输给精确 + Flash。Google 长上下文的公开叙事（Gemini 1.5）是能在百万 token 上做检索式任务，面试默认先讲精确注意力的 IO 栈，再谈要不要上稀疏 / 分层。窗口注意力仍然需要 Flash：局部 $S$ 也不该写回 HBM。
 
-错法：说 blockwise 把复杂度变成 $O(T)$；说 ring 是另一种 softmax；把 MoE 专家并行和 ring 说成同一件事。专家并行搬的是 token 到专家，见 `google-moe-routing`；ring 搬的是 KV 块到持有 $Q$ 的卡。
+常见误区是：说 blockwise 把复杂度变成 $O(T)$；说 ring 是另一种 softmax；把 MoE 专家并行和 ring 说成同一件事。专家并行搬的是 token 到专家，见 `google-moe-routing`；ring 搬的是 KV 块到持有 $Q$ 的卡。
 
 ## 追问
 
 - **Ring 的正确性？** 每块用在线 softmax 的 $m,\ell$ 做 rescale 再累加，和单机分块同一套代数，精确（忽略浮点顺序）。归约树不同，bitwise 不必相同。
 - **和流水线并行一起用吗？** 可以：PP 切层，ring 切 $T$。气泡和环同步叠在一起很难排，先看 2D mesh 是否够。
-- **为什么 TPU 不直接抄 CUDA Flash？** 编程模型不同，IO 层次相同：tile 留在 VMEM，别把 $S$ 吐到 HBM。Splash 是这条线。
+- **为什么 TPU 不直接抄 CUDA Flash？** 编程模型不同，IO 层次相同：tile 留在 VMEM，避免把 $S$ 写回 HBM。Splash 是这条线。
 - **1M 训练必须 ring 吗？** 不是唯一路径。激活重算 + 序列并行 + Flash 也能堆。Ring 的卖点是通信隐藏和单卡不存全 KV。选哪条看 HBM 和 ICI，不要背论文标题。窗口数字和 KV 字节账见 `google-gemini-longctx`。
 
 Serving 侧同一句话：prefill 用切 $T$ 的 IO 栈，decode 用 KV 布局，两套可以不同。
+
+## 相关题
+
+- [[google-flash-attention]]：只讲本题三层里最内的一层，FlashAttention 为什么 FLOPs 不变、HBM 往返变少。
+- [[nvidia-flash-attn]]：NVIDIA 版的 FlashAttention IO 分析，以及 decode 时这笔收益为什么变小。
 

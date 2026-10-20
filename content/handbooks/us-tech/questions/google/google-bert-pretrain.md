@@ -4,9 +4,7 @@ section: google
 order: 11
 level: A
 title: Google：BERT 两个预训练任务各解决什么，NSP 后来为什么被质疑
-quick: >-
-  MLM 逼编码器同时看左右上下文，填被盖住的 token，学的是双向表示。NSP 是二分类：两段是不是原文里相邻，本意是学句间关系。RoBERTa
-  去掉 NSP 更好；ALBERT 认为 NSP 太容易靠主题做对，改成句序 SOP。
+quick: "MLM 逼编码器同时看左右上下文，填被盖住的 token，学的是双向表示。NSP 是二分类：两段是不是原文里相邻，本意是学句间关系。RoBERTa 去掉 NSP 更好；ALBERT 认为 NSP 太容易靠主题做对，改成句序 SOP。"
 tags:
   - Google
   - BERT
@@ -28,7 +26,7 @@ sources:
     type: primary
 ---
 
-Google BERT 岗 / 搜索理解岗的基础题。不是默 2018 年的设定，是问两个 loss 各自监督什么、后来哪一篇把它证伪。生成式对照见 `google-t5-span`。
+Google BERT 岗 / 搜索理解岗的基础题。不是默 2018 年的设定，是问两个 损失（loss） 各自监督什么、后来哪一篇把它证伪。生成式对照见 `google-t5-span`。
 
 ## MLM：给双向编码器一个合法的训练信号
 
@@ -54,7 +52,7 @@ ALBERT。 认为 NSP 的负样本来自不同文档，模型靠主题就能做�
 
 搜索相关性：query 和文档是不是「下一句」并不重要，重要的是双向编码和后续微调。Google 后来大量用 T5 / decoder-only，句间任务直接生成。若还在训编码器，默认 MLM（或 span），不加 NSP，除非下游明确是句序 / 连贯。
 
-错法：把 NSP 说成 next-token；把 `[CLS]` 说成必须有 NSP 才能用；说 RoBERTa 证明双向没意义。RoBERTa 去掉的是 NSP，不是 MLM。
+常见误区是：把 NSP 说成 next-token；把 `[CLS]` 说成必须有 NSP 才能用；说 RoBERTa 证明双向没意义。RoBERTa 去掉的是 NSP，不是 MLM。
 
 现场例子：A「他打开了门。」B「房间很黑。」是 NSP 正样本；B 换成另一篇体育新闻是负样本。模型靠主题词就能做对。SOP 负样本只是把 A/B 对调，主题不变，必须看顺序。这就是 ALBERT 说 NSP 太容易的原因。
 
@@ -64,4 +62,4 @@ ALBERT。 认为 NSP 的负样本来自不同文档，模型靠主题就能做�
 - **15% 能不能更高？** 太高上下文被毁，双向优势没了；太低监督太稀。T5 仍用约 15% token，但改成 span，见 `google-t5-span`。
 - **NSP 对检索双塔还有用吗？** 一般不用 NSP。用对比学习对齐 query-doc。主题匹配正是双塔要学的。原文说 NSP 是为了 QA / NLI；后来去掉 NSP 改连续文档，这些任务并不掉。
 - **为什么现在很少提 `[CLS]`？** Decoder-only 用最后一个 token 或 pooling。编码器分类仍可用 `[CLS]` 或平均池化；这和 NSP 无关。
-- **SOP 和 NSP 能同时加吗？** 没必要。SOP 已经覆盖连贯；再加 NSP 等于再给一条容易的主题题。收口：MLM 学双向词义；NSP 本想学生句关系，却退化成主题分类，所以后来去掉或改 SOP。
+- **SOP 和 NSP 能同时加吗？** 没必要。SOP 已经覆盖连贯；再加 NSP 等于再给一条容易的主题题。收口：MLM 学双向词义；NSP 本想学习句间关系，却退化成主题分类，所以后来去掉或改 SOP。

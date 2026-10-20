@@ -5,7 +5,7 @@ order: 27
 level: A
 title: Google：PaLI / PaliGemma 多任务多语言视觉-语言，和 Gemini 差在哪
 quick: >-
-  PaLI 是视觉编码器加语言模型的生成式 VLM：多任务前缀、多语言图文、OCR 当一等任务。PaLI-3 / PaliGemma
+  PaLI 是视觉编码器加语言模型的生成式 VLM：多任务前缀、多语言图文、把 OCR 作为主要任务之一。PaLI-3 / PaliGemma
   说明对比预训练的视觉塔比盲目把 ViT 做大更划算。Gemini 是同一条解码器吃交错模态，不是这套 encoder-decoder
   前缀机。
 tags:
@@ -36,7 +36,7 @@ PaLI 是 Google 公开的 Pathways 视觉-语言模型族：把放大的 ViT 和
 
 ## 骨架：视觉 token 进语言编码器，文本当目标
 
-第一代 PaLI：分类预训练的大 ViT（ViT-e 约 4B）加 mT5 一类 encoder-decoder。图被切成 patch，见 `google-vit-patch`，进语言编码器一侧；解码器生成文本。任务靠自然语言前缀区分：「用某语言写 alt text」「根据图回答」。这和对话 SFT 的 user / assistant 轮次不是同一套模板，后训练怎么切见 `google-mm-sft`。
+第一代 PaLI：分类预训练的大 ViT（ViT-e 约 4B）加 mT5 一类 encoder-decoder。图被切成 patch，见 `google-vit-patch`，进语言编码器一侧；解码器生成文本。任务靠自然语言前缀区分：「用某语言写 alt text」「根据图回答」。这和对话 监督微调（SFT） 的 user / assistant 轮次不是同一套模板，后训练怎么切见 `google-mm-sft`。
 
 PaLI-X 继续双边放大（更大 ViT + 更大 UL2 式 LM），caption、VQA、文档、检测式输出、视频问答都能做。公开观察：ImageNet 已经饱和的视觉塔，接到 VLM 上仍可能涨：因为 VLM 要的是区域和字，不是 1000 类标签。面试别把「视觉塔越大越好」说到 PaLI-3 已经改口的地方。
 
@@ -63,7 +63,7 @@ PaLI-3 的改口：对比预训练（SigLIP 一类）的视觉塔，在「图里
 | 训练形态 | 多任务前缀、多语言 | 交错 few-shot | 预训练就混模态，再对话 / 工具 |
 | 开源锚点 | PaliGemma | 概念论文 | 产品报告，不是这份权重 |
 
-错法：说 PaLI 就是 Gemini 的开源版；说 PaliGemma 聊天能力等于 Gemini；把 CLIP 检索当成 PaLI 的生成目标。CLIP 是对齐；PaLI 是条件生成。产品要引用网页、要点击 UI，还得上工具，见 `google-gemini-agent`。
+常见误区是：说 PaLI 就是 Gemini 的开源版；说 PaliGemma 聊天能力等于 Gemini；把 CLIP 检索当成 PaLI 的生成目标。CLIP 是对齐；PaLI 是条件生成。产品要引用网页、要点击 UI，还得上工具，见 `google-gemini-agent`。
 
 取舍：要做一个可微调的文档 / 检测头，PaliGemma 配方清晰、分辨率档（256 / 1024 token）好讲。要做小时级视频和百万上下文对话，那是 Gemini 1.5 的窗口故事，见 `google-gemini-longctx`，不是把 PaLI-X 再加层。
 

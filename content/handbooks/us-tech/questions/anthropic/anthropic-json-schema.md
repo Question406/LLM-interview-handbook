@@ -4,9 +4,7 @@ section: anthropic
 order: 18
 level: A
 title: Anthropic：structured output 约束解码和事后再解析，各挡哪类错误？
-quick: >-
-  约束解码把 schema 编成文法，非法 token 抽不出来，JSON 不会烂。它不保证数字落在业务区间、URL
-  不越权、枚举语义对。范围、PII、授权仍要宿主再校验。Prompt 里求「只输出 JSON」然后正则捞，是在赌采样。
+quick: "约束解码把 schema 编成文法，使模型无法采样非法 token，保证 JSON 结构合法。它不保证数字落在业务区间、URL 不越权、枚举语义对。范围、PII、授权仍要宿主再校验。Prompt 里求「只输出 JSON」然后正则捞，是在赌采样。"
 tags:
   - Anthropic
   - Structured output
@@ -29,15 +27,15 @@ sources:
 
 ## 约束解码保证的是形状
 
-Schema 编译成文法。每一步合法续写集合被 mask 掉，模型抽不到会破坏括号、类型、`required` 的 token。于是 `json.loads` 和缺字段这一类循环可以去掉。对象必须 `additionalProperties: false`，否则文法不知道能不能多键。首次用某 schema 要编译，有一截 TTFT；编译结果大约缓存一天，改结构或工具集才失效。改 `description` 通常不使文法失效。
+Schema 编译成文法。每一步不合法的续写候选被 mask 掉，模型抽不到会破坏括号、类型、`required` 的 token。于是 `json.loads` 和缺字段这一类循环可以去掉。对象必须 `additionalProperties: false`，否则文法不知道能不能多键。首次使用某个 schema 时需要编译，会增加首个 token 的等待时间（TTFT）；编译结果大约缓存一天，改结构或工具集才失效。改 `description` 通常不使文法失效。
 
 官方子集：基本类型、`enum` / `const`、有限的 `anyOf`、内部 `$ref`。不吃：递归 schema、`minimum` / `maximum`、`minLength`、复杂正则（反向引用、lookahead）。SDK 常把这些约束删掉写进 description——模型可能遵守，文法不强制。
 
-它不保证：数字在业务范围里；字符串是合法订单号；路径不指向系统目录；枚举选了合法值但是用错工具。`anthropic-tool-use` 里写过：schema 过了还要政策检查。constraining ≠ validating 产品不变量。
+它不保证：数字在业务范围里；字符串是合法订单号；路径不指向系统目录；枚举选了合法值但是用错工具。`anthropic-tool-use` 里写过：schema 过了还要政策检查。约束输出格式不等于校验产品必须满足的业务条件。
 
 ## 再解析挡什么、什么时候还需要
 
-旧路径：prompt 要求 JSON → 从围栏里切片 → `json.loads` 失败就 `is_error` 重试。它挡的是「模型爱说人话」。代价是尾延迟、重试烧输出 token、错误提示本身又占窗口。约束解码把这层几乎删掉。
+旧路径：输入提示（prompt） 要求 JSON → 从围栏里切片 → `json.loads` 失败就 `is_error` 重试。它挡的是「模型爱说人话」。代价是尾延迟、重试烧输出 token、错误提示本身又占窗口。约束解码把这层几乎删掉。
 
 仍要宿主校验：
 
@@ -56,9 +54,9 @@ if not (0 <= data["score"] <= 1):
 
 ## 和 XML 提示、MCP、缓存的分工
 
-给模型看的长资料用 `anthropic-xml-prompt` 的标签边界；给运行时执行的用 JSON Schema。MCP server 的 `inputSchema` 仍是 JSON Schema，但远程 server 必须自己再校验一遍，不能信 client 已经约束过，见 `anthropic-mcp`。换 `output_config.format` 会让对话前缀失效，打爆 `anthropic-prompt-cache`。
+给模型看的长资料用 `anthropic-xml-prompt` 的标签边界；给运行时执行的用 JSON Schema。MCP server 的 `inputSchema` 仍是 JSON Schema，但远程 server 必须自己再校验一遍，不能信 client 已经约束过，见 `anthropic-mcp`。换 `output_config.format` 会让对话前缀失效，降低 `anthropic-prompt-cache` 的命中率。
 
-错法：schema 写成自由字符串 `cmd`；打开 `additionalProperties`；把约束解码当越权防护。评测延迟时要把冷编译和热请求分开报。数值区间、字符串长度写进 description 只是提示，宿主校验才是合同。
+常见误区是：schema 写成自由字符串 `cmd`；打开 `additionalProperties`；把约束解码当越权防护。评测延迟时要把冷编译和热请求分开报。数值区间、字符串长度写进 description 只是提示，这些条件仍要由宿主程序校验。
 
 ## 追问
 

@@ -46,3 +46,4 @@ yarn-error.log*
 # local-only content (personal paper deep-dives)
 /content/handbooks/*/_handbook.local.md
 /content/handbooks/llm-interview/questions/papers/
+/content/handbooks/us-tech/questions/personal/

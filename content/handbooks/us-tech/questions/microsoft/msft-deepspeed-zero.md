@@ -6,7 +6,7 @@ level: S
 title: Microsoft：DeepSpeed ZeRO 1/2/3 切的是什么状态，通信体积怎么变
 quick: >-
   ZeRO 切的是数据并行里的冗余状态，不是张量并行那种切 GEMM。1 切优化器，2 再切梯度，3 再切参数。1/2
-  通信体积仍是基线 DP 的 $2\Psi$，3 变成 $3\Psi$（约 $1.5\times$）。显存按阶段掉，别把 ZeRO-3 说成免费午餐。
+  通信体积仍是基线 DP 的 $2\Psi$，3 变成 $3\Psi$（约 $1.5\times$）。显存按阶段掉，别把 ZeRO-3 说成没有额外代价的优化。
 tags:
   - Microsoft
   - DeepSpeed

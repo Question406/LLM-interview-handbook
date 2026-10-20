@@ -41,7 +41,7 @@ $$
 y = xW + (xB)A.
 $$
 
-Serving 走后者：底座 GEMM 所有请求共用，再加两次瘦 GEMM。$x$ 是 $[B, T, D]$（decode 时 $T=1$）。
+Serving 走后者：底座 GEMM 所有请求共用，再加两次瘦 GEMM。$x$ 是 $[B, T, D]$（逐 token 生成（decode） 时 $T=1$）。
 
 显存：70B bf16 底座大约 140GB 量级，一份就够痛。单个 adapter 每层两个线性、若干层，常常几十到几百 MB。一千个 LoRA 仍可能小于再复制一份底座。所以正确图是：HBM 里一份 $W$ 加 adapter 池（热的在 GPU，冷的在 CPU / NVMe）。S-LoRA 把 adapter 也分页，和 KV 的 paged 思想同类，见 `nvidia-paged-kv`。
 
@@ -61,7 +61,7 @@ Compute：额外 FLOPs 大约 $2\cdot B\cdot T\cdot D\cdot r$ 量级（每个 Lo
 
 一种是每个 LoRA 当 Triton 里一个「虚模型」，共享同一份 TensorRT-LLM 引擎实例，请求带 adapter id。另一种是 Python backend 自己维护池。不要为每个 LoRA 起一个 `instance_group` 把 $W$ 复制 N 份，那是把 Triton 的多模型理解反了，见 `nvidia-triton-infer`。
 
-不同 LoRA 的 KV 不能因为 prompt 文本相同就 prefix 共享：投影矩阵已经不同。只有同一 adapter、同一前缀才有共享资格。
+不同 LoRA 的 KV 不能因为 输入提示（prompt） 文本相同就 prefix 共享：投影矩阵已经不同。只有同一 adapter、同一前缀才有共享资格。
 
 ## 追问
 

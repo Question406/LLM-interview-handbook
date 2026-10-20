@@ -4,10 +4,9 @@ section: openai
 order: 31
 level: S
 title: OpenAI：FlashDecoding 为什么沿 KV 长度做 split-K，decode 时和 FlashAttention 差在哪
-quick: >-
-  Prefill 的 $Q$ 长，$T_q$ 能把 SM 填满。Decode 时 $T_q=1$，并行度只剩 $B\cdot H$，长上下文、小 batch 吃不满带宽。FlashDecoding 把
-  $K,V$ 沿序列切成 $S$ 段并行算局部注意力，再按 log-sum-exp 归约，数学仍是精确 softmax。$B H$ 已经大于 SM 数时不要硬切。
+quick: "Decode 时 $T_q=1$，并行度只剩 $B\\cdot H$；FlashDecoding 沿 KV 长度切段并行，再按 log-sum-exp 精确合并，$BH$ 已够大时不必切。"
 tags:
+  - 完整编程练习
   - OpenAI
   - FlashDecoding
   - Inference
@@ -15,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: Flash-Decoding for long-context inference (Stanford CRFM)
     url: https://crfm.stanford.edu/2023/10/12/flashdecoding.html
@@ -31,47 +30,185 @@ sources:
     type: secondary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，在 CPU 上做数值验证，没有验证 GPU、多卡或性能。
+
+### 题面、接口与约束
+
+- `split_stats(q, k, v, scale) -> (m, ell, O)`：对一段 KV 算出最大分数 `m`、指数和 `ell` 和未归一化的加权和 `O`。`q` 是 `[D]`，`k`、`v` 是 `[S_g, D]`，`S_g >= 1`。
+- `merge_mlo(stats) -> [D]`：把各段统计按全局 max 重新缩放后合并，返回归一化输出；`ell == 0` 的段跳过，全部为空时抛 `ValueError`。
+- `flash_decode(q, k, v, scale, n_split=4) -> [D]`：把长度 `S` 的 KV 切成 `n_split` 段，结果必须等于 `softmax(scale * K q) @ V`。
+- 约束：`S >= 1`，`n_split >= 1`，否则抛 `ValueError`。`n_split` 可以大于 `S`，多出来的空段要安全跳过，不能对空数组取 max。
+
+### 输入输出示例
+
+```text
+S = 7, D = 4, scale = 0.5
+flash_decode(q, k, v, 0.5, n_split=3)   -> 等于 softmax(0.5 * k @ q) @ v
+flash_decode(q, k, v, 0.5, n_split=20)  -> 同上；20 段里有 13 段为空，合并时跳过
+flash_decode(q, k[:1], v[:1], 0.5, 8)   -> v[0]
+flash_decode(q, k[:0], v[:0], 0.5, 2)   -> ValueError
+```
+
+### 解题思路与正确性
+
+每段只保存三样东西：段内最大分数 $m_g$、指数和 $\ell_g$、没有除以 $\ell_g$ 的加权和 $O_g$。合并时取全局最大值 $m$，把每段乘上 $e^{m_g-m}$ 再相加，最后用总的 $O$ 除以总的 $\ell$。这样每个 token 的权重都变成 $e^{s_j-m}/\ell$，和一次性对整段做 softmax 完全一样。
+
+不能先在段内做 softmax 再平均：每段用的是自己的分母，平均以后权重和全局 softmax 对不上。
+
+空段没有分数，记成 $m_g=-\infty$、$\ell_g=0$，合并前过滤掉。否则全局 max 可能是 $-\infty$，算 $e^{-\infty-(-\infty)}$ 会得到 NaN。
+
+### 完整参考实现（Python 3）
+
+```python
+import numpy as np
+
+
+def split_stats(q, k, v, scale):
+    """一段 KV 的 online softmax 统计 (m, ell, O)，O 未除以 ell。
+
+    q: [D]，k, v: [S_g, D]，S_g >= 1。
+    """
+    scores = (k @ q).astype(np.float64) * scale   # [S_g]
+    m = float(np.max(scores))
+    weights = np.exp(scores - m)                  # [S_g]，每项在 (0, 1]
+    ell = float(weights.sum())
+    out = weights @ v.astype(np.float64)          # [D]，未归一化
+    return m, ell, out
+
+
+def merge_mlo(stats):
+    """把各段的 (m, ell, O) 按全局 max 重新缩放后相加，返回归一化输出 [D]。
+
+    ell == 0 的段（空段或整段被 mask）直接跳过。
+    """
+    valid = [(m, ell, out) for m, ell, out in stats if ell > 0 and np.isfinite(m)]
+    if not valid:
+        raise ValueError("all splits are empty, nothing to attend to")
+    global_max = max(m for m, _, _ in valid)
+    total_ell = 0.0
+    total_out = 0.0
+    for m, ell, out in valid:
+        factor = np.exp(m - global_max)   # (0, 1]
+        total_ell += factor * ell
+        total_out = total_out + factor * out
+    return total_out / total_ell
+
+
+def flash_decode(q, k, v, scale, n_split=4):
+    """把长度 S 的 KV 切成 n_split 段分别求统计，再合并成精确的 softmax(scale * K q) @ V。
+
+    q: [D]，k, v: [S, D]。n_split 可以大于 S，多出来的段是空段。
+    """
+    seq_len, dim = k.shape
+    if seq_len == 0:
+        raise ValueError("KV cache is empty")
+    if n_split < 1:
+        raise ValueError(f"n_split must be >= 1, got {n_split}")
+    cuts = np.linspace(0, seq_len, n_split + 1, dtype=int)
+    stats = []
+    for start, end in zip(cuts[:-1], cuts[1:]):
+        if start == end:
+            stats.append((-np.inf, 0.0, np.zeros(dim)))
+        else:
+            stats.append(split_stats(q, k[start:end], v[start:end], scale))
+    return merge_mlo(stats)
+```
+
+### 可执行测试
+
+```python
+def expect_value_error(fn, *args):
+    try:
+        fn(*args)
+    except ValueError:
+        return
+    raise AssertionError(f"{fn.__name__} should raise ValueError")
+
+
+def reference_attention(q, k, v, scale):
+    scores = (k @ q) * scale
+    weights = np.exp(scores - scores.max())
+    weights /= weights.sum()
+    return weights @ v
+
+
+rng = np.random.default_rng(2)
+q = rng.normal(size=4)
+k = rng.normal(size=(7, 4))
+v = rng.normal(size=(7, 4))
+expected = reference_attention(q, k, v, 0.5)
+
+# 不切、切成不等长的 3 段、段数远大于 S（大量空段）都等于直接 attention
+for n_split in (1, 3, 7, 20):
+    assert np.allclose(flash_decode(q, k, v, 0.5, n_split), expected)
+
+# 只有一个 token 时输出就是那一行 V
+assert np.allclose(flash_decode(q, k[:1], v[:1], 0.5, 8), v[0])
+
+# 分数很大时也不溢出：每段先减自己的 max
+big_q = q * 1000.0
+assert np.allclose(flash_decode(big_q, k, v, 0.5, 3), reference_attention(big_q, k, v, 0.5))
+
+# 常见错法：每段先归一化再平均，结果不对
+per_split = [reference_attention(q, k[a:b], v[a:b], 0.5) for a, b in ((0, 2), (2, 7))]
+assert not np.allclose(np.mean(per_split, axis=0), expected)
+
+# 空 KV、n_split < 1、所有段都为空都报错
+expect_value_error(flash_decode, q, k[:0], v[:0], 0.5, 2)
+expect_value_error(flash_decode, q, k, v, 0.5, 0)
+expect_value_error(merge_mlo, [(-np.inf, 0.0, np.zeros(4))])
+```
+
+### 复杂度与追问
+
+设 KV 长度为 $S$，head 维度为 $D$，段数为 $G$（即 `n_split`）。算术量是 $O(SD)$，和不切一样；额外保存 $G$ 份统计，空间 $O(GD)$，合并是 $O(GD)$。这是 CPU 上的数值模拟，不能据此报 GPU 加速比。
+
+- 追问「$G$ 怎么选」：让 batch × head × $G$ 大致盖住 SM 数，再看 $S$。$G$ 太大时部分结果变多、归约变重，每段也短到填不满一个 tile。
+- 追问「如果 $O_g$ 已经除过 $\ell_g$」：合并改成 $O=\sum_g e^{m_g-m}\ell_g O_g$，最后再除以 $\ell$。两种约定不要混用。
+
 ## 题怎么来的
 
-Dao、Haziza、Massa、Sizov 的 Flash-Decoding 是公开推理 kernel，不是 OpenAI 内部代号。推理岗会把它接在 `openai-prefill-decode` 后面问：既然 FlashAttention 已经不物化 $[T,T]$，decode 为什么还慢。差在并行度，不在公式。片上 softmax 见 `google-flash-attention`、`nvidia-flash-attn`、`coding-online-softmax`。
+Flash-Decoding 是 Dao、Haziza、Massa、Sizov 公开的推理 kernel，不是 OpenAI 内部的代号。推理岗常把它接在 `openai-prefill-decode` 后面问：既然 FlashAttention 已经不物化 $[T,T]$，逐 token 生成（decode）为什么还慢？答案在并行度，不在公式。片上 softmax 的推导见 `google-flash-attention`、`nvidia-flash-attn`、`coding-online-softmax`。
 
-## Decode 的并行度塌了
+## Decode 的并行度不够
 
-FlashAttention 的外层并行是 batch、head、query tile。Prefill 时 $T_q$ 上千，每个 query 块都能占一个 CTA，HBM 往返被 tile 吃掉，这是 prefill 的红利。
+FlashAttention 的外层并行是 batch、head 和 query tile。输入预填充（prefill，即处理输入并建立 KV cache）时 $T_q$ 上千，每个 query 块都能占一个 CTA，HBM 往返被 tile 摊掉。
 
-Decode 一步：$Q$ 是 `[B, H, 1, D]`，$K,V$ 是 `[B, H_{\mathrm{kv}}, T, D]`。分数已经是 `[1, T]`，没有 $[T,T]$ 可省。墙上的时间是把整段 KV 从 HBM 读进来。更糟的是能发 load 的 CTA 太少：并行度大约 $B\cdot H$（GQA 时是 $B\cdot H_q$，但 KV 头更少）。$B=1$、$H=32$，A100 有 108 个 SM，大部分 SM 闲着，带宽打不满。这不是算术强度公式变了，是 occupancy。
+Decode 一步里，$Q$ 是 `[B, H, 1, D]`，$K,V$ 是 `[B, H_{\mathrm{kv}}, T, D]`。分数只有 `[1, T]`，没有 $[T,T]$ 可省，时间主要花在把整段 KV 从 HBM 读进来。更麻烦的是能发起 load 的 CTA 太少：并行度大约是 $B\cdot H$（GQA 时是 $B\cdot H_q$，但 KV 头更少）。$B=1$、$H=32$ 时，A100 的 108 个 SM 大部分闲着，带宽打不满。算术强度的公式没变，问题出在 occupancy。
 
-所以「decode 再套一遍 prefill 的 FlashAttention」加速比通常很小。GQA / 量化 cache 降的是每步要读的字节，见 `google-gqa-mqa`；FlashDecoding 降的是读这些字节时 SM 闲着。两杠杆正交。
+所以 decode 时直接套用 prefill 的 FlashAttention，加速通常很小。GQA 和量化 cache 减少的是每步要读的字节，见 `google-gqa-mqa`；FlashDecoding 解决的是读这些字节时 SM 闲着的问题。两者互不冲突，可以叠加。
 
 ## Split-K：沿 KV 切开，再用 LSE 合并
 
-Flash-Decoding 多一个并行轴：把长度为 $T$ 的 $K,V$ 切成 $S$ 段。每段对同一个 $q$ 跑一块 FlashAttention，写出局部输出 $O_s$ 和该段的 log-sum-exp $\ell_s=\log\sum\exp(q k^\top/\sqrt{d})$。然后做一次小归约：
+Flash-Decoding 多加了一个并行轴：把长度为 $T$ 的 $K,V$ 切成 $S$ 段。每段对同一个 $q$ 跑一块 FlashAttention，写出段内归一化的局部输出 $O_s$，以及该段的 log-sum-exp $\ell_s=\log\sum\exp(q k^\top/\sqrt{d})$。然后做一次小规模归约：
 
 $$
 \ell=\log\sum_{s=1}^{S}e^{\ell_s},\qquad
 O=\sum_{s=1}^{S}e^{\ell_s-\ell}\,O_s.
 $$
 
-实现上先减 $\max_s \ell_s$ 再 exp，避免 overflow。这和 online softmax 跨块 rescale 是同一套代数，精确注意力，不是近似。CTA 数变成大约 $B\cdot H\cdot S$，只要 $T$ 够长，就能把 SM 喂饱。博客报过长序列上最高大约 8 倍的生成加速；数字随 GPU、头数、是否已经有足够 $B H$ 变，面试报趋势不要报成 SLA。
+实现时先减去 $\max_s \ell_s$ 再求指数，避免溢出。这和 online softmax 跨块 rescale 是同一套代数，结果是精确注意力，不是近似。练习代码用的是等价约定：每段存最大值 $m$、指数和 $\ell$（不取对数）和未归一化的 $O$，两者的关系是 $\ell_s=m+\log\ell$。
 
-```python
-def merge_splits(O_s, lse_s):
-    # O_s: [S, D], lse_s: [S]  fp32
-    m = lse_s.max()
-    w = torch.exp(lse_s - m)
-    ell = m + torch.log(w.sum())
-    return (w.unsqueeze(-1) * O_s).sum(0) / w.sum(), ell
-```
+切完以后 CTA 数大约是 $B\cdot H\cdot S$，只要 $T$ 够长就能把 SM 喂饱。博客报告过长序列上最高约 8 倍的生成加速；这个数字随 GPU、头数以及原本的 $BH$ 是否已经够大而变化，面试时讲趋势，不要说成保证的指标。
 
-启发式：`num_splits=1` 当 $B H$ 已经大于 SM 数。硬切 $S=8$ 只会加一次同步和若干次额外写 $O_s$，更慢。FlashAttention-2 论文也讨论过 split-K 的无效同步；decode 长、$B$ 小才是这条路径的工作点。$S$ 太大，每段 $T/S$ 太短，tile 效率掉下去，和 prefill 块太小同一类病。
+什么时候不切：$BH$ 已经大于 SM 数时，`num_splits=1`。这时硬切成 $S=8$ 只会多一次同步和几次额外的 $O_s$ 写回，反而更慢。FlashAttention-2 论文也讨论过 split-K 带来的多余同步；decode、长上下文、小 batch 才是这条路径的适用场景。$S$ 太大时每段只有 $T/S$ 个 token，tile 效率下降，和 prefill 块切得太小是同一类问题。
 
-因果：decode 一步没有未来 key，mask 不是主因。Paged KV 只改物理布局，split 仍然按逻辑 $T$ 切，见 `openai-continuous-batching`。投机解码的验证步 $T_q=\gamma\gt 1$，并行度回来了，往往不必 split-K，见 `openai-speculative-decoding`。
+因果 mask 在这里不是主要因素：decode 一步里没有未来的 key。Paged KV 只改变物理布局，split 仍按逻辑上的 $T$ 切，见 `openai-continuous-batching`。投机解码的验证步 $T_q=\gamma\gt 1$，并行度回来了，通常不必 split-K，见 `openai-speculative-decoding`。
 
-错法：说 FlashDecoding 把复杂度改成线性；说它和 FlashAttention 公式不同；在大 batch 上默认 split。要讲清何时切、怎么合并、何时不切。
+常见的错误说法有三种：说 FlashDecoding 把复杂度变成了线性；说它和 FlashAttention 的公式不同；在大 batch 上默认开启 split。回答时要讲清何时切、怎么合并、何时不切。
 
 ## 追问
 
-- **和 split-K GEMM 什么关系？** 同一思想：M 维太瘦，把 K 维切开填 SM，再归约。注意力的归约必须带 LSE，不能把各段 $O_s$ 直接平均。
-- **GQA 的 $H_{\mathrm{kv}}$ 更少，还要不要 split？** 更要。KV 头少意味着发 load 的 CTA 更少，长 $T$ 更吃不满带宽。
-- **数值会和单核 bit exact 吗？** 不会。浮点归约顺序变了，ulp 级差。下游 greedy 应对齐到 token；不要用 bitwise 当回归。
-- **训练要不要 FlashDecoding？** 不要。训练 $T_q$ 大，prefill 式 FlashAttention 才是主路径。这是推理 decode 的 occupancy 补丁。
+- **和 split-K GEMM 什么关系？** 思想相同：M 维太窄，就把 K 维切开来填满 SM，最后归约。区别是注意力的归约必须带 LSE，不能把各段 $O_s$ 直接平均。
+- **GQA 的 $H_{\mathrm{kv}}$ 更少，还要不要 split？** 更需要。KV 头少意味着发起 load 的 CTA 更少，长 $T$ 下更打不满带宽。
+- **数值会和单核结果 bit exact 吗？** 不会。浮点归约顺序变了，会有 ulp 级的差异。回归测试应该检查 greedy 解码出的 token 是否一致，不要用逐位比较。
+- **训练要不要用 FlashDecoding？** 不需要。训练时 $T_q$ 很大，prefill 式的 FlashAttention 才是主路径。FlashDecoding 是专门解决推理 decode 占用率的方案。
+
+## 相关题
+
+- [[nvidia-flash-decode]]：同一题的 NVIDIA 问法，练习代码完全相同；正文多了训练核与 decode 核的网格对照、FA-2 的 sliced-K 区别和 CUDA Graph。
+- [[coding-flash-decode]]：同一份练习代码的白板版，只讲分段统计和合并的正确性，不讲何时切。
+- [[nvidia-flash-attn]]：本题前置的 FlashAttention IO 分析，解释为什么 decode 时没有 $[T,T]$ 可省。
+- [[coding-online-softmax]]：LSE 合并的 rescale 规则来自顺序的 online softmax，那张先把单 CTA 串行扫 $K$ 的版本写对。

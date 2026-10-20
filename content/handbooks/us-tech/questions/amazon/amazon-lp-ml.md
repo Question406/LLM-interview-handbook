@@ -6,7 +6,7 @@ level: S
 title: Amazon：领导力原则怎么落到 ML 决策（上线门禁、客户数据、纠错）？
 quick: >-
   上线门禁是 Insist on the Highest Standards 加 Customer Obsession：离线不够就别全量。客户数据是 Earn
-  Trust：最小够用、可审计、可删。纠错是 Dive Deep 加 Backbone：指标掉了先停再查，不同意用数据吵，决定了就回滚或修。LP 不是
+  Trust：最小够用、可审计、可删。纠错是 Dive Deep 加 Backbone：指标掉了先停再查，有分歧时用数据讨论，决定了就回滚或修。LP 不是
   STAR 背诵，是你怎么拒绝一次坏上线。
 tags:
   - Amazon
@@ -42,7 +42,7 @@ Customer Obsession 要求指标是客户的：购买、退货、零结果、政�
 
 Bias for Action 在这里不是「没评完就推全量」。可逆的影子和 1% 实验才是行动；不可逆的全量是赌博。Frugality 也反对「再训一个大模型碰运气」。Are Right, A Lot 要你主动找会失败的切片，而不是只报平均值。
 
-Have Backbone; Disagree and Commit：门禁没过，对业务说不。你反对的实验如果团队决定做，就帮它把护栏和回滚写严，而不是上线后冷笑。现场故事要有一次你挡过的上线，或一次你被数据说服后 commit。没有数字的 STAR 在 Amazon 很弱。
+Have Backbone; Disagree and Commit：未满足上线条件，对业务说不。你反对的实验如果团队决定做，就帮它把护栏和回滚写严，而不是上线后冷笑。现场故事要有一次你挡过的上线，或一次你被数据说服后 commit。没有数字的 STAR 在 Amazon 很弱。
 
 ## 客户数据：Earn Trust 写进管道，不是写进 wiki
 

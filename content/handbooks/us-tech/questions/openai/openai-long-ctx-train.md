@@ -52,7 +52,7 @@ RoPE 第 $i$ 对维度的角频率 $\theta_i=\theta^{-2i/d}$，默认 $\theta=10
 
 ## packing：拼得满，但文档之间不要互看
 
-短文档要 pack 满 $[B,T]$ 才不浪费。错法是直接 concat，让文档 A 的 token attend 到文档 B。模型会学到虚假跨文依赖，长窗评测时反而更爱抄隔壁。正确是文档级注意力 mask：同一篇内因果，跨篇全挡。结束符可以当边界特征，不能代替 mask。
+短文档要 pack 满 $[B,T]$ 才不浪费。常见误区是直接 concat，让文档 A 的 token attend 到文档 B。模型会学到虚假跨文依赖，长窗评测时反而更爱抄隔壁。正确是文档级注意力 mask：同一篇内因果，跨篇全挡。结束符可以当边界特征，不能代替 mask。
 
 ```python
 # 文档 id 是 [B, T]，同一篇同号
@@ -72,3 +72,10 @@ Lost in the Middle 是评测现象：证据在中间比在头尾差。训练上�
 - **packing 不加 mask 最坏怎样？** 模型把相邻无关文档当上下文，检索和引用会串台。吞吐看起来很高，评测是脏的。
 - **和 sink / 滑窗什么关系？** 滑窗是推理驱逐；长窗训练是让模型真的见过长距离。两者都要时，先保证 RoPE 下标，见 `openai-rope-offset`。
 - **Math 用 $6ND$ 算长窗续训吗？** 可以估 FLOPs，但 $D$ 应计新增长上下文 token，不要把短窗预训练的 token 再数一遍充数，见 `openai-scaling-laws`。
+
+## 相关题
+
+- [[meta-pack-seq]]：只讲本题 packing 那一节，更细地说明文档 mask、`position_ids` 重置和 SFT 的风险。
+- [[coding-packed-lm]]：把文档 packing 写成代码，`cu_seqlens` 和块对角因果 mask 都要实现。
+- [[meta-yarn-ntk]]：PI、NTK、YaRN 和改 `rope_theta` 的区别，本卡只把插值当一条旋钮带过。
+- [[meta-llama-rope]]：Llama 3.1 的公开做法是提高 `rope_theta` 再续训长窗，可以当本卡的一个具体例子。

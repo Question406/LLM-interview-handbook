@@ -69,3 +69,10 @@ SmoothQuant 的核心是：LLM 激活沿通道有固定 outlier，INT8 格子装
 - **Per-tensor scale 不够怎么办？** 沿输出通道或沿块再切 scale。更碎更准，kernel 和 scale 传输更烦。MXFP8 是这条线的后续，没做过就说「块级 scale 在补 per-tensor 的动态范围」。
 - **和 INT8 能不能同一套校准？** 不能直接套。INT8 校准是部署前一次；FP8 训练的 amax 每个 iteration 都在动。把校准表硬接到训练 GEMM 上会漂。
 - **溢出了怎么看？** 看 inf/nan 计数、amax 是否打满 fp8_max、以及 TE 有没有把 scale 下调。和 GradScaler 的 skip step 类似，但作用点在 tensor scale，不是全局 loss scale。
+
+## 相关题
+
+- [[sys-mixed-precision]]：和本题高度重合，同样强调「训练 FP8 不是推理量化」，但重点放在 FP32 master weights 和 BF16/FP16 loss scaling。
+- [[sys-fp8-gemm]]：只谈推理侧的 FP8 GEMM，scale 粒度（DeepSeek-V3 的 tile/block）和 DeepGEMM 一类核。
+- [[nvidia-int8-quant]]：本题用来做对比的 INT8 推理量化，讲对称/非对称和校准。
+- [[nvidia-fp8-kv]]：同样是 FP8，但量化的是 KV cache，scale 来自每条请求自己的 K/V 分布。

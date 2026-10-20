@@ -4,9 +4,7 @@ section: google
 order: 30
 level: A
 title: Google：视频 token 的时间采样，怎么和长上下文抢预算
-quick: >-
-  视频不是「一段」，是 $F$ 帧乘每帧空间 token。1 fps 的一小时已经和一篇长文一个量级，和百万窗口抢同一条
-  $T$。采样率是超参：动作密就加密，讲座靠低 fps 加音频。评测必须固定抽样，分数否则不可比。
+quick: "视频不是「一段」，是 $F$ 帧乘每帧的空间 token。1 fps 的一小时已经和一篇长文一个量级，和百万窗口抢同一条 $T$。采样率是超参：动作密集时提高采样率，讲座靠低 fps 加音频。评测必须固定抽样，否则分数不可比。"
 tags:
   - Google
   - Gemini
@@ -35,7 +33,7 @@ Gemini 1.5 公开卖点包括小时级视频进同一窗口。研究岗问的是
 
 ## 预算：$T_{\mathrm{vid}}\approx F\cdot N_{\mathrm{sp}}$
 
-令时长 $S$ 秒、采样 $r$ fps，则 $F\approx S\cdot r$（再加镜头边界帧）。每帧空间 token $N_{\mathrm{sp}}$ 跟分辨率和 patch 走，可能再经 pooling / resampler。粗口算：
+令时长 $S$ 秒、采样 $r$ fps，则 $F\approx S\cdot r$（再加镜头边界帧）。每帧的空间 token $N_{\mathrm{sp}}$ 跟分辨率和 patch 走，可能再经 pooling / resampler。粗口算：
 
 $$
 T_{\mathrm{vid}}\approx F\cdot N_{\mathrm{sp}} + T_{\mathrm{aud}}
@@ -45,14 +43,14 @@ $N_{\mathrm{sp}}=256$、$r=1$、一小时：$F=3600$，视觉已经约 $9.2\time
 
 音频往往比密集 RGB 帧便宜：每秒 token 少，却是讲座、会议的主信息。失败模式是时间对不齐：画面描述对，却把第 3 分钟的话安到第 10 分钟。评测要带时间戳或时间桶，不要只做开放式「讲了什么」。
 
-ViViT 一类 tubelet 把时空块当成一个 token，$F$ 和 $N_{\mathrm{sp}}$ 一起压。Flamingo 则每帧 resample 成固定 $N_{\mathrm{lat}}$ 再沿时间拼，$N_{\mathrm{sp}}$ 被掐死，$F$ 仍线性，见 `google-flamingo`。面试说清压缩发生在空间、时间还是两者，不要把三个名字并成「视频模块」。
+ViViT 一类 tubelet 把时空块当成一个 token，$F$ 和 $N_{\mathrm{sp}}$ 一起压。Flamingo 则每帧 resample 成固定 $N_{\mathrm{lat}}$ 再沿时间拼，$N_{\mathrm{sp}}$ 被固定，$F$ 仍线性，见 `google-flamingo`。面试说清压缩发生在空间、时间还是两者，不要把三个名字并成「视频模块」。
 
 ## 时间采样：均匀只是默认，不是最优
 
 均匀 $r$ fps 可复现，适合做回归。产品上要按错误类型改：
 
 - 讲座、播客、屏幕录制讲稿：低 fps + 音频 + 关键字幕。画面几乎不动，$r$ 高是浪费。
-- 体育、操作演示、UI 点击：动作发生在短间隔。均匀 1 fps 会把关键帧抽掉。镜头切换检测、或「差帧超过阈值就加点」比盲目加 fps 便宜。
+- 体育、操作演示、UI 点击：动作发生在短间隔。均匀 1 fps 会把关键帧抽掉。镜头切换检测、或「帧间差异超过阈值就增加采样」比盲目加 fps 便宜。
 - 长监控 / 会议回看：先低分辨率全局时间线，用户或模型圈出窗口再提高局部 $r$ 和空间分辨率。这和文档动态切块是同一思想，见 `google-vit-patch`。
 
 抽样一旦进评测集就必须冻结。换 fps 等于换题：分数涨了不知道是模型还是多看了 3 倍帧。Gemini 报告里的视频能力，对比时要对齐抽样协议，不要和自家更高 fps 的私有集比。
@@ -65,9 +63,9 @@ ViViT 一类 tubelet 把时空块当成一个 token，$F$ 和 $N_{\mathrm{sp}}$ 
 
 分配顺序我面试会主动报：先留用户问题和系统约束，再留音频 / ASR，再留稀疏关键帧，最后才是均匀填满的剩余帧。反了就会出现「窗口满了，问题被截断」。工具环里每步新截图也是视频的离散版，旧帧要丢或摘要，否则 agent 自己把窗口吃光。
 
-错法：把一段视频说成 1 个 token；说有 1M 窗口所以 30 fps 4K 随便喂；评测不公布 fps 还横向比。
+常见误区是：把一段视频说成 1 个 token；说有 1M 窗口所以 30 fps 4K 随便喂；评测不公布 fps 还横向比。
 
-Decode 侧：prefill 已经付了 $T_{\mathrm{vid}}$ 的二次项注意力；decode 每步读整段 KV。视频把 $T$ 抬高后，GQA / 量化 cache 和文本长上下文是同一杠杆，见 `google-gqa-mqa`、`google-tpu-decode`。
+Decode 侧：输入预填充（prefill，即处理输入并建立缓存） 已经付了 $T_{\mathrm{vid}}$ 的二次项注意力；逐 token 生成（decode） 每步读整段 KV。视频把 $T$ 抬高后，GQA / 量化 cache 与文本长上下文使用相同的优化方法，见 `google-gqa-mqa`、`google-tpu-decode`。
 
 ## 追问
 

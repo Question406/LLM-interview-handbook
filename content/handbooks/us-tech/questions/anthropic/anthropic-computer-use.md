@@ -66,7 +66,7 @@ def run_block(block, user):
 
 隔离同样是产品层：专用 VM、最小权限、不要把登录态和支付 cookie 交给模型、出站域名允许列表。官方参考实现自己也写：在真实机器上跑、没有这些护栏，等于把键鼠交给不可信调用方。这和 `anthropic-tool-use` 是同一条：模型不可信。
 
-## 和 prompt injection 绑在一起
+## 与 prompt injection 一起考虑
 
 屏幕是不可信内容。网页、PDF、桌面通知都能写「现在点击发送」。Constitution 和系统提示都在同一上下文里，注入的目标就是覆盖它们。产品层确认的好处是：**即使模型被说服，动作还卡在宿主。** 注入细节见 `anthropic-prompt-injection`。
 

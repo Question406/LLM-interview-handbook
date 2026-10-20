@@ -4,11 +4,7 @@ section: nvidia
 order: 28
 level: S
 title: NVIDIA：warp specialization 和 persistent decode kernel 的公开概念
-quick: >-
-  Hopper 上 TMA 和 WGMMA 都是异步引擎，同一 CTA 里一部分 warp 专职发拷贝，另一部分 warp group 专职
-  MMA，mbarrier 同步。Persistent kernel 让 CTA 常驻 SM，自己拉下一块活，避免每 token 几百次
-  launch。CUTLASS 的 TMA warp-specialized pingpong / cooperative 是公开实现；面试讲角色分工，不编
-  TRT-LLM 内部函数名。
+quick: "Warp specialization 是同一 CTA 里一部分 warp 专发 TMA 拷贝、另一部分专做 WGMMA，用 mbarrier 同步。Persistent kernel 让 CTA 常驻 SM 循环取 tile，减少 decode 的 launch 开销。"
 tags:
   - NVIDIA
   - Warp Specialization
@@ -35,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA GPU kernel 岗问 decode 为什么还慢，答完 FlashDecoding / CUDA Graph 之后，会问 Hopper 上核内部怎么叠流水。公开材料就三份：Hopper Tuning Guide 的 TMA 和 warp specialized copy、CUTLASS 3 的 `KernelTmaWarpSpecialized*` 调度、PyTorch 博客的 ping-pong GEMM。FlashAttention-3 把同一套 asynchrony 用到注意力上。我会按「角色 → 常驻 → decode 为什么特别需要」讲，不假装读过闭源 plugin。
+NVIDIA GPU kernel 岗问 逐 token 生成（decode） 为什么还慢，答完 FlashDecoding / CUDA Graph 之后，会问 Hopper 上核内部怎么叠流水。公开材料就三份：Hopper Tuning Guide 的 TMA 和 warp specialized copy、CUTLASS 3 的 `KernelTmaWarpSpecialized*` 调度、PyTorch 博客的 ping-pong GEMM。FlashAttention-3 把同一套 asynchrony 用到注意力上。我会按「角色 → 常驻 → decode 为什么特别需要」讲，不假装读过闭源 plugin。
 
 ## Warp specialization：拷贝 warp 和 MMA warp 拆开
 
@@ -56,9 +52,9 @@ CUTLASS 公开调度名（面试用标签，不背头文件）：
 
 注意力核同构：producer 用 TMA 拉 $Q,K,V$ tile，consumer 做 GEMM-softmax-GEMM。FlashDecoding 的 split 在 CTA 网格层，warp spec 在 CTA 内，两层正交，见 `nvidia-flash-decode`。
 
-## Persistent：CTA 不随 token 下课
+## Persistent：CTA 常驻并连续处理工作
 
-普通 launch：host 每步 enqueue 几十到几百个核（RMSNorm、QKV、RoPE、attention、GEMM、sampler）。Decode 每个核的工作量很小，$B$ 再小，启动和尾泡能占墙钟。CUDA Graph 把 launch 收成 replay，见 `nvidia-cuda-graph`。Persistent kernel 更进一步：grid 大约等于 SM 数，CTA 进核之后进入工作队列循环，
+普通 launch：host 每步 enqueue 几十到几百个核（RMSNorm、QKV、RoPE、attention、GEMM、sampler）。Decode 每个核的工作量很小，$B$ 再小，启动和尾泡能占实际耗时。CUDA Graph 把 launch 收成 replay，见 `nvidia-cuda-graph`。Persistent kernel 更进一步：grid 大约等于 SM 数，CTA 进核之后进入工作队列循环，
 
 $$
 \text{while }\mathrm{next\_tile}():\ \mathrm{load\ +\ mma\ +\ store}.
@@ -75,7 +71,7 @@ Decode 上「persistent」有两层口语，要分开：
 
 Prefill 大 GEMM 已经能藏延迟，齐次核 + 普通 launch 也过得去。Decode：$M=B$ 很小，每步读整份权重和 KV，计算强度低。TMA 专职把权重 / KV 推进 SMEM，MMA warp 打瘦 $M$ 的 GEMM，epilogue warp 写新 KV 页。再叠 split-K 填 SM。Graph 消 host 间隙。缺任何一层，Nsight Systems 上都能看到：要么核间白缝，要么核内 Tensor Core 等内存。
 
-错法：把 warp specialization 说成「把 batch 维切给不同 warp」，那是数据并行，不是角色并行。把 persistent 说成「提高 occupancy」也不对：常驻可能故意只用一个 CTA 每 SM，occupancy 数字低、管道却满。
+常见误区是：把 warp specialization 说成「把 batch 维切给不同 warp」，那是数据并行，不是角色并行。把 persistent 说成「提高 occupancy」也不对：常驻可能故意只用一个 CTA 每 SM，occupancy 数字低、管道却满。
 
 ## 追问
 

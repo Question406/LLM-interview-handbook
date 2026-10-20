@@ -4,10 +4,7 @@ section: meta
 order: 3
 level: A
 title: Meta：Llama 3 tokenizer（tiktoken 风格）相对 Llama 2 SentencePiece 面试怎么讲
-quick: >-
-  Llama 2 是 32k 的 SentencePiece BPE；Llama 3 换成 tiktoken 风格的字节级 BPE，词表约 128k（公开报告是
-  100k tiktoken 底表再加约 28k 非英语 token）。英语压缩大约 3.17 提到 3.94 字符/token。词表和 embedding
-  绑死，不能混用两代 tokenizer。
+quick: "Llama 2 是 32k 的 SentencePiece BPE；Llama 3 换成 tiktoken 风格的字节级 BPE，词表约 128k，英语压缩从 3.17 升到 3.94 字符/token。两代 id 空间不同，不能混用。"
 tags:
   - Meta
   - Llama
@@ -51,7 +48,7 @@ Llama 3 博客给过一个对外数字：同样文本最多大约少 $15\%$ toke
 
 反过来，词表变大，embedding 和 lm_head 是 $[V, D]$。Llama 3 8B 比 Llama 2 7B 大约多 1B 参数，公开叙述里很大一块就是 $V$：$128256$ 对 $32000$。博客同时说：更好的压缩加上 8B 也用了 GQA（见 `meta-llama-gqa`），推理侧大致还能和 7B 打平。所以「词表越大越亏」是错的，要同时报 $V\cdot D$ 和平均 $T$。
 
-端侧更狠。Llama 3.2 把小模型塞到手机和边缘设备，KV cache 和 prefill 都跟 $T$ 走。同一段用户话少 $15\%$ token，是延迟和显存，不只是 tokenizer 竞赛分数。
+端侧更狠。Llama 3.2 把小模型塞到手机和边缘设备，KV cache 和 输入预填充（prefill，即处理输入并建立缓存） 都跟 $T$ 走。同一段用户话少 $15\%$ token，是延迟和显存，不只是 tokenizer 竞赛分数。
 
 ## 编码不变量，以及不能混用
 
@@ -73,3 +70,9 @@ tiktoken 风格 encode 的错法和 Anthropic 白板同一类：上线没有语�
 - **数字怎么切？** tiktoken 族常常把数字切得很细（一位一块很常见）。算术和表格任务会变长；这是词表税，模型「不会数数」只是其中一种读法。
 - **和 128k 上下文是一件事吗？** 词表压缩改变的是同样字符占用的 $T$；长上下文是注意力能看多远，见 `meta-llama-rope`。两者相乘：更肥的 token 在同样 128k 窗口里能塞更多字。
 - **能把 Llama 2 权重接到 Llama 3 tokenizer 上吗？** 不能直接接。id 空间变了，embedding 行对不上。要扩词表并重新训或做 embedding 对齐，这是另一个项目。
+
+## 相关题
+
+- [[openai-tiktoken]]：tiktoken 和 SentencePiece 的算法差别、特殊 token 和扩词表，讲得比本卡更细。
+- [[sys-tokenizer-same]]：两套 id 空间不能混用；那张卡讲 RL 训练里混用之后具体坏在哪。
+- [[anthropic-bpe-tokenizer]]：字节级 BPE 的手写实现和往返不变量。

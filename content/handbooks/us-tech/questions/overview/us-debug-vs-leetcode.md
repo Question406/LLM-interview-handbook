@@ -29,7 +29,7 @@ OpenAI 电面给一份约 300 行的 Transformer、四个标注区间各藏一�
 ## 这轮测的能力
 
 1. **先固定观测。** `eval()`、greedy、关 dropout。不固定的话你改对了也看不出来。
-2. **按契约查，不按感觉改。** mask 必须在 softmax 前打 $-\infty$；softmax 沿 key 长；缩放是 $\sqrt{d_k}$；decode 位置是 `cache_len`。
+2. **按契约查，不按感觉改。** mask 必须在 softmax 前打 $-\infty$；softmax 沿 key 长；缩放是 $\sqrt{d_k}$；逐 token 生成（decode） 位置是 `cache_len`。
 3. **加功能时不破坏旧不变量。** 有 cache 和没 cache，同一前缀 greedy 必须逐 token 相同。
 
 这些和「最长回文子串」练的不是同一块。可以并行刷题，但权重别倒过来。
@@ -42,3 +42,7 @@ Anthropic 更像「分层工程实现」：CRUD 对了才解锁 TTL，再解锁�
 
 - **LeetCode 还要刷吗？** Meta / Amazon / Microsoft 通用软件轮仍要。lab 的 RE 岗可以少刷 hard，但不能零。
 - **没给标注区间怎么办？** 自己加 shape 断言和「单 token vs 全量 attention」对齐测试，这就是工作方式。
+
+## 相关题
+
+- [[p3a-openai-transformer-bug-hunt]]：这里讲为什么考 debug，那张是可以直接练的版本，带一份植入了 mask 和位置 bug 的注意力函数和测试。

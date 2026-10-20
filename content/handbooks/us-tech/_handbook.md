@@ -40,8 +40,9 @@ sections:
     title: 09 · Microsoft
     description: Phi vision、LLaVA 训练、Copilot agent、Florence、多 agent 失败模式
   - id: xai
-    title: 10 · xAI / Tesla
-    description: Grok 视觉、搜索 agent、实时语音、tool loop；Tesla 题仅作对照
+    title: 10 · xAI / SpaceXAI / Tesla
+    description: >-
+      2026 SpaceXAI 产品面（Grok Build / Bot / compaction）、15 分钟筛、搜索与 tool loop；Tesla 题仅作对照
   - id: coding
     title: 11 · ML Coding 白板
     description: FlashDecoding、paged block table、SWA/ALiBi mask、融合 CE、投机接受、INT8、一步 decode

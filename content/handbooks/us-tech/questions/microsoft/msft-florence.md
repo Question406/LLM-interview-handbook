@@ -31,13 +31,13 @@ sources:
     type: secondary
 ---
 
-Azure / Copilot Vision 岗会问「视觉基础模型和多模态 LLM 怎么接」。公开锚点是 Florence-2：一张图加任务提示，encoder-decoder 吐出文本形式的 caption、框、短语接地、分割多边形。它不是 LLaVA 那种「图 token 拼进聊天 LLM」。Azure Vision 产品线也把统一视觉表征接到 OCR / 描述。接到生成时，Florence 是感知器，LLM 是推理器。不是逐字真题。
+Azure / Copilot Vision 岗会问「视觉基础模型和多模态 LLM 怎么接」。公开锚点是 Florence-2：一张图加任务提示，encoder-decoder 吐出文本形式的 caption、框、短语定位、分割多边形。它不是 LLaVA 那种「图 token 拼进聊天 LLM」。Azure Vision 产品线也把统一视觉表征接到 OCR / 描述。接到生成时，Florence 是感知器，LLM 是推理器。不是逐字真题。
 
 ## 输出是文本，但是视觉合同
 
 Florence 把检测和 OCR 收成语言：框写成相对坐标字符串，OCR 写成字加位置。好处是一套权重多任务；坏处是坐标是生成出来的，不是 NMS 后处理的硬框。接到 Copilot 时：
 
-1. **感知。** 提示选任务：密集 caption、OCR、接地、区域建议。得到结构化 $E$（框、字、置信）。
+1. **感知。** 提示选任务：密集 caption、OCR、定位、区域建议。得到结构化 $E$（框、字、置信）。
 2. **检索 / 权限。** 若证据来自租户文档，ACL 仍按 `msft-copilot-ground` 裁。Florence 不负责权限。
 3. **生成。** LLM 只在 $E$ 上说话。要引用就指回框 id 或 OCR span。对不上就拒。
 
@@ -47,14 +47,14 @@ FLD 公开规模是约 54 亿条标注、1.26 亿张图，用迭代伪标。面�
 
 ## 失败模式
 
-- **坐标幻觉。** 模型写出看起来合法的框，点下去是空白。评测用 IoU / 中心是否落在可点区域，不要用 caption BLEU。
+- **坐标幻觉。** 模型写出看起来合法的框，点下去是空白。评测用 交并比（IoU，即两个区域的交集与并集之比） / 中心是否落在可点区域，不要用 caption BLEU。
 - **OCR 数字。** 金额、版本号单独计。生成模型会把错 OCR 说得很自信。
 - **双重视觉。** 又跑 Florence 又把原图送进 VLM，延迟和 TPM 双计，见 `msft-azure-tpm`。需要细节时才把 ROI 切给 VLM。
 - **把 Florence 当 chatbot。** 它不会工具循环，也不会遵守仓库 ACL。循环在 `msft-copilot-agent`。
 
 延迟：检测 / OCR 应在百毫秒到一秒内给出可点框；语言推理另算。能用专用头就不要先跑一轮 7B 聊天。Azure 上 Image Analysis 和开源 Florence-2 权重不是同一 SLA，面试以当时文档为准。
 
-我会先问产品要的是框、字，还是开放描述。再画感知 → 证据 $E$ → 生成。统一 seq2seq 省模型数，不省接地契约。检测 / OCR 用 Florence，开放描述用 VLM；评测把框 IoU 和 caption 流畅分开报。
+我会先问产品要的是框、字，还是开放描述。再画感知 → 证据 $E$ → 生成。统一 seq2seq 省模型数，仍要验证输出是否与图中区域对应。检测 / OCR 用 Florence，开放描述用 VLM；评测把框 IoU 和 caption 流畅分开报。
 
 ## 追问
 

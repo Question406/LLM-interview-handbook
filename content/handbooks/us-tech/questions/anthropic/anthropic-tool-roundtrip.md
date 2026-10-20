@@ -4,8 +4,7 @@ section: anthropic
 order: 30
 level: A
 title: Anthropic：tool 往返结果过大、截断、cache 前缀被破坏，怎么处理？
-quick: >-
-  工具结果是下一轮前缀的一部分。过大要截断并标明截断，不要 silently 丢尾巴。截断长度、错误包装、时间戳只要抖一下，prompt cache 从那一块起全 miss。静态的是 tools 和 system，结果当可变后缀。
+quick: "工具结果是下一轮前缀的一部分。过大要截断并标明截断，不要静默丢弃尾部内容。截断长度、错误包装、时间戳只要抖一下，输入提示（prompt） cache 从那一块起全 miss。静态的是 tools 和 system，结果当可变后缀。"
 tags:
   - Anthropic
   - Tool use
@@ -31,7 +30,7 @@ Agent serving 岗会从 `anthropic-tool-use` 追到「结果太大怎么办」�
 
 ## 过大：截断是合同，不是静默丢
 
-一次 `cat`、一次网页、一张未压缩截图，都能把窗口打满。我会在宿主设硬顶：字符数或 token 估计，超了就切，并在结果里写明「truncated, kept first N chars, original M」。模型才能决定再 `grep` 或换工具，而不是以为文件只有这么长。
+一次 `cat`、一次网页、一张未压缩截图，都能把窗口打满。我会在宿主设硬顶：字符数或估计的 token 数，超了就切，并在结果里写明「truncated, kept first N chars, original M」。模型才能决定再 `grep` 或换工具，而不是以为文件只有这么长。
 
 三条路：
 
@@ -39,7 +38,7 @@ Agent serving 岗会从 `anthropic-tool-use` 追到「结果太大怎么办」�
 2. 外置。大文件写到沙箱路径，结果只回路径和前几行，逼模型按需读。这是 Claude Code 那类 agent 的默认。
 3. 摘要。只在结果确定是自然语言散文时用。代码、JSON、表格摘要会丢键，下一轮参数就编。
 
-截图更狠：每张按 `anthropic-vision` 的 $T_{\mathrm{vis}}$ 计，二十步不丢历史，视觉 token 能到三万。只留最近 1–2 张，旧的改成文本动作记录。`is_error` 的结果不要再塞半截 HTML；给错误码和可修的字段。
+截图的占用更大：每张按 `anthropic-vision` 的 $T_{\mathrm{vis}}$ 计，二十步不丢历史，视觉 token 能到三万。只留最近 1–2 张，旧的改成文本动作记录。`is_error` 的结果不要再塞半截 HTML；给错误码和可修的字段。
 
 不要把堆栈、密钥、Set-Cookie 回灌进上下文。结果当不可信数据，边界见 `anthropic-prompt-injection` 和 `anthropic-xml-prompt`。
 
@@ -79,9 +78,9 @@ def pack_result(text, tool_use_id):
 
 ## 和流式、MCP、窗口
 
-流式还没拼完 JSON 就执行，结果形状会漂，见 `anthropic-streaming-tools`。MCP 服务器返回的资源当数据，描述进上下文等于可执行 prompt，见 `anthropic-mcp`。窗口预算：文本结果按 tokenizer 计，图按 $T_{\mathrm{vis}}$ 计，两者抢同一条 $T$，见 `anthropic-long-context`。
+流式还没拼完 JSON 就执行，结果形状会漂，见 `anthropic-streaming-tools`。MCP 服务器返回的资源当数据，描述进上下文等于可执行 输入提示（prompt），见 `anthropic-mcp`。窗口预算：文本结果按 tokenizer 计，图按 $T_{\mathrm{vis}}$ 计，两者抢同一条 $T$，见 `anthropic-long-context`。
 
-错法：结果超过窗口就静默丢最后一轮；截断不标注；把「本次检索时间」写进要缓存的 system；为了省 token 把旧工具结果改写成摘要却仍指望命中旧 cache。
+常见误区是：结果超过窗口就静默丢最后一轮；截断不标注；把「本次检索时间」写进要缓存的 system；为了省 token 把旧工具结果改写成摘要却仍指望命中旧 cache。
 
 ## 追问
 

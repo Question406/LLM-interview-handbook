@@ -4,9 +4,7 @@ section: systems
 order: 71
 level: B
 title: 系统：rollout 和训练的 tokenizer 不一致，会坏在哪？
-quick: >-
-  同一段文本可以变成两串不同的 id。生成用的边界、EOS 和奖励看到的字符串，必须和训练 gather logprob 用的 id 是同一套。
-  特殊 token 多一个或少一个，mask 会整段错位。
+quick: "同一段文本可以变成两串不同的 id。生成用的边界、EOS 和奖励看到的字符串，必须和训练 gather logprob 用的 id 是同一套。 特殊 token 多一个或少一个，mask 会整段错位。"
 tags:
   - Post-train
   - Tokenizer
@@ -53,3 +51,9 @@ def assert_same(train_tok, rollout_tok):
 ## 追问
 
 **词表一样、但添加了额外特殊 token？** 大小可以相同而 id 不同，也可以大小不同。校验和要覆盖特殊 token 的名字和 id，不只比 `vocab_size`。
+
+## 相关题
+
+- [[openai-tiktoken]]：特殊 token 单独查表、不进 merge，扩词表是加行，这些正是这里要校验的东西。
+- [[meta-llama3-tokenizer]]：Llama 2 和 Llama 3 的 id 空间不同，是 tokenizer 不一致的典型来源。
+- [[anthropic-bpe-tokenizer]]：手写 BPE 的往返不变量，从实现层面看 encode 的结果取决于哪些东西。

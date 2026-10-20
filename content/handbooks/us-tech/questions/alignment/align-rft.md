@@ -4,9 +4,7 @@ section: alignment
 order: 22
 level: S
 title: 对齐：Reinforcement Fine-Tuning / RLVR，可验证奖励接到策略
-quick: >-
-  RFT 不是再做一遍偏好 RLHF。你写 grader（代码或模型），对同题多样本打分，用策略梯度把高分轨迹抬起来。RLVR
-  把奖励钉在可检查的对错上：单测、数学核对、schema。grader 会被刷，验收不能用同一套打分器。
+quick: "RFT 不是再做一遍偏好 基于人类反馈的强化学习（RLHF）。你写 grader（代码或模型），对同题多样本打分，用策略梯度把高分轨迹抬起来。基于可验证奖励的强化学习（RLVR） 把奖励钉在可检查的对错上：单测、数学核对、schema。grader 会被刷，验收不能用同一套打分器。"
 tags:
   - OpenAI
   - DeepSeek
@@ -28,11 +26,11 @@ sources:
     type: primary
 ---
 
-OpenAI 把 Reinforcement Fine-Tuning 做成推理模型上的产品面：你不训 RM，你提供 grader。DeepSeek-R1 / 开源后训练把同一思路叫可验证奖励上的 RL（常写作 RLVR）。对齐岗常问：和 SFT、RLHF 差在哪，grader 坏了会怎样。组相对实现见 `align-grpo`；过程密化见 `align-process-reward`。
+OpenAI 把 Reinforcement Fine-Tuning 做成推理模型上的产品面：你不训 奖励模型（RM），你提供 grader。DeepSeek-R1 / 开源后训练把同一思路叫可验证奖励上的 强化学习（RL）（常写作 基于可验证奖励的强化学习（RLVR））。对齐岗常问：和 监督微调（SFT）、基于人类反馈的强化学习（RLHF） 差在哪，grader 坏了会怎样。组相对实现见 `align-grpo`；过程密化见 `align-process-reward`。
 
 ## 循环：采样、打分、更新
 
-对每个 prompt $x$，从当前策略抽 $G$ 条 $y_i$，grader 给标量 $r_i$，再做 policy gradient（常见就是组标准化优势 + clip，KL 到参考策略仍在）。和 SFT 的差别：没有唯一「正确文本」，只有「更高分的完成更该出现」。和经典 RLHF 的差别：奖励尽量来自**程序或规则**，不是人偏好蒸馏出的 $r_\phi$。
+对每个 输入提示（prompt） $x$，从当前策略抽 $G$ 条 $y_i$，grader 给标量 $r_i$，再做 policy gradient（常见就是组标准化优势 + clip，KL 到参考策略仍在）。和 SFT 的差别：没有唯一「正确文本」，只有「更高分的完成更该出现」。和经典 RLHF 的差别：奖励尽量来自**程序或规则**，不是人偏好蒸馏出的 $r_\phi$。
 
 OpenAI 公开叙述里强调：先把任务做成 eval。若基座已经在该 eval 上顶格或全错，RFT 帮不上忙——没有可爬的坡。这和「成功率 0 时 GRPO 组内全零」是同一句话。grader 可以是确定性代码（单测、数值容差、JSON schema），也可以是模型打分。后者立刻退化成 LLM-as-judge / 弱 RM，过优化曲线见 `align-overopt-rm`。
 
@@ -60,7 +58,7 @@ RLVR 的公开定义就是：$r$ 由可自动核对的性质给出，数学最�
 
 ## 面试怎么选
 
-有自动对错、基座已经会一点：RFT / RLVR 是正道，数据比写满示范便宜。只有偏好、没有核对：回到 RM / DPO / CAI，见 `align-dpo`、`align-cai`。工具环上「可验证」常常是任务成功而不是单次 API 200，见 `align-tool-rl`。我会写：SFT 拟合 $y^\star$，RFT 拟合 $r(x,y)$ 的高分区域；然后画一条 grader 分涨、held-out 单测掉的分叉，说明你知道 Goodhart。
+有自动对错、基座已经会一点：RFT / RLVR 是正道，数据比写满示范便宜。只有偏好、没有核对：回到 RM / 直接偏好优化（DPO） / CAI，见 `align-dpo`、`align-cai`。工具环上「可验证」常常是任务成功而不是单次 API 200，见 `align-tool-rl`。我会写：SFT 拟合 $y^\star$，RFT 拟合 $r(x,y)$ 的高分区域；然后画一条 grader 分涨、held-out 单测掉的分叉，说明你知道 Goodhart。
 
 ## 追问
 

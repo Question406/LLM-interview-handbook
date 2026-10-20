@@ -4,10 +4,7 @@ section: openai
 order: 18
 level: S
 title: OpenAI：Kaplan 和 Chinchilla 差在哪，compute-optimal 坐标别背错
-quick: >-
-  Compute-optimal 看的是等 FLOPs 曲线上 loss 最低的 $(N,D)$，不是「同样训 300B token、谁大谁好」。Kaplan 把更多
-  compute 分给参数（$N\propto C^{0.73}$）；Chinchilla 参数和 token 近似均分（$N,D\propto C^{0.5}$），大约
-  20 token/参数。20 是训练 FLOP 最优，不是推理最优。
+quick: "Compute-optimal 是等 FLOPs 下 loss 最低的 $(N,D)$。Kaplan 把算力多分给参数（$N\\propto C^{0.73}$）；Chinchilla 让两者同速增长（$N,D\\propto C^{0.5}$），约 20 token/参数。"
 tags:
   - OpenAI
   - Scaling
@@ -34,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-Kaplan et al. 是 OpenAI 自己的 scaling 论文；Hoffmann et al. 的 Chinchilla 是 DeepMind 后来打脸「大模型少数据」那条 frontier。LLM 研究岗几乎必问。错法不是记不住公式，是把两张图的坐标轴混在一张嘴边：一张是固定 token 数看模型大小，一张是固定 FLOPs 看怎么分 $N$ 和 $D$。GPT-4 报告继续讲 scale，但不公开拟合系数，我会用 Kaplan / Chinchilla 的公开拟合答，不编内部曲线。
+Kaplan et al. 是 OpenAI 自己的 scaling 论文；Hoffmann et al. 的 Chinchilla 是 DeepMind 后来修正了「大模型、少数据」的最优分配结论。LLM 研究岗几乎必问。错法不是记不住公式，是把两张图的坐标轴混为一谈：一张是固定 token 数看模型大小，一张是固定 FLOPs 看怎么分 $N$ 和 $D$。GPT-4 报告继续讲 scale，但不公开拟合系数，我会用 Kaplan / Chinchilla 的公开拟合答，不编内部曲线。
 
 Transformer 的训练 FLOPs 近似
 
@@ -46,13 +43,13 @@ $N$ 是参数量，$D$ 是训练 token 数。2 来自前向的 matmul，反向�
 
 ## 两套定律，两个最优
 
-Kaplan 把 loss 分别拟成规模的幂律，例如非 embedding 参数
+Kaplan 把 损失（loss） 分别拟成规模的幂律，例如非 embedding 参数
 
 $$
 L(N) = \bigl(N_c / N\bigr)^{\alpha_N},\qquad \alpha_N \approx 0.076.
 $$
 
-在 compute 预算下他们得到经验分配 $N_{\mathrm{opt}}\propto C^{0.73}$、$D_{\mathrm{opt}}\propto C^{0.27}$。含义：多出来的 FLOPs 大部分去堆参数，数据涨得慢，大模型在远没吃饱数据时就停。GPT-3 175B 吃约 300B token，正是这条思路。
+在 compute 预算下他们得到经验分配 $N_{\mathrm{opt}}\propto C^{0.73}$、$D_{\mathrm{opt}}\propto C^{0.27}$。含义：多出来的 FLOPs 大部分去堆参数，数据涨得慢，大模型在数据仍然不足时就停止训练。GPT-3 175B 吃约 300B token，正是这条思路。
 
 Chinchilla 用三条独立路径（固定 FLOPs 扫 $N$、IsoFLOP 剖面、参数化拟合）收敛到同一句话：参数和 token 应一起加。拟合形如
 
@@ -60,7 +57,7 @@ $$
 L(N,D)=E+\frac{A}{N^{\alpha}}+\frac{B}{D^{\beta}},
 $$
 
-再在 $C=6ND$ 上求最小。经验结果 $N_{\mathrm{opt}}\propto C^{0.5}$、$D_{\mathrm{opt}}\propto C^{0.5}$。70B 的 Chinchilla 吃 1.4T token；同算力的 Gopher 280B 只吃了 300B，是典型的「太大、太饿」。一个好记的比是约 20 token / 参数，来自 $1.4\mathrm{T}/70\mathrm{B}$，不是 Kaplan 主图的横轴。
+再在 $C=6ND$ 上求最小。经验结果 $N_{\mathrm{opt}}\propto C^{0.5}$、$D_{\mathrm{opt}}\propto C^{0.5}$。70B 的 Chinchilla 吃 1.4T token；同算力的 Gopher 280B 只吃了 300B，是典型的「参数太多、数据不足」。一个好记的比是约 20 token / 参数，来自 $1.4\mathrm{T}/70\mathrm{B}$，不是 Kaplan 主图的横轴。
 
 按 Chinchilla，175B 的 compute-optimal 大约要 3.5T token，不是 GPT-3 的 300B。不要把 GPT-3 说成 Chinchilla-optimal。
 

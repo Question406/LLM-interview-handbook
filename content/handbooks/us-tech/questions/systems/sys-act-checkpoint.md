@@ -46,7 +46,7 @@ NVIDIA Megatron、Google 长上下文预训练、Meta FSDP 训 Llama，都会问
 - 省：激活 HBM，往往是峰值的大头。
 - 付：额外 forward FLOPs，以及重算和集体通信能不能错开。
 
-已经 compute-bound、batch 也喂饱了，再付百分之二十到三十的 FLOPs 是纯税。本来被显存卡住、microbatch 开不大、GEMM 很瘦，用省下的显存把 $B$ 或 $T$ 加倍，算术强度上去，墙钟反而更好。面试要讲这个拐点，别背「checkpoint 一定更快」或「一定更慢」。
+已经 compute-bound、batch 也喂饱了，再付百分之二十到三十的 FLOPs 是纯税。本来被显存卡住、microbatch 开不大、GEMM 很瘦，用省下的显存把 $B$ 或 $T$ 加倍，算术强度上去，实际耗时反而更好。面试要讲这个拐点，别背「checkpoint 一定更快」或「一定更慢」。
 
 一个数量级：不 checkpoint 时激活大致跟 $B\cdot T\cdot L\cdot h$ 走；每 block 留一个边界，激活大约按 $\sqrt{L}$ 降，前向大约再付 $1\times$。Selective 只重算 LN / dropout，额外 FLOPs 可以压到百分之十以下，显存降幅仍可观。这才是和「每层全重算」的差别。
 
@@ -58,7 +58,7 @@ Megatron 的序列并行（见 `sys-seq-parallel`）先解决一件 TP 留下的
 2. Checkpoint 降低的是段内还要为反向留着的大张量，通常是 MLP 中间 $[B,T,4h]$ 一类。
 3. FlashAttention 已经不把 $[B,H,T,T]$ 分数矩阵写回 HBM，再 checkpoint「注意力分数」就是在打空靶。
 
-Korthikanti 的 selective recomputation 正是这个组合：SP 切序列局部激活，selective 重算便宜 op，昂贵 GEMM 能存就存。三件一起开时，峰值常出现在 FSDP all-gather 权重和重放本段激活叠在同一窗口。Schedule 要把 prefetch 和 recompute 错开，否则省显存的开关把墙钟拉长，Nsight 上 SM 在等通信。
+Korthikanti 的 selective recomputation 正是这个组合：SP 切序列局部激活，selective 重算便宜 op，昂贵 GEMM 能存就存。三件一起开时，峰值常出现在 FSDP all-gather 权重和重放本段激活叠在同一窗口。Schedule 要把 prefetch 和 recompute 错开，否则省显存的开关把实际耗时拉长，Nsight 上 SM 在等通信。
 
 和 PP 一起用要注意：重算拉长每个 stage 的计算，1F1B 的气泡公式要重算一遍。只在某个 stage 开激进 checkpoint，负载会更不齐。
 

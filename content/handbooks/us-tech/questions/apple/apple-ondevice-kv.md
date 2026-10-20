@@ -32,7 +32,7 @@ sources:
     type: primary
 ---
 
-量化卡 `apple-ondevice-quant` 问的是 palettization 和 mask 的 $-\infty$。这题问的是 decode 为什么读不动历史。Apple 2024 就写 GQA 和 Neural Engine 上的 KV 更新；2025 明确 KV cache 8-bit，并把模型切成两段、第二段复用第一段末层 KV，cache 大约再降 37.5%。云端同一笔账见 `sys-kv-quant`、`google-gqa-mqa`，这里把墙换成手机带宽和预分配静态 shape，见 `apple-ane`。
+量化卡 `apple-ondevice-quant` 问的是 palettization 和 mask 的 $-\infty$。这题问的是 逐 token 生成（decode） 为什么读不动历史。Apple 2024 就写 GQA 和 Neural Engine 上的 KV 更新；2025 明确 KV cache 8-bit，并把模型切成两段、第二段复用第一段末层 KV，cache 大约再降 37.5%。云端同一笔账见 `sys-kv-quant`、`google-gqa-mqa`，这里把墙换成手机带宽和预分配静态 shape，见 `apple-ane`。
 
 ## 先写字节，再谈技巧
 
@@ -49,8 +49,8 @@ $2$ 是 K 和 V，$L$ 层数，$S$ 是已写入的上下文，$b$ 是每元素�
 三刀正交，不要说成一种量化：
 
 - GQA。线性降 $H_{\mathrm{kv}}$。质量敏感时不要直接 MQA；AFM 公开走 grouped-query。
-- 8-bit KV。$b: 2\to 1$（相对 fp16）。Scale 按 head 或按 token 存。Score 仍建议在 fp16 累加；mask 加在反量化之后，见 `apple-ondevice-quant`。K 的 outlier 常沿通道，乱 per-tensor 会把注意力打歪，云端同构讨论见 `sys-kv-quant`。
-- KV sharing（2025）。模型按约 5:3 深度切成两块，block 2 的 KV 直接用 block 1 末层的 cache，公开写降约 37.5%，还能让 prefill 跳过第二块的 KV 生成。这是改深度结构，不是 PTQ。
+- 8-bit KV。$b: 2\to 1$（相对 fp16）。Scale 按 head 或按 token 保存。Score 仍建议在 fp16 累加；mask 加在反量化之后，见 `apple-ondevice-quant`。K 的 outlier 常沿通道，乱 per-tensor 会把注意力打歪，云端同构讨论见 `sys-kv-quant`。
+- KV sharing（2025）。模型按约 5:3 深度切成两块，block 2 的 KV 直接用 block 1 末层的 cache，公开写降约 37.5%，还能让 输入预填充（prefill，即处理输入并建立缓存） 跳过第二块的 KV 生成。这是改深度结构，不是 PTQ。
 
 ANE 还要求预分配 $S_{\max}$，不能 `torch.cat` 沿时间维涨。Stateful 模型把 KV 登记成跨 `predict` 的 state；写入是定点 slice。随机 scatter 容易掉出 ANE。档位太稀浪费 SRAM，太密二进制膨胀，见 `apple-ane`。
 
@@ -64,7 +64,7 @@ $$
 
 每步 decode 都要扫这一份（加上当前层的计算）。改 8-bit 大约减半；若 $H_{\mathrm{kv}}$ 从 32 收到 8，再除以 4；KV sharing 再乘约 0.625。三刀叠完，同一 4k 窗口才谈得上和系统、激活抢内存。视觉前缀也占这条 cache，见 `apple-multimodal`：减不掉已经写进去的图像 token。
 
-不要承诺「8-bit KV 无损」。短上下文 greedy 要和 fp16 cache 对得上；长上下文看的是摘要接地和指令跟随，不是再刷一遍 MMLU。RoPE 必须在量化前转到 $K$，否则 cache 里是未旋转向量，decode 错位。
+不要承诺「8-bit KV 无损」。短上下文 greedy 要和 fp16 cache 对得上；长上下文看的是摘要是否由证据支持，以及是否遵循指令，不是再刷一遍 MMLU。RoPE 必须在量化前转到 $K$，否则 cache 里是未旋转向量，decode 错位。
 
 ## 我会怎么答
 
@@ -78,3 +78,12 @@ $$
 - **Paged KV 端上有吗？** 云端分页是为了并发和碎片。端上 $B\approx 1$、静态 $S_{\max}$，预分配更符合 ANE。不要把 vLLM 故事原样搬到 iPhone。
 - **为什么不把 KV 也 2-bit？** 权可以 QAT 到 2-bit；KV 每 token 写入、对 softmax 敏感。公开停在 8-bit 是质量和带宽的折中。
 - **第二段复用第一段 KV，注意力还对吗？** 设计假设后段可以从前段末层的压缩状态继续。这是架构选择，要在长上下文任务上验，不能口头保证等于满 KV。
+
+## 相关题
+
+- [[google-gqa-mqa]]：MHA、MQA、GQA 三档怎么选、KV 显存差多少，是这里「GQA 砍 $H_{\mathrm{kv}}$」那一刀的展开，场景在云端。
+- [[apple-ondevice-quant]]：同一套 Apple 端侧模型的另一半，讲权重 palettization 和 ANE 上 mask 的数值问题，本题只管 KV。
+- [[sys-kv-quant]]：云端 KV 量化的通用版，细讲 K/V 的 outlier 轴和 scale 怎么分。
+- [[nvidia-kv-offload]]：GPU 上 KV 放不下时卸到 CPU/NVMe 的带宽账，端侧没有这条退路，可以对照看。
+- [[google-tpu-decode]]：同样是 decode 每步读 KV 撞带宽墙，换到 TPU 上大并发 serving，靠连续批和投机解码把 batch 做大。
+- [[meta-llama-gqa]]：用 Llama 2 70B 的 32/8 配置算 GQA 省下的 KV，和这里同一个公式，但墙是 HBM 不是手机 DRAM。

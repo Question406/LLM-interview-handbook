@@ -4,9 +4,7 @@ section: systems
 order: 23
 level: A
 title: 系统：KV 分层存储，HBM / CPU / 盘和命中率
-quick: >-
-  在飞 decode 的页必须留在 HBM。已经算完的前缀块可以 DMA 到 CPU，再冷到盘，命中时再提升回来。
-  命中率只有在 CPU 池明显大于 GPU KV 时才有意义；decode 逐步从盘读 KV 会把 TPOT 打穿。
+quick: "在飞 逐 token 生成（decode） 的页必须留在 HBM。已经算完的前缀块可以 DMA 到 CPU，再冷到盘，命中时再提升回来。 命中率只有在 CPU 池明显大于 GPU KV 时才有意义；decode 逐步从盘读 KV 会把 TPOT 打穿。"
 tags:
   - vLLM
   - Serving
@@ -33,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-长上下文、多轮、共享系统提示，HBM 装不下所有「可能还会再用」的 KV。vLLM 的 OffloadingConnector、LMCache 的 CPU / 盘层、DistServe 把 prefill 算完的 KV 交给 decode 池，问的都是：**哪一层可以慢、哪一层绝对不能慢**。NVIDIA serving 岗会追 PCIe 和 DMA；OpenAI 风格会追错命中和 P99。分页寻址见 `sys-paged-attn`，跨请求复用见 `sys-prefix-cache`。本题只管分层介质和命中率账。
+长上下文、多轮、共享系统提示，HBM 装不下所有「可能还会再用」的 KV。vLLM 的 OffloadingConnector、LMCache 的 CPU / 盘层、DistServe 把 输入预填充（prefill，即处理输入并建立缓存） 算完的 KV 交给 逐 token 生成（decode） 池，问的都是：**哪一层可以慢、哪一层绝对不能慢**。NVIDIA serving 岗会追 PCIe 和 DMA；OpenAI 风格会追错命中和 P99。分页寻址见 `sys-paged-attn`，跨请求复用见 `sys-prefix-cache`。本题只管分层介质和命中率账。
 
 ## 三层各自干什么
 
@@ -41,7 +39,7 @@ sources:
 
 - **HBM（热）：** 在飞 decode 的页、马上要用的公共前缀。这一层的容量决定 `max_num_seqs`。
 - **CPU pinned（温）：** 已完成的前缀块、暂停请求、刚结束但可能被下一轮命中的页。vLLM 用异步 DMA 和计算重叠，把写完的 GPU 块拷到 host。
-- **盘 / 远端（冷）：** 超长文档前缀、跨 replica 共享。二级介质不能直接喂 GPU，必须经 CPU 中转。NVMe 或 RDMA 的延迟是毫秒到几十毫秒，只能摊在 TTFT 上，不能摊在每个 decode token 上。
+- **盘 / 远端（冷）：** 超长文档前缀、跨 replica 共享。二级介质不能直接喂 GPU，必须经 CPU 中转。NVMe 或 RDMA 的延迟是毫秒到几十毫秒，只能摊在 首个 token 的等待时间（TTFT） 上，不能摊在每个 decode token 上。
 
 带宽数量级要报出来：HBM 数 TB/s，主机 DDR 一两百 GB/s，PCIe 5 x16 大约 64 GB/s，盘再低一到两个数量级。32 路 decode、每步各读几百 MB 的 KV，只可能走 HBM。CPU 层的正确用法是 **整块前缀的命中提升**，不是逐步换页。
 
@@ -51,7 +49,7 @@ sources:
 
 ## 命中率什么时候值钱
 
-单层 CPU 要大于所有卡 GPU KV 之和。卸是立即的，CPU 池若只是 GPU 的镜子，命中率不会比 GPU prefix cache 更高，只多一次拷贝税。多级时 CPU 要够大，少把热点前缀打到盘上。
+单层 CPU 要大于所有卡 GPU KV 之和。卸是立即的，CPU 池若只是 GPU 的镜子，命中率不会比 GPU prefix cache 更高，只增加一次拷贝开销。多级时 CPU 要够大，少把热点前缀打到盘上。
 
 命中要拆开报，不要一个数字：
 
@@ -74,5 +72,10 @@ PD 分离时，prefill 池算完的 KV 本身就要搬到 decode 池，见 `sys-
 - **CPU 池要多大？** 单层至少大于聚合 GPU KV，否则只是镜子。给主机其它进程留余量。
 - **盘层为什么必须经 CPU？** GPU 不能直接随机读 NVMe 页表。二级只跟 CPU 主层说话，再 DMA 上 GPU。
 - **和 PD 分离冲突吗？** 不冲突。分离搬的是一次请求的 KV；分层复用的是跨请求前缀。体积公式同一套。
-- **命中率很高但 TTFT 变差？** 查 hit 落在哪一层。Disk hit 计入命中率，墙钟可能比 GPU miss 后的短 prefill 还差。
+- **命中率很高但 TTFT 变差？** 查 hit 落在哪一层。Disk hit 计入命中率，实际耗时可能比 GPU miss 后的短 prefill 还差。
 - **暂停的 agent 请求卸哪？** 工具等待是秒级，KV 可卸 CPU，回来再 promote。见 `sys-agent-sched`。
+
+## 相关题
+
+- [[nvidia-kv-offload]]：同一机制的 NVIDIA 问法，侧重 PCIe 带宽算账和什么时候量化比卸载划算，和本题几乎可以当一题复习。
+- [[sys-kv-quant]]：先把 KV 压窄再谈分层，讲 INT8/FP8 KV 的 scale 怎么定。

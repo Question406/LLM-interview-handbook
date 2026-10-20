@@ -4,10 +4,9 @@ section: coding
 order: 11
 level: A
 title: 白板：embedding 与 lm_head 权重共享，梯度怎么流
-quick: >-
-  `lm_head.weight` 和 `embed.weight` 同一块存储，形状都是 $[V, D]$。前向 lookup 用 $E$，logits 是
-  $h E^\top$。反向两条路的梯度累加到同一份 $E$。省 $VD$ 个参数；Llama 通常不绑，GPT-2 绑。
+quick: "`lm_head.weight` 和 `embed.weight` 是同一个 $[V, D]$ 参数：查表用 $E$，logits 是 $hE^\top$，两条路的梯度累加到同一份 $E$，省下 $VD$ 个参数。"
 tags:
+  - 完整编程练习
   - Coding
   - Weight Tying
   - Embedding
@@ -15,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: Using the Output Embedding to Improve Language Models (Press & Wolf)
     url: https://arxiv.org/abs/1608.05859
@@ -25,67 +24,163 @@ sources:
     type: primary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，CPU 上验证；没有验证 GPU、多卡或性能。
+
+### 题面、接口与约束
+
+- `TiedLM(vocab, dim, pad=0)`：一个最小语言模型，`nn.Embedding` 和无 bias 的 `lm_head` 共享同一个 `[V, D]` 的 Parameter，中间只有一层 LayerNorm。
+- `forward(ids, targets=None)`：`ids` 是 `[B, T]`。不给 `targets` 时返回 logits `[B, T, V]`；给 `targets` 时在内部做一次 shift（位置 `t` 的 logits 预测 `targets[:, t + 1]`），返回忽略 pad 的平均交叉熵。
+- 约束：B ≥ 1，给 `targets` 时它和 `ids` 形状相同、T ≥ 2，且 shift 之后至少有一个非 pad 目标，否则抛 `ValueError`。
+
+### 输入输出示例
+
+```text
+model = TiedLM(7, 4, pad=0)
+model.embed.weight is model.lm_head.weight          -> True
+model.embed.weight[1] 改成全 3                       -> model.lm_head.weight[1] 也是全 3
+model(ids=[[1, 2, 3], [2, 4, 0]], targets=同上)      -> 有限的标量 loss，最后一个目标 0 被忽略
+```
+
+### 解题思路与正确性
+
+绑定时直接把 `lm_head.weight` 赋值为 `embed.weight` 这个 Parameter 对象，而不是复制数值。这样两个模块引用同一块存储，`parameters()` 里只出现一次，optimizer 也只为它维护一份状态。
+
+反向时，autograd 把两条路径的梯度累加到同一个 `.grad` 上：查表路径给出现过的 token 行加梯度，输出投影路径给所有行加梯度。测试里用两份数值相同但独立的参数做对照，验证共享梯度正好等于两条路径梯度之和。
+
+`padding_idx` 只挡住查表那一路的梯度。输出投影那一路照样会给 pad 行梯度（softmax 会把概率分给 pad 这个类别），所以共享参数的 pad 行并不保证一直是 0。交叉熵用 `ignore_index=self.pad` 跳过 pad 目标，pad 不必是 0。
+
+### 完整参考实现（Python 3）
+
+```python
+import torch
+import torch.nn.functional as F
+from torch import nn
+
+
+class TiedLM(nn.Module):
+    """embedding 和无 bias 的 lm_head 共享同一个 [V, D] Parameter 的最小语言模型。"""
+
+    def __init__(self, vocab, dim, pad=0):
+        super().__init__()
+        self.pad = pad
+        self.embed = nn.Embedding(vocab, dim, padding_idx=pad)
+        self.ln = nn.LayerNorm(dim)
+        self.lm_head = nn.Linear(dim, vocab, bias=False)
+        self.lm_head.weight = self.embed.weight  # 共享同一个 Parameter，不是复制数值
+
+    def forward(self, ids, targets=None):
+        """ids: [B, T]。不给 targets 时返回 logits [B, T, V]；
+        给 targets 时把位置 t 的 logits 和 targets[:, t + 1] 对齐，返回忽略 pad 的平均 CE。
+        """
+        hidden = self.ln(self.embed(ids))  # [B, T, D]
+        logits = self.lm_head(hidden)      # [B, T, V]，即 hidden @ E^T
+        if targets is None:
+            return logits
+        if targets.shape != ids.shape or ids.shape[1] < 2:
+            raise ValueError("targets must match ids with T >= 2, got "
+                             f"{tuple(targets.shape)} vs {tuple(ids.shape)}")
+        shifted_targets = targets[:, 1:]
+        if not (shifted_targets != self.pad).any():
+            raise ValueError("no non-pad target after shifting")
+        return F.cross_entropy(
+            logits[:, :-1].reshape(-1, logits.size(-1)),
+            shifted_targets.reshape(-1),
+            ignore_index=self.pad,
+        )
+```
+
+### 可执行测试
+
+```python
+def expect_value_error(fn, *args):
+    try:
+        fn(*args)
+    except ValueError:
+        return
+    raise AssertionError("invalid input should raise ValueError")
+
+
+torch.manual_seed(0)
+torch.set_num_threads(1)
+model = TiedLM(7, 4, pad=0)
+ids = torch.tensor([[1, 2, 3], [2, 4, 0]])
+
+# 两个模块拿的是同一个 Parameter，parameters() 里只出现一次
+assert model.embed.weight is model.lm_head.weight
+assert sum(p is model.embed.weight for p in model.parameters()) == 1
+
+# 反向后两边看到的是同一份梯度
+loss = model(ids, ids)
+assert torch.isfinite(loss)
+loss.backward()
+assert model.embed.weight.grad is model.lm_head.weight.grad
+
+# 共享梯度 = 查表路径梯度 + 输出投影路径梯度：用两份数值相同的独立参数对照
+untied = TiedLM(7, 4, pad=0)
+untied.load_state_dict(model.state_dict())
+untied.lm_head.weight = nn.Parameter(model.embed.weight.detach().clone())
+untied(ids, ids).backward()
+path_sum = untied.embed.weight.grad + untied.lm_head.weight.grad
+assert torch.allclose(model.embed.weight.grad, path_sum, atol=1e-6)
+
+# padding_idx 只挡住查表那一路；输出那一路仍会给 pad 行梯度
+assert torch.all(untied.embed.weight.grad[0] == 0)
+assert untied.lm_head.weight.grad[0].abs().sum() > 0
+
+# 改 embedding 的一行，lm_head 同一行跟着变：两者是同一块内存
+with torch.no_grad():
+    model.embed.weight[1].fill_(3)
+assert torch.all(model.lm_head.weight[1] == 3)
+
+# pad 不是 0 时也按 pad 忽略：只有 1 个有效目标，loss 等于这一项的 CE
+model5 = TiedLM(7, 4, pad=5)
+ids5 = torch.tensor([[1, 2, 5]])
+logits = model5(ids5)
+expected = F.cross_entropy(logits[0, :1], ids5[0, 1:2])
+assert torch.allclose(model5(ids5, ids5), expected)
+
+# 非法输入：T < 2；shift 之后全是 pad
+expect_value_error(model, torch.tensor([[1]]), torch.tensor([[1]]))
+expect_value_error(model, torch.tensor([[1, 0]]), torch.tensor([[1, 0]]))
+```
+
+### 复杂度与追问
+
+设词表大小为 V、隐藏维度为 D。参数量从不绑定时的约 2·V·D 降到 V·D。logits 仍是 `[B, T, V]`，计算 O(B·T·V·D)，激活 O(B·T·V)，共享权重省不掉输出激活。
+
+- 追问「pad 不是 0 时要注意什么」：`ignore_index` 必须跟着 `pad` 走。如果写死成 0，`pad=5` 时会把真实的 token 0 当成 pad 忽略，反而把 pad 算进 loss。测试里有 `pad=5` 的例子。
+
 ## 题怎么来的
 
-Press & Wolf、Inan et al. 把输入 embedding 和输出投影绑成同一矩阵。GPT-2 / GPT-3 风格模型默认 tying；Llama 2/3 公开实现不绑，`lm_head` 是独立的 $[V, D]$。OpenAI / Google 白板爱问「省了什么、梯度会不会算两遍」。Lookup 显存见 `coding-embedding-lookup`。
+Press & Wolf 和 Inan et al. 提出把输入 embedding 和输出投影绑成同一个矩阵。GPT-2 / GPT-3 风格的模型默认绑定；Llama 2/3 的公开实现不绑，`lm_head` 是一个独立的 $[V, D]$ 矩阵。OpenAI 和 Google 的白板喜欢问「省了什么、梯度会不会算两遍」。查表本身的显存见 `coding-embedding-lookup`。
 
 ## 同一份 $E$：lookup 进，inner product 出
 
-`nn.Embedding(V, D).weight` 是 $[V, D]$。`nn.Linear(D, V, bias=False).weight` 也是 $[V, D]$（PyTorch Linear 存 $[out, in]$）。绑定时：
+`nn.Embedding(V, D).weight` 的形状是 $[V, D]$，`nn.Linear(D, V, bias=False).weight` 也是 $[V, D]$，因为 PyTorch 的 Linear 按 $[out, in]$ 存权重。绑定之后：
 
 $$
 x = E_{\mathrm{id}},\qquad \mathrm{logits} = h E^\top \in \mathbb{R}^{V}.
 $$
 
-不要再 transpose 一份参数。`self.lm_head.weight = self.embed.weight` 是引用，不是 copy。Optimizer 只能看到一个 param；state 里不要给 head 再开一套 $m,v$。
+不需要再额外存一份转置的参数。`self.lm_head.weight = self.embed.weight` 是引用，不是复制。optimizer 只看到一个参数，状态里不要再给 head 单独开一套 $m,v$。
 
-```python
-import torch
-from torch import nn
-
-class TiedLM(nn.Module):
-    def __init__(self, vocab, dim, pad=0):
-        super().__init__()
-        self.embed = nn.Embedding(vocab, dim, padding_idx=pad)
-        self.ln = nn.LayerNorm(dim)
-        self.lm_head = nn.Linear(dim, vocab, bias=False)
-        self.lm_head.weight = self.embed.weight  # same storage
-
-    def forward(self, ids, targets=None):
-        # ids: [B, T]
-        h = self.ln(self.embed(ids))
-        logits = self.lm_head(h)  # [B, T, V]
-        if targets is None:
-            return logits
-        return torch.nn.functional.cross_entropy(
-            logits[:, :-1].reshape(-1, logits.size(-1)),
-            targets[:, 1:].reshape(-1),
-            ignore_index=0,
-        )
-
-def check_tied():
-    m = TiedLM(32, 8)
-    assert m.lm_head.weight.data_ptr() == m.embed.weight.data_ptr()
-    ids = torch.randint(1, 32, (2, 5))
-    m(ids, ids).backward()
-    assert m.embed.weight.grad is not None
-```
-
-`data_ptr` 相同才能算绑上。若 `load_state_dict` 后又 `lm_head = Linear(...)` 重建，引用会断，变成两份权重。
+判断是否真的绑上了，看两者的 `data_ptr` 是否相同。如果 `load_state_dict` 之后又执行了 `lm_head = Linear(...)` 重建，引用就断了，模型又变成两份权重。
 
 ## 梯度：两条路加到同一块
 
-前向两条使用：$E$ 的第 $t$ 行被 gather 进 hidden；同一 $E$ 又和 $h$ 做点积出 logits。反向：
+$E$ 在前向里被用了两次：第 $t$ 个 token 对应的那一行被取出来作为 hidden 的输入；同一个 $E$ 又和 $h$ 做点积得到 logits。反向时：
 
-- CE → logits → $h E^\top$ 对 $E$ 的梯度是 $\sum_t h_t^\top (\partial L/\partial \mathrm{logits}_t)$；
-- embedding lookup 对出现过的行累加 $\partial L/\partial h_t$。
+- 交叉熵损失（CE）经过 logits $= h E^\top$ 传到 $E$ 的梯度是 $\sum_t (\partial L/\partial \mathrm{logits}_t)^\top h_t$，每个 token 行都会收到；
+- embedding 查表只给出现过的那些行累加 $\partial L/\partial x_t$。
 
-Autograd 对同一 storage 做 accumulate。不要自己再乘 2，也不要 `detach` 其中一条路。Pad 行若 `padding_idx` 置零梯度，两条路都不应更新那一行。Bias：输出层多一个 $b\in\mathbb{R}^{V}$ 可以不绑；GPT-2 的 lm_head 无 bias。
+autograd 会把两部分累加到同一块存储上。不要自己再乘 2，也不要 `detach` 掉其中一条路。`padding_idx` 只让查表这一路不更新 pad 行；输出投影那一路仍然会给 pad 行梯度，所以绑定后 pad 行一般会被更新（练习里的测试验证了这一点）。输出层如果有 bias $b\in\mathbb{R}^{V}$，它不需要绑定；GPT-2 的 lm_head 没有 bias。
 
-显存：不绑要两份 $V\times D$。$V=128256$，$D=4096$，bf16 一份约 1 GB，绑了省一份。FSDP / tensor parallel 下两份必须 shard 成同一 layout，否则 all-gather 对不齐。Llama 不绑是质量和实现选择，不是 tying 错了。
+显存上，不绑定要存两份 $V\times D$。以 $V=128256$、$D=4096$ 为例，bf16 下一份约 1 GB，绑定能省下一份。FSDP 或张量并行下，两处用到的必须是同一种切分方式，否则 all-gather 对不上。Llama 不绑定是出于质量和实现上的选择，并不是说 tying 有问题。
 
 ## 追问
 
-- **logits 为什么是 $h E^\top$ 不是 $h E$？** $E$ 行是 token 向量，$h$ 和某行点积才是该 token 的 logit。$h E$ 形状对不上。
-- **AdamW 的 $m,v$？** 一份权重一份 state。绑了却给 head 再建 state，等于 decay / 更新打到幽灵参数上。
-- **扩词表？** 两行一起扩，新 id 的初始化两边是同一行。只扩 embedding 不扩 head 会在 tying 下直接 shape 冲突。
+- **logits 为什么是 $h E^\top$ 而不是 $h E$？** $E$ 的每一行是一个 token 的向量，$h$ 和某一行做点积才得到这个 token 的 logit。写成 $h E$ 形状对不上。
+- **AdamW 的 $m,v$ 怎么处理？** 一份权重对应一份状态。绑定了却给 head 再建一套状态，weight decay 和更新就会作用到一个并不存在的参数上。
+- **扩词表时要注意什么？** embedding 和 head 一起扩，新 id 在两边的初始化是同一行。只扩 embedding 不扩 head，在 tying 下会直接出现 shape 冲突。

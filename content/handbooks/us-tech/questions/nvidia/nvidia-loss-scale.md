@@ -4,10 +4,7 @@ section: nvidia
 order: 12
 level: A
 title: NVIDIA：混合精度 loss scaling，overflow 怎么发现和恢复
-quick: >-
-  FP16 指数范围窄，梯度容易下溢成 0。把 loss 乘 $S$，反向梯度都乘 $S$，进优化器前再除掉。$S$ 太大就溢出成
-  inf。动态缩放：检测到 inf/nan 就跳过这一 step 并把 $S$ 减半；连续若干步干净再把 $S$ 加倍。BF16
-  通常不需要；FP8 的 tensor scale 是另一件事。
+quick: "FP16 梯度容易下溢，所以 loss 先乘 $S$，更新前再除掉。检测到 inf/nan 就跳过这一步并把 $S$ 减半，连续若干步正常再加倍。BF16 通常不需要。"
 tags:
   - NVIDIA
   - Mixed Precision
@@ -31,7 +28,7 @@ sources:
 
 ## 题怎么来的
 
-NVIDIA 把混合精度写成了 AMP / Apex / Megatron 的默认路径。我会先问 dtype：fp16 才需要全局 loss scale，bf16 通常不用，FP8 走的是另一套 tensor amax。这不是量化题。INT8 / SmoothQuant 见 `nvidia-int8-quant`；FP8 每张量 amax 见 `nvidia-fp8`。本题只处理全局 loss scaling：发现溢出、丢掉这一拍、改 $S$、权重保持上一拍的干净值。
+NVIDIA 把混合精度写成了 AMP / Apex / Megatron 的默认路径。我会先问 dtype：fp16 才需要全局 loss scaling，bf16 通常不用，FP8 走的是另一套 tensor amax。这不是量化题。INT8 / SmoothQuant 见 `nvidia-int8-quant`；FP8 每张量 amax 见 `nvidia-fp8`。本题只处理全局 loss scaling：发现溢出、丢掉这一拍、改 $S$、权重保持上一拍的干净值。
 
 ## 为什么要乘 $S$
 

@@ -4,10 +4,7 @@ section: xai
 order: 2
 level: S
 title: xAI：Grok 类 MoE 服务，decode 时专家并行和 batch 不齐怎么讲
-quick: >-
-  公开的 Grok-1 是 314B、8 专家、每 token 激活 2 个（约 25% 权重）。Decode 一步只有 $B$ 个新
-  token，专家并行靠 all-to-all；热专家拖住整层，冷专家 GEMM 太碎。先讲路由和容量，再讲
-  prefill / decode 不该共用同一套 EP 宽度。
+quick: "Grok-1 公开是 314B、8 专家、top-2。decode 每步只有 $B$ 个新 token，EP 的 all-to-all 变成延迟墙，热专家拖住整层。prefill 和 decode 应该用不同的 EP 宽度。"
 tags:
   - xAI
   - Grok
@@ -34,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-xAI 推理 / 训练系统岗会拿 Grok 当入口，问 MoE 在 decode 为什么比 dense 更难调度。这不是某一份能点名的 onsite 逐字题。公开锚点只有 Grok-1：314B、8 专家、每 token 用 2 个、约 25% 权重激活、64 层、Q 48 头 / KV 8 头、$d=6144$。官方 JAX 示例写明：MoE 层为了正确性，不是高效实现。后续 Grok 没有同等开源结构图，我只拿 Grok-1 加 Mixtral / Switch 的公开机制讲，不装内部 EP 拓扑、卡数或线上专家数。
+xAI 推理 / 训练系统岗会拿 Grok 当入口，问 MoE 在 逐 token 生成（decode） 为什么比 dense 更难调度。这不是某一份能点名的 onsite 逐字题。公开锚点只有 Grok-1：314B、8 专家、每个 token 用 2 个、约 25% 权重激活、64 层、Q 48 头 / KV 8 头、$d=6144$。官方 JAX 示例写明：MoE 层为了正确性，不是高效实现。后续 Grok 没有同等开源结构图，我只拿 Grok-1 加 Mixtral / Switch 的公开机制讲，不装内部 EP 拓扑、卡数或线上专家数。
 
 ## Decode 一步，专家并行在同步什么
 
@@ -58,7 +55,7 @@ $B$ 个 token、top-2、8 专家，期望每个专家 $Bk/E=B/4$ 个 token。$B$
 
 Prefill 和 decode 对 EP 宽度是反的。Prefill 一次几千 token，宽 EP 摊得开；decode 要短往返，EP 太宽只是多等网。所以我会主动提 prefill/decode 分离：两套并行度，KV 搬过去。连续 batching 把 $B$ 做大，是 MoE decode 几乎唯一能把专家 GEMM 做实的办法。没有足够并发，稀疏激活的好处会被 all-to-all 吃掉。入口限流决定 $B$ 从哪来，见 `xai-rate-limiter`。
 
-错法：把 MoE 说成「参数多、算力少，所以一定更快」。Decode 墙的是路由同步和权重带宽。也不要编 Grok 线上专家数、是否自研通信库。集群故障和 checkpoint 另开，见 `xai-colossus`。
+常见误区是：把 MoE 说成「参数多、算力少，所以一定更快」。Decode 墙的是路由同步和权重带宽。也不要编 Grok 线上专家数、是否自研通信库。集群故障和 checkpoint 另开，见 `xai-colossus`。
 
 和 dense decode 对比：dense 一步是一次大 GEMM，batch 不齐最多是 padding；MoE 一步是「路由 + 两次 all-to-all + 一堆小 GEMM」，batch 不齐会变成专家之间的空等。同步点要说清楚。
 
@@ -68,3 +65,10 @@ Prefill 和 decode 对 EP 宽度是反的。Prefill 一次几千 token，宽 EP 
 - **和 dense 张量并行比？** TP 切同一块矩阵，每层 all-reduce，负载齐。EP 切不同专家，负载不齐。8 专家 $k=2$ 也可以 EP 叠 TP，先画清通信再叠。
 - **Router 在 decode 会抖吗？** 会。同一前缀 greedy 应对齐；采样时专家选择随 token 变，负载均衡看窗口统计，不是一步一迁。
 - **官方示例为什么慢？** 正确性实现会算未选专家或走通用 gather。生产要 fused dispatch 加分组 GEMM。承认没写过 kernel 比装熟好。
+
+## 相关题
+
+- [[xai-moe-decode]]：同为 xAI 的续篇，和本题部分重合，只收 decode 一步专家负载不齐和连续 batch 碎片。
+- [[meta-llama-moe]]：同样的「公开架构 + EP 服务」问法，换成 Llama 4 的 shared + top-1、dropless。
+- [[google-gemini-moe]]：Google 版，多讲专家容量和丢 token，decode 成本的结论和本题一致。
+- [[google-moe-routing]]：路由 permute、容量 pad 的实现，以及 decode 时降 EP 度、复制热点专家。

@@ -68,4 +68,4 @@ All-to-all 的字节数大约是 $B \cdot F \cdot d \cdot \mathrm{bytes}$ 量级
 - **推理和训练切分一样吗？** 可以同一套表分片。推理 batch 和 QPS 不同，有时会把热表复制多份换延迟。不要假设训练拓扑原样上线。
 - **为什么不把 embedding 也 DDP？** 复制 TB 级表不现实。DDP 适合 MLP。
 - **Interaction 换成 Transformer？** 能，算力和 serving 延迟会跳一个量级，要有级联或蒸馏。先把 baseline 并行讲对再升级。
-- **稀疏梯度怎么做？** 只有被 lookup 到的行有梯度。优化器和通信都要按nnz 走，不要对整张表做 dense all-reduce。
+- **稀疏梯度怎么做？** 只有被 lookup 到的行有梯度。优化器和通信都要按 nnz 走，不要对整张表做 dense all-reduce。

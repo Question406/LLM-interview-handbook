@@ -4,9 +4,7 @@ section: meta
 order: 2
 level: A
 title: Meta：AI-enabled coding 轮怎么考？和普通 LeetCode 差在哪？
-quick: >-
-  从 2025 年 10 月起，onsite 有一轮 60 分钟、多文件仓库，编辑器里带 LLM 助手。考的不是 prompt 竞赛，是你能不能拆任务、读懂
-  AI 写出的 diff、跑测试、抓住幻觉。AI 是可选的，抄完却讲不清的会挂。
+quick: "从 2025 年 10 月起，onsite 有一轮 60 分钟、多文件仓库，编辑器里带 LLM 助手。考的不是 输入提示（prompt） 竞赛，是你能不能拆任务、读懂 AI 写出的 diff、跑测试、抓住幻觉。AI 是可选的，抄完却讲不清的会挂。"
 tags:
   - Meta
   - Coding
@@ -31,7 +29,7 @@ sources:
 - 来源：Hello Interview 对内部试点说明和多位候选人的整理；2025-10 起进入 onsite，2026 已是默认形态之一
 - 形态：CoderPad 三栏，约 60 分钟，一个加长的多文件题，分阶段推进（修 bug → 实现核心 → 优化）
 
-这轮不是「LeetCode 允许开 ChatGPT」。仓库已经在那儿，测试能跑，模型菜单可能有 GPT / Claude / Llama / Gemini。评委看你怎么指挥和验收，不看你能不能写出花哨 prompt。
+这轮不是「LeetCode 允许开 ChatGPT」。仓库已经在那儿，测试能跑，模型菜单可能有 GPT / Claude / Llama / Gemini。评委看你怎么指挥和验收，不看你能不能写出花哨 输入提示（prompt）。
 
 ## 官方在看的三件事
 

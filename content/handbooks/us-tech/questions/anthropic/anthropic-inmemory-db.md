@@ -5,9 +5,9 @@ order: 1
 level: A
 title: Anthropic：实现带 TTL 的内存数据库，后续怎么加备份和并发？
 quick: >-
-  第一层用 map 做 CRUD。TTL 不要扫全表：过期堆 + 惰性删除。备份是某时刻的一致快照，不是把 dict
-  浅拷贝出去。后面再加的 backup/restore、账户合并、并发，全靠第一层接口没把时间戳和存储细节漏出去。
+  接口从第一层就带时间戳；TTL 用惰性删除加过期堆，不扫全表；备份是某一时刻深拷贝的一致快照，存剩余 TTL，恢复时从当前时间重新起算。
 tags:
+  - 完整编程练习
   - Anthropic
   - Coding
   - TTL
@@ -15,7 +15,7 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: Anthropic interview questions (IGotAnOffer)
     url: https://igotanoffer.com/en/advice/anthropic-interview-questions
@@ -25,45 +25,235 @@ sources:
     type: secondary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 来源网站只披露了题型（见下文「真题记录」）。下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试。Python 3，只用标准库。
+
+### 题面、接口与约束
+
+- `DB.set(t, key, field, value, ttl=None)`：写入一个字段。`value` 不能是 `None`（内部用它表示删除），`ttl` 给出时必须为正，否则抛 `ValueError`。带 TTL 的值在 $[t, t+\text{ttl})$ 内有效。
+- `DB.delete(t, key, field) -> bool`：删除字段，返回删除前它在时刻 `t` 是否存在。
+- `DB.get(t, key, field)`：返回时刻 `t` 的值，不存在、已删除或已过期时返回 `None`。查询可以回看任意历史时刻。
+- `DB.scan(t, key, prefix="") -> list[(field, value)]`：返回时刻 `t` 该 key 下以 `prefix` 开头、仍然有效的字段，按字段名升序。
+- `DB.backup(t) -> int`：保存时刻 `t` 所有有效字段的快照（值深拷贝，TTL 存剩余时长），返回备份 id。
+- `DB.restore(now, backup_id)`：在时刻 `now` 用快照覆盖当前全部状态，TTL 从 `now` 重新起算；更早的历史不变。
+- 写操作（`set`、`delete`、`restore`）的时间全局单调不减，倒退时抛 `ValueError`；同一时刻后写的覆盖先写的。版本总数不超过 $10^4$。
+- 不同面经的分层：任务管理题可以把 user 当 key、task id 当 field；只有一个值的时间 KV 题固定 `field="value"`。
+
+### 输入输出示例
+
+```text
+set(0, "a", "x", 7, ttl=5)
+get(4, "a", "x")  -> 7
+get(5, "a", "x")  -> None      # 有效期是 [0, 5)
+backup(2)         -> 0         # 剩余 TTL = 3
+restore(10, 0)
+get(12, "a", "x") -> 7         # 从 10 起再活 3
+get(13, "a", "x") -> None
+get(1, "a", "x")  -> 7         # 历史不受 restore 影响
+```
+
+### 解题思路与正确性
+
+每个 `(key, field)` 存一个按时间追加的版本列表，版本是 `(写入时间, 值, 过期时间)`，删除写一个值为 `None` 的墓碑。查询时刻 `t` 时，从后往前找最后一个写入时间不晚于 `t` 的版本：这个版本决定结果。如果它已过期或是墓碑，就返回 `None`，不能再往前退回更旧的值，否则一个被删掉或过期的字段会「复活」。
+
+`restore` 不改历史，而是在 `now` 追加一轮写入：先给所有现有字段写墓碑，再把快照里的字段逐个写回，TTL 用快照存的剩余时长。因为是追加，`now` 之前的查询结果都不变。快照在备份和恢复时各深拷贝一次，之后改动调用方手里的对象不会影响数据库。
+
+### 完整参考实现（Python 3）
+
+```python
+from copy import deepcopy
+from typing import Any, NamedTuple, Optional
+
+
+class Version(NamedTuple):
+    time: int
+    value: Any                  # None 表示删除墓碑
+    expires_at: Optional[int]   # None 表示永不过期
+
+
+class DB:
+    """带 TTL、历史查询和备份恢复的内存数据库。每个 (key, field) 保存按时间追加的版本列表。"""
+
+    def __init__(self):
+        self.log = {}         # (key, field) -> [Version, ...]，按写入时间递增
+        self.clock = float("-inf")
+        self.backups = []     # backup id -> {(key, field): (value, 剩余 ttl 或 None)}
+
+    def _advance(self, t):
+        if t < self.clock:
+            raise ValueError(f"write time went backwards: {t} < {self.clock}")
+        self.clock = t
+
+    def _append(self, t, key, field, value, expires_at):
+        self.log.setdefault((key, field), []).append(Version(t, value, expires_at))
+
+    def _at(self, t, key, field):
+        """返回时刻 t 生效的 (value, expires_at)；不存在、已删除或已过期时 value 为 None。"""
+        for version in reversed(self.log.get((key, field), [])):
+            if version.time <= t:
+                if version.expires_at is None or t < version.expires_at:
+                    return version.value, version.expires_at
+                return None, None   # 最新版本已过期，不退回更旧的值
+        return None, None
+
+    def set(self, t, key, field, value, ttl=None):
+        if value is None:
+            raise ValueError("value must not be None")
+        if ttl is not None and ttl <= 0:
+            raise ValueError(f"ttl must be positive, got {ttl}")
+        self._advance(t)
+        expires_at = None if ttl is None else t + ttl
+        self._append(t, key, field, deepcopy(value), expires_at)
+
+    def delete(self, t, key, field):
+        """写墓碑；返回删除前该字段在时刻 t 是否存在。"""
+        existed = self.get(t, key, field) is not None
+        self._advance(t)
+        self._append(t, key, field, None, None)
+        return existed
+
+    def get(self, t, key, field):
+        return deepcopy(self._at(t, key, field)[0])
+
+    def scan(self, t, key, prefix=""):
+        """时刻 t 该 key 下以 prefix 开头的有效字段，按字段名升序。"""
+        result = []
+        for log_key, field in sorted(self.log):
+            if log_key != key or not field.startswith(prefix):
+                continue
+            value = self.get(t, key, field)
+            if value is not None:
+                result.append((field, value))
+        return result
+
+    def backup(self, t):
+        """保存时刻 t 的有效字段，TTL 存剩余时长。返回备份 id。"""
+        snapshot = {}
+        for key, field in self.log:
+            value, expires_at = self._at(t, key, field)
+            if value is not None:
+                remaining = None if expires_at is None else expires_at - t
+                snapshot[(key, field)] = (deepcopy(value), remaining)
+        self.backups.append(snapshot)
+        return len(self.backups) - 1
+
+    def restore(self, now, backup_id):
+        """在时刻 now 用快照整体替换当前状态；只追加版本，不改历史。"""
+        snapshot = deepcopy(self.backups[backup_id])
+        self._advance(now)
+        for key, field in list(self.log):
+            self.delete(now, key, field)
+        for (key, field), (value, remaining) in snapshot.items():
+            self.set(now, key, field, value, remaining)
+```
+
+### 可执行测试
+
+```python
+def expect_error(error_type, fn, *args):
+    try:
+        fn(*args)
+    except error_type:
+        return
+    raise AssertionError(f"expected {error_type.__name__}")
+
+
+db = DB()
+db.set(0, "a", "x", 7, 5)
+backup_id = db.backup(2)
+
+# TTL 有效期是 [0, 5)
+assert db.get(4, "a", "x") == 7
+assert db.get(5, "a", "x") is None
+
+# restore 后剩余 TTL 从 now 重新起算
+db.restore(10, backup_id)
+assert db.get(12, "a", "x") == 7
+assert db.get(13, "a", "x") is None
+
+# restore 不改历史
+assert db.get(1, "a", "x") == 7
+
+# 同一时刻后写覆盖先写
+db.set(14, "a", "z", 8)
+db.set(14, "a", "z", 9)
+assert db.scan(14, "a") == [("z", 9)]
+
+# 删除后历史仍可查，当前返回 None
+assert db.delete(15, "a", "z") is True
+assert db.get(14, "a", "z") == 9
+assert db.get(15, "a", "z") is None
+assert db.delete(15, "a", "z") is False
+
+# scan 按字段名升序，支持前缀
+db.set(16, "u", "task-2", "b")
+db.set(16, "u", "task-1", "a")
+db.set(16, "u", "note", "n")
+assert db.scan(16, "u", "task-") == [("task-1", "a"), ("task-2", "b")]
+assert [field for field, _ in db.scan(16, "u")] == ["note", "task-1", "task-2"]
+
+# 备份深拷贝：之后修改原对象不影响快照
+items = [1]
+db.set(17, "m", "list", items)
+items.append(2)
+snapshot_id = db.backup(17)
+db.set(18, "m", "list", [99])
+db.restore(19, snapshot_id)
+assert db.get(19, "m", "list") == [1]
+
+# 非法输入：时间倒退、非正 TTL、None 值
+expect_error(ValueError, db.set, 0, "a", "x", 1)
+expect_error(ValueError, db.set, 20, "a", "x", 1, 0)
+expect_error(ValueError, db.set, 20, "a", "x", None)
+```
+
+### 复杂度与追问
+
+设某个字段的版本数为 $v$、字段总数为 $F$。`get` 从后往前扫是 $O(v)$；版本按时间有序，可以用二分降到 $O(\log v)$。`scan` 是 $O(F\log F+Fv)$，`backup` 是 $O(Fv)$，`restore` 在此基础上再为每个字段追加常数个版本。
+
+- 追问「内存会一直涨」：历史查询要求保留旧版本，不能直接丢。如果题目允许只查最近一段时间，可以按时间窗口压缩，或者只保留每个字段最后一个早于窗口的版本。
+- 追问「快照里的可变值」：必须深拷贝，否则调用方改了自己手里的列表，快照也跟着变（测试里的 `items` 一例）。
+
 ## 真题记录
 
 - 公司：Anthropic
 - 岗位：SWE / 部分 RE 的 CodeSignal 或现场编码
-- 来源：IGotAnOffer 汇总的高频题；OA 拆解文把「Memory Database（TTL + backup/restore）」和「Bank System」列为分层解锁题
-- 形态：90 分钟、4 层，前一层单测不过后一层不开放
+- 来源：IGotAnOffer 汇总的高频题；OA 拆解文把「Memory Database（TTL + backup/restore）」和「Bank System」列为分层解锁的题
+- 形态：90 分钟、4 层，前一层单测不过，后一层不开放
 
-难在层数和时钟，不在单层算法。第一层把 `get/set` 写成无时间参数的 dict，第三层 TTL 就只能推倒重来。
+难点在层数和时钟，不在单层算法。如果第一层把 `get/set` 写成不带时间参数的 dict，到第三层加 TTL 时就只能推倒重来。
 
 ## 第一层：接口先带时间
 
-值保存 `(value, expire_at | None)`。所有读路径走同一个 `now`：OA 里时间是命令里的整数时间戳，不要用墙上时钟，否则单测不可复现。
+值保存成 `(value, expire_at | None)`。所有读路径都用同一个 `now`：OA 里的时间是命令自带的整数时间戳，不要用墙上时钟，否则单测没法复现。
 
-过期策略：
+过期策略有两种：
 
-- **惰性：** `get` / `scan` 时丢弃过期键。写路径简单。
-- **主动：** min-heap `(expire_at, key)`，推进时间时弹出。避免「只写不读，内存被过期键撑死」。
+- **惰性删除：** 在 `get` / `scan` 时丢掉过期的键，写路径简单。
+- **主动回收：** 用 min-heap 存 `(expire_at, key)`，推进时间时弹出到期的键。这样能避免「只写不读，内存被过期键撑满」。
 
-生产两个都要。面试至少实现惰性，并说出主动回收。过期堆要处理「同一 key 被续期」：堆里会有旧时间戳，弹出时核对当前 `expire_at`，不匹配就跳过。
+生产系统两种都要。面试里至少实现惰性删除，并说出主动回收。过期堆要处理「同一个 key 被续期」：堆里会留着旧的时间戳，弹出时核对当前的 `expire_at`，对不上就跳过。
 
-## 备份：深拷贝一份已过滤快照
+## 备份：深拷贝一份过滤后的快照
 
-Backup 不是 `dict.copy()`。要：
+备份不是 `dict.copy()`，要做到这几点：
 
-1. 按当前 `now` 丢掉过期键；
-2. 拷贝 value，可变对象要 deepcopy；
-3. restore 覆盖整个命名空间，还是 merge，题目会规定，默认整库替换；
-4. 快照里存的是绝对过期时间还是剩余 TTL？绝对时间更简单；若 restore 发生在「时间已推进」之后，绝对过期可能让整份备份立刻失效。剩余 TTL 更合理，restore 时 `expire_at = now + remaining`。
+1. 按当前 `now` 丢掉过期的键。
+2. 拷贝 value，可变对象要 deepcopy。
+3. restore 是覆盖整个命名空间还是 merge，由题目规定，默认整库替换。
+4. 快照里存绝对过期时间还是剩余 TTL？存绝对时间更简单，但如果 restore 发生在时间已经推进之后，绝对时间可能让整份备份一恢复就全部过期。存剩余 TTL 更合理，restore 时 `expire_at = now + remaining`，参考实现就是这么做的。
 
-面试里把这句说出来，比把 backup 写成 `self.data = snapshot` 更像用过带 TTL 的缓存。
+面试时把第 4 点讲出来，比把 backup 写成 `self.data = snapshot` 更像真用过带 TTL 的缓存。
 
 ## 后面几层别把状态塞进调用方
 
-Bank 变体（开户、转账、合并、cashback）和 DB 变体共享一件事：余额 / 版本号放在记录里，操作返回成功或失败，不要抛半更新。转账：先检查两账户都在、金额非负、源余额足够，再改两处。合并账户要定义主键谁留下、历史 cashback 怎么并。
+Bank 变体（开户、转账、合并、cashback）和 DB 变体有一个共同点：余额和版本号都放在记录里，操作返回成功或失败，不要抛出一个只更新了一半的异常。转账时先检查两个账户都存在、金额非负、源账户余额足够，再同时改两处。合并账户要定义谁的主键留下、历史 cashback 怎么合并。
 
-并发 follow-up：单线程 OA 不考锁，但现场会问。每键一把锁再加全局顺序（按 account id 排序加锁）避免 AB/BA 死锁。`setAll` 或全表 backup 需要停写或 copy-on-write 版本号，不能在遍历时被 set 改掉。
+并发是现场常见的 follow-up，单线程的 OA 不考锁。可以每个键一把锁，再规定全局加锁顺序（比如按 account id 排序）来避免 AB/BA 死锁。`setAll` 或全表 backup 需要停写，或者用 copy-on-write 加版本号，不能在遍历过程中被 `set` 改掉。
 
 ## 追问
 
-- **TTL 用 Redis 的那种 expire 命令模型还是滑动窗口？** 先实现绝对过期。滑动 TTL 每次 get 续期，heap 更新更烦，当 follow-up。
-- **为什么不每秒全表扫描？** $O(n)$ 唤醒。过期堆是 $O(\log n)$ 插入，$O(k)$ 弹出到期的 $k$ 个键。
-- **和计算机使用 / 工具超时的关系？** 同一类状态机：每个资源有 deadline，过期后行为要确定，不能「偶发读到旧值」。工具超时见 computer-use 章。
+- **TTL 用 Redis 那种 expire 命令模型，还是滑动窗口？** 先实现绝对过期。滑动 TTL 每次 get 都要续期，堆的更新更麻烦，留作 follow-up。
+- **为什么不每秒扫一遍全表？** 每次唤醒都是 $O(n)$。过期堆插入是 $O(\log n)$，每次只弹出到期的 $k$ 个键，代价 $O(k\log n)$。
+- **和计算机使用 / 工具超时有什么关系？** 是同一类状态机：每个资源有 deadline，过期后的行为必须确定，不能「偶尔读到旧值」。工具超时见 computer-use 章。

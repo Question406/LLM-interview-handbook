@@ -34,7 +34,7 @@ sources:
 
 ## 请求级 batch 在浪费什么
 
-静态 batch：凑满 $B$ 条，pad 到这个 batch 的 max length，一起 decode，直到最慢那条 EOS。三处浪费：
+静态 batch：凑满 $B$ 条，pad 到这个 batch 的 max length，一起 逐 token 生成（decode），直到最慢那条 EOS。三处浪费：
 
 1. **Padding。** 长度 20 和长度 200 坐一桌，短的每步都在算 pad。
 2. **队头阻塞。** 先到的短请求必须等这个 batch 收齐，或者等长请求结束。
@@ -42,7 +42,7 @@ sources:
 
 所以裸 tokens/s 可能还行，goodput（满足延迟 SLO 的完成数）很差。这和训练的固定 $T$ 完全不是同一个问题。
 
-具体想一个 batch：三条请求还要 8、40、200 步。请求级调度会让前两条陪着第三条空转 160 步。iteration-level 下，第 8 步和第 40 步各腾出一个槽，等待队列里的新 prefill 可以立刻填上。吞吐差的就是这些空槽，不是模型 FLOPs。
+具体想一个 batch：三条请求还要 8、40、200 步。请求级调度会让前两条陪着第三条空转 160 步。iteration-level 下，第 8 步和第 40 步各腾出一个槽，等待队列里的新 输入预填充（prefill，即处理输入并建立缓存） 可以立刻填上。吞吐差的就是这些空槽，不是模型 FLOPs。
 
 ## iteration-level 在干什么
 
@@ -50,13 +50,13 @@ Orca 的想法：调度单位是一次 decoder iteration，不是一次完整请
 
 - 已结束的序列出队，释放它的 KV。
 - 等待中的新请求，在有空位时 prefill 并加入。
-- 活着的序列各走 1 个 token，batch 形状每步都变。
+- 活着的序列各生成 1 个 token，batch 形状每步都变。
 
 GPU 不再为已经结束的位置做 GEMM。连续批（continuous batching）说的就是这个：batch 成员随时间连续替换，而不是一个栅栏等所有人。
 
 没有 paging 时，KV 仍要连续 `cat`，变长仍迫使你按上限预留。vLLM 把 KV 切成固定 page，逻辑上连续、物理上散。新 token 申请一页，结束就还页。投机解码拒绝时还页就等于 rollback，见 `openai-speculative-decoding`。
 
-和 prefill 的关系：新请求的 prefill 若整段塞进同一 iteration，会打爆这一步的时延。常见补丁是 chunked prefill：一步只消化部分 prompt，其余 slot 留给 decode，避免 `openai-prefill-decode` 里说的队头阻塞。彻底拆池则是另一档架构。
+和 prefill 的关系：新请求的 prefill 若整段塞进同一 iteration，会打爆这一步的时延。常见补丁是 chunked prefill：一步只消化部分 输入提示（prompt），其余 slot 留给 decode，避免 `openai-prefill-decode` 里说的队头阻塞。彻底拆池则是另一档架构。
 
 实现上每条请求至少要：当前 `position`、采样 RNG、结束条件、以及 KV 的 page 表。batch 维不再对应「第 $i$ 个固定样本」，而是当前活着的 slot。attention kernel 必须能吃 ragged 长度，或先按 page 间接寻址。写死 `[B, H, T_max, D]` 再 pad，等于把 continuous batching 的收益吐回去。
 
@@ -66,5 +66,12 @@ GPU 不再为已经结束的位置做 GEMM。连续批（continuous batching）�
 
 - **和动态 batching 的差别？** 很多框架的 dynamic batch 只是凑请求再整段跑完。continuous 是跑的过程中成员还在变。
 - **公平性？** 长生成会占着 KV。要有 max tokens、优先级、或抢占（抢占必须能把 KV offload / 丢弃）。
-- **batch 越大越好吗？** decode 在带宽饱和前是的；再大 TTFT 排队变差。对着 SLO 调，不对着 MFU 调。
+- **batch 越大越好吗？** decode 在带宽饱和前是的；再大 首个 token 的等待时间（TTFT） 排队变差。对着 SLO 调，不对着 MFU 调。
 - **训练能不能这么调度？** 没必要。训练样本长度可切齐，没有在线到达过程。
+
+## 相关题
+
+- [[meta-vllm]]：vLLM 的公开讲法，把 continuous batching 和 PagedAttention 放在一起讲。
+- [[google-tpu-decode]]：TPU 上做连续批，难点换成静态 shape 和重编译。
+- [[sys-paged-attn]]：每步能换成员，靠的是按块分配 KV；那题讲块表本身。
+- [[nvidia-kv-offload]]：抢占后的 KV 卸到哪里，以及什么时候卸载还不如量化。

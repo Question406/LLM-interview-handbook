@@ -4,8 +4,7 @@ section: microsoft
 order: 12
 level: A
 title: Microsoft：AutoGen / 多 agent 编排，失败、预算、和 SK 差别
-quick: >-
-  AutoGen 把对话当编排：多个可对话 agent 互发消息。失败典型是互相捧场死循环、工具抛错被当成成功、token 账单爆炸。预算要硬顶（轮数、token、墙钟、写操作）。和 Semantic Kernel 的差别是：SK 管插件边界和中间件，AutoGen 管多智能体怎么说话。
+quick: "AutoGen 把对话当编排：多个可对话 agent 互发消息。失败典型是互相捧场死循环、工具抛错被当成成功、token 账单爆炸。预算要硬顶（轮数、token、实际耗时、写操作）。和 Semantic Kernel 的差别是：SK 管插件边界和中间件，AutoGen 管多智能体怎么说话。"
 tags:
   - Microsoft
   - AutoGen
@@ -39,7 +38,7 @@ sources:
 | --- | --- | --- |
 | 单位 | 插件函数 + 一次模型调用 | 多个 conversable agent |
 | 控制 | filter / 中间件拦调用 | 对话策略、选下一个说话者 |
-| 身份 | 用户 token 向下传到 Graph | 每个 agent 自己的工具箱，更容易漏 ACL |
+| 身份 | 用户授权令牌向下传到 Graph | 每个 agent 自己的工具箱，更容易漏 ACL |
 | 产品位 | Copilot 式企业插件运行时 | 研究 / 复杂任务的多智能体实验床 |
 
 SK 的核心契约在 `msft-semantic-kernel`：原生函数有副作用，语义函数只产文本；写操作要确认；失败要结构化回给模型。AutoGen 默认是 **模型在跟另一个模型聊天**。没有 filter，一次「看起来像成功的」自然语言就会把错误放大成下一轮的事实。
@@ -52,14 +51,14 @@ SK 的核心契约在 `msft-semantic-kernel`：原生函数有副作用，语义
 
 1. **捧场循环。** Coder 说「请再审一下」，Reviewer 说「很好再改一版」，`max_round` 没设就烧 TPM。选 speaker 的模型喜欢找最健谈的那个，不是最该动手的那个。
 2. **工具失败当成功。** 代码执行超时，agent 用自然语言总结「已经跑过了」。下一轮当测试绿。收口必须和 SK 同一句：状态以系统记录为准，见 `msft-semantic-kernel`。
-3. **权限漂移。** Web Surfer 用应用身份；Coder 在沙箱里读到密钥。多 agent 要把 ACL 绑在 **工具运行时**，不要绑在 prompt「请尊重权限」。接地规则同 `msft-copilot-ground`。
+3. **权限漂移。** Web Surfer 用应用身份；Coder 在沙箱里读到密钥。多 agent 要把 ACL 绑在 **工具运行时**，不要绑在 输入提示（prompt）「请尊重权限」。有实际证据支持规则同 `msft-copilot-ground`。
 4. **上下文膨胀。** 每轮把全部聊天粘回去，$T$ 线性涨，TPM 和 lost-in-the-middle 一起爆，见 `msft-azure-tpm`、`msft-long-context`。Ledger 存在的意义就是别把小说当状态。
 
 Magentic-One 公开设计值得搬上白板：外环改 Task Ledger（计划），内环改 Progress Ledger（这一步有没有进展）。连续若干步没进展就重计划，而不是再催一次同一个 Web Surfer。GAIA / WebArena 上的完成率论文写得很一般（百分之三十几量级），面试用它当 **失败分析框架**，不要当「已经能自主办公」。
 
 ## 预算是硬顶，写在运行时里
 
-我会把预算写成宿主代码，不写在 system prompt 里「请节约」：
+我会把预算写成宿主代码，不写在 system 输入提示里「请节约」：
 
 ```python
 def run_team(step, *, max_rounds=8, max_tokens=12000, max_wall_s=120):
@@ -79,6 +78,6 @@ def run_team(step, *, max_rounds=8, max_tokens=12000, max_wall_s=120):
 ## 追问
 
 - **两个 agent 不够为什么加到五个？** 每加一个就多一份对话税和一份误调。Magentic-One 的消融是「这个角色是否覆盖一种工具界面」，不是人多力量大。
-- **和单 agent 带工具比？** 单 agent + 好 schema 能做的，不要上 GroupChat。多 agent 只在需要隔离的工具界面（浏览器 vs 终端）或需要显式复核时才划算。
+- **和单 agent 带工具比？** 单 agent + 清楚的 schema 能做的，不要上 GroupChat。多 agent 只在需要隔离的工具界面（浏览器 vs 终端）或需要显式复核时才划算。
 - **人在回路放哪？** 计划确认、不可逆动作、预算打满后的降级。不要让人去当下一轮 speaker 来「感觉还可以」。
 - **AutoGen 0.4 改名了还能这么答吗？** 能。抽象没变：对话编排 vs 插件中间件。改的是包名，不是失败模式。

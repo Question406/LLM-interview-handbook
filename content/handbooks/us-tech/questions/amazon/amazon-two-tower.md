@@ -35,7 +35,7 @@ $$
 L=-\log\frac{\exp(s(q,i^+)/\tau)}{\sum_{i\in\mathcal{N}}\exp(s(q,i)/\tau)}
 $$
 
-$\mathcal{N}$ 是正例加负例。现场错法是把 in-batch 负例当成线上分布。Batch 里的随机商品太容易，模型学的是「和随机货分开」，不是「在近邻里排对」。Amazon 那篇还会把 impressed-not-purchased 和随机负例分开，不要一套 triplet 糊过去。
+$\mathcal{N}$ 是正例加负例。现场常见误区是把 in-batch 负例当成线上分布。Batch 里的随机商品太容易，模型学的是「和随机货分开」，不是「在近邻里排对」。Amazon 那篇还会把 impressed-not-purchased 和随机负例分开，不要一套 triplet 糊过去。
 
 item 塔输入是标题、品牌、类目路径，不是用户历史。用户历史进 query 塔或后面的精排。把点击序列塞进 item 塔，新商品立刻冷启动失败，见 `amazon-cold-start`。
 
@@ -43,13 +43,13 @@ item 塔输入是标题、品牌、类目路径，不是用户历史。用户历
 
 ## serving 近似掉在哪
 
-线上不能对亿级 ASIN 做精确 MIPS。item 向量预先算好，丢进 HNSW / IVF-PQ。query 只跑一次塔，再 ANN。训练看到的是精确内积下的 $\mathcal{N}$；线上看到的是量化加图搜索后的 $\hat{\mathcal{N}}$。两集合一散，离线 Recall@100 很好、线上少召回。
+线上不能对亿级 ASIN 做精确 MIPS。item 向量预先算好，丢进 HNSW / IVF-PQ。query 只跑一次塔，再 ANN。训练看到的是精确内积下的 $\mathcal{N}$；线上看到的是量化加图搜索后的 $\hat{\mathcal{N}}$。两个集合差异增大时，离线 Recall@100 很好、线上少召回。
 
 掉点拆开量，不要口头「ANN 有损失」：
 
 1. **编码漂移。** 模型周更、目录日更，索引里仍是旧向量。
 2. **量化。** PQ / OPQ 把 $D$ 维压成码本，近邻被挤出 top-$k$。
-3. **图搜索预算。** HNSW 的 `efSearch`、IVF 的 `nprobe` 太小，recall 先崩，延迟看起来很漂亮。
+3. **图搜索预算。** HNSW 的 `efSearch`、IVF 的 `nprobe` 太小，recall 会先下降，延迟看起来很漂亮。
 4. **负例不匹配。** 没在 ANN 邻居上训过，模型不会在「看起来都像」的 200 个里把正例顶上去。
 
 补法按成本排。先在固定 query 集上算「精确 top-$k$ 被 ANN 覆盖的比例」，目标先放到 $0.95$ 以上再谈模型。覆盖不够就加 `efSearch` / `nprobe`，或先别上太狠的 PQ。覆盖够了还掉，从 ANN 索引里挖难负例再训，让训练邻居逼近 serving 邻居。再不够：词法召回并集，见 `amazon-kendra-hybrid`；top 200 用交叉编码器或精排重排。电商里 ASIN、型号、错误码不能靠近邻碰运气，必须有倒排保底。

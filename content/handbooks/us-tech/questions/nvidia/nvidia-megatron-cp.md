@@ -60,7 +60,7 @@ Megatron 的修法：把序列切成 $2N$ 块，每张卡拿一块靠前 + 一�
 
 ## 和 SP、推理切块不要并句
 
-SP 仍只切 LN / Dropout，GEMM 前要把 $T$ 拼回，见 `nvidia-context-parallel`。训练 CP 是空间上切开一条序列。Serving 的长 prompt 更常走 chunked prefill 或 prefill / decode 分池，那是时间上切开，见 `nvidia-chunked-prefill`。推理引擎里也可以对 prefill 做 context parallel，KV 再汇到 decode 池，那是另一张部署图。
+SP 仍只切 LN / Dropout，GEMM 前要把 $T$ 拼回，见 `nvidia-context-parallel`。训练 CP 是空间上切开一条序列。Serving 的长 输入提示（prompt） 更常走 chunked 输入预填充（prefill，即处理输入并建立缓存） 或 prefill / 逐 token 生成（decode） 分池，那是时间上切开，见 `nvidia-chunked-prefill`。推理引擎里也可以对 prefill 做 context parallel，KV 再汇到 decode 池，那是另一张部署图。
 
 ## 追问
 

@@ -4,10 +4,7 @@ section: systems
 order: 26
 level: S
 title: 系统：多模态 prefill，视觉 encoder 与 LLM 形状、batch 不齐
-quick: >-
-  视觉 encoder 出的是变长视觉 token，投影后塞进 LLM 的占位符位置，不是「一张图一个向量」。分辨率不同则
-  $T_{\mathrm{vis}}$ 差一个数量级，和纯文本请求不能当同一个稠密 batch。Encoder 和 LLM 的 roofline
-  也不同，混在一张卡上会长尾。
+quick: "视觉 encoder 出的是变长视觉 token，投影后塞进 LLM 的占位符位置，不是「一张图一个向量」。分辨率不同则 $T_{\\mathrm{vis}}$ 差一个数量级，和纯文本请求不能当同一个稠密 batch。Encoder 和 LLM 的 roofline 也不同，混在一张卡上会长尾。"
 tags:
   - vLLM
   - Google
@@ -34,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-Google Gemini 原生多模态、vLLM 的 multimodal encoder / disaggregated encoder、PD 分离论文 DistServe，都会问：图不是免费的。视觉侧是另一套权重和另一套形状，和 LLM prefill 的 $[B,T,d]$ 对不齐。NVIDIA 岗追 kernel 和并行；应用岗追一张高清图如何把 decode 流水打穿。模型侧视觉 token 直觉见 `google-gemini-mm`。本题只谈 serving 的形状和调度。
+Google Gemini 原生多模态、vLLM 的 multimodal encoder / disaggregated encoder、PD 分离论文 DistServe，都会问：图不是免费的。视觉侧是另一套权重和另一套形状，和 LLM 输入预填充（prefill，即处理输入并建立缓存） 的 $[B,T,d]$ 对不齐。NVIDIA 岗追 kernel 和并行；应用岗追一张高清图如何把 逐 token 生成（decode） 流水打穿。模型侧视觉 token 直觉见 `google-gemini-mm`。本题只谈 serving 的形状和调度。
 
 ## 两段计算、两套 shape
 
@@ -48,19 +45,19 @@ Google Gemini 原生多模态、vLLM 的 multimodal encoder / disaggregated enco
 Batch 不齐出在三处：
 
 - **图和文本混部。** 同一步里有的请求 $T_{\mathrm{vis}}=0$，有的 $T_{\mathrm{vis}}$ 几千。硬 pad 到 $T_{\max}$ 会让纯文本行做大量 mask 废计算。
-- **图和图像之间。** 分辨率、裁剪、动态分辨率（NaViT / Qwen 的 `grid_thw`）让 $T_{\mathrm{vis}}$ 差很多。Encoder 若要求整齐的 `[B, 3, H, W]`，就要 pad 像素或按分辨率分桶。
+- **图和图像之间。** 分辨率、裁剪、动态分辨率（NaViT / Qwen 的 `grid_thw`）让 $T_{\mathrm{vis}}$ 差很多。Encoder 若要求整齐的 `[B, 3, H, W]`，就要 pad 像素或按分辨率分组统计。
 - **占位符和 feature 对不齐。** 模板说这张图占 256 个 token，encoder 却出了 1024，embedding 对不上，是正确性 bug，不是慢。调度切块时不要把一张图的视觉 token 从中间切开。Chunked prefill 的文本块可以切，图块不行，见 `sys-chunked-prefill`。
 
-口算：LLM 70B prefill 吃 $[T,d]\times[d,d]$；ViT 是另一套小得多的权重。Encoder 相对 LLM 往往更轻，但高清、多图、并发时 Conv / ViT 仍能占满 TTFT。默认把 encoder 跟 LLM 一起做 TP、切 encoder 权重，小 ViT 的 GEMM 更瘦、还要同步。vLLM 公开了 encoder 按图做 batch 维 DP、LLM 仍 TP 的旋钮。文档给过 TP$=8$ 大约一成 TTFT / 吞吐，未优化的 Conv3D 还能再挖一截。这是公开旋钮，不是内部秘籍。
+口算：LLM 70B prefill 吃 $[T,d]\times[d,d]$；ViT 是另一套小得多的权重。Encoder 相对 LLM 往往更轻，但高清、多图、并发时 Conv / ViT 仍能占满 首个 token 的等待时间（TTFT）。默认把 encoder 跟 LLM 一起做 TP、切 encoder 权重，小 ViT 的 GEMM 更瘦、还要同步。vLLM 公开了 encoder 按图做 batch 维 DP、LLM 仍 TP 的旋钮。文档给过 TP$=8$ 大约一成 TTFT / 吞吐，未优化的 Conv3D 还能再挖一截。这是公开旋钮，不是内部秘籍。
 
 ## 调度：别让一张图卡住一池 decode
 
-Encoder 偏 compute、形状乱；LLM decode 偏带宽、要稳定的瘦 GEMM。同一 GPU 上：一条 4k 视觉 token 的 encoder+prefill 可以占满 SM 几百毫秒，在飞 decode 的 TPOT 出尖刺。这和纯文本长 prompt 同一类伤害，见 `sys-prefill-decode-disagg`，只是前面多了一段 encoder。
+Encoder 偏 compute、形状乱；LLM decode 偏带宽、要稳定的瘦 GEMM。同一 GPU 上：一条 4k 视觉 token 的 encoder+prefill 可以占满 SM 几百毫秒，在飞 decode 的 每个 token 的生成间隔突然变长。这和纯文本长 输入提示（prompt） 同一类伤害，见 `sys-prefill-decode-disagg`，只是前面多了一段 encoder。
 
 处理菜单：
 
 - **Processor / encoder cache。** 同一张图重复出现，缓存 processor 输出或 EC，不要每轮重跑 ViT。
-- **分辨率分桶 + ragged pack。** 相近 $T_{\mathrm{vis}}$ 组 batch；跨度太大就拆步。
+- **分辨率分组统计 + ragged pack。** 相近 $T_{\mathrm{vis}}$ 组 batch；跨度太大就拆步。
 - **Chunked prefill。** 只切文本后缀；视觉段一次齐。
 - **E 与 PD 分离。** Encoder 单独实例，EC 经 connector 注入 prefill 池。纯文本请求绕过 encoder。vLLM 文档把好处写成：独立扩容、缩短 TTFT 关键路径、跨进程复用 EC。短图、低并发不要拆，多一次传输。
 

@@ -4,9 +4,7 @@ section: apple
 order: 19
 level: S
 title: Apple：端侧 agent，工具本地跑、写操作确认、离线怎么收？
-quick: >-
-  工具在 App / 系统 Intent 里执行，模型只出结构化调用。写、发、删要确认。离线只保留本地工具，不要假装能搜网。步数、墙钟、热是硬顶。Foundation
-  Models 的 Tool 协议是公开面，不是云端 ReAct 搬到手机。
+quick: "工具在 App / 系统 Intent 里执行，模型只出结构化调用。写、发、删要确认。离线只保留本地工具，不要假装能搜网。步数、实际耗时、热是硬顶。Foundation Models 的 Tool 协议是公开面，不是云端 ReAct 搬到手机。"
 tags:
   - Apple
   - Agent
@@ -38,10 +36,10 @@ Apple Intelligence / 框架岗会问「端上能不能当 agent」。公开层 2
 我会先画三列，避免答成云端 Bedrock Agents：
 
 1. 谁执行。自定义 `Tool` 在本进程跑：查本地数据库、MapKit、当前 App 状态。系统能力走 App Intent。模型不出网替你打 HTTP，除非工具自己请求网络。PCC 是更大语言模型，不是默认工具运行时。
-2. 副作用。只读（搜本地邮件、列日历）可自动。发消息、删文件、付款、改系统设置必须确认或系统权限框。确认是 UI 契约，不是 prompt 里写「请谨慎」。这和 `apple-siri-grounded` 同一句：状态以系统记录为准。
-3. 离线。没网时工具列表要裁成本地子集。天气、网页、PCC 从 schema 里拿掉，而不是调失败后再让模型编。公开叙事里端侧就要能在私有上下文上工作。
+2. 副作用。只读（搜本地邮件、列日历）可自动。发消息、删文件、付款、改系统设置必须确认或系统权限框。确认是 UI 契约，不是 输入提示里写「请谨慎」。这和 `apple-siri-grounded` 同一句：状态以系统记录为准。
+3. 离线。没网时工具列表要裁成本地子集。天气、网页、PCC 从 schema 中移除，而不是调失败后再让模型编。公开叙事里端侧就要能在私有上下文上工作。
 
-预算写在宿主，不写在 system prompt：
+预算写在宿主，不写在 system 输入提示（prompt）：
 
 ```python
 def run_local_agent(step, *, max_rounds=4, max_wall_s=8):
@@ -63,9 +61,9 @@ def run_local_agent(step, *, max_rounds=4, max_wall_s=8):
 
 观测：每步记录 tool 名、参数哈希、是否确认、是否离线降级。用户隐私：完整邮件不要进长期日志，见 `apple-diff-privacy`。评测拆：任务成功、误调（不该发却发）、拒答、离线成功率、确认后的取消率。不要报「对话自然」。
 
-错法：把云端搜索当端侧默认工具；`Tool` 和 App Intent 说成同一个 API；离线还去调 PCC；用更大 server 模型补本地权限不足。权限不足是系统设计，不是能力问题。
+常见误区是：把云端搜索当端侧默认工具；`Tool` 和 App Intent 说成同一个 API；离线还去调 PCC；用更大 server 模型补本地权限不足。权限不足是系统设计，不是能力问题。
 
-和视觉 / 语音同一套接地：工具证据 $E$ 为空就问，不靠参数记忆补日历，见 `apple-siri-grounded`。延迟上多一跳工具就是多一次 TTS 等待，见 `apple-siri-latency`。
+和视觉 / 语音同样需要检查证据：工具证据 $E$ 为空就问，不靠参数记忆补日历，见 `apple-siri-grounded`。延迟上多一跳工具就是多一次 TTS 等待，见 `apple-siri-latency`。
 
 ## 追问
 

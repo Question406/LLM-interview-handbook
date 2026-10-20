@@ -4,9 +4,7 @@ section: design
 order: 13
 level: A
 title: 设计：prompt / 工具 schema 版本、灰度、回滚
-quick: >-
-  提示和工具 schema 是生产配置，和模型权重一起发版。改一句系统提示等于改模型行为。要 git、评测闸门、按流量灰度、
-  能按版本回滚。热补生产提示且不跑评测，算事故。
+quick: "提示和工具 schema 是生产配置，和模型权重一起发版。改一句系统提示等于改模型行为。要 git、评测闸门、按流量灰度、 能按版本回滚。热补生产提示且不跑评测，算事故。"
 tags:
   - OpenAI
   - Anthropic
@@ -30,7 +28,7 @@ sources:
 
 OpenAI function calling、Anthropic 工具循环、Microsoft Copilot 都把提示和 schema 当产品表面。白板问版本 / 灰度 / 回滚，是因为现场事故经常是「改了一句系统提示」。工具运行时见 `design-tool-prod`；评测闸门见 `design-eval-platform`、`design-offline-eval`。客服话术见 `design-chat-tools`。
 
-## 版本：提示、schema、模型钉死成发布
+## 版本：将提示、schema 和模型绑定为一份发布配置
 
 我会先问：几个表面（web、API、内部 agent）、谁能改提示、是否多模型、工具是否对外。然后把一份 release 定义成：
 
@@ -46,7 +44,7 @@ OpenAI function calling、Anthropic 工具循环、Microsoft Copilot 都把提�
 
 变更路径：
 
-1. 离线集 + 金标对话重跑，见 `design-offline-eval`。提示敏感切片：拒答、工具确认、接地。
+1. 离线集 + 金标对话重跑，见 `design-offline-eval`。提示敏感切片：拒答、工具确认、有实际证据支持。
 2. 影子：新提示只打分不对外，对比旧版裁判和人抽查，见 `align-llm-judge`。
 3. 金丝雀：1% 用户或内部员工。护栏：安全事故、工具误操作、p95、过度拒绝。
 4. 放量。按用户哈希，避免同一用户来回跳版本。
@@ -67,7 +65,7 @@ A/B 同一套护栏纪律，不要每天 peek，见 `design-eval-platform`。
 
 ## 回滚和事故
 
-回滚必须秒级切流量，不依赖重新部署权重。提示存在配置服务，带签名和权限。谁改了生产提示要审计：作者、diff、评测链接、审批。事故回顾看的是这条链，不是模型 loss。
+回滚必须秒级切流量，不依赖重新部署权重。提示存在配置服务，带签名和权限。谁改了生产提示要审计：作者、diff、评测链接、审批。事故回顾看的是这条链，不是模型 损失（loss）。
 
 失败模式：prod 控制台改提示；schema 删字段导致旧客户端崩；灰度只看点赞忽略工具误操作；回滚了提示忘了清前缀缓存，用户仍吃到旧 KV；多语言提示只改了英语。
 

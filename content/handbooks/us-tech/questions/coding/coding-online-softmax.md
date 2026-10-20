@@ -5,10 +5,9 @@ order: 15
 level: S
 title: 白板：FlashAttention 的 online softmax，两遍归约怎么写
 quick: >-
-  朴素 softmax 要对分数扫三遍：max、$\sum\exp$、再除。Online 把 max 和 sumexp
-  合成一遍流式归约，第二遍才归一化。FlashAttention 用同一套递推去 rescale 已写出的
-  $O$，分数矩阵不必落 HBM。单 tile 自己做 softmax 是错的。
+  一遍流式扫描同时维护 running max 和 sumexp，max 变大时把旧的和与已累加的输出一起 rescale；每个 tile 各自 softmax 是错的。
 tags:
+  - 完整编程练习
   - Coding
   - Softmax
   - FlashAttention
@@ -16,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: FlashAttention — Fast and Memory-Efficient Exact Attention with IO-Awareness
     url: https://arxiv.org/abs/2205.14135
@@ -29,9 +28,130 @@ sources:
     type: primary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，CPU 上用 float64 验证，没有验证 GPU kernel 或性能。
+
+### 题面、接口与约束
+
+- `online_stats(x) -> (m, ell)`：一遍扫描非空的有限向量 `x`，返回全局最大值 $m$ 和 $\ell=\sum_j e^{x_j-m}$。空输入抛 `ValueError`。
+- `softmax_from_stats(x, m, ell)`：用上面的统计量做第二遍，返回 softmax 概率。
+- `online_attn_row(q, k, v, scale, tile=16)`：单个 query 的注意力，`q` 是 `[D]`，`k`、`v` 是 `[S, D]`。按每块 `tile` 个 key 扫描，不物化长度为 $S$ 的完整分数向量，返回 `softmax(k @ q * scale) @ v`，形状 `[D]`。$S=0$ 或 `tile < 1` 时抛 `ValueError`。
+- 分数都是有限值，不处理整行被 mask 成 $-\infty$ 的情况（见下文「Tile 上不能各自归一化」）。
+
+### 输入输出示例
+
+```text
+online_stats([1000, 1000])                 -> m = 1000, ell = 2
+softmax_from_stats([1000, 1000], 1000, 2)  -> [0.5, 0.5]    # 不会因 exp(1000) 溢出
+online_attn_row(q, k, v, 0.5, tile=3)      -> 与 softmax(k @ q / 2) @ v 一致，tile 取 1、3、20 都一样
+```
+
+### 解题思路与正确性
+
+扫描过程中始终维护不变量 $\ell=\sum_{j\le i} e^{x_j-m}$，其中 $m$ 是目前见过的最大值。新的最大值 $m'$ 出现时，旧的和要乘 $e^{m-m'}$ 换到新标尺，再加上新元素的 $e^{x_i-m'}$。扫完后 $m$ 和 $\ell$ 就是全局统计量。
+
+注意力里还要维护未归一化的输出 $O=\sum_j e^{s_j-m}v_j$。它和 $\ell$ 用同一个 rescale 系数 $\alpha=e^{m-m'}$：每来一块 key，先把旧的 $O$ 和 $\ell$ 乘 $\alpha$，再加上本块的贡献。最后返回 $O/\ell$。第一块时 $m=-\infty$，$\alpha=0$，旧值本来就是 0，不需要特判。
+
+### 完整参考实现（Python 3）
+
+```python
+import numpy as np
+
+
+def online_stats(x):
+    """一遍扫描求 (max, sum(exp(x - max)))；x 非空且有限。"""
+    if len(x) == 0:
+        raise ValueError("empty scores")
+    running_max = -np.inf
+    running_sum = 0.0
+    for value in np.asarray(x, dtype=np.float64):
+        new_max = max(running_max, value)
+        running_sum = running_sum * np.exp(running_max - new_max) + np.exp(value - new_max)
+        running_max = new_max
+    return running_max, running_sum
+
+
+def softmax_from_stats(x, m, ell):
+    """第二遍：用全局 max 和 sumexp 归一化。"""
+    return np.exp(np.asarray(x, dtype=np.float64) - m) / ell
+
+
+def online_attn_row(q, k, v, scale, tile=16):
+    """单个 query 的分块注意力。q: [D]，k / v: [S, D]，返回 [D]。
+
+    按 key 块扫描，running max 变化时同时 rescale 已累加的输出和 sumexp。
+    """
+    seq_len, head_dim = k.shape
+    if seq_len == 0:
+        raise ValueError("need at least one key")
+    if tile < 1:
+        raise ValueError(f"tile must be >= 1, got {tile}")
+    running_max = -np.inf
+    running_sum = 0.0
+    output = np.zeros(head_dim, dtype=np.float64)
+    for start in range(0, seq_len, tile):
+        scores = (k[start:start + tile] @ q) * scale  # [tile]
+        new_max = max(running_max, float(np.max(scores)))
+        weights = np.exp(scores - new_max)
+        alpha = np.exp(running_max - new_max)          # 旧标尺 -> 新标尺
+        output = output * alpha + weights @ v[start:start + tile]
+        running_sum = running_sum * alpha + float(weights.sum())
+        running_max = new_max
+    return output / running_sum
+```
+
+### 可执行测试
+
+```python
+def expect_error(error_type, fn, *args, **kwargs):
+    try:
+        fn(*args, **kwargs)
+    except error_type:
+        return
+    raise AssertionError(f"expected {error_type.__name__}")
+
+
+# 大数值不溢出：两个 1000 的 softmax 是 [0.5, 0.5]
+m, ell = online_stats([1000.0, 1000.0])
+assert m == 1000
+assert ell == 2
+assert np.allclose(softmax_from_stats([1000.0, 1000.0], m, ell), [0.5, 0.5])
+
+# 与两遍写法的统计量一致
+rng = np.random.default_rng(4)
+x = rng.normal(size=11) * 5
+m, ell = online_stats(x)
+assert m == x.max()
+assert np.isclose(ell, np.exp(x - x.max()).sum())
+assert np.isclose(softmax_from_stats(x, m, ell).sum(), 1.0)
+
+# 分块注意力与完整 softmax 注意力一致，与 tile 大小无关
+q = rng.normal(size=4)
+k = rng.normal(size=(7, 4))
+v = rng.normal(size=(7, 4))
+scores = k @ q / 2
+probs = np.exp(scores - scores.max())
+probs /= probs.sum()
+for tile in (1, 3, 7, 20):
+    assert np.allclose(online_attn_row(q, k, v, 0.5, tile), probs @ v)
+
+# 非法输入
+expect_error(ValueError, online_stats, [])
+expect_error(ValueError, online_attn_row, q, k[:0], v[:0], 0.5)
+expect_error(ValueError, online_attn_row, q, k, v, 0.5, tile=0)
+```
+
+### 复杂度与追问
+
+设 key 数为 $S$、头维为 $D$。`online_attn_row` 时间 $O(SD)$；额外空间是 $O(D)$ 的输出累加器，加上当前块 $O(\text{tile}\cdot D)$ 的工作区。如果要的是 softmax 概率本身，输出仍然要 $O(S)$。
+
+- 追问「多个 query 怎么办」：每一行各自维护 $(m,\ell,O)$，FlashAttention 外层沿 $K,V$ 块走，内层对一块 query 行同时更新。
+- 追问「fp16 下怎么放精度」：running sumexp 和 rescale 系数放 fp32，见 `coding-softmax-stable`。
+
 ## 题怎么来的
 
-NVIDIA / OpenAI 的 kernel 白板不让你背 fused kernel 名字，要你把 softmax 的归约拆开。Dao et al. 的 FlashAttention 把 Milakov 的 online softmax 嵌进 SRAM tiling：分数 `[T, S]` 从不写回 HBM。IO 账见 `nvidia-flash-attn`。稳定但物化全表的写法见 `coding-softmax-stable`。要说清：为什么不能对每个 K 块单独 softmax，以及 running max 变了以后旧输出怎么乘回去。
+NVIDIA / OpenAI 的 kernel 白板不考你背 fused kernel 的名字，而是让你把 softmax 的归约拆开。Dao 等人的 FlashAttention 把 Milakov 的 online softmax 嵌进 SRAM tiling，`[T, S]` 的分数矩阵从不写回 HBM。IO 开销分析见 `nvidia-flash-attn`；稳定但物化整张表的写法见 `coding-softmax-stable`。这道题要讲清两件事：为什么不能对每个 K 块单独做 softmax，以及 running max 变了以后旧的输出怎么乘回去。
 
 ## 三遍、两遍、online
 
@@ -43,56 +163,36 @@ m=\max_j x_j,\quad
 p_j=e^{x_j-m}/\ell.
 $$
 
-三遍：先 max，再 sumexp，再除。两遍归约是把后两步合成「带着 $m$ 做一次 $\sum\exp$ + 写出 $p$」，仍要整行都在。Online 是流式维护 $(m,\ell)$：
+最朴素的写法扫三遍：先求 max，再求 sumexp，再逐个相除。online 的做法是在一遍里流式维护 $(m,\ell)$：
 
 $$
 m_i=\max(m_{i-1},x_i),\quad
 \ell_i=e^{m_{i-1}-m_i}\ell_{i-1}+e^{x_i-m_i}.
 $$
 
-扫完 $m_S,\ell_S$ 就是全局 max 和 sumexp，和两遍数学等价。第二遍 $p_i=\exp(x_i-m_S)/\ell_S$。注意力不需要物化 $p$：把这块 $p$ 乘 $V$，max 更新时把已有输出乘 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$。
+扫完时 $m_S,\ell_S$ 就是全局 max 和 sumexp，和分开算的结果在数学上相等。于是第二遍直接写出 $p_i=\exp(x_i-m_S)/\ell_S$，总共两遍。
 
-```python
-import numpy as np
-
-def online_stats(x):
-    m, ell = -np.inf, 0.0
-    for xi in np.asarray(x, dtype=np.float64):
-        m2 = max(m, xi)
-        ell = ell * np.exp(m - m2) + np.exp(xi - m2)
-        m = m2
-    return m, ell
-
-def softmax_from_stats(x, m, ell):
-    return np.exp(np.asarray(x, dtype=np.float64) - m) / ell
-
-def online_attn_row(q, k, v, scale, tile=16):
-    # q: [D], k,v: [S, D]；按 K 块扫，O 在线 rescale
-    s_len, d = k.shape
-    m, ell = -np.inf, 0.0
-    o = np.zeros(d, dtype=np.float64)
-    for j in range(0, s_len, tile):
-        s = (k[j : j + tile] @ q) * scale
-        m2 = max(m, float(np.max(s)))
-        p = np.exp(s - m2)
-        alpha = np.exp(m - m2)
-        o = o * alpha + p @ v[j : j + tile]
-        ell = ell * alpha + float(p.sum())
-        m = m2
-    return o / ell
-```
-
-单测：`online_stats` 对上 `x.max()` 和 `exp(x-m).sum()`；`online_attn_row` 对上 `(softmax(scale K q) @ V)`。对不上就是 rescale 漏乘。
+注意力连 $p$ 都不需要物化：每块的 $p$ 直接乘上对应的 $V$ 累加进输出；max 更新时，把已有输出乘上 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$。单测时，`online_stats` 要对上 `x.max()` 和 `exp(x - m).sum()`，`online_attn_row` 要对上 `softmax(scale * K q) @ V`。对不上，通常是某处漏乘了 rescale 系数。
 
 ## Tile 上不能各自归一化
 
-FlashAttention 外层沿 $K,V$ 块走。块 $j$ 的局部 $\mathrm{softmax}(Q K_j^\top)$ 的分母不是全局 $\ell$，权重对不上后面的块，结果不是精确注意力。必须保留行上的 $(m,\ell,O)$，新块只提供增量。因果 mask 在 tile 内打 $-\infty$，全 $-\infty$ 的行 $\ell=0$，要跳过或先看有没有有限值，否则 $O/\ell$ 是 NaN。
+FlashAttention 的外层沿 $K,V$ 块走。块 $j$ 上局部的 $\mathrm{softmax}(Q K_j^\top)$，分母只是这一块的和，不是全局的 $\ell$，各块的权重彼此对不上，结果就不是精确注意力。必须在每一行上保留 $(m,\ell,O)$，新块只提供增量。
 
-Decode 时 $T_q=1$，分数已经是 `[1, S]`，online 省的是不写 $S$，但墙钟多半在读 KV cache，和 prefill 的 $T^2$ IO 不是同一笔。白板先写对递推，再提这句。
+因果 mask 在 tile 内填 $-\infty$。如果一整行都是 $-\infty$，$\ell=0$，$O/\ell$ 会是 NaN，所以要跳过这种行，或者先检查有没有有限值。
+
+decode 时 $T_q=1$，分数只是 `[1, S]`。online 省下的是把长度为 $S$ 的分数写回 HBM 的开销，但实际耗时大多花在读 KV cache 上，这和 prefill 时 $T^2$ 规模的 IO 不是一回事。白板上先把递推写对，再提这一点。
 
 ## 追问
 
-- **和减 max 的稳定 softmax 什么关系？** 每一步减的是当前 running max，不是最后的全局 max；用 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$ 把旧的 $\ell$ 和 $O$ 变到新标尺上，等价于从头减全局 max。
-- **为什么 FlashAttention 还要第二遍的味道？** 统计 $m,\ell$ 可以一遍扫完；写出归一化后的 $P$ 仍要 $x$。注意力把「第二遍」融进 $PV$，训练再在反向重算。
-- **fp16 的 $\ell$ 要不要升精度？** 要。running sumexp 和 rescale 系数放 fp32，和 `coding-softmax-stable` 同一条。
-- **块内先 softmax 再加权平均能凑合吗？** 不能。那是错误的归一化，不是近似 FlashAttention。
+- **和减 max 的稳定 softmax 是什么关系？** 每一步减的是当前的 running max，而不是最终的全局 max；用 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$ 把旧的 $\ell$ 和 $O$ 换到新标尺上，效果等价于从头减全局 max。
+- **为什么 FlashAttention 仍然有归一化这一步？** 统计量 $m,\ell$ 一遍就能扫完，但写出归一化后的 $P$ 仍要再访问 $x$。注意力把这「第二遍」融进了 $PV$ 的累加里，训练时反向再重算一次。
+- **块内先 softmax、再把各块加权平均，能凑合吗？** 不能。那是错误的归一化，不算 FlashAttention 的近似。
+
+## 相关题
+
+- [[coding-softmax-stable]]：先把单行减全局 max 的稳定 softmax 写对，这张把它改成流式的 running max。
+- [[coding-fused-ce]]：同一套 running $(m,\ell)$ 用在词表维上，算 CE 时不物化完整 logits。
+- [[coding-flash-decode]]：把这里串行扫 $K$ 块改成多段并行，各段的 $(m,\ell,O)$ 再按同一套 rescale 合并。
+- [[nvidia-flash-decode]]：同一个 split-K 练习，从 NVIDIA 角度对照训练核和 decode 核切的轴。
+- [[openai-flash-decode]]：同一个 split-K 练习，OpenAI 问法侧重 decode 时并行度为什么不够、什么时候不必切。
+- [[nvidia-flash-attn]]：本题递推放回 FlashAttention 里的 IO 分析，SRAM tiling 省了多少 HBM 流量，decode 为什么收益小。

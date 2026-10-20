@@ -4,10 +4,7 @@ section: nvidia
 order: 17
 level: A
 title: NVIDIA：FP8 KV cache 和权重量化不是一回事
-quick: >-
-  权重量化减的是读 $W$；FP8 KV 减的是常驻 cache 和 decode 每步读历史 K/V。两套 scale、两套 kernel、两种误差。TensorRT-LLM
-  里权重量化算法和 `kv_cache_quant_algo` 分开。Hopper / Ada 上 KV 更常选 FP8 而不是 INT8，因为精度更好过。训练
-  FP8 混合精度又是第三件事。
+quick: "权重量化减的是每步读 $W$ 的字节；FP8 KV 减的是常驻 cache 和 decode 时读历史 K/V 的字节。两者 scale、kernel、误差都不同，TensorRT-LLM 里也是两个开关。"
 tags:
   - NVIDIA
   - FP8
@@ -34,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-刚答完 `nvidia-fp8` 或 `nvidia-int8-quant`，评委常补一句「那 KV 呢」。权重已经 FP8 / INT4，长上下文 decode 仍可能被 cache 打满。TensorRT-LLM 文档把 KV 量化写成独立开关，甚至允许 checkpoint 没开 FP8 KV、runtime 再打开。我会先写两笔显存账，再谈 scale 和误差落在哪。
+刚答完 `nvidia-fp8` 或 `nvidia-int8-quant`，评委常补一句「那 KV 呢」。权重已经 FP8 / INT4，长上下文 逐 token 生成（decode） 仍可能被 cache 打满。TensorRT-LLM 文档把 KV 量化写成独立开关，甚至允许 checkpoint 没开 FP8 KV、runtime 再打开。我会先写两笔显存账，再谈 scale 和误差落在哪。
 
 ## 两笔账、两堵墙
 
@@ -74,3 +71,12 @@ KV 量化：K、V 是运行时写进去的激活，每步多一行。Scale 常�
 - **GQA 还要量化 KV 吗？** $H_{\mathrm{kv}}$ 已经小了，容量压力轻一档，但 $T$ 到 128k 仍值得。GQA 减头数，FP8 减字节，正交，见 `google-gqa-mqa`。
 - **和 INT4 权重叠会不会崩？** 两套误差相乘。先单独开、再组合评测。崩了先看 K 的 scale 是不是太粗。
 - **训练 FP8 的 amax 能不能当 KV scale？** 不能。训练 amax 是层激活历史；KV 是每条请求自己的 K/V 分布，还随 $T$ 长。
+
+## 相关题
+
+- [[sys-kv-quant]]：同一主题的系统版，更细讲 K 按 channel、V 按 token 定 scale 的原因，以及 INT8 和 FP8 怎么选。
+- [[nvidia-w4a8]]：把权重、激活、KV 三把量化开关放在一张表里，和本题的「两笔账」是同一个思路的扩展。
+- [[nvidia-kv-offload]]：KV 容量不够时的另一条路，算 PCIe 带宽为什么让热 KV 只能留在 HBM、先上 FP8。
+- [[nvidia-fp8]]：本题开头要区分的 FP8 训练配方，延迟缩放和 amax 历史都在那边。
+- [[sys-fp8-gemm]]：FP8 用在权重 GEMM 上的 scale 粒度和核，对应本题说的「权重量化」那笔账。
+- [[nvidia-int8-quant]]：常作为本题前一问的权重 INT8 量化，对称/非对称和校准都针对 GEMM 的权重和激活。

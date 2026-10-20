@@ -5,7 +5,7 @@ order: 18
 level: A
 title: Meta：continual pretrain / 领域自适应，灾难遗忘怎么防
 quick: >-
-  从 Llama 权接着训领域数据，比从零便宜，但分布一偏，通用能力会掉。公开配方是：回放旧 mix、重热再衰减学习率、领域不要 $100\%$
+  从 Llama 权接着训领域数据，比从零便宜，但分布一偏，通用能力会掉。公开配方是：回放旧 mix、重新提高学习率，再逐步衰减、领域不要 $100\%$
   纯度。Code Llama 和 Llama 3 的 code expert 都是这条；验收必须同时报领域和通用榜。
 tags:
   - Meta
@@ -34,15 +34,15 @@ sources:
     type: secondary
 ---
 
-FAIR / Llama 岗把「再训 500B 代码」当工程题。Gururangan 的 Don't Stop Pretraining 把 DAPT 说清楚了；Code Llama 和 Llama 3 Herd 给了 Meta 公开实例。别把 CPT 说成 SFT：目标仍是 next-token，数据是无监督领域语料，学习率比 SFT 大、token 比 SFT 多几个数量级。
+FAIR / Llama 岗把「再训 500B 代码」当工程题。Gururangan 的 Don't Stop Pretraining 把 DAPT 说清楚了；Code Llama 和 Llama 3 Herd 给了 Meta 公开实例。别把 CPT 说成 监督微调（SFT）：目标仍是 next-token，数据是无监督领域语料，学习率比 SFT 大、token 数比 SFT 多几个数量级。
 
 ## Meta 公开的两条分叉
 
-Code Llama：从 Llama 2 初始化。Llama 2 大约 $2\mathrm{T}$ token，其中代码只有约 $80\mathrm{B}$。再在**代码为主**的 mix 上训 $500\mathrm{B}$（70B 是 $1\mathrm{T}$），论文写大约 $85\%$ 代码。7B 对照从零训同一 mix：从零的终点 loss，大约只相当于 CPT 跑到一半。结论：**通用预训练是领域继续训的免费初始化**，不是浪费。后面还有 infill 目标、长窗微调到更大 $T$。图上能看到：代码变强时，Llama 2 的 helpfulness 奖励模型分数往下掉。这是遗忘的公开形状，不是传闻。
+Code Llama：从 Llama 2 初始化。Llama 2 大约 $2\mathrm{T}$ token，其中代码只有约 $80\mathrm{B}$。再在**代码为主**的 mix 上训 $500\mathrm{B}$（70B 是 $1\mathrm{T}$），论文写大约 $85\%$ 代码。7B 对照从零训同一 mix：从零的最终损失，大约只相当于 CPT 跑到一半。结论：**通用预训练提供了领域继续训练的初始化，能减少后续训练量**。后面还有 infill 目标、长窗微调到更大 $T$。图上能看到：代码变强时，Llama 2 的 helpfulness 奖励模型分数往下掉。这是遗忘的公开形状，不是传闻。
 
-Llama 3 code expert：从**主预训练 run 中途分叉**，再继续约 $1\mathrm{T}$，其中代码大于 $85\%$。末段做 repo 级长窗微调到 $16\mathrm{k}$，再按主模型那套 SFT / DPO，但数据偏向代码。这个专家用来产代码人工标注和 rejection sampling，不是替代 405B chat。Herd 把这条明确写成 Gururangan / Code Llama 同类。
+Llama 3 code expert：从**主预训练 run 中途分叉**，再继续约 $1\mathrm{T}$，其中代码大于 $85\%$。末段做 repo 级长窗微调到 $16\mathrm{k}$，再按主模型那套 SFT / 直接偏好优化（DPO），但数据偏向代码。这个专家用来产代码人工标注和 rejection sampling，不是替代 405B chat。Herd 把这条明确写成 Gururangan / Code Llama 同类。
 
-和 `meta-llama3-pretrain` 的差别：主模型在同一 run 里微调 mix（加数学、多语言），仍是「一个通用 mix」；CPT 是**另起一条权**，领域浓度高一个数量级。退火 $40\mathrm{M}$ 高质量 upsample 也不是 CPT，量级差太远。
+和 `meta-llama3-pretrain` 的差别：主模型在同一 run 里微调 mix（加数学、多语言），仍是「一个通用 mix」；CPT 是**从已有权重另开一次训练**，领域浓度高一个数量级。退火 $40\mathrm{M}$ 高质量 upsample 也不是 CPT，量级差太远。
 
 ## 遗忘从哪来，公开论文怎么挡
 
@@ -50,7 +50,7 @@ Llama 3 code expert：从**主预训练 run 中途分叉**，再继续约 $1\mat
 
 Ibrahim 等人（2024）在「英语→英语弱偏移」和「英语→德语强偏移」上表明：不必上复杂正则，三件套就能接近从零重训所有数据：
 
-1. **学习率重热再衰减。** 余弦已经收到尾巴时，直接拿微小 LR 去吞几百 B 新 token，适应不动；突然用高峰 LR 只打新数据，旧知识被冲掉。要像新的预训练 schedule 一样 warmup + decay，但峰值通常低于从零。
+1. **重新提高学习率，再衰减。** 余弦学习率已经降到末尾时，继续用极小 LR 训练几百 B 新 token，很难适应新领域；突然用高峰 LR 只打新数据，旧知识被冲掉。要像新的预训练 schedule 一样 warmup + decay，但峰值通常低于从零。
 2. **回放。** 新 batch 里掺旧 mix。公开实验里，中等回放往往比把同样 FLOPs 换成更大模型更划算；回放到很高则不如把参数量做大。面试给工作点：先 $10\%\sim 30\%$ 旧数据扫，画领域榜和通用榜，不要背「必须 $25\%$」。
 3. **别把领域纯度收到 $100\%$。** Code Llama 留了约 $15\%$ 非代码，就是回放的一种。
 
@@ -60,11 +60,11 @@ Ibrahim 等人（2024）在「英语→英语弱偏移」和「英语→德语�
 
 ## 一个具体错法
 
-错法：主预训练余弦已经接近 $0$，接着 CPT 还用那个 LR。要么学不动，要么你手抖把 LR 拉高却没有 warmup，loss 尖刺、通用能力断崖。
+常见误区是：主预训练余弦已经接近 $0$，接着 CPT 还用那个 LR。要么学不动，要么突然提高 LR 却没有 warmup，导致损失出现尖峰，通用能力大幅下降。
 
 错法二：换词表再 CPT。embedding 行对不上，见 `meta-llama3-tokenizer`。要扩矩阵并初始化新 id，这是另一个项目。
 
-错法三：把评测集的训练劈开混进领域语料。8B 会涨、大模型涨得少，Herd 退火实验已经展示过这种假增益。
+错法三：把评测数据的训练划分混进领域语料。8B 会涨、大模型涨得少，Herd 退火实验已经展示过这种假增益。
 
 长窗 CPT 和领域 CPT 可以叠：Code Llama 就是先领域再长窗。长窗改的是 $T$ 和 RoPE（`meta-yarn-ntk`），领域 CPT 改的是数据分布，不要混成一个旋钮。
 

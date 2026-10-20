@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-Agent / serving 岗会把 prompt caching 当系统设计题，不是「记得开个开关」。官方机制是前缀缓存：同一条前缀反复进模型，KV 不用从头算。Claude Code 那篇工程文把教训收成一句：整个系统都要围着前缀稳定性转。
+Agent / serving 岗会把 输入提示（prompt） caching 当系统设计题，不是「记得开个开关」。官方机制是前缀缓存：同一条前缀反复进模型，KV 不用从头算。Claude Code 那篇工程文把教训收成一句：整个系统都要围着前缀稳定性转。
 
 ## 命中条件是字节级前缀
 
@@ -56,7 +56,7 @@ system = [
 
 公开倍率：5 分钟写缓存约 $1.25\times$ 基线输入，1 小时写约 $2\times$，读约 $0.1\times$。输出价不变。同一前缀要被读很多次才划算；只打一次、立刻换前缀，等于付溢价预填。和 Batch 折扣可以叠，见 `anthropic-batch-api`。
 
-延迟上，命中省的是 prefill，不是 decode。长系统提示 + 工具 schema + 仓库摘要这类输入主导的请求，TTFT 掉得最明显。输出很长、输入很短，缓存帮不上。
+延迟上，命中省的是 输入预填充（prefill，即处理输入并建立缓存），不是 逐 token 生成（decode）。长系统提示 + 工具 字段和类型规范（schema） + 仓库摘要这类输入主导的请求，首个 token 的等待时间（TTFT） 掉得最明显。输出很长、输入很短，缓存帮不上。
 
 预热：对共享前缀发一次 `max_tokens: 0`，breakpoint 必须打在后续真请求也共享的那一块。自动缓存会把点打在占位 user 消息上，预热条目永远对不上线流量。Thinking 配置也要一致，它会编进前缀，见 `anthropic-extended-thinking`。
 
@@ -64,7 +64,7 @@ system = [
 
 静态工具和系统提示在最前，长文档次之，每轮用户话、检索片段、时间戳放后缀。点打在静态前缀的最后一块。对话增长时，末尾那个点只要每轮新增块数小于 lookback 窗口，就能接到上一轮的写。窗口滑脱就加第二个点钉住旧前缀，不要把四个名额全堆在会变的块上。
 
-错法：工具集每请求按字母重排；system 里塞当前时间；为了 compaction 另开一条「无工具、另一套系统提示」的总结请求——前缀从第一个 token 就分叉，长对话越需要压缩越贵。侧路任务必须复用主对话的 tools / system / thinking。和 `anthropic-rate-limit` 一起讲：缓存命中仍占请求配额，只是 token 账记在 read 桶。
+常见误区是：工具集每请求按字母重排；system 里塞当前时间；为了 compaction 另开一条「无工具、另一套系统提示」的总结请求，前缀从第一个 token 就分叉，长对话越需要压缩越贵。侧路任务必须复用主对话的 tools / system / thinking。和 `anthropic-rate-limit` 一起讲：缓存命中仍占请求配额，只是 token 账记在 read 桶。
 
 ## 追问
 

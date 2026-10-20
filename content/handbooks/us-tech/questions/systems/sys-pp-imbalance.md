@@ -4,9 +4,7 @@ section: systems
 order: 63
 level: A
 title: 系统：流水线第一级和最后一级为什么更慢？
-quick: >-
-  词嵌入在第一级，logits 和 loss 在最后一级。按层数均分时，这两级的计算和激活都更重，稳态里别的卡在等它们。
-  把嵌入和输出头旁边的 transformer 层少放一两层，或者让这两级少承担虚 stage。
+quick: "词嵌入在第一级，logits 和 loss 在最后一级。按层数均分时，这两级的计算和激活都更重，稳态里别的卡在等它们。 把嵌入和输出头旁边的 transformer 层少放一两层，或者让这两级少承担虚 stage。"
 tags:
   - Pretrain
   - Pipeline Parallel
@@ -26,7 +24,7 @@ sources:
 
 ## 两头
 
-第一级除了若干 transformer 层，还有词嵌入。最后一级要把隐藏状态投到词表，词表几十万时，这一下的 GEMM 和激活都大，还要算 loss。中间级只是重复的层。
+第一级除了若干 transformer 层，还有词嵌入。最后一级要把隐藏状态投到词表，词表几十万时，这一下的 GEMM 和激活都大，还要计算 loss。中间级只是重复的层。
 
 1F1B 的稳态节拍等于最慢的一级。两头慢，中间的卡在每格之间空一截。profiler 上这截空档不在 warmup，而在稳态，所以不是「microbatch 太少」能单独解释的。
 

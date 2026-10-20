@@ -29,7 +29,7 @@ sources:
     type: secondary
 ---
 
-这本手册按公司切美国 frontier lab / Big Tech 的公开面经。LeetCode 中等难度不够，也不会只问「GRPO 和 PPO 的 KL 一样吗」。评委要看你能不能对着一份带 bug 的 nanoGPT 改对，再在同一份代码上加 KV cache。国内主题卡（GQA、量化、RLHF）在「LLM 面试手册」里，这里只收「这家公司怎么问」。
+这本手册按公司切美国 frontier lab / Big Tech 的公开面经。LeetCode 中等难度不够，也不会只问「GRPO 和 PPO 的 KL 一样吗」。评委要看你能不能对着一份带 bug 的 nanoGPT 改对，再在同一份代码上加 KV cache。国内主题卡（GQA、量化、基于人类反馈的强化学习（RLHF））在「LLM 面试手册」里，这里只收「这家公司怎么问」。
 
 ## 五条主线
 
@@ -40,12 +40,12 @@ sources:
 | Google DeepMind | ML design（数据/模型/评测一体）、GQA/MQA | `gdm-ml-design`、`google-gqa-mqa` |
 | Meta GenAI / FAIR | Llama GQA、onsite 的 AI-enabled coding | `meta-llama-gqa`、`meta-ai-coding` |
 | NVIDIA | 万亿参数并行、INT8 / 推理 kernel | `nvidia-trillion-train`、`nvidia-int8-quant` |
-| Apple Intelligence / Siri | 手写 MHA、voice grounded RAG | `apple-mha-code`、`apple-siri-grounded` |
+| Apple Intelligence / Siri | 手写 MHA、voice grounded 检索增强生成（RAG） | `apple-mha-code`、`apple-siri-grounded` |
 | Amazon AGI / Bedrock | 企业 RAG、p95、引用与过期文档 | `amazon-bedrock-rag` |
 | Microsoft | DeepSpeed ZeRO、Copilot grounding、Phi / ORPO | `msft-deepspeed-zero`、`msft-copilot-ground` |
-| xAI / Tesla | 带事务的内存 KV、短时限找 race、车载数据引擎 | `xai-kv-txn`、`tesla-data-engine` |
+| xAI / SpaceXAI / Tesla | 15 分钟筛（项目深挖 + why xAI）、内存 KV/race、Grok 工具与缓存；先读现在在卖什么 | `xai-spacexai-now`、`xai-screen-15min`、`xai-kv-txn`、`tesla-data-engine` |
 
-白板手撕走 ML Coding 章（`coding-softmax-stable`），训练/推理系统走 `sys-3d-parallel`，RAG / 推荐 / 评测平台走 `design-prod-rag`，RLHF / DPO / CAI 走 `align-rlhf-kl`。公司章只收「这家怎么问」。
+白板手撕走 ML Coding 章（`coding-softmax-stable`），训练/推理系统走 `sys-3d-parallel`，RAG / 推荐 / 评测平台走 `design-prod-rag`，RLHF / 直接偏好优化（DPO） / CAI 走 `align-rlhf-kl`。公司章只收「这家怎么问」。
 
 ## 和国内面的差
 

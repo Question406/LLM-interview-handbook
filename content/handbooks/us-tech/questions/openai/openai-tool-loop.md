@@ -4,9 +4,7 @@ section: openai
 order: 34
 level: A
 title: OpenAI：多步 tool loop，观察怎么塞回上下文，工具调错和停止条件
-quick: >-
-  模型只提议调用，宿主执行。观察按 tool call id 写成 role=tool 消息塞回，截断脏输出，不当指令。未知工具名、schema
-  失败、执行失败要回传错误让模型改，不要猜。停止靠最大步数、重复调用熔断、finish、token 预算，缺一不可。
+quick: "模型只提议调用，宿主执行。观察按 工具调用 id 写成 role=tool 消息塞回，截断脏输出，不当指令。未知工具名、schema 校验失败、执行失败要回传错误让模型改，不要猜。停止靠最大步数、重复调用熔断、finish 和 token 预算，缺一不可。"
 tags:
   - OpenAI
   - Tools
@@ -33,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-`openai-function-calling` 收 schema、JSON mode、并行。这题收循环跑起来之后：观察怎么写回、工具名是幻觉、何时停。Chat Completions 把 `tool_calls` 和后续 `role: tool` 做成一等消息；Assistants / Responses 只是同一状态机的另一套壳。生产执行见 `design-tool-prod`。训练侧见 `openai-agent-rl`。不是某一份隐藏面经。
+`openai-function-calling` 收 字段和类型规范（schema）、JSON mode、并行。这题收循环跑起来之后：观察怎么写回、工具名是幻觉、何时停。Chat Completions 把 `tool_calls` 和后续 `role: tool` 做成一等消息；Assistants / Responses 只是同一状态机的另一套壳。生产执行见 `design-tool-prod`。训练侧见 `openai-agent-rl`。不是某一份隐藏面经。
 
 ## 观察是数据，不是新的系统提示
 
@@ -48,7 +46,7 @@ sources:
 
 并行：同一 assistant 步里多个无依赖的读可以一起执行；写回必须按 id 对齐，不要按完成时间乱序张冠李戴。第二个调用需要第一个返回值时，不能并行，要走「调一次 → 观察进上下文 → 再调」。依赖拆错的签名是：后一个工具吃到空 id 或幻觉 id。
 
-上下文会线性涨。每步都是一次新的 prefill（或前缀缓存命中后再 decode），见 `openai-prefill-decode`、`openai-continuous-batching`。工具结果很大时，先摘要再进窗口，摘要也要打标，否则 debug 对不上。视觉工具返回的图按 `openai-mm-gpt` 占砖，和文本抢 $T$。
+上下文会线性涨。每步都是一次新的 输入预填充（prefill，即处理输入并建立缓存）（或前缀缓存命中后再 逐 token 生成（decode）），见 `openai-prefill-decode`、`openai-continuous-batching`。工具结果很大时，先摘要再进窗口，摘要也要打标，否则 debug 对不上。视觉工具返回的图按 `openai-mm-gpt` 占砖，和文本抢 $T$。
 
 ```python
 def step(messages, model, registry, budget):
@@ -77,18 +75,18 @@ def step(messages, model, registry, budget):
 
 停止条件要同时有，单靠模型说「我做完了」不够：
 
-- 最大步数 / 最大墙钟 / 最大新增 token。 没有上限的 loop 会在 5xx 上烧完预算。
+- 最大步数 / 最大实际耗时 / 最大新增 token 数。 没有上限的 loop 会在 5xx 上烧完预算。
 - 重复熔断。 同一 `(name, canonical_args)` 连续失败或连续成功超过阈值，停。死循环搜同一 query 是 WebGPT 时代就有的病。
 - 模型 finish。 不再发 `tool_calls`，给出用户可见回复。强迫 `tool_choice` 某函数时，它可能永远不 finish，对话助手要用 auto。
 - 宿主判定任务完成。 单测绿了、用户点了确认。模型还想再调一次也要拦。
 
 凭证、内网 URL、文件系统根不进参数空间；模型连提议都该被拒。停止之后不要把半截工具结果留在用户气泡里，写审计。
 
-错法：把工具输出拼进 system prompt；失败时静默重试写操作；只设温度当停止条件。
+常见误区是：把工具输出拼进 system 输入提示（prompt）；失败时静默重试写操作；只设温度当停止条件。
 
 ## 追问
 
 - **观察要不要进 KV cache？** 要，它们是后续 decode 的前缀。超长观察等于超长 prefill。该摘要就摘要。
 - **模型编造一个没注册的工具？** 回传 `unknown_tool`，不要动态 `eval` 名字。白名单是宿主合同。
 - **和 JSON mode？** JSON mode 只保证 content 能 parse。要执行副作用必须走 tool loop。对照见 `openai-function-calling`。
-- **训练这个循环吗？** 运行时是上面的状态机。用 RL 改策略见 `openai-agent-rl`；推理时多开几条轨迹见 `openai-test-time`。不要把三者说成同一个开关。
+- **训练这个循环吗？** 运行时是上面的状态机。用 强化学习（RL） 改策略见 `openai-agent-rl`；推理时多开几条轨迹见 `openai-test-time`。不要把三者说成同一个开关。

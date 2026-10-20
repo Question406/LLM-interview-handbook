@@ -35,7 +35,7 @@ sources:
 - 来源：一亩三分地 NVIDIA 题库公开条目「FP32 Tensor to INT8 Quantization (with Asymmetric Quantization Follow-ups)」，2026-05 仍列在题库里
 - 形态：coding / 数值题，随后追非对称、校准、以及为什么线上没加速
 
-系统对比 GPTQ / AWQ / SmoothQuant 见 `sys-quant`。本题按「手写量化映射」收，这是 NVIDIA 面试里更常见的开口。
+系统对比 GPTQ / AWQ / SmoothQuant 见 `sys-quant`。本题主要讲如何手写量化映射，这是 NVIDIA 面试里更常见的开口。
 
 ## 对称
 
@@ -67,12 +67,19 @@ Tensor Core 有 INT8 吞吐，但：
 
 - 通道数 / hidden 不能整除 Tensor Core tile，会走慢路径；
 - dequant 和 layernorm 仍在高精度，kernel 切太碎；
-- decode 是内存带宽墙，W8A16 读权更省，W8A8 还要量化激活，收益看 profile。
+- 逐 token 生成（decode） 通常受内存带宽限制，W8A16 读权更省，W8A8 还要量化激活，收益看 profile。
 
 Nsight Compute 上看实际发出的 MMA 指令，不要假设 dtype 一改就 $\times 2$。这和 NVIDIA 岗「你有没有真的量过」的口味一致。
 
 ## 追问
 
 - **动态量化 vs 静态？** 动态每步看当前 tensor 的 min/max，灵活但开销大；静态用校准统计，推理更快。LLM decode 常用静态权 + 动态或 per-token 激活。
-- **INT4 呢？** 权重量化更狠，激活往往仍 8/16。GPTQ/AWQ 是 PTQ 搜权重，不是简单 min/max。
+- **INT4 呢？** 权重量化更狠，激活往往仍 8/16。GPTQ/AWQ 是训练后量化（PTQ）中寻找更合适的权重量化结果，不是简单 min/max。
 - **和 FP8 训练的区别？** FP8 是训练时的混合精度，有 scaling recipe；INT8 这里是推理 PTQ。不要混成一个「低比特」。
+
+## 相关题
+
+- [[coding-int8-symm]]：同一个对称公式的白板编码版，要真写出 scale、饱和和 int32 累加的 dequant GEMM，并有单测。
+- [[nvidia-fp8]]：本题追问「和 FP8 训练的区别」的完整版，讲延迟缩放和 amax 历史。
+- [[nvidia-w4a8]]：INT4 权重加 FP8 激活的部署组合，接着回答「INT4 呢」那条追问。
+- [[nvidia-fp8-kv]]：评委答完权重量化后常补问的 KV 量化，scale 和误差落在另一个张量上。

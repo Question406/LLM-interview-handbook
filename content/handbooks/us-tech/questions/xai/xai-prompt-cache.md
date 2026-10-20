@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-09-29
 sources:
   - title: Automatic Prefix Caching — vLLM
     url: https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html
@@ -29,17 +29,26 @@ sources:
   - title: Open Release of Grok-1
     url: https://x.ai/news/grok-os
     type: primary
+  - title: Prompt caching
+    url: https://docs.x.ai/developers/advanced-api-usage/prompt-caching
+    type: primary
+  - title: Context compaction
+    url: https://docs.x.ai/developers/advanced-api-usage/context-compaction
+    type: primary
+  - title: Grok 4.7
+    url: https://docs.x.ai/developers/grok-4-6
+    type: primary
 ---
 
 ## 题怎么来的
 
 Grok 产品有长人格 / 政策系统提示，API 多租户又会在同一前缀上叠不同开发者指令。推理岗问的是：这段 KV 能不能算一次、给许多人用，错命中和租户串话怎么防。公开机制是 vLLM automatic prefix caching、SGLang RadixAttention，底层页表见 `sys-paged-attn`、通用前缀缓存见 `sys-prefix-cache`。xAI 内部缓存拓扑没公开，我只讲命中条件和多租户合同。`realInterview: false`。和 `xai-lru-cache` 的差别：那题是通用并发 LRU；本题是注意力 KV 前缀，不是业务对象缓存。
 
-## 命中的是 KV 页，系统提示必须字节级同 token
+## 命中的是 KV 页，系统提示必须使用相同 token 序列
 
-Prefix cache 复用的是已算好的 K/V 块。Key 至少包括：token id 序列（不是 UTF-8 原文）、模型版本、LoRA、位置编码配置。System prompt 改一个空格、chat template 换一行，从第一个不同 token 断开。把一段 KV 接到另一条长度不同的请求后面，RoPE 起点错了，数值是错的。错命中比 miss 更危险：输出 silently 错。
+Prefix cache 复用的是已算好的 K/V 块。Key 至少包括：token id 序列（不是 UTF-8 原文）、模型版本、LoRA、位置编码配置。System 输入提示（prompt） 改一个空格、chat template 换一行，从第一个不同 token 断开。把一段 KV 接到另一条长度不同的请求后面，RoPE 起点错了，数值是错的。错命中比 miss 更危险：输出可能悄悄出错。
 
-Grok-1 公开上下文是 8192；后来代际博文声称更长窗口。系统提示越长，prefill 占比越高，前缀命中越值钱。APC 只削 prefill，不削 decode。长 Think 回复（见 Grok-3 公开的 test-time compute）会让缓存收益看起来变小——那是 decode 墙，不是缓存坏了。
+Grok-1 公开上下文是 8192；后来代际博文声称更长窗口。系统提示越长，输入预填充（prefill，即处理输入并建立缓存） 占比越高，前缀命中越值钱。APC 只削 prefill，不削 逐 token 生成（decode）。长 Think 回复（见 Grok-3 公开的 test-time compute）会让缓存收益看起来变小，那是 decode 墙，不是缓存坏了。
 
 实现两条公开索引：
 
@@ -58,15 +67,30 @@ PagedAttention 的引用计数让共享便宜：多条 block table 指向同一�
 
 隔离手段公开可讲：vLLM 的 `cache_salt` 折进首块 hash，只有带同一 salt 的请求能复用。用途有二：租户隔离；削弱「用延迟探测某段前缀是否已在缓存里」的侧信道。不要把 salt 设成全局常数又声称多租户安全。
 
-工具调用会在前缀后插入 `tool` 消息。模板必须稳定，否则每轮工具结果都让公共前缀之后整段 miss。Function calling 的 schema 若按请求乱序排列，前缀哈希跟着抖，见 `xai-tool-use`。能固定顺序就固定。
+工具调用会在前缀后插入 `tool` 消息。模板必须稳定，否则每轮工具结果都让公共前缀之后整段 miss。Function calling 的 字段和类型规范（schema） 若按请求乱序排列，前缀哈希跟着抖，见 `xai-tool-use`。能固定顺序就固定。
 
-错法：按字符串 hash 缓存「用户 A 的检索结果给用户 B」——那是 ACL 事故，不是前缀缓存。权限故事和微软 Copilot 同一句，只是这里没有 Graph：谁的上下文就谁的 KV，公共段除外。
+常见误区是：按字符串 hash 缓存「用户 A 的检索结果给用户 B」，那是 ACL 事故，不是前缀缓存。权限故事和微软 Copilot 同一句，只是这里没有 Graph：谁的上下文就谁的 KV，公共段除外。
 
 限流在入口保护 GPU 队列，缓存命中会改变有效 prefill 成本。计费若按 token，要决定命中的前缀算不算钱。公开 API 各家口径不同；xAI 怎么计费以当时文档为准，面试不要编折扣比例。队列公平仍走 `xai-rate-limiter`，缓存命中不是让大象租户免费占满 KV 池。
+
+## 2026 API: cache vs compaction
+
+Grok 4.7 docs tell you to set `prompt_cache_key` (Responses) or `x-grok-conv-id` (Chat Completions) so consecutive turns land on the same server; otherwise you pay full prefill on a cold replica. That is this card: identical token prefix, reuse KV.
+
+Long agent loops get a second API: context compaction (`POST /v1/responses/compact`) folds prior turns into an opaque item and **drops** verbose tool traces. Compaction does not rescue `context_length_exceeded`. Product background: `xai-spacexai-now`.
+
+Interview trap: answering "how do you serve a 500k Grok Build thread" with only LRU or only prefix cache. Name which knob you would turn: stable prefix → cache; tool dump dominates and you still fit in window → compact; already over limit → prune or split first.
 
 ## 追问
 
 - **为什么必须 token 一致？** KV 是离散 token 上的函数。Tokenizer、特殊符号、模板空白都会改 id。字符串相等不是命中条件。
-- **租户想共享同一个 RAG 仓库前缀？** 只有仓库对两家都可见且 ACL 相同才能共享。否则检索块进公共缓存就是串租户。宁可多算 prefill。
+- **租户想共享同一个 检索增强生成（RAG） 仓库前缀？** 只有仓库对两家都可见且 ACL 相同才能共享。否则检索块进公共缓存就是串租户。宁可多算 prefill。
 - **和 MoE decode 的关系？** 缓存省的是公共前缀的注意力 KV；专家权重每步仍要按新 token 路由。命中不会让专家 GEMM 变齐，见 `xai-moe-decode`。
 - **系统提示每周改一版怎么办？** 版本进 cache key。灰度两份前缀就两份 KV，内存翻倍要算进去。切 100% 后再丢旧根节点。
+- **Cache or compact?** Cache when the prefix must stay exact. Compact when traces are huge and only salient state is needed next. They compose: compact, then the blob becomes the new prefix you try to cache.
+
+## 相关题
+
+- [[sys-prefix-cache]]：几乎是同一道题的通用系统版，侧重命中条件和热点前缀挤占在飞 decode。
+- [[p3a-xai-radix-cache]]：同为 xAI，要求手写前缀索引用的 radix tree，只做数据结构。
+- [[kv-prefix-block-hash]]：把租户、adapter、模型版本写进块哈希 key 的代码实现。

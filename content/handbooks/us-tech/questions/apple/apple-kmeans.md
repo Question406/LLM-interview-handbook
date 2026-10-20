@@ -5,9 +5,9 @@ order: 8
 level: A
 title: Apple coding：k-means / 近邻，作为电面算法题怎么答到 ML 岗标准？
 quick: >-
-  向量化算 $[n,k]$ 距离，迭代赋值和更新均值，处理空簇，报 $O(n k d I)$。ML 岗还要接到初始化、k-means++、和端上
-  palettization（16 中心 $\approx$ 4-bit）或检索。嵌三层循环只能当草稿，不能当答完。
+  向量化算 $[n,k]$ 距离，交替做赋值和均值更新，处理空簇，复杂度 $O(n k d I)$；再接到 k-means++ 和端上 palettization（16 个中心 $\approx$ 4-bit）。
 tags:
+  - 完整编程练习
   - Apple
   - K-means
   - Coding
@@ -15,7 +15,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: Introducing Apple’s On-Device and Server Foundation Models
     url: https://machinelearning.apple.com/research/introducing-apple-foundation-models
@@ -28,20 +28,168 @@ sources:
     type: secondary
 ---
 
-公开的 Siri MLE 电面讨论里，k-means 和 attention、sampling 并列成 ML coding 基本功，见 `apple-mha-code`。Exponent 也说 Apple 有的组是应用型 ML 题，有的是常规编码。把它答成双循环刷题，过不了 MLE 标准；答成「调库」又没代码。目标是 15–20 行向量化，外加三个 ML 追问接得住。
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是原帖完整题面或官方测试。Python 3 + NumPy。
+
+### 题面、接口与约束
+
+- `kmeans(x, k, initial, max_iter=100, tol=1e-8) -> (centers, labels, sse)`：Lloyd 迭代，不允许调用聚类库。
+- 输入：`x` 是有限的二维浮点数组 `[N, D]`，`initial` 是初始中心 `[K, D]`，要求 `1 <= K <= N`、`D >= 1`、`max_iter` 为正整数、`tol` 非负且有限；不满足时抛 `ValueError`。不修改调用方传入的 `initial`。
+- 赋值：每个点按平方欧氏距离分到最近的中心，距离相同时选编号较小的簇。
+- 更新：中心换成簇内点的均值；空簇保持原来的中心不动。
+- 停止：跑满 `max_iter` 轮，或者本轮所有中心的最大位移（L2 范数）不超过 `tol`。
+- 返回：最终中心、按最终中心重新分配的 `labels`，以及误差平方和 SSE（Python `float`）。
+
+### 输入输出示例
+
+```text
+x = [[0], [2], [10], [12]],  initial = [[0], [10]],  k = 2
+-> centers = [[1], [11]],  labels = [0, 0, 1, 1],  sse = 4.0
+```
+
+### 解题思路与正确性
+
+k-means 的目标是 SSE。每轮分两步，每一步都不会让 SSE 变大：中心固定时，把每个点分给最近的中心，SSE 只会变小或不变；分配固定时，一组点到某个中心的平方距离之和在中心取均值时最小，所以把非空簇的中心换成均值也不会增加 SSE。空簇没有点，保持原中心对 SSE 没有影响。因此 SSE 单调不增，但只保证收敛到局部最优，不保证全局最优。
+
+循环结束后要按最终中心再分配一次 labels。如果是因为跑满 `max_iter` 而停下，循环里最后一次算的 labels 对应的是更新前的中心，直接返回就会和 `centers` 对不上。
+
+`argmin` 在多个最小值时返回第一个，正好实现「距离相同选较小簇号」。
+
+### 完整参考实现（Python 3）
+
+```python
+import numpy as np
+
+
+def kmeans(x, k, initial, max_iter=100, tol=1e-8):
+    """Lloyd k-means：返回 (centers [K, D], labels [N], sse)。空簇保持原中心。"""
+    x = np.asarray(x, dtype=float)
+    centers = np.array(initial, dtype=float, copy=True)  # 复制，不修改调用方的 initial
+    if x.ndim != 2 or x.shape[1] == 0:
+        raise ValueError(f"x must be a non-empty [N, D] array, got shape {x.shape}")
+    if not 1 <= k <= len(x):
+        raise ValueError(f"k must be in [1, N={len(x)}], got {k}")
+    if centers.shape != (k, x.shape[1]):
+        raise ValueError(f"initial must have shape {(k, x.shape[1])}, got {centers.shape}")
+    if max_iter < 1:
+        raise ValueError(f"max_iter must be positive, got {max_iter}")
+    if not (np.isfinite(tol) and tol >= 0):
+        raise ValueError(f"tol must be finite and non-negative, got {tol}")
+    if not (np.isfinite(x).all() and np.isfinite(centers).all()):
+        raise ValueError("x and initial must be finite")
+
+    def assign(current_centers):
+        # [N, 1, D] - [1, K, D] -> [N, K, D] -> 平方距离 [N, K]
+        distances = ((x[:, None, :] - current_centers[None, :, :]) ** 2).sum(axis=-1)
+        return distances.argmin(axis=1)  # 平局时取较小簇号
+
+    for _ in range(max_iter):
+        labels = assign(centers)
+        updated = centers.copy()
+        for cluster in range(k):
+            members = x[labels == cluster]
+            if len(members):  # 空簇保持原中心
+                updated[cluster] = members.mean(axis=0)
+        shift = np.linalg.norm(updated - centers, axis=1).max()
+        centers = updated
+        if shift <= tol:
+            break
+
+    labels = assign(centers)  # 按最终中心重新分配
+    sse = ((x - centers[labels]) ** 2).sum()
+    return centers, labels, float(sse)
+```
+
+### 可执行测试
+
+```python
+def expect_value_error(action):
+    try:
+        action()
+    except ValueError:
+        return
+    raise AssertionError("expected ValueError")
+
+
+def brute_force_labels(x, centers):
+    return ((x[:, None, :] - centers[None, :, :]) ** 2).sum(-1).argmin(1)
+
+
+x = np.array([[0.0], [2.0], [10.0], [12.0]])
+
+# 题面示例：两簇收敛到 1 和 11，SSE = 4
+centers, labels, sse = kmeans(x, 2, [[0.0], [10.0]])
+assert np.allclose(centers, [[1.0], [11.0]])
+assert labels.tolist() == [0, 0, 1, 1]
+assert sse == 4
+assert isinstance(sse, float)
+
+# 空簇保持原中心，且不修改调用方的 initial
+initial = np.array([[0.0], [100.0]])
+centers, labels, sse = kmeans([[0.0], [0.0]], 2, initial)
+assert np.array_equal(centers, initial)
+assert labels.tolist() == [0, 0]
+assert sse == 0
+assert np.array_equal(initial, [[0.0], [100.0]])
+
+# 跑满 max_iter 停下时，labels 也对应最终中心
+centers, labels, _ = kmeans(x, 2, [[0.0], [1.0]], max_iter=1)
+assert np.array_equal(labels, brute_force_labels(x, centers))
+
+# SSE 随迭代轮数单调不增
+_, _, previous = kmeans(x, 2, [[0.0], [1.0]], max_iter=1)
+for rounds in range(2, 6):
+    _, _, current = kmeans(x, 2, [[0.0], [1.0]], max_iter=rounds)
+    assert current <= previous + 1e-12
+    previous = current
+
+# 距离相同时选编号较小的簇
+_, labels, _ = kmeans([[5.0]], 1, [[5.0]])
+assert labels.tolist() == [0]
+assert brute_force_labels(np.array([[1.0]]), np.array([[0.0], [2.0]])).tolist() == [0]
+
+# 二维数据：两团点各自聚成一簇
+points = np.array([[0.0, 0.0], [0.0, 1.0], [9.0, 9.0], [9.0, 10.0]])
+centers, labels, sse = kmeans(points, 2, points[[0, 2]])
+assert np.allclose(centers, [[0.0, 0.5], [9.0, 9.5]])
+assert np.isclose(sse, 1.0)
+
+# 非法输入
+expect_value_error(lambda: kmeans(x, 0, np.zeros((0, 1))))
+expect_value_error(lambda: kmeans(x, 5, np.zeros((5, 1))))
+expect_value_error(lambda: kmeans(x, 2, [[0.0, 1.0], [1.0, 2.0]]))
+expect_value_error(lambda: kmeans(x, 2, [[0.0], [1.0]], max_iter=0))
+expect_value_error(lambda: kmeans(x, 2, [[0.0], [1.0]], tol=-1.0))
+expect_value_error(lambda: kmeans([[np.nan], [1.0]], 1, [[0.0]]))
+```
+
+### 复杂度与追问
+
+设样本数 N、中心数 K、维度 D、迭代轮数 I。时间 O(I·N·K·D)。这份实现用广播算距离，中间张量是 `[N, K, D]`，峰值内存 O(N·K·D)，而不只是距离矩阵的 O(N·K)。
+
+- 追问「N 或 D 很大时内存爆了」：用 $\lVert x-\mu\rVert^2 = \lVert x\rVert^2 - 2x^\top\mu + \lVert\mu\rVert^2$ 展开，交叉项是一次矩阵乘法，峰值内存降到 O(N·K)；或者按 N 分块计算。
+- 追问「初始化为什么作为参数传入」：显式给定初始中心，测试才可复现。k-means++ 可以另写一个函数生成 `initial`，见下文。
+
+## 题怎么来的
+
+公开的 Siri MLE 电面讨论里，k-means 和 attention、sampling 并列，都算 ML coding 基本功，见 `apple-mha-code`。Exponent 也提到，Apple 有的组考应用型 ML 题，有的组考常规编码。把它写成双重循环的刷题解法，达不到 MLE 的标准；只说「调库」又等于没写代码。目标是 15–20 行向量化代码，外加接得住三个 ML 追问。
 
 ## 先写对迭代，再谈技巧
 
-输入 $X\in\mathbb{R}^{n\times d}$，簇数 $k$。目标是
+输入 $X\in\mathbb{R}^{n\times d}$，簇数为 $k$。目标是同时选分配 $c$ 和中心 $\mu$，使
 
 $$
 \min_{c,\mu}\sum_{i=1}^{n}\lVert x_i-\mu_{c_i}\rVert_2^2.
 $$
 
-这是 NP-hard，Lloyd 迭代只保证单调不增到局部最优。面试先承认这句，避免被问「为什么换种子分数乱跳」。
+这个问题是 NP-hard 的，Lloyd 迭代只保证目标单调不增，最后停在局部最优。面试时先把这一点说出来，面试官问「为什么换个随机种子分数就变」时就有了答案。
+
+下面是另一种常见写法：随机选初始中心，空簇随机重启。它和上面练习的约定（空簇保持原中心）不同，两种都可以，面试时说清楚选的是哪种。
 
 ```python
 import numpy as np
+
 
 def kmeans(x, k, n_iter=20, seed=0):
     n, d = x.shape
@@ -49,50 +197,54 @@ def kmeans(x, k, n_iter=20, seed=0):
     mu = x[rng.choice(n, size=k, replace=False)]
     for _ in range(n_iter):
         dist = ((x[:, None, :] - mu[None, :, :]) ** 2).sum(-1)  # [n, k]
-        c = dist.argmin(axis=1)
-        new = mu.copy()
+        labels = dist.argmin(axis=1)
+        new_mu = mu.copy()
         for j in range(k):
-            m = c == j
-            if m.any():
-                new[j] = x[m].mean(axis=0)
+            members = labels == j
+            if members.any():
+                new_mu[j] = x[members].mean(axis=0)
             else:
-                new[j] = x[rng.integers(n)]  # 空簇：随机重启
-        if np.allclose(new, mu):
+                new_mu[j] = x[rng.integers(n)]  # 空簇：随机挑一个点重启
+        if np.allclose(new_mu, mu):
             break
-        mu = new
-    return mu, c
+        mu = new_mu
+    # 跑满 n_iter 时 labels 还对应上一轮的 mu，按最终中心重新分配
+    labels = ((x[:, None, :] - mu[None, :, :]) ** 2).sum(-1).argmin(axis=1)
+    return mu, labels
 ```
 
-复杂度 $O(n k d I)$，内存 $O(n k)$ 的距离矩阵。$n$ 到百万、$d$ 到几百时这张表会爆，改成分块或 mini-batch：每次用 $b$ 条样本做一次赋值和均值的增量更新。电面 $n$ 小，写全量即可，但要把内存上限说出来。
+复杂度是 $O(n k d I)$。距离矩阵本身是 $O(n k)$，但这种广播写法的中间张量是 $[n, k, d]$。$n$ 到百万、$d$ 到几百时内存会爆，要改成分块或 mini-batch：每次只用 $b$ 条样本做一次赋值，再增量更新均值。电面里 $n$ 很小，写全量版本即可，但要主动说出内存上限在哪。
 
-空簇必须处理，否则 `mean` 出 `NaN`，下一轮全盘崩。k-means++：第一个中心均匀抽，之后第 $j$ 个以正比于 $\min_{t<j}\lVert x-\mu_t\rVert^2$ 的概率抽，期望把初始代价压下来。不要把 ++ 写成「每个簇抽最远的那一个」——那是 greedy 的另一变种，最坏会被离群点带跑。
+空簇必须处理，否则对空集合取 `mean` 会得到 `NaN`，下一轮所有距离都变成 `NaN`。
 
-距离：欧氏和 k-means 的均值更新匹配。若数据是单位化 embedding，用 $2-2\cos$ 等价于欧氏；不要一边 cosine 赋值一边算术均值更新，均值会离开球面，这时该用 spherical k-means（均值再归一化）或换算法。
+k-means++ 的初始化是：第一个中心从所有点里均匀抽；之后抽第 $j$ 个中心时，每个点被抽中的概率正比于它到已选中心的最近平方距离 $\min_{t<j}\lVert x-\mu_t\rVert^2$。这样期望的初始代价更低。不要把 ++ 写成「每次直接选最远的点」，那是 greedy 的另一种变体，最坏情况下会被离群点带偏。
+
+距离的选择：欧氏距离和均值更新是配套的。如果数据是单位化的 embedding，用 $2-2\cos$ 做距离等价于欧氏距离。不要一边用 cosine 做赋值、一边用算术均值更新中心，均值会离开单位球面；这种情况应该用 spherical k-means（求均值后再归一化），或者换算法。
 
 ## 近邻：同一套距离，不同的题
 
-「最近邻」有时是 k-means 的赋值（每个点找最近中心，其实是 $k$ 个原型上的 1-NN），有时是真的 $k$NN 分类 / 检索。
+「最近邻」有时指 k-means 的赋值步骤，即每个点找最近的中心，相当于在 $k$ 个原型上做 1-NN；有时指真正的 $k$NN 分类或检索。
 
-- 原型：推理只存 $k$ 个中心，$O(k d)$。这就是向量量化。Apple 端上 palettization：投影权按块做 k-means，$k=16$ 个中心对应 4-bit 码本，见 `apple-ondevice-quant`。面试把这句接上，coding 题就变成了公司题。
-- 检索：私有消息 / 照片 embedding 的 top-k 邻居。精确 $O(n d)$；端上 $n$ 是用户自己的库，暴力扫往往够。需要更快再上 IVF（先 k-means 粗量化，再只扫近的几个倒排表）或图索引。不要一上来画分布式集群——和数据不出设备冲突，见 `apple-personalize`。
-- kNN vs k-means：分类题若 $n$ 小、决策边界不规则，kNN 更直接；要压缩模型或做码本，才是 k-means。说清任务，不要把两个 $k$ 混用。
+- **原型。** 推理时只存 $k$ 个中心，占 $O(k d)$，这就是向量量化。Apple 端上的 palettization 就是把投影权重按块做 k-means，$k=16$ 个中心对应一本 4-bit 码本，见 `apple-ondevice-quant`。面试时把这一点接上，coding 题就和公司的实际工作联系起来了。
+- **检索。** 例如在用户私有的消息或照片 embedding 里找 top-k 邻居。精确检索是 $O(n d)$；端上的 $n$ 只是用户自己的数据量，暴力扫描往往就够了。需要更快时再上 IVF（先用 k-means 做粗量化，查询时只扫最近的几个倒排表）或图索引。不要一上来就画分布式集群，这和「数据不出设备」的要求冲突，见 `apple-personalize`。
+- **kNN 和 k-means 的区别。** 分类问题如果 $n$ 小、决策边界不规则，kNN 更直接；要压缩模型或者做码本，才用 k-means。先说清楚任务是什么，别把两个 $k$ 混在一起。
 
-评测：inertia（上式）只测紧致，不测下游。Palettization 要看恢复 adapter 之后的任务分；检索要看 recall@$k$ 和延迟。聚类没有唯一标签时，不要硬报 accuracy。
+评测：上面的目标函数（inertia）只衡量簇有多紧，不反映下游效果。Palettization 要看恢复 adapter 之后的任务分数；检索要看 recall@$k$ 和延迟。聚类没有唯一正确的标签，不要硬报 accuracy。
 
 ## ML 岗标准的口头清单
 
-写完代码我会按这个顺序补，面试官通常会打断到其中一条：
+写完代码后，我会按这个顺序补充，面试官通常会在其中某一条打断追问：
 
-1. 复杂度与何时改 mini-batch。
-2. 初始化 / 空簇 / 局部最优，多 seed。
+1. 复杂度，以及什么时候改用 mini-batch。
+2. 初始化、空簇和局部最优，以及多跑几个 seed。
 3. 和量化码本或端上检索的关系。
-4. $k$ 怎么选：下游任务曲线，不是只看肘部。肘部在高维 embedding 上很钝。
+4. $k$ 怎么选：看下游任务指标随 $k$ 的变化曲线，而不是只看肘部法则。高维 embedding 上肘部往往不明显。
 
-时间不够就保 1 和 3。纯嵌套三层循环只在解释广播时当伪代码，最终要留下向量化版。采样题同一套「能跑 + 能接到产品」的标准，见 `apple-topk-sample`。
+时间不够时优先保住第 1 条和第 3 条。纯三层循环只在解释广播时当伪代码用，最终要留下向量化版本。采样题也是同样的标准：代码能跑，还能接到产品上，见 `apple-topk-sample`。
 
 ## 追问
 
-- **和 GMM？** k-means 是等方、硬赋值的极限；要协方差或软赋值再上 EM。端上码本很少上满 GMM，贵。
-- **Mini-batch 会不会不收敛？** 有噪声，用衰减学习率或最后几轮全量 polish。生产 palettization 往往离线多跑几次取恢复误差最低的码本。
-- **高维距离失效？** 维数灾难让两两距离集中。先降维或用余弦加归一化；这也是为什么检索常用 trained embedding 而不是原始像素。
-- **为什么电面爱出这题？** 短、可测数值、又能拐到量化。准备 20 行比再刷一道 hard 图更划算。
+- **和 GMM 什么关系？** k-means 是 GMM 在各向同性协方差、硬赋值下的极限情况；需要协方差或软赋值时再用 EM 训练 GMM。端上码本很少用完整的 GMM，成本太高。
+- **Mini-batch 会不会不收敛？** 会有噪声。用衰减的学习率，或者最后几轮换成全量数据精修。生产里做 palettization，往往离线跑多次，取恢复误差最低的那本码本。
+- **高维下距离失效怎么办？** 维数灾难会让所有点两两之间的距离趋于接近。先降维，或者用余弦距离加归一化；这也是检索通常用训练过的 embedding、而不是原始像素的原因。
+- **为什么电面爱出这题？** 题短，结果是可验证的数值，还能自然地拐到量化话题。准备好这 20 行，比再刷一道 hard 图论题更划算。

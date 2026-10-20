@@ -46,7 +46,7 @@ ZeRO-1 只把 12 字节的优化器状态除以 $N$，权重和梯度仍是每�
 
 ## 不在这 16 里的
 
-激活跟序列长度、层数、micro batch 走，重计算可以把它打下来。KV cache 是推理和 rollout 的账。后训练若开 KL，参考模型再加一份 bf16 权重（2 字节/参数），没有 Adam。优化器临时 buffer、梯度里的 fp32 reduce buffer，估算时加一成，不要假装 16 是上限。
+激活跟序列长度、层数、micro batch 走，重计算可以把它打下来。KV cache 是推理和 采样轨迹（rollout） 的账。后训练若开 KL，参考模型再加一份 bf16 权重（2 字节/参数），没有 Adam。优化器临时 buffer、梯度里的 fp32 reduce buffer，估算时加一成，不要假装 16 是上限。
 
 ## 代码
 

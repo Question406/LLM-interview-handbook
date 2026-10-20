@@ -6,7 +6,7 @@ level: A
 title: 系统：异步 checkpoint，一致性和占用
 quick: >-
   先把 GPU 状态 stage 成一份不再被训练改写的快照（通常进 CPU/DRAM 或 pinned），再在后台线程写盘。训练可以继续，但
-  峰值多占一份拷贝。快照必须是同一 iteration 的权重、优化器、RNG、dataloader，撕裂的盘无法 resume。
+  峰值多占一份拷贝。快照必须是同一 iteration 的权重、优化器、RNG、dataloader，混入不同步状态的快照无法正确恢复。
 tags:
   - NVIDIA
   - PyTorch
@@ -37,7 +37,7 @@ NVIDIA Megatron / NeMo、PyTorch DCP 的 `async_save`、千卡作业「ckpt 把 
 
 ## 两段：冻结，再写
 
-同步 ckpt：停训练，所有 rank 把分片写盘，等齐再继续。简单、一致，墙钟等于最慢的 rank 的 IO。万亿状态（权重 + Adam 矩）经常几十到上百 GB 每卡量级，几分钟一次会把有效 MFU 切一截。
+同步 ckpt：停训练，所有 rank 把分片写盘，等齐再继续。简单、一致，实际耗时等于最慢的 rank 的 IO。万亿状态（权重 + Adam 矩）经常几十到上百 GB 每卡量级，几分钟一次会把有效 MFU 切一截。
 
 异步把它拆开：
 
@@ -50,7 +50,7 @@ PyTorch DCP 的 `async_save`、Megatron 的 async / NVRx 策略都是这个形�
 
 ## 一致性跨 rank、跨状态
 
-一份能 resume 的快照包括：分片权重、优化器矩、GradScaler / FP8 amax 历史、RNG、dataloader 游标，见 `sys-data-pipeline`。只存权重，Adam 从零矩重启，loss 会跳，看起来像 `sys-loss-spike`。各 rank 必须对同一 iteration 编号 stage；有人快一步，盘上就是不同 step 的拼盘。TP/PP/ZeRO 下按 FQN 分片写，resume 时允许 world size 变（弹性），但不能允许「半个 iteration」。
+一份能 resume 的快照包括：分片权重、优化器矩、GradScaler / FP8 amax 历史、RNG、dataloader 游标，见 `sys-data-pipeline`。只存权重，Adam 从零矩重启，损失（loss） 会跳，看起来像 `sys-loss-spike`。各 rank 必须对同一 iteration 编号 stage；有人快一步，盘上就是不同 step 的拼盘。TP/PP/ZeRO 下按 FQN 分片写，resume 时允许 world size 变（弹性），但不能允许「半个 iteration」。
 
 Barrier 放在 stage 前，不是放在写盘结束。写盘结束再 barrier 就把异步又变同步。训练侧只等 stage 完成（HBM→DRAM），不等 NFS。
 

@@ -39,13 +39,13 @@ GQA 把 KV 头砍得很小之后，这套 all-to-all 会先碰到整除墙，面
 
 ## 布局拧两次：序列切 $\leftrightarrow$ 头切
 
-输入按序列维切开，每卡 $[B, T/P, h]$。MLP、LN 都在这段局部序列上算，激活随 $P$ 降。注意力是 token 间算子，局部 $T/P$ 不够。Ulysses 用 **all-to-all 换轴**，不环传 KV：
+输入按序列维切开，每卡 $[B, T/P, h]$。MLP、LN 都在这段局部序列上算，激活随 $P$ 降。注意力是 token 之间的算子，局部 $T/P$ 不够。Ulysses 用 **all-to-all 换轴**，不环传 KV：
 
 1. 对 Q/K/V 做 all-to-all：每卡从「一段序列、全部头」变成「完整 $T$、大约 $H/P$ 个头」。
 2. 本地对这子集头做完整序列的注意力（可接 FlashAttention）。
 3. 再一次 all-to-all，把输出拧回「一段序列、全部头」，交给 MLP。
 
-论文把 QKV 三次 all-to-all 加输出一次，合计大约 $4Nh/P$ 每层每卡（$h$ 是 hidden）。$N$ 和 $P$ 一起加倍，每卡字节量不变。这和 ring 每卡搬接近一份完整 KV 的账不同：Ulysses 吃的是 all-to-all 的双分带宽，ring 吃的是点对点加 overlap。NVLink 域里 all-to-all 通常很香；跨 IB、消息再碎，启动开销会翻出来。
+论文把 QKV 三次 all-to-all 加输出一次，合计大约 $4Nh/P$ 每层每卡（$h$ 是 hidden）。$N$ 和 $P$ 一起加倍，每卡字节量不变。这和 ring 每卡搬接近一份完整 KV 的账不同：Ulysses 吃的是 all-to-all 的双分带宽，ring 吃的是点对点加 overlap。NVLink 域里 all-to-all 通常较高效；跨 IB、消息再碎，启动开销会翻出来。
 
 硬约束：**参与 Ulysses 的并行度不能大于「注意力还能切开的头数」**。GQA 之后 KV 头本来就少，再叠 TP（TP 已经按头切了），留给 Ulysses 的头 $= H_{\mathrm{kv}}/\mathrm{TP}$，很快触顶。头不够还硬开，要么补 dummy 头浪费算力，要么改走 ring / CP。Megatron Core 的 `cp_comm_type` 现在也能选 `a2a`（Ulysses 味）或 `p2p`（环），以及节点内 a2a、跨节点 p2p 的层次组合。
 

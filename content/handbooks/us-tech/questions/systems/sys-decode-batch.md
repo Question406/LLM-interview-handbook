@@ -4,9 +4,7 @@ section: systems
 order: 30
 level: A
 title: 系统：decode batch 动态，结束序列腾槽、inflight
-quick: >-
-  Inflight 是此刻正在一步 decode 的序列，不是排队里的总数。eos 或长度上限一到，立刻还页、还计算槽，waiting
-  里补人。有效 $B$ 决定能不能喂饱 decode GEMM；CUDA graph 按几档上限 pad，不要每步重捕获。
+quick: "Inflight 是此刻正在一步 逐 token 生成（decode） 的序列，不是排队里的总数。eos 或长度上限一到，立刻还页、还计算槽，waiting 里补人。有效 $B$ 决定能不能喂饱 decode GEMM；CUDA graph 按几档上限 pad，不要每步重捕获。"
 tags:
   - vLLM
   - NVIDIA
@@ -33,17 +31,17 @@ sources:
 
 ## 题怎么来的
 
-Orca 把调度改到 iteration 级，TensorRT-LLM 叫 in-flight batching，vLLM / TGI 叫 continuous batching。`sys-cont-batch` 讲为什么静态 batch 有洞；本题把镜头放在 decode 池里的槽位：谁算 inflight、结束怎么腾、新请求凭什么进来、图捕获怎么跟动态 $B$ 共存。NVIDIA 岗见 `nvidia-inflight-batch`。Agent 把槽挂起而不结束，见 `sys-agent-sched`。
+Orca 把调度改到 iteration 级，TensorRT-LLM 叫 in-flight batching，vLLM / TGI 叫 continuous batching。`sys-cont-batch` 讲为什么静态 batch 有洞；本题把镜头放在 逐 token 生成（decode） 池里的槽位：谁算 inflight、结束怎么腾、新请求凭什么进来、图捕获怎么跟动态 $B$ 共存。NVIDIA 岗见 `nvidia-inflight-batch`。Agent 把槽挂起而不结束，见 `sys-agent-sched`。
 
 ## Inflight 是算力集合，不是队列长度
 
-我会先对齐口径。记 `max_num_seqs` 为槽上限，$B_{\mathrm{run}}$ 为本步真正 launch 的序列数，$B_{\mathrm{wait}}$ 为排队。Inflight 在面试里应等于 $B_{\mathrm{run}}$（外加本步混进来的 prefill 块），不含 `tool_wait`、不含已经 eos、不含还在 CPU 上的 KV 命中提升。产品仪表若把「已接收未完成」都叫 inflight，要当场对齐口径，否则和 GPU 利用率对不上。
+我会先对齐口径。记 `max_num_seqs` 为槽上限，$B_{\mathrm{run}}$ 为本步真正 launch 的序列数，$B_{\mathrm{wait}}$ 为排队。Inflight 在面试里应等于 $B_{\mathrm{run}}$（外加本步混进来的 输入预填充（prefill，即处理输入并建立缓存） 块），不含 `tool_wait`、不含已经 eos、不含还在 CPU 上的 KV 命中提升。产品仪表若把「已接收未完成」都叫 inflight，要当场对齐口径，否则和 GPU 利用率对不上。
 
 每一步大致：
 
 1. 看上一步的 token：eos / stop / `max_tokens` / 客户端取消。命中则从 running 摘掉，block table 还进 free list，引用计数减到 0 的物理页回池，见 `sys-paged-attn`。
 2. 看预算：槽位 $B_{\mathrm{run}} \lt S_{\max}$（`max_num_seqs`），KV 页够，且本步 token 数不超过 `max_num_batched_tokens`。
-3. 从 waiting 准入。优先补 decode（memory-bound，需要 $B$ 喂权重带宽），还是塞一块 chunked prefill，是 SLO 问题：TTFT 紧就塞 prefill，TPOT 紧就保护 decode，见 `sys-chunked-prefill`。
+3. 从 waiting 准入。优先补 decode（memory-bound，需要 $B$ 喂权重带宽），还是塞一块 chunked prefill，是 SLO 问题：首个 token 的等待时间（TTFT） 紧就塞 prefill，TPOT 紧就保护 decode，见 `sys-chunked-prefill`。
 4. 组元数据：`kv_indptr`、`last_page_len`、采样参数，交给核，见 `sys-flashinfer`。
 
 结束腾的是两样：计算行和 KV 页。只腾计算、页按 `max_len` 占着，新请求没有地方写，Orca 的调度会在显存上失败。只腾页、计算仍走稠密 padded GEMM，结束行还在做 mask 废乘加。Ragged / packed kernel 和分页要一起开。
@@ -54,7 +52,7 @@ Orca 把调度改到 iteration 级，TensorRT-LLM 叫 in-flight batching，vLLM 
 
 Decode GEMM 的 $M=B_{\mathrm{run}}$。$B$ 太小，读完整份权重摊不薄，FP8 也救不了，见 `sys-fp8-gemm`。$B$ 开到 KV 爆边，每步读的历史 KV 变长，TPOT P99 先坏。Frontier 是 SLO 内 goodput，不是瞬时 tokens/s。
 
-CUDA graph：捕获固定 shape。做法是几档 $B\in\{1,2,4,8,16,32\}$，本步 pad 到 $\ge B_{\mathrm{run}}$ 的最近档。活着的用 `last_page_len` / 有效掩码。每步 $B$ 变就重捕获，启动税比一步 decode 还贵。FlashInfer 采样的 seed 也要做成 GPU tensor，才能进图，见 `nvidia-cuda-graph`。
+CUDA graph：捕获固定 shape。做法是几档 $B\in\{1,2,4,8,16,32\}$，本步 pad 到 $\ge B_{\mathrm{run}}$ 的最近档。活着的用 `last_page_len` / 有效掩码。每步 $B$ 变就重捕获，启动开销比一步 decode 还贵。FlashInfer 采样的 seed 也要做成 GPU tensor，才能进图，见 `nvidia-cuda-graph`。
 
 准入还会踩：
 
@@ -75,5 +73,5 @@ Prefix / radix 命中的请求进入 decode 池时，prefill 后缀可能很短�
 - **Inflight 含排队吗？** 不含。排队不占 SM。含了就会出现「inflight 很高、GPU 很空」。
 - **和 continuous batching 重复吗？** 那张卡讲洞和 iteration 粒度。这张卡讲 decode 槽、inflight 口径、graph 分档、准入预算。
 - **eos 和 tool_wait 一样腾槽吗？** 都离开 running。eos 释放 KV（或插入 radix 后降引用）；tool_wait 挂起 KV，见 `sys-agent-sched`。
-- **为什么要 token 预算不只看条数？** 一条 8k prefill 块和 32 条 decode 的 FLOPs / 墙钟完全不同。`max_num_batched_tokens` 封的是一步毫秒。
+- **为什么要 token 预算不只看条数？** 一条 8k prefill 块和 32 条 decode 的 FLOPs / 实际耗时完全不同。`max_num_batched_tokens` 封的是一步毫秒。
 - **$B$ 突然掉一半？** 齐步结束或抢占。看结束直方图。作业负载要错开 max tokens；在线负载更该查是不是准入被 KV 堵住。

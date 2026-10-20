@@ -4,9 +4,7 @@ section: apple
 order: 17
 level: S
 title: Apple：端侧视觉 token 预算和 ANE 静态 shape 怎么卡？
-quick: >-
-  视觉 token 数 $(H/P)\times(W/P)$ 进同一条上下文和 KV。ANE 要预编译分辨率档，不能 AnyRes 现场切。先算
-  $N_{\mathrm{vis}}$ 占了多少 $S_{\max}$，再决定缩略、切 ROI 还是上云。动态 padding 掉出 ANE 比看不清字更常见。
+quick: "视觉 token 数 $(H/P)\\times(W/P)$ 进同一条上下文和 KV。ANE 要预编译分辨率档，不能 AnyRes 现场切。先算 $N_{\\mathrm{vis}}$ 占了多少 $S_{\\max}$，再决定缩略、切 ROI 还是上云。动态 padding 掉出 ANE 比看不清字更常见。"
 tags:
   - Apple
   - Neural Engine
@@ -31,7 +29,7 @@ sources:
     type: secondary
 ---
 
-屏幕理解、Visual Intelligence、端侧 AFM 多模态都会问「一张图要几个 token」。云端 AnyRes 把大图切成 $g$ 块再加全局缩略，token 近线性涨，见 `msft-llava`。手机上墙是 ANE 静态 shape、SRAM 和已经预分配的 $S_{\max}$，见 `apple-ane`、`apple-ondevice-kv`。MM1 说分辨率和 token 数主导质量。按这些公开约束收。
+屏幕理解、Visual Intelligence、端侧 AFM 多模态都会问「一张图要几个 token」。云端 AnyRes 把大图切成 $g$ 块再加全局缩略，token 数近线性增长，见 `msft-llava`。手机上的限制是 ANE 静态 shape、SRAM 和已经预分配的 $S_{\max}$，见 `apple-ane`、`apple-ondevice-kv`。MM1 说分辨率和 token 数主导质量。按这些公开约束收。
 
 ## 先写预算，再谈切图
 
@@ -47,7 +45,7 @@ $$
 N_{\mathrm{vis}}+N_{\mathrm{text}}+N_{\mathrm{out}}\le S_{\max}.
 $$
 
-$S_{\max}$ 在导出时就定死。视觉前缀写入 KV 之后，decode 每步都要扫它，字节账仍是 $2 L H_{\mathrm{kv}} d_h S b$，见 `apple-ondevice-kv`。减不掉已经占住的图。
+$S_{\max}$ 在导出时就定死。视觉前缀写入 KV 之后，逐 token 生成（decode） 每步都要扫它，字节账仍是 $2 L H_{\mathrm{kv}} d_h S b$，见 `apple-ondevice-kv`。减不掉已经占住的图。
 
 ANE 额外约束：
 
@@ -62,12 +60,12 @@ ANE 额外约束：
 看清小字要高 $R$；高 $R$ 要更多 $N_{\mathrm{vis}}$ 或切块。端上正确顺序：
 
 - 自然图问答、相册描述：单档 224/336，冻塔，见 `apple-mm-train`。
-- 屏幕、表格：先 UI 树 / OCR，像素模型只补洞，见 `apple-multimodal`。不要整屏 1344 进 3B。
+- 屏幕、表格：先 UI 树 / OCR，像素模型只补充模型容易失败的任务，见 `apple-multimodal`。不要整屏 1344 进 3B。
 - 多图：硬顶张数。超出就问「你指哪一张」。
 
-Prefill 复杂度按 $(N_{\mathrm{vis}}+N_{\mathrm{text}})^2$ 估。图一进，首 token 被视觉编码器加 prefill 吃掉，和 `apple-siri-latency` 的 0.6 ms/prompt-token 不是同一段。验收看 Instruments：视觉塔和 LLM 是否都留在 Neural Engine，以及 greedy 与 CPU 参考一致。
+Prefill 复杂度按 $(N_{\mathrm{vis}}+N_{\mathrm{text}})^2$ 估。图一进，首 token 被视觉编码器加 输入预填充（prefill，即处理输入并建立缓存） 吃掉，和 `apple-siri-latency` 的 0.6 ms/prompt-token 不是同一段。验收看 Instruments：视觉塔和 LLM 是否都留在 Neural Engine，以及 greedy 与 CPU 参考一致。
 
-错法：把动态 AnyRes 当端侧默认；视觉 token 另开一条不占 KV 的「旁路」；训练用 224、线上 pad 到 448 还不做分辨率适配。剪枝若让 $N_{\mathrm{vis}}$ 变成数据依赖长度，会直接掉 ANE，见 `apple-token-prune`。
+常见误区是：把动态 AnyRes 当端侧默认；视觉 token 另开一条不占 KV 的「旁路」；训练用 224、线上 pad 到 448 还不做分辨率适配。剪枝若让 $N_{\mathrm{vis}}$ 变成数据依赖长度，会直接掉 ANE，见 `apple-token-prune`。
 
 ## 追问
 

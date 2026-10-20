@@ -4,9 +4,7 @@ section: meta
 order: 27
 level: A
 title: Meta：early vs late fusion，Chameleon 一类公开叙事能讲到哪
-quick: >-
-  早融合：图和文从 embedding 起进同一条 Transformer，Chameleon 把图 VQ 成离散 token，能理解和生成交错文档。晚融合：独立视觉塔，LM
-  用 cross-attn 或投影来读图，Llama 3.2 这条，图不能当 token 吐出来。稳定性、能否复用 3.1、OCR 上限，公开论文够答，不要编内部统一模型。
+quick: "早融合如 Chameleon，把图 VQ 成离散 token，和文本从第一层共用一条 Transformer，能生成交错图文。晚融合如 Llama 3.2，独立视觉塔加 cross-attn，只能输出文本。"
 tags:
   - Meta
   - Chameleon
@@ -31,21 +29,21 @@ sources:
     type: secondary
 ---
 
-FAIR / Llama 岗爱把融合画成谱，看你知不知道 **3.2 Vision 和 Chameleon 不是同一条发布线**。Chameleon（2024-05）是从零训的 token 早融合，图文都能生成；3.2（2024-09）是冻住 3.1、外挂 cross-attn，只出文本。公开能讲到架构、稳定性和取舍；不要说成「公司内部已经统一成一种」。Gemini 原生交错见 `google-gemini-mm`，3.2 接法见 `meta-llama-vision`。
+FAIR / Llama 岗爱把融合画成谱，看你知不知道 **3.2 Vision 和 Chameleon 不是同一条发布线**。Chameleon（2024-05）是从零训练的 token 早融合，图文都能生成；3.2（2024-09）是冻住 3.1、外挂 cross-attn，只出文本。公开能讲到架构、稳定性和取舍；不要说成「公司内部已经统一成一种」。Gemini 原生交错见 `google-gemini-mm`，3.2 接法见 `meta-llama-vision`。
 
 ## 三条公开做法
 
 **离散早融合（Chameleon）。** 图像 tokenizer（论文：基于 Make-a-Scene 一类 VQ，$512\times512\to 1024$ 个码，码本 $8192$）把图变成和词一样的离散 id。词表约 $65\mathrm{k}$，里面含这 $8192$ 个图像码。同一条因果 Transformer，序列可以是纯文、图文对、交错文档。Next-token 既预测词也预测图像码，所以 **能生成图**（开源推理长期没放图像解码器，面试要说「论文能力 vs 权重发布」）。数据公开量级：约 $10\mathrm{T}$ 交错混合，34B 看到的 token 大约是 Llama 2 的 $5\times$。
 
-**连续拼接（LLaVA）。** ViT 连续向量经 MLP 投到 LM 维，接到 prompt 前面或占位符处，之后全是自注意力。实现简单、能复用现成 LM 和 CLIP。图通常 **不能** 当像素生成。视觉 token 直接吃上下文窗，见 `meta-anyres`。
+**连续拼接（LLaVA）。** ViT 连续向量经 MLP 投到 LM 维，接到 输入提示（prompt） 前面或占位符处，之后全是自注意力。实现简单、能复用现成 LM 和 CLIP。图通常 **不能** 当像素生成。视觉 token 直接吃上下文窗，见 `meta-anyres`。
 
 **晚融合 / adapter（Flamingo、Llama 3.2）。** 视觉塔独立；LM 用 gated cross-attn 读图。3.2 冻 LM，文本基准不易塌，发版是 3.1 的 drop-in。**不能** 自回归出图像 token。视觉推理的上限受冻住的语言表示约束。
 
-错法：把 LLaVA 叫晚融合：视觉从 embedding 层就进主干，只是连续向量不是 VQ。错法二：把 3.2 叫 Chameleon 的产品化：训练目标、能否出图、是否复用 3.1，三条都反。
+常见误区是：把 LLaVA 叫晚融合：视觉从 embedding 层就进主干，只是连续向量不是 VQ。错法二：把 3.2 叫 Chameleon 的产品化：训练目标、能否出图、是否复用 3.1，三条都反。
 
 ## 早融合为什么难训，论文写了什么
 
-Chameleon 说按 Llama 2 栈直接混模态，到 $8\mathrm{B}$ / $1\mathrm{T}$ 以后会在中后期炸掉。原因他们归到 **softmax 平移不变**：图和文熵差大，共享权重的模态会靠抬范数抢 softmax，bf16 撑不住就散。公开药：
+Chameleon 说按 Llama 2 栈直接混模态，到 $8\mathrm{B}$ / $1\mathrm{T}$ 以后会在中后期炸掉。原因他们归到 **softmax 平移不变**：图和文熵差大，共享权重的模态会靠抬范数抢 softmax，bf16 撑不住就散。公开的稳定训练方法包括：
 
 - **QK-Norm**：attention 里对 $Q,K$ 做 LayerNorm，按住送进 softmax 的范数。7B 消融显示没它大约 $20\%$ epoch 就散。
 - **Norm 重排（34B）：** Swin 式先 attn 再 norm，限制 SwiGLU 把残差范数乘飞。

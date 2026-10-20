@@ -4,9 +4,7 @@ section: apple
 order: 16
 level: S
 title: Apple：端侧 / 云侧多模态训练，视觉塔冻结还是联合，分辨率怎么选？
-quick: >-
-  低分辨率先冻视觉塔、只训连接器和语言模型；高分辨率或和预训练差一档再解冻编码器。MM1 公开消融：连接器类型几乎不重要，分辨率和视觉
-  token 数才重要。端侧按 ANE 档位训，不要拿动态切块的云侧图去冒充手机图。
+quick: "低分辨率先冻视觉塔、只训连接器和语言模型；分辨率较高，或与预训练分辨率差距较大时，再解冻编码器。MM1 公开消融：连接器类型几乎不重要，分辨率和视觉 token 数才重要。端侧按 ANE 档位训，不能直接把云侧动态切块的计算图当成手机上可运行的计算图。"
 tags:
   - Apple
   - Multimodal
@@ -31,7 +29,7 @@ sources:
     type: secondary
 ---
 
-Foundation Models / 多模态岗会问「图文模型到底怎么训」。公开锚点是 Apple 的 MM1：连接器几乎不影响，分辨率和视觉 token 数才影响；SFT 时低分辨率冻编码器更好，高分辨率（公开消融到 1344px）再解冻。LLaVA 的两阶段是对照，不是 Apple 内部配方。产品侧还要拆端侧约 3B 和 PCC 上的 server 模型，见 `apple-foundation-models`。
+Foundation Models / 多模态岗会问「图文模型到底怎么训」。公开锚点是 Apple 的 MM1：连接器几乎不影响，分辨率和视觉 token 数才影响；监督微调（SFT） 时低分辨率冻编码器更好，高分辨率（公开消融到 1344px）再解冻。LLaVA 的两阶段是对照，不是 Apple 内部配方。产品侧还要拆端侧约 3B 和 PCC 上的 server 模型，见 `apple-foundation-models`。
 
 ## 先定分辨率，再决定冻哪一段
 
@@ -53,11 +51,11 @@ MM1 把 $R\in\{224,336\}$、$N_{\mathrm{vis}}\in\{64,144\}$ 做消融：涨分�
 
 ## 数据配比和产品边界
 
-MM1 公开课：caption、图文交错、纯文本要混。缺交错，多图推理和 in-context 图例会塌；缺纯文本，语言能力回退。面试讲「三桶都要、比例以论文表为准」，不要编一套 Apple Intelligence 私有配比。
+MM1 的公开结论：caption、图文交错、纯文本要混。缺交错，多图推理和 in-context 图例会下降；缺纯文本，语言能力回退。面试讲「三类数据都要、比例以论文表为准」，不要编一套 Apple Intelligence 私有配比。
 
 Foundation model 公开原则是不用用户私有数据训基础模型。相册、屏幕、消息不能当 SFT。个性化走本地检索和 adapter，见 `apple-personalize`、`apple-diff-privacy`。评测把 OCR / UI 定位和自然图 VQA 切开，见 `apple-multimodal`、`apple-afm-eval`。
 
-错法：训练 224、线上 1344 还不做适配；为刷一张综合榜解冻全部；把视觉 token 和文本当成两个上下文池。它们抢同一条 KV，见 `apple-ondevice-kv`。
+常见误区是：训练 224、线上 1344 还不做适配；为刷一张综合榜解冻全部；把视觉 token 和文本当成两个上下文池。它们抢同一条 KV，见 `apple-ondevice-kv`。
 
 ## 我会怎么收
 
@@ -65,7 +63,7 @@ Foundation model 公开原则是不用用户私有数据训基础模型。相册
 
 ## 追问
 
-- **为什么不从头训视觉塔？** 对比预训练已经买了几何和 OCR 先验。数据不够时解冻是在用 LLM 梯度毁编码器。
+- **为什么不从头训视觉塔？** 对比预训练已经学到了几何和 OCR 先验。数据不够时解冻是在用 LLM 梯度毁编码器。
 - **连接器都差不多，还要不要 MLP？** 要，但别当主创新。LLaVA-1.5 两层 MLP 是便宜的对齐容量，MM1 说它改变不了分辨率不够的事实。
 - **端侧能不能动态分辨率？** 训练可以多档，导出必须是静态桶，见 `apple-ane`。桶之间用 pad，不要运行时 `interpolate`。
-- **和纯 caption 预训练的差别？** caption 对不齐「指这块」。屏幕 / 接地要区域标注，见 `apple-multimodal`。
+- **和纯 caption 预训练的差别？** caption 对不齐「指这块」。屏幕理解和区域定位任务需要区域标注，见 `apple-multimodal`。

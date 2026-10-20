@@ -4,9 +4,7 @@ section: google
 order: 15
 level: S
 title: Google：Gemini 长上下文怎么评、位置偏差和成本，别只报 1M
-quick: >-
-  窗口数字只是上限。评测按长度桶和证据位置切，默认失败是中间丢掉。成本上注意力 FLOPs 仍是 $O(T^2)$，decode
-  每步读整段 KV。针能捞出来，不等于产品能用，也不等于 serving 算得过来。
+quick: "窗口数字只是上限。评测按长度桶和证据位置切，默认失败是中间丢掉。成本上注意力 FLOPs 仍是 $O(T^2)$，逐 token 生成（decode） 每步读整段 KV。针能捞出来，不等于产品能用，也不等于 serving 算得过来。"
 tags:
   - Google
   - Gemini
@@ -28,7 +26,7 @@ sources:
     type: primary
 ---
 
-Gemini / PaLM 研究岗爱问「1M 上下文你怎么证明它真的在用」。1.5 技术报告把窗口推到百万量级、实验里到千万，那是产品叙事。面试拆成三笔账：评测切什么、位置偏差怎么现、prefill / decode / KV 各贵在哪。注意力 IO 见 `google-flash-attention`，跨设备分块见 `google-block-attn`，KV head 见 `google-gqa-mqa`。
+Gemini / PaLM 研究岗爱问「1M 上下文你怎么证明它真的在用」。1.5 技术报告把窗口推到百万量级、实验里到千万，那是产品叙事。面试拆成三笔账：评测切什么、位置偏差怎么现、输入预填充（prefill，即处理输入并建立缓存） / 逐 token 生成（decode） / KV 各贵在哪。注意力 IO 见 `google-flash-attention`，跨设备分块见 `google-block-attn`，KV head 见 `google-gqa-mqa`。
 
 ## 评测：针只是回归
 
@@ -67,7 +65,7 @@ $$
 
 Serving 还会被 prefill 尾巴拖死：用户贴一整本仓库，首 token 延迟跟 $T^2$ 走。产品默认应是检索或分段摘要，1M 当兜底。面试主动报这条，比背「我们支持 1M」加分。
 
-错法：把 needle 准确率当长上下文能力；说 1M 所以注意力是线性的；只报窗口、不报每千 token 价格和 KV 字节。
+常见误区是：把 needle 准确率当长上下文能力；说 1M 所以注意力是线性的；只报窗口、不报每千 token 价格和 KV 字节。
 
 ## 追问
 

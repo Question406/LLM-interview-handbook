@@ -70,6 +70,6 @@ Batch 很小却把 data 轴拉满：每芯片 $B=1$，GEMM 瘦，MFU 崩。模�
 ## 追问
 
 - **FSDP 在 TPU 上叫什么？** 还是参数分片 + 按需 all-gather。实现上往往是 mesh 上多一条轴，或 ZeRO 风格的 `P("data")` 打在权重上。名字不重要，字节账重要。
-- **为什么 TPU 讨厌动态 shape？** XLA 按静态 shape 编译。MoE 变长 dispatch、变长 decode 都要 padding 到容量。这是 mesh 上 MoE 慢的常见原因。
+- **为什么 TPU 讨厌动态 shape？** XLA 按静态 shape 编译。MoE 变长 dispatch、变长 逐 token 生成（decode） 都要 padding 到容量。这是 mesh 上 MoE 慢的常见原因。
 - **单芯片 debug 和多芯片不一致？** 切分改变了归约顺序和浮点，bitwise 不一定相同。功能正确看 loss 曲线和下游，不要用 CPU 单核 bit exact 当 TPU SPMD 的验收。
 - **和 GPU 3D 哪个更「先进」？** 都是切这三维。差别在你能不能按带宽层次选轴，不在硬件品牌。

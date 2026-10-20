@@ -67,7 +67,7 @@ def on_event(ev):
 
 下一轮不要假装工具已跑完。要么不贴 `tool_result`（等于这轮作废，从用户新消息开始），要么贴 `is_error`：「aborted by user」。缺 `tool_result` 却保留 `tool_use` 块，API 会拒。
 
-取消要能打断正在跑的宿主工具，不只是停 decode。工具进程设超时和取消令牌，见生产 tool 的超时讨论。占着 decode slot 空等下游，会和 `anthropic-rate-limit` 打架。
+取消要能打断正在跑的宿主工具，不只是停 逐 token 生成（decode）。工具进程设超时和取消令牌，见生产 tool 的超时讨论。占着 decode slot 空等下游，会和 `anthropic-rate-limit` 打架。
 
 ## 幂等：id 在 start 就有，执行在 stop 之后
 
@@ -75,13 +75,13 @@ def on_event(ev):
 
 读工具可以重试。写工具默认不自动重试，除非工具声明幂等并接受你的键。付款、发信、删文件没有键就禁止「流断了再放一遍」。键不要只用参数哈希：同一金额改收款人必须是新键。取消后重试，若第一次其实已经成功，第二次要命中同一执行并返回第一次的收据，而不是再转一笔。
 
-和 `anthropic-tool-roundtrip` 衔接：执行完的结果仍要截断、仍不能破坏 cache 前缀。流式预览可以很脏；落库的 `tool_result` 必须是你校验过的最终对象。
+和 `anthropic-tool-roundtrip` 衔接：执行完的结果仍要截断、仍不能破坏 cache 前缀。流式预览可以暂时不完整；落库的 `tool_result` 必须是你校验过的最终对象。
 
-错法：每来一个 delta 就 `eval`；`max_tokens` 切断后用正则补全 JSON 然后下单；取消后对非幂等工具自动重放；用模型散文里的「已取消」当执行层状态。
+常见误区是：每来一个 delta 就 `eval`；`max_tokens` 切断后用正则补全 JSON 然后下单；取消后对非幂等工具自动重放；用模型散文里的「已取消」当执行层状态。
 
 ## 追问
 
 - **细粒度一定更快吗？** 大参数的首字节更快。小参数、且你必须等合法 JSON 才能动副作用，体感差不多，还多一类非法 JSON。
-- **并行多个 tool_use 怎么流？** 按 `index` 分桶拼串。一批里有敏感动作，确认打在每一块执行前，见 `anthropic-computer-use`。
+- **并行多个 tool_use 怎么流？** 按 `index` 分组统计拼串。一批里有敏感动作，确认打在每一块执行前，见 `anthropic-computer-use`。
 - **thinking 块和 tool 块一起流？** `anthropic-extended-thinking` 的 thinking 配置编进缓存前缀，不要和工具流的 delta 搞混。用户取消时 thinking 半截可以丢，工具副作用不能半截执行。
-- **partial JSON 能当 ACI 吗？** 不能。ACI 是完整 schema 校验之后的合同。预览只服务 UI。
+- **partial JSON 能当 ACI 吗？** 不能。ACI 是完整 字段和类型规范（schema） 校验之后的合同。预览只服务 UI。

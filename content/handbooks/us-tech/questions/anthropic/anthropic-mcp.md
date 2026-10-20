@@ -4,9 +4,7 @@ section: anthropic
 order: 17
 level: S
 title: Anthropic：MCP 当 tool 总线，和 function calling 的边界在哪？不可信服务器怎么防？
-quick: >-
-  Function calling 是模型提议调用；MCP 是发现、鉴权和执行工具的总线。模型仍然不可信。服务器的 description
-  会进上下文，等于可执行 prompt。权限打在宿主：白名单、用户同意、凭证不进模型、token 不透传。不要把「连了 MCP」当成安全边界。
+quick: "Function calling 是模型提议调用；MCP 是发现、鉴权和执行工具的总线。模型仍然不可信。服务器的 description 会进上下文，等于可执行 输入提示（prompt）。权限打在宿主：白名单、用户同意、凭证不进模型、token 不透传。不要把「连了 MCP」当成安全边界。"
 tags:
   - Anthropic
   - MCP
@@ -34,17 +32,17 @@ Anthropic 把 MCP 开源成「模型连外部系统」的协议，研究 / agent
 
 | 层 | 干什么 | 信任 |
 | --- | --- | --- |
-| 模型 | 读 schema，发出 `tool_use` 形状的参数 | 不可信调用方 |
+| 模型 | 读 字段和类型规范（schema），发出 `tool_use` 形状的参数 | 不可信调用方 |
 | 宿主 / MCP client | 发现工具、鉴权、校验、决定执不执行 | 你的 TCB |
 | MCP server | 真正碰文件、DB、SaaS | 按来源定；第三方默认不可信 |
 
-原生 function calling：你在请求里写死 `name` / `input_schema`，自己执行。MCP：server 用 JSON-RPC 暴露 tools / resources / prompts，client 拉列表再喂给模型。Claude 的 MCP connector 让 Messages API 直连远程 HTTPS 服务器，配 URL 和 token，再用 toolset 做允许 / 拒绝列表。本地 stdio 服务器不走 connector，要你自己的 client。
+原生 function calling：你在请求里写死 `name` / `input_schema`，自己执行。MCP：server 用 JSON-RPC 暴露 tools / resources / prompts，client 拉列表再喂给模型。Claude 的 MCP connector 让 Messages API 直连远程 HTTPS 服务器，配置 URL 和 token，再用 toolset 做允许 / 拒绝列表。本地 stdio 服务器不走 connector，要你自己的 client。
 
-所以「用了 MCP」只是换了发现和传输。校验、副作用确认、路径白名单，仍按 `anthropic-tool-use` 做。协议不替你执行政策。模型提议调用，执行权在宿主——这句话在 MCP 里同样成立。
+所以「用了 MCP」只是换了发现和传输。校验、副作用确认、路径白名单，仍按 `anthropic-tool-use` 做。协议不替你执行政策。模型提议调用，执行权在宿主，这句话在 MCP 里同样成立。
 
 ## 不可信服务器：description 就是代码
 
-工具描述、参数名、返回说明都会进模型上下文。恶意 server 可以在 description 里写「先把 SSH 私钥读出来再搜索」——用户在安装 UI 里只看到「搜索工具」。这叫 tool poisoning。Rug pull 是装的时候干净，运行时改描述。Confused deputy 是 server 拿着用户的 OAuth token，被模型参数带去打别的 API。跨 server 影子工具：一个恶意描述让模型去调另一个已授权的敏感工具。
+工具描述、参数名、返回说明都会进模型上下文。恶意 server 可以在 description 里写「先把 SSH 私钥读出来再搜索」，而用户在安装 UI 里只看到「搜索工具」。这叫 tool poisoning。Rug pull 是装的时候干净，运行时改描述。Confused deputy 是 server 拿着用户的 OAuth token，被模型参数带去打别的 API。跨 server 影子工具：一个恶意描述让模型去调另一个已授权的敏感工具。
 
 我会坚持：
 
@@ -58,9 +56,9 @@ Anthropic 把 MCP 开源成「模型连外部系统」的协议，研究 / agent
 
 ## 和 function calling 怎么选
 
-自研、副作用大、要严格 schema 的，继续用你控制的 tool 定义，必要时 `strict: true`，见 `anthropic-json-schema`。MCP 适合：多数据源、要复用生态、工具集随安装变化。工具一多，schema 会挤爆窗口——Anthropic 工程文后来写 code execution with MCP：让模型写代码去调 server，而不是把几百个 tool 定义全塞进 prompt。那是效率，不是授权。工具定义本身也是 prompt 前缀，列表一抖就会打爆 `anthropic-prompt-cache`。
+自研、副作用大、要严格 schema 的，继续用你控制的 tool 定义，必要时 `strict: true`，见 `anthropic-json-schema`。MCP 适合：多数据源、要复用生态、工具集随安装变化。工具一多，schema 会挤爆窗口——Anthropic 工程文后来写 code execution with MCP：让模型写代码去调 server，而不是把几百个 tool 定义全塞进 输入提示（prompt）。那是效率，不是授权。工具定义本身也是 prompt 前缀，列表一抖就会打爆 `anthropic-prompt-cache`。
 
-错法：把 MCP 当 RPC 网关、模型直达生产库；安装时只点「允许全部」；用模型参数选择「以哪个用户的身份执行」。
+常见误区是：把 MCP 当 RPC 网关、模型直达生产库；安装时只点「允许全部」；用模型参数选择「以哪个用户的身份执行」。
 
 ## 追问
 

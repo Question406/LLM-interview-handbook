@@ -5,7 +5,7 @@ order: 1
 level: S
 title: 系统：DP+TP+PP 三维并行怎么选切分，通信体积直觉
 quick: >-
-  TP 切层内矩阵，通信量跟激活 $B\cdot T\cdot h$ 走，锁在 NVLink 域。PP 切层，点对点传激活，税是气泡。DP
+  TP 切层内矩阵，通信量跟激活 $B\cdot T\cdot h$ 走，锁在 NVLink 域。PP 切层，点对点传激活，代价是气泡。DP
   切样本，梯度体积跟参数走。先让一层放进一张卡，TP 取满节点，PP 铺深度，剩下给 DP。
 tags:
   - NVIDIA
@@ -45,7 +45,7 @@ NVIDIA Megatron / NeMo、Meta 训 Llama、Google GSPMD，都会问卡怎么切�
 
 Megatron 列并行接行并行：前向在 MLP 出口 all-reduce 一次，反向对称再一次；注意力块同样两段。所以 TP 的集体通信次数跟层数、microbatch 成正比，单次 payload 跟 $B\cdot T\cdot h$ 成正比。序列一长，TP 比 DP 先吵。DP 的集体通信是整份梯度，跟 $T$ 无关，可以藏在反向后几层后面。
 
-PP 看起来通信少，税在空转：warmup 时后段 GPU 闲。1F1B 把气泡压到大约 $(p-1)/m$，所以 microbatch 数 $m$ 要明显大于 stage 数 $p$。气泡占的是墙钟，不是总线字节。
+PP 看起来通信少，代价在空转：warmup 时后段 GPU 闲。1F1B 把气泡压到大约 $(p-1)/m$，所以 microbatch 数 $m$ 要明显大于 stage 数 $p$。气泡占的是实际耗时，不是总线字节。
 
 ## 怎么选：先拓扑，再公式
 

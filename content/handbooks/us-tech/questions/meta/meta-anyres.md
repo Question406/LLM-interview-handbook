@@ -4,10 +4,7 @@ section: meta
 order: 26
 level: A
 title: Meta：任意分辨率切块（AnyRes / 动态 tile）和上下文预算
-quick: >-
-  高分辨率不是把整图 squish 进固定 ViT，是按长宽比切成至多 $K$ 块 tile（3.2 公开默认 $K=4$）再编码。LLaVA
-  AnyRes 把块 token 拼进 LM 窗；Llama 3.2 块走 encoder，LM 自注意力几乎不涨，涨的是视觉 $N$ 和
-  cross-attn。预算要按融合方式算，不要只报「支持任意分辨率」。
+quick: "按长宽比把图切成至多 $K$ 块 tile 再编码（Llama 3.2 默认 $K=4$）。LLaVA AnyRes 的视觉 token 进 LM 窗口；Llama 3.2 走 cross-attn，LM 窗口几乎不涨，但视觉 KV 会涨。"
 tags:
   - Meta
   - Llama
@@ -55,13 +52,13 @@ Meta Guard 3 Vision 论文写图像会 rescale 成 **$4$ 块 $560\times 560$**�
 
 同一句「$4$ 块」在两种融合里价钱完全不同。
 
-**拼接进 LM（LLaVA AnyRes）。** 每块 ViT 出 $P$ 个 token，再加缩略图 $P$ 个。粗算 $K=4$、$P=576$ 时约 $5\times576=2880$ 个视觉 token 进自注意力。它们占 $128\mathrm{k}$ 里的位置，和聊天记录抢 $T$，prefill FLOPs 是 $(T_{\mathrm{txt}}+T_{\mathrm{vis}})^2$。多图、高 $K$、视频帧会先把窗打满。产品上要先压分辨率、再决定切几块。
+**拼接进 LM（LLaVA AnyRes）。** 每块 ViT 出 $P$ 个 token，再加缩略图 $P$ 个。粗算 $K=4$、$P=576$ 时约 $5\times576=2880$ 个视觉 token 进自注意力。它们占 $128\mathrm{k}$ 里的位置，和聊天记录抢 $T$，输入预填充（prefill，即处理输入并建立缓存） FLOPs 是 $(T_{\mathrm{txt}}+T_{\mathrm{vis}})^2$。多图、高 $K$、视频帧会先把窗打满。产品上要先压分辨率、再决定切几块。
 
-**Llama 3.2 cross-attn。** 文本序列几乎不涨（几个 image 占位符）。涨的是：视觉 encoder 按 tile 线性；cross-attn 的 $N\approx K\cdot P$；decode 每步对这 $N$ 做一次 $QK^{\top}$。$K=4$、$P=1600$ 时 $N$ 约 $6.4\mathrm{k}$，八层 cross-attn 都能看见。**$128\mathrm{k}$ 文本窗还在，但首 token 延迟和视觉 KV 显存已经按 $K$ 涨。** 把「不占上下文」说成「免费」，是错的。
+**Llama 3.2 cross-attn。** 文本序列几乎不涨（几个 image 占位符）。涨的是：视觉 encoder 按 tile 线性；cross-attn 的 $N\approx K\cdot P$；逐 token 生成（decode） 每步对这 $N$ 做一次 $QK^{\top}$。$K=4$、$P=1600$ 时 $N$ 约 $6.4\mathrm{k}$，八层 cross-attn 都能看见。**$128\mathrm{k}$ 文本窗还在，但首 token 延迟和视觉 KV 显存已经按 $K$ 涨。** 把「不占上下文」说成「免费」，是错的。
 
 Serving 账三列：encoder 时延、视觉 KV 字节、对 TPOT 的 cross-attn 增量。图不变应缓存视觉 $K/V$；用户只追加一句文本，不要重跑 ViT。Batch 里不同图 $K$ 不同，要 pad 到 `max_num_tiles` 再用 mask，否则 $2\times2$ 和 $1\times1$ 不能拼 batch。分页 KV 管的是 **文本自注意力** 的 cache，见 `sys-paged-attn`；视觉旁路要单独算，不要假定 vLLM 一开 PagedAttention 图就不占显存，见 `meta-vllm`。
 
-错法：所有图都 pad 成正方形再缩到 $224$，字和 UI 没了。错法二：把 $K$ 开到 $6\times6$ 还不改位置编码和训练分布，推理切块训练没见过，OCR 会花。错法三：用 haystack 文本长度证明「视觉长上下文」，测的不是读图。
+常见误区是：所有图都 pad 成正方形再缩到 $224$，字和 UI 没了。错法二：把 $K$ 开到 $6\times6$ 还不改位置编码和训练分布，推理切块训练没见过，OCR 会花。错法三：用 haystack 文本长度证明「视觉长上下文」，测的不是读图。
 
 ## 追问
 

@@ -4,9 +4,7 @@ section: systems
 order: 60
 level: A
 title: 系统：KL 写进奖励，还是写进 loss？
-quick: >-
-  写进奖励时，KL 先算完并 detach，再减出优势，梯度不穿过 KL 那一项。写进 loss 时，KL 对当前策略可导。
-  GRPO 常用后者。两种不要叠在同一条更新里。
+quick: "写进奖励时，KL 先算完并 detach，再减出优势，梯度不穿过 KL 那一项。写进 损失（loss） 时，KL 对当前策略可导。 GRPO 常用后者。两种不要叠在同一条更新里。"
 tags:
   - Post-train
   - KL
@@ -27,7 +25,7 @@ sources:
 
 ## 题怎么来的
 
-verl 的 GRPO 说明写了：`use_kl_loss` 为真时，不再把 KL 放进奖励。Hugging Face 的后训练笔记把两件事分开：奖励里的 KL 要停梯度，loss 里的 KL 会进反向。这道按这个开关拟的。参考模型占多少显存见 `sys-ref-model`。
+verl 的 GRPO 说明写了：`use_kl_loss` 为真时，不再把 KL 放进奖励。Hugging Face 的后训练笔记把两件事分开：奖励里的 KL 要停梯度，损失（loss） 里的 KL 会进反向。这道按这个开关拟的。参考模型占多少显存见 `sys-ref-model`。
 
 ## 两种接法
 
@@ -55,3 +53,11 @@ def kl_in_loss(pg_loss, policy_logp, ref_logp, beta, mask):
 ## 追问
 
 **优势已经含 KL 时，还要不要 clip？** 要。clip 限制的是相对采样策略的步长。KL 限制的是相对参考模型的漂移。不是同一个锚。
+
+## 相关题
+
+- [[align-grpo]]：口述 GRPO 时要讲清 KL 护栏还在，这张回答它具体接在哪。
+- [[openai-ppo-clip]]：从 clip 这一侧讲「两个锚」，clip 管 $\pi_{\mathrm{old}}$，KL 管 $\pi_{\mathrm{ref}}$。
+- [[coding-rloo-advantage]]：RLOO 论文把 KL 并进序列奖励再做 leave-one-out，是「写进奖励」的具体例子。
+- [[fireworks-grpo-sft-loss]]：把 GRPO 写成加权 logprob 时，KL 要么折进权重、要么单独一项 loss，对应这里的两种接法。
+- [[p3a-anthropic-rl-fundamentals-grpo-debug]]：调试题的追问会问 ref KL 和 old ratio 为什么不能合成一项。

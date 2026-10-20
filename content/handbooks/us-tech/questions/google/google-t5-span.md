@@ -4,9 +4,7 @@ section: google
 order: 3
 level: A
 title: Google：T5 span corruption 预训练目标为什么比 BERT MLM 更适合生成
-quick: >-
-  BERT 是编码器上的独立 token 填空；T5 是编码器-解码器，把连续 span 收成一个 sentinel，解码器只生成被挖掉的
-  span。生成任务要的是「按顺序写出一串 token」，span corruption 和 text-to-text 微调是同一件事，MLM 不是。
+quick: "BERT 是编码器上的独立的 token 填空；T5 是编码器-解码器，把每段连续 span 替换成一个 sentinel，解码器只生成被挖掉的 span。生成任务要的是「按顺序写出一串 token」，span corruption 和 text-to-text 微调是同一件事，MLM 不是。"
 tags:
   - Google
   - T5
@@ -29,7 +27,7 @@ Google Brain / T5 岗、搜广推里「生成式摘要 / 改写」轮，都会�
 
 ## 先把两个目标画成数据流
 
-BERT MLM：随机盖约 15% token，编码器双向看整句，在被盖位置做词表分类。每个被盖位置几乎独立，没有「从左到右写出一句话」这条计算图。下游若要摘要、翻译，你得另接解码器，或把 BERT 当编码器冻住。预训练和生成微调接口对不上。
+BERT MLM：随机遮住约 15% 的 token，编码器双向看整句，在被盖位置做词表分类。每个被盖位置几乎独立，没有「从左到右写出一句话」这条计算图。下游若要摘要、翻译，你得另接解码器，或把 BERT 当编码器冻住。预训练和生成微调接口对不上。
 
 T5 默认目标（论文 Figure 2）：同样丢掉约 15% token，但连续被丢的片段合成 一个 sentinel。编码器看到的是缩短后的带洞句子；解码器的目标 只含被挖掉的 span，用同一套 sentinel 当分隔，最后再加一个结束 sentinel。均值 span 长度他们扫过，基线取 3。
 
@@ -46,9 +44,9 @@ T5 默认目标（论文 Figure 2）：同样丢掉约 15% token，但连续被�
 
 1. 输出是一段序列，不是一袋独立分类。 摘要、翻译、问答的微调格式都是「前缀任务名，解码出文本」。预训练已经在练这段解码器。MLM 练的是双向填空，生成时还要重新学因果和长度。
 2. Span 逼你重建短语，不只是单点词表。 生成错误经常是整段漏信息。连续 span 比单 token mask 更接近「写出 missing 内容」。
-3. 计算落在解码器该在的地方。 目标长度大约是被腐蚀的那 15%，不是整句重构。论文写明：只预测丢掉的 token、把连续洞收成一个 sentinel，是为了省预训练算力。BERT 式「编码器输出整句、每个位置都算」在 encoder-decoder 里反而更贵，而且解码器没有真正生成。
+3. 减少解码器需要预测的内容。 目标长度大约是被腐蚀的那 15%，不是整句重构。论文写明：只预测丢掉的 token、把连续洞收成一个 sentinel，是为了省预训练算力。BERT 式「编码器输出整句、每个位置都算」在 encoder-decoder 里反而更贵，而且解码器没有真正生成。
 
-T5 消融里，prefix LM、整句重构 MLM、打乱复原，大多不如 span corruption；翻译 BLEU 上 span 也更好。别吹成「理解任务 MLM 一定差」：GLUE 上差距没那么戏剧。要强调生成接口和目标长度。
+T5 消融里，prefix LM、整句重构 MLM、打乱复原，大多不如 span corruption；翻译 BLEU 上 span 也更好。不要据此声称「理解任务 MLM 一定差」：GLUE 上差距没有那么大。要强调生成接口和目标长度。
 
 ## 现场错法
 

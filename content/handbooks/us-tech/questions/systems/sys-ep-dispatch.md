@@ -4,9 +4,7 @@ section: systems
 order: 29
 level: S
 title: 系统：MoE expert parallel 的 token dispatch 负载
-quick: >-
-  Router 之后 all-to-all 把 token 送到持有该 expert 的卡。一步墙钟等于收 token 最多的那张卡，不是均值。
-  Prefill 走吞吐型 dispatch，decode 消息又短又要低延迟，不能共用一条核。负载靠容量、bias、EPLB，不是再喊一次 aux loss。
+quick: "all-to-all 把 token 送到持有该 expert 的卡，一步耗时由收 token 最多的那张卡决定，不看均值。负载靠容量、bias 和 EPLB 复制热专家来压，decode 还要单独的低延迟核。"
 tags:
   - DeepSeek
   - NVIDIA
@@ -33,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-`sys-expert-parallel` 讲 EP 切的是专家、搬的是 token。本题把镜头推到 dispatch 这一跳的负载：直方图一歪，all-to-all 和 expert GEMM 一起歪。DeepSeek-V3 报告、开源 DeepEP / EPLB，以及 NVIDIA grouped GEMM，都是公开材料。xAI 岗也会从 decode 碎片问过来，见 `xai-moe-decode`。别把未开源的内部 dispatch 讲成自己写过。
+`sys-expert-parallel` 讲 EP 切的是专家、传输的是 token。本题把镜头推到 dispatch 这一跳的负载：直方图一歪，all-to-all 和 expert GEMM 一起歪。DeepSeek-V3 报告、开源 DeepEP / EPLB，以及 NVIDIA grouped GEMM，都是公开材料。xAI 岗也会从 逐 token 生成（decode） 碎片问过来，见 `xai-moe-decode`。别把未开源的内部 dispatch 讲成自己写过。
 
 ## Dispatch 在干什么
 
@@ -50,7 +48,7 @@ $$
 t_{\mathrm{step}}\propto \max_r c_r,
 $$
 
-因为集合通信等最慢那条边，GEMM 等最热那个 expert。Switch 的容量因子 $C$：每个 expert 只收约 $C\cdot T/E$ 个 token，超出 drop 或溢出。$C$ 太小伤质量，$C$ 太大热点照样在。Aux loss、DeepSeek 公开的 expert bias 修正、EPLB（把热专家复制到多个 rank、按历史负载摆专家），目的都是让 $\{c_r\}$ 的 $\max/\mathrm{mean}$ 接近 1。面试要说到这是 P99 通信优化，不是训练曲线装饰。
+因为集合通信等最慢那条边，GEMM 等最热那个 expert。Switch 的容量因子 $C$：每个 expert 只收约 $C\cdot T/E$ 个 token，超出 drop 或溢出。$C$ 太小伤质量，$C$ 太大热点照样在。Aux 损失（loss）、DeepSeek 公开的 expert bias 修正、EPLB（把热专家复制到多个 rank、按历史负载摆专家），目的都是让 $\{c_r\}$ 的 $\max/\mathrm{mean}$ 接近 1。面试要说到这是 P99 通信优化，不是训练曲线装饰。
 
 ```python
 counts = torch.bincount(expert_ids.flatten(), minlength=E)
@@ -59,7 +57,7 @@ per_rank = counts.view(ep_size, E // ep_size).sum(dim=1)
 hot = int(per_rank.max())
 ```
 
-Decode 时 $T$ 变成在飞 batch 那么点 token，$k \gt 1$，all-to-all 退化成小消息延迟墙。Prefill 的 $T$ 大，走带宽。DeepEP 公开 README 把两条路写死了：高吞吐核给训练和 inference prefill；低延迟核给 inference decode；原生 FP8 dispatch；还能控占用多少 SM，好和 GEMM overlap。同一套 NCCL all-to-all 硬套到 decode 上，尾延迟会很难看。这也是「训练拓扑不要原样搬 serving」的具体落点。
+Decode 时 $T$ 变成在飞 batch 那么点 token，$k \gt 1$，all-to-all 退化成小消息延迟墙。Prefill 的 $T$ 大，走带宽。DeepEP 公开 README 把两条路写死了：高吞吐核给训练和 inference 输入预填充（prefill，即处理输入并建立缓存）；低延迟核给 inference decode；原生 FP8 dispatch；还能控占用多少 SM，好和 GEMM overlap。同一套 NCCL all-to-all 硬套到 decode 上，尾延迟会很难看。这也是「训练拓扑不要原样搬 serving」的具体落点。
 
 ## 负载从哪来、怎么叠并行
 
@@ -85,3 +83,11 @@ PD 分离时 prefill / decode 用不同 EP 度是合理的：prefill 吃吞吐 d
 - **EPLB 和 aux loss 谁在推理生效？** Aux 是训练目标。推理时专家位置和复制是 EPLB / 部署表。只报「训过 aux」不够。
 - **Token drop 和 CUDA graph？** 每步 $c_r$ 变，静态图难捕获。低延迟 decode 更爱固定容量 padding，用计算换可预测延迟。
 - **和 TP all-reduce 一句话差在哪？** TP 尺寸固定、对端固定；EP dispatch 变长、目的随 router 变，尾部由热点 expert 决定。
+
+## 相关题
+
+- [[sys-expert-parallel]]：本题的前篇，和本题部分重合，先讲 EP 切专家、搬 token 的整体图，再说 all-to-all 是墙。
+- [[google-moe-routing]]：dispatch 之前的路由和容量 pad，以及 decode 时降 EP 度或复制热点专家。
+- [[openai-moe-aux-loss]]：训练侧怎么用 aux loss 压负载，本题追问里说的「aux 只在训练生效」在那边展开。
+- [[xai-moe-decode]]：xAI 从 decode 碎片问过来的版本，专家 GEMM 又短又不齐，CUDA Graph padding 吃掉稀疏收益。
+- [[nvidia-moe-gemm]]：dispatch 到本地之后的 grouped GEMM，为什么不能按专家循环 launch。

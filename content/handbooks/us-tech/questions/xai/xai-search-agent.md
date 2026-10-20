@@ -14,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-09-29
 sources:
   - title: xAI Web Search
     url: https://docs.x.ai/developers/tools/web-search
@@ -28,6 +28,9 @@ sources:
   - title: Grok 3 Beta — The Age of Reasoning Agents
     url: https://x.ai/blog/grok-3
     type: primary
+  - title: Workflows in Grok Build
+    url: https://x.ai/news/workflows
+    type: primary
 ---
 
 ## 题怎么来的
@@ -38,7 +41,7 @@ Grok 的产品差异之一是实时搜索。公开文档把 `web_search` 和 `x_
 
 用户问「刚才 X 上谁说了什么」，正确路径是 `x_search`（可滤 handle、时间窗），不是靠记忆。网页新闻走 `web_search`，可 `allowed_domains` / `excluded_domains`（文档写过上限大约 5 个，以当时为准）。`enable_image_understanding` 让 agent 看搜到的图，那是额外工具调用，会加延迟和视觉预算，见 `xai-grok-vision`。
 
-引用契约：回答里的命题要能指回这一次工具返回的 URL / 帖子 id。搜到 A 却用预训练里的旧数字，是时效幻觉。搜空了要说没找到，不要补「一般认为」。DeepSearch 长轨迹还要报步数和墙钟，避免把「搜得久」当成质量。
+引用契约：回答里的命题要能指回这一次工具返回的 URL / 帖子 id。搜到 A 却用预训练里的旧数字，是时效幻觉。搜空了要说没找到，不要补「一般认为」。DeepSearch 长轨迹还要报步数和实际耗时，避免把「搜得久」当成质量。
 
 失败：
 
@@ -49,15 +52,19 @@ Grok 的产品差异之一是实时搜索。公开文档把 `web_search` 和 `x_
 
 `from_date` / `to_date` 是 X 搜索的公开旋钮。评测要切时间窗：问「今天」却命中上周，算失败。允许域名单用于企业「只信文档站」，不是安全的全部。
 
-错法：把内置搜索说成预训练见过实时 X；自定义函数和搜索失败用同一套文案；并行两次搜索没有去重，引用打架。
+常见误区是：把内置搜索说成预训练见过实时 X；自定义函数和搜索失败用同一套文案；并行两次搜索没有去重，引用打架。
 
 ## 评测
 
-拆：是否该搜、查询是否对、结果是否被引用、空结果拒答率、注入后是否仍执行写操作、墙钟。只报「答案像真的」会把编造新闻算进正例。Arena 偏好更不适合时效题，见 `xai-lmarena`。
+拆：是否该搜、查询是否对、结果是否被引用、空结果拒答率、注入后是否仍执行写操作、实际耗时。只报「答案像真的」会把编造新闻算进正例。Arena 偏好更不适合时效题，见 `xai-lmarena`。
 
-循环预算：最大搜索次数、每次超时、总 token。搜索 agent 比普通聊天更容易空转。观测要把截断后的 snippet 记下来，否则你调试的是模型没看见的世界，见 `xai-agent-loop`。
+循环预算：最大搜索次数、每次超时、总 token 预算。搜索 agent 比普通聊天更容易空转。观测要把截断后的 snippet 记下来，否则你调试的是模型没看见的世界，见 `xai-agent-loop`。
 
 宿主要记每次查询、返回 URL、是否空集。没有这三样，你无法证明引用对回了本次搜索。失败模式比产品名词更值得展开。
+
+## 2026 年：实时搜索为何仍是 Grok 的产品特点
+
+Grok 4.7 仍把 `web_search` 和 `x_search` 作为内置服务端工具。Grok Build 的 `/deep-research` 工作流会分派调查任务，并用来源核验结论。面试回答“为什么加入 xAI”时，可以从这里展开：信息时效、引用是否有来源，以及结果是否完整；要求完整集合的任务中，只有部分正确仍算失败。不能用 Arena Elo 判断模型是否知道“今天 X 上发生了什么”。公司信息见 `xai-spacexai-now`。
 
 ## 追问
 

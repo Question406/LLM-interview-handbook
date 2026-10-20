@@ -4,9 +4,7 @@ section: microsoft
 order: 16
 level: S
 title: Microsoft：Phi vision / 小模型多模态，token 预算和适配器？
-quick: >-
-  Phi-3.5-Vision 约 4.2B，CLIP 网格加动态切块；Phi-4-Multimodal 用 Mixture-of-LoRAs 把视觉 / 语音接上冻住的语言模型。小模型上下文更紧，先算视觉
-  token 再谈「能看清字」。别把 4B 当 13B LLaVA 用。
+quick: "Phi-3.5-Vision 约 4.2B，CLIP 网格加动态切块；Phi-4-Multimodal 用 Mixture-of-LoRAs 把视觉 / 语音接上冻住的语言模型。小模型上下文更紧，先算视觉 token 再谈「能看清字」。别把 4B 当 13B LLaVA 用。"
 tags:
   - Microsoft
   - Phi
@@ -47,13 +45,13 @@ $$
 - 截图小字、表格：必须切块或先 OCR，然后 **减文本、减多图**。
 - 多图：三张 576 已经 1728，系统提示还没算。
 
-Phi-4 的 Mixture-of-LoRAs：底模冻住，视觉一条 LoRA，语音一条。推理按模态组合加载，互不干扰。面试别说「我们把 ViT 和 LLM 全解开一起训」。那是 13B 数据配方，4B 上很容易毁语言。对齐阶段仍可只训投影 / LoRA，指令阶段再松 LLM，细节见 `msft-llava-train`。
+Phi-4 的 Mixture-of-LoRAs：基础模型冻住，视觉一条 LoRA，语音一条。推理按模态组合加载，互不干扰。面试别说「我们把 ViT 和 LLM 全解开一起训」。那是 13B 数据配方，4B 上很容易毁语言。对齐阶段仍可只训投影 / LoRA，指令阶段再松 LLM，细节见 `msft-llava-train`。
 
-错法：训练 224、线上 AnyRes 切满还不做适配；把 Phi 当 OCR 引擎却不评字段级准确；语音和视觉抢同一套 LoRA。公开报告强调模态扩展要隔离。
+常见误区是：训练 224、线上 AnyRes 切满还不做适配；把 Phi 当 OCR 引擎却不评字段级准确；语音和视觉抢同一套 LoRA。公开报告强调模态扩展要隔离。
 
 ## 评测和产品位
 
-Phi 的主张是高质量数据让小模型打过更大脏模型。视觉同样：合成指令会泄漏 TextVQA 风格。评测要新鲜截图、内部 UI、表格数字，不要只报公开 VQA。幻觉「图里有猫」和文本接地同类：对不上区域就拒，见 `msft-copilot-ground`。
+Phi 的主张是高质量数据让小模型打过更大脏模型。视觉同样：合成指令会泄漏 TextVQA 风格。评测要新鲜截图、内部 UI、表格数字，不要只报公开 VQA。幻觉「图里有猫」和文本有实际证据支持同类：对不上区域就拒，见 `msft-copilot-ground`。
 
 产品位：手机 / 边缘 / Copilot 里的「看一眼」用 Phi；仓库级文档理解用更大 VLM 或 Florence 出结构再生成，见 `msft-florence`。ONNX 导出要静态分辨率档，见 `msft-onnx-export`。视觉 token 进 TPM，和文本同一本账。
 

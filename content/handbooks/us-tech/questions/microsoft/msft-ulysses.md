@@ -77,11 +77,11 @@ Megatron-LM 的 sequence parallelism **绑在张量并行上**。LayerNorm / dro
 - 已经在 Megatron TP 域、只是 LN 激活重复：Megatron SP，不必强行换 all-to-all。
 - $P$ 要大于头数（GQA 小模型尤其容易撞）：Ulysses 单独不够，要 Ring / CP 或 2D。
 
-错法：把 Ulysses 说成「ZeRO-4」；把 Megatron SP 说成切注意力序列；认为 all-to-all 一定比 all-gather 慢（体积小时延迟可能更差，论文优势在 $N$ 很大且 $P$ 跟上的时候）。小 $N$ 开很大 $P$，all-to-all 启动开销会吃掉收益，和「小模型开 ZeRO-3」是同一类错误。
+常见误区是：把 Ulysses 说成「ZeRO-4」；把 Megatron SP 说成切注意力序列；认为 all-to-all 一定比 all-gather 慢（体积小时延迟可能更差，论文优势在 $N$ 很大且 $P$ 跟上的时候）。小 $N$ 开很大 $P$，all-to-all 启动开销会吃掉收益，和「小模型开 ZeRO-3」是同一类错误。
 
 ## 追问
 
 - **为什么 $P$ 不能大于头数？** 转置之后每卡至少要分到一个头。头不够就有卡空转，或者你得改切 KV 头 / 再叠一维并行。
 - **和流水线并行？** 正交。PP 切层，Ulysses 切 $T$。微批和序列分片会一起改激活形状，画图时先固定 PP 再画 SP 组。
 - **数值和单卡不一致？** all-to-all 只是重排，数学上等价。先对短序列做单卡对照。掉点优先查头是否整除、GQA 的 KV 复制有没有切错。
-- **推理 decode 也上 Ulysses？** Decode 一步 $N=1$ 的新 token，序列并行没东西切。这是训练 / prefill 的工具。在线长上下文更常走分段检索，见 `msft-long-context`。
+- **推理 逐 token 生成（decode） 也上 Ulysses？** Decode 一步 $N=1$ 的新 token，序列并行没东西切。这是训练 / 输入预填充（prefill，即处理输入并建立缓存） 的工具。在线长上下文更常走分段检索，见 `msft-long-context`。

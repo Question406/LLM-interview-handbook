@@ -4,9 +4,7 @@ section: systems
 order: 8
 level: S
 title: 系统：prefill/decode 分离部署，KV 搬运成本
-quick: >-
-  Prefill 吃算力、decode 吃带宽和 KV 容量，混部时一条长 prompt 会打断 decode 流水。拆到两个池才能各自扩容。
-  代价是把 KV 从 prefill 池搬到 decode 池：体积跟层数、KV 头、序列长度、字节宽成正比，网络不够时搬一次接近再算一遍。
+quick: "Prefill 吃算力、decode 吃带宽和 KV 容量，混部时长 prompt 会打断 decode。拆成两个池可以各自扩容，代价是要搬 KV，网络慢时搬一次接近重算一遍。"
 tags:
   - Serving
   - NVIDIA
@@ -33,11 +31,11 @@ sources:
 
 ## 题怎么来的
 
-DistServe、Microsoft Splitwise、NVIDIA TensorRT-LLM / Dynamo 的分离服务，都在答同一件事：prefill 和 decode 的 roofline 不同，混在一张卡上会互相伤害。OpenAI 风格问 TTFT 和 TPOT 为什么不能一起调（见 `openai-prefill-decode`）；NVIDIA 问 KV 怎么搬、搬得过算吗。算术强度对比可以先说「prefill 大 GEMM、decode 反复读权重和 KV」，本题落到部署和搬运成本。
+DistServe、Microsoft Splitwise、NVIDIA TensorRT-LLM / Dynamo 的分离服务，都在答同一件事：输入预填充（prefill，即处理输入并建立缓存） 和 逐 token 生成（decode） 的 roofline 不同，混在一张卡上会互相伤害。OpenAI 风格问 首个 token 的等待时间（TTFT） 和 TPOT 为什么不能一起调（见 `openai-prefill-decode`）；NVIDIA 问 KV 怎么搬、搬得过算吗。算术强度对比可以先说「prefill 大 GEMM、decode 反复读权重和 KV」，本题落到部署和搬运成本。
 
 ## 为什么要拆
 
-Prefill 一次吃整段 prompt，$[T,d]\times[d,d]$，算术强度随 $T$ 涨，容易喂饱 Tensor Core，受算力限制。Decode 每步每条序列只多一个 token，却要读整份权重和历史 KV，强度低，受 HBM 带宽和 KV 容量限制。同一 GPU 上混跑：一条 $T=8\mathrm{k}$ 的 prefill 占满 SM 几十到几百毫秒，正在飞的 decode batch 被打断，TPOT 出尖刺。这不是 decode 突然变 compute-bound，是调度把带宽流水拆碎了。
+Prefill 一次吃整段 输入提示（prompt），$[T,d]\times[d,d]$，算术强度随 $T$ 涨，容易喂饱 Tensor Core，受算力限制。Decode 每步每条序列只多一个 token，却要读整份权重和历史 KV，强度低，受 HBM 带宽和 KV 容量限制。同一 GPU 上混跑：一条 $T=8\mathrm{k}$ 的 prefill 占满 SM 几十到几百毫秒，正在生成的请求 batch 被打断，每个 token 的生成间隔突然变长。这不是 decode 突然变 compute-bound，是调度把带宽流水拆碎了。
 
 拆开之后：
 
@@ -45,7 +43,7 @@ Prefill 一次吃整段 prompt，$[T,d]\times[d,d]$，算术强度随 $T$ 涨，
 - Decode 池堆带宽和 KV 容量（更低 TP、更高 `mem_fraction` 给 cache、continuous batching 吃满有效 $B$）。
 - TTFT 和 TPOT 才能独立扩容。DistServe 优化的是 goodput（SLO 内的有效吞吐），不是瞬时 tokens/s。
 
-短请求、prompt 很短、卡很少时别拆：多一次 KV 传输和两套调度，角色不对称不明显，墙钟往往更差。单池折中是 chunked prefill：长 prompt 切块，块之间插入 decode，不传跨机 KV。长上下文、流量里 prefill 和 decode 比例漂移大、两阶段想用不同并行度时，再上分离。
+短请求、prompt 很短、卡很少时别拆：多一次 KV 传输和两套调度，角色不对称不明显，实际耗时往往更差。单池折中是 chunked prefill：长 prompt 切块，块之间插入 decode，不传跨机 KV。长上下文、流量里 prefill 和 decode 比例漂移大、两阶段想用不同并行度时，再上分离。
 
 ## KV 搬运要算字节
 
@@ -55,7 +53,7 @@ $$
 2 \cdot L \cdot n_{\mathrm{kv}} \cdot d_h \cdot T \cdot b
 $$
 
-K 和 V 各一份，$b$ 是每元素字节。GQA 让 $n_{\mathrm{kv}}$ 小于查询头，搬运已经比 MHA 轻一截；再叠 KV 量化（见 `sys-kv-quant`）把 $b$ 从 2 打到 1 或更低。Llama-70B 量级、8k 上下文，单请求 KV 可以到 GB 级。走 NVLink 还好；走跨节点 RDMA，有时搬运墙钟已经接近这段 prefill 本身。那时「分离」赚的调度，会被网络吐回去。
+K 和 V 各一份，$b$ 是每元素字节。GQA 让 $n_{\mathrm{kv}}$ 小于查询头，搬运已经比 MHA 轻一截；再叠 KV 量化（见 `sys-kv-quant`）把 $b$ 从 2 打到 1 或更低。Llama-70B 量级、8k 上下文，单请求 KV 可以到 GB 级。走 NVLink 还好；走跨节点 RDMA，有时搬运实际耗时已经接近这段 prefill 本身。那时「分离」赚的调度，会被网络吐回去。
 
 工程上还会踩：
 
@@ -68,7 +66,7 @@ NVIDIA 岗可能问 NCCL/NVSHMEM 搬 KV 还是走 GPU Direct RDMA、要不要压
 
 ## 追问
 
-- **短 prompt 高并发要不要拆？** 通常不要。Prefill 很短，decode 主导，搬运是纯税。先 chunked prefill 和 continuous batching。
+- **短 prompt 高并发要不要拆？** 通常不要。Prefill 很短，decode 主导，搬运只增加开销。先 chunked prefill 和 continuous batching。
 - **GQA / MQA 对搬运意味着什么？** KV 头变少，体积线性下降，分离更划算。这也是长上下文 serving 爱 GQA 的原因之一。
 - **TTFT 拆完一定更好吗？** Prefill 池不排队时更好；若 prefill 池更挤，再加上搬 KV，TTFT 可能更差。要看队列，不要假设拓扑一定赢。
 - **和 continuous batching 冲突吗？** 不冲突。分离是池之间；池内仍要 iteration-level 调度，见 `sys-cont-batch`。

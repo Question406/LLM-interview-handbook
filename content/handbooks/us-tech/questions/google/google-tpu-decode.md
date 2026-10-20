@@ -4,10 +4,7 @@ section: google
 order: 29
 level: S
 title: Google：TPU 上 decode，MXU 吃不满、KV 带宽，和 GPU 怎么对照
-quick: >-
-  Prefill 是大 GEMM，MXU 能饱；decode 左矩阵行数是并发 $B$，TPU 收缩维 128，小 $B$ 格子空转。每步还要读整段
-  KV，很快变带宽墙。和 GPU 对照：更小的 Tensor Core tile、paged KV、CUDA graph；TPU 要静态
-  pad、连续批、GQA，必要时投机把 $M$ 抬上去。
+quick: "decode 时 GEMM 的行数只有并发数 $B$，128 宽的 MXU 大半空转，每步还要读整段 KV，很快撞上带宽墙。TPU 靠连续批、投机解码把 $M$ 做大，用 GQA 减 KV。"
 tags:
   - Google
   - TPU
@@ -40,7 +37,7 @@ TPU 峰值在脉动阵列 MXU 上，常见收缩维 128。GEMM $[M,K]\times[K,N]
 
 算术强度也掉。权重主导时，一步 FFN 大约把 $[D, D_{\mathrm{ff}}]$ 从 HBM 读进来，只跟 $B$ 行激活乘一次。$B$ 小，时间模型是字节 / 带宽，不是 FLOPs / 峰值。Pope 文用分析模型在「权重稳态 / 激活稳态」布局之间切：小 $B$ 倾向把权重量在芯片上少搬；大 $B$ 激活体积反过来，布局要换。面试抓 **$B$ 改了通信体积和 MXU 利用率一起变**，不要背布局名字。静态 shape 和 `pjit` 见 `google-jax-pjit`。
 
-所以 TPU decode 的第一杠杆是 **把有效 $M$ 做大**：连续批处理、等待拼 batch、投机解码一次验证 $\gamma$ 个位置（$M$ 变成 $B\cdot\gamma$ 量级），见 `google-spec-decode`。XLA 要静态 shape，短序列和空槽会 pad 到编译上限；pad 也占 MXU 但不出 token，等于付电费买空气。
+所以 TPU 逐 token 生成（decode） 的第一杠杆是 **把有效 $M$ 做大**：连续批处理、等待拼 batch、投机解码一次验证 $\gamma$ 个位置（$M$ 变成 $B\cdot\gamma$ 量级），见 `google-spec-decode`。XLA 要静态 shape，短序列和空槽会 pad 到编译上限；pad 也占用 MXU，却不产生有效 token，因此会浪费计算和电量。
 
 ## KV：decode 的另一堵墙
 
@@ -52,7 +49,7 @@ $$
 
 $T$ 从 8k 到 1M，线性涨两个数量级，窗口叙事见 `google-gemini-longctx`。MXU 就算吃饱了 FFN，注意力仍可能在等 HBM。GQA / MQA 把 $H_{\mathrm{kv}}$ 砍下来，是 Google 推理论文的一等杠杆，见 `google-gqa-mqa`。量化 cache、前缀缓存、多 query 共享 KV，全是打这条带宽，不是打 FLOPs 公式。
 
-Splash / Pallas 式注意力在 prefill 上避免物化 $[T,T]$，见 `google-flash-attention`。Decode 的主要 IO 已经是读 KV，再融一次 softmax 红利有限。Flash 解决不了 decode 主 IO 已经是读 KV 这件事。
+Splash / Pallas 式注意力在 输入预填充（prefill，即处理输入并建立缓存） 上避免物化 $[T,T]$，见 `google-flash-attention`。Decode 的主要 IO 已经是读 KV，再融一次 softmax 红利有限。Flash 解决不了 decode 主 IO 已经是读 KV 这件事。
 
 口算一张卡：TPU v4 公开量级大约每芯片 32 GiB HBM、约 1.2 TB/s 带宽、bf16 矩阵算力约 275 TFLOP。单请求百万 token 的 KV 可以到百 GB 量级（随 $L,H_{\mathrm{kv}}$），根本塞不下，更谈不上 MXU 利用率。并发变成「HBM 里能活几段 cache」。
 
@@ -69,7 +66,7 @@ Splash / Pallas 式注意力在 prefill 上避免物化 $[T,T]$，见 `google-fl
 
 MoE decode 还要降专家并行，见 `google-moe-routing`。专家过多、token 太少，all-to-all 比 MXU 空转更早爆。
 
-错法：用训练 MFU 报 serving；说 decode 慢是因为 softmax 不在 MXU 就换近似注意力；只加芯片不加 $B$ 和 GQA。
+常见误区是：用训练 MFU 报 serving；说 decode 慢是因为 softmax 不在 MXU 就换近似注意力；只加芯片不加 $B$ 和 GQA。
 
 ## 追问
 
@@ -77,3 +74,10 @@ MoE decode 还要降专家并行，见 `google-moe-routing`。专家过多、tok
 - **$B$ 是不是越大越好？** 利用率升，逐步延迟和 KV 占用一起升。Pope 的故事是延迟-吞吐 Pareto，不是单点 MFU 冠军。
 - **int8 权重量化帮谁？** 帮权重带宽和容量，不帮 KV 随 $T$ 涨。长上下文还是要砍 $H_{\mathrm{kv}}$ 或量化 cache。
 - **连续批在 TPU 上难在哪？** 静态 shape 和重编译。实现是槽位复用加 pad，不是 GPU 上那种随意 ragged kernel。
+
+## 相关题
+
+- [[google-gqa-mqa]]：只讲 MHA/MQA/GQA 选型和 KV 显存差多少，不涉及 MXU 吃不满的问题。
+- [[openai-continuous-batching]]：continuous batching 本身怎么做 iteration-level 调度，GPU 视角，没有静态 shape 的约束。
+- [[openai-speculative-decoding]]：这里把投机解码当作做大 $M$ 的手段；那题问的是拒绝草稿后 KV 怎么回滚。
+- [[apple-ondevice-kv]]：同样的 KV 带宽账放到端侧，并发只有 1，没法靠大 batch 摊薄。

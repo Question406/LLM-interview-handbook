@@ -4,10 +4,9 @@ section: coding
 order: 30
 level: A
 title: 白板：QK RMSNorm 再 RoPE，Qwen / 部分 Llama 变体怎么写
-quick: >-
-  对每个 head 的 $q,k$ 沿 $D$ 做 RMSNorm（通常有 $\gamma$，无 $\beta$），**然后**再 RoPE。不 norm $v$。GQA 时
-  $k$ 只有 $H_{\mathrm{kv}}$ 头，用自己的 `k_norm`。顺序反了会对不齐公开 checkpoint。
+quick: "对每个 head 的 $q,k$ 沿 $D$ 做 RMSNorm（有 $\\gamma$ 无 $\\beta$，不碰 $v$），然后再 RoPE；GQA 时 $k$ 按 $H_{\\mathrm{kv}}$ 份用自己的 `k_norm`。"
 tags:
+  - 完整编程练习
   - Coding
   - QK-Norm
   - RMSNorm
@@ -15,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: Qwen3 Technical Report
     url: https://arxiv.org/abs/2505.09388
@@ -28,16 +27,137 @@ sources:
     type: primary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，CPU 上验证；没有验证 GPU 或性能。
+
+### 题面、接口与约束
+
+- `rmsnorm_last(x, weight, eps=1e-6)`：沿最后一维做 RMSNorm，统计量在 fp32 里算，结果转回输入的 dtype。`weight` 是 `[d]` 的 $\gamma$，传 `None` 表示不缩放；没有 bias。
+- `apply_rope(x, cos, sin)`：对 `[B, H, T, d]` 做 RoPE，维度 (0, 1)、(2, 3)… 两两成对旋转。`cos`、`sin` 是 `[T, d/2]`。`d` 为奇数或表的形状不对时抛 `ValueError`。
+- `qk_norm_then_rope(q, k, w_q, w_k, cos, sin)`：Q 和 K 各用自己的权重做 RMSNorm，然后再做 RoPE，返回 `(q, k)`。
+- `q` 是 `[B, H_q, T, d]`，`k` 是 `[B, H_kv, T, d]`，两者 head 数可以不同（GQA），`d` 为偶数。V 不做归一化。
+
+### 输入输出示例
+
+```text
+q, k 全零                       -> 归一化后仍全零（eps 防止除 0）
+q 任意，w_q = 全 1              -> 每个 head 的 RMS ≈ 1，RoPE 之后范数不变
+位置 0（cos = 1, sin = 0）      -> RoPE 不改变这个 token
+```
+
+### 解题思路与正确性
+
+RMSNorm 的约简轴是最后一维 `d`：每个 head、每个位置单独算一次 RMS，不在 head 之间、也不在时间维上混合。K 只有 `H_kv` 个 head，就按 `H_kv` 份来算，用的是 `w_k`。
+
+RoPE 把每一对维度当作平面上的一个点做旋转，旋转不改变向量长度，所以 RMS 在旋转前后一样。真正让顺序有区别的是逐维相乘的 $\gamma$：旋转会把一对维度混在一起，先乘 $\gamma$ 再旋转和先旋转再乘 $\gamma$，在 $\gamma$ 不均匀时结果不同。测试里分别验证了这两种情况。按 Qwen3 的顺序，先 norm 再 RoPE。
+
+### 完整参考实现（Python 3）
+
+```python
+import torch
+
+
+def rmsnorm_last(x, weight, eps=1e-6):
+    """沿最后一维 d 做 RMSNorm（统计量用 fp32 算），weight 为 [d] 或 None（不缩放）。"""
+    x_fp32 = x.float()
+    inv_rms = torch.rsqrt(x_fp32.pow(2).mean(dim=-1, keepdim=True) + eps)
+    normed = (x_fp32 * inv_rms).to(x.dtype)
+    return normed if weight is None else normed * weight
+
+
+def apply_rope(x, cos, sin):
+    """对 x: [B, H, T, d] 做 RoPE，维度 (0, 1)、(2, 3)… 两两成对旋转。cos, sin: [T, d/2]。"""
+    seq_len, head_dim = x.shape[-2], x.shape[-1]
+    if head_dim % 2:
+        raise ValueError(f"RoPE requires an even head dim, got {head_dim}")
+    expected = (seq_len, head_dim // 2)
+    if cos.shape != expected or sin.shape != expected:
+        raise ValueError(f"cos and sin must be {expected}, "
+                         f"got {tuple(cos.shape)} and {tuple(sin.shape)}")
+    even, odd = x[..., 0::2], x[..., 1::2]
+    rotated_even = even * cos - odd * sin
+    rotated_odd = even * sin + odd * cos
+    # 把两半交错拼回 [.., d]：(e0, o0, e1, o1, ...)
+    return torch.stack((rotated_even, rotated_odd), dim=-1).flatten(-2)
+
+
+def qk_norm_then_rope(q, k, w_q, w_k, cos, sin):
+    """先各自做 QK RMSNorm，再做 RoPE。q: [B, H_q, T, d]，k: [B, H_kv, T, d]。"""
+    q = rmsnorm_last(q, w_q)
+    k = rmsnorm_last(k, w_k)
+    return apply_rope(q, cos, sin), apply_rope(k, cos, sin)
+```
+
+### 可执行测试
+
+```python
+def expect_value_error(fn, *args):
+    try:
+        fn(*args)
+    except ValueError:
+        return
+    raise AssertionError(f"{fn.__name__} should raise ValueError")
+
+
+def rope_tables(seq_len, head_dim):
+    positions = torch.arange(float(seq_len))[:, None]
+    inv_freq = 10000 ** (-torch.arange(0, head_dim, 2) / head_dim)
+    return torch.cos(positions * inv_freq), torch.sin(positions * inv_freq)
+
+
+torch.manual_seed(0)
+torch.set_num_threads(1)
+q = torch.randn(2, 4, 3, 4)  # H_q = 4
+k = torch.randn(2, 2, 3, 4)  # H_kv = 2，Q/K 的 head 数可以不同
+ones = torch.ones(4)
+cos, sin = rope_tables(3, 4)
+
+# 形状不变；单位权重下旋转不改变归一化之后的范数
+q_out, k_out = qk_norm_then_rope(q, k, ones, ones, cos, sin)
+assert q_out.shape == q.shape
+assert k_out.shape == k.shape
+assert torch.allclose(q_out.square().sum(-1),
+                      rmsnorm_last(q, ones).square().sum(-1), atol=1e-5)
+
+# 全零输入归一化后仍是 0（eps 防止除 0）
+assert torch.all(rmsnorm_last(torch.zeros_like(q), ones) == 0)
+
+# 归一化后每个 head 的 RMS 约为 1；weight=None 等价于全 1 权重
+assert torch.allclose(rmsnorm_last(q, None).square().mean(-1),
+                      torch.ones(2, 4, 3), atol=1e-4)
+assert torch.allclose(rmsnorm_last(q, None), rmsnorm_last(q, ones))
+
+# 位置 0 的 cos = 1、sin = 0，RoPE 不改变第一个 token
+assert torch.allclose(apply_rope(q, cos, sin)[:, :, 0], q[:, :, 0])
+
+# 顺序：gamma 全为 1 时两种顺序相同（旋转不改变 RMS），gamma 不均匀时就不同了
+gamma = torch.tensor([1.0, 2.0, 0.5, 3.0])
+norm_first = apply_rope(rmsnorm_last(q, ones), cos, sin)
+rope_first = rmsnorm_last(apply_rope(q, cos, sin), ones)
+assert torch.allclose(norm_first, rope_first, atol=1e-5)
+norm_first = apply_rope(rmsnorm_last(q, gamma), cos, sin)
+rope_first = rmsnorm_last(apply_rope(q, cos, sin), gamma)
+assert not torch.allclose(norm_first, rope_first, atol=1e-3)
+
+# 非法输入：head 维为奇数；cos/sin 的长度和 T 对不上
+expect_value_error(apply_rope, torch.randn(1, 1, 3, 3), cos, sin)
+expect_value_error(apply_rope, q, cos[:2], sin[:2])
+```
+
+### 复杂度与追问
+
+设 batch 为 B、长度为 T、head 维为 d，query 和 KV 的 head 数分别是 $H_q$、$H_{kv}$。归一化和旋转都是逐元素或沿 d 约简，时间 $O(B \cdot (H_q + H_{kv}) \cdot T \cdot d)$，输出也是同样大小。和投影 GEMM 相比，这两次额外约简的开销可以忽略。
+
+- 追问「GQA 时 K 能不能先 repeat 再 norm」：不行，见下文。先按 `H_kv` 份 norm 和 RoPE，需要时再 repeat。
+
 ## 题怎么来的
 
-Henry et al. 把 QK 归一化当训练稳定手段；Gemma 2 / Qwen3 写进了公开架构。Qwen3 明确：去掉 QKV bias，加上
-QK-Norm，并且 HuggingFace 实现是 RMSNorm 后再 RoPE。部分 Llama 变体（社区里常提到 Llama 4 一类）可能把
-norm 放在 RoPE 之后，和 Qwen 不是同一张计算图。Meta / 跨境 Qwen 岗白板要你写出顺序、轴、以及 $H_q\ne H_{\mathrm{kv}}$ 时有几份 $\gamma$。层输入那份 RMSNorm 仍在，见
-`coding-rmsnorm`；本题是注意力内部多出来的两份。
+Henry et al. 把 QK 归一化当作稳定训练的手段，Gemma 2 和 Qwen3 把它写进了公开架构。Qwen3 的报告明确说去掉了 QKV bias、加上 QK-Norm，HuggingFace 实现里是先 RMSNorm 再 RoPE。部分 Llama 变体（社区里常提到 Llama 4 一类）可能把 norm 放在 RoPE 之后，和 Qwen 不是同一张计算图。Meta 和跨境 Qwen 岗的白板会要你写清顺序、约简的轴，以及 $H_q\ne H_{\mathrm{kv}}$ 时有几份 $\gamma$。层输入处的那份 RMSNorm 仍然在，见 `coding-rmsnorm`；本题说的是注意力内部多出来的两份。
 
 ## 沿 head dim 归一，再旋转
 
-$Q$ 形状 `[B, H_q, T, D]`，$K$ 形状 `[B, H_kv, S, D]`。QK-Norm 的 reduction 是最后一维 $D$，每个 head 自己的 RMS，不在 head 之间混：
+$Q$ 的形状是 `[B, H_q, T, D]`，$K$ 是 `[B, H_kv, S, D]`。QK-Norm 沿最后一维 $D$ 约简，每个 head 算自己的 RMS，不在 head 之间混：
 
 $$
 \mathrm{RMS}(x)=\sqrt{\frac{1}{D}\sum_{i=1}^{D}x_i^2+\varepsilon},\qquad
@@ -45,57 +165,31 @@ $$
 \hat k=\gamma_k\odot\frac{k}{\mathrm{RMS}(k)}.
 $$
 
-$\gamma_q\in\mathbb{R}^{D}$ 广播到所有 query head（有的实现做成 `[H_q, D]` per-head
-参数，Qwen3 常用一份 $D$）。没有 bias $\beta$。$V$ 不做。然后
+$\gamma_q\in\mathbb{R}^{D}$ 广播到所有 query head。有的实现把它做成 `[H_q, D]` 的 per-head 参数，Qwen3 通常只用一份长度为 $D$ 的。没有 bias $\beta$，$V$ 也不做归一化。之后再旋转：
 
 $$
 q',k'=\mathrm{RoPE}(\hat q,\hat k).
 $$
 
-先旋再 norm 会把已经编进角度的分量再拉回单位 RMS，位置几何变了。公开 Qwen3 权重按「norm → RoPE」存；对不齐就是 silent
-错，和 RoPE 偶奇对 / half-rotate 搞混是同一类。Decode 时 $T=1$，RMS 仍沿 $D$，不沿 cache 长度。
+公开的 Qwen3 权重是按「norm → RoPE」训练出来的。顺序反了不会报错，但 $\gamma$ 作用的坐标系变了（见上面练习里的顺序测试），结果和 checkpoint 对不上。这种错误和把 RoPE 的相邻配对与 half-rotate 配对搞混是同一类，都不容易发现。decode 时 $T=1$，RMS 仍然沿 $D$ 算，不沿 cache 长度算。
 
-```python
-import torch
-
-def rmsnorm_last(x, weight, eps=1e-6):
-    # x: [B, H, T, D]
-    z = x.float()
-    inv = torch.rsqrt(z.pow(2).mean(dim=-1, keepdim=True) + eps)
-    y = (z * inv).to(x.dtype)
-    return y * weight if weight is not None else y
-
-def apply_rope(x, cos, sin):
-    xe, xo = x[..., 0::2], x[..., 1::2]
-    c, s = cos[None, None, :, :], sin[None, None, :, :]
-    ye = xe * c - xo * s
-    yo = xe * s + xo * c
-    return torch.stack((ye, yo), dim=-1).flatten(-2)
-
-def qk_norm_then_rope(q, k, w_q, w_k, cos, sin):
-    q = rmsnorm_last(q, w_q)
-    k = rmsnorm_last(k, w_k)
-    return apply_rope(q, cos, sin), apply_rope(k, cos, sin)
-```
-
-GQA：`k` 不要先 `repeat_kv` 再 norm，否则 $H_{\mathrm{kv}}$ 份参数被复制成 $H_q$ 份，和训练时的
-`k_norm` 对不上。正确顺序是 norm $K$（$H_{\mathrm{kv}}$）→ RoPE → 需要时再 repeat，见
-`coding-gqa-repeat`。Cache 里写已经 norm+RoPE 的 $K$，decode 不要对历史 $K$ 再 norm
-一遍。
+GQA 时不要先对 `k` 做 `repeat_kv` 再 norm，否则 $H_{\mathrm{kv}}$ 份的计算被复制成 $H_q$ 份，如果用的是 per-head 参数，还会和训练时的 `k_norm` 对不上。正确顺序是：对 $H_{\mathrm{kv}}$ 份 $K$ 做 norm，再做 RoPE，需要时最后 repeat，见 `coding-gqa-repeat`。cache 里存的是已经 norm 加 RoPE 之后的 $K$，逐 token 生成（decode）时不要对历史 $K$ 再 norm 一遍。
 
 ## 为什么要它，和层 RMSNorm 别并成一个
 
-QK 点积没有自己的归一化时，logit 尺度随 $\|W_Q\|,\|W_K\|$ 涨，softmax 变尖，训练容易炸。QK-Norm 把每个 head
-的 $q,k$ 钉在相近 RMS 上，相当于给注意力温度加了锚。层上的 RMSNorm 管的是残差流 `[B, T,
-D_{\mathrm{model}}]`，轴和对象都不同，不能删掉其中一个冒充另一个。
+QK 点积没有自己的归一化时，logit 的尺度会随 $\|W_Q\|,\|W_K\|$ 增长，softmax 越来越尖，训练容易不稳定。QK-Norm 把每个 head 的 $q,k$ 固定在相近的 RMS 上，相当于给注意力温度加了一个锚。层上的 RMSNorm 管的是残差流 `[B, T, D_model]`，约简的轴和作用对象都不同，不能删掉其中一个来代替另一个。
 
-$\varepsilon$ 与层 norm 可以不同；实现里常 $10^{-6}$。统计在 fp32 做。Apple 端侧会问多两次 reduction
-值不值：相对 GEMM 可忽略，换来的是能训更大 LR / 更深的注意力。MLA 一类不物化完整 $q,k$ 的结构不一定套得上，面试说到「这是
-MHA/GQA 的补丁」即可。
+$\varepsilon$ 可以和层 norm 的不同，实现里常用 $10^{-6}$，统计量在 fp32 里算。Apple 端侧面试可能会问多两次约简值不值：相对 GEMM 的开销可以忽略，换来的是能用更大的学习率、训更深的注意力。MLA 这类不显式生成完整 $q,k$ 的结构不一定能直接套用，面试里说明「这是给 MHA/GQA 打的补丁」就够了。
 
 ## 追问
 
-- **一定要在 RoPE 前吗？** Qwen3 / 常见 Gemma 路径是前。Llama 4 一类公开讨论是后。读权重前看 `q_norm` 插在哪，不要赌。
-- **$V$ 要不要 norm？** 标准 QK-Norm 不要。$V$ 是被加权的内容，不是点积的两边。
-- **和 QK 的 $1/\sqrt{D}$ 重复吗？** 不重复。Scale 是常数；RMSNorm 按样本、按 head 变。两者都留。
-- **decode 历史 $K$ 还 norm 吗？** 写入时做过就不要再做。对 cache 再 norm 等于用「当前 $\gamma$」去改旧向量，逐步生成和满量 prefill 会对不齐。
+- **一定要在 RoPE 之前吗？** Qwen3 和常见的 Gemma 路径是在之前，公开讨论里 Llama 4 一类是在之后。加载权重前先看 `q_norm` 插在哪里，不要猜。
+- **$V$ 要不要 norm？** 标准 QK-Norm 不做。$V$ 是被加权求和的内容，不是点积的两边。
+- **和点积的 $1/\sqrt{D}$ 缩放重复吗？** 不重复。缩放是常数，RMSNorm 随每个样本、每个 head 变化，两者都要保留。
+- **decode 时历史 $K$ 还要 norm 吗？** 写入 cache 时做过了，就不要再做。对 cache 再 norm 一次，等于用当前的 $\gamma$ 去改旧向量，逐步生成的结果会和一次性输入预填充（prefill，即处理整段输入并建立缓存）的结果对不齐。
+
+## 相关题
+
+- [[coding-rmsnorm]]：残差流上的层 RMSNorm，公式和本题相同，但约简对象是 `[B, T, D_model]`，两者不能互相替代。
+- [[coding-layernorm]]：带减均值和 $\beta$ 的完整 LayerNorm，用来说明 QK-Norm 为什么选 RMSNorm。
+- [[coding-rope]]：QK norm 之后接的就是这一步旋转，decode 位置取 cache 长度。

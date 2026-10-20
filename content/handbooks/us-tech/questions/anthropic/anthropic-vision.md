@@ -4,9 +4,7 @@ section: anthropic
 order: 26
 level: A
 title: Anthropic：Claude vision 图怎么编码、多图怎么喂，截图 agent 卡在哪？
-quick: >-
-  图按 28 像素一块切成视觉 token，数量跟分辨率走，不跟「一张图」走。超长边会先缩小；computer use 的
-  tool_result 截图例外，超限直接拒，要你自己缩。多图当有序块，先标 Image 1。截图 agent 的坐标必须对上缩小后的图。
+quick: "图按 28 像素一块切成视觉 token，数量跟分辨率走，不跟「一张图」走。超长边会先缩小；computer use 的 tool_result 截图例外，超限直接拒，要你自己缩。多图当有序块，先标 Image 1。截图 agent 的坐标必须对上缩小后的图。"
 tags:
   - Anthropic
   - Vision
@@ -45,7 +43,7 @@ Shape 口头报：文本 $[B, T_{\mathrm{txt}}, D]$，视觉 $[B, T_{\mathrm{vis
 
 条数墙（会变，面试报数量级并说查文档）：claude.ai 一条约 20 张；API 在 200k 窗口上大约 100 张/请求，更长窗口可以到几百。整请求还有字节上限。超过约 20 张 `image`（含历史回放、嵌在 `tool_result` 里的截图；Bedrock / GCP 上 PDF 页图也计入）时，每张还有更严的边长限制，文档建议任一边不超过约 2000 px，否则 many-image 校验失败。多页 PDF 不要靠自己拆成一百张图硬塞，走 `anthropic-pdf` 的 document 块。
 
-多轮别反复打 base64：历史越长，payload 和 TTFT 一起涨。Files API 上传一次，后面只传 `file_id`。静态系统提示仍可打 `anthropic-prompt-cache`；图字节本身每次变就 miss，不要指望「同一张截图换了 JPEG 质量还能命中」。文档还写：Claude 不读 EXIF / 元数据，朝向、拍摄时间要你自己转正后再送。URL 源适合 CDN；内网图不要把带签名的 URL 写进会进日志的请求体。
+多轮别反复打 base64：历史越长，payload 和 首个 token 的等待时间（TTFT） 一起涨。Files API 上传一次，后面只传 `file_id`。静态系统提示仍可打 `anthropic-prompt-cache`；图字节本身每次变就 miss，不要指望「同一张截图换了 JPEG 质量还能命中」。文档还写：Claude 不读 EXIF / 元数据，朝向、拍摄时间要你自己转正后再送。URL 源适合 CDN；内网图不要把带签名的 URL 写进会进日志的请求体。
 
 ## 截图 agent：分辨率、坐标、历史
 
@@ -56,15 +54,15 @@ Computer use 的观察是翻拍式截图，不是视频。Anthropic 研究文写
 3. 历史截图要丢。每步一张约 1568 token 的图，二十步就三万视觉 token。只留最近 1–2 张，旧的改成「已执行 click at …」的文本。这会改消息前缀，缓存点只能钉在 tools / system，见 `anthropic-tool-roundtrip`。
 4. 屏幕是不可信输入。像素里的字能当注入，见 `anthropic-mm-harm` 和 `anthropic-prompt-injection`。敏感动作仍要产品层确认，见 `anthropic-computer-use`。
 
-口算例子：1920×1080 在标准档会先缩到大约 1456×819，再按 28 切，大约 52×30 块，接近 1560 视觉 token。同一张图在高分辨率档可以到两千多。agent 循环里这是每一步的固定税，比「再加一句 system」贵得多。
+口算例子：1920×1080 在标准档会先缩到大约 1456×819，再按 28 切，大约 52×30 块，接近 1560 视觉 token。同一张图在高分辨率档可以到两千多。agent 循环里这是每一步的固定开销，比「再加一句 system」贵得多。
 
-坐标映射：$x_{\mathrm{os}}=x_{\mathrm{model}}\cdot W_{\mathrm{os}}/W_{\mathrm{model}}$，宽高分别乘，不要假设正方形缩放。缩完再送、点完再截图回读，比信一次 bbox 稳。Files API 的 `file_id` 只省传输，不省 $T_{\mathrm{vis}}$。
+坐标映射：$x_{\mathrm{os}}=x_{\mathrm{model}}\cdot W_{\mathrm{os}}/W_{\mathrm{model}}$，宽高分别乘，不要假设正方形缩放。缩完再送、点完再截图回读，比信一次 目标框 稳。Files API 的 `file_id` 只省传输，不省 $T_{\mathrm{vis}}$。
 
-错法：把 4K 桌面原样塞进每一步；用缩略图点图标；多图不编号导致「左边那张」指错；用 URL 拉内网截图却把签名 URL 泄漏进日志。和 `anthropic-tool-use` 同一句：模型提议点击，宿主按缩小后的坐标系执行，执行权不在像素里。
+常见误区是：把 4K 桌面原样塞进每一步；用缩略图点图标；多图不编号导致「左边那张」指错；用 URL 拉内网截图却把签名 URL 泄漏进日志。和 `anthropic-tool-use` 同一句：模型提议点击，宿主按缩小后的坐标系执行，执行权不在像素里。
 
 ## 追问
 
 - **GIF 能动吗？** 文档：动画不支持，只用第一帧。时间线任务自己抽帧当多图，并标明次序。
 - **和 PDF 谁贵？** 原生 PDF 是「每页一张图 + 文本层」，见 `anthropic-pdf`。纯截图书页没有文本层，引用落不了句。
-- **坐标能当接地真值吗？** 不能。官方说空间输出是近似。点按钮要截图回读，不要信一次框。
+- **坐标能当定位真值吗？** 不能。官方说空间输出是近似。点按钮要截图回读，不要信一次框。
 - **人像识别？** 可接受使用政策：不能用来指认照片里的人。产品要拒，不是靠模型「看起来像不会」。

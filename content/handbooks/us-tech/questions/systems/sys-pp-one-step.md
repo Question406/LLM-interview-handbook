@@ -57,4 +57,4 @@ def one_f1b(forward, backward, opt, num_micro, num_stages, stage):
 
 **梯度累积和流水线叠在一起，step 几次？** 仍是每个 global step 一次。流水线的 $M$ 和累积的 $K$ 都只增加「加进这份梯度的 microbatch 数」。
 
-**最后一级先算完 loss，能不能先更新最后一级？** 不能。前面的 stage 还在用旧权重产生活化。各 stage 的 `step` 要对齐到同一次迭代，否则下一圈前向和反向的权重版本错开。
+**最后一级先算完 损失（loss），能不能先更新最后一级？** 不能。前面的 stage 还在用旧权重产生激活。各 stage 的 `step` 要对齐到同一次迭代，否则下一圈前向和反向的权重版本错开。

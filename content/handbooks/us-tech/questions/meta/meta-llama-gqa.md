@@ -4,9 +4,7 @@ section: meta
 order: 1
 level: A
 title: Meta / Llama：为什么 70B 用 GQA？和 MHA 比 decode 省在哪？
-quick: >-
-  Llama 2 70B 公开配置是 $32$ 个 query head、 $8$ 个 KV head。KV cache 大约降到 MHA 的 $1/4$，decode
-  带宽跟着降。质量用 grouped 的 KV 保住，不走到 MQA 的极端共享。这是 Meta 推理岗的默认开口。
+quick: "Llama 2 70B 公开配置是 $32$ 个 query head、 $8$ 个 KV head。KV cache 大约降到 MHA 的 $1/4$，逐 token 生成（decode） 带宽跟着降。质量用 grouped 的 KV 保住，不走到 MQA 的极端共享。这是 Meta 推理岗的默认开口。"
 tags:
   - Meta
   - Llama
@@ -35,7 +33,7 @@ $$
 2 \cdot L \cdot T \cdot H_{\mathrm{kv}} \cdot d_{\mathrm{head}} \cdot \mathrm{bytes}
 $$
 
-$H_{\mathrm{kv}}$ 从 $32$ 变 $8$，cache 和 decode 读带宽大约 $\times 1/4$。Decode 每步几乎不算大 GEMM，时间砸在读历史 KV 上，所以这个 $1/4$ 是墙钟，不只是显存表上的数。
+$H_{\mathrm{kv}}$ 从 $32$ 变 $8$，cache 和 逐 token 生成（decode） 读带宽大约 $\times 1/4$。Decode 每步几乎不算大 GEMM，时间砸在读历史 KV 上，所以这个 $1/4$ 是实际耗时，不只是显存表上的数。
 
 MQA（$H_{\mathrm{kv}}=1$）还能再省 $8$ 倍，但 70B 这种质量敏感的对话模型，Meta 选了 GQA。论文明确写 GQA 是为了在不显著掉质量的前提下加快推理。不要答成「GQA 一定比 MHA 准」。
 
@@ -52,3 +50,10 @@ Llama 2 是 **训练时就是 GQA**，不是 MHA 训完再 merge。现场若问�
 - **8 这个数怎么来的？** 公开论文没把搜索过程写死。面试答：在 $1$ 和 $H_q$ 之间扫，$8$ 是质量和带宽的工作点。不要编造「必须是 $4$ 的幂」除非你做过消融。
 - **和 MoE 专家并行冲突吗？** 不直接冲突。GQA 改的是注意力 KV；MoE 改的是 FFN 路由。显存上两者叠加，需要一起算。
 - **Llama 4 / 后续还用 GQA 吗？** 以当时公开技术报告为准。原理不变：decode 带宽跟 $H_{\mathrm{kv}}$ 走。
+
+## 相关题
+
+- [[google-gqa-mqa]]：Google 问法，把 MHA、MQA、GQA 三档放在一起比，不绑定某个具体模型配置。
+- [[meta-gqa-kernel]]：同为 Meta 问法，接着要你写 GQA：cache 只存 $H_{\mathrm{kv}}$ 组，kernel 里按 `h_q // g` 取 KV。
+- [[apple-ondevice-kv]]：同一个 KV 字节公式搬到手机端，墙变成 DRAM 和 ANE，还叠了 8-bit cache。
+- [[us-llm-paper-stack]]：GQA 和 Llama 都在面试前的精读论文栈里，那张说明要读到能默写关键式。

@@ -5,7 +5,7 @@ order: 1
 level: A
 title: Google DeepMind：分子（或其它科学）数据怎么做 ML design？
 quick: >-
-  先钉任务：预测、生成还是检索；再钉监督信号、泄漏和评测单位（分子 / 构象 / scaffold）。模型选择（图网络、3D
+  先明确任务：预测、生成还是检索；再明确监督信号、泄漏和评测单位（分子 / 构象 / scaffold）。模型选择（图网络、3D
   encoder、语言模型）放在数据约束后面。DeepMind 这轮要的是实验设计，别套 ResNet。
 tags:
   - Google
@@ -32,7 +32,7 @@ sources:
 - 来源：一亩三分地 2025 帖「DeepMind - ML Design 面」。公开可见部分：chemistry molecule dataset，字段从 `molecu` 截断；评分 Average / Waitlist
 - 同系列：DeepMind coding 非 LC，有候选人说是游戏策略 + BFS/DFS
 
-分子字段被论坛隐藏了，下面按科学 ML design 的通用骨架写。现场以面试官给的 schema 为准，不要背 AlphaFold 当万能答案。
+分子字段被论坛隐藏了，下面按科学 ML design 的通用骨架写。现场以面试官给的 字段和类型规范（schema） 为准，不要背 AlphaFold 当万能答案。
 
 ## 先问数据单位，再选模型
 

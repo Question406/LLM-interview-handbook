@@ -37,9 +37,9 @@ NVIDIA 推理 / 系统面常问「模型怎么在 GPU 上跑起来」，不是�
 
 来一个请求就 launch 一次 GPU，batch 为 1 把 Tensor Core 浪费掉。Dynamic batcher：请求在队列里等到凑够 `preferred_batch_size`、或超过 `max_queue_delay_microseconds`、或碰到 `max_batch_size`，再送进后端。形状、dtype 要对齐；动态维要用 padding 或 backend 自己的 ragged 支持。这是延迟换吞吐：p50 可能几乎不变，p99 会被队列延迟抬起来。SLA 是 20ms 的交互接口，delay 开 8ms 就要小心。
 
-适合：图像、embedding、encoder、LLM prefill 这种计算墙、batch 越大越满。不适合：已经是延迟墙、而且请求长度差很多、padding 浪费算力的场景。LLM decode 每步 query 长度是 1，经典动态 batch 还要求「同一时刻一群请求一起进、一起出」，短序列要等长序列，这正是 in-flight / continuous batching 要打破的。
+适合：图像、embedding、encoder、LLM 输入预填充（prefill，即处理输入并建立缓存） 这种计算墙、batch 越大越满。不适合：已经是延迟墙、而且请求长度差很多、padding 浪费算力的场景。LLM 逐 token 生成（decode） 每步 query 长度是 1，经典动态 batch 还要求「同一时刻一群请求一起进、一起出」，短序列要等长序列，这正是 in-flight / continuous batching 要打破的。
 
-配置里我还会看是否保序、有没有优先级队列、以及是否按输入长度分桶。分桶能减 padding，等于间接减气泡。
+配置里我还会看是否保序、有没有优先级队列、以及是否按输入长度分组统计。分组统计能减 padding，等于间接减气泡。
 
 ## 多模型和 GPU 共享
 

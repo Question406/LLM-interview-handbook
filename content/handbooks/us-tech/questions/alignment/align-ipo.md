@@ -4,9 +4,7 @@ section: alignment
 order: 14
 level: A
 title: 对齐：IPO 相对 DPO
-quick: >-
-  DPO 把 BT 概率拟合到 $\sigma(\beta\Delta)$，偏好接近确定时会把间隔往无穷推。IPO 用平方损失把同一 log 比回归到
-  $1/(2\tau)$，过拟合确定性标签更轻。$\tau$ 仍是 KL 温度，不是第二套隐式奖励定义。
+quick: "直接偏好优化（DPO） 把 BT 概率拟合到 $\\sigma(\\beta\\Delta)$，偏好接近确定时会把间隔往无穷推。IPO 用平方损失把同一 log 比回归到 $1/(2\\tau)$，过拟合确定性标签更轻。$\\tau$ 仍是 KL 温度，不是第二套隐式奖励定义。"
 tags:
   - DeepMind
   - IPO
@@ -28,7 +26,7 @@ sources:
     type: primary
 ---
 
-DeepMind 的 IPO 论文是冲着「从偏好学策略」的目标函数去的，不是又一个刷榜变体。对齐岗在 DPO 之后追 IPO，是看你有没有注意到 logistic 在确定性 pair 上的病态。先把 `align-dpo` 的隐式奖励写对，再谈平方损失改了哪一项。
+DeepMind 的 IPO 论文是冲着「从偏好学策略」的目标函数去的，不是又一个刷榜变体。对齐岗在 直接偏好优化（DPO） 之后追 IPO，是看你有没有注意到 logistic 在确定性 pair 上的病态。先把 `align-dpo` 的隐式奖励写对，再谈平方损失改了哪一项。
 
 ## DPO 在确定性偏好上会怎样
 
@@ -38,11 +36,11 @@ $$
 \Delta=\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}.
 $$
 
-若数据里几乎总是 $y_w\succ y_l$（标注员很一致，或你用 RM 造的硬间隔），BT 的最大似然希望 $\Delta\to\infty$。训练上就是 rejected 被打穿、chosen 间隔被无限拉大，KL 狂飙。这是目标的性质，不是「忘了加权重衰减」。
+若数据里几乎总是 $y_w\succ y_l$（标注员很一致，或你用 奖励模型（RM） 造的硬间隔），BT 的最大似然希望 $\Delta\to\infty$。训练上就是 rejected 的概率被压到极低、chosen 间隔被无限拉大，KL 狂飙。这是目标的性质，不是「忘了加权重衰减」。
 
 Azar 等人指出：你真正想拟合的往往是偏好概率本身，而不是一个无界的 BT 奖励。把映射从 $\sigma$ 换成恒等，再在 log 比上做回归，就得到 IPO。
 
-## IPO：把间隔钉在有限靶上
+## IPO：让间隔回归到有限目标
 
 记 $h_\theta=\Delta$（同一个 implicit log 比）。IPO 损失是
 
@@ -59,7 +57,7 @@ def ipo_loss(pi_w, pi_l, ref_w, ref_l, tau):
     return ((h - target) ** 2).mean()
 ```
 
-和 DPO 一样：只在 response 上求和；$\log Z(x)$ 在差里消掉。换 token 平均还是序列和，等于偷改 $\tau$，见 `align-dpo` 对 $\beta$ 的同一警告。
+和 DPO 一样：只在 response 上求和；$\log Z(x)$ 在差里消掉。换成 token 平均还是序列和，等于偷改 $\tau$，见 `align-dpo` 对 $\beta$ 的同一警告。
 
 面试对照：
 
@@ -83,4 +81,11 @@ IPO 不是「不需要参考模型」。没有 $\pi_{\mathrm{ref}}$，$h$ 的定
 - **$\tau$ 和 $\beta$ 能混用吗？** 量纲同类，数值不能抄。换损失先重扫，并盯 KL 与长度。
 - **IPO 还要单独加 token KL 吗？** 目标里已经相对 $\pi_{\mathrm{ref}}$。再减一项要声明你改了目标。
 - **为什么不直接 clip $\Delta$？** 硬 clip 是优化 hack；IPO 把有限间隔写进目标。
-- **和 ORPO 一句话？** ORPO 把 SFT 和偏好并进 odds ratio，参考模型可选。IPO 仍显式要 ref，改的是偏好项形状。
+- **和 ORPO 一句话？** ORPO 把 监督微调（SFT） 和偏好并进 odds ratio，参考模型可选。IPO 仍显式要 ref，改的是偏好项形状。
+
+## 相关题
+
+- [[align-dpo]]：IPO 改的就是这里的 DPO 目标，先弄清隐式奖励和 $\beta$ 再看 IPO 改了哪一处。
+- [[coding-dpo-weighted]]：白板写 DPO 梯度，卡末追问给出了 IPO 的梯度系数，可以拿来验算。
+- [[msft-orpo]]：同样是 DPO 的变体，ORPO 改的是要不要参考模型，IPO 改的是偏好项的形状。
+- [[align-kto]]：KTO 改的是数据形式（不要 pair），和 IPO、ORPO 放在一起比最清楚。

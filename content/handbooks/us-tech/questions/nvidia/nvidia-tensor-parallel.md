@@ -38,7 +38,7 @@ NVIDIA 训练 / CUDA / NeMo 岗爱从 Megatron 一层往下挖。万亿怎么切
 
 ## 一层里切什么
 
-输入 $[B, T, D]$。列并行把 $W$ 沿输出维切开，每卡一份 $[D, D/N]$，输入在 TP 组内是完整的（或 all-gather 之后完整），输出 $[B, T, D/N]$，这段没有 all-reduce。行并行把 $W$ 沿输入维切开，输入已经是分片 $[B, T, D/N]$，局部 GEMM 得到完整宽度的 partial，必须对 partial 求和才得到真输出。
+输入 $[B, T, D]$。列并行把 $W$ 沿输出维切开，每卡一份 $[D, D/N]$，输入在 TP 组内是完整的（或 all-gather 之后完整），输出 $[B, T, D/N]$，这段没有 all-reduce。行并行把 $W$ 沿输入维切开，输入已经是分片 $[B, T, D/N]$，局部 GEMM 得到完整宽度的 partial，必须对 partial 求和才得到完整输出。
 
 Transformer 的默认接法（Megatron 论文）：
 
@@ -48,7 +48,7 @@ Transformer 的默认接法（Megatron 论文）：
 4. MLP 上投影（$D\to 4D$）：列并行，GeLU 本地。
 5. MLP 下投影（$4D\to D$）：行并行，正向 all-reduce ②。
 
-一层正向就是这两次。反向对称：列并行的输入梯度要再 reduce 一次，所以论文说 forward / backward 各两次 all-reduce。把「QKV 切完就要 all-reduce」说出来是常见错法：QKV 刚切完每卡算的是自己的 head，还没有东西需要对齐。
+一层正向就是这两次。反向对称：列并行的输入梯度要再 reduce 一次，所以论文说 forward / backward 各两次 all-reduce。把「QKV 切完就要 all-reduce」说出来是常见误区：QKV 刚切完每卡算的是自己的 head，还没有东西需要对齐。
 
 ```python
 # x: [B, T, D]，已在 TP 组内对齐
@@ -73,7 +73,7 @@ return ln(y + h)
 
 两次 all-reduce 的 payload 都是 $[B, T, D]$ 量级，延迟敏感。NVLink 域内（一台 8 卡 $N=8$）通常划得来；跨节点做大 TP，PCIe / IB 延迟会把 kernel 切碎，MFU 掉。所以常见是节点内 TP，节点间 PP / DP。集合算法见 `nvidia-nccl-allreduce`。
 
-粗算：bf16 下 $B=4,T=2048,D=8192$，一次 all-reduce 大约 $134\,\mathrm{MB}$；NVLink 六百 GB/s 只要零点几毫秒。同层 MLP 的 FLOPs 高一个数量级，单节点往往还是计算墙。一上 IB，带宽掉一位，TP 就可能变成通信墙。面试落到「为什么 TP 不跨机」，用这组数量级比背「NVLink 更快」有用。
+粗算：bf16 下 $B=4,T=2048,D=8192$，一次 all-reduce 大约 $134\,\mathrm{MB}$；NVLink 六百 GB/s 只要零点几毫秒。同层 MLP 的 FLOPs 高一个数量级，单节点往往还是计算瓶颈。一上 IB，带宽低一个数量级，TP 就可能变成通信瓶颈。面试落到「为什么 TP 不跨机」，用这组数量级比背「NVLink 更快」有用。
 
 ## 追问
 

@@ -4,10 +4,7 @@ section: amazon
 order: 13
 level: A
 title: Amazon：Titan embedding 怎么评（MTEB 坑、领域），和 RAG 是什么关系？
-quick: >-
-  MTEB 是八类任务的公开榜，没有一个模型全赢；RAG 只关心检索切片和你的语料，不关心 STS 平均分。Titan V2 公开可出 1024 /
-  512 / 256 维，短维在检索上能保住大部分分数。索引和查询必须同一模型、同一维。领域要自己做金标，不要把英文维基榜当 Seller
-  政策。
+quick: "MTEB 是八类任务的公开榜，没有一个模型全赢；检索增强生成（RAG） 只关心检索切片和你的语料，不关心 STS 平均分。Titan V2 公开可出 1024 / 512 / 256 维，短维在检索上能保住大部分分数。索引和查询必须同一模型、同一维。领域要自己做金标，不要把英文维基榜当 Seller 政策。"
 tags:
   - Amazon
   - Titan
@@ -32,7 +29,7 @@ sources:
     type: primary
 ---
 
-RAG / Knowledge Bases 岗会把 embedding 问成「是不是 MTEB 第一」。Muennighoff 等人的 MTEB 论文核心结论正好相反：**没有一种嵌入方法在所有任务上称王**。STS 强不代表检索强。Titan V2 的公开卖点是 RAG：默认 1024 维，可选 512 / 256，AWS 写 512 维大约留住 99% 检索分、256 维大约 97%，用来换存储和延迟。生成侧怎么评见 `amazon-titan-eval`；本题只评向量。
+检索增强生成（RAG） / Knowledge Bases 岗会把 embedding 问成「是不是 MTEB 第一」。Muennighoff 等人的 MTEB 论文核心结论正好相反：**没有一种嵌入方法在所有任务上称王**。STS 强不代表检索强。Titan V2 的公开卖点是 RAG：默认 1024 维，可选 512 / 256，AWS 写 512 维大约留住 99% 检索分、256 维大约 97%，用来换存储和延迟。生成侧怎么评见 `amazon-titan-eval`；本题只评向量。
 
 ## MTEB 能看什么，不能当门禁
 
@@ -57,7 +54,7 @@ AWS 自己的 responsible AI 卡也用 MTEB 讲稳健性，并单独报检索 nD
 
 领域评测我会做一份「应用 MTEB」：正例是该返回的条款 / 商品 / FAQ，负例是易混的过期条款和邻类目。报 Recall@5、nDCG@10，再切标识符 vs 语义 vs 多语言。冷启动目录没有行为信号时，embedding 更重要，见 `amazon-cold-start`、`amazon-two-tower`（双塔是另一套检索，别和 Titan 句向量混为一个塔）。
 
-错法：只报 MTEB average；query 用指令型模型、文档用 Titan；用生成模型的 BLEU 证明 embedding 好；把 256 维当免费午餐却不在自己的集上复测那 97%。
+常见误区是：只报 MTEB average；query 用指令型模型、文档用 Titan；用生成模型的 BLEU 证明 embedding 好；把 256 维当免费午餐却不在自己的集上复测那 97%。
 
 ```python
 body = json.dumps({

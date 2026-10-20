@@ -4,10 +4,9 @@ section: coding
 order: 8
 level: S
 title: 白板：温度 → top-k → nucleus 的顺序，实现细节
-quick: >-
-  先把非法 token 打成 $-\infty$，再除温度 $T$，稳定 softmax，然后 top-k，再在剩余质量上做 nucleus。先截断再除
-  $T$ 会得到另一套分布。至少留一个 token；$T\le 0$ 或 $p\le 0$ 走 greedy。
+quick: "先把非法 token 打成 $-\\infty$，再除温度 $T$、稳定 softmax，然后 top-k，最后在剩余质量上做 nucleus；$T=0$ 或 $p=0$ 走 greedy。"
 tags:
+  - 完整编程练习
   - Coding
   - Sampling
   - Nucleus
@@ -15,7 +14,7 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-10-18
 sources:
   - title: The Curious Case of Neural Text Degeneration
     url: https://arxiv.org/abs/1904.09751
@@ -28,65 +27,177 @@ sources:
     type: primary
 ---
 
+## 完整编程练习（手册重构版）
+
+> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，CPU 上验证；没有测 GPU、batch 或性能。
+
+### 题面、接口与约束
+
+- `sample_temp_k_p(logits, T, k, p, rng, mask=None) -> int`：对一维 logits `[V]` 采样一个 token id。顺序固定为：合法性 mask → 除以温度 `T` → top-k → 在重新归一化的分布上做 top-p → 从剩余 token 里按概率抽样。
+- `T >= 0`，`0 <= p <= 1`，`k` 是 `None`（不做 top-k）或正整数；`mask` 是与 logits 同形状的布尔数组，`True` 表示允许。
+- `T == 0` 或 `p == 0` 时不抽样，直接返回合法 token 里 logit 最大的那个。
+- 概率并列时按 token id 从小到大排；全部 token 被 mask 时抛 `ValueError`，参数越界、logits 含 NaN 或 $+\infty$ 时也抛 `ValueError`。
+
+### 输入输出示例
+
+```text
+sample_temp_k_p([0, 0, 0], T=1, k=1, p=1, rng)                          -> 0   # 三个并列，top-1 只留最小 id
+sample_temp_k_p([2, 1, 0], T=0, k=None, p=1, rng, [False, False, True]) -> 2   # 只有 token 2 合法
+sample_temp_k_p([1, 2], T=1, k=None, p=1, rng, [False, False])         -> ValueError
+```
+
+### 解题思路与正确性
+
+mask 必须最先做。被禁的 token 不应该参与温度缩放、top-k 排名和 top-p 累计；如果全部被禁，`np.argmax` 会对全 $-\infty$ 的数组静默返回 0，所以要在入口显式报错。
+
+温度缩放前先减去最大值，再除以 `T`。这样极小的正 `T`（如 `1e-10`）下，最大 logit 变成 0，其他 logit 变成很大的负数，`exp` 不会上溢成 `inf`。
+
+top-k 用稳定排序在 logit 上选前 `k` 个，其余置 $-\infty$。top-p 在 top-k 之后重新归一化的概率上做：按概率降序累计，`searchsorted(..., side="left") + 1` 找到第一个让累计质量达到 `p` 的位置，并把它也保留下来，所以核里至少有一个 token。最后对核内概率再归一化，交给 `rng.choice`。
+
+### 完整参考实现（Python 3）
+
+```python
+import math
+
+import numpy as np
+
+
+def sample_temp_k_p(logits, T, k, p, rng, mask=None):
+    """按 mask → 温度 → top-k → top-p 的顺序采样一个 token id。
+
+    T == 0 或 p == 0 时返回合法 token 中 logit 最大者；并列时取较小的 id。
+    """
+    scores = np.asarray(logits, dtype=float).copy()
+    if scores.ndim != 1 or scores.size == 0:
+        raise ValueError(f"logits must be a non-empty 1-D array, got shape {scores.shape}")
+    if np.isnan(scores).any() or np.isposinf(scores).any():
+        raise ValueError("logits must not contain NaN or +inf")
+    if not math.isfinite(T) or T < 0:
+        raise ValueError(f"temperature must be finite and >= 0, got {T}")
+    if not math.isfinite(p) or not 0 <= p <= 1:
+        raise ValueError(f"top_p must be in [0, 1], got {p}")
+    if k is not None and (type(k) is not int or k < 1):
+        raise ValueError(f"top_k must be None or a positive int, got {k!r}")
+
+    if mask is not None:
+        if np.shape(mask) != scores.shape:
+            raise ValueError(f"mask shape {np.shape(mask)} != logits shape {scores.shape}")
+        scores = np.where(mask, scores, -np.inf)
+    if not np.isfinite(scores).any():
+        raise ValueError("every token is masked out")
+
+    if T == 0 or p == 0:
+        return int(np.argmax(scores))  # argmax 并列时返回最小下标
+
+    # 先减 max 再除 T：极小的正 T 下也不会上溢
+    scores = (scores - scores.max()) / T
+
+    # 稳定排序：分数并列时较小的 token id 排在前面
+    if k is not None:
+        order = np.argsort(-scores, kind="stable")
+        scores[order[k:]] = -np.inf
+
+    weights = np.exp(scores)
+    probs = weights / weights.sum()
+
+    order = np.argsort(-probs, kind="stable")
+    cumulative = np.cumsum(probs[order])
+    # 第一个累计质量 >= p 的位置也要保留，因此核里至少有一个 token
+    nucleus_size = min(probs.size, int(np.searchsorted(cumulative, p, side="left")) + 1)
+    kept = order[:nucleus_size]
+
+    kept_probs = probs[kept] / probs[kept].sum()
+    return int(rng.choice(kept, p=kept_probs))
+```
+
+### 可执行测试
+
+```python
+def expect_value_error(fn, *args, **kwargs):
+    try:
+        fn(*args, **kwargs)
+    except ValueError:
+        return
+    raise AssertionError("expected ValueError")
+
+
+rng = np.random.default_rng(2)
+
+# 三个 logit 并列、k=1：只保留 id 最小的 token 0
+assert all(sample_temp_k_p([0, 0, 0], 1, 1, 1, rng) == 0 for _ in range(20))
+
+# 极小的正温度不会溢出，结果接近 greedy
+assert sample_temp_k_p([1000, 999], 1e-10, None, 1, rng) == 0
+
+# T=0 走 greedy，并且只在合法 token 里选
+assert sample_temp_k_p([2, 1, 0], 0, None, 1, rng, [False, False, True]) == 2
+
+# p=0 也走 greedy
+assert sample_temp_k_p([0, 5, 1], 1, None, 0, rng) == 1
+
+# 很小的 p 只保留概率最高的 token
+assert all(sample_temp_k_p([0, 3, 1], 1, None, 0.01, rng) == 1 for _ in range(20))
+
+# 全部 token 被 mask 时报错，而不是静默返回 token 0
+expect_value_error(sample_temp_k_p, [1, 2], 1, None, 1, rng, [False, False])
+
+# 非法参数
+expect_value_error(sample_temp_k_p, [1, 2], -1, None, 1, rng)
+expect_value_error(sample_temp_k_p, [1, 2], 1, 0, 1, rng)
+expect_value_error(sample_temp_k_p, [1, 2], 1, None, 1.5, rng)
+expect_value_error(sample_temp_k_p, [1, float("nan")], 1, None, 1, rng)
+
+# 不截断时采样频率接近 softmax：logits [0, log 3] 对应概率 [0.25, 0.75]
+draws = [sample_temp_k_p([0, math.log(3)], 1, None, 1, rng) for _ in range(10000)]
+assert abs(sum(draws) / len(draws) - 0.75) < 0.02
+```
+
+### 复杂度与追问
+
+设词表大小为 V。这份实现做了两次稳定全排序，时间 O(V log V)，额外空间 O(V)。
+
+- 追问「能不能做到线性」：top-k 可以改用 `np.argpartition`，平均 O(V)，但它不保证并列时的顺序，要另外规定第 k 名并列时保留谁。top-p 仍要对保留下来的候选排序，如果先做了 top-k，就只排 k 个，O(V + k log k)。在没改实现之前，不能把这份代码说成线性复杂度。
+- 追问「batch 怎么做」：每条样本的核大小不同，不能假设同一个 `nucleus_size`。常见做法是对整行排序后用累计概率生成布尔 mask，把核外位置置成 $-\infty$，再整体 softmax 抽样。
+
 ## 题怎么来的
 
-Holtzman et al. 的 nucleus sampling 是解码默认件。Apple Siri MLE 电面把 sampling 和 attention 并列；OpenAI / Anthropic 推理岗会问温度和截断谁先谁后。公开实现（Transformers `generate`）是温度 → top-k → top-p，白板对齐这条，别发明第四种顺序。稳定 softmax 见 `coding-softmax-stable`；和 greedy / beam 的取舍见 `coding-beam-search`。
+Holtzman et al. 提出的 nucleus sampling 已经是解码的默认组件。Apple Siri MLE 电面把 sampling 和 attention 放在一起考；OpenAI、Anthropic 的推理岗会问温度和截断谁先谁后。公开实现（Transformers 的 `generate`）的顺序是温度 → top-k → top-p，白板上按这个顺序写，不要自己发明第四种。稳定 softmax 见 `coding-softmax-stable`；和 greedy、beam search 的取舍见 `coding-beam-search`。
 
 ## 顺序：先整形分布，再截尾
 
-记 logits 为 $z$。非法位置先打 $-\infty$，再 $z' = z / T$（$T>0$），
+记 logits 为 $z$。非法位置先打成 $-\infty$，再做 $z' = z / T$（$T>0$），得到温度化后的分布
 
 $$
 \pi_T=\mathrm{softmax}(z').
 $$
 
-Top-k：只保留 $\pi_T$ 里最大的 $k$ 个，其余置零。Nucleus（top-p）：在剩下的概率上按降序累计，取最小前缀使质量和 $\ge p$，其余丢掉，核内重新归一化再采样。
+Top-k 只保留 $\pi_T$ 里最大的 $k$ 个，其余概率置零。Nucleus（top-p）在剩下的概率上按降序累计，取质量和 $\ge p$ 的最短前缀，其余丢掉，再在核内重新归一化后采样。
 
-$T$ 越小分布越尖，同一 $p$ 进核的 token 越少。所以 nucleus 必须定义在温度化之后的分布上。先按原始 softmax 截断再除 $T$，截尾集合不随温度变，和开源推理栈不一致。Top-k 与 top-p 同时开时，常见是先 k 再 p（HF 默认）；反过来保留集不同，必须写进注释和单测。
+$T$ 越小分布越尖，同一个 $p$ 能进核的 token 越少，所以 nucleus 必须定义在温度化之后的分布上。如果先按原始 softmax 截断再除 $T$，截出来的集合不随温度变化，结果和开源推理栈对不上。
 
-$T\to 0$ 或 $p\le 0$ 走 $\arg\max$，不要真除 0、不要把核裁空。$p=1$ 等于不截尾。
+正温度不改变 logit 之间的排序，所以 top-k 选出的集合与先除不先除 $T$ 无关；但它改变每个 token 的概率质量，top-p 的累计阈值必须在温度化后的概率上算。Top-k 与 top-p 同时开时，常见做法是先 k 后 p（HF 默认）。反过来保留的集合会不同，选了哪种就写进注释和单测。
 
-```python
-import numpy as np
+$p=1$ 等于不截尾。$T=0$ 或 $p=0$ 走 $\arg\max$，不要真的除以 0，也不要把核裁空。
 
-def sample_temp_k_p(logits, T, k, p, rng, mask=None):
-    z = np.asarray(logits, dtype=np.float64)
-    if mask is not None:
-        z = np.where(mask, z, -np.inf)
-    if not np.isfinite(z).any() or T <= 0 or p <= 0:
-        z = np.where(np.isfinite(z), z, -np.inf)
-        return int(np.argmax(z))
-    z = z / T
-    z = z - np.max(np.where(np.isfinite(z), z, -np.inf))
-    z = np.where(np.isfinite(z), z, -np.inf)
-    logp = z - np.logaddexp.reduce(z)
-    prob = np.exp(logp)
-    prob = np.where(np.isfinite(prob), prob, 0.0)
-    if k is not None and 0 < k < prob.size:
-        keep = np.argpartition(prob, -k)[-k:]
-        q = np.zeros_like(prob)
-        q[keep] = prob[keep]
-        prob = q / q.sum()
-    order = np.argsort(-prob)
-    cdf = np.cumsum(prob[order])
-    n = int(np.searchsorted(cdf, min(p, 1.0), side="left")) + 1
-    keep = order[:n]
-    q = np.zeros_like(prob)
-    q[keep] = prob[keep]
-    q /= q.sum()
-    return int(rng.choice(q.size, p=q))
-```
+## 边界比公式更容易出错
 
-`searchsorted(..., side="left")+1` 保证至少一枚 token。全 mask 在入口挡一次，归一化后再挡一次。累计用概率序不是 logit 序：温度会改相对大小，但单调变换下 argmax 不变。
+- 在 logits 上做累计：logit 不是概率，累计到 $p$ 没有质量上的含义。
+- 截尾后不重新归一化就 `choice`：概率和小于 1，NumPy 会直接报错。
+- 对全 $-\infty$ 的数组减 max：$-\infty - (-\infty)$ 是 NaN，整行变成 NaN。这份实现在减 max 之前就把全 mask 的情况挡掉了。
+- 有重复惩罚时，要规定它是改 logits 还是改概率；通常改 logits，并且发生在 softmax 之前。
 
-## 边界比公式容易翻车
-
-不要在 logits 上做累计（质量含义不对）；截尾后不重新归一化就 `choice`（概率和小于 1）；把 $-\infty$ 拿去减 max（全体变 NaN）。Batch 里每条样本的核大小不同，不能假设同一个 `n`。重复惩罚若存在，规定清是改 logits 还是改概率，并且发生在 softmax 之前。
-
-Apple 端侧还会问：top-k 在词表 $10^5$ 上要不要全排序。`argpartition` $O(V)$ 够；不要每步 `sort` 除非你要解释。Gumbel-max 是另一条采样路，见 `coding-gumbel-max`。
+Apple 端侧还会问：词表 $10^5$ 时 top-k 要不要全排序。用 `argpartition` 的 O(V) 就够，除非你能解释为什么需要每步 `sort`。Gumbel-max 是另一条采样路线，见 `coding-gumbel-max`。
 
 ## 追问
 
-- **为什么不能先 top-p 再温度？** 核依赖当前概率序。先截再改 $T$，等于在另一个分布上采样，和 Transformers 默认策略不一致。
-- **$p=0$ 怎么办？** 裁空会让归一化失败。实现上当作 greedy。和 $T\to 0$ 应落到同一 token。
-- **top-k 和 top-p 谁先？** 先约定再测。HF 常见先 k 后 p。两种顺序保留的 token 不同，不要口头含糊。
+- **为什么不能先 top-p 再除温度？** 核取决于当前的概率分布。先截断再改 $T$，等于在另一个分布上定的核，和 Transformers 的默认策略不一致。
+- **$p=0$ 怎么办？** 按定义核是空的，归一化会失败。实现上把它当作 greedy，结果应和 $T=0$ 落到同一个 token。
+- **top-k 和 top-p 谁先？** 先约定再写测试。HF 常见先 k 后 p；两种顺序保留的 token 不同，不要口头含糊过去。
+
+## 相关题
+
+- [[apple-topk-sample]]：参考实现和测试与本卡相同，Apple 版多了「端侧为什么常用 top-k」的追问。
+- [[p3a-cohere-numpy-top-k-sampling]]：NumPy 版本，只做 top-k，强调可复现的 rng 和并列时按 id 排序。
+- [[coding-gumbel-max]]：截断之后可以用 Gumbel-max 采样，它的温度和 Gumbel-softmax 的松弛温度不是一回事。
+- [[coding-token-logprob]]：训练端算 logprob 时要除以和采样时相同的温度，否则新旧策略的比值会偏。
+- [[coding-beam-search]]：同样是从 logits 出 token，beam 走确定性搜索，可以和采样对照取舍。

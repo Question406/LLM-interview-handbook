@@ -4,11 +4,7 @@ section: nvidia
 order: 27
 level: A
 title: NVIDIA：视觉 encoder 和 LLM 同卡 serving，prefill 形状为什么不齐
-quick: >-
-  ViT 一次吃 $[B_{\mathrm{img}}, N_{\mathrm{patch}}, D_v]$ 的规整 GEMM；LLM prefill 吃的是
-  文本加视觉 token 拼起来的变长 $[N_{\mathrm{tok}}, D]$。两者 batch 轴、序列长、算力墙都不一样，不能当同一个
-  IFB 步里的同形状核。同卡是为了省 embedding 的 PCIe，代价是调度要拆 encoder 阶段和 decoder
-  prefill 阶段。
+quick: "ViT 按图片数做规整的 $[B_{\\mathrm{img}}, N_{\\mathrm{patch}}, D_v]$ 前向；LLM prefill 处理文本加视觉 token 的变长 pack。两者 batch 轴不同，调度要拆成两个阶段。"
 tags:
   - NVIDIA
   - Multimodal
@@ -35,7 +31,7 @@ sources:
 
 ## 题怎么来的
 
-LLaVA / VILA / Qwen2-VL 一类在 TensorRT-LLM 里是「视觉 encoder + LLM decoder」。Triton 后端文档把视觉引擎和 LLM 引擎拆开建；新一点的 LLM-API 可以同进程跑。NVIDIA serving 岗问的不是 CLIP 原理，是：**同卡时一步 scheduler 看见的 token 形状为什么和纯文本 prefill 对不上**。我会先写两条流水线的 shape，再讲混 batch 和 chunked prefill 不能切 encoder 内部。
+LLaVA / VILA / Qwen2-VL 一类在 TensorRT-LLM 里是「视觉 encoder + LLM decoder」。Triton 后端文档把视觉引擎和 LLM 引擎拆开建；新一点的 LLM-API 可以同进程跑。NVIDIA serving 岗问的不是 CLIP 原理，是：**同卡时一步 scheduler 看见的 token 形状为什么和纯文本 输入预填充（prefill，即处理输入并建立缓存） 对不上**。我会先写两条流水线的 shape，再讲混 batch 和 chunked prefill 不能切 encoder 内部。
 
 ## 两条流水线，两种矩阵
 
@@ -46,7 +42,7 @@ X_{\mathrm{vit}}:[B_{\mathrm{img}}, N_{\mathrm{patch}}, D_v],\qquad
 E_{\mathrm{vis}}:[B_{\mathrm{img}}, N_{\mathrm{vis}}, D].
 $$
 
-这是完整前向，自注意力是对称的、没有 KV cache、没有逐步 decode。算术强度高，GEMM 好看，batch 维是 **图的张数**，不是请求数。
+这是完整前向，自注意力是对称的、没有 KV cache、没有逐步 逐 token 生成（decode）。算术强度高，GEMM 好看，batch 维是 **图的张数**，不是请求数。
 
 LLM 侧：文本 embedding 和 $E_{\mathrm{vis}}$ 按占位符插进同一条序列。一条请求的 prefill 长是 $T_{\mathrm{text}}+N_{\mathrm{vis}}$（多图再加）。IFB 一步看到的是 packed token：
 
@@ -64,9 +60,9 @@ Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nv
 
 1. **Encoder 不可切成 LLM 那种 token chunk。** ViT 的层间依赖是整图注意力。Chunked prefill 切的是 **已经算好的视觉 embedding 在 LLM 里的消费**，不是把一张图的 patch 分两步跑完 encoder。TRT-LLM 后来给 llava-next / Qwen2 补的 multimodal chunked prefill，文档强调 embedding cache / 只跑尚未消费的视觉段。把一张图的 encoder 斩两半当 chunk，hidden 对不上。
 
-2. **Token budget 被图打满。** 一张图 576-2k token，再加长 caption，$U=2048$ 可能只够半张图的 LLM prefill。正在飞的 decode TBT 被这条视觉 prefill 抬成尖刺，比纯文本 8k 还常见，因为请求一来就带着图。
+2. **Token budget 被图打满。** 一张图 576-2k token，再加长 caption，$U=2048$ 可能只够半张图的 LLM prefill。正在生成的请求 TBT 被这条视觉 prefill 抬成尖刺，比纯文本 8k 还常见，因为请求一来就带着图。
 
-3. **Batch 轴错位。** 4 条文本 decode（$B=4$、$T_q=1$）和 1 张待编码的图。Encoder 想要 $B_{\mathrm{img}}\ge 8$ 才饱和；LLM decode 已经在抢 HBM。同卡要么让图排队凑 encoder batch（TTFT 差），要么 $B_{\mathrm{img}}=1$ 跑瘦 ViT（利用率差）。分卡（encoder 池 / decode 池）把 embedding 经 PCIe 或 NVLink 送过去，形状问题变成带宽问题。
+3. **Batch 轴错位。** 4 条文本 decode（$B=4$、$T_q=1$）和 1 张待编码的图。Encoder 想要 $B_{\mathrm{img}}\ge 8$ 才饱和；LLM decode 已经在抢 HBM。同卡要么让图排队凑 encoder batch（首个 token 的等待时间（TTFT） 差），要么 $B_{\mathrm{img}}=1$ 跑瘦 ViT（利用率差）。分卡（encoder 池 / decode 池）把 embedding 经 PCIe 或 NVLink 送过去，形状问题变成带宽问题。
 
 4. **KV 容量。** 视觉 token 全部进 cache，fp16 时一张图就按百兆级往上加。要先 FP8 KV / 分页，见 `nvidia-fp8-kv`。Prefix 共享对「同一张图多次问」有用，对每张用户图没有。
 

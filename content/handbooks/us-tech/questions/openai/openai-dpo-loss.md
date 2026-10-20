@@ -4,9 +4,7 @@ section: openai
 order: 10
 level: S
 title: OpenAI：DPO 相对 PPO 少了什么，implicit reward 怎么说
-quick: >-
-  DPO 把「RM + 反向 KL 约束」解析掉，实现上不再训奖励模型、不再 on-policy rollout、没有 critic 和 PPO
-  clip。隐式奖励是 $r(x,y)=\beta\log(\pi_\theta/\pi_{\mathrm{ref}})$。少的是 RL 套件，不是少了 KL 先验。
+quick: "DPO 去掉了显式 RM、on-policy rollout、critic 和 PPO clip，但 KL 先验还在。隐式奖励是 $r(x,y)=\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})$。"
 tags:
   - OpenAI
   - DPO
@@ -30,13 +28,13 @@ sources:
 
 ## 题怎么来的
 
-OpenAI 公开对齐主线是 InstructGPT 的 PPO-RLHF。DPO 不是 OpenAI 的论文，但 Research / 对齐岗会拿它当对照：「既然 KL 约束的最优策略有闭式，为什么还要 RL」。我会按 DPO 原文把 implicit reward 写出来，再对照 `openai-instructgpt-kl` 和 `openai-ppo-clip`。不要假装自己在某次 onsite 抽到了这道原题。
+OpenAI 公开对齐主线是 InstructGPT 的 PPO-RLHF。直接偏好优化（DPO） 不是 OpenAI 的论文，但 Research / 对齐岗会拿它当对照：「既然 KL 约束的最优策略有闭式，为什么还要 RL」。我会按 DPO 原文把 implicit 奖励分数（reward） 写出来，再对照 `openai-instructgpt-kl` 和 `openai-ppo-clip`。不要假装自己在某次 onsite 抽到了这道原题。
 
 ## PPO 环里有什么，DPO 砍掉什么
 
-InstructGPT 式 PPO 要：偏好数据 $\to$ 奖励模型 $r_\phi$ $\to$ 当前策略采样 $\to$ 减 ref KL 的奖励 $\to$ GAE / value $\to$ clip 更新。在线、贵、脆，ratio 还可能炸。
+InstructGPT 式 PPO 要：偏好数据 $\to$ 奖励模型 $r_\phi$ $\to$ 当前策略采样 $\to$ 减 ref KL 的奖励 $\to$ GAE / value $\to$ clip 更新。在线、贵、脆，ratio 还可能出现极端值。
 
-KL 约束的 RLHF 目标是
+KL 约束的 基于人类反馈的强化学习（RLHF） 目标是
 
 $$
 \max_\pi\ \mathbb{E}_{y\sim\pi}[r(x,y)]-\beta D_{\mathrm{KL}}(\pi\|\pi_{\mathrm{ref}}).
@@ -61,15 +59,24 @@ $$
 ## 我会主动报的失败模式
 
 - **off-policy。** 偏好数据若来自旧策略，而 $\pi_\theta$ 已经走远，BT 在隐式 $r$ 上的假设变差。PPO 至少在当前 $\pi$ 上采样。DPO 要定期换数据，或拿 online / iterative DPO。
-- **长度。** log 比沿 token 加，长回答容易赢。可以归一化长度，或在数据里控制 chosen/rejected 长度。
+- **长度。** log 比沿 token 求和，长回答容易赢。可以归一化长度，或在数据里控制 chosen/rejected 长度。
 - **ref 必须冻。** 把 $\pi_{\mathrm{ref}}$ 跟着 $\theta$ 跑，隐式 KL 锚就没了。
 - **没有 RM 不等于没有 hacking。** 模型可以刷标注员偏好里的表面特征。CAI 那条人写原则的对照见 `anthropic-constitutional-ai`。
 
-实现：loss 在 log 空间算 $\Delta$，`logsigmoid`；不要先 exp 再减。评测仍要一套不在偏好集里的 eval，见 `openai-eval-harness`。
+实现：损失（loss） 在 log 空间算 $\Delta$，`logsigmoid`；不要先 exp 再减。评测仍要一套不在偏好集里的 eval，见 `openai-eval-harness`。
 
 ## 追问
 
 - **还要 PPO clip 吗？** 标准 DPO 不要。$\beta$ 和 ref 已经在管步长。有人加 DPOP / hinge，那是变体。
 - **implicit reward 能当 RM 用吗？** 能打偏好对的分数差，但不保证绝对尺度，也不能直接当 best-of-n 的黄金 RM。
-- **和 InstructGPT 三阶段？** DPO 通常接在 SFT 后，替换 RM+PPO。SFT 还在，否则 $\pi_{\mathrm{ref}}$ 太弱。
-- **为什么面试还要会 PPO？** 因为 OpenAI 原设定、在线探索、过程奖励、工具调用 RL，DPO 闭式罩不住。
+- **和 InstructGPT 三阶段？** DPO 通常接在 监督微调（SFT） 后，替换 RM+PPO。SFT 还在，否则 $\pi_{\mathrm{ref}}$ 太弱。
+- **为什么面试还要会 PPO？** 因为 OpenAI 原设定、在线探索、过程奖励、工具调用 强化学习（RL），DPO 闭式罩不住。
+
+## 相关题
+
+- [[align-dpo]]：同样讲隐式奖励，但重点放在 $Z(x)$ 怎么消掉，以及 $\beta$ 太大、太小各会怎样。
+- [[coding-dpo-weighted]]：要求手写 DPO 梯度并解释每对样本的权重，准备白板轮时看这张。
+- [[align-online-dpo]]：接着「DPO 去掉了 on-policy rollout」往下问：离线 pair 滞后时怎么用迭代采样补回来。
+- [[msft-orpo]]：ORPO 连参考模型也去掉了，和这张卡连起来能讲清 PPO、DPO、ORPO 各要加载几个模型。
+- [[us-llm-paper-stack]]：DPO 和 InstructGPT 都在面试前的精读论文栈里，那张卡说明要读到什么程度。
+- [[align-reward-model]]：DPO 砍掉的那张显式 RM 怎么用 Bradley-Terry 训，两边是同一个偏好模型。
