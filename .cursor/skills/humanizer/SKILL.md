@@ -5,6 +5,8 @@ description: |
   Use when editing or reviewing prose for AI tells: not-X-but-Y contrasts, one-line
   closers, staged openers, forced triads, dashes everywhere, inflated claims, sales
   language, stock AI words, bold labels, or filler. Based on Wikipedia's "Signs of AI writing."
+  Also rewrite Chinese translationese, empty jargon, and compressed technical explanations
+  into natural Chinese, including interview-handbook short and full answers.
 license: MIT
 metadata:
   version: "3.0.0"
@@ -15,6 +17,8 @@ metadata:
 Rewrite AI-sounding text so it reads like the writer, not a chatbot. Keep what it says. Do not make anything up.
 
 **This repo:** for `content/handbooks/**` question files, also follow [handbook-voice.md](handbook-voice.md) (Chinese interview tone; preserve frontmatter, math, IDs, links).
+
+**Chinese prose:** always read [chinese-humanizer.md](chinese-humanizer.md). Apply it to both short answers (`quick`) and full answers. Read and rewrite each answer in context; bulk word replacement or adding definitions alone does not count as a full rewrite.
 
 ## Why AI text sounds the way it does
 
@@ -50,6 +54,8 @@ Without a sample, take the voice from the kind of text. Blog posts, essays, opin
 **Pasted text (default).** Return the draft, a short list of remaining patterns, and the final rewrite.
 
 **File mode.** When the user names a file, run the full process but write only the final text to the file. Change prose only. Keep code blocks, inline code, commands, paths, YAML metadata, data, and link targets unchanged. Then give the user a short summary.
+
+For this repository's handbook questions, the `quick` field is prose and may be rewritten as specified in [handbook-voice.md](handbook-voice.md); all other metadata remains unchanged.
 
 **Embedded mode.** When another task uses this skill for a pull request, commit message, or document, return only the final text.
 
