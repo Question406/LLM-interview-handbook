@@ -1,0 +1,1291 @@
+[
+  {
+    "id": "p3a-xai-flatten-unflatten-nested-structure",
+    "family": "nested",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nested.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "5994e186bb3856230ab7860d09dacdfa3285bfa94d0003bd3f6412a2b0f7b822"
+  },
+  {
+    "id": "p3a-xai-resumable-iterator-design",
+    "family": "nested",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nested.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "5994e186bb3856230ab7860d09dacdfa3285bfa94d0003bd3f6412a2b0f7b822"
+  },
+  {
+    "id": "p3a-openai-resumable-iterator",
+    "family": "nested",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nested.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "5994e186bb3856230ab7860d09dacdfa3285bfa94d0003bd3f6412a2b0f7b822"
+  },
+  {
+    "id": "p3a-xai-transactional-key-value-store",
+    "family": "transactions",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/transactions.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "72af26463ae47ca2c19b4ff02b684d0e198d8af30fd47cd7003ae52ae3f16268"
+  },
+  {
+    "id": "p3a-microsoft-kv-store-with-snapshot",
+    "family": "transactions",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/transactions.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "72af26463ae47ca2c19b4ff02b684d0e198d8af30fd47cd7003ae52ae3f16268"
+  },
+  {
+    "id": "p3a-xai-weighted-lru-cache",
+    "family": "weighted_lru",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/weighted_lru.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "2ccc4ab46efc281fb50a536601065682eb17b6eeaed5789a5b4d724669721a9b"
+  },
+  {
+    "id": "p3a-anthropic-coding-q2-lru-cache-durability",
+    "family": "weighted_lru",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/weighted_lru.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "2ccc4ab46efc281fb50a536601065682eb17b6eeaed5789a5b4d724669721a9b"
+  },
+  {
+    "id": "p3a-xai-kth-element-streaming-window",
+    "family": "window_order",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/window_order.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "cb96955bc284d8409612cc92824ac8f7dabfb4a6bf49408500d70abfd2992030"
+  },
+  {
+    "id": "p3a-xai-twitter-spaces-active-hours",
+    "family": "spaces",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/spaces.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "15a2a9ab1375b280c12e9e1246958828b62b2fb492952585431c4b9b3de0067e"
+  },
+  {
+    "id": "p3a-xai-distinct-integers-after-offset",
+    "family": "distinct",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/distinct.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "28d6f3334e1be9f05ae24ab843beec131f2fc7db548cc85e263a96144b1b841b"
+  },
+  {
+    "id": "p3a-xai-parallel-integer-sort",
+    "family": "parallel_sort",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/parallel_sort.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "d640c2972480b78f386c88a53c8472fda2d59a7c88852b7f2c1c2eceab5adc64"
+  },
+  {
+    "id": "p3a-xai-multithreaded-bank-account-bug-hunt",
+    "family": "bank_lock",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bank_lock.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "5330b5634f65ef14baa109d5930a71fe9ede518ad6e4989e8a8dc1dc447009fe"
+  },
+  {
+    "id": "p3a-xai-process-vs-thread-verbal",
+    "family": "bank_lock",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bank_lock.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "5330b5634f65ef14baa109d5930a71fe9ede518ad6e4989e8a8dc1dc447009fe"
+  },
+  {
+    "id": "p3a-xai-radix-cache",
+    "family": "radix",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/radix.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "935faca84c2c6c831a00d0d027afa4b49ace9fd4ca5ea285f3f38fb0a041d71e"
+  },
+  {
+    "id": "p3a-xai-distributed-token-bucket-limiter",
+    "family": "token_bucket",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/token_bucket.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "beb503f1ba1948a284fee4a46a5b14e37db438ae732236ea3b7e002897146291"
+  },
+  {
+    "id": "p3a-anthropic-oa-in-memory-database",
+    "family": "history_db",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9c4b1ca27053eeff95f3b9f8136b996f0929447c2e06f69dc8507d7a3c255faa"
+  },
+  {
+    "id": "p3a-xai-in-memory-database-ttl-backup",
+    "family": "history_db",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9c4b1ca27053eeff95f3b9f8136b996f0929447c2e06f69dc8507d7a3c255faa"
+  },
+  {
+    "id": "p3a-anthropic-oa-task-management",
+    "family": "history_db",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9c4b1ca27053eeff95f3b9f8136b996f0929447c2e06f69dc8507d7a3c255faa"
+  },
+  {
+    "id": "p3a-perplexity-kv-store-with-timestamps-and-restore",
+    "family": "history_db",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9c4b1ca27053eeff95f3b9f8136b996f0929447c2e06f69dc8507d7a3c255faa"
+  },
+  {
+    "id": "p3a-openai-time-based-kv-store",
+    "family": "history_db",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9c4b1ca27053eeff95f3b9f8136b996f0929447c2e06f69dc8507d7a3c255faa"
+  },
+  {
+    "id": "p3a-xai-durable-kv-cache",
+    "family": "durable_kv",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/durable_kv.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "0537eb6ff900e7fd15f3e697da3c33b7998275bf79ca07d42d8b3715df1135d1"
+  },
+  {
+    "id": "p3a-openai-durable-kv-store-serialization",
+    "family": "durable_kv",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/durable_kv.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "0537eb6ff900e7fd15f3e697da3c33b7998275bf79ca07d42d8b3715df1135d1"
+  },
+  {
+    "id": "p3a-xai-mock-llm-dynamic-batching",
+    "family": "batch_decode",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/batch_decode.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "bb6363492a138b87029985f757b64c4ac27d1a9fb6600150fbeda570ad4426ce"
+  },
+  {
+    "id": "p3a-xai-gpu-node-group-test",
+    "family": "node_test",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/node_test.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "909a6f3fcfd00ded803ed57a649a87e9c6ea22bc3d46ec1706cc30795775b0f2"
+  },
+  {
+    "id": "p3a-xai-fixed-window-tokens",
+    "family": "fixed_window",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/fixed_window.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "67ae780e8e5fe355542e2949f4a64f5b86ec8c4c12a867d8fc371c205900c30a"
+  },
+  {
+    "id": "p3a-xai-pipeline-critical-path",
+    "family": "critical_path",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/critical_path.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "79a5f9f1a9032e099ac4cfb78d7b577681133b1d24c86dea9a88f88a58c9ab16"
+  },
+  {
+    "id": "p3a-xai-common-ngrams",
+    "family": "ngrams",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/ngrams.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "1f07034485fdf4f5de37ea0db5fa62cc342eaed7a4f484e71c365e6c3834adc3"
+  },
+  {
+    "id": "p3a-xai-speculative-edits",
+    "family": "spec_edits",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/spec_edits.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "de08ab798f6a642b943c1bc58eb82a17c38b59843ea8fa1439e8365dee9a4195"
+  },
+  {
+    "id": "p3a-xai-patchify-cnn",
+    "family": "patchify",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/patchify.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "64749c17085ff3f4fcf451d4ca09ebfdcf703ec77166c49b2c4c5274011d6f67"
+  },
+  {
+    "id": "p3a-anthropic-ml-programming-screen",
+    "family": "attention",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/attention.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "55a8634beec5e716f7a085325d304bd65e8df8d656484556b104b879f49a5d75"
+  },
+  {
+    "id": "p3a-meta-attention-implementation-and-follow-ups",
+    "family": "attention",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/attention.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "55a8634beec5e716f7a085325d304bd65e8df8d656484556b104b879f49a5d75"
+  },
+  {
+    "id": "p3a-openai-transformer-bug-hunt",
+    "family": "attention",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/attention.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "55a8634beec5e716f7a085325d304bd65e8df8d656484556b104b879f49a5d75"
+  },
+  {
+    "id": "p3a-perplexity-map-reduce-and-blockwise-attention",
+    "family": "block_attention",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/block_attention.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "b6f4700c91e1174ea892a60fad182f78b801f04c0fd14c9b772c9e10decadbbf"
+  },
+  {
+    "id": "p3a-openai-numpy-1nn-wx-b",
+    "family": "nearest_neighbor",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nearest_neighbor.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "f2efd9ff0290a9f2e7a0ad30ccf54437a4cf9f7a01ec8b373555a026e27f0a9e"
+  },
+  {
+    "id": "p3a-openai-masked-cross-entropy-loss",
+    "family": "cross_entropy",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/cross_entropy.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "bc5991f9ef8972459190c25af471ec75e2f9a3401739bf0515dd27494b6b8877"
+  },
+  {
+    "id": "p3a-openai-streaming-entropy",
+    "family": "entropy",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/entropy.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "3e5162af1615bce39c715ac0d6f9ab643e8df58b45868e95126ccdc10146632c"
+  },
+  {
+    "id": "p3a-microsoft-beam-search-decoder",
+    "family": "beam",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/beam.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "ed0cad670f2b7d267ecafc87cfac4c71dbb8e43b58d9f8671ad133ebcc2064aa"
+  },
+  {
+    "id": "p3a-perplexity-beam-search-decoder",
+    "family": "beam",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/beam.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "ed0cad670f2b7d267ecafc87cfac4c71dbb8e43b58d9f8671ad133ebcc2064aa"
+  },
+  {
+    "id": "p3a-cohere-numpy-top-k-sampling",
+    "family": "topk_sample",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/topk_sample.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "0309666e5e9031de1863e4d8ec965c35a3d7048a8b0665afaaa71f1a58476594"
+  },
+  {
+    "id": "p3a-xai-distributed-matmul-dp-fsdp",
+    "family": "matmul",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/matmul.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "42b7bed545266dcc714bd8c94705cb943cb152e17a543ab237b88b2e67ebe2df"
+  },
+  {
+    "id": "p3a-openai-sharded-matmul-backprop-debugging",
+    "family": "matmul",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/matmul.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "42b7bed545266dcc714bd8c94705cb943cb152e17a543ab237b88b2e67ebe2df"
+  },
+  {
+    "id": "p3a-openai-gpu-credits",
+    "family": "credits",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/credits.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "72dd0c1f5b6ce9ca16693a758a513a16bdfe82ed57cc85a82bb372dbbe8464c8"
+  },
+  {
+    "id": "p3a-perplexity-credit-tracker-with-expiring-credits",
+    "family": "credits",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/credits.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "72dd0c1f5b6ce9ca16693a758a513a16bdfe82ed57cc85a82bb372dbbe8464c8"
+  },
+  {
+    "id": "p3a-openai-fault-tolerant-work-queue",
+    "family": "work_queue",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/work_queue.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "ee2c982366907eedded2d2b1b4b187b5a4179c31dae9cf499fad972966dc608e"
+  },
+  {
+    "id": "p3a-openai-social-network-follow-graph",
+    "family": "follow_graph",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/follow_graph.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "4510b3ad51c679f8764bea0ae0d65900d87401e50471b4aeebd42c96ef3db5e0"
+  },
+  {
+    "id": "p3a-anthropic-coding-bootloader",
+    "family": "bootloader",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bootloader.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "dc9654bb43a75eb548400e36c2708d61a0e7651b09c86f608e9266a5651433ab"
+  },
+  {
+    "id": "p3a-microsoft-streaming-stop-token-detection",
+    "family": "stop_stream",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/stop_stream.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6ea6e284983aafd1d7a81e11605272d8a495b6a4e52be4ff7c85ac050bff1906"
+  },
+  {
+    "id": "p3a-perplexity-stop-sequences-before-first-match",
+    "family": "stop_stream",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/stop_stream.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6ea6e284983aafd1d7a81e11605272d8a495b6a4e52be4ff7c85ac050bff1906"
+  },
+  {
+    "id": "p3a-anthropic-coding-q3-stack-trace",
+    "family": "stack_trace",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/stack_trace.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "3cf623bb9b80f2cb45b250da01a8fd4b7d73ee251b7d5224670e7ae18aace477"
+  },
+  {
+    "id": "p3a-anthropic-coding-q2-file-deduplication",
+    "family": "file_dedup",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/file_dedup.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6f6a5801b160d6aced1a9954f0e3f4e0bc22fc37bafc22e07627c7f424e316c6"
+  },
+  {
+    "id": "p3a-openai-infection-spread-cellular-automata",
+    "family": "infection",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/infection.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "a142982a3527616d5989de374be7ae31d81ac583d9c22ec48dd6c2fe05774f38"
+  },
+  {
+    "id": "p3a-openai-ip-address-cidr-iterator",
+    "family": "ip",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/ip.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "f00d8abab3b094cf6905474a06e1a7e4e27bb099b125b3912a0f9ae68efb5736"
+  },
+  {
+    "id": "p3a-openai-implement-cd-command",
+    "family": "cd",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/cd.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "3568ade25b759524e47442919a9538156651598388202ea50e6fb3fc02b4cf77"
+  },
+  {
+    "id": "p3a-anthropic-coding-q6-tokenizer",
+    "family": "tokenizer",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/tokenizer.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "522a0e02d630286f07c31054a2d44f6be16eace278aa0f6ee85f5a810abc2551"
+  },
+  {
+    "id": "p3a-anthropic-coding-design-data-batcher",
+    "family": "batcher",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/batcher.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "4a8500196679c29092c7ce7da46e54ca284b3ef5393f34e2442b370dbb786b67"
+  },
+  {
+    "id": "p3a-perplexity-stream-sampling-and-distribution-verification",
+    "family": "reservoir",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/reservoir.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "a8176b96c1be6c859652bb12f054663dc0a6cb61c4f2a6edb43ea4cc635d9c74"
+  },
+  {
+    "id": "p3a-perplexity-stream-deduplication-with-near-duplicate-detection",
+    "family": "near_dedup",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/near_dedup.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "1874f715fe8ccd2885c5287580ee42b912d52697b4760cadae7a28a719ab7319"
+  },
+  {
+    "id": "p3a-microsoft-max-number-occurrences-in-suffix",
+    "family": "small_algorithms",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "c29f1eac65c25901cabdcc9133fa33f6daf56624ebd98db87c6efa263668198a"
+  },
+  {
+    "id": "p3a-microsoft-top-k-largest-retain",
+    "family": "small_algorithms",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "c29f1eac65c25901cabdcc9133fa33f6daf56624ebd98db87c6efa263668198a"
+  },
+  {
+    "id": "p3a-google-deepmind-graph-dfs",
+    "family": "small_algorithms",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "c29f1eac65c25901cabdcc9133fa33f6daf56624ebd98db87c6efa263668198a"
+  },
+  {
+    "id": "p3a-google-deepmind-array-threshold-filter",
+    "family": "small_algorithms",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "c29f1eac65c25901cabdcc9133fa33f6daf56624ebd98db87c6efa263668198a"
+  },
+  {
+    "id": "p3a-mistral-daily-gpu-remaining",
+    "family": "mistral_gpu",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/mistral_gpu.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "92cb20da28f765960b1b32eef73ca0dfd5cb82ebc98c12b2e9b28a3a0965b3cb"
+  },
+  {
+    "id": "p3a-mistral-gpu-unlimited-switches",
+    "family": "mistral_gpu",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/mistral_gpu.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "92cb20da28f765960b1b32eef73ca0dfd5cb82ebc98c12b2e9b28a3a0965b3cb"
+  },
+  {
+    "id": "p3a-mistral-gpu-k-switches",
+    "family": "mistral_gpu",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/mistral_gpu.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "92cb20da28f765960b1b32eef73ca0dfd5cb82ebc98c12b2e9b28a3a0965b3cb"
+  },
+  {
+    "id": "p3a-openai-classifier-noisy-annotators",
+    "family": "logistic",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6a3cce218852d8f6807617e925969572a94ad0ada3029b53f0cc4ce3115f579c"
+  },
+  {
+    "id": "p3a-openai-code-reading-pytorch-refactor",
+    "family": "logistic",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6a3cce218852d8f6807617e925969572a94ad0ada3029b53f0cc4ce3115f579c"
+  },
+  {
+    "id": "p3a-microsoft-employee-attrition-prediction",
+    "family": "logistic",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6a3cce218852d8f6807617e925969572a94ad0ada3029b53f0cc4ce3115f579c"
+  },
+  {
+    "id": "p3a-perplexity-sklearn-binary-classifier",
+    "family": "logistic",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6a3cce218852d8f6807617e925969572a94ad0ada3029b53f0cc4ce3115f579c"
+  },
+  {
+    "id": "p3a-anthropic-ml-take-home-research",
+    "family": "logistic",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6a3cce218852d8f6807617e925969572a94ad0ada3029b53f0cc4ce3115f579c"
+  },
+  {
+    "id": "p3a-anthropic-rl-fundamentals-grpo-debug",
+    "family": "grpo",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/grpo.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "207646c6fc4fe3e5b6a1b3157553ff454f5871bfef8ff02c320bad94179cfdf6"
+  },
+  {
+    "id": "p3a-openai-autograd-hillis-steele-scan",
+    "family": "prefix_autograd",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/prefix_autograd.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "1b1eaa22f73801320d446c6e6e28017b0a544e0e2dd0c43062769e5018c1ab9c"
+  },
+  {
+    "id": "p3a-anthropic-performance-engineer-modeling",
+    "family": "performance",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/performance.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "dcfd6818d5f3cd8963eed4ee020ef433de01697faed3a35fdc223dc2d4660149"
+  },
+  {
+    "id": "p3a-microsoft-transformer-roofline-fp-precision",
+    "family": "performance",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/performance.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "dcfd6818d5f3cd8963eed4ee020ef433de01697faed3a35fdc223dc2d4660149"
+  },
+  {
+    "id": "p3a-anthropic-performance-engineer-take-home",
+    "family": "performance",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/performance.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "dcfd6818d5f3cd8963eed4ee020ef433de01697faed3a35fdc223dc2d4660149"
+  },
+  {
+    "id": "p3a-anthropic-mech-interp-take-home",
+    "family": "double_descent",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/double_descent.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "0aa0d7022bcf017702ad7b763ce642ca712e3b075d82464f40dd77a3da0b9455"
+  },
+  {
+    "id": "p3a-openai-math-reasoning-stopping-time",
+    "family": "restart",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/restart.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "92b810b34347b47311a44f74c617aacf6255147836dc311e058df2db4f42f48f"
+  },
+  {
+    "id": "p3a-anthropic-oa-file-systems",
+    "family": "filesystem",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/filesystem.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "8ae6f47836d2b600be5e0887d65565a271f7860bf371d52536b22995f3063918"
+  },
+  {
+    "id": "p3a-perplexity-in-memory-file-system",
+    "family": "filesystem",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/filesystem.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "8ae6f47836d2b600be5e0887d65565a271f7860bf371d52536b22995f3063918"
+  },
+  {
+    "id": "p3a-openai-in-memory-database-sql",
+    "family": "sql",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/sql.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "714646ed9c14d1dc5be2d1415dd4971e508162d8cb671ece25ce08b778e82fb0"
+  },
+  {
+    "id": "p3a-microsoft-in-memory-sql-engine",
+    "family": "sql",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/sql.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "714646ed9c14d1dc5be2d1415dd4971e508162d8cb671ece25ce08b778e82fb0"
+  },
+  {
+    "id": "p3a-anthropic-oa-recipe-manager",
+    "family": "recipes",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/recipes.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "59f354689566f334f84be24578caa7ed3cd5423a0bbf6ccb6f93f2faebb6120d"
+  },
+  {
+    "id": "p3a-microsoft-parse-emails-state-machine",
+    "family": "email_scan",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/email_scan.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "17f582f35e3e5cca8d04a0d02ead4a9bbbc92c231e9dfb311a3b9e64d83f4129"
+  },
+  {
+    "id": "p3a-anthropic-oa-worker-management",
+    "family": "employee",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/employee.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "999f8d246cd632336e502fbd0cfa1584492b43495ca0cecda55a14bb6a353a57"
+  },
+  {
+    "id": "p3a-openai-opensheet-spreadsheet",
+    "family": "sheet",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/sheet.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "51b722bf938e8958b7bdf6904e9d392cf3d1ba333b6ff0b284db962a7d54c70b"
+  },
+  {
+    "id": "p3a-openai-toy-language-type-inference",
+    "family": "type_inference",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/type_inference.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "3dab4c015c4db3cca4d7cbb7f765caf14dbf319f027a0019aabf4fd5c121a135"
+  },
+  {
+    "id": "p3a-openai-version-dependency",
+    "family": "versions",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/versions.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "7052105485a665de5278d9f55096c83b5e7cb33b5ede796f82fc2935c3ba8c87"
+  },
+  {
+    "id": "p3a-openai-maximum-score-grid-path-limited-jumps",
+    "family": "grid_path",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/grid_path.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "abb51b471dca47e8e00b63e8aa5d812d81fe780fa339588bceac87fba4a68973"
+  },
+  {
+    "id": "p3a-openai-memory-allocator",
+    "family": "allocator",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/allocator.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "8beb4dbdfaaa74a6d8082f790206e0d363398e1ae53321ec3ecbdb04c4a70a81"
+  },
+  {
+    "id": "p3a-microsoft-memory-allocator",
+    "family": "allocator",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/allocator.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "8beb4dbdfaaa74a6d8082f790206e0d363398e1ae53321ec3ecbdb04c4a70a81"
+  },
+  {
+    "id": "p3a-anthropic-coding-q1-web-crawler",
+    "family": "crawler",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/crawler.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9170815a754c290d7d0742305485f0e6ee5658a0776b2600d0c12ad9ca912226"
+  },
+  {
+    "id": "p3a-anthropic-coding-q1-image-processing",
+    "family": "image_pipeline",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/image_pipeline.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "cf82041b739dd5e9ef29ba7828339150d81879029cd16fc9593a0ff66a757491"
+  },
+  {
+    "id": "p3a-anthropic-coding-q4-distributed-mode-median",
+    "family": "distributed_stats",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/distributed_stats.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "d79a2f68622c11b7b6eff3ba30b2e8e59410c2afe3580f0c85b061f62c580650"
+  },
+  {
+    "id": "p3a-openai-modal-lock-fair-modal-lock",
+    "family": "modal_lock",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/modal_lock.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "232d795ed4199922c8bfe60d39d4b47792ac7ca23cbe6b961c2e66cf9cd743ef"
+  },
+  {
+    "id": "p3a-openai-distributed-cluster-count-topology",
+    "family": "cluster",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/cluster.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "2374e5007bb39cf8745027f44f263ee873571b408fbde3f8b9b96438a6b3e2e9"
+  },
+  {
+    "id": "p3a-perplexity-todo-list-for-ai",
+    "family": "todo",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/todo.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "41625f2cdb087083435978e7b87570954e1799abfd4707bca4b622006ad59a21"
+  },
+  {
+    "id": "p3a-anthropic-oa-fellows-dns-resolver",
+    "family": "dns",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/dns.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "e1b064593a25a0193b0b3868d1150c86fc5c5e16049a272295a23f7edd901feb"
+  },
+  {
+    "id": "p3a-microsoft-dna-shotgun-sequencing",
+    "family": "dna",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/dna.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "ba2c37b743edb7b2f156069386d41dc3512de60b85709e483029ffb655d6104c"
+  },
+  {
+    "id": "p3a-openai-shard-rebalance",
+    "family": "shards",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/shards.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "4b4474865799587754fd386e881e4fb2e728b827abf3b3183eaf13577544b18d"
+  },
+  {
+    "id": "p3a-openai-monster-battle-system",
+    "family": "monster",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/monster.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "273fc69e5f8fa5cee77e64e43400c5c5f4e32ec447732c46f9a464708cc2c5e9"
+  },
+  {
+    "id": "p3a-openai-poker-simulation",
+    "family": "poker",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/poker.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "3af3d0dfc03e40587f48ad2b9aba511e2ed3255c2979b4a6bc4a2b51950ef528"
+  },
+  {
+    "id": "p3a-xai-checkers-backend-design",
+    "family": "checkers",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/checkers.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "68ac9b0d277ae62f39b6938cdee4aa7eae79d2bbeb707c3b8860fc849482e838"
+  },
+  {
+    "id": "p3a-openai-data-labeling-task-scheduler",
+    "family": "label_schedule",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/label_schedule.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "333da098b1d014f4015f34f06241371083837bbe70a43db7744b76cafc5a041a"
+  },
+  {
+    "id": "p3a-openai-chat-bot-system-refactoring",
+    "family": "bots",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bots.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "6050fe52c57ac261bc0fe00ff943a55080f763a3da935eeac71b5346b71fa51a"
+  },
+  {
+    "id": "p3a-anthropic-oa-bank-system",
+    "family": "bank_oa",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bank_oa.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "fc184be25d0e6ce170617d51c8345d347046751d4f7472b66ca818bd336be035"
+  },
+  {
+    "id": "p3a-cursor-speculative-decoding-acceptance",
+    "family": "speculative_sampling",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/speculative_sampling.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "04af5f10e32835710b7567b9d49cf838ac996ac4c5bbd83bc3af12e864b6da3a"
+  },
+  {
+    "id": "p3a-cursor-streaming-markdown-code-parser",
+    "family": "markdown",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/markdown.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9674d7437d4e51b8eddc0d69b76e93d3cb118f843c986ed835377a87126cca2d"
+  },
+  {
+    "id": "p3a-perplexity-byte-tokenizer-and-token-count-estimator",
+    "family": "bpe",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bpe.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "166a8f0a22892b9241a3af05f825b6cdc213714f7e8ef1e912a2ce5c0b4b4dc5"
+  },
+  {
+    "id": "p3a-cohere-delete-digit-five",
+    "family": "prefix_delete_five",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/prefix_delete_five.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "f90c3349601f2235edbad5cbff1f608a15b7ca14b847c4061ed0156bf273b2ef"
+  },
+  {
+    "id": "p3a-anthropic-agents-coding-llm-tool-use",
+    "family": "agent",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9841e315b2f975b5feaacc0bfc74f5dc9adda6c1d2c08eb6cb18b3454150120f"
+  },
+  {
+    "id": "p3a-cohere-terminal-game-llm-agent",
+    "family": "agent",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9841e315b2f975b5feaacc0bfc74f5dc9adda6c1d2c08eb6cb18b3454150120f"
+  },
+  {
+    "id": "p3a-anthropic-prompting-engineering-with-llms",
+    "family": "agent",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9841e315b2f975b5feaacc0bfc74f5dc9adda6c1d2c08eb6cb18b3454150120f"
+  },
+  {
+    "id": "p3a-xai-agentic-one-hour-movie-generation",
+    "family": "agent",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "9841e315b2f975b5feaacc0bfc74f5dc9adda6c1d2c08eb6cb18b3454150120f"
+  },
+  {
+    "id": "p3a-perplexity-embedding-model-batching-service",
+    "family": "embedding_service",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/embedding_service.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "965b6f9aaba3d3a6aba2ad2e14cf4de7a3d9d465b1027f3770ece67724967c4f"
+  },
+  {
+    "id": "p3a-perplexity-premium-zone-escape-path",
+    "family": "zone",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/zone.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "bc2941c5b1589dab3a761a45960cb646f0f37e8d2b5412c521358cb2a42193c3"
+  },
+  {
+    "id": "p3a-xai-input-field-review",
+    "family": "search_input",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/search_input.mjs",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "language": "javascript",
+    "solutionSha256": "7213e1c63576039b7d86eac4e6b838de8e11ea283f4ef1639c0369637daf6f99"
+  },
+  {
+    "id": "p3a-perplexity-frontend-discover-infinite-scroll",
+    "family": "infinite_feed",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/infinite_feed.mjs",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "language": "javascript",
+    "solutionSha256": "4eb6389ad2ad36d8d02a73717b2871113cd5d05b5597044b6098f3875e8b9c03"
+  },
+  {
+    "id": "p3a-xai-twitter-insight-platform-take-home",
+    "family": "twitter_pipeline",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/twitter_pipeline.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "d3bbe01180ec1ea8a4c9949fb3966bbfee14cf1be83b0ad4b1d242a7e833b661"
+  },
+  {
+    "id": "p3a-openai-payment-coffee-shop",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-sora-video-generation",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-chess-game",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-cloud-ide",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-real-time-ai-product-feature",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-mining-novel-data-unlabeled-corpus",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-chatgpt-enterprise-rag",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-gpt-3-playground",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-image-sharing-content-deduplication",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-crossword-puzzle-solver",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-ai-chatbot-system",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-multi-tenant-ci-cd-workflow",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-slack",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-rag-search-ml-design",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-google-calendar",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-design-url-shortener",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-webhook-delivery-system",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-points-of-interest-yelp",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-sd-q1-inference-api",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-sd-q4-1to1-chat-system",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-onsite-design-doc-review",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-sd-q3-model-distribution",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-sd-q2-prompt-playground",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-sd-q5-data-infrastructure",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-xai-notification-system-design",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-xai-rag-system-design",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-xai-rate-limiter-design",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-microsoft-embedding-lm-head-distributed-sharding",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-microsoft-chatbot-personalization-memory-design",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-microsoft-web-crawler-system-design",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-microsoft-search-autocomplete-typeahead",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-perplexity-durable-long-running-agentic-query-execution",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-google-ml-system-design-recsys-chatbot-classifier",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-meta-system-design-ai-enabled-agent-system",
+    "family": "design-case",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-technical-deep-dive",
+    "family": "project",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-onsite-project-deep-dive",
+    "family": "project",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-microsoft-project-deep-dive",
+    "family": "project",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-perplexity-behavioral-and-project-deep-dive",
+    "family": "project",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-hm-bq-why-openai",
+    "family": "culture",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-onsite-culture-ai-safety",
+    "family": "culture",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-recruiter-hr-screen-bq",
+    "family": "why",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-recruiter-screen-why-anthropic",
+    "family": "why",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-xai-most-challenging-project-why-xai",
+    "family": "why",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-openai-engineering-management-fundamentals",
+    "family": "management",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-onsite-hm-behavioral",
+    "family": "management",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-meta-ai-oriented-behavioral",
+    "family": "ai-bq",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-google-deepmind-rs-paper-presentation-defense",
+    "family": "research",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-google-ml-fundamentals-deep-dive",
+    "family": "fundamentals",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-meta-ml-foundations-optimizers-scaling-law-clustering",
+    "family": "fundamentals",
+    "contract": "handbook-scenario",
+    "reviewed": true,
+    "executable": false
+  },
+  {
+    "id": "p3a-anthropic-ml-configuration-system",
+    "family": "configuration",
+    "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/configuration.py",
+    "contract": "handbook-reconstruction",
+    "tested": true,
+    "solutionSha256": "0dc42fb2f1fe3039b2428b4f541044658c72d8a4b25a84a8c080881999e1df80"
+  }
+]

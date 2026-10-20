@@ -1,0 +1,34 @@
+{
+  "curatedCards": 167,
+  "summarizedCards": 164,
+  "sourceIndexEntries": 385,
+  "sourceIndexByCompany": {
+    "anthropic": 79,
+    "cohere": 4,
+    "cursor": 10,
+    "google-deepmind": 2,
+    "google": 14,
+    "meta": 39,
+    "mistral": 3,
+    "openai": 182,
+    "perplexity": 27,
+    "xai": 25
+  },
+  "curatedByCompany": {
+    "openai": 53,
+    "anthropic": 35,
+    "xai": 30,
+    "microsoft": 16,
+    "perplexity": 16,
+    "mistral": 3,
+    "cohere": 3,
+    "google-deepmind": 2,
+    "cursor": 2,
+    "google": 3,
+    "meta": 4
+  },
+  "reviewedCards": 167,
+  "codingPractices": 118,
+  "nonCodingAnswers": 49,
+  "testedImplementations": 85
+}

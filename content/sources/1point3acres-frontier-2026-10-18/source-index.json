@@ -1,0 +1,2697 @@
+[
+  {
+    "company": "anthropic",
+    "title": "Function Cache Keys and Crash-Recoverable LRU Cache",
+    "url": "https://www.1point3acres.com/interview/problems/1634ce25-e301-53d6-ae4c-af51fb820611",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Reconstruct Function Events from Sampled Call Stacks",
+    "url": "https://www.1point3acres.com/interview/problems/b968d46d-6144-5bd2-8734-356b626ea13c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Concurrent Same-Host Web Crawler",
+    "url": "https://www.1point3acres.com/interview/problems/89ae8ad6-c666-5445-b8b5-80be9989c77a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "File Deduplication",
+    "url": "https://www.1point3acres.com/interview/problems/f2c97b60-699e-5799-8244-55f15f82ea1a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Reconstruct Function Start/End Events from Sampled Call Stacks",
+    "url": "https://www.1point3acres.com/interview/problems/dd450545-b81f-5b95-8cd0-c3b999d194a0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "File Deduplication",
+    "url": "https://www.1point3acres.com/interview/problems/e5c7229b-808c-525e-a899-be1a6337e2ad",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Concurrent Same-Hostname Web Crawler",
+    "url": "https://www.1point3acres.com/interview/problems/6115afec-ade7-5144-bdb8-a9756f1c7421",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Review and Improve Pull Requests in a TypeScript Repository",
+    "url": "https://www.1point3acres.com/interview/problems/403a3c88-b330-5a7c-b7b2-6596a1c01051",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Compute the Global Mode Across Distributed Shards",
+    "url": "https://www.1point3acres.com/interview/problems/df1e9614-3704-5dfa-b9a2-17137a75dfc0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Batch Image Transformation Pipeline",
+    "url": "https://www.1point3acres.com/interview/problems/3c4d953f-37ac-55d2-8846-5f31385fe98c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Convert Call-Stack Samples into Timestamped Function Events",
+    "url": "https://www.1point3acres.com/interview/problems/009e07b3-c642-531c-8a3d-eb16fcaaeba8",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "In-Memory Key-Value Store with Nested Transactions and Value Counts",
+    "url": "https://www.1point3acres.com/interview/problems/20ebc05b-c152-573c-aa66-541458bdacc0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Minimum Workers with Deterministic Job Assignment",
+    "url": "https://www.1point3acres.com/interview/problems/168b4161-b86a-5ebc-a16f-6118c8c00adb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Generate Function Profiling Events",
+    "url": "https://www.1point3acres.com/interview/problems/464cc938-2dc4-560f-8250-7bf336b8e9f3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "File Deduplication",
+    "url": "https://www.1point3acres.com/interview/problems/2c5a041b-d32a-53e1-9304-4b4d2680352f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Fix a Buggy LRU Cache Key Built from args and kwargs",
+    "url": "https://www.1point3acres.com/interview/problems/314ff29a-4b15-5906-b526-b347b7b1bfb2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Optimized Infection Simulation on a 2D Grid",
+    "url": "https://www.1point3acres.com/interview/problems/01599122-965f-57e6-99b0-d43238e938fc",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Longest-Match Tokenizer with Unknown Token Merging",
+    "url": "https://www.1point3acres.com/interview/problems/48917c0b-2887-5f92-8547-15fedbc869aa",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Multi-Level In-Memory Database with TTL and Time Travel",
+    "url": "https://www.1point3acres.com/interview/problems/a3816a9d-04af-5a4a-8363-20be75018fd2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Stack Trace Suffix Matching",
+    "url": "https://www.1point3acres.com/interview/problems/3f55c628-6ee0-5304-8799-4ae500643827",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files in a File System",
+    "url": "https://www.1point3acres.com/interview/problems/b8e1c8cd-db6a-557c-ad93-1c39e581475d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find All Possible Recipes from Given Supplies",
+    "url": "https://www.1point3acres.com/interview/problems/89c84243-c0ab-5947-8e9b-9a29a3f7895c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files by Content",
+    "url": "https://www.1point3acres.com/interview/problems/4b32579d-bdcc-5a45-96da-f8c56b1aafe4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files by Content",
+    "url": "https://www.1point3acres.com/interview/problems/ab528b5f-7c0a-5745-adfb-22d830ac4807",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Fix Bootloader Program by Swapping One Instruction to Avoid Loop",
+    "url": "https://www.1point3acres.com/interview/problems/61e8a96a-9a4c-4360-8605-6dc9dced96a8",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "DNS Solver Implementation (Round 1)",
+    "url": "https://www.1point3acres.com/interview/problems/a540d34e-f411-435f-a363-e46f29964ad4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Debug / Fix an Extremely Randomized Trees (ExtraTrees) Implementation in NumPy",
+    "url": "https://www.1point3acres.com/interview/problems/84071144-2958-4ae1-aeca-131436139171",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Task Management System (CRUD + Priority Ordering + User Quota + History Query)",
+    "url": "https://www.1point3acres.com/interview/problems/284aa27f-5e4a-45d2-b3d9-49d46fd2b2e5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Thread-Safe Linked List Task Queue Transformation",
+    "url": "https://www.1point3acres.com/interview/problems/549736b2-61b8-48ae-aa7f-45dbce76c46b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "High-Concurrency Prompt Template Deduplication (Array + Hash Map)",
+    "url": "https://www.1point3acres.com/interview/problems/c70ba245-6dae-4c2d-a468-a77101e44faf",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "LLM-Oriented String Processing (Technical Phone Screen)",
+    "url": "https://www.1point3acres.com/interview/problems/5ca0d0e0-a2d7-422b-ac91-29e2ff6cbd2a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Implement an LRU Cache",
+    "url": "https://www.1point3acres.com/interview/problems/fef6cb52-1fcf-44cf-8072-e610257ede5e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "In-Memory Database with Backup and Restore",
+    "url": "https://www.1point3acres.com/interview/problems/1091f5c2-4b7c-4b13-9db8-7caada56c79f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Basic SQL Exercise + Learning/Skill-Growth Discussion",
+    "url": "https://www.1point3acres.com/interview/problems/a278d355-79f7-44a0-8a10-ce7e6c8e055f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Python Data Analysis on a Provided Dataset (Capacity Management Context)",
+    "url": "https://www.1point3acres.com/interview/problems/d03ad0c8-580a-4af4-8619-328ea8011719",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Implement a UI From a Figma Mock in React + TypeScript",
+    "url": "https://www.1point3acres.com/interview/problems/1a1fb907-7914-40b7-aa33-f5825437aa91",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Implement an LRU Cache (HashMap + Doubly Linked List) and Debug an Existing Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/4d278295-f27d-4425-9bc3-2be3388a320c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Implement a Weighted Data Batcher with Deterministic Save/Resume (DataRegistry Iterator Interface)",
+    "url": "https://www.1point3acres.com/interview/problems/afa9e386-7de2-4dd2-8747-3810328a9c39",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Image Processing Pipeline (Grayscale / Scale / Resize) with Performance Optimization",
+    "url": "https://www.1point3acres.com/interview/problems/6d14e9e2-3f95-453c-aca6-3f04fcbb34f0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find and Deduplicate Duplicate Files (by size and by content hash)",
+    "url": "https://www.1point3acres.com/interview/problems/8a4bd412-9a23-4420-9802-67e8a38e8448",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Single-thread Web Crawler, then Multi-threaded Crawler",
+    "url": "https://www.1point3acres.com/interview/problems/24ef32e6-b554-41ca-977b-307982b4d871",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "File Deduplication (find duplicate files)",
+    "url": "https://www.1point3acres.com/interview/problems/42afe615-f6b2-494c-807f-37c309841f8b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler (single-threaded first, then concurrent)",
+    "url": "https://www.1point3acres.com/interview/problems/3823a702-699e-4bf5-bd78-8ce518c640ad",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Debug an LRU Cache Implementation + Persistence After Crash (Follow-ups)",
+    "url": "https://www.1point3acres.com/interview/problems/f8f1f1af-e60a-4322-9122-43d00c8db24f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Implement a Same-Domain Web Crawler with Deduplication (Sync + Async Follow-up)",
+    "url": "https://www.1point3acres.com/interview/problems/40fd31e7-ff92-4cc8-946f-cd43f39a9412",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Design a Data Batcher (Code & Design)",
+    "url": "https://www.1point3acres.com/interview/problems/d0bfa6e3-f932-41aa-9448-bb8d17c493eb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Debug three RL training bugs and discuss GRPO trade-offs and variants",
+    "url": "https://www.1point3acres.com/interview/problems/bb3d1390-8cc8-41a4-938b-95ae37967619",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Task Management System (4-part OA)",
+    "url": "https://www.1point3acres.com/interview/problems/a44d81cc-388d-4133-8b79-76c80538347b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "VO Q2 (Unclear: File Deduplication or LRU Cache)",
+    "url": "https://www.1point3acres.com/interview/problems/f909b9c2-da1d-4093-b73b-55ccac13df3c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Multithreaded Web Crawler (Thread-Safe)",
+    "url": "https://www.1point3acres.com/interview/problems/f1a3ad01-3ae9-41bb-8541-060c151e6e0b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler (Same Host) — Single-threaded and Multi-threaded",
+    "url": "https://www.1point3acres.com/interview/problems/a5601fd7-84ea-4682-b281-1d91b9d423ef",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Longest-Match Tokenization with UNK and Optional UNK-Run Compression",
+    "url": "https://www.1point3acres.com/interview/problems/7fa8521a-94a1-462e-8b39-5aae12076ca0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Route Multiple Prompt Calls to Multiple GPT Servers Using a Hash Table",
+    "url": "https://www.1point3acres.com/interview/problems/46a64535-7d55-4b9f-af3e-9db6d856187a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "In-Memory Database",
+    "url": "https://www.1point3acres.com/interview/problems/a52d691f-b59e-48ad-86b1-be301c9921fd",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Numpy Debugging Task",
+    "url": "https://www.1point3acres.com/interview/problems/cf0e36da-02f9-46a9-be16-dd6fac7d456c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Process Cat Images",
+    "url": "https://www.1point3acres.com/interview/problems/a91f29c5-e919-47ed-b1fd-aa5470b62735",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Python Class and Data Structures",
+    "url": "https://www.1point3acres.com/interview/problems/1c35c2c1-9209-49c2-8ad6-aca71db1ffdb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Infection Simulation in a Grid",
+    "url": "https://www.1point3acres.com/interview/problems/60cdb5a8-ed94-46ca-9d0c-3198b18f62cb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler with Fragment Handling",
+    "url": "https://www.1point3acres.com/interview/problems/3acc0d47-19f6-4415-a22d-cca3f33b51d4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Token Usage Calculation",
+    "url": "https://www.1point3acres.com/interview/problems/1f861fb5-8d4f-46c0-b1f4-d2599788cc8a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler Challenge",
+    "url": "https://www.1point3acres.com/interview/problems/cdf0facf-7e01-47e4-9261-15bb1346366e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "File Deduplication Using Hashing",
+    "url": "https://www.1point3acres.com/interview/problems/8bcf1ece-d504-4803-901a-bfb2f6872c37",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Implement a Function get_when in an In-Memory Database",
+    "url": "https://www.1point3acres.com/interview/problems/b6750541-51ba-4dfa-93b2-568a0c81515b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Image Transformation using Python Libraries",
+    "url": "https://www.1point3acres.com/interview/problems/d5535584-0980-47fb-862d-6f9f7569791d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "RecipeManager Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/91116355-5324-4c50-b74a-a8e42df967f5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Efficient Model Deployment in a Cluster",
+    "url": "https://www.1point3acres.com/interview/problems/c91f8ed2-4407-459f-a433-a15fbf1de741",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "LRU Cache Extension",
+    "url": "https://www.1point3acres.com/interview/problems/7390541e-4891-4fbb-88e8-911e011a5a3e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Efficiency of Distributed Systems",
+    "url": "https://www.1point3acres.com/interview/problems/5c90398f-3a09-4523-ad38-146d6669d337",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Debugging Real-World Problem",
+    "url": "https://www.1point3acres.com/interview/problems/7e8f1598-d1dd-45e4-b464-09578d81c66e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files in a System",
+    "url": "https://www.1point3acres.com/interview/problems/ed023e78-cfc9-4f97-b29d-de300fb741b8",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler with Multithreading",
+    "url": "https://www.1point3acres.com/interview/problems/eab3ec23-cfcc-4009-bb0e-abed459f8234",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files",
+    "url": "https://www.1point3acres.com/interview/problems/b38dbdc7-ff57-4c09-b92b-2054b2f5e5a4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files in a File System",
+    "url": "https://www.1point3acres.com/interview/problems/f974d555-a6bc-4d6e-82ac-58ec39015f7c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "File Profiler",
+    "url": "https://www.1point3acres.com/interview/problems/dc568545-f217-4ade-8ba3-30d633579af6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler with Asyncio",
+    "url": "https://www.1point3acres.com/interview/problems/1bf863e2-d68b-44ec-b2a6-d1f1592a0b58",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Web Crawler Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/63b7bb68-fcb6-46cd-ab2c-fbac3302c9f9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Multi-threaded Web Crawler with URL De-duplication",
+    "url": "https://www.1point3acres.com/interview/problems/6d59b950-e10e-4f05-a050-8c6b4b93c8cb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Constant Latency Inference API for String List Processing",
+    "url": "https://www.1point3acres.com/interview/problems/db839215-fa43-437a-9e99-412a95249805",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "anthropic",
+    "title": "Find Duplicate Files by Content from Directory List",
+    "url": "https://www.1point3acres.com/interview/problems/5360b546-23f0-468e-9d87-0c88c373689c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cohere",
+    "title": "Remove All Digit Fives to Maximize a Number",
+    "url": "https://www.1point3acres.com/interview/problems/7db16bf3-5b95-55de-a7dc-7da080f1a1e3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cohere",
+    "title": "Implement Top-K Token Sampling with NumPy",
+    "url": "https://www.1point3acres.com/interview/problems/7a3c568d-c54a-53a3-bd89-85dca674313d",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cohere",
+    "title": "Implement top-k sampling using NumPy",
+    "url": "https://www.1point3acres.com/interview/problems/40f31787-1af2-4520-ad46-1bac12bd39ae",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cohere",
+    "title": "Live Coding: Replace a Heuristic Python Implementation of a Terminal Text-Based Game with an LLM-Driven Agent",
+    "url": "https://www.1point3acres.com/interview/problems/d363b064-b6f5-4efb-afd2-03b807fa85ff",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Implement Speculative Decoding",
+    "url": "https://www.1point3acres.com/interview/problems/f0d3fbd8-0cde-5a44-ae56-6b9e105bed69",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Streaming Markdown Code Parser",
+    "url": "https://www.1point3acres.com/interview/problems/34db21b4-effb-505b-8bc3-d02502828352",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "In-Memory Transactional Key-Value Database",
+    "url": "https://www.1point3acres.com/interview/problems/c0e227a8-4536-5550-8808-9b2a9880393f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Pluggable Hierarchical Rate Limiter",
+    "url": "https://www.1point3acres.com/interview/problems/ada7da4c-70f6-5f85-b4e8-8bc831c690fd",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Repository Merkle Tree Hashing and Change Detection",
+    "url": "https://www.1point3acres.com/interview/problems/8bca51b7-7135-5376-b979-c544455d7df4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Build and Diff an N-ary Merkle Tree for a File System",
+    "url": "https://www.1point3acres.com/interview/problems/5f0d95df-9506-5d39-8837-d58fc1d1a8af",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Repository Merkle Tree Hashing and Change Detection",
+    "url": "https://www.1point3acres.com/interview/problems/8b9a7120-c748-5f3d-bd0a-49f7565ca7cc",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Build a File-System Hash Tree",
+    "url": "https://www.1point3acres.com/interview/problems/f2a56b29-a0c4-5da2-9e4b-fdc4760aec25",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Debug and Patch a Codebase, Then Propose Long-Term Improvements",
+    "url": "https://www.1point3acres.com/interview/problems/b803dd21-3e34-4033-b68b-36c10910ee5b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "cursor",
+    "title": "Streaming Markdown Parser",
+    "url": "https://www.1point3acres.com/interview/problems/175556f6-2c78-4a92-a504-2f35db538367",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google-deepmind",
+    "title": "Graph Construction DFS",
+    "url": "https://www.1point3acres.com/interview/problems/ec95664e-bb65-47c5-87fb-bbedfad728d4",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google-deepmind",
+    "title": "Array Traversal",
+    "url": "https://www.1point3acres.com/interview/problems/6ef654a3-ec8c-4ce7-b96b-1eb1455d9e21",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Meeting Rooms / Interval Scheduling Variants",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/meeting-rooms-variants",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Number of Islands",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/number-of-islands",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Top-K Frequent in Large Logs",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/top-k-frequent-from-logs",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Necklace Cut into Two Halves with Equal D/R Counts",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/necklace-cut-equal-counts",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Sum of Good Subarrays (Adjacent Diff ±1)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/good-subarrays-diff-one",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Find All Bad Pairs Using runTest Oracle",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/find-bad-pairs-with-oracle",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Range Duplicate Check with Constant-Time Queries",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/range-duplicate-check-constant-time-queries",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Rotten Oranges / Multi-Source BFS (taxis)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/rotten-oranges-multi-source-bfs-taxis",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Decode String",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/decode-string",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "ML System Design (Recsys / Chatbot / Image Classifier)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/ml-system-design-recsys-chatbot-classifier",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Behavioral Round (Googliness Themes)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/bq-round-google-style",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "ML Fundamentals Deep Dive (AI/ML & MLE Roles)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/ml-fundamentals-deep-dive",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Google Hiring Assessment (GHA / Work Styles)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/google-hiring-assessment-gha",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "google",
+    "title": "Research Paper Presentation and Defense (DeepMind RS)",
+    "url": "https://www.1point3acres.com/interview/problems/company/google/deepmind-rs-paper-presentation-defense",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Coding — Maze Solver",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-maze-solver",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Coding — Maximum Unique Character Subset",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-max-unique-character-subset",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "CodeSignal OA — Banking System (Progressive OOD)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/codesignal-oa-banking-system",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Basic Calculator I / II",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/basic-calculator-i-ii",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Coding — Card Game (Three Cards Summing to 15)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-card-game-sum-fifteen",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Coding — Friend Recommendation",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-friend-recommendation",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Random Pick with Weight",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/random-pick-with-weight",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Valid Palindrome II",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/valid-palindrome-ii",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Lowest Common Ancestor (BT / BST / N-ary)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/lowest-common-ancestor",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Min Remove to Make Valid Parentheses",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/min-remove-to-make-valid-parens",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Find Peak Element",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/find-peak-element",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Binary Tree Vertical Order / Right Side View",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/binary-tree-vertical-order-right-side-view",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Kth Largest Element / Quick Select",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/kth-largest-quick-select",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Project Round (Take-Home-Style)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-project-take-home-style-round",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "LRU Cache",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/lru-cache",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Attention Implementation + Flash / Linear Attention Follow-ups",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/attention-implementation-and-follow-ups",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "CodeSignal OA — In-Memory Database",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/codesignal-oa-in-memory-database",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Range Sum of BST",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/range-sum-of-bst",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Subarray Sum Equals K",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/subarray-sum-equals-k",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Coding — Shared Substring in String List",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-substring-from-list",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Walls and Gates / Max Area of Island",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/walls-and-gates-multi-source-bfs",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Pow(x, n)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/pow-x-n",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Alien Dictionary",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/alien-dictionary",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI Coding — Compiler Optimization",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-compiler-optimization",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Tree Diameter / Longest Path",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/tree-diameter",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Mouse and Cheese / Maze Rewards",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mouse-and-cheese-maze-rewards",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Longest Consecutive Sequence",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/longest-consecutive-sequence",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "MLSD — Harmful / Weapon-Sales Content Detection",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mlsd-harmful-content-detection",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "MLSD — Nearby Place Recommendation",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mlsd-nearby-place-recommendation",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "MLSD — Reels / Short Video Recommendation",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mlsd-reels-short-video-recommendation",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "MLSD — Ads Ranking",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mlsd-ads-ranking",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "System Design — Instagram / News Feed",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/system-design-instagram-news-feed",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI-Enabled System Design — Agent System",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/system-design-ai-enabled-agent-system",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "MLSD — Image Copyright Violation Detection",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mlsd-image-copyright-detection",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "System Design — Ticketmaster / Ticketing",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/system-design-ticketmaster",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "MLSD — Notification Ranking (Multi-source)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/mlsd-notification-ranking",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "Traditional Behavioral — Meta",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/traditional-behavioral-meta",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "AI-Oriented Behavioral (AI BQ, NEW)",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-oriented-behavioral",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "meta",
+    "title": "ML Foundations — Optimizers, Scaling Laws, K-Means and GMM",
+    "url": "https://www.1point3acres.com/interview/problems/company/meta/ml-foundations-optimizers-scaling-law-clustering",
+    "evidence": "company-card-summary",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "mistral",
+    "title": "Max GPUs with At Most K Switches Between Clusters",
+    "url": "https://www.1point3acres.com/interview/problems/c1728f84-cc91-4ed2-a617-5e7a0274500f",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "mistral",
+    "title": "Max GPUs with Unlimited Switching Across Clusters (Per Day)",
+    "url": "https://www.1point3acres.com/interview/problems/24a878fc-e238-45c0-908a-516c3f976237",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "mistral",
+    "title": "Daily Remaining GPUs per Cluster",
+    "url": "https://www.1point3acres.com/interview/problems/d17c9b3f-c87d-4976-b339-e901cdb6f076",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Fault-Tolerant Queue with Reservations and a Dead-Letter Queue",
+    "url": "https://www.1point3acres.com/interview/problems/1d341d34-bb71-5be7-b6ea-2af488cbba70",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Persistent Key-Value Store with Size-Limited Disk Chunks",
+    "url": "https://www.1point3acres.com/interview/problems/ab19d8bb-7d2d-519e-a999-25f4119190a3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Persistent Key-Value Store with Binary Serialization",
+    "url": "https://www.1point3acres.com/interview/problems/e6d27df3-4b15-5b37-92a8-24b28fcf0162",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Fault-Tolerant Task Queue with Cooldowns and Dependencies",
+    "url": "https://www.1point3acres.com/interview/problems/522f8d31-3cef-5822-9b07-363c423f91cc",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Lowest Cost Shirts",
+    "url": "https://www.1point3acres.com/interview/problems/746f2450-7e64-5c66-869a-6122025e3db6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement malloc and free with Free-Block Indexing",
+    "url": "https://www.1point3acres.com/interview/problems/32b84e2a-99c1-5d37-bb21-e3e2c39e2d87",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Microorganism Simulation",
+    "url": "https://www.1point3acres.com/interview/problems/d14a0980-552f-509d-a728-eb5469254799",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Count Paths Visiting Exactly One Shop of Each Type",
+    "url": "https://www.1point3acres.com/interview/problems/f27c58d6-4e09-5c7e-b35a-4e84bd26cc9f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Simple Network: Endpoint or Cycle-Closing Node",
+    "url": "https://www.1point3acres.com/interview/problems/db6e975a-ae2e-53a4-bd03-6588dd9253b1",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Indexed Linked List with Checkpoints",
+    "url": "https://www.1point3acres.com/interview/problems/49b21917-8955-55fc-875d-4ffd850cfca4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement an At-Least-Once Task Scheduling Queue with DLQ",
+    "url": "https://www.1point3acres.com/interview/problems/548316eb-df84-5ca4-8de7-998c066751cc",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a Spreadsheet with Formula Evaluation and Cycle Detection",
+    "url": "https://www.1point3acres.com/interview/problems/de752325-a236-527c-bf9a-37f26acae140",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Extensible Card Hand Comparison Game",
+    "url": "https://www.1point3acres.com/interview/problems/43a9ce0f-3e31-5d4f-89ea-7ea800648dcf",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "1-Nearest Neighbor Classification with Manhattan Distance",
+    "url": "https://www.1point3acres.com/interview/problems/fe05dfd3-4412-503b-9861-dde9ef9e289a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credits with Expiration",
+    "url": "https://www.1point3acres.com/interview/problems/ca8a7d4f-38ed-5f83-b71c-f1df43e688a2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Evaluate Hierarchical Alert Routing Rules",
+    "url": "https://www.1point3acres.com/interview/problems/b6f9e93d-0d5e-540c-bb62-509e022e9ec6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Compare Three-Card Poker Hands with Optional Flush Rule",
+    "url": "https://www.1point3acres.com/interview/problems/bf3e16a6-a286-5c60-a8ac-673058700b96",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credit Ledger with Out-of-Order Events",
+    "url": "https://www.1point3acres.com/interview/problems/27bef098-ccf6-53ad-a1ea-888a7b8eef44",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Prefix-Product Autograd",
+    "url": "https://www.1point3acres.com/interview/problems/fad6a24b-cbae-5a7d-8554-6fee7ebe6f14",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-Memory Key-Value Store with Write-Ahead Log Recovery",
+    "url": "https://www.1point3acres.com/interview/problems/31f4c8bf-6628-5df0-a0b7-9ee030e04eff",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Event Counting in a 15-Minute Sliding Window",
+    "url": "https://www.1point3acres.com/interview/problems/54ecd11c-2385-5c17-bcf3-b85b95a52a5c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a Spreadsheet with Formula Dependencies and Cycle Detection",
+    "url": "https://www.1point3acres.com/interview/problems/b264dde8-60f4-535e-b17b-b030955fed5d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Causal Self-Attention with a KV Cache",
+    "url": "https://www.1point3acres.com/interview/problems/b5dc76b1-8bf9-5a64-b21f-7c3e4be3b181",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Guess a Secret Number with One-Call Delayed Feedback",
+    "url": "https://www.1point3acres.com/interview/problems/e41553c0-20ac-51a0-bc69-17309dce31b6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Cross-Entropy Loss",
+    "url": "https://www.1point3acres.com/interview/problems/7326ca55-033c-54b6-85b9-607d5dc7db5a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "1-Nearest Neighbor Classification",
+    "url": "https://www.1point3acres.com/interview/problems/98617b41-9680-50cc-82de-07a02e927bdd",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Prefix Product Autograd",
+    "url": "https://www.1point3acres.com/interview/problems/484e28e1-cf32-58a4-a62c-895217af3a5c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Dependency-Aware Multi-Agent Request Scheduler",
+    "url": "https://www.1point3acres.com/interview/problems/472b106a-5204-5e12-acf4-8a1fca2a099f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credit System with Validity Windows",
+    "url": "https://www.1point3acres.com/interview/problems/1811d9e3-291b-5957-a868-af0368f92233",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-Memory Key-Value Store with Serialization",
+    "url": "https://www.1point3acres.com/interview/problems/f88f238c-fb2d-5f80-9e2c-18702e8d244e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Vectorized 1-Nearest Neighbor and Neural-Network Formulation",
+    "url": "https://www.1point3acres.com/interview/problems/2e9a14d1-de15-5d3d-8fad-86fe55728bac",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a Work Queue with Leases, Retries, and a Dead-Letter Queue",
+    "url": "https://www.1point3acres.com/interview/problems/63818b03-2fcb-560b-ab5f-fa85f8e1950f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Versioned User Follow Graph with Snapshots",
+    "url": "https://www.1point3acres.com/interview/problems/a2405f87-543a-54c9-8884-3b476be29ece",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Snapshot Set",
+    "url": "https://www.1point3acres.com/interview/problems/8ed246bb-89da-5107-83a0-194469269a2a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Topological Sort of Task Dependencies",
+    "url": "https://www.1point3acres.com/interview/problems/542a8554-3c84-5c34-80db-1baf85ded6be",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a Durable Key-Value Store with File Segmentation",
+    "url": "https://www.1point3acres.com/interview/problems/1af94a96-b8e6-546b-9114-085f43c45e6c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-Memory KV Store with Log-Based Recovery",
+    "url": "https://www.1point3acres.com/interview/problems/6fa38df3-8a6f-5c84-a084-890edd6ee424",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a Memory Allocator with First-Fit and Best-Fit",
+    "url": "https://www.1point3acres.com/interview/problems/afcb855b-4115-59d5-a04f-1ef4b3d0eef2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Friend Circles / Number of Provinces",
+    "url": "https://www.1point3acres.com/interview/problems/7115b1b8-6a9c-5439-9d16-2006bafc44e6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Count Machines in a Cluster Tree and Recover Tree Topology",
+    "url": "https://www.1point3acres.com/interview/problems/a6645c96-e7a1-5ecf-ad46-b61da8a424c7",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Sharded Matrix Multiplication and Backpropagation",
+    "url": "https://www.1point3acres.com/interview/problems/e7f659ba-d42d-50cd-a0a5-c7d78a230852",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a Simple Memory Allocator with First-Fit and Best-Fit",
+    "url": "https://www.1point3acres.com/interview/problems/bef6e93e-802a-5746-b4ac-1d4cdb6d667b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Masked Cross Entropy Loss with Label Smoothing",
+    "url": "https://www.1point3acres.com/interview/problems/f62c64b2-c498-5a80-8ca7-8e7c16591fe9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Maximum Falling Path with Limited Vertical Jumps and Bonus Scoring",
+    "url": "https://www.1point3acres.com/interview/problems/9783914a-7d86-5a41-94e1-af1b1f9fb063",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-Memory Memory Allocator with malloc/free, First-Fit and Best-Fit",
+    "url": "https://www.1point3acres.com/interview/problems/375aac58-2435-5054-9d53-897f1596dfc4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Message Event Aggregation in a 5-Minute Sliding Window",
+    "url": "https://www.1point3acres.com/interview/problems/a4cd6a8e-afaa-5155-9e02-d089c0210493",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Build a ChatGPT Chat Interface in an Existing iOS Project",
+    "url": "https://www.1point3acres.com/interview/problems/ce24bf6d-a01f-58db-9fa8-dccd80e7fa1b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Find the Incorrect Data Labeler",
+    "url": "https://www.1point3acres.com/interview/problems/d2fcfdcf-7015-535c-aecb-8729bdd9edcf",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Minimum Time to Infect a Network",
+    "url": "https://www.1point3acres.com/interview/problems/5ef7f558-3e9a-5784-9873-c0dd3bc284bf",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Restore Valid IPv4 Addresses",
+    "url": "https://www.1point3acres.com/interview/problems/b4ff5eff-1541-5da7-b251-598d75a41f06",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Plant Infection by Neighbor Count",
+    "url": "https://www.1point3acres.com/interview/problems/1130d2a4-2742-5561-83f4-a44975909a44",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infection Spread with Immune Units and Expiring Contagiousness",
+    "url": "https://www.1point3acres.com/interview/problems/e779b9e1-5a83-5184-b0b4-acc5d22ba660",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Streaming Entropy with Online and Block-wise Updates",
+    "url": "https://www.1point3acres.com/interview/problems/1235a5c1-d4a0-534f-93a3-46eb764de3ff",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Resumable Iterator for List and File",
+    "url": "https://www.1point3acres.com/interview/problems/2e69024a-cf1f-5a8d-845f-f93c1a6ade15",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Minimum Time to Infect All Plants",
+    "url": "https://www.1point3acres.com/interview/problems/52d376f2-a7b9-55d5-90eb-a06a88acae5b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Reproduce Double Descent in Linear Regression",
+    "url": "https://www.1point3acres.com/interview/problems/a5c37bda-f1a1-528d-b6aa-0968b57e250a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement malloc and free with First-Fit Allocation and Discuss Best-Fit Optimization",
+    "url": "https://www.1point3acres.com/interview/problems/f2643e53-d3fd-52fe-ab54-2edf543b69b7",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Cell Simulation / Conway's Game of Life",
+    "url": "https://www.1point3acres.com/interview/problems/a53a5fba-8679-5995-a771-1783f0fad482",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a Memory Allocator with Coalescing",
+    "url": "https://www.1point3acres.com/interview/problems/f6f40df8-1643-5c2b-8237-c6d7124553ef",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Coding: Design a Distributed Rate Limiter with Persistence (Clock Skew, Redis Fallback)",
+    "url": "https://www.1point3acres.com/interview/problems/ee08a6d0-0eac-4767-86af-19287ae5af50",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Debug A/B Test Python Code (Metric Computation and Statistical Testing)",
+    "url": "https://www.1point3acres.com/interview/problems/fbde06cd-0253-4b64-a01a-9ea551c06435",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Basic SQL Querying (Filtering, Aggregation, Join, Window Functions)",
+    "url": "https://www.1point3acres.com/interview/problems/4b150157-f8fc-435c-9ee4-348a49343e55",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Draw Paths / Strokes on a Set of Points",
+    "url": "https://www.1point3acres.com/interview/problems/e27c0df7-1849-4946-8f9d-70773e7d96e3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Machine Topology Reasoning (Topology / Dependency Graph)",
+    "url": "https://www.1point3acres.com/interview/problems/985c6952-0c9e-40e2-8d54-e2b1a7731c80",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Social Network Query/Computation (Graph-Based Social Problem)",
+    "url": "https://www.1point3acres.com/interview/problems/a2d18ae7-97a8-4dfe-ab4a-1d7192e2e6fe",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infection Spread on a Network (Graph Propagation)",
+    "url": "https://www.1point3acres.com/interview/problems/66dfe55d-a29b-41a6-b782-b049ef97d8ab",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Plant Infection (multi-part)",
+    "url": "https://www.1point3acres.com/interview/problems/fca7001d-3089-4d7f-ae1f-5a44924f874d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infectious Disease Simulation / Containment (unspecified)",
+    "url": "https://www.1point3acres.com/interview/problems/06f15ce5-2ae4-473c-baa8-1edfdb0936f8",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Human Labeling and Training a Classifier (ML Coding)",
+    "url": "https://www.1point3acres.com/interview/problems/22767524-0d52-4710-9b9f-88894be4a71a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Monster Fighting (Multi-part)",
+    "url": "https://www.1point3acres.com/interview/problems/14fe459e-0891-4c3a-a60a-2ed0915c78f0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infectious Disease Simulation (Multi-part)",
+    "url": "https://www.1point3acres.com/interview/problems/00989ada-41f1-405a-8ab3-7792a508c41b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement 1-Nearest Neighbor Classifier with NumPy; Rewrite as Neural Network Weights",
+    "url": "https://www.1point3acres.com/interview/problems/a40d5222-9b14-4696-952c-a6d32f248e76",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Matrix Multiplication Forward and Backward in PyTorch",
+    "url": "https://www.1point3acres.com/interview/problems/0b297a24-8769-4688-b0bd-1b914279a827",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Debug a MiniGPT Transformer and Implement KV Cache (PyTorch)",
+    "url": "https://www.1point3acres.com/interview/problems/1c94c41d-587d-4c4f-b98d-95d376048c0e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Debug a Buggy Distributed Job Scheduler (Concurrency, Deadlocks, Rate Limiting, and Testing)",
+    "url": "https://www.1point3acres.com/interview/problems/07e2180a-6a33-4570-ab86-d276ce424ecf",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement an Async Message Bus for sendAsyncMessage (Simulation)",
+    "url": "https://www.1point3acres.com/interview/problems/b06f318b-6c42-43eb-baec-ae8a0e10c31e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Distributed Topology Reconstruction via Async Messages",
+    "url": "https://www.1point3acres.com/interview/problems/c4588a6c-a66e-4391-9b23-a16a365ae88e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Count Nodes in a Distributed Tree via Async Messages",
+    "url": "https://www.1point3acres.com/interview/problems/96f72212-b262-4014-b7fc-6ae2411f9008",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design and implement an extensible ChatApp with bots (multi-channel support)",
+    "url": "https://www.1point3acres.com/interview/problems/7dce05db-191b-4a77-9f00-5f1c72a846a5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "IP address to CIDR blocks (iterative/range-based)",
+    "url": "https://www.1point3acres.com/interview/problems/1beea68a-2947-4257-ade0-7714ac9f43d3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Android Jetpack Compose rating card with comment validation and submission state",
+    "url": "https://www.1point3acres.com/interview/problems/8e9c52ef-e7bd-43cb-8b11-63389889bfdb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a Read/Write-Optimized Data Structure (General Coding, Non-ML)",
+    "url": "https://www.1point3acres.com/interview/problems/a759463f-97ec-4b54-b643-30f879f88a18",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "ML Coding Interview: Math + Coding + Research Brainstorm (Notebook-based)",
+    "url": "https://www.1point3acres.com/interview/problems/d249ed6c-598c-435e-ba34-56d4c3aded8f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Multi-Head Attention (NumPy or PyTorch)",
+    "url": "https://www.1point3acres.com/interview/problems/78579ab8-67cd-40c9-9a7c-892d7157cb14",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a Simple Key-Value Store from Scratch",
+    "url": "https://www.1point3acres.com/interview/problems/b4834cb9-c51e-4405-9adb-f8f28a99335d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Persistent Key-Value Store",
+    "url": "https://www.1point3acres.com/interview/problems/b50ac945-d5f9-4a09-9863-138fe0da0578",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement an in-memory TTL cache (optionally LRU)",
+    "url": "https://www.1point3acres.com/interview/problems/478c798b-df30-44a1-8f7e-2dfba6cd2710",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design an in-memory rate limiter (token bucket / sliding window)",
+    "url": "https://www.1point3acres.com/interview/problems/91b46503-5a56-4b8a-a1f3-b4f15da02b11",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement an in-memory key-value store with time-travel (versioned snapshots)",
+    "url": "https://www.1point3acres.com/interview/problems/a60129d0-f802-4c70-add6-536a426434be",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Numerically Stable Entropy from Logits (Batch and Streaming)",
+    "url": "https://www.1point3acres.com/interview/problems/5331598d-bb6b-4e87-b2fc-db211ccf2ba2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Balanced Sequence Generation for (AI, Human, Task) Tags with Prefix Constraints",
+    "url": "https://www.1point3acres.com/interview/problems/6c63f46e-8897-4039-b189-0fed5e159bf7",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-place Matrix Multiplication vs Autograd; Out-of-place Forward/Backward; Scan-based Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/80f3be88-96a3-45be-8b5d-e1d626da063c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infection Spread Simulation (Unspecified Variant)",
+    "url": "https://www.1point3acres.com/interview/problems/f81441e6-33b3-4af8-adbe-a35c0e378d86",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Unix-like cd Command (with Symlink Follow-up)",
+    "url": "https://www.1point3acres.com/interview/problems/517354b3-4532-46e6-a31b-c8c2e999712e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Chatbot Channel: Multi-bot Message Router",
+    "url": "https://www.1point3acres.com/interview/problems/ddd9458c-76ca-4204-a65c-df13f65c5a0e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "2D Grid Infection (BFS Spread)",
+    "url": "https://www.1point3acres.com/interview/problems/ef7d4635-d876-4a51-8ce0-a3d113b62dc1",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Dataset Exploration: Detect Label Noise and Choose Metrics",
+    "url": "https://www.1point3acres.com/interview/problems/efbf2b5a-6863-4c73-947f-003612c370f3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Softmax Cross-Entropy Loss and Backprop (NumPy)",
+    "url": "https://www.1point3acres.com/interview/problems/ce840bf0-d07d-422c-a8d0-36045dd3bb1a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement and Debug a Minimal Neural Network Training Loop (PyTorch)",
+    "url": "https://www.1point3acres.com/interview/problems/a7d621c9-52af-490b-b0e0-df43a030996d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement 1-Nearest-Neighbor and a Simple Neural Network in NumPy, then Modify to Use L1 Distance",
+    "url": "https://www.1point3acres.com/interview/problems/1fddc7af-487c-4044-85eb-e73c9f64f8b9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "ML Coding: Human Annotation Data Filtering (Detect Bad Annotations)",
+    "url": "https://www.1point3acres.com/interview/problems/7a51f506-2145-446a-afd8-10004c139c69",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Find Duplicate Files + Follow-ups on Optimization and Distributed Systems",
+    "url": "https://www.1point3acres.com/interview/problems/59fd3a47-dd91-4cc7-8ed2-310f93f26568",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Plant Infection Simulation (Multi-part)",
+    "url": "https://www.1point3acres.com/interview/problems/d5566b1b-8678-45b4-ae3a-6d3af9afd9d9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credits Grants: create_grant / subtract / get_balance with expiry and FIFO-by-expire deduction",
+    "url": "https://www.1point3acres.com/interview/problems/c3feff25-1ea2-44d7-8620-a9871c611035",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Optimal Turn-Based Monster Battle Simulation with Ordering and Revival Decisions",
+    "url": "https://www.1point3acres.com/interview/problems/30f3afa1-b8ac-4730-8eaa-11fdb969077b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Incremental Task Scheduling for Human Labelers and Models with Daily Streaming Constraints",
+    "url": "https://www.1point3acres.com/interview/problems/5584e468-fad4-4185-85f5-a71420266f7b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Monster Battle (Coding)",
+    "url": "https://www.1point3acres.com/interview/problems/04bc716b-4b8c-41b6-9b84-d6653af68394",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Machine Count and Network Topology Message Delivery (implement receiveMessage)",
+    "url": "https://www.1point3acres.com/interview/problems/756863af-79c3-43e8-977b-398f2a20fe61",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a ChatGPT-like Chat UI in React (Streaming + Loading + Message Flow)",
+    "url": "https://www.1point3acres.com/interview/problems/7754ac3d-eaf8-4ebc-855d-45a901c39e18",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "IP Address Iterator (Forward / Backward / CIDR)",
+    "url": "https://www.1point3acres.com/interview/problems/b942bff0-248d-481e-82a1-4c2d4ce905e3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Type a Language (Implement and Pass Test Cases)",
+    "url": "https://www.1point3acres.com/interview/problems/79d58c6d-8ac1-4b26-8e84-0a86996a038f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Data Labeling Task Scheduler Construction",
+    "url": "https://www.1point3acres.com/interview/problems/380d0ad9-8d2e-460b-8a39-f347fe4e3328",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "KV Store with Serialization (Basic Operations)",
+    "url": "https://www.1point3acres.com/interview/problems/ed4926d7-2858-4f77-a3c7-ab5878fd4785",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Cellular Automata Infection Simulation",
+    "url": "https://www.1point3acres.com/interview/problems/8be7ffc0-2e86-4093-89d8-dbe1b2813fa6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Jetpack Compose: Build a UI Similar to Google Translate Home Screen",
+    "url": "https://www.1point3acres.com/interview/problems/ecec4fb8-cd2f-4da0-9620-145885b2aa3f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Identify Low-Quality Annotators Under Label Noise and Evaluate Classifier Improvement",
+    "url": "https://www.1point3acres.com/interview/problems/e6420e24-2c92-4f48-b01d-db2eaaa32dd0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Time-Aware Social Network Follow Graph with Recommendations",
+    "url": "https://www.1point3acres.com/interview/problems/d9afe2bc-6711-4a13-90d1-aafcee4cb705",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Resolve Python Dependency Versions",
+    "url": "https://www.1point3acres.com/interview/problems/7edea219-bdbe-49a3-bf45-7958cb6188ac",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Debug a Transformer Implementation and Modify It into a Classifier",
+    "url": "https://www.1point3acres.com/interview/problems/2255b47c-b6fa-4797-a06c-ffb8391f30c2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infectious Disease Spread (Infection Propagation)",
+    "url": "https://www.1point3acres.com/interview/problems/e64046b0-c762-467b-905f-4e4293875d94",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Coding Question (same as referenced post / Hack2Hire link)",
+    "url": "https://www.1point3acres.com/interview/problems/5691a292-2c2a-404a-9791-36fcae7c17ed",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Coding: Credit/Bug-free Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/68125203-6fe0-48a1-ad34-b40da1720c20",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Refactor a Chatbot Codebase",
+    "url": "https://www.1point3acres.com/interview/problems/52d61176-7455-4756-a5d5-7c9ddb53f0d2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "iOS Take-Home: Implement a Sample Project (UIKit/SwiftUI)",
+    "url": "https://www.1point3acres.com/interview/problems/57301c85-b925-4bcf-8609-7c1e87a84a74",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Social Network Follow/Unfollow With Snapshots",
+    "url": "https://www.1point3acres.com/interview/problems/1e1193de-63cd-4149-97cc-b9b5f229a015",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Debug and Improve a GRPO RL Training Loop for Language Models (PyTorch)",
+    "url": "https://www.1point3acres.com/interview/problems/906a162e-db6b-4431-8c41-1c53c758d2b9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credits II (Modified): Balance Query Returns None When Subtract Fails",
+    "url": "https://www.1point3acres.com/interview/problems/27d03a78-b011-4752-b7f4-b9aa6f92ad54",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement an In-Memory Key-Value Store with Write-Ahead Logging for Crash Recovery",
+    "url": "https://www.1point3acres.com/interview/problems/746c7b5c-9f31-46ca-8bcf-0e0d69e5b090",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a Minimal SQL-Like Query Engine Over an In-Memory Database",
+    "url": "https://www.1point3acres.com/interview/problems/2b9e4599-47c1-4076-8f8f-b04086ee8a88",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infectious Disease (multi-part coding question)",
+    "url": "https://www.1point3acres.com/interview/problems/b534c041-5df4-46ab-9682-41ddd412937c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Compute the Distribution of LLM Decoding Stopping Time and Build a Strategy Against Adversaries",
+    "url": "https://www.1point3acres.com/interview/problems/7c43fee5-fd93-40b0-b610-b533299b665f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement a KV Store with Shutdown/Restore",
+    "url": "https://www.1point3acres.com/interview/problems/b3abad37-3795-4610-a47a-c68ea9df6bbb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Infection Spread Problem",
+    "url": "https://www.1point3acres.com/interview/problems/d8023bb1-7e04-4db8-8923-04d869c2eb4c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "KV Store Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/811ba67f-faca-4f75-a670-7ced29702f54",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "General Coding Interview",
+    "url": "https://www.1point3acres.com/interview/problems/ced5e63d-df6c-4a76-8166-add49305f598",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Problem Prompt and ChatGPT Integration",
+    "url": "https://www.1point3acres.com/interview/problems/c8b8d1cc-ca59-4dcb-ab59-b78f66ec1ea8",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Toy language problem",
+    "url": "https://www.1point3acres.com/interview/problems/0f8dda91-aa68-4c31-9a38-953bd650efe7",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Image Classification with Noise Analysis",
+    "url": "https://www.1point3acres.com/interview/problems/65f6fa15-cead-46bc-bd86-5f74c566baf5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Chatbot Development",
+    "url": "https://www.1point3acres.com/interview/problems/e7a36cff-619e-4b81-b325-fd12dae70bd1",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a System for Remote Devbox",
+    "url": "https://www.1point3acres.com/interview/problems/7712035f-9c95-4803-8d87-0611bd9aca4c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "IP Address Iterator",
+    "url": "https://www.1point3acres.com/interview/problems/fd613e94-3523-45f5-b878-ba68b79cb16f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Pokémon Battle Simulation",
+    "url": "https://www.1point3acres.com/interview/problems/c67a473c-ca9a-49f3-a8cd-191c57a6bc3c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "ML Coding with NP and NN Layers",
+    "url": "https://www.1point3acres.com/interview/problems/59c77c9a-49d0-4955-be64-91473bb8ab7f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "ML Debugging with Transformer Model",
+    "url": "https://www.1point3acres.com/interview/problems/da45a11e-5cc2-404c-8a37-f13f235bb9bb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credit Calculator",
+    "url": "https://www.1point3acres.com/interview/problems/d01fe6d8-e86a-4cf8-b36d-900107f35f74",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "ML Coding",
+    "url": "https://www.1point3acres.com/interview/problems/732b414c-9790-41dc-b04d-21feac7d31c8",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "ML Debugging",
+    "url": "https://www.1point3acres.com/interview/problems/1f5d9987-cddf-41e8-9051-40dd986fd083",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Crossword Puzzle Solver Service Design",
+    "url": "https://www.1point3acres.com/interview/problems/b746805f-856e-452c-a0e5-b5e82eba809f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Map Serialization and De-serialization",
+    "url": "https://www.1point3acres.com/interview/problems/f47116fa-8557-4c2e-b784-18ae4e55df2c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Toy Language Interpreter",
+    "url": "https://www.1point3acres.com/interview/problems/d7b129eb-5166-4c1e-97bc-02132d748c47",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "CICD and GPU Utilization",
+    "url": "https://www.1point3acres.com/interview/problems/3460d47c-d129-46a8-bac1-c6e9698acb04",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credit Management System",
+    "url": "https://www.1point3acres.com/interview/problems/ed86e7bd-0545-4aa1-8a8a-4d1b5b4e60f0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Basic SQL Features",
+    "url": "https://www.1point3acres.com/interview/problems/bdfc7319-2304-4e31-8ac8-c2bf35a02ee6",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Monster Duel",
+    "url": "https://www.1point3acres.com/interview/problems/f015eda2-55c2-42c1-a27e-389cd37fbde7",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "GPU Credit Allocation",
+    "url": "https://www.1point3acres.com/interview/problems/9ca7433b-42f6-44a9-ba17-21d7c8e517f3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a simple database class with insert and query methods",
+    "url": "https://www.1point3acres.com/interview/problems/862e9246-1a5e-49f7-b30e-c9fe39aef1b5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design KV Store with File Serialization",
+    "url": "https://www.1point3acres.com/interview/problems/844a8408-841a-4858-ab1b-d2c9ee8f8bce",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Valid Parentheses with Redundancy Check",
+    "url": "https://www.1point3acres.com/interview/problems/663d5171-6dc3-42c3-bc4e-5d7e1cdf504c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Inference with Probability Using NumPy",
+    "url": "https://www.1point3acres.com/interview/problems/21805e58-6c77-422a-aefa-6b8ea623c6da",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Implement Node and Function Classes with Type Inference",
+    "url": "https://www.1point3acres.com/interview/problems/a425b87b-b53c-40ae-9683-57d3e32491ee",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Transformer Model Debugging",
+    "url": "https://www.1point3acres.com/interview/problems/73bacbfd-0f76-432a-a927-484ad38107a4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Excel Sheet Operation",
+    "url": "https://www.1point3acres.com/interview/problems/106dedaf-ce19-4c30-a62d-39cf777e507e",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "CD Directory Navigation",
+    "url": "https://www.1point3acres.com/interview/problems/cb179259-8534-4d67-876a-902a3749896f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "CRUD Backend API and Debugging",
+    "url": "https://www.1point3acres.com/interview/problems/e971a19f-9946-4e1f-b431-aed746c00283",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Design a Simple iOS Application",
+    "url": "https://www.1point3acres.com/interview/problems/e8fe101f-5f9a-4562-b204-ce991fded895",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Insert Interval",
+    "url": "https://www.1point3acres.com/interview/problems/6352fc06-05dc-4c71-a3af-8b2a086efd67",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Maximize The Hits (Newgrad)",
+    "url": "https://www.1point3acres.com/interview/problems/openai-maximize-the-hits",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Count Valid Sequences",
+    "url": "https://www.1point3acres.com/interview/problems/openai-count-valid-sequences",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Challenges and Strategies in Transitioning Non-Profit to For-Profit",
+    "url": "https://www.1point3acres.com/interview/problems/89149d57-b4d1-4cb6-a153-b1118845ea1d",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Scalable Real-Time Messaging System Design for Slack",
+    "url": "https://www.1point3acres.com/interview/problems/731dee1e-dc10-46a6-8a27-80580e41ea5c",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Spreadsheet Implementation with Cycle Detection and Caching",
+    "url": "https://www.1point3acres.com/interview/problems/b0fb2e35-02e8-45a9-bcfe-f1ad3e4778fd",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Resumable List Iterator with Save and Restore Functionality",
+    "url": "https://www.1point3acres.com/interview/problems/9c8fae11-23cc-4f3c-a51a-29ac5840c093",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-Memory Database with Multi-Condition Query and Ordering",
+    "url": "https://www.1point3acres.com/interview/problems/1992efed-1d3c-4a76-bc45-362b9083c249",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Designing Scalable Enterprise Chat System Like Slack",
+    "url": "https://www.1point3acres.com/interview/problems/dc3b2441-88b4-4b0d-90ae-da62b123262f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Resumable Iterator, Unit Tests, Time-Based KV Store, and Concurrency",
+    "url": "https://www.1point3acres.com/interview/problems/ec3912e2-0511-4700-b01b-5fad7ac3d781",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "AccountBalance Class with Time-Based Grants and Spending",
+    "url": "https://www.1point3acres.com/interview/problems/fb4a851c-1fca-4576-9ec6-c933f106c6d4",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Maximize Rice Units Taken Without Emptying Piles Using DP",
+    "url": "https://www.1point3acres.com/interview/problems/3b674fd2-33ac-43c2-964d-526dffa9dc9a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Multiprocessing Debugging for Neural Network Propagation",
+    "url": "https://www.1point3acres.com/interview/problems/a91050eb-ce04-4669-81b0-4219d72e6661",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Persistent Key-Value Store with Accurate Serialization/Deserialization",
+    "url": "https://www.1point3acres.com/interview/problems/25252736-d196-40ba-8c6f-51b7b416a341",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Resumable 2D Iterator with Pause and Resume Functionality",
+    "url": "https://www.1point3acres.com/interview/problems/f37c572f-b9ee-482f-9eb5-420e03c340c2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "Diagnosing and Fixing Transformer Model Training Performance Drop",
+    "url": "https://www.1point3acres.com/interview/problems/b326bc75-155a-4590-88e2-a92fb8cd01a1",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "openai",
+    "title": "In-Memory Key-Value Database CRUD Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/4c7b892d-2d33-4bb2-8855-2dc6a30fa1d1",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Analyze Daily CTR and Data Quality in a Large JSONL Dataset",
+    "url": "https://www.1point3acres.com/interview/problems/45c32369-b29c-5d82-b155-b17539857eed",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Sort Topic Names by Prefix and Numeric Suffix",
+    "url": "https://www.1point3acres.com/interview/problems/81ccdec6-c14b-59a3-9dd0-b5eb154b3f04",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Change Directory with Relative Path Support",
+    "url": "https://www.1point3acres.com/interview/problems/daa04167-319d-5f0a-90e5-aafc5b220d34",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Implement an In-Memory File System",
+    "url": "https://www.1point3acres.com/interview/problems/36d8927a-2d43-5b82-a7a2-5086e3e483e3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Incremental Per-Context Entry Numbering and Late-Data Backfill",
+    "url": "https://www.1point3acres.com/interview/problems/d13298d1-a7d6-57bf-b487-0d94b97d45c1",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Design an In-Memory Unix File System",
+    "url": "https://www.1point3acres.com/interview/problems/c79f2803-6bb0-5200-80fc-402b90b604cb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Design an In-Memory File System with Shell Commands",
+    "url": "https://www.1point3acres.com/interview/problems/b16154e0-ed63-5dfe-a8a9-743e3f770cc9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Command-Line In-Memory File System",
+    "url": "https://www.1point3acres.com/interview/problems/3e6e0eac-f0b5-5653-88d5-431e285b264f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Design In-Memory File System",
+    "url": "https://www.1point3acres.com/interview/problems/dc486b95-d3a2-53e3-8fce-99a5a00b3947",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Design an In-Memory Unix File System and Implement Basic Commands",
+    "url": "https://www.1point3acres.com/interview/problems/9acc85e8-99d7-4396-8e0b-c39042d27fa5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Implement an OOP ToDo List with Task CRUD, Status, and Dependencies (Cascade Updates)",
+    "url": "https://www.1point3acres.com/interview/problems/5ba2e5ff-b97f-4ff7-bdaf-464686e73474",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Design an In-Memory File System (Trie-based)",
+    "url": "https://www.1point3acres.com/interview/problems/c800096d-a45c-4035-8c5d-d8cd54435e5a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Debug Failures (Identify Root Cause from Symptoms)",
+    "url": "https://www.1point3acres.com/interview/problems/0c094114-ae7b-4985-93ac-b511add981c2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Log Processing (Parsing & Aggregation)",
+    "url": "https://www.1point3acres.com/interview/problems/f8c1cd11-0ad2-4dbd-8b4e-f3421a9beb8f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "DFS with Memoization (Top-Down DP)",
+    "url": "https://www.1point3acres.com/interview/problems/3dbb39bc-c6d6-49d3-bdec-c3ff13306a01",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Fix Existing Code (Bug Fixing)",
+    "url": "https://www.1point3acres.com/interview/problems/2c71454e-9fe0-4ad3-bc61-28746db93b44",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Parse citation numbers from paragraphs and reorder/deduplicate sources by first appearance",
+    "url": "https://www.1point3acres.com/interview/problems/d488ee7c-02c0-48d3-bd35-cea44dd5d48f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Build a Discover-like News Feed Page with Infinite Scroll and Repeating Layout",
+    "url": "https://www.1point3acres.com/interview/problems/35618d45-785f-413b-ba19-66b7d4c0e730",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Implement a Dependency-Aware Todo List with Cascade Failure",
+    "url": "https://www.1point3acres.com/interview/problems/825608c9-31a4-45a7-9997-266a5194e930",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Estimate Token Count",
+    "url": "https://www.1point3acres.com/interview/problems/67841629-b483-4703-8e31-49c4b5015bd2",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Implement Tokenize Function",
+    "url": "https://www.1point3acres.com/interview/problems/dcd37aa2-dbac-4c98-b5d1-35df728f8809",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Understand Code Functionality",
+    "url": "https://www.1point3acres.com/interview/problems/3fb5e103-da74-4bf4-bc83-9f0f44ab5eb7",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Optimize Byte Tokenization and Estimate Token Count",
+    "url": "https://www.1point3acres.com/interview/problems/8edaef48-6a51-41bc-aa63-1a491ca4bcf3",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Implement ToDo list for AI",
+    "url": "https://www.1point3acres.com/interview/problems/0bec2543-0687-43d8-8d6c-2ab2f2564ff0",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Depth-First Search Problem",
+    "url": "https://www.1point3acres.com/interview/problems/a4351e3a-2c7d-477f-ad68-5b08de250719",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Binary Classification using scikit-learn",
+    "url": "https://www.1point3acres.com/interview/problems/9a87250e-ebcc-41ae-9a88-8845db0a45f5",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "perplexity",
+    "title": "Implement ToDo List for AI",
+    "url": "https://www.1point3acres.com/interview/problems/d1f79357-564d-49fd-b1b8-e7802fce4984",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Greedy Decoding and Speculative Code Edits",
+    "url": "https://www.1point3acres.com/interview/problems/9726ecc3-e64a-5049-b2f8-62637313d593",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Dynamic Batching for Autoregressive Decoding",
+    "url": "https://www.1point3acres.com/interview/problems/9962fe23-9242-59b8-9687-1602d9d8fbdb",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Fixed-Window Token Limiter",
+    "url": "https://www.1point3acres.com/interview/problems/b6025b30-5ff6-5b70-8a92-fa46a1ebc43c",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Thread-Safe BankAccount Wrapper",
+    "url": "https://www.1point3acres.com/interview/problems/a1ee1fb9-17d5-5025-824a-f1eaedf72432",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Code Review: Find Issues in an Input Field Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/dcef89ff-9f57-4c98-bbcf-10692b3248af",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Distributed Matrix Multiplication with Data Parallel and FSDP Simulation",
+    "url": "https://www.1point3acres.com/interview/problems/8dbf7a4b-cd6d-451e-93f6-afe306a2a537",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Design a Restorable (Checkpointable) Iterator",
+    "url": "https://www.1point3acres.com/interview/problems/4169a374-0bdd-4e33-9a69-1e1c77e20019",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Token Limiter",
+    "url": "https://www.1point3acres.com/interview/problems/cc6f7ab2-4bdd-4914-85c9-f4912c2ffd73",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Minimum Time to Produce a Goal Dataset in a Data Pipeline (Parallel Tasks)",
+    "url": "https://www.1point3acres.com/interview/problems/98b3005e-64bf-49ac-9c1f-abfdc73e7189",
+    "evidence": "detail-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Unflatten: Refill a Nested Template Structure with Values from a Flat List",
+    "url": "https://www.1point3acres.com/interview/problems/d9258ba9-923a-4558-bb63-010bd875baa9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Flatten a Nested Python Structure (lists/dicts/tuples) into a List of Integers",
+    "url": "https://www.1point3acres.com/interview/problems/fcec4203-9a63-413a-822b-b03c8773ea2a",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Calculate Active Hours for Twitter Spaces",
+    "url": "https://www.1point3acres.com/interview/problems/5a51205a-adc3-4bd1-8dba-e7f523bca130",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Research and Machine Learning Coding",
+    "url": "https://www.1point3acres.com/interview/problems/db218568-64e3-4dd3-9f2d-d69aaeb60441",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "4-hour Take Home Project Task",
+    "url": "https://www.1point3acres.com/interview/problems/99d766b3-2c88-4cd1-a25f-f2e48170f592",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "kth element",
+    "url": "https://www.1point3acres.com/interview/problems/e29bbb96-3d2f-4e82-b59d-f97de75a3c40",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Handwrite parallelized sort",
+    "url": "https://www.1point3acres.com/interview/problems/a370ccf4-60ff-4255-9311-2434fb8a56ac",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Rate Limiter Design",
+    "url": "https://www.1point3acres.com/interview/problems/6947dfaa-d713-4f05-a793-141f8342366f",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "KV Store Design",
+    "url": "https://www.1point3acres.com/interview/problems/ec60b5f2-2f80-4d1c-8ccf-afdcee0dfa8b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Multithread Sorting",
+    "url": "https://www.1point3acres.com/interview/problems/c1009f35-deaf-4922-82d8-f13dcf4140ab",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "In-Memory Database Implementation",
+    "url": "https://www.1point3acres.com/interview/problems/c07cf524-19a6-428b-a61d-b2c4d80d15b9",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Determine large rice bags",
+    "url": "https://www.1point3acres.com/interview/problems/1ba75e4c-f83b-4549-bdce-8cf808b97b8b",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Twitter Insight Platform with Rate Limiting and Dockerization",
+    "url": "https://www.1point3acres.com/interview/problems/374e2dda-f111-4d17-85db-86fb2a044a72",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "Find the Most Common N-grams",
+    "url": "https://www.1point3acres.com/interview/problems/4ccdfde5-3895-413d-afaf-05181effd6aa",
+    "evidence": "title-only",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "SpaceXAI ML Coding：Speculative Edits",
+    "url": "https://www.1point3acres.com/interview/thread/1193219",
+    "evidence": "thread-read",
+    "collectedAt": "2026-10-18"
+  },
+  {
+    "company": "xai",
+    "title": "xAI ML/Infra：DP/FSDP 与作者补充图像张量操作",
+    "url": "https://www.1point3acres.com/interview/thread/1171574",
+    "evidence": "thread-read",
+    "collectedAt": "2026-10-18"
+  }
+]

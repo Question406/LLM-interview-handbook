@@ -1,0 +1,25 @@
+{
+  "codingCards": 8,
+  "navigationCards": 1,
+  "standaloneExecutables": 8,
+  "displayedSourceMatches": true,
+  "renderedHtmlMatches": true,
+  "allExecutableTestsPassed": true,
+  "repositoryTestsPassed": 41,
+  "buildPassed": true,
+  "integration": {
+    "layers": 3,
+    "reusedPrefixTokens": 3,
+    "prefillTokensComputed": 2,
+    "generatedTokens": 3,
+    "totalWarmComputed": 5,
+    "totalColdComputed": 8,
+    "layerKvAndGreedyOutputsMatch": true
+  },
+  "limits": [
+    "CPU NumPy reference",
+    "single-threaded component contracts",
+    "engine restores contiguous KV by copying; COW and segmented read primitives separately tested",
+    "not confirmed company interview questions"
+  ]
+}

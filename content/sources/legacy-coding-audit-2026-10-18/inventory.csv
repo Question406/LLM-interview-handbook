@@ -1,0 +1,421 @@
+id,section,title,classification,reviewDepth,repairedThisPass,file
+align-agent-rl,alignment,对齐：多智能体 / 工具 RL 的稀疏奖励与信用分配,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-agent-rl.md
+align-arena,alignment,对齐：Chatbot Arena / 在线 ELO 的偏差,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-arena.md
+align-best-of-n,alignment,对齐：Best-of-N 推理时对齐，成本与 RM over-optimize,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-best-of-n.md
+align-cai,alignment,对齐：Constitutional AI 人从偏好标注挪到原则+抽查,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-cai.md
+align-cot-leak,alignment,对齐：隐藏思维链与思考预算如何泄漏,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-cot-leak.md
+align-debate,alignment,对齐：Debate / 递归监督的公开概念,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-debate.md
+align-dpo,alignment,对齐：DPO 的 implicit reward，β 太大太小,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-dpo.md
+align-eval-contam,alignment,对齐：评测污染，n-gram / 搜索查重，泄漏后怎么办,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-eval-contam.md
+align-grpo,alignment,对齐：GRPO / group relative，相对 PPO 少了 critic,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-grpo.md
+align-ipo,alignment,对齐：IPO 相对 DPO,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-ipo.md
+align-kto,alignment,对齐：KTO 只用 binary 反馈,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-kto.md
+align-length-bias,alignment,对齐：偏好学习里的长度偏见,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-length-bias.md
+align-llm-judge,alignment,对齐：LLM-as-judge 偏差（位置、自偏好）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-llm-judge.md
+align-mm-harm,alignment,对齐：图文有害——截图越狱与隐写指令,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-mm-harm.md
+align-online-dpo,alignment,对齐：在线 / iterative DPO，策略滞后,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-online-dpo.md
+align-over-refuse,alignment,对齐：过度拒答 vs 有害遵从，评测切片怎么切,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-over-refuse.md
+align-overopt-rm,alignment,对齐：奖励模型过优化——BoN 曲线与代理失效,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-overopt-rm.md
+align-process-reward,alignment,对齐：过程奖励 vs 结果奖励，步骤标注噪声,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-process-reward.md
+align-red-team,alignment,对齐：红队和自动化攻击，覆盖率和过拟合评测模型,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-red-team.md
+align-reward-hack,alignment,对齐：reward hacking 例子（冗长、谄媚、格式刷分）怎么发现,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-reward-hack.md
+align-reward-model,alignment,对齐：奖励模型怎么训、校准、Bradley-Terry 噪声,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-reward-model.md
+align-rft,alignment,对齐：Reinforcement Fine-Tuning / RLVR，可验证奖励接到策略,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-rft.md
+align-rlaif,alignment,对齐：RLAIF，批评模型隔离，宪法条款要有反例,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-rlaif.md
+align-rlhf-kl,alignment,对齐：RLHF 为什么加 reverse KL 到 SFT 模型，正向 KL 会怎样,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-rlhf-kl.md
+align-safety-tax,alignment,对齐：安全对齐掉能力，怎么测,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-safety-tax.md
+align-sycophancy,alignment,对齐：谄媚用户错误观点，和 helpful 目标冲突,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-sycophancy.md
+align-tool-rl,alignment,对齐：只对工具成功给奖，还是逐步过程奖,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-tool-rl.md
+align-weak-strong,alignment,对齐：weak-to-strong——监督者弱于被监督模型,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/alignment/align-weak-strong.md
+amazon-agent-eval,amazon,Amazon：企业 agent 怎么评，任务成功、越权、引用？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-agent-eval.md
+amazon-batch-infer,amazon,Amazon：Bedrock batch 和实时推理怎么选，吞吐和成本各看什么？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-batch-infer.md
+amazon-bedrock-agents,amazon,Amazon：Bedrock Agents 的工具、记忆、护栏，和自建 harness 怎么选？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-bedrock-agents.md
+amazon-bedrock-rag,amazon,Amazon：Seller Support 上 500 万份政策 PDF，p95 2 秒的 RAG 怎么做？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-bedrock-rag.md
+amazon-cold-start,amazon,Amazon：冷启动商品 / 新 query，推荐和搜索怎么共用信号？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-cold-start.md
+amazon-converse-tool,amazon,Amazon：Converse tool use，toolConfig、并行工具和 Guardrail 怎么接？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-converse-tool.md
+amazon-feature-store,amazon,Amazon：特征存储一致性，训练/服务特征偏移？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-feature-store.md
+amazon-guardrails,amazon,Amazon Bedrock Guardrails：拦截应发生在生成前还是后，和模型对齐的分工？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-guardrails.md
+amazon-kendra-hybrid,amazon,Amazon：关键词 + 向量混合检索，何时 BM25 赢 embedding？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-kendra-hybrid.md
+amazon-lp-ml,amazon,Amazon：领导力原则怎么落到 ML 决策（上线门禁、客户数据、纠错）？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-lp-ml.md
+amazon-mm-rag,amazon,Amazon：图 / PDF RAG，OCR 和视觉检索怎么选？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-mm-rag.md
+amazon-nova-mm,amazon,Amazon：Nova 多模态（公开）和 Bedrock 路由怎么接？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-nova-mm.md
+amazon-nova,amazon,Amazon：Nova / Titan 当 Bedrock 模型族，怎么评、怎么路由？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-nova.md
+amazon-p99-stream,amazon,Amazon：流式生成的 p99，首 token 和整段完成为什么要拆开报？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-p99-stream.md
+amazon-rerank-llm,amazon,Amazon：LLM rerank 和 embedding 召回怎么叠？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-rerank-llm.md
+amazon-titan-embed,amazon,Amazon：Titan embedding 怎么评（MTEB 坑、领域），和 RAG 是什么关系？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-titan-embed.md
+amazon-titan-eval,amazon,Amazon：Bedrock/Titan 类应用怎么评，不能只报 BLEU？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-titan-eval.md
+amazon-trainium,amazon,Amazon：Trainium / Neuron 上训 LLM，和 GPU 栈公开层差在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-trainium.md
+amazon-two-tower,amazon,Amazon：双塔召回，训练对齐和 serving 近似，ANN 掉点怎么补？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/amazon/amazon-two-tower.md
+anthropic-agent-eval,anthropic,Anthropic：OSWorld / WebArena 类公开基准怎么讲？污染和成功定义卡在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-agent-eval.md
+anthropic-bank-oa,anthropic,Anthropic OA：银行账户 / 转账后续，接口如何从内存库长出来？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/anthropic/anthropic-bank-oa.md
+anthropic-batch-api,anthropic,Anthropic：Batch API 和在线 serving 的调度差在哪，适合什么负载？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-batch-api.md
+anthropic-bpe-tokenizer,anthropic,Anthropic：手写 BPE Tokenizer，encode / decode 要对齐什么不变量？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/anthropic/anthropic-bpe-tokenizer.md
+anthropic-citations,anthropic,Anthropic：引用接地怎么做，文档块和 span 对不上时该不该拒答？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-citations.md
+anthropic-computer-rl,anthropic,Anthropic：computer use 上动作级和轨迹级反馈差在哪？确认框为什么不能训进策略？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-computer-rl.md
+anthropic-computer-use,anthropic,Anthropic：computer use 敏感动作为什么必须产品层确认，不是 constitution？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-computer-use.md
+anthropic-constitutional-ai,anthropic,Anthropic：Constitutional AI 和 RLHF 差在哪？监督从哪来？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-constitutional-ai.md
+anthropic-context-distill,anthropic,Anthropic：context distillation 把原则压进模型，和 system prompt 差在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-context-distill.md
+anthropic-crawler-oa,anthropic,Anthropic OA：爬虫 / 网页抓取分层题，礼貌延迟与去重怎么做？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/anthropic/anthropic-crawler-oa.md
+anthropic-eval-honesty,anthropic,Anthropic：诚实性和不确定性怎么评，和 HH 冲突时站哪边？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-eval-honesty.md
+anthropic-extended-thinking,anthropic,Anthropic：extended thinking 的推理预算、延迟，以及为什么不能把 CoT 当产品日志？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-extended-thinking.md
+anthropic-grpo-debug,anthropic,Anthropic：RL Fundamentals，修一段有 bug 的 GRPO,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/anthropic/anthropic-grpo-debug.md
+anthropic-hh-rlhf,anthropic,Anthropic：HH-RLHF 里 helpful 和 harmless 冲突时，偏好怎么采？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-hh-rlhf.md
+anthropic-inmemory-db,anthropic,Anthropic：实现带 TTL 的内存数据库，后续怎么加备份和并发？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/anthropic/anthropic-inmemory-db.md
+anthropic-json-schema,anthropic,Anthropic：structured output 约束解码和事后再解析，各挡哪类错误？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-json-schema.md
+anthropic-long-context,anthropic,Anthropic：长上下文评测为什么大海捞针不够，位置偏差怎么测？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-long-context.md
+anthropic-mcp,anthropic,Anthropic：MCP 当 tool 总线，和 function calling 的边界在哪？不可信服务器怎么防？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-mcp.md
+anthropic-memory,anthropic,Anthropic：跨会话记忆什么进检索、什么不该持久化？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-memory.md
+anthropic-mm-harm,anthropic,Anthropic：多模态越狱图里藏指令，和纯文本 injection 差在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-mm-harm.md
+anthropic-needle,anthropic,Anthropic：大海捞针不够，长上下文真实评测怎么设计？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-needle.md
+anthropic-pdf,anthropic,Anthropic：PDF 是页图还是文本层？引用怎么落到页？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-pdf.md
+anthropic-perf-takehome,anthropic,Anthropic：开源的性能 take-home，是一台 VLIW SIMD 机器,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/anthropic/anthropic-perf-takehome.md
+anthropic-pref-bt,anthropic,Anthropic：Bradley-Terry 偏好模型，平局和噪声标签怎么处理？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-pref-bt.md
+anthropic-pref-collect,anthropic,Anthropic：偏好数据怎么采？双盲、平局、多轴 HH,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-pref-collect.md
+anthropic-prompt-cache,anthropic,Anthropic：prompt caching 为什么要求前缀稳定，breakpoint 该打在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-prompt-cache.md
+anthropic-prompt-injection,anthropic,Anthropic：prompt injection 碰上 tool 调用，边界应该设在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-prompt-injection.md
+anthropic-rate-limit,anthropic,Anthropic：怎么给 API 设计 rate limiter（token 桶 / 滑动窗）？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/anthropic/anthropic-rate-limit.md
+anthropic-rlaif,anthropic,Anthropic：RLAIF 和 RLHF 的人在环里位置差在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-rlaif.md
+anthropic-safety-levels,anthropic,Anthropic：ASL / RSP 面试能公开讲到哪，不要编内部阈值,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-safety-levels.md
+anthropic-streaming-tools,anthropic,Anthropic：流式 tool 调用怎么处理 partial JSON、用户取消和幂等？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-streaming-tools.md
+anthropic-tool-roundtrip,anthropic,Anthropic：tool 往返结果过大、截断、cache 前缀被破坏，怎么处理？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-tool-roundtrip.md
+anthropic-tool-use,anthropic,Anthropic：tool use 的 schema、失败重试，以及为什么把模型当不可信调用方？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-tool-use.md
+anthropic-vision,anthropic,Anthropic：Claude vision 图怎么编码、多图怎么喂，截图 agent 卡在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-vision.md
+anthropic-xml-prompt,anthropic,Anthropic：为什么偏爱 XML 标签组织 tool / 条款，解析失败怎么降级？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/anthropic/anthropic-xml-prompt.md
+apple-afm-eval,apple,Apple：端侧 LLM 怎么评，延迟、耗电、隐私，为什么不能只报 BLEU？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-afm-eval.md
+apple-ane,apple,Apple：Neural Engine 约束（静态 shape、算子白名单）对 Transformer 设计的影响？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-ane.md
+apple-audio-llm,apple,Apple：语音进 LLM，流式 ASR 文本还是音频 token？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-audio-llm.md
+apple-diff-privacy,apple,Apple：差分隐私在个性化语言模型里怎么讲 ε，和「数据不出设备」的关系？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-diff-privacy.md
+apple-foundation-models,apple,Apple：Foundation Models 公开叙事怎么讲，端侧和云各自干什么、能力边界在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-foundation-models.md
+apple-kmeans,apple,Apple coding：k-means / 近邻，作为电面算法题怎么答到 ML 岗标准？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/apple/apple-kmeans.md
+apple-mha-code,apple,Apple / Siri MLE：手写 Multi-Head Attention，shape 和 mask 怎么收？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/apple/apple-mha-code.md
+apple-mm-train,apple,Apple：端侧 / 云侧多模态训练，视觉塔冻结还是联合，分辨率怎么选？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-mm-train.md
+apple-multimodal,apple,Apple：图文 / 屏幕理解 grounding，引用的是像素区域还是 OCR 文本？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-multimodal.md
+apple-ondevice-agent,apple,Apple：端侧 agent，工具本地跑、写操作确认、离线怎么收？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-ondevice-agent.md
+apple-ondevice-kv,apple,Apple：端侧 KV 的显存和带宽怎么估，GQA 加量化 cache 各省哪一刀？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-ondevice-kv.md
+apple-ondevice-quant,apple,Apple：端侧权重量化 / KV 量化，ANE 上 mask 的 -inf 还安全吗？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-ondevice-quant.md
+apple-personalize,apple,Apple：个性化不能上传全量私有上下文，适配器 / 本地检索怎么选？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-personalize.md
+apple-rank-adapter,apple,Apple：低秩适配器做个性化，和检索怎么选，数据如何不出设备？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-rank-adapter.md
+apple-siri-grounded,apple,Apple Siri：工具结果必须接地的回复，怎么设计生成和评测？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-siri-grounded.md
+apple-siri-latency,apple,Apple：Siri 语音链路延迟预算，流式 TTS vs 等完整答案？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-siri-latency.md
+apple-spec-edge,apple,Apple：端侧投机解码值得上吗，草稿模型放哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-spec-edge.md
+apple-token-prune,apple,Apple：视觉 token 剪枝 / 合并，质量和延迟怎么折？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-token-prune.md
+apple-topk-sample,apple,Apple 电面：温度、top-k、nucleus 顺序，端侧为什么常 top-k？,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/apple/apple-topk-sample.md
+apple-vision-edge,apple,Apple：端侧视觉 token 预算和 ANE 静态 shape 怎么卡？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/apple/apple-vision-edge.md
+coding-adamw,coding,白板：AdamW 一步更新，m/v、bias correction、decoupled decay,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-adamw.md
+coding-alibi,coding,白板：ALiBi 斜率加到 scores 上，decode 用 cache 长度当 query 位,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-alibi.md
+coding-attn-mask,coding,白板：因果、padding、文档边界合成一张注意力 mask,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-attn-mask.md
+coding-beam-search,coding,白板：beam search vs greedy vs sampling，长度惩罚,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-beam-search.md
+coding-bpe-merge,coding,白板：BPE 训练一步 merge，词表膨胀；词尾标记写成 endofword 禁止 XML,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-bpe-merge.md
+coding-cispo,coding,白板：CISPO 和 PPO clip 的区别，clip 的是权重还是梯度,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-cispo.md
+coding-cross-entropy,coding,白板：从 logits 写 cross entropy，不要先 softmax 再 log,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-cross-entropy.md
+coding-decode-step,coding,白板：一步 decode，取 q、concat KV、GQA repeat、出 logits,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-decode-step.md
+coding-dpo-weighted,coding,白板：DPO 的梯度写成加权 logprob，权重是什么，什么时候大,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-dpo-weighted.md
+coding-dropout,coding,白板：dropout mask 训练/推理缩放（inverted dropout）,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-dropout.md
+coding-embedding-lookup,coding,白板：embedding lookup + padding mask，大词表显存,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-embedding-lookup.md
+coding-flash-decode,coding,白板：FlashDecoding 的 split-K，online softmax 怎么沿 KV 切开再合并,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-flash-decode.md
+coding-fused-ce,coding,"白板：融合 linear 和 cross entropy，不要物化 `[B, T, V]` logits",完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-fused-ce.md
+coding-gae,coding,白板：GAE 反向递推，done、截断和 value clip 各在哪一行,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-gae.md
+coding-gqa-repeat,coding,白板：GQA 把 KV head repeat 成 query heads，shape 怎么断言,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-gqa-repeat.md
+coding-grad-clip,coding,白板：global norm clip， inf/nan 怎么处理,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-grad-clip.md
+coding-grpo-loss-agg,coding,白板：GRPO 的 token loss 怎么聚合成一个数？三种写法的长度偏置,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-grpo-loss-agg.md
+coding-gspo-seq-ratio,coding,白板：GSPO 的序列级 ratio，写成 token 上的加权 logprob loss,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-gspo-seq-ratio.md
+coding-gumbel-max,coding,白板：Gumbel-max 采样，和 softmax 温度的关系,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-gumbel-max.md
+coding-int8-symm,coding,白板：对称 INT8 量化，scale、饱和，以及 dequant GEMM 的形状,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-int8-symm.md
+coding-kl-div,coding,白板：token 级 KL（策略 vs 参考策略），reduction 和 ignore pad,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-kl-div.md
+coding-layernorm,coding,白板：LayerNorm vs 在 feature 维上的标准化，eps 和仿射,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-layernorm.md
+coding-logsumexp,coding,白板：log-sum-exp trick，和 cross entropy 的关系,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-logsumexp.md
+coding-loss-atlas,coding,白板总览：LLM 训练里常见的 loss，都写成「权重 × logprob」来对照,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-loss-atlas.md
+coding-mq-attn,coding,白板：MQA 单 KV head，怎么对 query heads broadcast,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-mq-attn.md
+coding-online-softmax,coding,白板：FlashAttention 的 online softmax，两遍归约怎么写,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-online-softmax.md
+coding-packed-lm,coding,白板：packed sequences 的 cu_seqlens 和文档边界 mask,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-packed-lm.md
+coding-paged-table,coding,白板：PagedAttention 的 block table，逻辑页怎么映到物理块，append 一页,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-paged-table.md
+coding-qk-norm,coding,白板：QK RMSNorm 再 RoPE，Qwen / 部分 Llama 变体怎么写,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-qk-norm.md
+coding-rloo-advantage,coding,白板：RLOO 的 leave-one-out baseline，向量化写法和它跟 GRPO 差在哪,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-rloo-advantage.md
+coding-rmsnorm,coding,白板：RMSNorm 比 LayerNorm 少了什么，Llama 为什么用,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-rmsnorm.md
+coding-rope-cache,coding,白板：RoPE 的 cos/sin cache，decode 时怎么 index,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-rope-cache.md
+coding-rope,coding,白板：RoPE 对 q/k 旋转，偶数维成对，decode 的 position,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-rope.md
+coding-silu,coding,白板：SiLU / Swish 手写，数值上哪里会炸,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-silu.md
+coding-softmax-stable,coding,白板：数值稳定 softmax，为什么减 max，轴怎么选,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-softmax-stable.md
+coding-spec-accept,coding,白板：投机解码接受规则，拒绝后从哪一步重采样,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-spec-accept.md
+coding-swa-mask,coding,白板：sliding window 和因果 mask 合成，prefill 与 decode 的 shape,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-swa-mask.md
+coding-swiglu,coding,白板：SwiGLU / Llama MLP，门控和中间维为什么是 8/3,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-swiglu.md
+coding-tis-mismatch,coding,白板：推理引擎的 logprob 和训练端对不上，截断重要性权重怎么加,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-tis-mismatch.md
+coding-token-logprob,coding,白板：从 logits 取 response 的 token logprob，shift、temperature 和显存,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-token-logprob.md
+coding-topk-nucleus,coding,白板：温度 → top-k → nucleus 的顺序，实现细节,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-topk-nucleus.md
+coding-weight-tying,coding,白板：embedding 与 lm_head 权重共享，梯度怎么流,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-weight-tying.md
+coding-z-loss,coding,白板：PaLM z-loss，为什么往 logits 上加这一项,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/coding-z-loss.md
+fireworks-grpo-sft-loss,coding,Fireworks：把 clipped GRPO 写成 SFT 式的加权 logprob loss,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/coding/fireworks-grpo-sft-loss.md
+design-ads-rank,design,设计：广告预测与拍卖，校准、延迟、探索,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-ads-rank.md
+design-agent-budget,design,设计：Agent 的步数与美元预算，以及降级到无工具,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-agent-budget.md
+design-agent-harness,design,设计：Agent harness（工具、沙箱、预算、确认框）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-agent-harness.md
+design-browser-agent,design,设计：浏览器 agent 的沙箱、确认与选择器脆弱,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-browser-agent.md
+design-chat-serving,design,设计：ChatGPT 类对话服务（排队、优先级、前缀缓存、限流）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-chat-serving.md
+design-chat-tools,design,设计：带工具的客服聊天，工单、RAG、升级人工,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-chat-tools.md
+design-code-assistant,design,设计：代码助手（仓库索引、权限、补全延迟、SWE-bench 口径）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-code-assistant.md
+design-eval-agent,design,设计：Agent 评测平台——任务图、重放、非确定性,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-eval-agent.md
+design-eval-platform,design,设计：LLM 评测平台（离线集、在线 A/B、人工抽查、污染）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-eval-platform.md
+design-feature-store,design,设计：特征平台，点查延迟、训练一致性,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-feature-store.md
+design-long-doc,design,设计：长文档问答（检索 vs 长上下文 vs 分层摘要）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-long-doc.md
+design-mm-assistant,design,设计：多模态助手的引用区域与视觉 token 预算,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-mm-assistant.md
+design-mm-rag,design,设计：多模态 RAG——图向量、文本与 ACL,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-mm-rag.md
+design-moderation,design,设计：内容安全分级，延迟、申诉、模型+规则,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-moderation.md
+design-multimodal-prod,design,设计：多模态助手（图/屏/语音），模态延迟不齐,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-multimodal-prod.md
+design-offline-eval,design,设计：LLM 离线评测平台（切片、人评、污染、回归门禁）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-offline-eval.md
+design-prod-rag,design,设计：生产 RAG（切片、新鲜度、权限、引用、p95）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-prod-rag.md
+design-prompt-mgmt,design,设计：prompt / 工具 schema 版本、灰度、回滚,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-prompt-mgmt.md
+design-recsys,design,设计：推荐系统召回-排序-重排，多目标与探索,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-recsys.md
+design-search,design,设计：语义搜索 + 关键词，混合与拼写纠错,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-search.md
+design-tool-prod,design,设计：生产 tool calling（超时、幂等、确认、审计）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-tool-prod.md
+design-voice-agent,design,设计：语音 agent 的打断、端到端延迟、ASR 错误传播,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/design/design-voice-agent.md
+gdm-ml-design,google,Google DeepMind：分子（或其它科学）数据怎么做 ML design？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/gdm-ml-design.md
+google-ads-auction,google,Google：广告拍卖 + 预测 CTR/CVR，校准为什么比「模型更大」先说,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-ads-auction.md
+google-agent-eval,google,Google：Agent 基准和 Gemini 产品评测切片（公开口径）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-agent-eval.md
+google-alphafold-eval,google,DeepMind：AlphaFold 类科学 ML 怎么定义评测，不能只报 loss,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-alphafold-eval.md
+google-bert-pretrain,google,Google：BERT 两个预训练任务各解决什么，NSP 后来为什么被质疑,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-bert-pretrain.md
+google-block-attn,google,Google：长序列注意力的 blockwise / ring IO，和 FlashAttention 什么关系,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-block-attn.md
+google-cot-reason,google,Google：chain-of-thought 和推理时计算，面试怎么讲不神化,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-cot-reason.md
+google-distill-llm,google,Google：大模型蒸到服务模型，on-policy 蒸馏和 SFT 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-distill-llm.md
+google-eval-mmlu,google,Google：MMLU 等学术榜的坑，污染、prompt、多语言,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-eval-mmlu.md
+google-flamingo,google,Google：Flamingo 用 Perceiver resampler 和交叉注意把视觉压进 LLM,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-flamingo.md
+google-flash-attention,google,Google/DeepMind 岗：FlashAttention 省的是 HBM 往返，不是 FLOPs 公式变了,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-flash-attention.md
+google-gemini-agent,google,Google：Gemini 工具调用、计算机使用（公开层）和搜索接地,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-gemini-agent.md
+google-gemini-longctx,google,Google：Gemini 长上下文怎么评、位置偏差和成本，别只报 1M,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-gemini-longctx.md
+google-gemini-mm,google,Google：Gemini 原生多模态，视觉 token、交错训练，OCR 还是像素,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-gemini-mm.md
+google-gemini-moe,google,Google：Gemini 系 MoE 面试怎么讲路由、专家容量和 decode 成本,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-gemini-moe.md
+google-gqa-mqa,google,Google：MHA、MQA、GQA 怎么选？KV 显存差多少？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-gqa-mqa.md
+google-jax-pjit,google,Google：jax.pjit / shard_map 面试怎么讲 SPMD 和编译时切分,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-jax-pjit.md
+google-jax-transformer,google,Google：用 JAX 写一层 Transformer，shard、scan、remat 怎么摆,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/google/google-jax-transformer.md
+google-mm-sft,google,Google：多模态 SFT，交错图文、纯文本回退、灾难遗忘,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-mm-sft.md
+google-moe-routing,google,Google：MoE 路由、容量因子和 decode 专家并行怎么落地,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-moe-routing.md
+google-pali,google,Google：PaLI / PaliGemma 多任务多语言视觉-语言，和 Gemini 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-pali.md
+google-palm-pathways,google,Google：PaLM / Pathways 规模化训练，你怎么讲「一条模型服务多任务」,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-palm-pathways.md
+google-search-quality,google,Google：搜索质量离线指标（NDCG）和线上行为怎么对不上,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-search-quality.md
+google-spec-decode,google,Google：投机解码怎么保证无损，和 Medusa / EAGLE 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-spec-decode.md
+google-t5-span,google,Google：T5 span corruption 预训练目标为什么比 BERT MLM 更适合生成,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-t5-span.md
+google-tpu-decode,google,Google：TPU 上 decode，MXU 吃不满、KV 带宽，和 GPU 怎么对照,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-tpu-decode.md
+google-tpu-llm,google,Google：TPU 上训 Transformer，MXU、流水线和 GPU 三维并行怎么对照,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-tpu-llm.md
+google-tpu-mesh,google,Google：TPU mesh / 把 batch 和模型维切到芯片上，和 GPU 三维并行怎么类比,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-tpu-mesh.md
+google-video-token,google,Google：视频 token 的时间采样，怎么和长上下文抢预算,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-video-token.md
+google-vit-patch,google,Google：ViT patch 和原生分辨率，token 数怎么爆、动态切块怎么压,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-vit-patch.md
+google-wide-deep,google,Google：Wide & Deep 记忆 vs 泛化，现在还怎么用这个直觉,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-wide-deep.md
+google-youtube-rank,google,Google：YouTube / 信息流排序 ML design（召回-粗排-精排-重排）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/google/google-youtube-rank.md
+meta-ab-peeking,meta,Meta：A/B 提前偷看为什么会通胀显著度，序贯检验怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-ab-peeking.md
+meta-ads-calibration,meta,Meta：广告模型校准（predicted vs observed），logloss 和 AUC 各管什么,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-ads-calibration.md
+meta-agent-code,meta,Meta：代码 agent——仓库索引、补丁评测，和 AI coding 面试差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-agent-code.md
+meta-ai-coding,meta,Meta：AI-enabled coding 轮怎么考？和普通 LeetCode 差在哪？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-ai-coding.md
+meta-anyres,meta,Meta：任意分辨率切块（AnyRes / 动态 tile）和上下文预算,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-anyres.md
+meta-concurrency-feed,meta,Meta：信息流后端并发（缓存、一致性），偏工程轮,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-concurrency-feed.md
+meta-continual-pt,meta,Meta：continual pretrain / 领域自适应，灾难遗忘怎么防,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-continual-pt.md
+meta-dlrm,meta,Meta：DLRM 推荐，稀疏 embedding 和 MLP 怎么切并行,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-dlrm.md
+meta-early-fusion,meta,Meta：early vs late fusion，Chameleon 一类公开叙事能讲到哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-early-fusion.md
+meta-fsdp-llm,meta,Meta：FSDP 训 LLM 的具体坑——prefetch、wrap policy、activation,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-fsdp-llm.md
+meta-fsdp2,meta,Meta：FSDP / FSDP2 切什么、通信何时发生、和 ZeRO-3 的关系,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-fsdp2.md
+meta-gqa-kernel,meta,Meta：GQA 实现——repeat KV、kernel 融合，别只背论文配置,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/meta/meta-gqa-kernel.md
+meta-llama-eval,meta,Meta：Llama 评测套件——别只报 MMLU，污染和套餐,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama-eval.md
+meta-llama-gqa,meta,Meta / Llama：为什么 70B 用 GQA？和 MHA 比 decode 省在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama-gqa.md
+meta-llama-guard,meta,Meta：Llama Guard 当独立安全分类器，和基座对齐怎么分工,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama-guard.md
+meta-llama-moe,meta,Meta：Llama 4 / MoE 服务侧（公开信息）——专家并行和 batch,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama-moe.md
+meta-llama-rope,meta,Meta：Llama 的 RoPE / 长上下文外推（NTK、YaRN 只需概念层）面试怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama-rope.md
+meta-llama-vision,meta,Meta：Llama 3.2 Vision / Mllama——cross-attn 视觉编码器怎么接,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama-vision.md
+meta-llama3-pretrain,meta,Meta：Llama 3 预训练公开故事——数据、退火、长上下文阶段怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama3-pretrain.md
+meta-llama3-tokenizer,meta,Meta：Llama 3 tokenizer（tiktoken 风格）相对 Llama 2 SentencePiece 面试怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-llama3-tokenizer.md
+meta-mm-safety,meta,Meta：视觉+文本安全——Llama Guard 多模态和截图越狱,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-mm-safety.md
+meta-multi-token,meta,Meta：multi-token prediction 训练目标是什么，推理怎么用,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-multi-token.md
+meta-newsfeed-rank,meta,Meta：News Feed 排序，多目标（停留、互动、违规）怎么权衡,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-newsfeed-rank.md
+meta-pack-seq,meta,Meta：sample packing、文档边界、attention mask 的坑,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-pack-seq.md
+meta-pytorch-compile,meta,Meta：torch.compile / 图编译在训练栈里能省什么、何时关掉,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-pytorch-compile.md
+meta-ranking-logloss,meta,Meta：为什么排序常盯 logloss / 校准而不只是 AUC,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-ranking-logloss.md
+meta-segment-anything,meta,Meta：SAM 作为「提示分割」系统，数据和评测怎么设计,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-segment-anything.md
+meta-speech,meta,Meta：语音 token / 语音 LLM 公开概念（别编内部 ASR 栈）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-speech.md
+meta-synth-sft,meta,Meta：合成 SFT 数据——自指令、教师模型、泄漏和多样性,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-synth-sft.md
+meta-toolformer,meta,Meta：Toolformer 式自监督工具调用,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-toolformer.md
+meta-vllm,meta,Meta：vLLM 伺候 Llama——PagedAttention 和 continuous batching 公开怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-vllm.md
+meta-yarn-ntk,meta,Meta：NTK / YaRN 长上下文外推，和改 rope_theta 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/meta/meta-yarn-ntk.md
+msft-agent-rl,microsoft,Microsoft：多 agent 失败，循环、互相吹捧幻觉、预算？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-agent-rl.md
+msft-autogen,microsoft,Microsoft：AutoGen / 多 agent 编排，失败、预算、和 SK 差别,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-autogen.md
+msft-azure-ai-search,microsoft,Microsoft：Azure AI Search + 生成，混合检索、权限、引用,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-azure-ai-search.md
+msft-azure-tpm,microsoft,Microsoft：Azure OpenAI TPM/RPM 限流，产品层排队和降级,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-azure-tpm.md
+msft-bing-rank,microsoft,Microsoft：Bing / 搜索排序，LLM 重排和传统 LTR 怎么叠,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-bing-rank.md
+msft-constrained-decode,microsoft,Microsoft：约束解码 / JSON 文法，和自由生成的质量,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-constrained-decode.md
+msft-copilot-agent,microsoft,Microsoft：Copilot agent 模式，仓库权限和循环预算？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-copilot-agent.md
+msft-copilot-ground,microsoft,Microsoft：Copilot grounding（代码/文档检索），引用和权限,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-copilot-ground.md
+msft-deepspeed-zero,microsoft,Microsoft：DeepSpeed ZeRO 1/2/3 切的是什么状态，通信体积怎么变,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-deepspeed-zero.md
+msft-florence,microsoft,Microsoft：Florence / 视觉基础模型怎么接到生成（公开）？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-florence.md
+msft-llava-train,microsoft,Microsoft：LLaVA 两阶段训练，对齐再指令，视觉 token 数？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-llava-train.md
+msft-llava,microsoft,Microsoft：LLaVA 类图文投影，视觉 token 数和上下文预算,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-llava.md
+msft-long-context,microsoft,Microsoft：长上下文产品（会议纪要、仓库问答）的评测切片,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-long-context.md
+msft-onnx-export,microsoft,Microsoft：ONNX / 导出动态轴，训练图和推理图不一致的坑,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-onnx-export.md
+msft-orpo,microsoft,Microsoft：ORPO 相对 DPO/PPO，少了参考模型意味着什么,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-orpo.md
+msft-phi-data,microsoft,Microsoft：Phi「教科书数据」质量 vs 规模，污染和评测切片,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-phi-data.md
+msft-phi-slm,microsoft,Microsoft：Phi 小模型路线，数据质量 vs 规模，面试怎么讲「不是只堆参数」,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-phi-slm.md
+msft-phi-vision,microsoft,Microsoft：Phi vision / 小模型多模态，token 预算和适配器？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-phi-vision.md
+msft-semantic-kernel,microsoft,Microsoft：Agent / Semantic Kernel 插件边界，工具失败怎么收,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-semantic-kernel.md
+msft-ulysses,microsoft,Microsoft：DeepSpeed Ulysses 序列并行，和 Megatron SP 对照,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/microsoft/msft-ulysses.md
+nvidia-chunked-prefill,nvidia,NVIDIA：chunked prefill 把长 prompt 切开和 decode 混部,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-chunked-prefill.md
+nvidia-context-parallel,nvidia,NVIDIA：context / sequence parallel 给长上下文，和 TP 的通信差,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-context-parallel.md
+nvidia-cuda-graph,nvidia,NVIDIA：CUDA Graph 在 decode 上的收益和动态 shape 限制,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-cuda-graph.md
+nvidia-flash-attn,nvidia,NVIDIA：FlashAttention IO 分析，SRAM tiling，为什么 decode 收益不同,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-flash-attn.md
+nvidia-flash-decode,nvidia,NVIDIA：FlashDecoding split-K，和训练用 FlashAttention 差在哪,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/nvidia/nvidia-flash-decode.md
+nvidia-flashinfer,nvidia,NVIDIA：FlashInfer 的 append KV、sampler，和 vLLM 什么关系,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-flashinfer.md
+nvidia-fp8-kv,nvidia,NVIDIA：FP8 KV cache 和权重量化不是一回事,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-fp8-kv.md
+nvidia-fp8,nvidia,NVIDIA：FP8 训练 scale、延迟缩放、和 INT8 推理量化不是同一件事,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-fp8.md
+nvidia-fused-moe,nvidia,NVIDIA：fused MoE 的 permute、grouped GEMM、unpermute,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-fused-moe.md
+nvidia-inflight-batch,nvidia,NVIDIA：in-flight batching，iteration-level 调度,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-inflight-batch.md
+nvidia-int8-quant,nvidia,NVIDIA：FP32 tensor 怎么量化到 INT8？非对称量化跟什么走？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-int8-quant.md
+nvidia-kv-offload,nvidia,NVIDIA：KV 卸到 CPU / NVMe，何时带宽还不如量化,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-kv-offload.md
+nvidia-lora-serve,nvidia,NVIDIA：多 LoRA 同服务，基础权重共享、adapter 切换成本,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-lora-serve.md
+nvidia-loss-scale,nvidia,NVIDIA：混合精度 loss scaling，overflow 怎么发现和恢复,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-loss-scale.md
+nvidia-megatron-cp,nvidia,NVIDIA：Megatron context parallel，环上传 KV,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-megatron-cp.md
+nvidia-mm-vit,nvidia,NVIDIA：视觉 encoder 和 LLM 同卡 serving，prefill 形状为什么不齐,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-mm-vit.md
+nvidia-moe-gemm,nvidia,NVIDIA：MoE grouped GEMM 和专家并行 kernel,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-moe-gemm.md
+nvidia-nccl-allreduce,nvidia,NVIDIA：NCCL all-reduce 环/树，带宽瓶颈 vs 计算重叠,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-nccl-allreduce.md
+nvidia-occupancy,nvidia,NVIDIA：CUDA occupancy、register 压力，Nsight 上看什么,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-occupancy.md
+nvidia-paged-kv,nvidia,NVIDIA：PagedAttention / KV block table，碎片和 prefix 共享,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-paged-kv.md
+nvidia-pipeline-bubble,nvidia,NVIDIA：流水线气泡从哪来，1F1B / interleaved 怎么减,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-pipeline-bubble.md
+nvidia-spec-medusa,nvidia,NVIDIA：Medusa / EAGLE 多头草稿，和经典投机解码差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-spec-medusa.md
+nvidia-tensor-parallel,nvidia,NVIDIA：张量并行切 QKV/MLP，通信是哪一次 all-reduce，和序列并行差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-tensor-parallel.md
+nvidia-trillion-train,nvidia,NVIDIA：万亿参数 LLM 怎么分布式训练？并行切在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-trillion-train.md
+nvidia-triton-infer,nvidia,NVIDIA：Triton Inference Server 动态 batch、多模型、GPU 共享,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-triton-infer.md
+nvidia-trt-llm,nvidia,NVIDIA：TensorRT-LLM 相对 vLLM / Triton 的定位，plugin、inflight、量化,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-trt-llm.md
+nvidia-w4a8,nvidia,NVIDIA：W4A8 和 KV 量化、激活量化不是一把开关,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-w4a8.md
+nvidia-ws-decode,nvidia,NVIDIA：warp specialization 和 persistent decode kernel 的公开概念,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/nvidia/nvidia-ws-decode.md
+openai-adamw,openai,OpenAI：AdamW 为什么要把 weight decay 从自适应步长里拆出来,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-adamw.md
+openai-agent-rl,openai,OpenAI：工具循环上的 RL，轨迹、credit、环境重置，和 token 级 PPO 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-agent-rl.md
+openai-allgather-noise,openai,OpenAI：noisy 链路上实现 all_gather，轮数 bound 怎么推？,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/openai/openai-allgather-noise.md
+openai-attention-sink,openai,OpenAI：滑窗 / streaming attention 为什么开头几个 token 不能扔,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-attention-sink.md
+openai-continuous-batching,openai,OpenAI：continuous batching / iteration-level 调度解决什么,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-continuous-batching.md
+openai-data-mix,openai,OpenAI：pretrain 数据配比，web / code / math、epoch 和过滤怎么答,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-data-mix.md
+openai-dpo-loss,openai,OpenAI：DPO 相对 PPO 少了什么，implicit reward 怎么说,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-dpo-loss.md
+openai-entropy-l1,openai,OpenAI ML Coding：用 linear + softmax 算 entropy；换成 L1 怎么做？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-entropy-l1.md
+openai-eval-harness,openai,OpenAI：怎么设计内部 eval 避免污染和「刷榜」,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-eval-harness.md
+openai-flash-decode,openai,OpenAI：FlashDecoding 为什么沿 KV 长度做 split-K，decode 时和 FlashAttention 差在哪,完整编程练习,题面/实现/测试/复杂度,True,content/handbooks/us-tech/questions/openai/openai-flash-decode.md
+openai-function-calling,openai,OpenAI：tool / function calling 的 schema、失败、并行，和 JSON mode 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-function-calling.md
+openai-gpu-credits,openai,OpenAI：GPU credit，调用乱序也要按时间重放,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-gpu-credits.md
+openai-grad-checkpoint,openai,OpenAI：activation checkpoint 省显存的代价，和 ZeRO 怎么叠,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-grad-checkpoint.md
+openai-if-eval,openai,OpenAI：指令遵循评测（IFEval 一类）和「会考试不会听话」,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-if-eval.md
+openai-instructgpt-kl,openai,OpenAI / InstructGPT：RLHF 为什么要加相对 SFT 的 KL？方向是哪边？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-instructgpt-kl.md
+openai-kv-cache-impl,openai,OpenAI：从零实现 KV cache，有/无 cache greedy 必须对齐,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-kv-cache-impl.md
+openai-logprob,openai,OpenAI：logprobs、校准和温度，什么时候不该信模型的 p,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-logprob.md
+openai-long-ctx-train,openai,OpenAI：长上下文怎么训，RoPE 基频、续训和文档 packing,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-long-ctx-train.md
+openai-lora-sft,openai,OpenAI：对基座做 LoRA SFT，rank、目标模块和全参怎么取舍,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-lora-sft.md
+openai-loss-spike,openai,OpenAI：训练 loss 突然炸或变 NaN，怎么分层排查,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-loss-spike.md
+openai-mm-eval,openai,OpenAI：多模态评测坑，图文泄漏、OCR 当语义、MMMU 一类怎么拆,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-mm-eval.md
+openai-mm-gpt,openai,OpenAI：GPT-4o 类原生多模态，视觉 token 怎么进 Transformer，分辨率怎么抢上下文,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-mm-gpt.md
+openai-moe-aux-loss,openai,OpenAI：MoE 辅助损失和负载均衡，路由塌缩怎么发现,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-moe-aux-loss.md
+openai-ppo-clip,openai,OpenAI：PPO clip 在 InstructGPT/RLHF 里在干什么，ratio 爆了怎么收,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-ppo-clip.md
+openai-prefill-decode,openai,OpenAI：prefill 和 decode 计算形态差在哪，调度为什么要拆,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-prefill-decode.md
+openai-resumable-iter,openai,OpenAI：可恢复迭代器，getState 之后还能接着 next,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-resumable-iter.md
+openai-rope-offset,openai,OpenAI：RoPE 在 decode 时位置偏移写错会 silently 错，怎么查,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-rope-offset.md
+openai-scaling-laws,openai,OpenAI：Kaplan 和 Chinchilla 差在哪，compute-optimal 坐标别背错,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-scaling-laws.md
+openai-softmax-bug,openai,OpenAI：attention 里 softmax 轴和 mask 用 0 会怎样，怎么单测,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-softmax-bug.md
+openai-speculative-decoding,openai,OpenAI：投机解码拒绝草稿时为什么要 rollback KV,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-speculative-decoding.md
+openai-swa,openai,OpenAI：sliding window attention 和全局 sink 怎么共存,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-swa.md
+openai-test-time,openai,OpenAI：test-time compute / 推理时搜索，公开层怎么讲，不编内部,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-test-time.md
+openai-tiktoken,openai,OpenAI：tiktoken / BPE 和 SentencePiece 差在哪，特殊 token 和词表怎么扩,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-tiktoken.md
+openai-tool-loop,openai,OpenAI：多步 tool loop，观察怎么塞回上下文，工具调错和停止条件,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-tool-loop.md
+openai-transformer-debug,openai,OpenAI：给一份带 bug 的 Transformer，怎么查？KV cache 怎么加？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/openai/openai-transformer-debug.md
+openai-vit-connect,openai,OpenAI：ViT / patch embed 怎么接到 LLM，投影、对齐预训练、分辨率插值,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/openai/openai-vit-connect.md
+us-agent-prep,overview,美国 Tech：Agent / RL 面准备轨迹、工具与评测，不要只背 ReAct,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-agent-prep.md
+us-debug-vs-leetcode,overview,为什么美国 lab 爱给带 bug 的 Transformer，而不是再出一道中等 LeetCode？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-debug-vs-leetcode.md
+us-leveling,overview,E4 / L5 / L6 在 LLM 岗面里，评委预期差在哪？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-leveling.md
+us-llm-paper-stack,overview,面试前该精读的公开论文栈（Attention、GQA、InstructGPT、DPO、vLLM、Llama）,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-llm-paper-stack.md
+us-llm-re-prep,overview,美国 Tech / frontier lab：LLM Research Engineer 六周怎么准备？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-llm-re-prep.md
+us-loop-types,overview,美国 Tech LLM 岗常见几轮，每一轮到底在考什么？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-loop-types.md
+us-mm-prep,overview,美国 Tech LLM team：多模态轮怎么准备（编码、token 预算、评测）,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-mm-prep.md
+us-onsite-ai-coding,overview,Meta 那种 AI-enabled coding 轮，没有官方练习环境时怎么模拟？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-onsite-ai-coding.md
+us-prep-map,overview,美国 Tech / frontier lab：LLM 岗按哪几条线准备？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-prep-map.md
+us-research-vs-applied,overview,Research Engineer、Research Scientist、Applied MLE，准备重点怎么分？,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/overview/us-research-vs-applied.md
+xai-me-15min-clock,xai,"xAI 15-min screen ⓪: clock script (PhD / LLM, timed)",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-15min-clock.md
+xai-me-cs-verbal,xai,"xAI 15-min screen ⑨: optional CS verbal (process, thread, GIL, async)",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-cs-verbal.md
+xai-me-hardest-project,xai,"xAI 15-min screen ②: most challenging project (one decision, two altitudes)",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-hardest-project.md
+xai-me-intro,xai,"xAI 15-min screen ①: 2–3 min intro, recent-first (PhD / LLM)",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-intro.md
+xai-me-live-debug,xai,xAI 15-min screen ⑩: live-debug / BankAccount (CoderPad until tests pass),完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/personal/xai-me-live-debug.md
+xai-me-paper-followups,xai,"xAI 15-min screen ⑤: paper follow-ups (contract grain, not backbone lore)",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-paper-followups.md
+xai-me-reverse-and-pivot,xai,xAI 15-min screen ⑧: reverse questions; after this it is a paper defense,流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-reverse-and-pivot.md
+xai-me-statement,xai,xAI 15-min screen ⑥: Exceptional Work Statement (one paper you can defend),流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-statement.md
+xai-me-want-to-work,xai,xAI 15-min screen ④: what I want to work on (pivot by team),流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-want-to-work.md
+xai-me-why-xai,xai,"xAI 15-min screen ③: why xAI (named team, 90 s–2 min)",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-why-xai.md
+xai-me-work-style,xai,"xAI 15-min screen ⑦: hours, RTO, start date",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/personal/xai-me-work-style.md
+sys-3d-parallel,systems,系统：DP+TP+PP 三维并行怎么选切分，通信体积直觉,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-3d-parallel.md
+sys-act-checkpoint,systems,系统：activation checkpoint 重算 vs 存，和序列并行叠,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-act-checkpoint.md
+sys-act-mem,systems,系统：激活显存随序列长度怎么涨，和参数的 16 字节怎么分开？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-act-mem.md
+sys-adv-bcast,systems,系统：序列级优势怎么铺到 token 上，哪些位置必须是 0？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-adv-bcast.md
+sys-agent-sched,systems,系统：agent 多轮，工具等待时 GPU 空转怎么插 decode,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-agent-sched.md
+sys-allreduce-reducescatter,systems,系统：all-reduce vs reduce-scatter+all-gather，ZeRO 为什么拆,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-allreduce-reducescatter.md
+sys-async-ckpt,systems,系统：异步 checkpoint，一致性和占用,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-async-ckpt.md
+sys-async-stale,systems,系统：异步 rollout 的权重比训练旧几步，loss 里要带什么？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-async-stale.md
+sys-chunked-prefill,systems,系统：chunked prefill 和 decode 混部,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-chunked-prefill.md
+sys-ckpt-bundle,systems,系统：预训练 checkpoint 里除了权重，还要存什么才能接着训？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-ckpt-bundle.md
+sys-clip-global,systems,系统：多卡上梯度裁剪，范数要先 AllReduce 再缩放,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-clip-global.md
+sys-cont-batch,systems,系统：continuous batching，iteration-level 调度，hole 碎片,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-cont-batch.md
+sys-context-parallel,systems,系统：context parallel 长上下文，ring 传 KV,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-context-parallel.md
+sys-data-pipeline,systems,系统：万亿 token 数据管道，shuffle、checkpoint、坏样本,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-data-pipeline.md
+sys-ddp-bucket,systems,系统：DDP 的梯度桶为什么能和反向重叠？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-ddp-bucket.md
+sys-decode-batch,systems,系统：decode batch 动态，结束序列腾槽、inflight,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-decode-batch.md
+sys-deterministic,systems,系统：两次预训练的 loss 对不上最后一位，要不要查？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-deterministic.md
+sys-eos-mask,systems,系统：一条回答在 EOS 之后的 token，还进不进后训练 loss？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-eos-mask.md
+sys-ep-dispatch,systems,系统：MoE expert parallel 的 token dispatch 负载,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-ep-dispatch.md
+sys-expert-parallel,systems,系统：专家并行，token 调度不均和 all-to-all,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-expert-parallel.md
+sys-flashinfer,systems,系统：FlashInfer 推理核库，append、sampling、调度器接口,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-flashinfer.md
+sys-fp8-gemm,systems,系统：FP8 GEMM，scaling 与 DeepGEMM 一类公开思路,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-fp8-gemm.md
+sys-frag-oom,systems,系统：显存没用满却 OOM，是碎片还是缓存？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-frag-oom.md
+sys-grad-accum,systems,系统：global batch、micro batch、梯度累积，哪一次才同步？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-grad-accum.md
+sys-group-size,systems,系统：GRPO 的组大小 G，显存和方差怎么一起看？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-group-size.md
+sys-host-stall,systems,系统：GPU 空转，先分是数据没喂上，还是卡在通信？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-host-stall.md
+sys-init-same,systems,系统：数据并行各卡的初始权重为什么必须相同？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-init-same.md
+sys-kl-place,systems,系统：KL 写进奖励，还是写进 loss？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-kl-place.md
+sys-kv-offload,systems,系统：KV 分层存储，HBM / CPU / 盘和命中率,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-kv-offload.md
+sys-kv-quant,systems,系统：KV cache 量化（INT8/FP8），outlier 和注意力质量,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-kv-quant.md
+sys-left-pad,systems,系统：生成用左填充，打分为什么会打到 prompt 上？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-left-pad.md
+sys-loss-spike,systems,系统：分布式训练 loss spike 排查清单,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-loss-spike.md
+sys-lr-tokens,systems,系统：改了梯度累积，学习率 warmup 按 token 还是按 step？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-lr-tokens.md
+sys-mfu,systems,系统：预训练一步的 MFU 怎么算，哪些时间不能算进分子？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-mfu.md
+sys-mixed-precision,systems,系统：BF16/FP8 训练，master weights，和推理量化分开,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-mixed-precision.md
+sys-mm-prefill,systems,系统：多模态 prefill，视觉 encoder 与 LLM 形状、batch 不齐,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-mm-prefill.md
+sys-oom-order,systems,系统：预训练 OOM，按激活、优化器、通信缓冲的顺序砍,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-oom-order.md
+sys-overlong,systems,系统：超长序列的激活、注意力时间、并行怎么叠,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-overlong.md
+sys-paged-attn,systems,系统：PagedAttention 块表、复制、前缀共享,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-paged-attn.md
+sys-param-bytes,systems,系统：一个参数在训练里占多少字节，ZeRO 之后剩多少？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-param-bytes.md
+sys-pp-imbalance,systems,系统：流水线第一级和最后一级为什么更慢？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-pp-imbalance.md
+sys-pp-one-step,systems,系统：流水线里优化器为什么不能在稳态中间 step？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-pp-one-step.md
+sys-prefill-decode-disagg,systems,系统：prefill/decode 分离部署，KV 搬运成本,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-prefill-decode-disagg.md
+sys-prefix-cache,systems,系统：prefix / prompt cache，多用户系统提示共享,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-prefix-cache.md
+sys-radix-tree,systems,系统：radix / prefix tree 共享 KV（SGLang）,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-radix-tree.md
+sys-ref-model,systems,系统：KL 的参考模型放哪，为什么不算第二份 Adam？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-ref-model.md
+sys-replay,systems,系统：旧的 rollout 能不能留到下一步再训？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-replay.md
+sys-rollout-logprob,systems,系统：on-policy 时 rollout 的 logprob 和训练前向对不上，先查什么？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-rollout-logprob.md
+sys-rollout-place,systems,系统：后训练的生成和训练，共置还是拆到两组卡？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-rollout-place.md
+sys-sandbox-nproc,systems,系统：沙箱除了超时，还要限制进程数、内存和磁盘,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-sandbox-nproc.md
+sys-sandbox-reward,systems,系统：沙箱奖励用哪一次运行的结果，不稳定的测试怎么处理？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-sandbox-reward.md
+sys-sandbox-secret,systems,系统：沙箱里的报错会不会把密钥和数据路径漏给模型？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-sandbox-secret.md
+sys-sandbox,systems,系统：代码奖励的沙箱要隔离开什么？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-sandbox.md
+sys-seq-parallel,systems,系统：sequence parallel 减 activation，和 TP 的配对,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-seq-parallel.md
+sys-spec-sys,systems,系统：投机解码，草稿长度、拒绝回滚 KV、测吞吐,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-spec-sys.md
+sys-straggler,systems,系统：训练 straggler、弹性、跳过坏 batch，和 NCCL 超时,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-straggler.md
+sys-tokenizer-same,systems,系统：rollout 和训练的 tokenizer 不一致，会坏在哪？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-tokenizer-same.md
+sys-tp-overlap,systems,系统：TP 通信和 GEMM overlap，怎么暴露通信墙,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-tp-overlap.md
+sys-ulysses,systems,系统：DeepSpeed Ulysses all-to-all 切序列，和 Megatron SP,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-ulysses.md
+sys-verifier,systems,系统：可验证奖励不在 GPU 上，一步要怎么等它？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-verifier.md
+sys-weight-remap,systems,系统：训练分片怎么送进 vLLM，为什么不能按 rank 原样拷？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-weight-remap.md
+sys-zero-stages,systems,系统：ZeRO 1/2/3 与 FSDP 对照，CPU offload 何时值得,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/systems/sys-zero-stages.md
+tesla-autolabel,xai,Tesla：自动标注质量门禁，人在环抽查比例怎么定,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/tesla-autolabel.md
+tesla-data-engine,xai,Tesla：数据引擎（挖难例、自动标注、闭环），面试怎么结构化,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/tesla-data-engine.md
+tesla-hydra-nets,xai,Tesla：HydraNets 多任务共享骨干，损失权衡和任务干扰,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/tesla-hydra-nets.md
+tesla-latency-slo,xai,Tesla：车载延迟 SLO，几乎不能凑 batch，和云端 LLM serving 差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/tesla-latency-slo.md
+tesla-occupancy-net,xai,Tesla：occupancy / BEV 类表示，评测用什么，和纯相机占用栅格差在哪,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/tesla-occupancy-net.md
+xai-agent-loop,xai,xAI：Grok tool loop 工程，超时、重试、观测截断？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-agent-loop.md
+xai-colossus,xai,xAI：超大集群训练，故障、checkpoint、重同步面试怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-colossus.md
+xai-grok-moe,xai,xAI：Grok 类 MoE 服务，decode 时专家并行和 batch 不齐怎么讲,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-grok-moe.md
+xai-grok-pretrain,xai,xAI：Grok 预训练公开口径能讲什么，不要编数据配比,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-grok-pretrain.md
+xai-grok-vision,xai,xAI：Grok 视觉公开口径能讲什么，不要编编码器？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-grok-vision.md
+xai-kv-txn,xai,xAI：内存 KV 怎么加事务？15 分钟屏幕上的 race 怎么找？,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/xai/xai-kv-txn.md
+xai-lmarena,xai,xAI：LMSYS Arena / 在线偏好，和离线榜的差，不要神化 Elo,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-lmarena.md
+xai-lru-cache,xai,xAI：手写 LRU / 并发缓存，和 KV 事务题怎么衔接,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/xai/xai-lru-cache.md
+xai-moe-decode,xai,xAI：MoE decode 专家不齐和 batch 碎片,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-moe-decode.md
+xai-prompt-cache,xai,xAI：系统提示缓存，多租户前缀共享,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-prompt-cache.md
+xai-rate-limiter,xai,xAI coding：API rate limiter，多租户公平和突发,完整编程练习,题面/实现/测试/复杂度,False,content/handbooks/us-tech/questions/xai/xai-rate-limiter.md
+xai-realtime,xai,xAI：低延迟语音 / 对话（公开层）怎么拆预算？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-realtime.md
+xai-screen-15min,xai,"xAI: 15-minute video screen, clock and cut reasons",流程/备考/导航,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-screen-15min.md
+xai-search-agent,xai,xAI：实时搜索工具，时效、引用、失败怎么收？,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-search-agent.md
+xai-spacexai-now,xai,"xAI / SpaceXAI: what they are shipping now (Grok, Cursor, Colossus)",技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-spacexai-now.md
+xai-tool-use,xai,xAI：Grok tool use / function calling 的公开层工程约束,技术知识/设计讲解,结构与题型核对；未逐条重核外部事实,False,content/handbooks/us-tech/questions/xai/xai-tool-use.md

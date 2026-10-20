@@ -1,0 +1,10 @@
+{
+  "reviewedCards": 167,
+  "codingCards": 118,
+  "nonCodingCards": 49,
+  "testedImplementations": 85,
+  "byLanguage": {
+    "python": 83,
+    "javascript": 2
+  }
+}

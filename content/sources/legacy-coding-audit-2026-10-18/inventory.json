@@ -1,0 +1,3782 @@
+[
+  {
+    "id": "align-agent-rl",
+    "section": "alignment",
+    "title": "对齐：多智能体 / 工具 RL 的稀疏奖励与信用分配",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-agent-rl.md"
+  },
+  {
+    "id": "align-arena",
+    "section": "alignment",
+    "title": "对齐：Chatbot Arena / 在线 ELO 的偏差",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-arena.md"
+  },
+  {
+    "id": "align-best-of-n",
+    "section": "alignment",
+    "title": "对齐：Best-of-N 推理时对齐，成本与 RM over-optimize",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-best-of-n.md"
+  },
+  {
+    "id": "align-cai",
+    "section": "alignment",
+    "title": "对齐：Constitutional AI 人从偏好标注挪到原则+抽查",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-cai.md"
+  },
+  {
+    "id": "align-cot-leak",
+    "section": "alignment",
+    "title": "对齐：隐藏思维链与思考预算如何泄漏",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-cot-leak.md"
+  },
+  {
+    "id": "align-debate",
+    "section": "alignment",
+    "title": "对齐：Debate / 递归监督的公开概念",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-debate.md"
+  },
+  {
+    "id": "align-dpo",
+    "section": "alignment",
+    "title": "对齐：DPO 的 implicit reward，β 太大太小",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-dpo.md"
+  },
+  {
+    "id": "align-eval-contam",
+    "section": "alignment",
+    "title": "对齐：评测污染，n-gram / 搜索查重，泄漏后怎么办",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-eval-contam.md"
+  },
+  {
+    "id": "align-grpo",
+    "section": "alignment",
+    "title": "对齐：GRPO / group relative，相对 PPO 少了 critic",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-grpo.md"
+  },
+  {
+    "id": "align-ipo",
+    "section": "alignment",
+    "title": "对齐：IPO 相对 DPO",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-ipo.md"
+  },
+  {
+    "id": "align-kto",
+    "section": "alignment",
+    "title": "对齐：KTO 只用 binary 反馈",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-kto.md"
+  },
+  {
+    "id": "align-length-bias",
+    "section": "alignment",
+    "title": "对齐：偏好学习里的长度偏见",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-length-bias.md"
+  },
+  {
+    "id": "align-llm-judge",
+    "section": "alignment",
+    "title": "对齐：LLM-as-judge 偏差（位置、自偏好）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-llm-judge.md"
+  },
+  {
+    "id": "align-mm-harm",
+    "section": "alignment",
+    "title": "对齐：图文有害——截图越狱与隐写指令",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-mm-harm.md"
+  },
+  {
+    "id": "align-online-dpo",
+    "section": "alignment",
+    "title": "对齐：在线 / iterative DPO，策略滞后",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-online-dpo.md"
+  },
+  {
+    "id": "align-over-refuse",
+    "section": "alignment",
+    "title": "对齐：过度拒答 vs 有害遵从，评测切片怎么切",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-over-refuse.md"
+  },
+  {
+    "id": "align-overopt-rm",
+    "section": "alignment",
+    "title": "对齐：奖励模型过优化——BoN 曲线与代理失效",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-overopt-rm.md"
+  },
+  {
+    "id": "align-process-reward",
+    "section": "alignment",
+    "title": "对齐：过程奖励 vs 结果奖励，步骤标注噪声",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-process-reward.md"
+  },
+  {
+    "id": "align-red-team",
+    "section": "alignment",
+    "title": "对齐：红队和自动化攻击，覆盖率和过拟合评测模型",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-red-team.md"
+  },
+  {
+    "id": "align-reward-hack",
+    "section": "alignment",
+    "title": "对齐：reward hacking 例子（冗长、谄媚、格式刷分）怎么发现",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-reward-hack.md"
+  },
+  {
+    "id": "align-reward-model",
+    "section": "alignment",
+    "title": "对齐：奖励模型怎么训、校准、Bradley-Terry 噪声",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-reward-model.md"
+  },
+  {
+    "id": "align-rft",
+    "section": "alignment",
+    "title": "对齐：Reinforcement Fine-Tuning / RLVR，可验证奖励接到策略",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-rft.md"
+  },
+  {
+    "id": "align-rlaif",
+    "section": "alignment",
+    "title": "对齐：RLAIF，批评模型隔离，宪法条款要有反例",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-rlaif.md"
+  },
+  {
+    "id": "align-rlhf-kl",
+    "section": "alignment",
+    "title": "对齐：RLHF 为什么加 reverse KL 到 SFT 模型，正向 KL 会怎样",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-rlhf-kl.md"
+  },
+  {
+    "id": "align-safety-tax",
+    "section": "alignment",
+    "title": "对齐：安全对齐掉能力，怎么测",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-safety-tax.md"
+  },
+  {
+    "id": "align-sycophancy",
+    "section": "alignment",
+    "title": "对齐：谄媚用户错误观点，和 helpful 目标冲突",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-sycophancy.md"
+  },
+  {
+    "id": "align-tool-rl",
+    "section": "alignment",
+    "title": "对齐：只对工具成功给奖，还是逐步过程奖",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-tool-rl.md"
+  },
+  {
+    "id": "align-weak-strong",
+    "section": "alignment",
+    "title": "对齐：weak-to-strong——监督者弱于被监督模型",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/alignment/align-weak-strong.md"
+  },
+  {
+    "id": "amazon-agent-eval",
+    "section": "amazon",
+    "title": "Amazon：企业 agent 怎么评，任务成功、越权、引用？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-agent-eval.md"
+  },
+  {
+    "id": "amazon-batch-infer",
+    "section": "amazon",
+    "title": "Amazon：Bedrock batch 和实时推理怎么选，吞吐和成本各看什么？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-batch-infer.md"
+  },
+  {
+    "id": "amazon-bedrock-agents",
+    "section": "amazon",
+    "title": "Amazon：Bedrock Agents 的工具、记忆、护栏，和自建 harness 怎么选？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-bedrock-agents.md"
+  },
+  {
+    "id": "amazon-bedrock-rag",
+    "section": "amazon",
+    "title": "Amazon：Seller Support 上 500 万份政策 PDF，p95 2 秒的 RAG 怎么做？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-bedrock-rag.md"
+  },
+  {
+    "id": "amazon-cold-start",
+    "section": "amazon",
+    "title": "Amazon：冷启动商品 / 新 query，推荐和搜索怎么共用信号？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-cold-start.md"
+  },
+  {
+    "id": "amazon-converse-tool",
+    "section": "amazon",
+    "title": "Amazon：Converse tool use，toolConfig、并行工具和 Guardrail 怎么接？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-converse-tool.md"
+  },
+  {
+    "id": "amazon-feature-store",
+    "section": "amazon",
+    "title": "Amazon：特征存储一致性，训练/服务特征偏移？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-feature-store.md"
+  },
+  {
+    "id": "amazon-guardrails",
+    "section": "amazon",
+    "title": "Amazon Bedrock Guardrails：拦截应发生在生成前还是后，和模型对齐的分工？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-guardrails.md"
+  },
+  {
+    "id": "amazon-kendra-hybrid",
+    "section": "amazon",
+    "title": "Amazon：关键词 + 向量混合检索，何时 BM25 赢 embedding？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-kendra-hybrid.md"
+  },
+  {
+    "id": "amazon-lp-ml",
+    "section": "amazon",
+    "title": "Amazon：领导力原则怎么落到 ML 决策（上线门禁、客户数据、纠错）？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-lp-ml.md"
+  },
+  {
+    "id": "amazon-mm-rag",
+    "section": "amazon",
+    "title": "Amazon：图 / PDF RAG，OCR 和视觉检索怎么选？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-mm-rag.md"
+  },
+  {
+    "id": "amazon-nova-mm",
+    "section": "amazon",
+    "title": "Amazon：Nova 多模态（公开）和 Bedrock 路由怎么接？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-nova-mm.md"
+  },
+  {
+    "id": "amazon-nova",
+    "section": "amazon",
+    "title": "Amazon：Nova / Titan 当 Bedrock 模型族，怎么评、怎么路由？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-nova.md"
+  },
+  {
+    "id": "amazon-p99-stream",
+    "section": "amazon",
+    "title": "Amazon：流式生成的 p99，首 token 和整段完成为什么要拆开报？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-p99-stream.md"
+  },
+  {
+    "id": "amazon-rerank-llm",
+    "section": "amazon",
+    "title": "Amazon：LLM rerank 和 embedding 召回怎么叠？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-rerank-llm.md"
+  },
+  {
+    "id": "amazon-titan-embed",
+    "section": "amazon",
+    "title": "Amazon：Titan embedding 怎么评（MTEB 坑、领域），和 RAG 是什么关系？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-titan-embed.md"
+  },
+  {
+    "id": "amazon-titan-eval",
+    "section": "amazon",
+    "title": "Amazon：Bedrock/Titan 类应用怎么评，不能只报 BLEU？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-titan-eval.md"
+  },
+  {
+    "id": "amazon-trainium",
+    "section": "amazon",
+    "title": "Amazon：Trainium / Neuron 上训 LLM，和 GPU 栈公开层差在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-trainium.md"
+  },
+  {
+    "id": "amazon-two-tower",
+    "section": "amazon",
+    "title": "Amazon：双塔召回，训练对齐和 serving 近似，ANN 掉点怎么补？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-two-tower.md"
+  },
+  {
+    "id": "anthropic-agent-eval",
+    "section": "anthropic",
+    "title": "Anthropic：OSWorld / WebArena 类公开基准怎么讲？污染和成功定义卡在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-agent-eval.md"
+  },
+  {
+    "id": "anthropic-bank-oa",
+    "section": "anthropic",
+    "title": "Anthropic OA：银行账户 / 转账后续，接口如何从内存库长出来？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bank-oa.md"
+  },
+  {
+    "id": "anthropic-batch-api",
+    "section": "anthropic",
+    "title": "Anthropic：Batch API 和在线 serving 的调度差在哪，适合什么负载？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-batch-api.md"
+  },
+  {
+    "id": "anthropic-bpe-tokenizer",
+    "section": "anthropic",
+    "title": "Anthropic：手写 BPE Tokenizer，encode / decode 要对齐什么不变量？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bpe-tokenizer.md"
+  },
+  {
+    "id": "anthropic-citations",
+    "section": "anthropic",
+    "title": "Anthropic：引用接地怎么做，文档块和 span 对不上时该不该拒答？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-citations.md"
+  },
+  {
+    "id": "anthropic-computer-rl",
+    "section": "anthropic",
+    "title": "Anthropic：computer use 上动作级和轨迹级反馈差在哪？确认框为什么不能训进策略？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-computer-rl.md"
+  },
+  {
+    "id": "anthropic-computer-use",
+    "section": "anthropic",
+    "title": "Anthropic：computer use 敏感动作为什么必须产品层确认，不是 constitution？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-computer-use.md"
+  },
+  {
+    "id": "anthropic-constitutional-ai",
+    "section": "anthropic",
+    "title": "Anthropic：Constitutional AI 和 RLHF 差在哪？监督从哪来？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-constitutional-ai.md"
+  },
+  {
+    "id": "anthropic-context-distill",
+    "section": "anthropic",
+    "title": "Anthropic：context distillation 把原则压进模型，和 system prompt 差在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-context-distill.md"
+  },
+  {
+    "id": "anthropic-crawler-oa",
+    "section": "anthropic",
+    "title": "Anthropic OA：爬虫 / 网页抓取分层题，礼貌延迟与去重怎么做？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-crawler-oa.md"
+  },
+  {
+    "id": "anthropic-eval-honesty",
+    "section": "anthropic",
+    "title": "Anthropic：诚实性和不确定性怎么评，和 HH 冲突时站哪边？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-eval-honesty.md"
+  },
+  {
+    "id": "anthropic-extended-thinking",
+    "section": "anthropic",
+    "title": "Anthropic：extended thinking 的推理预算、延迟，以及为什么不能把 CoT 当产品日志？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-extended-thinking.md"
+  },
+  {
+    "id": "anthropic-grpo-debug",
+    "section": "anthropic",
+    "title": "Anthropic：RL Fundamentals，修一段有 bug 的 GRPO",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-grpo-debug.md"
+  },
+  {
+    "id": "anthropic-hh-rlhf",
+    "section": "anthropic",
+    "title": "Anthropic：HH-RLHF 里 helpful 和 harmless 冲突时，偏好怎么采？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-hh-rlhf.md"
+  },
+  {
+    "id": "anthropic-inmemory-db",
+    "section": "anthropic",
+    "title": "Anthropic：实现带 TTL 的内存数据库，后续怎么加备份和并发？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-inmemory-db.md"
+  },
+  {
+    "id": "anthropic-json-schema",
+    "section": "anthropic",
+    "title": "Anthropic：structured output 约束解码和事后再解析，各挡哪类错误？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-json-schema.md"
+  },
+  {
+    "id": "anthropic-long-context",
+    "section": "anthropic",
+    "title": "Anthropic：长上下文评测为什么大海捞针不够，位置偏差怎么测？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-long-context.md"
+  },
+  {
+    "id": "anthropic-mcp",
+    "section": "anthropic",
+    "title": "Anthropic：MCP 当 tool 总线，和 function calling 的边界在哪？不可信服务器怎么防？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-mcp.md"
+  },
+  {
+    "id": "anthropic-memory",
+    "section": "anthropic",
+    "title": "Anthropic：跨会话记忆什么进检索、什么不该持久化？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-memory.md"
+  },
+  {
+    "id": "anthropic-mm-harm",
+    "section": "anthropic",
+    "title": "Anthropic：多模态越狱图里藏指令，和纯文本 injection 差在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-mm-harm.md"
+  },
+  {
+    "id": "anthropic-needle",
+    "section": "anthropic",
+    "title": "Anthropic：大海捞针不够，长上下文真实评测怎么设计？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-needle.md"
+  },
+  {
+    "id": "anthropic-pdf",
+    "section": "anthropic",
+    "title": "Anthropic：PDF 是页图还是文本层？引用怎么落到页？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-pdf.md"
+  },
+  {
+    "id": "anthropic-perf-takehome",
+    "section": "anthropic",
+    "title": "Anthropic：开源的性能 take-home，是一台 VLIW SIMD 机器",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-perf-takehome.md"
+  },
+  {
+    "id": "anthropic-pref-bt",
+    "section": "anthropic",
+    "title": "Anthropic：Bradley-Terry 偏好模型，平局和噪声标签怎么处理？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-pref-bt.md"
+  },
+  {
+    "id": "anthropic-pref-collect",
+    "section": "anthropic",
+    "title": "Anthropic：偏好数据怎么采？双盲、平局、多轴 HH",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-pref-collect.md"
+  },
+  {
+    "id": "anthropic-prompt-cache",
+    "section": "anthropic",
+    "title": "Anthropic：prompt caching 为什么要求前缀稳定，breakpoint 该打在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-prompt-cache.md"
+  },
+  {
+    "id": "anthropic-prompt-injection",
+    "section": "anthropic",
+    "title": "Anthropic：prompt injection 碰上 tool 调用，边界应该设在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-prompt-injection.md"
+  },
+  {
+    "id": "anthropic-rate-limit",
+    "section": "anthropic",
+    "title": "Anthropic：怎么给 API 设计 rate limiter（token 桶 / 滑动窗）？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-rate-limit.md"
+  },
+  {
+    "id": "anthropic-rlaif",
+    "section": "anthropic",
+    "title": "Anthropic：RLAIF 和 RLHF 的人在环里位置差在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-rlaif.md"
+  },
+  {
+    "id": "anthropic-safety-levels",
+    "section": "anthropic",
+    "title": "Anthropic：ASL / RSP 面试能公开讲到哪，不要编内部阈值",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-safety-levels.md"
+  },
+  {
+    "id": "anthropic-streaming-tools",
+    "section": "anthropic",
+    "title": "Anthropic：流式 tool 调用怎么处理 partial JSON、用户取消和幂等？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-streaming-tools.md"
+  },
+  {
+    "id": "anthropic-tool-roundtrip",
+    "section": "anthropic",
+    "title": "Anthropic：tool 往返结果过大、截断、cache 前缀被破坏，怎么处理？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-tool-roundtrip.md"
+  },
+  {
+    "id": "anthropic-tool-use",
+    "section": "anthropic",
+    "title": "Anthropic：tool use 的 schema、失败重试，以及为什么把模型当不可信调用方？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-tool-use.md"
+  },
+  {
+    "id": "anthropic-vision",
+    "section": "anthropic",
+    "title": "Anthropic：Claude vision 图怎么编码、多图怎么喂，截图 agent 卡在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-vision.md"
+  },
+  {
+    "id": "anthropic-xml-prompt",
+    "section": "anthropic",
+    "title": "Anthropic：为什么偏爱 XML 标签组织 tool / 条款，解析失败怎么降级？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-xml-prompt.md"
+  },
+  {
+    "id": "apple-afm-eval",
+    "section": "apple",
+    "title": "Apple：端侧 LLM 怎么评，延迟、耗电、隐私，为什么不能只报 BLEU？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-afm-eval.md"
+  },
+  {
+    "id": "apple-ane",
+    "section": "apple",
+    "title": "Apple：Neural Engine 约束（静态 shape、算子白名单）对 Transformer 设计的影响？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-ane.md"
+  },
+  {
+    "id": "apple-audio-llm",
+    "section": "apple",
+    "title": "Apple：语音进 LLM，流式 ASR 文本还是音频 token？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-audio-llm.md"
+  },
+  {
+    "id": "apple-diff-privacy",
+    "section": "apple",
+    "title": "Apple：差分隐私在个性化语言模型里怎么讲 ε，和「数据不出设备」的关系？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-diff-privacy.md"
+  },
+  {
+    "id": "apple-foundation-models",
+    "section": "apple",
+    "title": "Apple：Foundation Models 公开叙事怎么讲，端侧和云各自干什么、能力边界在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-foundation-models.md"
+  },
+  {
+    "id": "apple-kmeans",
+    "section": "apple",
+    "title": "Apple coding：k-means / 近邻，作为电面算法题怎么答到 ML 岗标准？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-kmeans.md"
+  },
+  {
+    "id": "apple-mha-code",
+    "section": "apple",
+    "title": "Apple / Siri MLE：手写 Multi-Head Attention，shape 和 mask 怎么收？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-mha-code.md"
+  },
+  {
+    "id": "apple-mm-train",
+    "section": "apple",
+    "title": "Apple：端侧 / 云侧多模态训练，视觉塔冻结还是联合，分辨率怎么选？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-mm-train.md"
+  },
+  {
+    "id": "apple-multimodal",
+    "section": "apple",
+    "title": "Apple：图文 / 屏幕理解 grounding，引用的是像素区域还是 OCR 文本？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-multimodal.md"
+  },
+  {
+    "id": "apple-ondevice-agent",
+    "section": "apple",
+    "title": "Apple：端侧 agent，工具本地跑、写操作确认、离线怎么收？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-ondevice-agent.md"
+  },
+  {
+    "id": "apple-ondevice-kv",
+    "section": "apple",
+    "title": "Apple：端侧 KV 的显存和带宽怎么估，GQA 加量化 cache 各省哪一刀？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-ondevice-kv.md"
+  },
+  {
+    "id": "apple-ondevice-quant",
+    "section": "apple",
+    "title": "Apple：端侧权重量化 / KV 量化，ANE 上 mask 的 -inf 还安全吗？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-ondevice-quant.md"
+  },
+  {
+    "id": "apple-personalize",
+    "section": "apple",
+    "title": "Apple：个性化不能上传全量私有上下文，适配器 / 本地检索怎么选？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-personalize.md"
+  },
+  {
+    "id": "apple-rank-adapter",
+    "section": "apple",
+    "title": "Apple：低秩适配器做个性化，和检索怎么选，数据如何不出设备？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-rank-adapter.md"
+  },
+  {
+    "id": "apple-siri-grounded",
+    "section": "apple",
+    "title": "Apple Siri：工具结果必须接地的回复，怎么设计生成和评测？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-siri-grounded.md"
+  },
+  {
+    "id": "apple-siri-latency",
+    "section": "apple",
+    "title": "Apple：Siri 语音链路延迟预算，流式 TTS vs 等完整答案？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-siri-latency.md"
+  },
+  {
+    "id": "apple-spec-edge",
+    "section": "apple",
+    "title": "Apple：端侧投机解码值得上吗，草稿模型放哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-spec-edge.md"
+  },
+  {
+    "id": "apple-token-prune",
+    "section": "apple",
+    "title": "Apple：视觉 token 剪枝 / 合并，质量和延迟怎么折？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-token-prune.md"
+  },
+  {
+    "id": "apple-topk-sample",
+    "section": "apple",
+    "title": "Apple 电面：温度、top-k、nucleus 顺序，端侧为什么常 top-k？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/apple/apple-topk-sample.md"
+  },
+  {
+    "id": "apple-vision-edge",
+    "section": "apple",
+    "title": "Apple：端侧视觉 token 预算和 ANE 静态 shape 怎么卡？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/apple/apple-vision-edge.md"
+  },
+  {
+    "id": "coding-adamw",
+    "section": "coding",
+    "title": "白板：AdamW 一步更新，m/v、bias correction、decoupled decay",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-adamw.md"
+  },
+  {
+    "id": "coding-alibi",
+    "section": "coding",
+    "title": "白板：ALiBi 斜率加到 scores 上，decode 用 cache 长度当 query 位",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-alibi.md"
+  },
+  {
+    "id": "coding-attn-mask",
+    "section": "coding",
+    "title": "白板：因果、padding、文档边界合成一张注意力 mask",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-attn-mask.md"
+  },
+  {
+    "id": "coding-beam-search",
+    "section": "coding",
+    "title": "白板：beam search vs greedy vs sampling，长度惩罚",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-beam-search.md"
+  },
+  {
+    "id": "coding-bpe-merge",
+    "section": "coding",
+    "title": "白板：BPE 训练一步 merge，词表膨胀；词尾标记写成 endofword 禁止 XML",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-bpe-merge.md"
+  },
+  {
+    "id": "coding-cispo",
+    "section": "coding",
+    "title": "白板：CISPO 和 PPO clip 的区别，clip 的是权重还是梯度",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-cispo.md"
+  },
+  {
+    "id": "coding-cross-entropy",
+    "section": "coding",
+    "title": "白板：从 logits 写 cross entropy，不要先 softmax 再 log",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-cross-entropy.md"
+  },
+  {
+    "id": "coding-decode-step",
+    "section": "coding",
+    "title": "白板：一步 decode，取 q、concat KV、GQA repeat、出 logits",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-decode-step.md"
+  },
+  {
+    "id": "coding-dpo-weighted",
+    "section": "coding",
+    "title": "白板：DPO 的梯度写成加权 logprob，权重是什么，什么时候大",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-dpo-weighted.md"
+  },
+  {
+    "id": "coding-dropout",
+    "section": "coding",
+    "title": "白板：dropout mask 训练/推理缩放（inverted dropout）",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-dropout.md"
+  },
+  {
+    "id": "coding-embedding-lookup",
+    "section": "coding",
+    "title": "白板：embedding lookup + padding mask，大词表显存",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-embedding-lookup.md"
+  },
+  {
+    "id": "coding-flash-decode",
+    "section": "coding",
+    "title": "白板：FlashDecoding 的 split-K，online softmax 怎么沿 KV 切开再合并",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-flash-decode.md"
+  },
+  {
+    "id": "coding-fused-ce",
+    "section": "coding",
+    "title": "白板：融合 linear 和 cross entropy，不要物化 `[B, T, V]` logits",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-fused-ce.md"
+  },
+  {
+    "id": "coding-gae",
+    "section": "coding",
+    "title": "白板：GAE 反向递推，done、截断和 value clip 各在哪一行",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-gae.md"
+  },
+  {
+    "id": "coding-gqa-repeat",
+    "section": "coding",
+    "title": "白板：GQA 把 KV head repeat 成 query heads，shape 怎么断言",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-gqa-repeat.md"
+  },
+  {
+    "id": "coding-grad-clip",
+    "section": "coding",
+    "title": "白板：global norm clip， inf/nan 怎么处理",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-grad-clip.md"
+  },
+  {
+    "id": "coding-grpo-loss-agg",
+    "section": "coding",
+    "title": "白板：GRPO 的 token loss 怎么聚合成一个数？三种写法的长度偏置",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-grpo-loss-agg.md"
+  },
+  {
+    "id": "coding-gspo-seq-ratio",
+    "section": "coding",
+    "title": "白板：GSPO 的序列级 ratio，写成 token 上的加权 logprob loss",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-gspo-seq-ratio.md"
+  },
+  {
+    "id": "coding-gumbel-max",
+    "section": "coding",
+    "title": "白板：Gumbel-max 采样，和 softmax 温度的关系",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-gumbel-max.md"
+  },
+  {
+    "id": "coding-int8-symm",
+    "section": "coding",
+    "title": "白板：对称 INT8 量化，scale、饱和，以及 dequant GEMM 的形状",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-int8-symm.md"
+  },
+  {
+    "id": "coding-kl-div",
+    "section": "coding",
+    "title": "白板：token 级 KL（策略 vs 参考策略），reduction 和 ignore pad",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-kl-div.md"
+  },
+  {
+    "id": "coding-layernorm",
+    "section": "coding",
+    "title": "白板：LayerNorm vs 在 feature 维上的标准化，eps 和仿射",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-layernorm.md"
+  },
+  {
+    "id": "coding-logsumexp",
+    "section": "coding",
+    "title": "白板：log-sum-exp trick，和 cross entropy 的关系",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-logsumexp.md"
+  },
+  {
+    "id": "coding-loss-atlas",
+    "section": "coding",
+    "title": "白板总览：LLM 训练里常见的 loss，都写成「权重 × logprob」来对照",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-loss-atlas.md"
+  },
+  {
+    "id": "coding-mq-attn",
+    "section": "coding",
+    "title": "白板：MQA 单 KV head，怎么对 query heads broadcast",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-mq-attn.md"
+  },
+  {
+    "id": "coding-online-softmax",
+    "section": "coding",
+    "title": "白板：FlashAttention 的 online softmax，两遍归约怎么写",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-online-softmax.md"
+  },
+  {
+    "id": "coding-packed-lm",
+    "section": "coding",
+    "title": "白板：packed sequences 的 cu_seqlens 和文档边界 mask",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-packed-lm.md"
+  },
+  {
+    "id": "coding-paged-table",
+    "section": "coding",
+    "title": "白板：PagedAttention 的 block table，逻辑页怎么映到物理块，append 一页",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-paged-table.md"
+  },
+  {
+    "id": "coding-qk-norm",
+    "section": "coding",
+    "title": "白板：QK RMSNorm 再 RoPE，Qwen / 部分 Llama 变体怎么写",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-qk-norm.md"
+  },
+  {
+    "id": "coding-rloo-advantage",
+    "section": "coding",
+    "title": "白板：RLOO 的 leave-one-out baseline，向量化写法和它跟 GRPO 差在哪",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-rloo-advantage.md"
+  },
+  {
+    "id": "coding-rmsnorm",
+    "section": "coding",
+    "title": "白板：RMSNorm 比 LayerNorm 少了什么，Llama 为什么用",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-rmsnorm.md"
+  },
+  {
+    "id": "coding-rope-cache",
+    "section": "coding",
+    "title": "白板：RoPE 的 cos/sin cache，decode 时怎么 index",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-rope-cache.md"
+  },
+  {
+    "id": "coding-rope",
+    "section": "coding",
+    "title": "白板：RoPE 对 q/k 旋转，偶数维成对，decode 的 position",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-rope.md"
+  },
+  {
+    "id": "coding-silu",
+    "section": "coding",
+    "title": "白板：SiLU / Swish 手写，数值上哪里会炸",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-silu.md"
+  },
+  {
+    "id": "coding-softmax-stable",
+    "section": "coding",
+    "title": "白板：数值稳定 softmax，为什么减 max，轴怎么选",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-softmax-stable.md"
+  },
+  {
+    "id": "coding-spec-accept",
+    "section": "coding",
+    "title": "白板：投机解码接受规则，拒绝后从哪一步重采样",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-spec-accept.md"
+  },
+  {
+    "id": "coding-swa-mask",
+    "section": "coding",
+    "title": "白板：sliding window 和因果 mask 合成，prefill 与 decode 的 shape",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-swa-mask.md"
+  },
+  {
+    "id": "coding-swiglu",
+    "section": "coding",
+    "title": "白板：SwiGLU / Llama MLP，门控和中间维为什么是 8/3",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-swiglu.md"
+  },
+  {
+    "id": "coding-tis-mismatch",
+    "section": "coding",
+    "title": "白板：推理引擎的 logprob 和训练端对不上，截断重要性权重怎么加",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-tis-mismatch.md"
+  },
+  {
+    "id": "coding-token-logprob",
+    "section": "coding",
+    "title": "白板：从 logits 取 response 的 token logprob，shift、temperature 和显存",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-token-logprob.md"
+  },
+  {
+    "id": "coding-topk-nucleus",
+    "section": "coding",
+    "title": "白板：温度 → top-k → nucleus 的顺序，实现细节",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-topk-nucleus.md"
+  },
+  {
+    "id": "coding-weight-tying",
+    "section": "coding",
+    "title": "白板：embedding 与 lm_head 权重共享，梯度怎么流",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-weight-tying.md"
+  },
+  {
+    "id": "coding-z-loss",
+    "section": "coding",
+    "title": "白板：PaLM z-loss，为什么往 logits 上加这一项",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/coding-z-loss.md"
+  },
+  {
+    "id": "fireworks-grpo-sft-loss",
+    "section": "coding",
+    "title": "Fireworks：把 clipped GRPO 写成 SFT 式的加权 logprob loss",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/coding/fireworks-grpo-sft-loss.md"
+  },
+  {
+    "id": "design-ads-rank",
+    "section": "design",
+    "title": "设计：广告预测与拍卖，校准、延迟、探索",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-ads-rank.md"
+  },
+  {
+    "id": "design-agent-budget",
+    "section": "design",
+    "title": "设计：Agent 的步数与美元预算，以及降级到无工具",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-agent-budget.md"
+  },
+  {
+    "id": "design-agent-harness",
+    "section": "design",
+    "title": "设计：Agent harness（工具、沙箱、预算、确认框）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-agent-harness.md"
+  },
+  {
+    "id": "design-browser-agent",
+    "section": "design",
+    "title": "设计：浏览器 agent 的沙箱、确认与选择器脆弱",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-browser-agent.md"
+  },
+  {
+    "id": "design-chat-serving",
+    "section": "design",
+    "title": "设计：ChatGPT 类对话服务（排队、优先级、前缀缓存、限流）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-chat-serving.md"
+  },
+  {
+    "id": "design-chat-tools",
+    "section": "design",
+    "title": "设计：带工具的客服聊天，工单、RAG、升级人工",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-chat-tools.md"
+  },
+  {
+    "id": "design-code-assistant",
+    "section": "design",
+    "title": "设计：代码助手（仓库索引、权限、补全延迟、SWE-bench 口径）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-code-assistant.md"
+  },
+  {
+    "id": "design-eval-agent",
+    "section": "design",
+    "title": "设计：Agent 评测平台——任务图、重放、非确定性",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-eval-agent.md"
+  },
+  {
+    "id": "design-eval-platform",
+    "section": "design",
+    "title": "设计：LLM 评测平台（离线集、在线 A/B、人工抽查、污染）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-eval-platform.md"
+  },
+  {
+    "id": "design-feature-store",
+    "section": "design",
+    "title": "设计：特征平台，点查延迟、训练一致性",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-feature-store.md"
+  },
+  {
+    "id": "design-long-doc",
+    "section": "design",
+    "title": "设计：长文档问答（检索 vs 长上下文 vs 分层摘要）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-long-doc.md"
+  },
+  {
+    "id": "design-mm-assistant",
+    "section": "design",
+    "title": "设计：多模态助手的引用区域与视觉 token 预算",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-mm-assistant.md"
+  },
+  {
+    "id": "design-mm-rag",
+    "section": "design",
+    "title": "设计：多模态 RAG——图向量、文本与 ACL",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-mm-rag.md"
+  },
+  {
+    "id": "design-moderation",
+    "section": "design",
+    "title": "设计：内容安全分级，延迟、申诉、模型+规则",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-moderation.md"
+  },
+  {
+    "id": "design-multimodal-prod",
+    "section": "design",
+    "title": "设计：多模态助手（图/屏/语音），模态延迟不齐",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-multimodal-prod.md"
+  },
+  {
+    "id": "design-offline-eval",
+    "section": "design",
+    "title": "设计：LLM 离线评测平台（切片、人评、污染、回归门禁）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-offline-eval.md"
+  },
+  {
+    "id": "design-prod-rag",
+    "section": "design",
+    "title": "设计：生产 RAG（切片、新鲜度、权限、引用、p95）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-prod-rag.md"
+  },
+  {
+    "id": "design-prompt-mgmt",
+    "section": "design",
+    "title": "设计：prompt / 工具 schema 版本、灰度、回滚",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-prompt-mgmt.md"
+  },
+  {
+    "id": "design-recsys",
+    "section": "design",
+    "title": "设计：推荐系统召回-排序-重排，多目标与探索",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-recsys.md"
+  },
+  {
+    "id": "design-search",
+    "section": "design",
+    "title": "设计：语义搜索 + 关键词，混合与拼写纠错",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-search.md"
+  },
+  {
+    "id": "design-tool-prod",
+    "section": "design",
+    "title": "设计：生产 tool calling（超时、幂等、确认、审计）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-tool-prod.md"
+  },
+  {
+    "id": "design-voice-agent",
+    "section": "design",
+    "title": "设计：语音 agent 的打断、端到端延迟、ASR 错误传播",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/design/design-voice-agent.md"
+  },
+  {
+    "id": "gdm-ml-design",
+    "section": "google",
+    "title": "Google DeepMind：分子（或其它科学）数据怎么做 ML design？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/gdm-ml-design.md"
+  },
+  {
+    "id": "google-ads-auction",
+    "section": "google",
+    "title": "Google：广告拍卖 + 预测 CTR/CVR，校准为什么比「模型更大」先说",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-ads-auction.md"
+  },
+  {
+    "id": "google-agent-eval",
+    "section": "google",
+    "title": "Google：Agent 基准和 Gemini 产品评测切片（公开口径）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-agent-eval.md"
+  },
+  {
+    "id": "google-alphafold-eval",
+    "section": "google",
+    "title": "DeepMind：AlphaFold 类科学 ML 怎么定义评测，不能只报 loss",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-alphafold-eval.md"
+  },
+  {
+    "id": "google-bert-pretrain",
+    "section": "google",
+    "title": "Google：BERT 两个预训练任务各解决什么，NSP 后来为什么被质疑",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-bert-pretrain.md"
+  },
+  {
+    "id": "google-block-attn",
+    "section": "google",
+    "title": "Google：长序列注意力的 blockwise / ring IO，和 FlashAttention 什么关系",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-block-attn.md"
+  },
+  {
+    "id": "google-cot-reason",
+    "section": "google",
+    "title": "Google：chain-of-thought 和推理时计算，面试怎么讲不神化",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-cot-reason.md"
+  },
+  {
+    "id": "google-distill-llm",
+    "section": "google",
+    "title": "Google：大模型蒸到服务模型，on-policy 蒸馏和 SFT 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-distill-llm.md"
+  },
+  {
+    "id": "google-eval-mmlu",
+    "section": "google",
+    "title": "Google：MMLU 等学术榜的坑，污染、prompt、多语言",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-eval-mmlu.md"
+  },
+  {
+    "id": "google-flamingo",
+    "section": "google",
+    "title": "Google：Flamingo 用 Perceiver resampler 和交叉注意把视觉压进 LLM",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-flamingo.md"
+  },
+  {
+    "id": "google-flash-attention",
+    "section": "google",
+    "title": "Google/DeepMind 岗：FlashAttention 省的是 HBM 往返，不是 FLOPs 公式变了",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-flash-attention.md"
+  },
+  {
+    "id": "google-gemini-agent",
+    "section": "google",
+    "title": "Google：Gemini 工具调用、计算机使用（公开层）和搜索接地",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-gemini-agent.md"
+  },
+  {
+    "id": "google-gemini-longctx",
+    "section": "google",
+    "title": "Google：Gemini 长上下文怎么评、位置偏差和成本，别只报 1M",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-gemini-longctx.md"
+  },
+  {
+    "id": "google-gemini-mm",
+    "section": "google",
+    "title": "Google：Gemini 原生多模态，视觉 token、交错训练，OCR 还是像素",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-gemini-mm.md"
+  },
+  {
+    "id": "google-gemini-moe",
+    "section": "google",
+    "title": "Google：Gemini 系 MoE 面试怎么讲路由、专家容量和 decode 成本",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-gemini-moe.md"
+  },
+  {
+    "id": "google-gqa-mqa",
+    "section": "google",
+    "title": "Google：MHA、MQA、GQA 怎么选？KV 显存差多少？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-gqa-mqa.md"
+  },
+  {
+    "id": "google-jax-pjit",
+    "section": "google",
+    "title": "Google：jax.pjit / shard_map 面试怎么讲 SPMD 和编译时切分",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-jax-pjit.md"
+  },
+  {
+    "id": "google-jax-transformer",
+    "section": "google",
+    "title": "Google：用 JAX 写一层 Transformer，shard、scan、remat 怎么摆",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/google/google-jax-transformer.md"
+  },
+  {
+    "id": "google-mm-sft",
+    "section": "google",
+    "title": "Google：多模态 SFT，交错图文、纯文本回退、灾难遗忘",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-mm-sft.md"
+  },
+  {
+    "id": "google-moe-routing",
+    "section": "google",
+    "title": "Google：MoE 路由、容量因子和 decode 专家并行怎么落地",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-moe-routing.md"
+  },
+  {
+    "id": "google-pali",
+    "section": "google",
+    "title": "Google：PaLI / PaliGemma 多任务多语言视觉-语言，和 Gemini 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-pali.md"
+  },
+  {
+    "id": "google-palm-pathways",
+    "section": "google",
+    "title": "Google：PaLM / Pathways 规模化训练，你怎么讲「一条模型服务多任务」",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-palm-pathways.md"
+  },
+  {
+    "id": "google-search-quality",
+    "section": "google",
+    "title": "Google：搜索质量离线指标（NDCG）和线上行为怎么对不上",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-search-quality.md"
+  },
+  {
+    "id": "google-spec-decode",
+    "section": "google",
+    "title": "Google：投机解码怎么保证无损，和 Medusa / EAGLE 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-spec-decode.md"
+  },
+  {
+    "id": "google-t5-span",
+    "section": "google",
+    "title": "Google：T5 span corruption 预训练目标为什么比 BERT MLM 更适合生成",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-t5-span.md"
+  },
+  {
+    "id": "google-tpu-decode",
+    "section": "google",
+    "title": "Google：TPU 上 decode，MXU 吃不满、KV 带宽，和 GPU 怎么对照",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-tpu-decode.md"
+  },
+  {
+    "id": "google-tpu-llm",
+    "section": "google",
+    "title": "Google：TPU 上训 Transformer，MXU、流水线和 GPU 三维并行怎么对照",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-tpu-llm.md"
+  },
+  {
+    "id": "google-tpu-mesh",
+    "section": "google",
+    "title": "Google：TPU mesh / 把 batch 和模型维切到芯片上，和 GPU 三维并行怎么类比",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-tpu-mesh.md"
+  },
+  {
+    "id": "google-video-token",
+    "section": "google",
+    "title": "Google：视频 token 的时间采样，怎么和长上下文抢预算",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-video-token.md"
+  },
+  {
+    "id": "google-vit-patch",
+    "section": "google",
+    "title": "Google：ViT patch 和原生分辨率，token 数怎么爆、动态切块怎么压",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-vit-patch.md"
+  },
+  {
+    "id": "google-wide-deep",
+    "section": "google",
+    "title": "Google：Wide & Deep 记忆 vs 泛化，现在还怎么用这个直觉",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-wide-deep.md"
+  },
+  {
+    "id": "google-youtube-rank",
+    "section": "google",
+    "title": "Google：YouTube / 信息流排序 ML design（召回-粗排-精排-重排）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/google/google-youtube-rank.md"
+  },
+  {
+    "id": "meta-ab-peeking",
+    "section": "meta",
+    "title": "Meta：A/B 提前偷看为什么会通胀显著度，序贯检验怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-ab-peeking.md"
+  },
+  {
+    "id": "meta-ads-calibration",
+    "section": "meta",
+    "title": "Meta：广告模型校准（predicted vs observed），logloss 和 AUC 各管什么",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-ads-calibration.md"
+  },
+  {
+    "id": "meta-agent-code",
+    "section": "meta",
+    "title": "Meta：代码 agent——仓库索引、补丁评测，和 AI coding 面试差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-agent-code.md"
+  },
+  {
+    "id": "meta-ai-coding",
+    "section": "meta",
+    "title": "Meta：AI-enabled coding 轮怎么考？和普通 LeetCode 差在哪？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-ai-coding.md"
+  },
+  {
+    "id": "meta-anyres",
+    "section": "meta",
+    "title": "Meta：任意分辨率切块（AnyRes / 动态 tile）和上下文预算",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-anyres.md"
+  },
+  {
+    "id": "meta-concurrency-feed",
+    "section": "meta",
+    "title": "Meta：信息流后端并发（缓存、一致性），偏工程轮",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-concurrency-feed.md"
+  },
+  {
+    "id": "meta-continual-pt",
+    "section": "meta",
+    "title": "Meta：continual pretrain / 领域自适应，灾难遗忘怎么防",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-continual-pt.md"
+  },
+  {
+    "id": "meta-dlrm",
+    "section": "meta",
+    "title": "Meta：DLRM 推荐，稀疏 embedding 和 MLP 怎么切并行",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-dlrm.md"
+  },
+  {
+    "id": "meta-early-fusion",
+    "section": "meta",
+    "title": "Meta：early vs late fusion，Chameleon 一类公开叙事能讲到哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-early-fusion.md"
+  },
+  {
+    "id": "meta-fsdp-llm",
+    "section": "meta",
+    "title": "Meta：FSDP 训 LLM 的具体坑——prefetch、wrap policy、activation",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-fsdp-llm.md"
+  },
+  {
+    "id": "meta-fsdp2",
+    "section": "meta",
+    "title": "Meta：FSDP / FSDP2 切什么、通信何时发生、和 ZeRO-3 的关系",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-fsdp2.md"
+  },
+  {
+    "id": "meta-gqa-kernel",
+    "section": "meta",
+    "title": "Meta：GQA 实现——repeat KV、kernel 融合，别只背论文配置",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-gqa-kernel.md"
+  },
+  {
+    "id": "meta-llama-eval",
+    "section": "meta",
+    "title": "Meta：Llama 评测套件——别只报 MMLU，污染和套餐",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-eval.md"
+  },
+  {
+    "id": "meta-llama-gqa",
+    "section": "meta",
+    "title": "Meta / Llama：为什么 70B 用 GQA？和 MHA 比 decode 省在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-gqa.md"
+  },
+  {
+    "id": "meta-llama-guard",
+    "section": "meta",
+    "title": "Meta：Llama Guard 当独立安全分类器，和基座对齐怎么分工",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-guard.md"
+  },
+  {
+    "id": "meta-llama-moe",
+    "section": "meta",
+    "title": "Meta：Llama 4 / MoE 服务侧（公开信息）——专家并行和 batch",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-moe.md"
+  },
+  {
+    "id": "meta-llama-rope",
+    "section": "meta",
+    "title": "Meta：Llama 的 RoPE / 长上下文外推（NTK、YaRN 只需概念层）面试怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-rope.md"
+  },
+  {
+    "id": "meta-llama-vision",
+    "section": "meta",
+    "title": "Meta：Llama 3.2 Vision / Mllama——cross-attn 视觉编码器怎么接",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-vision.md"
+  },
+  {
+    "id": "meta-llama3-pretrain",
+    "section": "meta",
+    "title": "Meta：Llama 3 预训练公开故事——数据、退火、长上下文阶段怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama3-pretrain.md"
+  },
+  {
+    "id": "meta-llama3-tokenizer",
+    "section": "meta",
+    "title": "Meta：Llama 3 tokenizer（tiktoken 风格）相对 Llama 2 SentencePiece 面试怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama3-tokenizer.md"
+  },
+  {
+    "id": "meta-mm-safety",
+    "section": "meta",
+    "title": "Meta：视觉+文本安全——Llama Guard 多模态和截图越狱",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-mm-safety.md"
+  },
+  {
+    "id": "meta-multi-token",
+    "section": "meta",
+    "title": "Meta：multi-token prediction 训练目标是什么，推理怎么用",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-multi-token.md"
+  },
+  {
+    "id": "meta-newsfeed-rank",
+    "section": "meta",
+    "title": "Meta：News Feed 排序，多目标（停留、互动、违规）怎么权衡",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-newsfeed-rank.md"
+  },
+  {
+    "id": "meta-pack-seq",
+    "section": "meta",
+    "title": "Meta：sample packing、文档边界、attention mask 的坑",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-pack-seq.md"
+  },
+  {
+    "id": "meta-pytorch-compile",
+    "section": "meta",
+    "title": "Meta：torch.compile / 图编译在训练栈里能省什么、何时关掉",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-pytorch-compile.md"
+  },
+  {
+    "id": "meta-ranking-logloss",
+    "section": "meta",
+    "title": "Meta：为什么排序常盯 logloss / 校准而不只是 AUC",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-ranking-logloss.md"
+  },
+  {
+    "id": "meta-segment-anything",
+    "section": "meta",
+    "title": "Meta：SAM 作为「提示分割」系统，数据和评测怎么设计",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-segment-anything.md"
+  },
+  {
+    "id": "meta-speech",
+    "section": "meta",
+    "title": "Meta：语音 token / 语音 LLM 公开概念（别编内部 ASR 栈）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-speech.md"
+  },
+  {
+    "id": "meta-synth-sft",
+    "section": "meta",
+    "title": "Meta：合成 SFT 数据——自指令、教师模型、泄漏和多样性",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-synth-sft.md"
+  },
+  {
+    "id": "meta-toolformer",
+    "section": "meta",
+    "title": "Meta：Toolformer 式自监督工具调用",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-toolformer.md"
+  },
+  {
+    "id": "meta-vllm",
+    "section": "meta",
+    "title": "Meta：vLLM 伺候 Llama——PagedAttention 和 continuous batching 公开怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-vllm.md"
+  },
+  {
+    "id": "meta-yarn-ntk",
+    "section": "meta",
+    "title": "Meta：NTK / YaRN 长上下文外推，和改 rope_theta 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/meta/meta-yarn-ntk.md"
+  },
+  {
+    "id": "msft-agent-rl",
+    "section": "microsoft",
+    "title": "Microsoft：多 agent 失败，循环、互相吹捧幻觉、预算？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-agent-rl.md"
+  },
+  {
+    "id": "msft-autogen",
+    "section": "microsoft",
+    "title": "Microsoft：AutoGen / 多 agent 编排，失败、预算、和 SK 差别",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-autogen.md"
+  },
+  {
+    "id": "msft-azure-ai-search",
+    "section": "microsoft",
+    "title": "Microsoft：Azure AI Search + 生成，混合检索、权限、引用",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-azure-ai-search.md"
+  },
+  {
+    "id": "msft-azure-tpm",
+    "section": "microsoft",
+    "title": "Microsoft：Azure OpenAI TPM/RPM 限流，产品层排队和降级",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-azure-tpm.md"
+  },
+  {
+    "id": "msft-bing-rank",
+    "section": "microsoft",
+    "title": "Microsoft：Bing / 搜索排序，LLM 重排和传统 LTR 怎么叠",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-bing-rank.md"
+  },
+  {
+    "id": "msft-constrained-decode",
+    "section": "microsoft",
+    "title": "Microsoft：约束解码 / JSON 文法，和自由生成的质量",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-constrained-decode.md"
+  },
+  {
+    "id": "msft-copilot-agent",
+    "section": "microsoft",
+    "title": "Microsoft：Copilot agent 模式，仓库权限和循环预算？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-copilot-agent.md"
+  },
+  {
+    "id": "msft-copilot-ground",
+    "section": "microsoft",
+    "title": "Microsoft：Copilot grounding（代码/文档检索），引用和权限",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-copilot-ground.md"
+  },
+  {
+    "id": "msft-deepspeed-zero",
+    "section": "microsoft",
+    "title": "Microsoft：DeepSpeed ZeRO 1/2/3 切的是什么状态，通信体积怎么变",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-deepspeed-zero.md"
+  },
+  {
+    "id": "msft-florence",
+    "section": "microsoft",
+    "title": "Microsoft：Florence / 视觉基础模型怎么接到生成（公开）？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-florence.md"
+  },
+  {
+    "id": "msft-llava-train",
+    "section": "microsoft",
+    "title": "Microsoft：LLaVA 两阶段训练，对齐再指令，视觉 token 数？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-llava-train.md"
+  },
+  {
+    "id": "msft-llava",
+    "section": "microsoft",
+    "title": "Microsoft：LLaVA 类图文投影，视觉 token 数和上下文预算",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-llava.md"
+  },
+  {
+    "id": "msft-long-context",
+    "section": "microsoft",
+    "title": "Microsoft：长上下文产品（会议纪要、仓库问答）的评测切片",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-long-context.md"
+  },
+  {
+    "id": "msft-onnx-export",
+    "section": "microsoft",
+    "title": "Microsoft：ONNX / 导出动态轴，训练图和推理图不一致的坑",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-onnx-export.md"
+  },
+  {
+    "id": "msft-orpo",
+    "section": "microsoft",
+    "title": "Microsoft：ORPO 相对 DPO/PPO，少了参考模型意味着什么",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-orpo.md"
+  },
+  {
+    "id": "msft-phi-data",
+    "section": "microsoft",
+    "title": "Microsoft：Phi「教科书数据」质量 vs 规模，污染和评测切片",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-phi-data.md"
+  },
+  {
+    "id": "msft-phi-slm",
+    "section": "microsoft",
+    "title": "Microsoft：Phi 小模型路线，数据质量 vs 规模，面试怎么讲「不是只堆参数」",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-phi-slm.md"
+  },
+  {
+    "id": "msft-phi-vision",
+    "section": "microsoft",
+    "title": "Microsoft：Phi vision / 小模型多模态，token 预算和适配器？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-phi-vision.md"
+  },
+  {
+    "id": "msft-semantic-kernel",
+    "section": "microsoft",
+    "title": "Microsoft：Agent / Semantic Kernel 插件边界，工具失败怎么收",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-semantic-kernel.md"
+  },
+  {
+    "id": "msft-ulysses",
+    "section": "microsoft",
+    "title": "Microsoft：DeepSpeed Ulysses 序列并行，和 Megatron SP 对照",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-ulysses.md"
+  },
+  {
+    "id": "nvidia-chunked-prefill",
+    "section": "nvidia",
+    "title": "NVIDIA：chunked prefill 把长 prompt 切开和 decode 混部",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-chunked-prefill.md"
+  },
+  {
+    "id": "nvidia-context-parallel",
+    "section": "nvidia",
+    "title": "NVIDIA：context / sequence parallel 给长上下文，和 TP 的通信差",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-context-parallel.md"
+  },
+  {
+    "id": "nvidia-cuda-graph",
+    "section": "nvidia",
+    "title": "NVIDIA：CUDA Graph 在 decode 上的收益和动态 shape 限制",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-cuda-graph.md"
+  },
+  {
+    "id": "nvidia-flash-attn",
+    "section": "nvidia",
+    "title": "NVIDIA：FlashAttention IO 分析，SRAM tiling，为什么 decode 收益不同",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flash-attn.md"
+  },
+  {
+    "id": "nvidia-flash-decode",
+    "section": "nvidia",
+    "title": "NVIDIA：FlashDecoding split-K，和训练用 FlashAttention 差在哪",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flash-decode.md"
+  },
+  {
+    "id": "nvidia-flashinfer",
+    "section": "nvidia",
+    "title": "NVIDIA：FlashInfer 的 append KV、sampler，和 vLLM 什么关系",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flashinfer.md"
+  },
+  {
+    "id": "nvidia-fp8-kv",
+    "section": "nvidia",
+    "title": "NVIDIA：FP8 KV cache 和权重量化不是一回事",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-fp8-kv.md"
+  },
+  {
+    "id": "nvidia-fp8",
+    "section": "nvidia",
+    "title": "NVIDIA：FP8 训练 scale、延迟缩放、和 INT8 推理量化不是同一件事",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-fp8.md"
+  },
+  {
+    "id": "nvidia-fused-moe",
+    "section": "nvidia",
+    "title": "NVIDIA：fused MoE 的 permute、grouped GEMM、unpermute",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-fused-moe.md"
+  },
+  {
+    "id": "nvidia-inflight-batch",
+    "section": "nvidia",
+    "title": "NVIDIA：in-flight batching，iteration-level 调度",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-inflight-batch.md"
+  },
+  {
+    "id": "nvidia-int8-quant",
+    "section": "nvidia",
+    "title": "NVIDIA：FP32 tensor 怎么量化到 INT8？非对称量化跟什么走？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-int8-quant.md"
+  },
+  {
+    "id": "nvidia-kv-offload",
+    "section": "nvidia",
+    "title": "NVIDIA：KV 卸到 CPU / NVMe，何时带宽还不如量化",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-kv-offload.md"
+  },
+  {
+    "id": "nvidia-lora-serve",
+    "section": "nvidia",
+    "title": "NVIDIA：多 LoRA 同服务，基础权重共享、adapter 切换成本",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-lora-serve.md"
+  },
+  {
+    "id": "nvidia-loss-scale",
+    "section": "nvidia",
+    "title": "NVIDIA：混合精度 loss scaling，overflow 怎么发现和恢复",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-loss-scale.md"
+  },
+  {
+    "id": "nvidia-megatron-cp",
+    "section": "nvidia",
+    "title": "NVIDIA：Megatron context parallel，环上传 KV",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-megatron-cp.md"
+  },
+  {
+    "id": "nvidia-mm-vit",
+    "section": "nvidia",
+    "title": "NVIDIA：视觉 encoder 和 LLM 同卡 serving，prefill 形状为什么不齐",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-mm-vit.md"
+  },
+  {
+    "id": "nvidia-moe-gemm",
+    "section": "nvidia",
+    "title": "NVIDIA：MoE grouped GEMM 和专家并行 kernel",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-moe-gemm.md"
+  },
+  {
+    "id": "nvidia-nccl-allreduce",
+    "section": "nvidia",
+    "title": "NVIDIA：NCCL all-reduce 环/树，带宽瓶颈 vs 计算重叠",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-nccl-allreduce.md"
+  },
+  {
+    "id": "nvidia-occupancy",
+    "section": "nvidia",
+    "title": "NVIDIA：CUDA occupancy、register 压力，Nsight 上看什么",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-occupancy.md"
+  },
+  {
+    "id": "nvidia-paged-kv",
+    "section": "nvidia",
+    "title": "NVIDIA：PagedAttention / KV block table，碎片和 prefix 共享",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-paged-kv.md"
+  },
+  {
+    "id": "nvidia-pipeline-bubble",
+    "section": "nvidia",
+    "title": "NVIDIA：流水线气泡从哪来，1F1B / interleaved 怎么减",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-pipeline-bubble.md"
+  },
+  {
+    "id": "nvidia-spec-medusa",
+    "section": "nvidia",
+    "title": "NVIDIA：Medusa / EAGLE 多头草稿，和经典投机解码差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-spec-medusa.md"
+  },
+  {
+    "id": "nvidia-tensor-parallel",
+    "section": "nvidia",
+    "title": "NVIDIA：张量并行切 QKV/MLP，通信是哪一次 all-reduce，和序列并行差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-tensor-parallel.md"
+  },
+  {
+    "id": "nvidia-trillion-train",
+    "section": "nvidia",
+    "title": "NVIDIA：万亿参数 LLM 怎么分布式训练？并行切在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-trillion-train.md"
+  },
+  {
+    "id": "nvidia-triton-infer",
+    "section": "nvidia",
+    "title": "NVIDIA：Triton Inference Server 动态 batch、多模型、GPU 共享",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-triton-infer.md"
+  },
+  {
+    "id": "nvidia-trt-llm",
+    "section": "nvidia",
+    "title": "NVIDIA：TensorRT-LLM 相对 vLLM / Triton 的定位，plugin、inflight、量化",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-trt-llm.md"
+  },
+  {
+    "id": "nvidia-w4a8",
+    "section": "nvidia",
+    "title": "NVIDIA：W4A8 和 KV 量化、激活量化不是一把开关",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-w4a8.md"
+  },
+  {
+    "id": "nvidia-ws-decode",
+    "section": "nvidia",
+    "title": "NVIDIA：warp specialization 和 persistent decode kernel 的公开概念",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-ws-decode.md"
+  },
+  {
+    "id": "openai-adamw",
+    "section": "openai",
+    "title": "OpenAI：AdamW 为什么要把 weight decay 从自适应步长里拆出来",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-adamw.md"
+  },
+  {
+    "id": "openai-agent-rl",
+    "section": "openai",
+    "title": "OpenAI：工具循环上的 RL，轨迹、credit、环境重置，和 token 级 PPO 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-agent-rl.md"
+  },
+  {
+    "id": "openai-allgather-noise",
+    "section": "openai",
+    "title": "OpenAI：noisy 链路上实现 all_gather，轮数 bound 怎么推？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/openai/openai-allgather-noise.md"
+  },
+  {
+    "id": "openai-attention-sink",
+    "section": "openai",
+    "title": "OpenAI：滑窗 / streaming attention 为什么开头几个 token 不能扔",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-attention-sink.md"
+  },
+  {
+    "id": "openai-continuous-batching",
+    "section": "openai",
+    "title": "OpenAI：continuous batching / iteration-level 调度解决什么",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-continuous-batching.md"
+  },
+  {
+    "id": "openai-data-mix",
+    "section": "openai",
+    "title": "OpenAI：pretrain 数据配比，web / code / math、epoch 和过滤怎么答",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-data-mix.md"
+  },
+  {
+    "id": "openai-dpo-loss",
+    "section": "openai",
+    "title": "OpenAI：DPO 相对 PPO 少了什么，implicit reward 怎么说",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-dpo-loss.md"
+  },
+  {
+    "id": "openai-entropy-l1",
+    "section": "openai",
+    "title": "OpenAI ML Coding：用 linear + softmax 算 entropy；换成 L1 怎么做？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-entropy-l1.md"
+  },
+  {
+    "id": "openai-eval-harness",
+    "section": "openai",
+    "title": "OpenAI：怎么设计内部 eval 避免污染和「刷榜」",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-eval-harness.md"
+  },
+  {
+    "id": "openai-flash-decode",
+    "section": "openai",
+    "title": "OpenAI：FlashDecoding 为什么沿 KV 长度做 split-K，decode 时和 FlashAttention 差在哪",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": true,
+    "file": "content/handbooks/us-tech/questions/openai/openai-flash-decode.md"
+  },
+  {
+    "id": "openai-function-calling",
+    "section": "openai",
+    "title": "OpenAI：tool / function calling 的 schema、失败、并行，和 JSON mode 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-function-calling.md"
+  },
+  {
+    "id": "openai-gpu-credits",
+    "section": "openai",
+    "title": "OpenAI：GPU credit，调用乱序也要按时间重放",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-gpu-credits.md"
+  },
+  {
+    "id": "openai-grad-checkpoint",
+    "section": "openai",
+    "title": "OpenAI：activation checkpoint 省显存的代价，和 ZeRO 怎么叠",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-grad-checkpoint.md"
+  },
+  {
+    "id": "openai-if-eval",
+    "section": "openai",
+    "title": "OpenAI：指令遵循评测（IFEval 一类）和「会考试不会听话」",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-if-eval.md"
+  },
+  {
+    "id": "openai-instructgpt-kl",
+    "section": "openai",
+    "title": "OpenAI / InstructGPT：RLHF 为什么要加相对 SFT 的 KL？方向是哪边？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-instructgpt-kl.md"
+  },
+  {
+    "id": "openai-kv-cache-impl",
+    "section": "openai",
+    "title": "OpenAI：从零实现 KV cache，有/无 cache greedy 必须对齐",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-kv-cache-impl.md"
+  },
+  {
+    "id": "openai-logprob",
+    "section": "openai",
+    "title": "OpenAI：logprobs、校准和温度，什么时候不该信模型的 p",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-logprob.md"
+  },
+  {
+    "id": "openai-long-ctx-train",
+    "section": "openai",
+    "title": "OpenAI：长上下文怎么训，RoPE 基频、续训和文档 packing",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-long-ctx-train.md"
+  },
+  {
+    "id": "openai-lora-sft",
+    "section": "openai",
+    "title": "OpenAI：对基座做 LoRA SFT，rank、目标模块和全参怎么取舍",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-lora-sft.md"
+  },
+  {
+    "id": "openai-loss-spike",
+    "section": "openai",
+    "title": "OpenAI：训练 loss 突然炸或变 NaN，怎么分层排查",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-loss-spike.md"
+  },
+  {
+    "id": "openai-mm-eval",
+    "section": "openai",
+    "title": "OpenAI：多模态评测坑，图文泄漏、OCR 当语义、MMMU 一类怎么拆",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-mm-eval.md"
+  },
+  {
+    "id": "openai-mm-gpt",
+    "section": "openai",
+    "title": "OpenAI：GPT-4o 类原生多模态，视觉 token 怎么进 Transformer，分辨率怎么抢上下文",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-mm-gpt.md"
+  },
+  {
+    "id": "openai-moe-aux-loss",
+    "section": "openai",
+    "title": "OpenAI：MoE 辅助损失和负载均衡，路由塌缩怎么发现",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-moe-aux-loss.md"
+  },
+  {
+    "id": "openai-ppo-clip",
+    "section": "openai",
+    "title": "OpenAI：PPO clip 在 InstructGPT/RLHF 里在干什么，ratio 爆了怎么收",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-ppo-clip.md"
+  },
+  {
+    "id": "openai-prefill-decode",
+    "section": "openai",
+    "title": "OpenAI：prefill 和 decode 计算形态差在哪，调度为什么要拆",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-prefill-decode.md"
+  },
+  {
+    "id": "openai-resumable-iter",
+    "section": "openai",
+    "title": "OpenAI：可恢复迭代器，getState 之后还能接着 next",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-resumable-iter.md"
+  },
+  {
+    "id": "openai-rope-offset",
+    "section": "openai",
+    "title": "OpenAI：RoPE 在 decode 时位置偏移写错会 silently 错，怎么查",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-rope-offset.md"
+  },
+  {
+    "id": "openai-scaling-laws",
+    "section": "openai",
+    "title": "OpenAI：Kaplan 和 Chinchilla 差在哪，compute-optimal 坐标别背错",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-scaling-laws.md"
+  },
+  {
+    "id": "openai-softmax-bug",
+    "section": "openai",
+    "title": "OpenAI：attention 里 softmax 轴和 mask 用 0 会怎样，怎么单测",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-softmax-bug.md"
+  },
+  {
+    "id": "openai-speculative-decoding",
+    "section": "openai",
+    "title": "OpenAI：投机解码拒绝草稿时为什么要 rollback KV",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-speculative-decoding.md"
+  },
+  {
+    "id": "openai-swa",
+    "section": "openai",
+    "title": "OpenAI：sliding window attention 和全局 sink 怎么共存",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-swa.md"
+  },
+  {
+    "id": "openai-test-time",
+    "section": "openai",
+    "title": "OpenAI：test-time compute / 推理时搜索，公开层怎么讲，不编内部",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-test-time.md"
+  },
+  {
+    "id": "openai-tiktoken",
+    "section": "openai",
+    "title": "OpenAI：tiktoken / BPE 和 SentencePiece 差在哪，特殊 token 和词表怎么扩",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-tiktoken.md"
+  },
+  {
+    "id": "openai-tool-loop",
+    "section": "openai",
+    "title": "OpenAI：多步 tool loop，观察怎么塞回上下文，工具调错和停止条件",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-tool-loop.md"
+  },
+  {
+    "id": "openai-transformer-debug",
+    "section": "openai",
+    "title": "OpenAI：给一份带 bug 的 Transformer，怎么查？KV cache 怎么加？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-transformer-debug.md"
+  },
+  {
+    "id": "openai-vit-connect",
+    "section": "openai",
+    "title": "OpenAI：ViT / patch embed 怎么接到 LLM，投影、对齐预训练、分辨率插值",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/openai/openai-vit-connect.md"
+  },
+  {
+    "id": "us-agent-prep",
+    "section": "overview",
+    "title": "美国 Tech：Agent / RL 面准备轨迹、工具与评测，不要只背 ReAct",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-agent-prep.md"
+  },
+  {
+    "id": "us-debug-vs-leetcode",
+    "section": "overview",
+    "title": "为什么美国 lab 爱给带 bug 的 Transformer，而不是再出一道中等 LeetCode？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-debug-vs-leetcode.md"
+  },
+  {
+    "id": "us-leveling",
+    "section": "overview",
+    "title": "E4 / L5 / L6 在 LLM 岗面里，评委预期差在哪？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-leveling.md"
+  },
+  {
+    "id": "us-llm-paper-stack",
+    "section": "overview",
+    "title": "面试前该精读的公开论文栈（Attention、GQA、InstructGPT、DPO、vLLM、Llama）",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-llm-paper-stack.md"
+  },
+  {
+    "id": "us-llm-re-prep",
+    "section": "overview",
+    "title": "美国 Tech / frontier lab：LLM Research Engineer 六周怎么准备？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-llm-re-prep.md"
+  },
+  {
+    "id": "us-loop-types",
+    "section": "overview",
+    "title": "美国 Tech LLM 岗常见几轮，每一轮到底在考什么？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-loop-types.md"
+  },
+  {
+    "id": "us-mm-prep",
+    "section": "overview",
+    "title": "美国 Tech LLM team：多模态轮怎么准备（编码、token 预算、评测）",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-mm-prep.md"
+  },
+  {
+    "id": "us-onsite-ai-coding",
+    "section": "overview",
+    "title": "Meta 那种 AI-enabled coding 轮，没有官方练习环境时怎么模拟？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-onsite-ai-coding.md"
+  },
+  {
+    "id": "us-prep-map",
+    "section": "overview",
+    "title": "美国 Tech / frontier lab：LLM 岗按哪几条线准备？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-prep-map.md"
+  },
+  {
+    "id": "us-research-vs-applied",
+    "section": "overview",
+    "title": "Research Engineer、Research Scientist、Applied MLE，准备重点怎么分？",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/overview/us-research-vs-applied.md"
+  },
+  {
+    "id": "xai-me-15min-clock",
+    "section": "xai",
+    "title": "xAI 15-min screen ⓪: clock script (PhD / LLM, timed)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-15min-clock.md"
+  },
+  {
+    "id": "xai-me-cs-verbal",
+    "section": "xai",
+    "title": "xAI 15-min screen ⑨: optional CS verbal (process, thread, GIL, async)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-cs-verbal.md"
+  },
+  {
+    "id": "xai-me-hardest-project",
+    "section": "xai",
+    "title": "xAI 15-min screen ②: most challenging project (one decision, two altitudes)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-hardest-project.md"
+  },
+  {
+    "id": "xai-me-intro",
+    "section": "xai",
+    "title": "xAI 15-min screen ①: 2–3 min intro, recent-first (PhD / LLM)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-intro.md"
+  },
+  {
+    "id": "xai-me-live-debug",
+    "section": "xai",
+    "title": "xAI 15-min screen ⑩: live-debug / BankAccount (CoderPad until tests pass)",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-live-debug.md"
+  },
+  {
+    "id": "xai-me-paper-followups",
+    "section": "xai",
+    "title": "xAI 15-min screen ⑤: paper follow-ups (contract grain, not backbone lore)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-paper-followups.md"
+  },
+  {
+    "id": "xai-me-reverse-and-pivot",
+    "section": "xai",
+    "title": "xAI 15-min screen ⑧: reverse questions; after this it is a paper defense",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-reverse-and-pivot.md"
+  },
+  {
+    "id": "xai-me-statement",
+    "section": "xai",
+    "title": "xAI 15-min screen ⑥: Exceptional Work Statement (one paper you can defend)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-statement.md"
+  },
+  {
+    "id": "xai-me-want-to-work",
+    "section": "xai",
+    "title": "xAI 15-min screen ④: what I want to work on (pivot by team)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-want-to-work.md"
+  },
+  {
+    "id": "xai-me-why-xai",
+    "section": "xai",
+    "title": "xAI 15-min screen ③: why xAI (named team, 90 s–2 min)",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-why-xai.md"
+  },
+  {
+    "id": "xai-me-work-style",
+    "section": "xai",
+    "title": "xAI 15-min screen ⑦: hours, RTO, start date",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-work-style.md"
+  },
+  {
+    "id": "sys-3d-parallel",
+    "section": "systems",
+    "title": "系统：DP+TP+PP 三维并行怎么选切分，通信体积直觉",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-3d-parallel.md"
+  },
+  {
+    "id": "sys-act-checkpoint",
+    "section": "systems",
+    "title": "系统：activation checkpoint 重算 vs 存，和序列并行叠",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-act-checkpoint.md"
+  },
+  {
+    "id": "sys-act-mem",
+    "section": "systems",
+    "title": "系统：激活显存随序列长度怎么涨，和参数的 16 字节怎么分开？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-act-mem.md"
+  },
+  {
+    "id": "sys-adv-bcast",
+    "section": "systems",
+    "title": "系统：序列级优势怎么铺到 token 上，哪些位置必须是 0？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-adv-bcast.md"
+  },
+  {
+    "id": "sys-agent-sched",
+    "section": "systems",
+    "title": "系统：agent 多轮，工具等待时 GPU 空转怎么插 decode",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-agent-sched.md"
+  },
+  {
+    "id": "sys-allreduce-reducescatter",
+    "section": "systems",
+    "title": "系统：all-reduce vs reduce-scatter+all-gather，ZeRO 为什么拆",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-allreduce-reducescatter.md"
+  },
+  {
+    "id": "sys-async-ckpt",
+    "section": "systems",
+    "title": "系统：异步 checkpoint，一致性和占用",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-async-ckpt.md"
+  },
+  {
+    "id": "sys-async-stale",
+    "section": "systems",
+    "title": "系统：异步 rollout 的权重比训练旧几步，loss 里要带什么？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-async-stale.md"
+  },
+  {
+    "id": "sys-chunked-prefill",
+    "section": "systems",
+    "title": "系统：chunked prefill 和 decode 混部",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-chunked-prefill.md"
+  },
+  {
+    "id": "sys-ckpt-bundle",
+    "section": "systems",
+    "title": "系统：预训练 checkpoint 里除了权重，还要存什么才能接着训？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-ckpt-bundle.md"
+  },
+  {
+    "id": "sys-clip-global",
+    "section": "systems",
+    "title": "系统：多卡上梯度裁剪，范数要先 AllReduce 再缩放",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-clip-global.md"
+  },
+  {
+    "id": "sys-cont-batch",
+    "section": "systems",
+    "title": "系统：continuous batching，iteration-level 调度，hole 碎片",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-cont-batch.md"
+  },
+  {
+    "id": "sys-context-parallel",
+    "section": "systems",
+    "title": "系统：context parallel 长上下文，ring 传 KV",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-context-parallel.md"
+  },
+  {
+    "id": "sys-data-pipeline",
+    "section": "systems",
+    "title": "系统：万亿 token 数据管道，shuffle、checkpoint、坏样本",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-data-pipeline.md"
+  },
+  {
+    "id": "sys-ddp-bucket",
+    "section": "systems",
+    "title": "系统：DDP 的梯度桶为什么能和反向重叠？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-ddp-bucket.md"
+  },
+  {
+    "id": "sys-decode-batch",
+    "section": "systems",
+    "title": "系统：decode batch 动态，结束序列腾槽、inflight",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-decode-batch.md"
+  },
+  {
+    "id": "sys-deterministic",
+    "section": "systems",
+    "title": "系统：两次预训练的 loss 对不上最后一位，要不要查？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-deterministic.md"
+  },
+  {
+    "id": "sys-eos-mask",
+    "section": "systems",
+    "title": "系统：一条回答在 EOS 之后的 token，还进不进后训练 loss？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-eos-mask.md"
+  },
+  {
+    "id": "sys-ep-dispatch",
+    "section": "systems",
+    "title": "系统：MoE expert parallel 的 token dispatch 负载",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-ep-dispatch.md"
+  },
+  {
+    "id": "sys-expert-parallel",
+    "section": "systems",
+    "title": "系统：专家并行，token 调度不均和 all-to-all",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-expert-parallel.md"
+  },
+  {
+    "id": "sys-flashinfer",
+    "section": "systems",
+    "title": "系统：FlashInfer 推理核库，append、sampling、调度器接口",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-flashinfer.md"
+  },
+  {
+    "id": "sys-fp8-gemm",
+    "section": "systems",
+    "title": "系统：FP8 GEMM，scaling 与 DeepGEMM 一类公开思路",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-fp8-gemm.md"
+  },
+  {
+    "id": "sys-frag-oom",
+    "section": "systems",
+    "title": "系统：显存没用满却 OOM，是碎片还是缓存？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-frag-oom.md"
+  },
+  {
+    "id": "sys-grad-accum",
+    "section": "systems",
+    "title": "系统：global batch、micro batch、梯度累积，哪一次才同步？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-grad-accum.md"
+  },
+  {
+    "id": "sys-group-size",
+    "section": "systems",
+    "title": "系统：GRPO 的组大小 G，显存和方差怎么一起看？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-group-size.md"
+  },
+  {
+    "id": "sys-host-stall",
+    "section": "systems",
+    "title": "系统：GPU 空转，先分是数据没喂上，还是卡在通信？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-host-stall.md"
+  },
+  {
+    "id": "sys-init-same",
+    "section": "systems",
+    "title": "系统：数据并行各卡的初始权重为什么必须相同？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-init-same.md"
+  },
+  {
+    "id": "sys-kl-place",
+    "section": "systems",
+    "title": "系统：KL 写进奖励，还是写进 loss？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-kl-place.md"
+  },
+  {
+    "id": "sys-kv-offload",
+    "section": "systems",
+    "title": "系统：KV 分层存储，HBM / CPU / 盘和命中率",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-kv-offload.md"
+  },
+  {
+    "id": "sys-kv-quant",
+    "section": "systems",
+    "title": "系统：KV cache 量化（INT8/FP8），outlier 和注意力质量",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-kv-quant.md"
+  },
+  {
+    "id": "sys-left-pad",
+    "section": "systems",
+    "title": "系统：生成用左填充，打分为什么会打到 prompt 上？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-left-pad.md"
+  },
+  {
+    "id": "sys-loss-spike",
+    "section": "systems",
+    "title": "系统：分布式训练 loss spike 排查清单",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-loss-spike.md"
+  },
+  {
+    "id": "sys-lr-tokens",
+    "section": "systems",
+    "title": "系统：改了梯度累积，学习率 warmup 按 token 还是按 step？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-lr-tokens.md"
+  },
+  {
+    "id": "sys-mfu",
+    "section": "systems",
+    "title": "系统：预训练一步的 MFU 怎么算，哪些时间不能算进分子？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-mfu.md"
+  },
+  {
+    "id": "sys-mixed-precision",
+    "section": "systems",
+    "title": "系统：BF16/FP8 训练，master weights，和推理量化分开",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-mixed-precision.md"
+  },
+  {
+    "id": "sys-mm-prefill",
+    "section": "systems",
+    "title": "系统：多模态 prefill，视觉 encoder 与 LLM 形状、batch 不齐",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-mm-prefill.md"
+  },
+  {
+    "id": "sys-oom-order",
+    "section": "systems",
+    "title": "系统：预训练 OOM，按激活、优化器、通信缓冲的顺序砍",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-oom-order.md"
+  },
+  {
+    "id": "sys-overlong",
+    "section": "systems",
+    "title": "系统：超长序列的激活、注意力时间、并行怎么叠",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-overlong.md"
+  },
+  {
+    "id": "sys-paged-attn",
+    "section": "systems",
+    "title": "系统：PagedAttention 块表、复制、前缀共享",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-paged-attn.md"
+  },
+  {
+    "id": "sys-param-bytes",
+    "section": "systems",
+    "title": "系统：一个参数在训练里占多少字节，ZeRO 之后剩多少？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-param-bytes.md"
+  },
+  {
+    "id": "sys-pp-imbalance",
+    "section": "systems",
+    "title": "系统：流水线第一级和最后一级为什么更慢？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-pp-imbalance.md"
+  },
+  {
+    "id": "sys-pp-one-step",
+    "section": "systems",
+    "title": "系统：流水线里优化器为什么不能在稳态中间 step？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-pp-one-step.md"
+  },
+  {
+    "id": "sys-prefill-decode-disagg",
+    "section": "systems",
+    "title": "系统：prefill/decode 分离部署，KV 搬运成本",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-prefill-decode-disagg.md"
+  },
+  {
+    "id": "sys-prefix-cache",
+    "section": "systems",
+    "title": "系统：prefix / prompt cache，多用户系统提示共享",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-prefix-cache.md"
+  },
+  {
+    "id": "sys-radix-tree",
+    "section": "systems",
+    "title": "系统：radix / prefix tree 共享 KV（SGLang）",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-radix-tree.md"
+  },
+  {
+    "id": "sys-ref-model",
+    "section": "systems",
+    "title": "系统：KL 的参考模型放哪，为什么不算第二份 Adam？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-ref-model.md"
+  },
+  {
+    "id": "sys-replay",
+    "section": "systems",
+    "title": "系统：旧的 rollout 能不能留到下一步再训？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-replay.md"
+  },
+  {
+    "id": "sys-rollout-logprob",
+    "section": "systems",
+    "title": "系统：on-policy 时 rollout 的 logprob 和训练前向对不上，先查什么？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-rollout-logprob.md"
+  },
+  {
+    "id": "sys-rollout-place",
+    "section": "systems",
+    "title": "系统：后训练的生成和训练，共置还是拆到两组卡？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-rollout-place.md"
+  },
+  {
+    "id": "sys-sandbox-nproc",
+    "section": "systems",
+    "title": "系统：沙箱除了超时，还要限制进程数、内存和磁盘",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-sandbox-nproc.md"
+  },
+  {
+    "id": "sys-sandbox-reward",
+    "section": "systems",
+    "title": "系统：沙箱奖励用哪一次运行的结果，不稳定的测试怎么处理？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-sandbox-reward.md"
+  },
+  {
+    "id": "sys-sandbox-secret",
+    "section": "systems",
+    "title": "系统：沙箱里的报错会不会把密钥和数据路径漏给模型？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-sandbox-secret.md"
+  },
+  {
+    "id": "sys-sandbox",
+    "section": "systems",
+    "title": "系统：代码奖励的沙箱要隔离开什么？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-sandbox.md"
+  },
+  {
+    "id": "sys-seq-parallel",
+    "section": "systems",
+    "title": "系统：sequence parallel 减 activation，和 TP 的配对",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-seq-parallel.md"
+  },
+  {
+    "id": "sys-spec-sys",
+    "section": "systems",
+    "title": "系统：投机解码，草稿长度、拒绝回滚 KV、测吞吐",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-spec-sys.md"
+  },
+  {
+    "id": "sys-straggler",
+    "section": "systems",
+    "title": "系统：训练 straggler、弹性、跳过坏 batch，和 NCCL 超时",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-straggler.md"
+  },
+  {
+    "id": "sys-tokenizer-same",
+    "section": "systems",
+    "title": "系统：rollout 和训练的 tokenizer 不一致，会坏在哪？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-tokenizer-same.md"
+  },
+  {
+    "id": "sys-tp-overlap",
+    "section": "systems",
+    "title": "系统：TP 通信和 GEMM overlap，怎么暴露通信墙",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-tp-overlap.md"
+  },
+  {
+    "id": "sys-ulysses",
+    "section": "systems",
+    "title": "系统：DeepSpeed Ulysses all-to-all 切序列，和 Megatron SP",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-ulysses.md"
+  },
+  {
+    "id": "sys-verifier",
+    "section": "systems",
+    "title": "系统：可验证奖励不在 GPU 上，一步要怎么等它？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-verifier.md"
+  },
+  {
+    "id": "sys-weight-remap",
+    "section": "systems",
+    "title": "系统：训练分片怎么送进 vLLM，为什么不能按 rank 原样拷？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-weight-remap.md"
+  },
+  {
+    "id": "sys-zero-stages",
+    "section": "systems",
+    "title": "系统：ZeRO 1/2/3 与 FSDP 对照，CPU offload 何时值得",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/systems/sys-zero-stages.md"
+  },
+  {
+    "id": "tesla-autolabel",
+    "section": "xai",
+    "title": "Tesla：自动标注质量门禁，人在环抽查比例怎么定",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/tesla-autolabel.md"
+  },
+  {
+    "id": "tesla-data-engine",
+    "section": "xai",
+    "title": "Tesla：数据引擎（挖难例、自动标注、闭环），面试怎么结构化",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/tesla-data-engine.md"
+  },
+  {
+    "id": "tesla-hydra-nets",
+    "section": "xai",
+    "title": "Tesla：HydraNets 多任务共享骨干，损失权衡和任务干扰",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/tesla-hydra-nets.md"
+  },
+  {
+    "id": "tesla-latency-slo",
+    "section": "xai",
+    "title": "Tesla：车载延迟 SLO，几乎不能凑 batch，和云端 LLM serving 差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/tesla-latency-slo.md"
+  },
+  {
+    "id": "tesla-occupancy-net",
+    "section": "xai",
+    "title": "Tesla：occupancy / BEV 类表示，评测用什么，和纯相机占用栅格差在哪",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/tesla-occupancy-net.md"
+  },
+  {
+    "id": "xai-agent-loop",
+    "section": "xai",
+    "title": "xAI：Grok tool loop 工程，超时、重试、观测截断？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-agent-loop.md"
+  },
+  {
+    "id": "xai-colossus",
+    "section": "xai",
+    "title": "xAI：超大集群训练，故障、checkpoint、重同步面试怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-colossus.md"
+  },
+  {
+    "id": "xai-grok-moe",
+    "section": "xai",
+    "title": "xAI：Grok 类 MoE 服务，decode 时专家并行和 batch 不齐怎么讲",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-grok-moe.md"
+  },
+  {
+    "id": "xai-grok-pretrain",
+    "section": "xai",
+    "title": "xAI：Grok 预训练公开口径能讲什么，不要编数据配比",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-grok-pretrain.md"
+  },
+  {
+    "id": "xai-grok-vision",
+    "section": "xai",
+    "title": "xAI：Grok 视觉公开口径能讲什么，不要编编码器？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-grok-vision.md"
+  },
+  {
+    "id": "xai-kv-txn",
+    "section": "xai",
+    "title": "xAI：内存 KV 怎么加事务？15 分钟屏幕上的 race 怎么找？",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-kv-txn.md"
+  },
+  {
+    "id": "xai-lmarena",
+    "section": "xai",
+    "title": "xAI：LMSYS Arena / 在线偏好，和离线榜的差，不要神化 Elo",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-lmarena.md"
+  },
+  {
+    "id": "xai-lru-cache",
+    "section": "xai",
+    "title": "xAI：手写 LRU / 并发缓存，和 KV 事务题怎么衔接",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-lru-cache.md"
+  },
+  {
+    "id": "xai-moe-decode",
+    "section": "xai",
+    "title": "xAI：MoE decode 专家不齐和 batch 碎片",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-moe-decode.md"
+  },
+  {
+    "id": "xai-prompt-cache",
+    "section": "xai",
+    "title": "xAI：系统提示缓存，多租户前缀共享",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-prompt-cache.md"
+  },
+  {
+    "id": "xai-rate-limiter",
+    "section": "xai",
+    "title": "xAI coding：API rate limiter，多租户公平和突发",
+    "classification": "完整编程练习",
+    "reviewDepth": "题面/实现/测试/复杂度",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-rate-limiter.md"
+  },
+  {
+    "id": "xai-realtime",
+    "section": "xai",
+    "title": "xAI：低延迟语音 / 对话（公开层）怎么拆预算？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-realtime.md"
+  },
+  {
+    "id": "xai-screen-15min",
+    "section": "xai",
+    "title": "xAI: 15-minute video screen, clock and cut reasons",
+    "classification": "流程/备考/导航",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-screen-15min.md"
+  },
+  {
+    "id": "xai-search-agent",
+    "section": "xai",
+    "title": "xAI：实时搜索工具，时效、引用、失败怎么收？",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-search-agent.md"
+  },
+  {
+    "id": "xai-spacexai-now",
+    "section": "xai",
+    "title": "xAI / SpaceXAI: what they are shipping now (Grok, Cursor, Colossus)",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-spacexai-now.md"
+  },
+  {
+    "id": "xai-tool-use",
+    "section": "xai",
+    "title": "xAI：Grok tool use / function calling 的公开层工程约束",
+    "classification": "技术知识/设计讲解",
+    "reviewDepth": "结构与题型核对；未逐条重核外部事实",
+    "repairedThisPass": false,
+    "file": "content/handbooks/us-tech/questions/xai/xai-tool-use.md"
+  }
+]

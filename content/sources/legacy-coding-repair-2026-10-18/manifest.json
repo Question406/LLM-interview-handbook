@@ -1,0 +1,102 @@
+[
+  {
+    "id": "xai-me-live-debug",
+    "file": "content/handbooks/us-tech/questions/personal/xai-me-live-debug.md",
+    "origin": "p3a-xai-multithreaded-bank-account-bug-hunt"
+  },
+  {
+    "id": "anthropic-crawler-oa",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-crawler-oa.md",
+    "origin": "p3a-anthropic-coding-q1-web-crawler"
+  },
+  {
+    "id": "anthropic-inmemory-db",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-inmemory-db.md",
+    "origin": "p3a-anthropic-oa-in-memory-database"
+  },
+  {
+    "id": "anthropic-bank-oa",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bank-oa.md",
+    "origin": "p3a-anthropic-oa-bank-system"
+  },
+  {
+    "id": "anthropic-grpo-debug",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-grpo-debug.md",
+    "origin": "p3a-anthropic-rl-fundamentals-grpo-debug"
+  },
+  {
+    "id": "openai-gpu-credits",
+    "file": "content/handbooks/us-tech/questions/openai/openai-gpu-credits.md",
+    "origin": "p3a-openai-gpu-credits"
+  },
+  {
+    "id": "openai-resumable-iter",
+    "file": "content/handbooks/us-tech/questions/openai/openai-resumable-iter.md",
+    "origin": "p3a-openai-resumable-iterator"
+  },
+  {
+    "id": "xai-kv-txn",
+    "file": "content/handbooks/us-tech/questions/xai/xai-kv-txn.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/optimistic_kv.py"
+  },
+  {
+    "id": "xai-rate-limiter",
+    "file": "content/handbooks/us-tech/questions/xai/xai-rate-limiter.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/two_level_limiter.py"
+  },
+  {
+    "id": "apple-mha-code",
+    "file": "content/handbooks/us-tech/questions/apple/apple-mha-code.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/attention_cache.py"
+  },
+  {
+    "id": "meta-gqa-kernel",
+    "file": "content/handbooks/us-tech/questions/meta/meta-gqa-kernel.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/attention_cache.py"
+  },
+  {
+    "id": "openai-transformer-debug",
+    "file": "content/handbooks/us-tech/questions/openai/openai-transformer-debug.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/attention_cache.py"
+  },
+  {
+    "id": "openai-kv-cache-impl",
+    "file": "content/handbooks/us-tech/questions/openai/openai-kv-cache-impl.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/attention_cache.py"
+  },
+  {
+    "id": "openai-softmax-bug",
+    "file": "content/handbooks/us-tech/questions/openai/openai-softmax-bug.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/attention_cache.py"
+  },
+  {
+    "id": "openai-rope-offset",
+    "file": "content/handbooks/us-tech/questions/openai/openai-rope-offset.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/attention_cache.py"
+  },
+  {
+    "id": "apple-kmeans",
+    "file": "content/handbooks/us-tech/questions/apple/apple-kmeans.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/kmeans.py"
+  },
+  {
+    "id": "openai-entropy-l1",
+    "file": "content/handbooks/us-tech/questions/openai/openai-entropy-l1.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/linear_entropy_l1.py"
+  },
+  {
+    "id": "anthropic-bpe-tokenizer",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bpe-tokenizer.md",
+    "origin": "p3a-perplexity-byte-tokenizer-and-token-count-estimator"
+  },
+  {
+    "id": "xai-lru-cache",
+    "file": "content/handbooks/us-tech/questions/xai/xai-lru-cache.md",
+    "origin": "content/sources/legacy-coding-repair-2026-10-18/solutions/locked_lru.py"
+  },
+  {
+    "id": "anthropic-rate-limit",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-rate-limit.md",
+    "origin": "xai-rate-limiter"
+  }
+]

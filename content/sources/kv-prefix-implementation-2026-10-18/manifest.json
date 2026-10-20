@@ -1,0 +1,58 @@
+[
+  {
+    "id": "kv-prefix-transformer",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-transformer.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/transformer.py",
+    "sha256": "f568c299d3fe28bda8da32ed81dc3d8e9014de3b517d5ed6f8a239b10da05c86",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-radix",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-radix.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/radix.py",
+    "sha256": "f67eb5e08939c485175fec0f056c10c143c0957743f12392a6054973d31ab2d5",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-radix-leases",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-radix-leases.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/pinned_radix.py",
+    "sha256": "e51cf40131056d22260cc91e21aac27ceeaa3834ff2e13e3d825e2baf372d5e6",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-paged-cow",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-paged-cow.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/paged_cow.py",
+    "sha256": "e2c74ba0ee7bb34d677c2d118302b814fc826de5937d0581759e3f4533949a4f",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-block-hash",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-block-hash.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/block_hash.py",
+    "sha256": "ae6badee8517747f0133928ba6f3a65689995d503714992ced131929bd8700be",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-segmented-attention",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-segmented-attention.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/segmented_attention.py",
+    "sha256": "40afc0c5fe733080ee0039b6b7878ea43c601c0ec39ef33623b6c779fa299b01",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-reuse-plan",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-reuse-plan.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/reuse_plan.py",
+    "sha256": "3edad05c59be1225a4cda6034c5eeb22b8b7cfc32cc798b46a6352dce36662d4",
+    "tested": true
+  },
+  {
+    "id": "kv-prefix-engine",
+    "file": "content/handbooks/us-tech/questions/systems/kv-prefix-engine.md",
+    "solution": "content/sources/kv-prefix-implementation-2026-10-18/solutions/engine.py",
+    "sha256": "03bc56bc2a4d45b3fe459d92b2e2e4f5986d35d5480889044d626ac667657ac7",
+    "tested": true
+  }
+]

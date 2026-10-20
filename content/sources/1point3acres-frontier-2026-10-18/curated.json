@@ -1,0 +1,3284 @@
+{
+  "collectedAt": "2026-10-18",
+  "method": "Chrome visible DOM via cua_repl; no hidden API or paywall bypass",
+  "records": [
+    {
+      "id": "p3a-openai-gpu-credits",
+      "company": "openai",
+      "title": "GPU Credits：乱序事件、过期额度与负余额变体",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/gpu-credits",
+      "evidence": "detail-read",
+      "category": "Coding",
+      "promptSummary": "实现发放额度、扣款和历史余额查询；先花最早过期额度，事件允许乱序到达。",
+      "preparation": "用事件时间排序重放作为正确性基准，每次扣款时只使用当时有效的 grant。历史上花掉的额度不能因查询时间变化而复活。闭区间到期、零余额返回 0、负余额返回 None 是本页变体；另有负余额永久失败版本，必须先澄清。优化可用到期最小堆及检查点，插入早期事件后失效后续缓存。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-gpu-credits.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-gpu-credits",
+        "family": "credits",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/credits.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "37690e90df462a0b8da70ef41dd1da77a866c3ea4fb290f25a4a44f58415eb11"
+      }
+    },
+    {
+      "id": "p3a-openai-infection-spread-cellular-automata",
+      "company": "openai",
+      "title": "感染传播：分阶段规则的网格模拟",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/infection-spread-cellular-automata",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "在网格中模拟感染扩散，按阶段增加传播规则。",
+      "preparation": "基础版本用多源 BFS；同步的一天只允许上一天的感染源参与传播。规则增加免疫、邻居阈值或传染期后，显式维护状态和时间，不能默认仍是一次访问的 BFS。用单格、孤立区、同日新感染和无法全部感染的例子检查语义。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-infection-spread-cellular-automata.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-infection-spread-cellular-automata",
+        "family": "infection",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/infection.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "38ccd99966e2225c89a4f7086ce240c5f4d9c042aa247bf368299f3b4e990e47"
+      }
+    },
+    {
+      "id": "p3a-openai-social-network-follow-graph",
+      "company": "openai",
+      "title": "带时间版本的关注图与好友推荐",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/social-network-follow-graph",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现关注、取消关注、按时间查询以及二度关系推荐。",
+      "preparation": "当前邻接集合只适合当前查询；历史查询需要事件日志或每条边的有效区间。推荐时枚举二跳邻居，排除自己和已经关注的人，再按题目指定规则去重和排序。先确认推荐基于哪个时刻的图。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-social-network-follow-graph.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-social-network-follow-graph",
+        "family": "follow_graph",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/follow_graph.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "f7488198acaef443bf48c566291c797c9c4c3f2f879ba21609eaa9ee93f55d07"
+      }
+    },
+    {
+      "id": "p3a-openai-transformer-bug-hunt",
+      "company": "openai",
+      "title": "Transformer Bug Hunt：让训练与输出恢复正确",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/transformer-bug-hunt",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "给定 Transformer、训练脚本和测试，定位植入的错误。",
+      "preparation": "先做形状、因果 mask、位置索引和 label shift 检查，再用极小样本过拟合验证梯度链。每修一处都观察 loss 和最小输出，不要只看代码能否运行。页面摘要提到约四处 bug，具体错误行不能由摘要推定。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-transformer-bug-hunt.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-transformer-bug-hunt",
+        "family": "attention",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/attention.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "145cf63d3e7caaeca7e3b7a4e7f436f5c8336f43e3af519cd0f01cb4d300ebb4"
+      }
+    },
+    {
+      "id": "p3a-openai-numpy-1nn-wx-b",
+      "company": "openai",
+      "title": "NumPy 1-NN 向量化与神经网络形式",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/numpy-1nn-wx-b",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "禁止 Python 循环实现最近邻分类，并改写成 Wx+b 加激活的前向。",
+      "preparation": "欧氏距离比较可去掉对所有候选都相同的查询范数，变成训练向量与查询的点积及偏置。先确认平方欧氏距离还是 L1 距离；L1 不能直接套用欧氏恒等式。用广播或矩阵乘法实现，再讨论距离矩阵显存与分块。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-numpy-1nn-wx-b.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-numpy-1nn-wx-b",
+        "family": "nearest_neighbor",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nearest_neighbor.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6aad308c07ecee58f0dba2c502f90c18a4bc6202ba99c12190c3c06091bed2c0"
+      }
+    },
+    {
+      "id": "p3a-openai-classifier-noisy-annotators",
+      "company": "openai",
+      "title": "标注员噪声：找出低质量标注并验证改进",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/classifier-noisy-annotators",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "训练数据来自多个标注员，识别问题标注员并检验过滤后分类器。",
+      "preparation": "固定独立验证集，先查看每个标注员的样本量、类别分布和分层误差，避免把困难样本误当坏标注。用交叉拟合或可靠审阅集评估标签质量；相同训练预算下比较过滤前后指标及置信区间。验证标签不能与被筛选的训练标签混在一起。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-classifier-noisy-annotators.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-classifier-noisy-annotators",
+        "family": "logistic",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ad02d3c5336b62c0a59e0787ec21811e37b12f9851a39a2bba9b983de1957838"
+      }
+    },
+    {
+      "id": "p3a-openai-distributed-cluster-count-topology",
+      "company": "openai",
+      "title": "异步消息树：统计机器数与恢复拓扑",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/distributed-cluster-count-topology",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "节点只能向父子节点发消息，实现 receiveMessage，汇总节点数与完整结构。",
+      "preparation": "根广播 request id，节点向孩子发子请求，收齐各子树结果再向父节点汇总。按 request id 和 child id 去重，缓存完成的结果供重传使用。超时代表结果未知，不能直接把失联子树计为零；明确是否允许部分结果。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-distributed-cluster-count-topology.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-distributed-cluster-count-topology",
+        "family": "cluster",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/cluster.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "da0f97f1d3b0c5ddf214424117c781b8131f22dd68ea54e2d95f6abc5f53751f"
+      }
+    },
+    {
+      "id": "p3a-openai-autograd-hillis-steele-scan",
+      "company": "openai",
+      "title": "矩阵前缀积：手写反传与并行扫描",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/autograd-hillis-steele-scan",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "从原地矩阵乘法开始，改成支持 autograd 的前向，再手写 backward 和 Hillis–Steele scan。",
+      "preparation": "反传依赖前向中间值，原地覆盖会破坏保存的张量。对 Y=AB，分别用上游梯度乘 B 的转置与 A 的转置；矩阵链需保持乘法顺序。并行前缀扫描只利用结合律，不能交换左右因子。浮点结果可因结合顺序不同而变化。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-autograd-hillis-steele-scan.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-autograd-hillis-steele-scan",
+        "family": "prefix_autograd",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/prefix_autograd.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "2c90db944b3728a730e8c203fc29f1bcff7f8235d7655501c923bd1c9fe21f04"
+      }
+    },
+    {
+      "id": "p3a-openai-monster-battle-system",
+      "company": "openai",
+      "title": "怪兽战斗：基础规则、属性克制与目标策略",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/monster-battle-system",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现回合制双队战斗，分阶段加入属性和智能选目标规则。",
+      "preparation": "把战斗状态、伤害计算和选目标策略分开。用明确的行动顺序更新生命值与死亡状态，记录日志便于定位一回合内的差异。策略优化先确认目标函数，不能把贪心称为最优；复活、并列和全部阵亡需单独定义。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-monster-battle-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-monster-battle-system",
+        "family": "monster",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/monster.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "9af5357c141e6bc8684b1c60dcca9f7026db8dfb5243783b226915c0ad55934e"
+      }
+    },
+    {
+      "id": "p3a-openai-memory-allocator",
+      "company": "openai",
+      "title": "内存分配器：malloc、free 与空闲块索引",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/memory-allocator",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "固定大小内存池支持分配与释放，并改进线性扫描方案。",
+      "preparation": "按地址维护区间以便合并相邻空闲块，按长度建立另一索引以找 best-fit。修改空闲区间时同步更新两个索引。若要求 first-fit，应按地址找首个可容纳块，不能用最小长度块替代。验证重复释放、碎片和合并两侧邻居。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-memory-allocator.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-memory-allocator",
+        "family": "allocator",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/allocator.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "5d4f154bae262aa1be5668908a5b6956431bdb170b9c69077b02923e2b98b948"
+      }
+    },
+    {
+      "id": "p3a-openai-toy-language-type-inference",
+      "company": "openai",
+      "title": "玩具语言：泛型、嵌套元组与类型推断",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/toy-language-type-inference",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现基本类型、泛型、元组和函数签名的参数匹配与返回类型代换。",
+      "preparation": "把类型解析成树，递归比较形状并建立泛型到具体类型的映射。同一泛型重复出现必须一致，然后递归替换返回类型。先区分类型变量和类型构造器；不兼容类型应给清晰错误，不能在冲突时静默覆盖。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-toy-language-type-inference.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-toy-language-type-inference",
+        "family": "type_inference",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/type_inference.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "3ece5962ae4119d38dab0110cf58e80192b90a3502c8a3c170df85d7b539dd62"
+      }
+    },
+    {
+      "id": "p3a-openai-data-labeling-task-scheduler",
+      "company": "openai",
+      "title": "人工标注调度：公平、唯一性与增量约束",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/data-labeling-task-scheduler",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "为任务、模型和标注员生成三元组，满足题目给定的公平与不重复约束。",
+      "preparation": "先将每条约束写成可检查的不变量，再确定能否用轮转构造；不同约束可能需要匹配或流模型。生成后检查每个人的负载、每个组合的次数与任务覆盖。不要凭题目名字猜测每个任务需要全部模型和全部标注员。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-data-labeling-task-scheduler.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-data-labeling-task-scheduler",
+        "family": "label_schedule",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/label_schedule.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "7f33445efd43af3c96d82512c510c225fbb7ede71123ea24ae8ef7ae94733153"
+      }
+    },
+    {
+      "id": "p3a-openai-chat-bot-system-refactoring",
+      "company": "openai",
+      "title": "聊天机器人重构：从全局状态到事件总线",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/chat-bot-system-refactoring",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "重构支持 AwayBot、MeetBot、TacoBot 的 slash-command 聊天服务。",
+      "preparation": "先用现有输入输出固定行为，再提取命令解析、机器人接口和会话状态。事件驱动追问中定义事件类型、订阅生命周期与处理顺序，避免一条回复反复触发机器人。重构前后应通过相同的行为用例。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-chat-bot-system-refactoring.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-chat-bot-system-refactoring",
+        "family": "bots",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bots.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "28f8eaf0c959249102a71f7eaeddc49b65650c330cb0364ae03b78071100d74d"
+      }
+    },
+    {
+      "id": "p3a-openai-fault-tolerant-work-queue",
+      "company": "openai",
+      "title": "可靠任务队列：租约、重试、死信与依赖",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/fault-tolerant-work-queue",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现入队、预留、成功、失败，加入超时、重试限制和 DAG 依赖。",
+      "preparation": "为任务定义 pending、reserved、done、dead 状态，租约使用唯一 token，拒绝过期 worker 的完成通知。至少一次交付意味着业务处理仍需幂等。只有前置任务满足约定的完成条件才释放后续任务，并明确重试次数是否含首次执行。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-fault-tolerant-work-queue.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-fault-tolerant-work-queue",
+        "family": "work_queue",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/work_queue.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "5b00c2faaa5c081a3c6b9a061d26888bf42731bc9909a863eb5d2cb4e89315b5"
+      }
+    },
+    {
+      "id": "p3a-openai-poker-simulation",
+      "company": "openai",
+      "title": "三张牌模拟与可扩展牌型比较",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/poker-simulation",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "发牌、记录过程、比较三条/对子/高牌，随后加入同花和弃牌规则。",
+      "preparation": "把每手牌编码成可字典序比较的元组：牌型等级加组内点数排序。扩展同花时修改牌型评估器，不要重写发牌流程。明确同牌型并列、花色是否破平局、弃牌后是否补牌。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-poker-simulation.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-poker-simulation",
+        "family": "poker",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/poker.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "3de8dd0eec7c0f4cb7d93fe43f23f98fb1daa2ff2c67024aa6e8ca356852e6c2"
+      }
+    },
+    {
+      "id": "p3a-openai-ip-address-cidr-iterator",
+      "company": "openai",
+      "title": "IPv4 / CIDR：解析、范围和双向迭代",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/ip-address-cidr-iterator",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "分阶段实现 IP 地址和 CIDR 范围相关操作。",
+      "preparation": "将 IPv4 转成无符号整数，用前缀长度计算网络起止值，再实现有界游标。校验四段范围、前缀 0 与 32、地址上界和耗尽状态。后退接口与恢复状态应使用同一位置定义，避免返回上一项还是下一项的歧义。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-ip-address-cidr-iterator.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-ip-address-cidr-iterator",
+        "family": "ip",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/ip.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6f93c4b0a3a1b2cffd5da59cab0f15106d6fae485e0d4e3ec0cb841dd8cd2710"
+      }
+    },
+    {
+      "id": "p3a-openai-durable-kv-store-serialization",
+      "company": "openai",
+      "title": "持久 KV：任意字节编码与 1KB 分文件",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/durable-kv-store-serialization",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "禁止 JSON/pickle，序列化任意字符键值，随后加入单文件容量上限。",
+      "preparation": "用字节长度前缀而非分隔符，先统一编码后计算字节数。读取时检查短读、损坏长度与版本；跨文件记录需要明确分片头和重组规则。崩溃恢复还要讨论原子替换或 WAL，单纯能 dump/load 不等于写入持久可靠。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-durable-kv-store-serialization.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-durable-kv-store-serialization",
+        "family": "durable_kv",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/durable_kv.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "952bba65a09e182671f2c64608b70cf3622dc4855f6e1c8dda43050d6e4a7e20"
+      }
+    },
+    {
+      "id": "p3a-openai-streaming-entropy",
+      "company": "openai",
+      "title": "流式熵：logits 在线累积与数值稳定",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/streaming-entropy",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "先从 logits 计算分布熵，再支持逐项输入和分块合并。",
+      "preparation": "维护最大 logit、相对最大值的指数和、指数加权 logit 和；出现更大最大值时同时重标定。最终熵为 log 配分函数减去 logit 的期望。用整批 logsumexp 结果对照极大 logits、单元素和分块顺序。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-streaming-entropy.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-streaming-entropy",
+        "family": "entropy",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/entropy.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ad45ce131a75b1353b32a0536e7338289363d77a185f34653002a1f848f1d9e9"
+      }
+    },
+    {
+      "id": "p3a-openai-shard-rebalance",
+      "company": "openai",
+      "title": "分片区间重平衡：覆盖与重叠上限",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/shard-rebalance",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "支持增删 shard，确保每点重叠数不超过 limit，同时补洞并减少迁移。",
+      "preparation": "先将所有端点排序成基本区间，在每段计算覆盖数，再分清必须删除、必须补充与可保留的部分。最少迁移需要明确成本是 key 长度、字节数还是 shard 数；先给可验证方案，再讨论优化。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-shard-rebalance.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-shard-rebalance",
+        "family": "shards",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/shards.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "dc043622db0b1c63afbe0f9f6ddd8d80fdae9bdc04ff677f5f1a5efc409b95b5"
+      }
+    },
+    {
+      "id": "p3a-openai-math-reasoning-stopping-time",
+      "company": "openai",
+      "title": "随机求解时间：LLM 推理重启策略",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/math-reasoning-stopping-time",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "已知求解时间分布，设计重启策略降低期望时间，并讨论最坏情况。",
+      "preparation": "阈值重启的期望成本可分解为一次尝试耗时除以一次尝试成功概率。重启必须带来新独立随机性，否则重复同一路径不会改善。未知分布和对抗情形不能直接沿用已知分布的最佳阈值，需要讨论通用重启序列。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-math-reasoning-stopping-time.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-math-reasoning-stopping-time",
+        "family": "restart",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/restart.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "f5a2a4ab92e8c8b90f7fb42a1e0bb2a3f36f7d4cc81726b616735f6277acf598"
+      }
+    },
+    {
+      "id": "p3a-openai-version-dependency",
+      "company": "openai",
+      "title": "包版本依赖：约束解析与求解",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/version-dependency",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "解析版本依赖并支持查询和版本选择；网站摘要对完整求解器规格并不确定。",
+      "preparation": "把每个包的候选版本与依赖区间显式建模，做约束传播，冲突时回溯。固定一个版本后需递归约束依赖包，单纯拓扑排序不能解决多版本冲突。先问清是否必须全局求解及是否允许无解。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-version-dependency.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-version-dependency",
+        "family": "versions",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/versions.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "0fdef5dd82d4e8f18fc49b6127641592790b0b332543215f9388e29030a30a0c"
+      }
+    },
+    {
+      "id": "p3a-openai-masked-cross-entropy-loss",
+      "company": "openai",
+      "title": "NumPy 交叉熵：mask、label smoothing 与 KL",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/masked-cross-entropy-loss",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "实现交叉熵，扩展有效位置 mask 和标签平滑。",
+      "preparation": "先用 logsumexp 算 log-softmax，取目标类别负 log 概率，再按有效 token 数归一化。平滑标签是目标分布的一部分，必须明确是否把均匀质量分配给所有类别。全 mask 输入应有定义，不能除零。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-masked-cross-entropy-loss.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-masked-cross-entropy-loss",
+        "family": "cross_entropy",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/cross_entropy.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "d4e9ae09bbf613de9a52cfb5231f925c74b0d26f30eb4e7c6d7621ca6f2c2ce4"
+      }
+    },
+    {
+      "id": "p3a-openai-maximum-score-grid-path-limited-jumps",
+      "company": "openai",
+      "title": "有限跨行跳跃的最大分数路径",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/maximum-score-grid-path-limited-jumps",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "给定起点和最多 K 次双行跳跃，求最优分数、路径、最优路径数及奖励扩展。",
+      "preparation": "以行、列和已用跳数为 DP 状态，转移遵守题目允许方向。保存前驱恢复路径；计数只对达到相同最优分值的合法前驱求和。邻接奖励若依赖额外历史，需要扩充状态，不能直接加到无记忆 DP 上。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-maximum-score-grid-path-limited-jumps.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-maximum-score-grid-path-limited-jumps",
+        "family": "grid_path",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/grid_path.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "772713d2b0dbdf41d0cb4624f405571c73f484246af2ce3f8dc535ef59c9e49e"
+      }
+    },
+    {
+      "id": "p3a-openai-implement-cd-command",
+      "company": "openai",
+      "title": "实现 cd：路径规范化、符号链接与环检测",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/implement-cd-command",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "逐步支持相对路径、绝对路径、点路径、家目录和符号链接。",
+      "preparation": "普通规范化用栈；符号链接须按真实路径解析规则逐段展开，相对目标以链接所在目录为基准。检测链接循环并设置合理跳转上限。解释 cd 改变的是 shell 进程工作目录，因此通常是 shell 内建命令。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-implement-cd-command.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-implement-cd-command",
+        "family": "cd",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/cd.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "832ca485f33d9f14c2c51bbf56d262069c41f571a40f987dff57a987e789319f"
+      }
+    },
+    {
+      "id": "p3a-openai-opensheet-spreadsheet",
+      "company": "openai",
+      "title": "电子表格：公式、依赖、环与 O(1) 读取",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/opensheet-spreadsheet",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现单元格数值和引用公式，拒绝循环依赖；追问快速 getCell。",
+      "preparation": "解析公式建立正向及反向依赖，写入前先检查新图是否成环。懒求值配缓存适合读少写多；若要求 O(1) 读取，写入时按拓扑顺序更新所有受影响单元格。删除旧公式时必须移除旧依赖边。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-opensheet-spreadsheet.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-opensheet-spreadsheet",
+        "family": "sheet",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/sheet.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ae2eb0e14dfafd4fd8cfa6bdb2c26c8910863983f8e81200033203b6154bf685"
+      }
+    },
+    {
+      "id": "p3a-openai-modal-lock-fair-modal-lock",
+      "company": "openai",
+      "title": "ModalLock：同模式并发与跨模式公平",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/modal-lock-fair-modal-lock",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现同模式共享、不同模式互斥，再加入模式组 FIFO 公平性。",
+      "preparation": "用条件变量维护活跃模式、持有者数和等待队列；等待必须在循环里重查谓词。公平版本若已有异模式排队，应阻止新同模式请求无限插队。异常释放、取消等待和最后一个持有者离开都需正确唤醒。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-modal-lock-fair-modal-lock.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-modal-lock-fair-modal-lock",
+        "family": "modal_lock",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/modal_lock.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "650e670c5cb2a9c02eccc3e84fbbe32f9abb5441d5d6b9721e73bfb482367273"
+      }
+    },
+    {
+      "id": "p3a-openai-sharded-matmul-backprop-debugging",
+      "company": "openai",
+      "title": "分片矩阵乘法与多设备反向调试",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/sharded-matmul-backprop-debugging",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "推导跨设备 matmul 的前向和 backward，并修复给定缺陷。",
+      "preparation": "先写清每张卡的切片轴和全局张量形状，再决定是拼接还是求和。反向通信应与前向拆分互为对应，不要把 all-gather 和 all-reduce 混用。用单设备基准、有限差分及不整除尺寸验证。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-sharded-matmul-backprop-debugging.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-sharded-matmul-backprop-debugging",
+        "family": "matmul",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/matmul.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ce31d7e3fcc0032fbbdf569ae58496bd79bdbd5126b03a1670b639ec9373990c"
+      }
+    },
+    {
+      "id": "p3a-openai-resumable-iterator",
+      "company": "openai",
+      "title": "可恢复迭代器：一维、二维和三维",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/resumable-iterator",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现 get_state/set_state，从列表扩展到嵌套容器。",
+      "preparation": "状态描述下一次将返回的位置，而不是已经返回的值；需要包含所有嵌套游标和耗尽标记。保存状态应复制可变字段，使快照不受继续迭代影响。覆盖空子列表、连续空层和末尾恢复。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-resumable-iterator.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-resumable-iterator",
+        "family": "nested",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nested.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "77614f7234dff1a0440d21eba0a1561a027dfbac770241bbe358d46a86991933"
+      }
+    },
+    {
+      "id": "p3a-openai-code-reading-pytorch-refactor",
+      "company": "openai",
+      "title": "大型 PyTorch 文件阅读与复杂度分析",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/code-reading-pytorch-refactor",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "阅读四百余行代码，分阶段修改，并分析时间和空间开销。",
+      "preparation": "先从入口、数据形状和模型输出建立调用图，再定位本轮要求涉及的最小路径。复杂度以 batch、样本数、特征维度等变量表达；将阅读到的行为与自行建议分开。摘要将其与噪声标注员分类器联系，不代表所有轮次脚本相同。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-code-reading-pytorch-refactor.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-code-reading-pytorch-refactor",
+        "family": "logistic",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ad02d3c5336b62c0a59e0787ec21811e37b12f9851a39a2bba9b983de1957838"
+      }
+    },
+    {
+      "id": "p3a-openai-in-memory-database-sql",
+      "company": "openai",
+      "title": "内存 SQL：建表、插入、投影、筛选和排序",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/in-memory-database-sql",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "分阶段实现 SQL 风格数据库，讨论索引优化。",
+      "preparation": "将存储、谓词执行、投影和排序拆开，定义缺失列与类型错误行为。先过滤排序再投影，避免排序列被提前删除。索引应按查询模式选择，并计算写入维护成本；不必在基本题里实现完整 SQL 文法。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-in-memory-database-sql.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-in-memory-database-sql",
+        "family": "sql",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/sql.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "d70bbaaf0b164aafc122e67d28916a9250b4c5c1a729c5cd9e66dda9553e12b8"
+      }
+    },
+    {
+      "id": "p3a-openai-time-based-kv-store",
+      "company": "openai",
+      "title": "时间 KV：历史值查询与生产测试",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/time-based-kv-store",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "同一 key 保存多时间戳值，并讨论 mock clock、单调性和并发。",
+      "preparation": "有序时间列表通过 upper_bound 找最后一个不晚于查询的版本。允许乱序写时不能直接 append；要重新插入或使用有序结构。测试控制时钟，覆盖同时间覆盖规则、空历史及读写竞争；并发读的一致性也需约定。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-time-based-kv-store.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-time-based-kv-store",
+        "family": "history_db",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "31ac0973aa181476f8b08b28f928f55d93adddb91a101d48e0de4d1755eadc19"
+      }
+    },
+    {
+      "id": "p3a-openai-payment-coffee-shop",
+      "company": "openai",
+      "title": "咖啡点单与支付系统设计",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/payment-coffee-shop",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "围绕实际商店点单或结账场景设计支付流程。",
+      "preparation": "先划清订单、库存和支付状态机，再引入幂等键、支付回调去重和对账。超时不等于失败，查询外部支付状态后决定补偿。需求若只是咖啡店，不应先花时间搭建泛化金融平台。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-payment-coffee-shop.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-payment-coffee-shop",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-sora-video-generation",
+      "company": "openai",
+      "title": "Sora 视频生成：GPU 调度与失败恢复",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-sora-video-generation",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "有限且波动的 GPU 池中接收视频请求并完成异步生成。",
+      "preparation": "API 返回任务 id，调度器按资源需求和公平策略分配 worker，生成产物放对象存储。检查点与任务租约处理抢占和故障，用户重试靠幂等键复用任务。重点解释取消、OOM、长尾和输出发布的原子性。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-sora-video-generation.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-sora-video-generation",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-chess-game",
+      "company": "openai",
+      "title": "在线国际象棋：匹配、走子和权威时钟",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-chess-game",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计实时双人对弈、匹配及服务端管理的棋钟。",
+      "preparation": "每盘由一个权威状态机验证走子和时钟，以序列号保证重连可追赶。记录时间基准和剩余时长，按事件计算而非每秒写数据库。匹配池按评级及等待时长扩展，断线、重复走子和超时判负需一致。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-chess-game.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-chess-game",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-cloud-ide",
+      "company": "openai",
+      "title": "Cloud IDE：终端流、VM 生命周期和隔离",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-cloud-ide",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "浏览器编程环境，另有 SSH 加主机调度的变体。",
+      "preparation": "控制平面管理环境启动、挂起、回收，数据平面承载终端和文件。用隔离沙箱、资源限额和短期会话授权保护多租户，持久卷与进程生命周期分离。先确认题目是浏览器 IDE 还是 SSH 主机集群。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-cloud-ide.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-cloud-ide",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-real-time-ai-product-feature",
+      "company": "openai",
+      "title": "实时 AI 产品：流式响应、准入与成本",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/real-time-ai-product-feature",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计面向大量用户的实时或流式 AI 功能，并讨论十倍流量。",
+      "preparation": "区分排队时延、首 token 时延和完整响应时延；准入控制基于请求成本而非只数 QPS。服务端支持取消、超时与限流，客户端区分可重试失败和已产生部分输出。以 token、队列长度和 GPU 饱和度定位瓶颈。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-real-time-ai-product-feature.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-real-time-ai-product-feature",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-mining-novel-data-unlabeled-corpus",
+      "company": "openai",
+      "title": "未标注语料挖掘：新信息与目标图像",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/mining-novel-data-unlabeled-corpus",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "从海量未标注数据挖掘独特信息，并找含指定对象的图片；详细规格未公开。",
+      "preparation": "先定义新颖性是相对已有训练集、语义簇还是事实库。采用去重、表征索引和候选过滤，再用人工抽样评估覆盖率与误报。对象检索可分召回与精排，但不可把自行设计的流程当成原题细节。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-mining-novel-data-unlabeled-corpus.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-mining-novel-data-unlabeled-corpus",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-chatgpt-enterprise-rag",
+      "company": "openai",
+      "title": "企业 ChatGPT：内部数据接入与权限检索",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/chatgpt-enterprise-rag",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "企业上传数据，以这些数据为基础提供定制问答。",
+      "preparation": "数据接入保留来源、版本和 ACL，检索先按租户与用户权限过滤。答案带可追溯引用，数据删除要传播到索引和缓存。评估既看答案质量，也看无权限数据是否泄露、更新是否及时以及拒答是否合理。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-chatgpt-enterprise-rag.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-chatgpt-enterprise-rag",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-gpt-3-playground",
+      "company": "openai",
+      "title": "GPT Playground：流式生成和参数预设",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/gpt-3-playground",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计用户输入、参数管理、结果流和预设保存的全栈系统。",
+      "preparation": "为每次生成绑定不可变参数快照与 request id，前端状态区分编辑中、生成中、完成和失败。流式更新不能误写到另一个会话；取消和重试有清晰语义。预设共享需明确权限与版本。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-gpt-3-playground.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-gpt-3-playground",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-image-sharing-content-deduplication",
+      "company": "openai",
+      "title": "图片共享：内容哈希去重与删除生命周期",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/image-sharing-content-deduplication",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "上传、查看、下载、删除图片；相同字节只存一份。",
+      "preparation": "逻辑图片记录与内容 blob 分离，用内容哈希定位 blob、引用关系控制存活。并发上传通过条件写入去重，数据库与对象存储失败需要补偿和后台修复。删除一个用户引用不能删除其他人仍引用的 blob。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-image-sharing-content-deduplication.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-image-sharing-content-deduplication",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-crossword-puzzle-solver",
+      "company": "openai",
+      "title": "分布式填字求解：约束传播与搜索切分",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/crossword-puzzle-solver",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计大词典填字求解服务，分摊搜索并尽早终止。",
+      "preparation": "先用词长和交叉字母建立候选集，选候选最少的槽位展开并传播约束。仅在搜索前沿足够大时切分工作，避免重复传输巨大状态。找到解后发布终止信号，并让 worker 安全中止；分布式并不能消除指数最坏复杂度。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-crossword-puzzle-solver.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-crossword-puzzle-solver",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-ai-chatbot-system",
+      "company": "openai",
+      "title": "浏览器保存状态的 AI 聊天界面",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-ai-chatbot-system",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计简单聊天系统，题目规定服务端不持久化对话。",
+      "preparation": "本地维护会话、消息和流式增量，服务端只负责认证与模型请求代理。使用消息 id 区分并发生成；刷新恢复与多标签同步取决于本地存储契约。明确隐私和容量后选择 IndexedDB 等存储，不要违背题意增加服务器聊天库。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-ai-chatbot-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-ai-chatbot-system",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-multi-tenant-ci-cd-workflow",
+      "company": "openai",
+      "title": "多租户 CI/CD：调度、隔离和执行语义",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/multi-tenant-ci-cd-workflow",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "git push 触发工作流，容错执行并实时呈现状态。",
+      "preparation": "持久化 DAG、步骤状态和租约，worker 在隔离环境中执行。所谓恰好一次须限定为状态提交或业务效果；崩溃时无法仅靠队列保证任意外部命令只执行一次。用幂等步骤、去重提交或事务边界解释可实现保证。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-multi-tenant-ci-cd-workflow.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-multi-tenant-ci-cd-workflow",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-slack",
+      "company": "openai",
+      "title": "Slack：频道、私信、多设备和大群",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-slack",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计消息、通知、跨设备投递及扩展。",
+      "preparation": "消息有稳定 id 和会话内序列，存储确认与推送确认分开。离线设备按游标补取，重复消息客户端去重。大群按活跃度采用推拉结合，热点会话分区策略不能破坏排序契约。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-slack.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-slack",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-rag-search-ml-design",
+      "company": "openai",
+      "title": "搜索 ML 设计：embedding、混合召回与排序",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/rag-search-ml-design",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "口述检索系统，深挖 embedding 训练和检索流程。",
+      "preparation": "把训练目标与线上召回指标联系起来：对比学习负例质量影响 embedding。稀疏与稠密召回融合后精排，评估召回、排序和最终答案分别归因。用时间切分防止评测污染，并核算检索延迟预算。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-rag-search-ml-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-rag-search-ml-design",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-google-calendar",
+      "company": "openai",
+      "title": "日历系统：多视图查询与跨设备同步",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-google-calendar",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "创建事件并支持日、周、月、年范围浏览。",
+      "preparation": "保存原始时区和重复规则，按查询窗口展开实例，例外事件单独覆盖。范围索引和缓存加速不同视图，更新以版本号或增量游标同步。重点澄清跨时区、夏令时和重复系列编辑范围。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-google-calendar.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-google-calendar",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-design-url-shortener",
+      "company": "openai",
+      "title": "短链接：生成、重定向、缓存和扩展",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-url-shortener",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "将长 URL 转成短码并支持可靠重定向。",
+      "preparation": "用唯一 id 编码或随机短码加碰撞检测，重定向走缓存与持久映射。明确自定义短码、到期和可编辑性，它们决定缓存失效方式。热点链接需避免缓存击穿，并保留滥用处理接口。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-design-url-shortener.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-design-url-shortener",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-webhook-delivery-system",
+      "company": "openai",
+      "title": "Webhook：十亿日事件与至少一次投递",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/webhook-delivery-system",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "注册回调 URL，可靠投递事件，处理重试和失败隔离。",
+      "preparation": "持久队列保存事件与每个目标的投递状态，指数退避并加抖动；每目标并发上限防止坏接收端拖累所有租户。以事件 id 支持接收端去重，超限进入死信。明确签名、防重放与目标地址校验。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-webhook-delivery-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-webhook-delivery-system",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-points-of-interest-yelp",
+      "company": "openai",
+      "title": "附近地点搜索：地理索引和低延迟",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/points-of-interest-yelp",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "海量地点、读多写少条件下进行附近检索。",
+      "preparation": "用 geohash 或空间树筛候选，再按实际球面距离过滤和排序。跨网格边界要查询相邻单元，密集城市与稀疏区域需要不同粒度。按真实数据分布估算候选数、热点和缓存命中，不能只以总地点数平均分片。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-points-of-interest-yelp.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-points-of-interest-yelp",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-hm-bq-why-openai",
+      "company": "openai",
+      "title": "OpenAI 行为面：动机、安全、冲突与失败",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/hm-bq-why-openai",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "讨论求职动机、AGI/安全情境、失败、分歧和离职原因。",
+      "preparation": "用具体经历说明自己如何做决策、承担结果并修正错误。安全题给出受影响对象、未知项和验证方式，而非表态口号。公司研究与价值主张要以面试前阅读为依据，不能编造亲历经验。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-hm-bq-why-openai.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-hm-bq-why-openai",
+        "family": "culture",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-recruiter-hr-screen-bq",
+      "company": "openai",
+      "title": "OpenAI HR：经历、时间线和工作条件",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/recruiter-hr-screen-bq",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "招聘筛选讨论经历、流程、地点和薪资预期。",
+      "preparation": "用简短项目故事连接目标岗位，准备可入职时间和工作地点约束。薪酬讨论以个人真实条件表达，轮次和时间线以当前 recruiter 确认为准。页面概括流程不能保证每个团队都相同。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-recruiter-hr-screen-bq.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-recruiter-hr-screen-bq",
+        "family": "why",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-engineering-management-fundamentals",
+      "company": "openai",
+      "title": "工程管理：招聘、培养、绩效和团队结构",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/engineering-management-fundamentals",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "围绕管理方式、一对一、技术参与和团队运作举例。",
+      "preparation": "选一例低绩效、一例成长培养和一例优先级冲突，说明观察证据、沟通行动和后续结果。区分个人贡献与组织效果，管理机制应能解释为什么适合团队规模和阶段。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-engineering-management-fundamentals.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-engineering-management-fundamentals",
+        "family": "management",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-openai-technical-deep-dive",
+      "company": "openai",
+      "title": "技术项目深挖：材料与决策证据",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/technical-deep-dive",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "准备一个过去项目并接受技术细节追问。",
+      "preparation": "围绕问题、约束、关键决策、结果和反思组织材料，明确本人职责。为规模、成本、实验和故障准备可核实数字。对被放弃方案讲清触发条件，不用无法披露的内部资料证明能力。",
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-technical-deep-dive.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-openai-technical-deep-dive",
+        "family": "project",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q2-file-deduplication",
+      "company": "anthropic",
+      "title": "文件去重：分层筛选、I/O 与分布式扩展",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q2-file-deduplication",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "遍历目录找相同内容文件，追问哈希、I/O 和规模。",
+      "preparation": "先按大小分组，仅对可能重复的组计算内容指纹，必要时逐字节确认。小文件受元数据开销影响，大文件受读带宽影响，不能无限增加进程。明确符号链接、硬链接、读取中被修改和权限错误的处理。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q2-file-deduplication.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q2-file-deduplication",
+        "family": "file_dedup",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/file_dedup.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "f4bb6a540570955abd3ce0b81a11f791fdeeee8523742545aa5c3fc022a97839"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q1-image-processing",
+      "company": "anthropic",
+      "title": "图片流水线：批量变换与并行性能",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q1-image-processing",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "对目录内图片执行灰度、翻转、缩放、模糊或旋转并优化耗时。",
+      "preparation": "先实现顺序基准，明确变换顺序与输出尺寸，再测量解码、变换和写盘耗时。线程适合能释放 GIL 的库调用和 I/O，多进程适合 CPU 密集步骤但有数据传输成本。任务并发要受内存和磁盘吞吐约束。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q1-image-processing.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q1-image-processing",
+        "family": "image_pipeline",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/image_pipeline.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "c75a9c64d74cf26068eda321acb1cbda8166ed697143d07a8eb370966abe6c9e"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q3-stack-trace",
+      "company": "anthropic",
+      "title": "调用栈重建：事件、采样、递归与去噪",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q3-stack-trace",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "题型包含 enter/exit 流恢复调用栈，以及时间戳栈采样反推开始结束事件。",
+      "preparation": "相邻采样栈比较最长公共前缀，先从深到浅结束旧后缀，再从浅到深开始新后缀；递归帧按深度区分。仅有采样不能恢复两次采样之间所有真实调用，要区分观测事件和真实执行历史。去噪需明确连续样本阈值。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q3-stack-trace.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q3-stack-trace",
+        "family": "stack_trace",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/stack_trace.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "0c843f4519da755aacac89c7751beceae65aada0a425cb1b3bfa50f1c4d67fb5"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q1-web-crawler",
+      "company": "anthropic",
+      "title": "同域爬虫：从 BFS 到并发和分布式",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q1-web-crawler",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "给定 getUrls 接口，抓取同域页面并去重。",
+      "preparation": "解析 hostname 限定域，用锁保护检查并加入 visited 的原子步骤。维护待处理和正在处理的总工作量，队列暂时为空并不代表结束。异常、URL fragment、限速和跨机器分片都是独立契约。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q1-web-crawler.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q1-web-crawler",
+        "family": "crawler",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/crawler.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "34e8bf80491fb2a6ec27c7fee3f5667c94226f9ea8d5458262461bc1d3be8cad"
+      }
+    },
+    {
+      "id": "p3a-anthropic-agents-coding-llm-tool-use",
+      "company": "anthropic",
+      "title": "用 LLM 构造多步工具 Agent",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/agents-coding-llm-tool-use",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "在 Colab 利用给定 API 建立 prompt 和工具调用循环。",
+      "preparation": "定义结构化动作、校验参数、执行工具并把结果回填上下文，设置步骤预算和结束条件。将模型提议与工具执行分开，记录轨迹便于重放和评分。先让最小闭环完成任务，再增加重试与恢复；不能把未知任务细节补成真题。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-agents-coding-llm-tool-use.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-agents-coding-llm-tool-use",
+        "family": "agent",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "4858a4dfd086f5b0cab22a70e6e1f5e5f7dab19c4e1d55e3096b23378ff0b13e"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q2-lru-cache-durability",
+      "company": "anthropic",
+      "title": "LRU 调试：args/kwargs 缓存键与崩溃恢复",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q2-lru-cache-durability",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "修复可调用对象缓存的键生成，再支持持久恢复。",
+      "preparation": "缓存键必须反映函数调用语义，处理 kwargs 顺序、默认参数和不可哈希值；不要简单拼接字符串。持久层需说明写入何时确认，以及恢复时能否接受丢失最近项。若要求严格持久性，要保证日志落盘与恢复重放顺序。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q2-lru-cache-durability.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q2-lru-cache-durability",
+        "family": "weighted_lru",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/weighted_lru.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "c0f6d36a62a9d1161cc03a606224725bccedbbc34f6ed1c3fb8761892de10720"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q4-distributed-mode-median",
+      "company": "anthropic",
+      "title": "分布式众数与中位数：低带宽通信",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q4-distributed-mode-median",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "多 worker 持有分片，在读取和节点间带宽限制下求全局统计量。",
+      "preparation": "众数不能仅合并每片本地众数；可以按值分区聚合完整计数。中位数可用值域计数反复缩小区间，但先确认整数范围和重复值。量化每轮读取量与通信量，评估是否值得多轮扫描换取更少传输。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q4-distributed-mode-median.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q4-distributed-mode-median",
+        "family": "distributed_stats",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/distributed_stats.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ca704068a1d6bfa1e6213f0deeffdfff7f13ec91f5ba56ba0e87483d7d9b3471"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-in-memory-database",
+      "company": "anthropic",
+      "title": "四级内存数据库：CRUD、TTL 与恢复变体",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-in-memory-database",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "CodeSignal 逐级扩展 KV/field 数据库，第四级可能是备份恢复或历史查询。",
+      "preparation": "基础操作共享同一过期判定函数，scan 按字段名排序。备份需深复制值和剩余 TTL；恢复后的 TTL 按恢复时刻重新计算。历史查询则需要版本记录，两种第四级不能混用实现。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-in-memory-database.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-in-memory-database",
+        "family": "history_db",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "31ac0973aa181476f8b08b28f928f55d93adddb91a101d48e0de4d1755eadc19"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-q6-tokenizer",
+      "company": "anthropic",
+      "title": "最长匹配 Tokenizer：UNK 合并与 trie",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-q6-tokenizer",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "按词表做最长前缀匹配，支持未知字符及连续 UNK 合并。",
+      "preparation": "trie 从当前位置扫描，记住最后一次终结节点；走不通时返回最长已匹配 token。没有 token 时按题目指定的字符或字节推进。UNK 合并改变的是输出段落边界，不应跳过随后能匹配的有效 token。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q6-tokenizer.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-q6-tokenizer",
+        "family": "tokenizer",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/tokenizer.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "da55dab8c5c2e98ac1ac1fef30c54a7d710f026496fde7c8e4682704bb81afe8"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-recipe-manager",
+      "company": "anthropic",
+      "title": "菜谱管理：大小写、权限、版本与回滚",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-recipe-manager",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "四级实现菜谱 CRUD、按配料数排序、用户权限和版本历史。",
+      "preparation": "用标准化名字定位实体，但保留显示名称。把权限检查放到所有写入口，版本记录不可变；回滚是恢复历史内容还是新建版本需先确认。相同配料数的排序、删除后重建和历史所属用户是重要边界。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-recipe-manager.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-recipe-manager",
+        "family": "recipes",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/recipes.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6507440634c0edfac158303caf74f0749cfb9d89e4e50f65267c4fa0a6f3c534"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-bank-system",
+      "company": "anthropic",
+      "title": "银行 OA：转账冻结、接收与账号合并",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-bank-system",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现存取款、两步转账，以及合并后账号被重新创建的情况。",
+      "preparation": "发起转账时冻结资金，接收或到期后只结算一次。账户实例用独立身份，不仅依赖可复用的账号字符串；否则老转账会误落到新账户。明确合并如何转移历史、冻结款和待接收交易。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-bank-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-bank-system",
+        "family": "bank_oa",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bank_oa.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "d5976321eefc87363588a18672fd63a93fd8840b9236718e5ca1708a62bb5f4c"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-design-data-batcher",
+      "company": "anthropic",
+      "title": "加权 DataBatcher：确定性采样与断点续训",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-design-data-batcher",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "按数据源权重输出 batch，支持 offset 恢复，且 batch 大小不一定整除权重和。",
+      "preparation": "维护跨 batch 的加权周期或确定性调度序列，不能每次向下取整后永远饿死小权重源。状态包含源游标、调度位置和随机状态，恢复后输出应与不停机运行完全一致。先明确权重是严格比例还是概率。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-design-data-batcher.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-design-data-batcher",
+        "family": "batcher",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/batcher.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "787f47338dad7cdbdb354e07da6ac8bd96c5fbdb01935e4d2543ec3b92addd26"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-task-management",
+      "company": "anthropic",
+      "title": "任务 OA：CRUD、TTL 和历史快照",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-task-management",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "每用户任务表逐级加入自动过期与任意历史时刻查询。",
+      "preparation": "当前状态和历史版本分开；删除与过期必须能在历史查询中正确解释。统一有效区间端点，返回过去某时刻存在的任务而非当前还活着的任务。读快照不能修改原有状态。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-task-management.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-task-management",
+        "family": "history_db",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "31ac0973aa181476f8b08b28f928f55d93adddb91a101d48e0de4d1755eadc19"
+      }
+    },
+    {
+      "id": "p3a-anthropic-coding-bootloader",
+      "company": "anthropic",
+      "title": "指令模拟：检测死循环并修复单条指令",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/coding-bootloader",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "模拟 plus/next/jump，找出让程序循环的指令并修复。",
+      "preparation": "用程序计数器访问集合检测重复，累计器单独维护。基础解枚举可改指令后重新执行；优化用反向可达性找能到达终止位置的跳转。必须验证改动确实被执行，并明确越界是终止还是错误。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-bootloader.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-coding-bootloader",
+        "family": "bootloader",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bootloader.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ecb8e31292b3abfedd9d6076f27b9430a5d89d35faeff1ba421e74237652ef5b"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-file-systems",
+      "company": "anthropic",
+      "title": "文件系统 OA：路径操作与未公开扩展",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-file-systems",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "简化文件系统的逐级实现，末级存在 LLM 相关扩展但细节不足。",
+      "preparation": "基础层用目录树管理路径，明确文件与目录冲突、根目录和重复创建。后续题面未读到的部分不猜测；现场先读 helper 契约并为路径归一化写少量边界例子。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-file-systems.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-file-systems",
+        "family": "filesystem",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/filesystem.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "dee0361dcb27546fbd515c09ab29eabfc521d27022c7836c1a312f2d21d54f20"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-fellows-dns-resolver",
+      "company": "anthropic",
+      "title": "Fellows DNS：别名、回退、环与缓存",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-fellows-dns-resolver",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "固定测试框架中逐步实现简化 DNS resolver。",
+      "preparation": "先处理直接记录，再沿别名解析并记录访问链防环；缓存成功和失败需不同策略。回退发生的条件、别名深度与并发重复查询要统一。网络失败不应被永久缓存成不存在。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-fellows-dns-resolver.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-fellows-dns-resolver",
+        "family": "dns",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/dns.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "8e0f247b55270a1ffdfce128c4f60d3b736bc9688d22d5f8c7555eae4cd691ea"
+      }
+    },
+    {
+      "id": "p3a-anthropic-oa-worker-management",
+      "company": "anthropic",
+      "title": "员工管理：打卡、晋升和重叠奖金",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/oa-worker-management",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "记录出入、下次入场生效的晋升以及重叠工作区间的奖金。",
+      "preparation": "把已完成工时、当前会话和待生效晋升分开，入场时一次应用晋升。奖金按工作区间与奖励区间交集计算，重叠奖励是否叠加以题面为准。避免把未结束会话提前结算两次。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-worker-management.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-oa-worker-management",
+        "family": "employee",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/employee.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "057c6ba585602820f61f34c1b46db2a9bef7aa39e2a353d28b8772f452fcebf3"
+      }
+    },
+    {
+      "id": "p3a-anthropic-rl-fundamentals-grpo-debug",
+      "company": "anthropic",
+      "title": "GRPO 调试与重要性采样比追问",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/rl-fundamentals-grpo-debug",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "修复训练脚本若干错误，再解释 clip、优势归一化和 on/off-policy。",
+      "preparation": "逐层检查采样分布、组内优势、old logprob 与 response mask；对等回报组处理零方差。比率是 logprob 差的指数，old 值需固定。具体植入行以现场脚本为准，摘要不足以确认第三个 bug。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-rl-fundamentals-grpo-debug.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-rl-fundamentals-grpo-debug",
+        "family": "grpo",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/grpo.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "a7e80305865a177893d7b9588c7ac86c0950c3af97791b4bd1b9a4cae75a9ab2"
+      }
+    },
+    {
+      "id": "p3a-anthropic-ml-programming-screen",
+      "company": "anthropic",
+      "title": "ML Programming：QKV Attention 与 einsum",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/ml-programming-screen",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "根据数学公式实现序列模型或缩放点积注意力。",
+      "preparation": "先标注 batch、head、序列和通道维，再实现 QK 转置、缩放、mask、softmax 和乘 V。检查 softmax 归一化轴及全 mask 行，最后与直接循环小例子对照。einsum 应能清楚对应到求和指标。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-programming-screen.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-ml-programming-screen",
+        "family": "attention",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/attention.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "145cf63d3e7caaeca7e3b7a4e7f436f5c8336f43e3af519cd0f01cb4d300ebb4"
+      }
+    },
+    {
+      "id": "p3a-anthropic-prompting-engineering-with-llms",
+      "company": "anthropic",
+      "title": "Prompting：任务提示词与评测脚手架",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/prompting-engineering-with-llms",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "Colab 中围绕指定任务写提示和配套评测代码。",
+      "preparation": "固定一小组代表性案例，记录基线、失败类别和每次改动的效果。将任务规则、示例和输出 schema 分开，验证非法输出及长尾输入。开发集调优不能反复消耗最终保留测试集。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-prompting-engineering-with-llms.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-prompting-engineering-with-llms",
+        "family": "agent",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "4858a4dfd086f5b0cab22a70e6e1f5e5f7dab19c4e1d55e3096b23378ff0b13e"
+      }
+    },
+    {
+      "id": "p3a-anthropic-performance-engineer-take-home",
+      "company": "anthropic",
+      "title": "性能 Take-home：优化模拟 GPU kernel",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/performance-engineer-take-home",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "限时优化核心函数，以测量加速评估。",
+      "preparation": "先确认正确性和基准协议，再定位访存、计算或调度瓶颈。每次优化单独记录输入规模、运行次数和方差，防止只优化公开样例。是否允许 AI 和工具以当前邀请说明为准，不把旧面经规则当成永远有效。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-performance-engineer-take-home.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-performance-engineer-take-home",
+        "family": "performance",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/performance.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "0a46fe4080be179054b062f7dd2d1843d8c176a1a384fe6119f0f573e92fb9d9"
+      }
+    },
+    {
+      "id": "p3a-anthropic-sd-q1-inference-api",
+      "company": "anthropic",
+      "title": "Inference API：动态批处理与 GPU 利用率",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/sd-q1-inference-api",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计跨 GPU 的 LLM 推理服务，深入流量突增和 prefill/decode。",
+      "preparation": "准入层按 token 和 KV 预算排队，调度器支持连续批处理并及时回收结束请求。说明首 token 与吞吐目标、长短请求公平性、取消和 OOM 处理。prefill/decode 分离需计算 KV 传输成本。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-sd-q1-inference-api.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-sd-q1-inference-api",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-sd-q4-1to1-chat-system",
+      "company": "anthropic",
+      "title": "单设备一对一聊天：投递、在线状态与离线队列",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/sd-q4-1to1-chat-system",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "只做私聊，不含群或频道，比较 Kafka 和 Redis。",
+      "preparation": "持久消息日志保证离线补取，WebSocket 管理在线连接；presence 用心跳和超时近似而非绝对事实。比较消息总线时按重放、持久性和延迟需求选择。确认送达和已读是两个不同事件。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-sd-q4-1to1-chat-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-sd-q4-1to1-chat-system",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-onsite-design-doc-review",
+      "company": "anthropic",
+      "title": "设计文档评审：发现风险与提出替代",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/onsite-design-doc-review",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "现场阅读文档，指出遗漏、风险和可行方案。",
+      "preparation": "先复述需求与约束，再按数据一致性、失败恢复、安全、容量和可运维性查缺口。每条批评解释触发场景和影响，提出带成本的替代方案。优先处理能改变决策的大问题，避免只纠正文风。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-onsite-design-doc-review.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-onsite-design-doc-review",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-sd-q3-model-distribution",
+      "company": "anthropic",
+      "title": "模型权重分发：带宽下界、树与分块 swarm",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/sd-q3-model-distribution",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "将数百 GB checkpoint 分发到数百主机，链路存在带宽限制。",
+      "preparation": "先根据源节点出口和总接收量估计下界，再比较全员直拉、树广播及分块互传。共享上传下载预算时必须联合计算。分片校验、版本原子切换、ready 检查和失败重取决定能否安全上线。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-sd-q3-model-distribution.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-sd-q3-model-distribution",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-sd-q2-prompt-playground",
+      "company": "anthropic",
+      "title": "Prompt Playground：产品流程、schema 与共享",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/sd-q2-prompt-playground",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "题面已给部署图，要求重点讨论用户流程、数据和 UX。",
+      "preparation": "定义 prompt、版本、测试输入、运行结果和分享权限，明确编辑与运行使用哪一个版本。并发编辑、失效分享链接、敏感样例和失败重跑各有可见状态。按给定范围讨论，不把整轮耗在重复画架构图上。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-sd-q2-prompt-playground.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-sd-q2-prompt-playground",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-sd-q5-data-infrastructure",
+      "company": "anthropic",
+      "title": "数据基础设施：接入、处理与分级访问",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/sd-q5-data-infrastructure",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计大规模数据摄取处理，支持不同利益相关方与敏感级别；详细规格有限。",
+      "preparation": "澄清数据来源、更新频率、可重放性和权限边界，区分原始层、处理层与服务层。记录血缘、schema 版本和质量检查，失败批次可以重跑。权限与删除要求应贯穿所有派生数据。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-sd-q5-data-infrastructure.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-sd-q5-data-infrastructure",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-ml-configuration-system",
+      "company": "anthropic",
+      "title": "ML 配置系统：schema、继承与可复现性",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/ml-configuration-system",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计并部分实现配置管理；网站未给完整具体要求。",
+      "preparation": "将层级覆盖规则、类型检查与最终配置固化分开，记录默认值来源和版本。运行时保存解析后的完整配置与代码/数据标识，以便复现。先定义合并列表与删除字段语义，不能仅用字典 update 冒充完整系统。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-configuration-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-ml-configuration-system",
+        "family": "configuration",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/configuration.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "3ef1568d7312748e7c1dda72f1b79bb0ea4b7b7676c5b0089e612f06e777acbc"
+      }
+    },
+    {
+      "id": "p3a-anthropic-onsite-culture-ai-safety",
+      "company": "anthropic",
+      "title": "Culture：AI 安全、价值判断与有依据的批评",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/onsite-culture-ai-safety",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "通过个人经历讨论安全与公司价值，也可能要求批评公司。",
+      "preparation": "准备在交付压力、证据不足或风险争议下真实做决定的例子，说明行动和代价。批评应针对具体主张并提出可验证改进，不靠迎合或极端断言。面经中的淘汰频率不等于可验证的录取统计。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-onsite-culture-ai-safety.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-onsite-culture-ai-safety",
+        "family": "culture",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-recruiter-screen-why-anthropic",
+      "company": "anthropic",
+      "title": "Recruiter：Why Anthropic 与研究理解",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/recruiter-screen-why-anthropic",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "筛选轮讨论动机、公开研究与政策观点。",
+      "preparation": "选择确实读过的一项研究说明问题、方法、限制以及与目标岗位的关系，再解释自己的可贡献之处。不使用背诵式价值声明替代个人动机；不确定的政策细节在面试前核对。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-recruiter-screen-why-anthropic.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-recruiter-screen-why-anthropic",
+        "family": "why",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-onsite-hm-behavioral",
+      "company": "anthropic",
+      "title": "HM：跨职能合作、影响与培养他人",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/onsite-hm-behavioral",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "讨论项目影响、非工程协作、指导和路线图决策。",
+      "preparation": "用一个有分歧的合作实例说明利益相关方、取舍、自己的行动和结果。量化影响时解释基线和外部因素，避免把团队成果全部归于自己。失败后如何改变工作方法也是核心证据。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-onsite-hm-behavioral.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-onsite-hm-behavioral",
+        "family": "management",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-onsite-project-deep-dive",
+      "company": "anthropic",
+      "title": "项目演讲：技术选择、个人职责与反思",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/onsite-project-deep-dive",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "准备过去技术项目的讲解和深入问答。",
+      "preparation": "核心材料覆盖需求、约束、候选方案、决策与结果，备份页放规模和实验细节。能解释关键实现并承认不确定性。网站提到的演讲时长是面经版本，最终按邀请确认。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-onsite-project-deep-dive.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-onsite-project-deep-dive",
+        "family": "project",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-anthropic-mech-interp-take-home",
+      "company": "anthropic",
+      "title": "机制可解释性：复现样本维度双下降",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/mech-interp-take-home",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "小模型实验复现 double descent，解释现象并提出修复。",
+      "preparation": "固定数据生成与随机种子，扫描样本量相对参数量的比例，分别绘制训练误差与测试误差。检查插值附近的病态性和噪声影响，比较正则化或容量调整。用重复实验区分趋势与随机波动。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-mech-interp-take-home.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-mech-interp-take-home",
+        "family": "double_descent",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/double_descent.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "99b51918f4591559f356cdccfebfd4b1190613fa87f070c795971f4e9cfee663"
+      }
+    },
+    {
+      "id": "p3a-anthropic-performance-engineer-modeling",
+      "company": "anthropic",
+      "title": "性能建模：matmul 算术强度与并行布局",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/performance-engineer-modeling",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "估计 A100 矩阵乘耗时，扩展到多层流水和 FFN 分片。",
+      "preparation": "先计算 FLOPs 与实际访存字节数，用计算峰值和有效带宽给出 roofline 下界，再加通信和启动开销。流水并行要计算气泡，张量并行要核算集合通信。区分理论下界与可实现时延。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-performance-engineer-modeling.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-performance-engineer-modeling",
+        "family": "performance",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/performance.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "0a46fe4080be179054b062f7dd2d1843d8c176a1a384fe6119f0f573e92fb9d9"
+      }
+    },
+    {
+      "id": "p3a-anthropic-ml-take-home-research",
+      "company": "anthropic",
+      "title": "ML Take-home：实验、代码与现场复盘",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/ml-take-home-research",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "完成独立 ML 实验，再展示结果并接受追问。",
+      "preparation": "先建立简单可靠基线，再做少量有假设的实验，记录数据切分、随机种子和资源开销。交付物应能重跑并说明失败尝试。工具规则与时长按当前任务确认，不能从历史面经泛化。",
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-take-home-research.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-anthropic-ml-take-home-research",
+        "family": "logistic",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ad02d3c5336b62c0a59e0787ec21811e37b12f9851a39a2bba9b983de1957838"
+      }
+    },
+    {
+      "id": "p3a-xai-twitter-insight-platform-take-home",
+      "company": "xai",
+      "title": "Twitter 分析平台：数据校验、Grok worker 与限流",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/twitter-insight-platform-take-home",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "读取数据集，校验推文、入库、异步调用模型评分，并加入入/出站限流和容器化。",
+      "preparation": "先交付可重跑的端到端流程；按记录 id 去重，worker 有重试和失败记录。外部 API 限额与用户入口限额分开，敏感配置通过环境注入。用 mock 服务验证错误响应和超时；工具是否允许以当前说明为准。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-twitter-insight-platform-take-home.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-twitter-insight-platform-take-home",
+        "family": "twitter_pipeline",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/twitter_pipeline.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "1b0e7ff70917fc60d9a848dc3644e15122b2a346523de128dd6e2800124a2f06"
+      }
+    },
+    {
+      "id": "p3a-xai-distributed-matmul-dp-fsdp",
+      "company": "xai",
+      "title": "分布式 matmul：DP 与 FSDP 模拟",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/distributed-matmul-dp-fsdp",
+      "evidence": "thread-read",
+      "category": "ML",
+      "promptSummary": "利用给定 Queue 通信器完成分块矩阵乘与循环 all-gather。",
+      "preparation": "先明确 A、B 每卡持有什么分片，推导结果的全局坐标。DP 按行算结果并 gather，FSDP 版本逐轮接收权重分片并写回正确输出位置。所有 rank 通信顺序一致，避免双方先等待或队列填满导致死锁。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distributed-matmul-dp-fsdp.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-distributed-matmul-dp-fsdp",
+        "family": "matmul",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/matmul.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ce31d7e3fcc0032fbbdf569ae58496bd79bdbd5126b03a1670b639ec9373990c"
+      },
+      "additionalSources": [
+        "https://www.1point3acres.com/interview/thread/1171574"
+      ]
+    },
+    {
+      "id": "p3a-xai-resumable-iterator-design",
+      "company": "xai",
+      "title": "迭代器 checkpoint：跨进程与嵌套恢复",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/resumable-iterator-design",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "保存当前位置并恢复，扩展到迭代器的迭代器。",
+      "preparation": "用下一项游标定义状态，保存底层数据版本和所有嵌套位置。文件流还需记录资源标识，不能只存活对象引用。空容器、末尾和多次恢复应产生一致结果。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-resumable-iterator-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-resumable-iterator-design",
+        "family": "nested",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nested.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "77614f7234dff1a0440d21eba0a1561a027dfbac770241bbe358d46a86991933"
+      }
+    },
+    {
+      "id": "p3a-xai-distributed-token-bucket-limiter",
+      "company": "xai",
+      "title": "共享 token bucket：惰性补充与并发原子性",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/distributed-token-bucket-limiter",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现每用户令牌桶，多服务共同执行同一限额。",
+      "preparation": "每次读取按经过时间补令牌并截断到桶容量，检查与扣减必须在共享存储中原子执行。统一时钟来源，处理时间倒退和状态到期。进程内锁无法保护其他服务器，需事务或服务端脚本。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distributed-token-bucket-limiter.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-distributed-token-bucket-limiter",
+        "family": "token_bucket",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/token_bucket.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "62509dd3e1a2c2964398c24448a5f7bda6d722fdd8e04284e7ce8c6bf36c26ee"
+      }
+    },
+    {
+      "id": "p3a-xai-flatten-unflatten-nested-structure",
+      "company": "xai",
+      "title": "嵌套 Python 容器 flatten 与 unflatten",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/flatten-unflatten-nested-structure",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "展开 list/dict/tuple 中的整数，再按模板回填。",
+      "preparation": "递归保留字典遍历顺序及容器类型，只把叶子整数替换。回填时同时验证缺值和多值，不在原模板上就地覆盖。若 bool 是否算整数、字典键是否参与遍历不明确，需要先确认。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-flatten-unflatten-nested-structure.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-flatten-unflatten-nested-structure",
+        "family": "nested",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/nested.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "77614f7234dff1a0440d21eba0a1561a027dfbac770241bbe358d46a86991933"
+      }
+    },
+    {
+      "id": "p3a-xai-weighted-lru-cache",
+      "company": "xai",
+      "title": "按总权重限容的 LRU",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/weighted-lru-cache",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "条目有大小，一次插入可能驱逐多个最久未使用项。",
+      "preparation": "哈希表加双向链表维护访问顺序，另维护当前总权重。更新已有 key 时先减旧权重，超限时循环驱逐。单项超过容量需先约定拒绝还是不缓存，避免无限驱逐或错误保留。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-weighted-lru-cache.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-weighted-lru-cache",
+        "family": "weighted_lru",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/weighted_lru.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "c0f6d36a62a9d1161cc03a606224725bccedbbc34f6ed1c3fb8761892de10720"
+      }
+    },
+    {
+      "id": "p3a-xai-checkers-backend-design",
+      "company": "xai",
+      "title": "跳棋后端：棋盘、合法走子和胜负",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/checkers-backend-design",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "限时设计并部分实现 checkers 游戏后端。",
+      "preparation": "明确棋种与跳吃、连跳、升王规则，再用纯函数验证一次状态转移。服务端持有权威局面，客户端只提交意图。先交正确基础闭环，再讨论房间、重连和持久化。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-checkers-backend-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-checkers-backend-design",
+        "family": "checkers",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/checkers.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "33933d4aaf37462c775713da11c2731e781255885301b940346ed71508d577af"
+      }
+    },
+    {
+      "id": "p3a-xai-twitter-spaces-active-hours",
+      "company": "xai",
+      "title": "Spaces 活跃时长与流式并发 top-K",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/twitter-spaces-active-hours",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "按 create/join/leave 日志计算每个房间用户活跃总时间，再跟踪并发排名。",
+      "preparation": "为每个用户房间对保存加入时刻，离开时累加差值。重复 join、缺失 leave 和同时间事件顺序需定义。用户时长与房间存在时长不同；流式 top-K 需要处理计数减小，不能只追加堆项不做失效。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-twitter-spaces-active-hours.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-twitter-spaces-active-hours",
+        "family": "spaces",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/spaces.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "d1669fd8b5269200ad00e111561345ac55b7fa3560e0375da3236b83468ed9d0"
+      }
+    },
+    {
+      "id": "p3a-xai-radix-cache",
+      "company": "xai",
+      "title": "Radix Cache：压缩边、分裂与最长前缀",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/radix-cache",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现整数序列的压缩前缀树和枚举。",
+      "preparation": "插入时求与边标签的公共前缀，部分重合就拆成父前缀和两条后缀。精确命中与最长前缀是不同接口，必须记录匹配长度。若用于 KV cache，缓存有效范围还依赖模型和上下文版本。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-radix-cache.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-radix-cache",
+        "family": "radix",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/radix.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "28a2ba810e8743be6df3beb7d91b549fa9d6f0084a18eb71feb9637a59082a1e"
+      }
+    },
+    {
+      "id": "p3a-xai-transactional-key-value-store",
+      "company": "xai",
+      "title": "嵌套事务 KV：begin、commit 与 rollback",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/transactional-key-value-store",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现读己之写、删除和多层事务。",
+      "preparation": "用事务层叠放变更和删除 tombstone，读取从最内层向外查。子事务提交合并到父层，最外层提交才写基础存储；回滚只丢当前层。若题目定义 commit 关闭全部事务，要调整契约，不能默认。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-transactional-key-value-store.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-transactional-key-value-store",
+        "family": "transactions",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/transactions.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "82d02feb59e4cf3fdc28caa28500bf7790b02c884dd251adc015cc72196ec7c0"
+      }
+    },
+    {
+      "id": "p3a-xai-distinct-integers-after-offset",
+      "company": "xai",
+      "title": "数组元素各加 [-k,k] 后最多不同值",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/distinct-integers-after-offset",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "每个元素可独立选择偏移，另有偏移值不可重复的少数变体。",
+      "preparation": "对普通版本将可选区间按左端点排序，尽量分配大于上个值的最小可行整数。这样为后续保留空间。偏移不可重复是额外全局约束，原贪心证明不再自动成立，应单独求解。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distinct-integers-after-offset.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-distinct-integers-after-offset",
+        "family": "distinct",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/distinct.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6f8ea6a9d6826a9013378ab6527295bc38942b8ba3258e2a50bdac24dbbea5f6"
+      }
+    },
+    {
+      "id": "p3a-xai-kth-element-streaming-window",
+      "company": "xai",
+      "title": "有限内存时间窗第 k 大/小",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/kth-element-streaming-window",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "从静态选择扩展到最近 N 秒数据的顺序统计。",
+      "preparation": "静态问题可用 quickselect 或有界堆。精确时间窗必须同时删除过期值并维护排序计数，可用队列加有序计数结构；值域小才适合桶。任意值域、任意速率和固定内存下不能保证无限精度，需讨论近似与误差。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-kth-element-streaming-window.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-kth-element-streaming-window",
+        "family": "window_order",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/window_order.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "c6793e5b3174ae9220202828ee52b95cbaa20d5d0bfaf8d496f6e5d480b2f74f"
+      }
+    },
+    {
+      "id": "p3a-xai-durable-kv-cache",
+      "company": "xai",
+      "title": "持久 KV cache：日志、压缩和大文件",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/durable-kv-cache",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "写盘后进程重启仍能恢复，并讨论旧日志清理。",
+      "preparation": "WAL 记录有长度和校验，恢复时识别尾部不完整记录。快照和日志切换需原子发布，压缩不能丢失并发新写入。明确确认写入是在写入缓冲区还是 fsync 后，两者持久性不同。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-durable-kv-cache.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-durable-kv-cache",
+        "family": "durable_kv",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/durable_kv.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "952bba65a09e182671f2c64608b70cf3622dc4855f6e1c8dda43050d6e4a7e20"
+      }
+    },
+    {
+      "id": "p3a-xai-gpu-node-group-test",
+      "company": "xai",
+      "title": "GPU 节点组测：识别坏节点与并行调度",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/gpu-node-group-test",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "集合测试仅在全部节点良好时成功，集合至少两节点，同节点不能同时参与两次测试。",
+      "preparation": "先讨论可识别性：两个未知节点测试失败不能定位哪个坏；没有已知好节点时可能存在不可区分实例。得到可靠好节点后可作搭档进行单点间接测试。再按不相交集合安排并行轮次，区分测试次数与墙钟轮数。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-gpu-node-group-test.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-gpu-node-group-test",
+        "family": "node_test",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/node_test.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "aef6ba13e0f147b1778f5d5ca65bbea3ea205ce273090e469b73104cb67fb854"
+      }
+    },
+    {
+      "id": "p3a-xai-mock-llm-dynamic-batching",
+      "company": "xai",
+      "title": "Mock LLM 推理循环：动态填槽和结果归属",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/mock-llm-dynamic-batching",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "model(batch) 返回 next tokens，完成序列后立即接入等待请求。",
+      "preparation": "为每个槽位保存 request id、生成 tokens 和停止条件。先处理本轮结果与释放，再填新请求，不能把旧槽位输出归到新请求。取消、空队列、max tokens 为零和所有请求结束都要明确。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-mock-llm-dynamic-batching.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-mock-llm-dynamic-batching",
+        "family": "batch_decode",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/batch_decode.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "e89ce6463457536341bf4557821512f43d2f8d871218b7b76e538cf8de1e7752"
+      }
+    },
+    {
+      "id": "p3a-xai-multithreaded-bank-account-bug-hunt",
+      "company": "xai",
+      "title": "BankAccount 并发调试与包装修复",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/multithreaded-bank-account-bug-hunt",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "短筛中修复 deposit 竞态，并在不改原类时通过继承或包装修复。",
+      "preparation": "锁应覆盖读改写整个临界区，所有访问余额的方法遵守同一锁。包装若暴露原对象或某个方法绕过锁仍不安全。GIL 不会让跨多个操作的业务序列自动原子化。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-multithreaded-bank-account-bug-hunt.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-multithreaded-bank-account-bug-hunt",
+        "family": "bank_lock",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bank_lock.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "dfae90eac00ce6b298169bf3a3a618ba4c4445f390fb623507ce2f0845049a05"
+      }
+    },
+    {
+      "id": "p3a-xai-in-memory-database-ttl-backup",
+      "company": "xai",
+      "title": "多级数据库：字段操作、scan、TTL 与备份",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/in-memory-database-ttl-backup",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "逐级实现内存数据库与快照恢复。",
+      "preparation": "统一时间与过期逻辑，scan 使用稳定排序。备份保存深复制的有效记录和剩余寿命，恢复后重新建立过期时刻。先确认删除字段和删除记录的区别，避免历史备份被后续写入修改。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-in-memory-database-ttl-backup.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-in-memory-database-ttl-backup",
+        "family": "history_db",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "31ac0973aa181476f8b08b28f928f55d93adddb91a101d48e0de4d1755eadc19"
+      }
+    },
+    {
+      "id": "p3a-xai-parallel-integer-sort",
+      "company": "xai",
+      "title": "并行整数排序：分区、worker 和合并",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/parallel-integer-sort",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "要求多线程实现，不能仅调用单线程 sort。",
+      "preparation": "分区后并行排序，再用并行或分层归并组合。测量任务启动、复制和合并开销，数据小的时候并行可能更慢。Python 线程受 GIL 和底层实现影响，要区分题目要求的线程机制与真实 CPU 加速。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-parallel-integer-sort.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-parallel-integer-sort",
+        "family": "parallel_sort",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/parallel_sort.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "48d576901433546a6acca330d4d66e6be0ab6b8c73234fabf8640a2653422799"
+      }
+    },
+    {
+      "id": "p3a-xai-notification-system-design",
+      "company": "xai",
+      "title": "新帖通知粉丝：fanout 与投递保证",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/notification-system-design",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "用户发帖后向关注者发送通知。",
+      "preparation": "持久化发帖事件，异步展开关注关系并分批投递，用用户加事件 id 去重。大 V 与普通用户可采用不同推拉策略，重试不应重复提醒。区分应用内通知、移动推送以及用户免打扰偏好。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-notification-system-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-notification-system-design",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-xai-rag-system-design",
+      "company": "xai",
+      "title": "RAG：外部知识接入、检索与证据",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/rag-system-design",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计给 LLM 提供外部知识的问答系统。",
+      "preparation": "保留数据版本、切块来源和访问权限，召回后精排并生成引用。评测拆成检索是否找到证据和回答是否忠于证据。外部内容可能包含指令注入，工具权限不随检索文本扩大。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-rag-system-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-rag-system-design",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-xai-rate-limiter-design",
+      "company": "xai",
+      "title": "双向限流：入口、公平队列与下游配额",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/rate-limiter-design",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "入口 API 与出站模型调用各有独立限额。",
+      "preparation": "入口限流保护服务，出站限流保护供应商额度；两者之间需有界队列和背压。按用户公平调度，超过等待预算返回明确状态。跨节点执行需共享状态或分配可证明不超额的配额。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-rate-limiter-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-rate-limiter-design",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-xai-most-challenging-project-why-xai",
+      "company": "xai",
+      "title": "短筛：最难项目与 Why xAI",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/most-challenging-project-why-xai",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "简短描述最有挑战项目及目标团队动机。",
+      "preparation": "用约束、最关键技术选择、本人贡献和结果组织两分钟回答，准备逐层展开。动机落在具体问题与能力匹配上，不编造公司内部路线或私人经历。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-most-challenging-project-why-xai.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-most-challenging-project-why-xai",
+        "family": "why",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-xai-agentic-one-hour-movie-generation",
+      "company": "xai",
+      "title": "一小时电影生成 Agent workflow",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/agentic-one-hour-movie-generation",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "开放设计长电影的分解、生成和一致性控制。",
+      "preparation": "分解为剧本、分镜、素材、镜头生成、剪辑与评审，维护角色、场景和时间线约束。镜头级失败可局部重试，人工审批控制高成本阶段。评估叙事一致性、视听连续性、成本和生成时延，而非只列模型名字。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-agentic-one-hour-movie-generation.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-agentic-one-hour-movie-generation",
+        "family": "agent",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "4858a4dfd086f5b0cab22a70e6e1f5e5f7dab19c4e1d55e3096b23378ff0b13e"
+      }
+    },
+    {
+      "id": "p3a-xai-process-vs-thread-verbal",
+      "company": "xai",
+      "title": "进程与线程：内存、调度与共享风险",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/process-vs-thread-verbal",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "短筛口述基础操作系统知识。",
+      "preparation": "同进程线程共享地址空间并各有栈，进程通常隔离内存并通过 IPC 协作。共享状态便于传数据但带来竞态与死锁；隔离也有复制或通信成本。把 OS 原理与 Python 的 GIL 限制分开解释。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-process-vs-thread-verbal.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-process-vs-thread-verbal",
+        "family": "bank_lock",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bank_lock.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "dfae90eac00ce6b298169bf3a3a618ba4c4445f390fb623507ce2f0845049a05"
+      }
+    },
+    {
+      "id": "p3a-microsoft-dna-shotgun-sequencing",
+      "company": "microsoft",
+      "title": "DNA fragments：有向链、欧拉路径与多链",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/dna-shotgun-sequencing",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "由端点标签片段恢复序列，逐步扩展无向链和多链。",
+      "preparation": "将片段视为边、端点标签视为顶点，先区分路径遍历和欧拉遍历。欧拉路线需使用每条片段且不能遗漏平行边，检查度数与连通性。多链版本如何拆分以具体约束为准，不能任意拼出一条链。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-dna-shotgun-sequencing.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-dna-shotgun-sequencing",
+        "family": "dna",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/dna.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "214a8e73e2251215a95f6d81bdcdd1c3baff1e36dc622db484e501209e62a092"
+      }
+    },
+    {
+      "id": "p3a-microsoft-in-memory-sql-engine",
+      "company": "microsoft",
+      "title": "CSV 初始化的内存 SQL 引擎",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/in-memory-sql-engine",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "解析 CSV，并分阶段支持 SELECT、WHERE 和 ORDER BY。",
+      "preparation": "先定义是否支持引号、转义和字段类型，再建立表结构。谓词、排序与投影独立实现；多条件优先级要明确。若题目给简化 CSV 契约，就按契约处理，不擅自扩大为完整数据库。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-in-memory-sql-engine.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-in-memory-sql-engine",
+        "family": "sql",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/sql.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "d70bbaaf0b164aafc122e67d28916a9250b4c5c1a729c5cd9e66dda9553e12b8"
+      }
+    },
+    {
+      "id": "p3a-microsoft-employee-attrition-prediction",
+      "company": "microsoft",
+      "title": "员工离职预测：不平衡分类与可解释性",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/employee-attrition-prediction",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "给定 HR 数据，预测离职并分析特征影响。",
+      "preparation": "清理缺失与类别变量，在训练集拟合预处理，防止数据泄漏。比较简单基线、PR 指标和校准，解释模型相关性不等于因果关系。这是 Microsoft 通用 MLE 题，摘要未确认属于 MAI。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-employee-attrition-prediction.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-employee-attrition-prediction",
+        "family": "logistic",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ad02d3c5336b62c0a59e0787ec21811e37b12f9851a39a2bba9b983de1957838"
+      }
+    },
+    {
+      "id": "p3a-microsoft-memory-allocator",
+      "company": "microsoft",
+      "title": "MAI 连续内存分配与策略取舍",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/memory-allocator",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "固定内存池支持按大小分配和释放。",
+      "preparation": "显式维护空闲区间及相邻合并，解释 first-fit 与 best-fit 的不同。指针合法性、重复释放和碎片率都需验证。先达到正确接口，再用索引减少扫描成本。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-memory-allocator.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-memory-allocator",
+        "family": "allocator",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/allocator.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "5d4f154bae262aa1be5668908a5b6956431bdb170b9c69077b02923e2b98b948"
+      }
+    },
+    {
+      "id": "p3a-microsoft-kv-store-with-snapshot",
+      "company": "microsoft",
+      "title": "快照 KV：基于历史版本分支写入",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/kv-store-with-snapshot",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "生成快照、按 snapshot id 读取，并从快照产生新写入分支。",
+      "preparation": "快照必须不可变，使用持久数据结构或复制写入来共享未变化数据。版本树包含父关系，按分支读取而非简单查询时间戳。删除要用 tombstone，避免已删键从祖先重新出现。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-kv-store-with-snapshot.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-kv-store-with-snapshot",
+        "family": "transactions",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/transactions.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "82d02feb59e4cf3fdc28caa28500bf7790b02c884dd251adc015cc72196ec7c0"
+      }
+    },
+    {
+      "id": "p3a-microsoft-parse-emails-state-machine",
+      "company": "microsoft",
+      "title": "日志邮箱解析：显示名、注释与去重",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/parse-emails-state-machine",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "单次扫描分号分隔记录，处理可选名字及注释。",
+      "preparation": "状态机区分引号、注释层级和实际地址区域，只在顶层分隔。明确转义、非法记录和大小写去重规则。这是公司通用题，不能仅凭邻近题卡判为 LLM team。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-parse-emails-state-machine.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-parse-emails-state-machine",
+        "family": "email_scan",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/email_scan.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "f6acb37260e11d6e56d9d99c0e3594a663343a3cfb627114eb891b1523aab693"
+      }
+    },
+    {
+      "id": "p3a-microsoft-beam-search-decoder",
+      "company": "microsoft",
+      "title": "Beam Search：从 greedy 到 top-K 扩展",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/beam-search-decoder",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "模型接口已提供，实现解码与 beam 管理。",
+      "preparation": "每步给未结束 beam 累加 log 概率并选全局最优候选，完成 beam 单独保留。不要对概率直接连乘；长度惩罚、EOS 和提前停止会改变最优序列定义。用小词表穷举结果校验实现。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-beam-search-decoder.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-beam-search-decoder",
+        "family": "beam",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/beam.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6859531c2c115a9d6b36e57270d806a6669733e4d29d6124acccb4149119356a"
+      }
+    },
+    {
+      "id": "p3a-microsoft-max-number-occurrences-in-suffix",
+      "company": "microsoft",
+      "title": "MAI 后缀最大值出现次数",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/max-number-occurrences-in-suffix",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "对多个起点查询该后缀最大值出现几次。",
+      "preparation": "从右向左维护当前最大值与频次，遇到更大值重置，等值累加，较小值沿用。预处理 O(n)，查询 O(1)。空数组、越界和负数应有明确处理。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-max-number-occurrences-in-suffix.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-max-number-occurrences-in-suffix",
+        "family": "small_algorithms",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "b922a6424caea0486c2da9699ec99a4c0213f27a25d0286b2f0cc98078f07fa3"
+      }
+    },
+    {
+      "id": "p3a-microsoft-top-k-largest-retain",
+      "company": "microsoft",
+      "title": "MAI Top-K：排序、保留原序与复合排名",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/top-k-largest-retain",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "返回 top-K，变体要求原顺序或业务复合排序。",
+      "preparation": "固定大小最小堆适合 n 很大而 k 较小的场景。原序输出应选择元素索引再按索引输出，不能直接按值排序。复合 key 明确并列规则，k 为零或超过长度要先约定。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-top-k-largest-retain.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-top-k-largest-retain",
+        "family": "small_algorithms",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "b922a6424caea0486c2da9699ec99a4c0213f27a25d0286b2f0cc98078f07fa3"
+      }
+    },
+    {
+      "id": "p3a-microsoft-streaming-stop-token-detection",
+      "company": "microsoft",
+      "title": "LLM 流式停止序列：跨 chunk 且不泄露前缀",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/streaming-stop-token-detection",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "模型输出分块到达，命中禁止序列立即停止，不能缓存整条流。",
+      "preparation": "维护当前输出尾部中可能成为 stop 前缀的部分，只有确定安全的字符才发给客户端。保留至多与最长 stop 长度相关的缓冲，或用自动机增量匹配。重叠 stop 和跨块边界是关键例子。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-streaming-stop-token-detection.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-streaming-stop-token-detection",
+        "family": "stop_stream",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/stop_stream.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "e950822fdea174f5bca3053612dd4171423714adb354a4fed05fdd2c464f9c51"
+      }
+    },
+    {
+      "id": "p3a-microsoft-embedding-lm-head-distributed-sharding",
+      "company": "microsoft",
+      "title": "Embedding 与 LM Head 分片及通信",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/embedding-lm-head-distributed-sharding",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "单 GPU 放不下词表矩阵，比较词表轴和隐藏轴切分。",
+      "preparation": "写出输入输出张量布局，再计算每种切分的路由、聚合和通信量。Embedding 词表分片需要定位 token 归属，LM head 需要分布式 top-k 或归一化。把负载不均和权重绑定纳入讨论；摘要未明确此题就是 MAI。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-embedding-lm-head-distributed-sharding.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-embedding-lm-head-distributed-sharding",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-microsoft-chatbot-personalization-memory-design",
+      "company": "microsoft",
+      "title": "MAI Chatbot 记忆：存储、检索和冲突",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/chatbot-personalization-memory-design",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "为个性化聊天设计长期记忆，避免每轮重读全部历史。",
+      "preparation": "将用户声明、推断偏好和临时上下文区分，记录来源、置信度和更新时间。检索受用户权限限制，旧偏好允许覆盖和删除。评估应覆盖错误记忆纠正、跨用户泄漏和多轮一致性。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-chatbot-personalization-memory-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-chatbot-personalization-memory-design",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-microsoft-web-crawler-system-design",
+      "company": "microsoft",
+      "title": "MAI 分布式爬虫：调度、礼貌与去重",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/web-crawler-system-design",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "压缩时限内设计抓取流水线。",
+      "preparation": "URL frontier 按域名管理速率与并发，下载、解析、去重和存储解耦。跨机器分片须避免同域突发过载；重试、robots 规则与内容去重独立设计。估算每日抓取量和单页大小以核算吞吐。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-web-crawler-system-design.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-web-crawler-system-design",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-microsoft-search-autocomplete-typeahead",
+      "company": "microsoft",
+      "title": "MAI 搜索补全：前缀、更新与延迟",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/search-autocomplete-typeahead",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "设计低延迟 typeahead 服务。",
+      "preparation": "用 trie 或前缀到候选 top-K 的索引加速读取，离线统计与实时趋势合并。按地区和语言分区，热点前缀缓存，明确敏感词过滤和个性化权限。吞吐与更新新鲜度决定预计算粒度。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-search-autocomplete-typeahead.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-search-autocomplete-typeahead",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-microsoft-project-deep-dive",
+      "company": "microsoft",
+      "title": "MAI / Microsoft 项目深挖",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/project-deep-dive",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "围绕一个自选项目深入追问 ownership、决策和反思。",
+      "preparation": "先讲问题与约束，再解释一个最关键的技术选择和被放弃方案，用真实指标支持结果。能从架构追问到实现、实验和故障处理。该题跨 MAI 与其他 Microsoft 团队，不能据此推断固定轮次。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-project-deep-dive.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-project-deep-dive",
+        "family": "project",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-microsoft-transformer-roofline-fp-precision",
+      "company": "microsoft",
+      "title": "MAI AI Infra：roofline、CUDA 与精度转换梯度",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/transformer-roofline-fp-precision",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "读 Transformer、估算 matmul、实现 kernel，并分析 FP32 到 FP16 的残差梯度。",
+      "preparation": "先以 FLOPs/带宽确定瓶颈，再讨论布局与 kernel 融合。cast 的数学梯度与有限精度数值误差要分开，检查溢出、下溢及累加精度。性能预测必须列出硬件与并行假设。",
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-transformer-roofline-fp-precision.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-microsoft-transformer-roofline-fp-precision",
+        "family": "performance",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/performance.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "0a46fe4080be179054b062f7dd2d1843d8c176a1a384fe6119f0f573e92fb9d9"
+      }
+    },
+    {
+      "id": "p3a-perplexity-in-memory-file-system",
+      "company": "perplexity",
+      "title": "树形文件系统：路径与文件/目录操作",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/in-memory-file-system",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "分阶段实现创建、列出、读写及删除。",
+      "preparation": "目录用子节点映射、文件存内容，先统一路径解析与规范化。区分空目录删除和递归删除，明确定义文件名冲突及错误类型。后续阶段复用同一树，避免早期接口语义漂移。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-in-memory-file-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-in-memory-file-system",
+        "family": "filesystem",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/filesystem.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "dee0361dcb27546fbd515c09ab29eabfc521d27022c7836c1a312f2d21d54f20"
+      }
+    },
+    {
+      "id": "p3a-perplexity-todo-list-for-ai",
+      "company": "perplexity",
+      "title": "AI ToDoList：依赖、就绪与失败传播",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/todo-list-for-ai",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "实现任务状态，再加依赖关系及级联失败。",
+      "preparation": "建立依赖和反向依赖图，新增边检查环。就绪仅在所有依赖满足时成立；失败传播按 visited 去重避免菱形图重复处理。明确重试是否清除下游失败，以及父子关系与依赖关系是否同义。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-todo-list-for-ai.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-todo-list-for-ai",
+        "family": "todo",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/todo.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "638f95df57711f7b1ed8201666f3e2635b333469ac9ded818ff2893c5b7bd8ab"
+      }
+    },
+    {
+      "id": "p3a-perplexity-stop-sequences-before-first-match",
+      "company": "perplexity",
+      "title": "第一处 stop 前截断与流式扩展",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/stop-sequences-before-first-match",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "文本或 chunk 流遇最早 stop 序列后只返回之前内容。",
+      "preparation": "离线版找所有 stop 的最早起点，流式版保留尚可能成为 stop 前缀的后缀。已经发出的字符无法收回，所以不能先输出整块再检查。覆盖空 stop、重叠 stop 和流结束时未完成前缀。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stop-sequences-before-first-match.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-stop-sequences-before-first-match",
+        "family": "stop_stream",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/stop_stream.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "e950822fdea174f5bca3053612dd4171423714adb354a4fed05fdd2c464f9c51"
+      }
+    },
+    {
+      "id": "p3a-perplexity-frontend-discover-infinite-scroll",
+      "company": "perplexity",
+      "title": "Discover 前端：分页、无限滚动与布局",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/frontend-discover-infinite-scroll",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "使用给定数据和 fetch helper 实现 TypeScript 信息流。",
+      "preparation": "分页状态区分首次加载、追加、失败和耗尽，给请求序号以丢弃过期响应。列表项使用稳定 id，防止并发滚动重复请求。键盘可访问性、图片占位和容器高度影响真实使用体验。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-frontend-discover-infinite-scroll.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-frontend-discover-infinite-scroll",
+        "family": "infinite_feed",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/infinite_feed.mjs",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "language": "javascript",
+        "solutionSha256": "e543301181df18207defc81b946ae2ad960425571c3f25263436576a41ea3c7e"
+      }
+    },
+    {
+      "id": "p3a-perplexity-kv-store-with-timestamps-and-restore",
+      "company": "perplexity",
+      "title": "历史 KV：时间戳操作与 restore",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/kv-store-with-timestamps-and-restore",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "set/get/delete 带时间戳，再恢复某个历史状态。",
+      "preparation": "每个 key 保存有序版本和删除标记，查询最后一个不晚于目标的版本。restore 应明确是覆盖当前状态还是建立新分支，以及恢复后的事件时间语义。不要用当前字典假装可以回答历史查询。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-kv-store-with-timestamps-and-restore.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-kv-store-with-timestamps-and-restore",
+        "family": "history_db",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/history_db.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "31ac0973aa181476f8b08b28f928f55d93adddb91a101d48e0de4d1755eadc19"
+      }
+    },
+    {
+      "id": "p3a-perplexity-sklearn-binary-classifier",
+      "company": "perplexity",
+      "title": "二分类实战：基线、调参与指标改进",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/sklearn-binary-classifier",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "用 scikit-learn 在给定玩具数据上训练并改善指标。",
+      "preparation": "固定训练验证切分，使用 Pipeline 防止预处理泄漏。先做简单模型，再按错误分布决定特征、阈值或超参数调整。类不平衡时不要只报准确率，最终结果在未参与调参的数据上评估。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-sklearn-binary-classifier.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-sklearn-binary-classifier",
+        "family": "logistic",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/logistic.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ad02d3c5336b62c0a59e0787ec21811e37b12f9851a39a2bba9b983de1957838"
+      }
+    },
+    {
+      "id": "p3a-perplexity-stream-sampling-and-distribution-verification",
+      "company": "perplexity",
+      "title": "Reservoir Sampling 与分布验证",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/stream-sampling-and-distribution-verification",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "未知长度数据流，一遍扫描、O(k) 空间抽样，并验证近似均匀。",
+      "preparation": "前 k 项进入蓄水池，第 i 项以 k/i 概率入池并随机替换位置。用归纳证明任一元素最后入选概率相同；重复试验统计入选频率并设容忍范围。固定随机种子用于复现，不能把一次抽样看作分布证明。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stream-sampling-and-distribution-verification.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-stream-sampling-and-distribution-verification",
+        "family": "reservoir",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/reservoir.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "bb360eb1a565b14d5122088dc73764f1838a5ee3d79f117233424176772be5da"
+      }
+    },
+    {
+      "id": "p3a-perplexity-stream-deduplication-with-near-duplicate-detection",
+      "company": "perplexity",
+      "title": "流式去重：精确与近似重复",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/stream-deduplication-with-near-duplicate-detection",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "保留每个字符串第一次出现，扩展到相似度阈值。",
+      "preparation": "精确去重用集合；近重复先定义相似度与规范化，再用候选索引减少比较。相似关系可能不传递，因此先到先保留会改变结果。无限流与有限内存需要时间窗或近似结构，不能许诺永不遗忘。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stream-deduplication-with-near-duplicate-detection.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-stream-deduplication-with-near-duplicate-detection",
+        "family": "near_dedup",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/near_dedup.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "48a3f5cad4b91d140d86cf6bd6d56b18835d244885c183061bb1df50a719d9b7"
+      }
+    },
+    {
+      "id": "p3a-perplexity-premium-zone-escape-path",
+      "company": "perplexity",
+      "title": "地理区域逃离：黑盒判定与搜索假设",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/premium-zone-escape-path",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "给起点和是否处于 premium zone 的判断，找外部坐标或路径。",
+      "preparation": "先确认区域是否连通/凸、有无道路约束、是否允许穿越禁区。离散网格可 BFS，但没有边界和分辨率不能保证终止或最优。题面不充分时应明确所需假设，不直接套普通二维迷宫。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-premium-zone-escape-path.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-premium-zone-escape-path",
+        "family": "zone",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/zone.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "5c4a885711ecba816fab030e3f5a86a2d29ab681eb1048e8eb9d01ad64e511c9"
+      }
+    },
+    {
+      "id": "p3a-perplexity-beam-search-decoder",
+      "company": "perplexity",
+      "title": "Beam Search：next_token_fn 与停止条件",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/beam-search-decoder",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "补全给定 beam search，处理 beam 大小、最大 token 与 stop。",
+      "preparation": "beam 保存 token 序列、累计 log 概率和结束状态，每步对活跃候选扩展后全局截断。完成序列不继续生成，长度归一化与提前停止需与评分定义一致。用可手算的小模型检查。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-beam-search-decoder.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-beam-search-decoder",
+        "family": "beam",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/beam.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6859531c2c115a9d6b36e57270d806a6669733e4d29d6124acccb4149119356a"
+      }
+    },
+    {
+      "id": "p3a-perplexity-credit-tracker-with-expiring-credits",
+      "company": "perplexity",
+      "title": "过期积分：时间范围与最早过期优先",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/credit-tracker-with-expiring-credits",
+      "evidence": "company-card-summary",
+      "category": "Coding",
+      "promptSummary": "添加有效期积分、时刻扣减与余额查询。",
+      "preparation": "将积分看作带起止时刻和剩余量的 grant，按事件时间执行，扣减优先花最早到期项。历史查询或乱序写入需要重放。是否允许透支以及端点包含关系不能从 OpenAI 同名题直接继承。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-credit-tracker-with-expiring-credits.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-credit-tracker-with-expiring-credits",
+        "family": "credits",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/credits.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "37690e90df462a0b8da70ef41dd1da77a866c3ea4fb290f25a4a44f58415eb11"
+      }
+    },
+    {
+      "id": "p3a-perplexity-byte-tokenizer-and-token-count-estimator",
+      "company": "perplexity",
+      "title": "Byte Tokenizer：等价优化与计数估计",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/byte-tokenizer-and-token-count-estimator",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "读慢参考实现，写输出完全相同的更快版本，再受预算估计 token 数。",
+      "preparation": "先固定字节编码、合并优先级与并列规则，用参考实现做差分对照。局部合并可用链表加优先队列但需处理失效候选。计数估计考虑采样窗口边界与偏差，不擅自复制完整 tokenizer 绕开预算。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-byte-tokenizer-and-token-count-estimator.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-byte-tokenizer-and-token-count-estimator",
+        "family": "bpe",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/bpe.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "8297fc424c971191fbbfe9599223ab947a65251703d8c7a80db6140fe7755b44"
+      }
+    },
+    {
+      "id": "p3a-perplexity-embedding-model-batching-service",
+      "company": "perplexity",
+      "title": "Embedding 批服务：并发、容量与 shutdown",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/embedding-model-batching-service",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "包装给定模型支持批量请求，变体按 batch 和 token 数限容。",
+      "preparation": "请求进入有界队列，按数量和 token 预算组批，维护结果到原请求的映射。shutdown 需定义排空还是取消，异常保证所有 future 都完成。将等待时间与模型执行时间分别度量。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-embedding-model-batching-service.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-embedding-model-batching-service",
+        "family": "embedding_service",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/embedding_service.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "4202e13ffeb9d43a8db3f1971234c7060df05ea5b10ead025d6bb82526304585"
+      }
+    },
+    {
+      "id": "p3a-perplexity-durable-long-running-agentic-query-execution",
+      "company": "perplexity",
+      "title": "长任务 Agent：数小时执行、断线续跑与进度流",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/durable-long-running-agentic-query-execution",
+      "evidence": "company-card-summary",
+      "category": "Design",
+      "promptSummary": "把内存 ask 服务改成持久执行，浏览器断开后仍完成。",
+      "preparation": "持久化任务、步骤和工具结果，worker 用租约取得执行权，阶段完成后提交检查点。客户端以游标重连进度日志，不用连接存活表示任务生命周期。外部副作用用幂等键，取消与重试要落持久状态。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-durable-long-running-agentic-query-execution.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-durable-long-running-agentic-query-execution",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-perplexity-behavioral-and-project-deep-dive",
+      "company": "perplexity",
+      "title": "Why Perplexity、项目、协作与需求变化",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/behavioral-and-project-deep-dive",
+      "evidence": "company-card-summary",
+      "category": "Behavioral",
+      "promptSummary": "讨论技术栈、困难项目、不受欢迎决策及跨团队合作。",
+      "preparation": "用真实的需求变化案例说明如何重新评估成本与优先级，给出自己的行动和反馈。动机连接产品问题与个人经验，不以未经核实的公司传闻论证。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-behavioral-and-project-deep-dive.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-behavioral-and-project-deep-dive",
+        "family": "project",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-perplexity-map-reduce-and-blockwise-attention",
+      "company": "perplexity",
+      "title": "Map-Reduce、上下文并行与分块 Attention",
+      "url": "https://www.1point3acres.com/interview/problems/company/perplexity/map-reduce-and-blockwise-attention",
+      "evidence": "company-card-summary",
+      "category": "ML",
+      "promptSummary": "技术筛选讨论向量操作、分段 QKV 和稳定 softmax。",
+      "preparation": "分块 Attention 维护每行最大值、归一化和与加权输出，跨块合并时同步重缩放。上下文切分改变 K/V 通信与归约，先列张量布局再分析网络成本。分块不能分别 softmax 后直接平均。",
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-map-reduce-and-blockwise-attention.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-perplexity-map-reduce-and-blockwise-attention",
+        "family": "block_attention",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/block_attention.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6d7c995ca02c70856c1d32c24714b87b492f508ff7681a2864f0ccd4cdf498d7"
+      }
+    },
+    {
+      "id": "p3a-mistral-daily-gpu-remaining",
+      "company": "mistral",
+      "title": "Mistral：每日 GPU 余量统计",
+      "url": "https://www.1point3acres.com/interview/problems/d17c9b3f-c87d-4976-b339-e901cdb6f076",
+      "evidence": "detail-read",
+      "promptSummary": "每天从固定容量重新开始，累加扣除当天每集群使用量，记录可能乱序。",
+      "preparation": "按 day、cluster 汇总使用量，再用 capacity 减去该日总量；输出包含零到最大日的所有日期。不能把前一日余量结转到下一日。空 usage 的输出天数应按接口另行约定。",
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-daily-gpu-remaining.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-mistral-daily-gpu-remaining",
+        "family": "mistral_gpu",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/mistral_gpu.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "e0aee71591a07325b5b6e968196526e474cf88bf7da9f31e49774c571864656a"
+      }
+    },
+    {
+      "id": "p3a-mistral-gpu-unlimited-switches",
+      "company": "mistral",
+      "title": "Mistral：无限切换集群时的最大 GPU 总量",
+      "url": "https://www.1point3acres.com/interview/problems/24a878fc-e238-45c0-908a-516c3f976237",
+      "evidence": "detail-read",
+      "promptSummary": "每天选一个集群，允许任意次跨天切换，最大化各天余量之和。",
+      "preparation": "每天选择该行最大值并求和，时间 O(DC)。因为跨天没有耦合约束，各天独立最优就是全局最优。若引入切换费用或次数限制，这个证明不再成立。",
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-gpu-unlimited-switches.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-mistral-gpu-unlimited-switches",
+        "family": "mistral_gpu",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/mistral_gpu.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "e0aee71591a07325b5b6e968196526e474cf88bf7da9f31e49774c571864656a"
+      }
+    },
+    {
+      "id": "p3a-mistral-gpu-k-switches",
+      "company": "mistral",
+      "title": "Mistral：最多 K 次切换的 GPU 调度",
+      "url": "https://www.1point3acres.com/interview/problems/c1728f84-cc91-4ed2-a617-5e7a0274500f",
+      "evidence": "detail-read",
+      "promptSummary": "每天选一个集群，整个时间段最多 K 次切换，最大化总收益。",
+      "preparation": "DP 状态为天数、已切换次数与当前集群。转移在保持集群和从其他集群切换之间取最大；初始所有集群都可选，首次选择不算切换。基础复杂度 O(DKC²)，维护上一层每个切换数的最大与次大可降到 O(DKC)。使用滚动数组节省空间。",
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-gpu-k-switches.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-mistral-gpu-k-switches",
+        "family": "mistral_gpu",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/mistral_gpu.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "e0aee71591a07325b5b6e968196526e474cf88bf7da9f31e49774c571864656a"
+      }
+    },
+    {
+      "id": "p3a-cohere-numpy-top-k-sampling",
+      "company": "cohere",
+      "title": "Cohere：NumPy Top-K Sampling 与 Top-P 追问",
+      "url": "https://www.1point3acres.com/interview/problems/7a3c568d-c54a-53a3-bd89-85dca674313d",
+      "evidence": "detail-read",
+      "promptSummary": "仅在最高 k 个 logits 上随机采样，验证 k 范围，解释 greedy 和 top-p。",
+      "preparation": "用 argpartition 找候选，在候选内减最大值后指数归一化，用传入 rng 采样并映射回原 token id。k=1 退化为 greedy；固定 k 无法适应分布尖锐程度，top-p 按累计概率选择集合。测试不可采到被裁掉 token、极端 logits 和可复现性。",
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-numpy-top-k-sampling.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-cohere-numpy-top-k-sampling",
+        "family": "topk_sample",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/topk_sample.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "2a86786651f708cab6f09bc2fcfd541eb29261f5cd0d49fd182fd891b54ab246"
+      }
+    },
+    {
+      "id": "p3a-cohere-delete-digit-five",
+      "company": "cohere",
+      "title": "Cohere：删除数字 5 的题目线索",
+      "url": "https://www.1point3acres.com/interview/problems/7db16bf3-5b95-55de-a7dc-7da080f1a1e3",
+      "evidence": "title-only",
+      "promptSummary": "公司目录标题为 Remove All Digit Fives to Maximize a Number；未核实完整题干。",
+      "preparation": "仅标题不足以确定是删一个 5、全部 5，还是可选多个。先确认题面再选算法；若确实要求删全部 5，可字符串过滤并处理负号与空结果。该分支是条件式练习建议，不作为已确认规则。",
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-delete-digit-five.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-cohere-delete-digit-five",
+        "family": "prefix_delete_five",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/prefix_delete_five.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ed14ed002a20d4ed571b3becb681c24e383c22fe3026f93524255db47bbb7c18"
+      }
+    },
+    {
+      "id": "p3a-cohere-terminal-game-llm-agent",
+      "company": "cohere",
+      "title": "Cohere：把终端游戏启发式实现替换成 LLM Agent",
+      "url": "https://www.1point3acres.com/interview/problems/d363b064-b6f5-4efb-afd2-03b807fa85ff",
+      "evidence": "detail-read",
+      "promptSummary": "给定数百行 Python 游戏参考实现，限时构建新的 LLM 驱动 agent。",
+      "preparation": "先理解观察、动作与胜负规则，把原启发式当基线，再封装结构化动作和合法性校验。模型失败时保留可控退路，记录轨迹、随机种子及成功率。可靠性和可验证性比只展示一次成功更有说服力；工具规则依当前说明确认。",
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-terminal-game-llm-agent.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-cohere-terminal-game-llm-agent",
+        "family": "agent",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/agent.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "4858a4dfd086f5b0cab22a70e6e1f5e5f7dab19c4e1d55e3096b23378ff0b13e"
+      }
+    },
+    {
+      "id": "p3a-google-deepmind-graph-dfs",
+      "company": "google-deepmind",
+      "title": "DeepMind Android：构图与 DFS",
+      "url": "https://www.1point3acres.com/interview/problems/ec95664e-bb65-47c5-87fb-bbedfad728d4",
+      "evidence": "detail-read",
+      "promptSummary": "由边构造无向图，从起点返回 DFS 访问顺序；来源帖子标注 Android 岗。",
+      "preparation": "邻接表保存节点关系，visited 在展开前写入，循环图因此不会无限递归。访问顺序依赖邻居顺序，若测试要求固定顺序需按题意排序或保留输入顺序。O(V+E)；这条不能推广成 DeepMind RS 题。",
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-graph-dfs.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-google-deepmind-graph-dfs",
+        "family": "small_algorithms",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "b922a6424caea0486c2da9699ec99a4c0213f27a25d0286b2f0cc98078f07fa3"
+      }
+    },
+    {
+      "id": "p3a-google-deepmind-array-threshold-filter",
+      "company": "google-deepmind",
+      "title": "DeepMind Android：数组阈值过滤与索引",
+      "url": "https://www.1point3acres.com/interview/problems/6ef654a3-ec8c-4ce7-b96b-1eb1455d9e21",
+      "evidence": "detail-read",
+      "promptSummary": "统计数组中大于阈值的元素数量并返回索引，来自 Android 岗相关题目目录。",
+      "preparation": "一次遍历，满足严格大于时加入索引，数量为索引列表长度。复杂度 O(n)，返回索引所需空间 O(k)。明确大于与大于等于、零基索引及空数组；不要因公司名把基础题改写成研究题。",
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-array-threshold-filter.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-google-deepmind-array-threshold-filter",
+        "family": "small_algorithms",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/small_algorithms.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "b922a6424caea0486c2da9699ec99a4c0213f27a25d0286b2f0cc98078f07fa3"
+      }
+    },
+    {
+      "id": "p3a-cursor-speculative-decoding-acceptance",
+      "company": "cursor",
+      "title": "Cursor：投机解码的接受率与残差采样",
+      "url": "https://www.1point3acres.com/interview/problems/f0d3fbd8-0cde-5a44-ae56-6b9e105bed69",
+      "evidence": "detail-read",
+      "promptSummary": "实现普通解码和 draft/target 投机解码，要求保持目标采样分布，训练不在范围。",
+      "preparation": "对 draft token 以 min(1,p/q) 接受，首次拒绝后从正部残差归一化分布采样，并丢弃未验证后缀。全接受时按契约补一个 target token。缓存回滚与实际接受长度一致；用小词表分布实验验证，再测量真实延迟而非只比调用次数。",
+      "file": "content/handbooks/us-tech/questions/coding/p3a-cursor-speculative-decoding-acceptance.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-cursor-speculative-decoding-acceptance",
+        "family": "speculative_sampling",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/speculative_sampling.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "cc59d30c15ae24119e7327613fad7c20c97832cf0f4cea118ff8dd92761a0276"
+      }
+    },
+    {
+      "id": "p3a-cursor-streaming-markdown-code-parser",
+      "company": "cursor",
+      "title": "Cursor：跨 chunk 的 Markdown Code Parser",
+      "url": "https://www.1point3acres.com/interview/problems/34db21b4-effb-505b-8bc3-d02502828352",
+      "evidence": "detail-read",
+      "promptSummary": "增量解析单反引号 inline code 与三反引号 fenced code，发出已能安全确定的 HTML。",
+      "preparation": "状态机保存普通文本、行内代码、代码块及尚不完整的反引号片段。代码块内不解析普通 Markdown，输出内容做 HTML 转义。流结束显式 finalize 未闭合标记；测试分隔符在每个可能位置分块、空块与未闭合情况。",
+      "file": "content/handbooks/us-tech/questions/coding/p3a-cursor-streaming-markdown-code-parser.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-cursor-streaming-markdown-code-parser",
+        "family": "markdown",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/markdown.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "34574923fb24c7801336ffcf18d958438dd813a3a660df689d52f6770df4eeb9"
+      }
+    },
+    {
+      "id": "p3a-google-deepmind-rs-paper-presentation-defense",
+      "company": "google",
+      "title": "DeepMind RS：论文演讲与答辩",
+      "url": "https://www.1point3acres.com/interview/problems/company/google/deepmind-rs-paper-presentation-defense",
+      "evidence": "company-card-summary",
+      "promptSummary": "展示自己的论文并解释动机、假设、替代方案、局限和下一步；多模态工作会深挖训练与后训练贡献。",
+      "preparation": "用可证伪研究假设组织叙事，区分方法创新、实验发现和 benchmark 工程。准备消融、负结果、数据来源及统计不确定性，解释为什么其他方案不够。该题在 Google 公司题卡中明确标注 DeepMind RS。",
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-rs-paper-presentation-defense.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-google-deepmind-rs-paper-presentation-defense",
+        "family": "research",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-google-ml-fundamentals-deep-dive",
+      "company": "google",
+      "title": "Google AI/ML：按 LLM/NLP/CV 方向深挖基础",
+      "url": "https://www.1point3acres.com/interview/problems/company/google/ml-fundamentals-deep-dive",
+      "evidence": "company-card-summary",
+      "promptSummary": "领域面以候选人方向为主，考察概念为何成立，而非只背定义。",
+      "preparation": "从自己项目中的一个损失或建模选择展开，推导目标、梯度及适用条件，再给反例与验证实验。LLM 方向可准备 attention、优化、检索与评测，但摘要没有给完整原题清单，不能把练习主题标为逐字真题。",
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-ml-fundamentals-deep-dive.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-google-ml-fundamentals-deep-dive",
+        "family": "fundamentals",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-google-ml-system-design-recsys-chatbot-classifier",
+      "company": "google",
+      "title": "Google MLE：推荐、聊天与分类 ML 系统设计",
+      "url": "https://www.1point3acres.com/interview/problems/company/google/ml-system-design-recsys-chatbot-classifier",
+      "evidence": "company-card-summary",
+      "promptSummary": "题卡覆盖推荐、chatbot、图像分类、审核和风控等多种场景。",
+      "preparation": "先定义用户、目标与可量化指标，再解释数据、训练与 serving 的分工。讨论冷启动、延迟预算、漂移、A/B 与回滚。题型跨 Google MLE/AI-ML，未确认为 DeepMind 专属。",
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-ml-system-design-recsys-chatbot-classifier.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-google-ml-system-design-recsys-chatbot-classifier",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-meta-attention-implementation-and-follow-ups",
+      "company": "meta",
+      "title": "Meta Superintelligence/MLE：Attention 与 Flash/Linear 追问",
+      "url": "https://www.1point3acres.com/interview/problems/company/meta/attention-implementation-and-follow-ups",
+      "evidence": "company-card-summary",
+      "promptSummary": "实现标准 attention，分析复杂度并口述 FlashAttention 和 linear attention。",
+      "preparation": "先写 QK 转置、缩放、mask、softmax 和乘 V，分析注意力矩阵的二次空间。FlashAttention 用分块和在线 softmax减少 HBM 流量，仍计算标准注意力；linear attention 改变计算形式和性质，不能称为相同输出的简单优化。",
+      "file": "content/handbooks/us-tech/questions/meta/p3a-meta-attention-implementation-and-follow-ups.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-meta-attention-implementation-and-follow-ups",
+        "family": "attention",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/attention.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "145cf63d3e7caaeca7e3b7a4e7f436f5c8336f43e3af519cd0f01cb4d300ebb4"
+      }
+    },
+    {
+      "id": "p3a-meta-system-design-ai-enabled-agent-system",
+      "company": "meta",
+      "title": "Meta AI-Native：工单分流或代码审查 Agent",
+      "url": "https://www.1point3acres.com/interview/problems/company/meta/system-design-ai-enabled-agent-system",
+      "evidence": "company-card-summary",
+      "promptSummary": "设计自动化 Agent，深入工具、记忆、成本和单/多 agent 选择。",
+      "preparation": "先交付单一受控循环，工具调用使用 schema 校验与执行权限；需要并行独立子任务时才增加多 agent。为外部副作用设置幂等和必要人工步骤。评估任务成功率、错误类别、延迟与成本，并保留可重放轨迹。",
+      "file": "content/handbooks/us-tech/questions/meta/p3a-meta-system-design-ai-enabled-agent-system.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-meta-system-design-ai-enabled-agent-system",
+        "family": "design-case",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-meta-ml-foundations-optimizers-scaling-law-clustering",
+      "company": "meta",
+      "title": "Meta ML Foundations：优化器、Scaling Law、K-Means 与 GMM",
+      "url": "https://www.1point3acres.com/interview/problems/company/meta/ml-foundations-optimizers-scaling-law-clustering",
+      "evidence": "company-card-summary",
+      "promptSummary": "题卡只公开主题层面的口述清单，未披露完整问法。",
+      "preparation": "分别准备优化器更新机制、缩放律的拟合范围、K-Means 目标与 GMM 的软分配。能比较假设与失败条件，并给出小例子。不要把自行选择的推导题或具体常数归因给面试官。",
+      "file": "content/handbooks/us-tech/questions/meta/p3a-meta-ml-foundations-optimizers-scaling-law-clustering.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-meta-ml-foundations-optimizers-scaling-law-clustering",
+        "family": "fundamentals",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-meta-ai-oriented-behavioral",
+      "company": "meta",
+      "title": "Meta AI BQ：AI 工具协作与失败判断",
+      "url": "https://www.1point3acres.com/interview/problems/company/meta/ai-oriented-behavioral",
+      "evidence": "company-card-summary",
+      "promptSummary": "行为面重点转向使用 AI 工具、判断输出和识别失败模式。",
+      "preparation": "以真实任务说明如何划定 AI 的工作范围、检查结果以及何时改变方案。准备一次工具出错的具体证据，解释发现机制与补救。工具规则和轮次会变化，历史题卡不保证未来流程。",
+      "file": "content/handbooks/us-tech/questions/meta/p3a-meta-ai-oriented-behavioral.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-meta-ai-oriented-behavioral",
+        "family": "ai-bq",
+        "contract": "handbook-scenario",
+        "reviewed": true,
+        "executable": false
+      }
+    },
+    {
+      "id": "p3a-xai-speculative-edits",
+      "company": "xai",
+      "category": "Coding",
+      "title": "代码编辑 Speculative Edits：复用原代码草稿",
+      "url": "https://www.1point3acres.com/interview/thread/1193219",
+      "evidence": "thread-read",
+      "promptSummary": "原帖明确要求 greedy 与 speculative edits 输出相同，复用原代码作为草稿，处理全匹配、分歧与长度上限。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-speculative-edits.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-speculative-edits",
+        "family": "spec_edits",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/spec_edits.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "9d0bb27d4ca7f89578e097de26b4c80dca3b9b8cc7a97e2bfdb24ff4c11669f2"
+      }
+    },
+    {
+      "id": "p3a-xai-patchify-cnn",
+      "company": "xai",
+      "category": "Coding",
+      "title": "图像 Patchify 与 CNN 输入轴转置",
+      "url": "https://www.1point3acres.com/interview/thread/1171574",
+      "evidence": "thread-comment-read",
+      "promptSummary": "原帖作者在评论补充第二轮：图像拆分图块，把通道移到高宽之前，再送入 CNN。具体形状由练习约定。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-patchify-cnn.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-patchify-cnn",
+        "family": "patchify",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/patchify.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6fe36ccde9df2437eca7addff267b5a1b3031e8c4fd4f404af3d380912c7f480"
+      }
+    },
+    {
+      "id": "p3a-xai-fixed-window-tokens",
+      "company": "xai",
+      "category": "Coding",
+      "title": "固定窗口 Token Limiter：乱序时间戳与 RESET",
+      "url": "https://www.1point3acres.com/interview/problems/b6025b30-5ff6-5b70-8a92-fa46a1ebc43c",
+      "evidence": "detail-read",
+      "promptSummary": "已读网站题干：每key每固定窗口独立计费，拒绝不扣量；时间可乱序，RESET清该key全部窗口。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-fixed-window-tokens.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-fixed-window-tokens",
+        "family": "fixed_window",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/fixed_window.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "ebc4e0af7365925dfab07fcc06fd54aad44f7f7658fbb33a8d4509ab4ae10016"
+      }
+    },
+    {
+      "id": "p3a-xai-pipeline-critical-path",
+      "company": "xai",
+      "category": "Coding",
+      "title": "数据流水线：无限并行下的目标完成时间",
+      "url": "https://www.1point3acres.com/interview/problems/98b3005e-64bf-49ac-9c1f-abfdc73e7189",
+      "evidence": "detail-read",
+      "promptSummary": "已读题干：任务等待全部输入、各输出至多一个生产者，无生产者输入在时刻0可用。求目标数据最早时间。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-pipeline-critical-path.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-pipeline-critical-path",
+        "family": "critical_path",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/critical_path.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "6d81da2e15bfc866e367b51579a4625505681805afe26d8fa814477983e4870e"
+      }
+    },
+    {
+      "id": "p3a-xai-common-ngrams",
+      "company": "xai",
+      "category": "Coding",
+      "title": "高频 N-grams：边界、计数与确定性排序",
+      "url": "https://www.1point3acres.com/interview/problems/4ccdfde5-3895-413d-afaf-05181effd6aa",
+      "evidence": "title-only",
+      "promptSummary": "本次基于既有目录标题重构可练题；未确认原题是否按字节、单词或多文档切分。下方明确练习版契约。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-common-ngrams.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-common-ngrams",
+        "family": "ngrams",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/ngrams.py",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "solutionSha256": "5e8741a962baa2500453ec5fcfec78409116f3353d80fb7f7819a24291b454b1"
+      }
+    },
+    {
+      "id": "p3a-xai-input-field-review",
+      "company": "xai",
+      "category": "Coding",
+      "title": "输入框 Code Review：异步搜索与过期响应",
+      "url": "https://www.1point3acres.com/interview/problems/dcef89ff-9f57-4c98-bbcf-10692b3248af",
+      "evidence": "title-only",
+      "promptSummary": "本次基于目录的输入框实现审查题重构异步搜索练习；具体原始代码未披露，不将下方代码当作原题。",
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-input-field-review.md",
+      "answerRevision": "complete-practice-v2",
+      "practice": {
+        "id": "p3a-xai-input-field-review",
+        "family": "search_input",
+        "solution": "content/sources/1point3acres-frontier-2026-10-18/practice/solutions/search_input.mjs",
+        "contract": "handbook-reconstruction",
+        "tested": true,
+        "language": "javascript",
+        "solutionSha256": "6ff3ca79d86159c0dda861b42f09abdd7012a3674c80cfda7f6707b16cc97dc2"
+      }
+    }
+  ],
+  "revision": "complete-practice-v2",
+  "originalThreadsRead": [
+    "https://www.1point3acres.com/interview/thread/1193219",
+    "https://www.1point3acres.com/interview/thread/1171574"
+  ]
+}

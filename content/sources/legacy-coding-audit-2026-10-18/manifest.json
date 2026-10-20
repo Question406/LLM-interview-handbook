@@ -1,0 +1,355 @@
+[
+  {
+    "id": "coding-softmax-stable",
+    "file": "content/handbooks/us-tech/questions/coding/coding-softmax-stable.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-softmax-stable.py",
+    "tested": true,
+    "displayedSha256": "352ffe8acb5f729bcbf849e078ce0cde85d727e9d89b587745bd755b535a61db"
+  },
+  {
+    "id": "coding-logsumexp",
+    "file": "content/handbooks/us-tech/questions/coding/coding-logsumexp.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-logsumexp.py",
+    "tested": true,
+    "displayedSha256": "1bc8e6d560ca6581a605057b4b3bb3c70ee08b6825b7fbea40339a3176c42e2e"
+  },
+  {
+    "id": "coding-cross-entropy",
+    "file": "content/handbooks/us-tech/questions/coding/coding-cross-entropy.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-cross-entropy.py",
+    "tested": true,
+    "displayedSha256": "9dc75328557f2051872b036d8d52dd56db448d552805d7cf59f5d4cbca4d685c"
+  },
+  {
+    "id": "coding-mq-attn",
+    "file": "content/handbooks/us-tech/questions/coding/coding-mq-attn.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-mq-attn.py",
+    "tested": true,
+    "displayedSha256": "648db44c69962d465db20de8f937a798c47ef571539b780c24b1e2ff800e714f"
+  },
+  {
+    "id": "coding-gumbel-max",
+    "file": "content/handbooks/us-tech/questions/coding/coding-gumbel-max.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-gumbel-max.py",
+    "tested": true,
+    "displayedSha256": "85b2d6aff00a0959ef57f04826caf009555348fc8c3f6d0e0f9f46aad2f2e7c3"
+  },
+  {
+    "id": "coding-adamw",
+    "file": "content/handbooks/us-tech/questions/coding/coding-adamw.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-adamw.py",
+    "tested": true,
+    "displayedSha256": "24cbd43a1680401711d52fc68abfbacb0c16bedd5e4f6f4eb674941b68dc0171"
+  },
+  {
+    "id": "coding-silu",
+    "file": "content/handbooks/us-tech/questions/coding/coding-silu.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-silu.py",
+    "tested": true,
+    "displayedSha256": "1f17b12309ead405c4ec8878c2ac18738826f39e52a2890f265b29360f85bed9"
+  },
+  {
+    "id": "coding-swiglu",
+    "file": "content/handbooks/us-tech/questions/coding/coding-swiglu.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-swiglu.py",
+    "tested": true,
+    "displayedSha256": "4219deba962ec5c2708e8fba6d4442aa1b1dc672df21bf010484efe52e0dfe60"
+  },
+  {
+    "id": "coding-layernorm",
+    "file": "content/handbooks/us-tech/questions/coding/coding-layernorm.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-layernorm.py",
+    "tested": true,
+    "displayedSha256": "01d4532b7be39c92d537f2f04b65b091b0bab10c57bf8f5ce551d3f43790bf62"
+  },
+  {
+    "id": "coding-rmsnorm",
+    "file": "content/handbooks/us-tech/questions/coding/coding-rmsnorm.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-rmsnorm.py",
+    "tested": true,
+    "displayedSha256": "afd8160e1a975532ae962a638c3a7cdb83a7cf8fb636996bf5c3c54fdc368af8"
+  },
+  {
+    "id": "coding-gqa-repeat",
+    "file": "content/handbooks/us-tech/questions/coding/coding-gqa-repeat.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-gqa-repeat.py",
+    "tested": true,
+    "displayedSha256": "c688dea4d11acd86810433893ee65222da3c1f7426894e1880eb7e079c2e96dc"
+  },
+  {
+    "id": "coding-attn-mask",
+    "file": "content/handbooks/us-tech/questions/coding/coding-attn-mask.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-attn-mask.py",
+    "tested": true,
+    "displayedSha256": "f74d78bb0e75932605fc11d8be06e95b8f43959cc4b5faee60b5489eb3c3cb23"
+  },
+  {
+    "id": "coding-swa-mask",
+    "file": "content/handbooks/us-tech/questions/coding/coding-swa-mask.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-swa-mask.py",
+    "tested": true,
+    "displayedSha256": "853402647b9ec72b2b5bc2eee0e3eca335383b8d4c7eaac839c07e9761d62ed6"
+  },
+  {
+    "id": "coding-rope",
+    "file": "content/handbooks/us-tech/questions/coding/coding-rope.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-rope.py",
+    "tested": true,
+    "displayedSha256": "33b5eaccb4588bc7cbe44026ecd990c45d192f9e69cb690e4cc8943cddca1f1a"
+  },
+  {
+    "id": "coding-rope-cache",
+    "file": "content/handbooks/us-tech/questions/coding/coding-rope-cache.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-rope-cache.py",
+    "tested": true,
+    "displayedSha256": "02725c21fb779f986a4924382ccfdd9807f9e2ae7a7662ce3d0ac5606bff420d"
+  },
+  {
+    "id": "coding-qk-norm",
+    "file": "content/handbooks/us-tech/questions/coding/coding-qk-norm.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-qk-norm.py",
+    "tested": true,
+    "displayedSha256": "cda9e854a92a3240f420f015bef3926160422b1ab471a3f71f7a04bfcd55f2c0"
+  },
+  {
+    "id": "coding-alibi",
+    "file": "content/handbooks/us-tech/questions/coding/coding-alibi.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-alibi.py",
+    "tested": true,
+    "displayedSha256": "b0d1c139d5f59900d07407ee487e1967a2e23c1ce344f0a2b51e0d95ee1e9992"
+  },
+  {
+    "id": "coding-dropout",
+    "file": "content/handbooks/us-tech/questions/coding/coding-dropout.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-dropout.py",
+    "tested": true,
+    "displayedSha256": "d5403614575d6a0096e11b17f73366d374c19a61ad30cb163bac921375bbf699"
+  },
+  {
+    "id": "coding-embedding-lookup",
+    "file": "content/handbooks/us-tech/questions/coding/coding-embedding-lookup.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-embedding-lookup.py",
+    "tested": true,
+    "displayedSha256": "eb6322803aa980a2ec27a625a1170021c59abe4c949e621745211c21a1b0d96b"
+  },
+  {
+    "id": "coding-grad-clip",
+    "file": "content/handbooks/us-tech/questions/coding/coding-grad-clip.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-grad-clip.py",
+    "tested": true,
+    "displayedSha256": "30f0bac2c40237256d3f88d55966aa59f5a8dcbc6678ff9c2302f930c284d390"
+  },
+  {
+    "id": "coding-int8-symm",
+    "file": "content/handbooks/us-tech/questions/coding/coding-int8-symm.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-int8-symm.py",
+    "tested": true,
+    "displayedSha256": "b085c5b7a485755ccce4ba5ee5796f065729ff9ffc942f116e7cf0643745cc59"
+  },
+  {
+    "id": "coding-weight-tying",
+    "file": "content/handbooks/us-tech/questions/coding/coding-weight-tying.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-weight-tying.py",
+    "tested": true,
+    "displayedSha256": "1ab950d3d389179d6ec5c698c4995dc2cead8600e0463b4c696290db3fde3d98"
+  },
+  {
+    "id": "coding-grpo-loss-agg",
+    "file": "content/handbooks/us-tech/questions/coding/coding-grpo-loss-agg.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-grpo-loss-agg.py",
+    "tested": true,
+    "displayedSha256": "8bf43f552f67764ba72c795c1507710aabd5e8c7c931d8142deba58ae19efab6"
+  },
+  {
+    "id": "coding-rloo-advantage",
+    "file": "content/handbooks/us-tech/questions/coding/coding-rloo-advantage.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-rloo-advantage.py",
+    "tested": true,
+    "displayedSha256": "242e4e711625704c60313efcc1a8d8ebf8509366f41d4d53b252ab0e042ad1bd"
+  },
+  {
+    "id": "coding-gae",
+    "file": "content/handbooks/us-tech/questions/coding/coding-gae.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-gae.py",
+    "tested": true,
+    "displayedSha256": "19aed254b10c8ed918ff692779c2ad01c4bdc8822702e284af76b8d01d9abfe8"
+  },
+  {
+    "id": "coding-cispo",
+    "file": "content/handbooks/us-tech/questions/coding/coding-cispo.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-cispo.py",
+    "tested": true,
+    "displayedSha256": "37c79ed7929a27334317cfab502f0dc61f4839604f0eb037747b1b1af2fd6551"
+  },
+  {
+    "id": "coding-dpo-weighted",
+    "file": "content/handbooks/us-tech/questions/coding/coding-dpo-weighted.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-dpo-weighted.py",
+    "tested": true,
+    "displayedSha256": "aa82bff1fc19f7d077221e9f1234d004c6363b7af2fa226b39f53d1131f78492"
+  },
+  {
+    "id": "coding-gspo-seq-ratio",
+    "file": "content/handbooks/us-tech/questions/coding/coding-gspo-seq-ratio.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-gspo-seq-ratio.py",
+    "tested": true,
+    "displayedSha256": "1b26ad2c8d550ca6995d3a23d180db7858ec072ab5523df374d83cb83d0827fa"
+  },
+  {
+    "id": "coding-tis-mismatch",
+    "file": "content/handbooks/us-tech/questions/coding/coding-tis-mismatch.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-tis-mismatch.py",
+    "tested": true,
+    "displayedSha256": "2220842d87f78abd40e23a766d1bff54964146ed60f65e2a7c1d675197380290"
+  },
+  {
+    "id": "fireworks-grpo-sft-loss",
+    "file": "content/handbooks/us-tech/questions/coding/fireworks-grpo-sft-loss.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/fireworks-grpo-sft-loss.py",
+    "tested": true,
+    "displayedSha256": "482a6213d25004c985ca4972b2d54c0f6f208ac1a124daa4c12cf0aa487ed8fc"
+  },
+  {
+    "id": "coding-kl-div",
+    "file": "content/handbooks/us-tech/questions/coding/coding-kl-div.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-kl-div.py",
+    "tested": true,
+    "displayedSha256": "d49f85c3a8a4fa9dde07bc8ed7b5f8e8c964ff9a6406130fe06e8dfcea519429"
+  },
+  {
+    "id": "coding-z-loss",
+    "file": "content/handbooks/us-tech/questions/coding/coding-z-loss.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-z-loss.py",
+    "tested": true,
+    "displayedSha256": "ab66f84b948001206575deb191ec214096509d7fc4fcfcb1ce89b6b1c024c90a"
+  },
+  {
+    "id": "coding-fused-ce",
+    "file": "content/handbooks/us-tech/questions/coding/coding-fused-ce.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-fused-ce.py",
+    "tested": true,
+    "displayedSha256": "5f5340c3ad890b570f179c9547bc83f14993717ce76796869f6ee9aaf56bf6f0"
+  },
+  {
+    "id": "coding-token-logprob",
+    "file": "content/handbooks/us-tech/questions/coding/coding-token-logprob.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-token-logprob.py",
+    "tested": true,
+    "displayedSha256": "9404ae731d41d3b4a61b6466a5b407602c4a8e05cdf7e8f53c8cc6c6418f5196"
+  },
+  {
+    "id": "coding-loss-atlas",
+    "file": "content/handbooks/us-tech/questions/coding/coding-loss-atlas.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-loss-atlas.py",
+    "tested": true,
+    "displayedSha256": "f2682e77d1f8f57d72583d04ee92c76c64a9d6bc33f02db57388554b18f3a8bd"
+  },
+  {
+    "id": "coding-bpe-merge",
+    "file": "content/handbooks/us-tech/questions/coding/coding-bpe-merge.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-bpe-merge.py",
+    "tested": true,
+    "displayedSha256": "d3bc221dde4aa58365f1e7ffede951d50a2eeb16135f0362289843e955190967"
+  },
+  {
+    "id": "coding-packed-lm",
+    "file": "content/handbooks/us-tech/questions/coding/coding-packed-lm.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-packed-lm.py",
+    "tested": true,
+    "displayedSha256": "acb7e979c16ec136779df94e9a73fa10ef67988860a1e1e1399c15eb562377bb"
+  },
+  {
+    "id": "coding-online-softmax",
+    "file": "content/handbooks/us-tech/questions/coding/coding-online-softmax.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-online-softmax.py",
+    "tested": true,
+    "displayedSha256": "860503288af3d9946b9e0125acf7b7f5926f924826518349a9e5c1ad76fd9197"
+  },
+  {
+    "id": "coding-flash-decode",
+    "file": "content/handbooks/us-tech/questions/coding/coding-flash-decode.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-flash-decode.py",
+    "tested": true,
+    "displayedSha256": "0afe13ccd10cc362f924bf147a92d487fceb6a4416e714e9a4c662d6397d40ce"
+  },
+  {
+    "id": "coding-decode-step",
+    "file": "content/handbooks/us-tech/questions/coding/coding-decode-step.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-decode-step.py",
+    "tested": true,
+    "displayedSha256": "e7f9752ebb24828ade22f69f524acc709135937b4a94cf4c4fcd8b08a581351f"
+  },
+  {
+    "id": "coding-topk-nucleus",
+    "file": "content/handbooks/us-tech/questions/coding/coding-topk-nucleus.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-topk-nucleus.py",
+    "tested": true,
+    "displayedSha256": "5c6271f4b2c3fbb23ed505cb424ed56d384c11469847d2fa5af2f8d4cfb4a483"
+  },
+  {
+    "id": "coding-beam-search",
+    "file": "content/handbooks/us-tech/questions/coding/coding-beam-search.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-beam-search.py",
+    "tested": true,
+    "displayedSha256": "caede93c2fc3f166c96c7ec19c1d9549af8112ecfef44210df49499db9990297"
+  },
+  {
+    "id": "coding-spec-accept",
+    "file": "content/handbooks/us-tech/questions/coding/coding-spec-accept.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-spec-accept.py",
+    "tested": true,
+    "displayedSha256": "634d5ec90098ca87f0b4eb747b5382752365f2b94f14358b20561c80500aae97"
+  },
+  {
+    "id": "coding-paged-table",
+    "file": "content/handbooks/us-tech/questions/coding/coding-paged-table.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/coding-paged-table.py",
+    "tested": true,
+    "displayedSha256": "b96ac84d11603a54e581756c02c3b61cd853fa9698c52a3c875477dc5a1ebfed"
+  },
+  {
+    "id": "openai-allgather-noise",
+    "file": "content/handbooks/us-tech/questions/openai/openai-allgather-noise.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/openai-allgather-noise.py",
+    "tested": true,
+    "displayedSha256": "3005ac5d4a49a9e033bea60d8e47b7380d7771fe820a16c1311aea82cb7ab16b"
+  },
+  {
+    "id": "google-jax-transformer",
+    "file": "content/handbooks/us-tech/questions/google/google-jax-transformer.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/google-jax-transformer.py",
+    "tested": true,
+    "displayedSha256": "65d4676aa0b856d5dbaea36fedec4e72e5fbc944acb28f83dcbffb5673ac86f2"
+  },
+  {
+    "id": "anthropic-perf-takehome",
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-perf-takehome.md",
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/anthropic-perf-takehome.py",
+    "tested": true,
+    "displayedSha256": "32e50baffd2fd3150575d95f45fa8517ec760a6feb93341a7dbb50bca0f66f53"
+  },
+  {
+    "id": "apple-topk-sample",
+    "file": "content/handbooks/us-tech/questions/apple/apple-topk-sample.md",
+    "sharedWith": "coding-topk-nucleus",
+    "tested": true,
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/apple-topk-sample.py",
+    "displayedSha256": "5c6271f4b2c3fbb23ed505cb424ed56d384c11469847d2fa5af2f8d4cfb4a483"
+  },
+  {
+    "id": "openai-flash-decode",
+    "file": "content/handbooks/us-tech/questions/openai/openai-flash-decode.md",
+    "sharedWith": "coding-flash-decode",
+    "tested": true,
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/openai-flash-decode.py",
+    "displayedSha256": "0afe13ccd10cc362f924bf147a92d487fceb6a4416e714e9a4c662d6397d40ce"
+  },
+  {
+    "id": "nvidia-flash-decode",
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flash-decode.md",
+    "sharedWith": "coding-flash-decode",
+    "tested": true,
+    "solution": "content/sources/legacy-coding-audit-2026-10-18/solutions/nvidia-flash-decode.py",
+    "displayedSha256": "0afe13ccd10cc362f924bf147a92d487fceb6a4416e714e9a4c662d6397d40ce"
+  }
+]
