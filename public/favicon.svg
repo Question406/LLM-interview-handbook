@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="面试题库">
   <title>面试题库</title>
   <style>
-    .bg { fill: #0d5c63; }
-    .fg { fill: #f4fbfb; }
+    .bg { fill: #7a2430; }
+    .fg { fill: #fafafa; }
     @media (prefers-color-scheme: dark) {
-      .bg { fill: #4ec4d0; }
-      .fg { fill: #102226; }
+      .bg { fill: #8e2f3c; }
+      .fg { fill: #f6f6f6; }
     }
   </style>
   <rect class="bg" width="32" height="32" rx="8"/>

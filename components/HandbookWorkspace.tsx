@@ -6,8 +6,9 @@ import { useContentLoader } from "@/hooks/useContentLoader";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useMastered, useThemePreference } from "@/hooks/usePersistedUi";
 import { findQuestionInHandbook, isTextEntryTarget, qualifiedId, questionPrompt, writeClipboard } from "@/lib/handbook";
-import { filtersForHandbook, questionMatchesFilter, questionMatchesQuery, type FilterId } from "@/lib/handbook-filters";
-import { EMPTY_SEARCH, parseHandbookSearch, resolveCatalogEntry, serializeHandbookSearch, type HandbookSearch } from "@/lib/handbook-route";
+import { filtersForHandbook, handbookHasCompanies, questionMatchesCompany, questionMatchesFilter, questionMatchesQuery, type FilterId } from "@/lib/handbook-filters";
+import { arrangeStudySections } from "@/lib/study-layout";
+import { EMPTY_SEARCH, parseHandbookSearch, resolveCatalogEntry, serializeHandbookSearch, type BrowseAxis, type HandbookSearch } from "@/lib/handbook-route";
 import { ContentGuide, EmptyState, ShortcutDialog } from "./ShellExtras";
 import { Hero } from "./Hero";
 import { QuestionList } from "./QuestionList";
@@ -15,6 +16,7 @@ import { Rail } from "./Rail";
 import { StudyControls } from "./StudyControls";
 import { Topbar } from "./Topbar";
 import type { CopiedKind } from "./QuestionCard";
+import { resetPracticeReveals } from "./practice-code";
 
 export function HandbookWorkspace({
   catalog,
@@ -40,6 +42,7 @@ export function HandbookWorkspace({
     typeof location === "undefined" ? null : parseHandbookSearch(location.search).question
   ));
   const [copied, setCopied] = useState<{ id: string; kind: CopiedKind } | null>(null);
+  const [revealSolutions, setRevealSolutions] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -64,7 +67,10 @@ export function HandbookWorkspace({
   const handbook = (entry && indexes[entry.id]) ?? initialHandbook;
   const handbookPending = Boolean(entry && !indexes[entry.id]);
   const activeSection = route.section;
+  const activeCompany = route.company;
+  const browseAxis = route.axis;
   const guideOpen = route.view === "guide";
+  const showCompanyAxis = handbookHasCompanies(handbook);
 
   const writeRoute = useCallback((next: HandbookSearch, mode: "push" | "replace" = "push") => {
     setRoute(next);
@@ -96,7 +102,7 @@ export function HandbookWorkspace({
   }, [catalog, indexes, loadIndex, route.book]);
 
   const openOverview = useCallback(() => {
-    writeRoute({ book: handbook.slug, section: null, question: null, view: null });
+    writeRoute({ book: handbook.slug, section: null, question: null, view: null, company: null, axis: null });
     setFocusedQuestionId(null);
     setQuery("");
     setMobileNavOpen(false);
@@ -104,7 +110,7 @@ export function HandbookWorkspace({
   }, [handbook.slug, writeRoute]);
 
   const openGuide = useCallback(() => {
-    writeRoute({ book: handbook.slug, section: null, question: null, view: "guide" });
+    writeRoute({ book: handbook.slug, section: null, question: null, view: "guide", company: null, axis: null });
     setFocusedQuestionId(null);
     setQuery("");
     setMobileNavOpen(false);
@@ -112,11 +118,35 @@ export function HandbookWorkspace({
   }, [handbook.slug, writeRoute]);
 
   const openSection = useCallback((sectionId: string) => {
-    writeRoute({ book: handbook.slug, section: sectionId, question: null, view: null });
+    writeRoute({ book: handbook.slug, section: sectionId, question: null, view: null, company: null, axis: null });
     setFocusedQuestionId(null);
     setQuery("");
     setMobileNavOpen(false);
     window.scrollTo(0, 0);
+  }, [handbook.slug, writeRoute]);
+
+  const openCompany = useCallback((companyId: string) => {
+    writeRoute({ book: handbook.slug, section: null, question: null, view: null, company: companyId, axis: "company" });
+    setFocusedQuestionId(null);
+    setQuery("");
+    setMobileNavOpen(false);
+    window.scrollTo(0, 0);
+  }, [handbook.slug, writeRoute]);
+
+  const openBrowseAxis = useCallback((axis: BrowseAxis) => {
+    if (axis === "company") {
+      writeRoute({ book: handbook.slug, section: null, question: null, view: null, company: null, axis: "company" });
+    } else {
+      writeRoute({ book: handbook.slug, section: null, question: null, view: null, company: null, axis: null });
+    }
+    setFocusedQuestionId(null);
+    setQuery("");
+    setMobileNavOpen(false);
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(axis === "company" ? "by-company" : "by-topic");
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      else window.scrollTo(0, 0);
+    });
   }, [handbook.slug, writeRoute]);
 
   const goToQuestion = useCallback((questionId: string, book?: string | null) => {
@@ -126,7 +156,7 @@ export function HandbookWorkspace({
         if (!loaded) return;
         const found = findQuestionInHandbook(loaded, questionId);
         if (!found) return;
-        writeRoute({ book: loaded.slug, section: found.section.id, question: found.question.id, view: null });
+        writeRoute({ book: loaded.slug, section: found.section.id, question: found.question.id, view: null, company: null, axis: null });
         setQuery("");
         setFilter("all");
         setLibraryOpen(false);
@@ -142,20 +172,27 @@ export function HandbookWorkspace({
     if (!found) return;
     void loadCards(found.section);
     void loadAnswer(handbook.id, found.question);
-    writeRoute({ book: handbook.slug, section: found.section.id, question: found.question.id, view: null });
+    writeRoute({
+      book: handbook.slug,
+      section: found.section.id,
+      question: found.question.id,
+      view: null,
+      company: route.company,
+      axis: route.axis,
+    });
     setFocusedQuestionId(found.question.id);
     setQuery("");
     setFilter("all");
     setOpenQuestions((current) => new Set(current).add(questionId));
     setScrollToId(questionId);
-  }, [catalog, entry, handbook, loadAnswer, loadCards, loadIndex, writeRoute]);
+  }, [catalog, entry, handbook, loadAnswer, loadCards, loadIndex, route.axis, route.company, writeRoute]);
 
   const switchHandbook = useCallback(async (nextId: string) => {
     const next = catalog.find((candidate) => candidate.id === nextId);
     if (!next) return;
     const loaded = indexes[next.id] ?? await loadIndex(next);
     if (!loaded) return;
-    writeRoute({ book: loaded.slug, section: null, question: null, view: null }, "replace");
+    writeRoute({ book: loaded.slug, section: null, question: null, view: null, company: null, axis: null }, "replace");
     setQuery("");
     setFilter("all");
     setOpenQuestions(new Set());
@@ -182,7 +219,7 @@ export function HandbookWorkspace({
   const activeFilter = availableFilters.some((option) => option.id === filter) ? filter : "all";
 
   const visibleSections = useMemo(() => {
-    const source = isSearching
+    const source = isSearching || activeCompany
       ? handbook.sections
       : handbook.sections.filter((section) => section.id === activeSection);
     return source.map((section) => ({
@@ -190,15 +227,49 @@ export function HandbookWorkspace({
       questions: section.questions.filter((question) => (
         questionMatchesQuery(question, normalizedQuery)
         && questionMatchesFilter(question, activeFilter, handbook.id, mastered)
+        && questionMatchesCompany(question, activeCompany)
       )),
     })).filter((section) => section.questions.length > 0);
-  }, [activeFilter, activeSection, handbook, isSearching, mastered, normalizedQuery]);
+  }, [activeCompany, activeFilter, activeSection, handbook, isSearching, mastered, normalizedQuery]);
+
+  const studyLayout = useMemo(
+    () => (isSearching ? { pinned: [] as HandbookQuestion[], sections: visibleSections } : arrangeStudySections(visibleSections)),
+    [isSearching, visibleSections],
+  );
+  const pinnedGroups = useMemo(() => {
+    const groups: { section: HandbookSection; questions: HandbookQuestion[] }[] = [];
+    const seen = new Map<string, number>();
+    for (const question of studyLayout.pinned) {
+      const section = handbook.sections.find((candidate) => candidate.id === question.sectionId)
+        ?? handbook.sections.find((candidate) => candidate.questions.some((item) => item.id === question.id));
+      if (!section) continue;
+      const index = seen.get(section.id);
+      if (index === undefined) {
+        seen.set(section.id, groups.length);
+        groups.push({ section, questions: [question] });
+      } else {
+        groups[index].questions.push(question);
+      }
+    }
+    return groups;
+  }, [handbook.sections, studyLayout.pinned]);
+  const visibleSectionKey = [
+    ...studyLayout.sections.map((section) => section.id),
+    ...pinnedGroups.map((group) => group.section.id),
+  ].join(",");
+  useEffect(() => {
+    if (!visibleSectionKey) return;
+    for (const section of handbook.sections) {
+      if (visibleSectionKey.split(",").includes(section.id)) void loadCards(section);
+    }
+  }, [handbook, loadCards, visibleSectionKey]);
 
   const visibleQuestions = useMemo(
-    () => visibleSections.flatMap((section) => section.questions),
-    [visibleSections],
+    () => [...studyLayout.pinned, ...studyLayout.sections.flatMap((section) => section.questions)],
+    [studyLayout],
   );
-  const isContentView = Boolean(activeSection) || isSearching;
+  const hasVisiblePractice = visibleQuestions.some((question) => question.tags.includes("完整编程练习"));
+  const isContentView = Boolean(activeSection) || isSearching || Boolean(activeCompany);
   const masteredCount = handbook.sections.flatMap((section) => section.questions)
     .filter((question) => mastered.has(qualifiedId(handbook.id, question.id))).length;
   const progress = handbook.stats.questions ? (masteredCount / handbook.stats.questions) * 100 : 0;
@@ -223,12 +294,19 @@ export function HandbookWorkspace({
   const copyQuestionLink = useCallback(async (questionId: string) => {
     const found = findQuestionInHandbook(handbook, questionId);
     if (!found) return;
-    const nextRoute = { book: handbook.slug, section: found.section.id, question: questionId, view: null } satisfies HandbookSearch;
+    const nextRoute = {
+      book: handbook.slug,
+      section: found.section.id,
+      question: questionId,
+      view: null,
+      company: route.company,
+      axis: route.axis,
+    } satisfies HandbookSearch;
     writeRoute(nextRoute, "replace");
     await writeClipboard(`${location.origin}${location.pathname}${serializeHandbookSearch(nextRoute, catalog)}`);
     setCopied({ id: questionId, kind: "link" });
     window.setTimeout(() => setCopied((current) => current?.id === questionId && current.kind === "link" ? null : current), 1100);
-  }, [catalog, handbook, writeRoute]);
+  }, [catalog, handbook, route.axis, route.company, writeRoute]);
 
   const copyQuestionPrompt = useCallback(async (question: HandbookQuestion) => {
     const found = findQuestionInHandbook(handbook, question.id);
@@ -261,6 +339,15 @@ export function HandbookWorkspace({
   };
 
   const goToAdjacentSection = (direction: 1 | -1) => {
+    if (browseAxis === "company") {
+      const companies = handbook.companies ?? [];
+      if (!companies.length) return;
+      const currentIndex = activeCompany ? companies.findIndex((company) => company.id === activeCompany) : -1;
+      const startIndex = currentIndex === -1 ? (direction === 1 ? -1 : 0) : currentIndex;
+      const nextIndex = (startIndex + direction + companies.length) % companies.length;
+      openCompany(companies[nextIndex].id);
+      return;
+    }
     const currentIndex = activeSection ? handbook.sections.findIndex((section) => section.id === activeSection) : -1;
     const startIndex = currentIndex === -1 ? (direction === 1 ? -1 : 0) : currentIndex;
     const nextIndex = (startIndex + direction + handbook.sections.length) % handbook.sections.length;
@@ -325,6 +412,8 @@ export function HandbookWorkspace({
           break;
         case "Enter":
           if (!focusedQuestion) break;
+          // Let in-card controls (copy, reveal, collapsible tests) handle their own Enter.
+          if (event.target instanceof Element && event.target.closest(".question-card button:not(.question-heading), .question-card summary, .question-card a")) break;
           event.preventDefault();
           keyboardState.toggleOpen(focusedQuestion);
           break;
@@ -342,6 +431,9 @@ export function HandbookWorkspace({
         handbook={handbook}
         catalog={catalog}
         activeSection={activeSection}
+        activeCompany={activeCompany}
+        browseAxis={browseAxis}
+        showCompanyAxis={showCompanyAxis}
         isSearching={isSearching}
         masteredCount={masteredCount}
         progress={progress}
@@ -351,6 +443,8 @@ export function HandbookWorkspace({
         onToggleLibrary={() => setLibraryOpen((current) => !current)}
         onSwitchHandbook={(id) => void switchHandbook(id)}
         onOpenSection={openSection}
+        onOpenCompany={openCompany}
+        onBrowseAxis={openBrowseAxis}
         onOpenGuide={openGuide}
         onCloseMobile={() => setMobileNavOpen(false)}
       />
@@ -379,6 +473,7 @@ export function HandbookWorkspace({
               masteredCount={masteredCount}
               mastered={mastered}
               onOpenSection={openSection}
+              onOpenCompany={openCompany}
               onRandomQuestion={randomQuestion}
             />
           )}
@@ -390,6 +485,12 @@ export function HandbookWorkspace({
               onFilter={setFilter}
               onExpandVisible={() => setOpenQuestions(new Set(visibleQuestions.map((question) => question.id)))}
               onCollapseAll={() => setOpenQuestions(new Set())}
+              showSolutionToggle={hasVisiblePractice}
+              revealSolutions={revealSolutions}
+              onToggleSolutions={() => {
+                resetPracticeReveals();
+                setRevealSolutions((current) => !current);
+              }}
             />
           )}
 
@@ -404,7 +505,53 @@ export function HandbookWorkspace({
                   <div className="section-count">{visibleQuestions.length} 题</div>
                 </header>
               )}
-              {visibleSections.map((section) => (
+              {activeCompany && !isSearching && (
+                <header className="search-results-intro">
+                  <div>
+                    <div className="eyebrow"><span /> 公司</div>
+                    <h2>{handbook.companies.find((company) => company.id === activeCompany)?.title ?? activeCompany}</h2>
+                  </div>
+                  <div className="section-count">{visibleQuestions.length} 题</div>
+                </header>
+              )}
+              {pinnedGroups.length > 0 && (
+                <section className="question-section study-start">
+                  <header className="section-intro">
+                    <div>
+                      <div className="eyebrow"><span /> 先看这些</div>
+                      <h2>{activeCompany ? "这家要准备什么" : "这一章先看什么"}</h2>
+                      <p>{activeCompany ? "导航和备考地图放在最上面。读完再往下按章节刷。" : "先读导航，再往下刷这一章。"}</p>
+                    </div>
+                    <div className="section-count">{studyLayout.pinned.length} 题</div>
+                  </header>
+                  {pinnedGroups.map((group) => (
+                    <QuestionList
+                      key={`pin-${group.section.id}`}
+                      section={group.section}
+                      handbookId={handbook.id}
+                      questions={group.questions}
+                      openQuestions={openQuestions}
+                      mastered={mastered}
+                      focusedQuestionId={focusedQuestionId}
+                      revealSolutions={revealSolutions}
+                      copied={copied}
+                      cards={cards[group.section.cardsPath]}
+                      answers={answers}
+                      scrollToId={scrollToId && group.questions.some((question) => question.id === scrollToId) ? scrollToId : null}
+                      onScrolled={onScrolled}
+                      onToggleOpen={toggleOpen}
+                      onToggleMastered={onToggleMastered}
+                      onCopyPrompt={copyQuestionPrompt}
+                      onCopyLink={copyQuestionLink}
+                      onOpenQuestion={goToQuestion}
+                      onFocus={setFocusedQuestionId}
+                      onNeedAnswer={onNeedAnswer}
+                      onNeedCards={onNeedCards}
+                    />
+                  ))}
+                </section>
+              )}
+              {studyLayout.sections.map((section) => (
                 <section className="question-section" key={section.id}>
                   <header className="section-intro">
                     <div>
@@ -421,6 +568,7 @@ export function HandbookWorkspace({
                     openQuestions={openQuestions}
                     mastered={mastered}
                     focusedQuestionId={focusedQuestionId}
+                    revealSolutions={revealSolutions}
                     copied={copied}
                     cards={cards[section.cardsPath]}
                     answers={answers}
@@ -437,7 +585,7 @@ export function HandbookWorkspace({
                   />
                 </section>
               ))}
-              {visibleSections.length === 0 && (
+              {visibleQuestions.length === 0 && (
                 <EmptyState
                   title="没有找到匹配的题目"
                   detail="试试换一个关键词，或清除当前筛选。"

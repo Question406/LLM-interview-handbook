@@ -1,8 +1,9 @@
 "use client";
 
-import { memo, useLayoutEffect, useRef } from "react";
+import { memo, useLayoutEffect, useMemo, useRef } from "react";
 import type { HandbookQuestion, QuestionCardHtml } from "@/content/types";
-import { displayPlain } from "@/lib/handbook";
+import { displayPlain, writeClipboard } from "@/lib/handbook";
+import { applyPracticeReveal, enhancePractice, handlePracticeClick, rememberTestsToggle } from "./practice-code";
 
 export type CopiedKind = "link" | "prompt";
 
@@ -15,17 +16,24 @@ function followupKey(details: HTMLDetailsElement) {
 function AnswerContent({
   html,
   questionId,
+  revealSolutions,
   onOpenQuestion,
 }: {
   html: string;
   questionId: string;
+  revealSolutions: boolean;
   onOpenQuestion: (questionId: string, book?: string | null) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
+  // Stable object identity: React re-applies innerHTML whenever this prop object changes, which
+  // would wipe the injected practice controls and open follow-ups on every rerender.
+  const innerHtml = useMemo(() => ({ __html: html }), [html]);
 
   useLayoutEffect(() => {
     const node = hostRef.current;
     if (!node) return;
+
+    enhancePractice(node, questionId);
 
     const saved = openFollowups.get(questionId);
     if (saved) {
@@ -37,7 +45,8 @@ function AnswerContent({
 
     const onToggle = (event: Event) => {
       const details = event.target;
-      if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("followup")) return;
+      if (!(details instanceof HTMLDetailsElement)) return;
+      if (rememberTestsToggle(details, questionId) || !details.classList.contains("followup")) return;
       const key = followupKey(details);
       if (!key) return;
       const next = openFollowups.get(questionId) ?? new Set<string>();
@@ -50,15 +59,23 @@ function AnswerContent({
     return () => node.removeEventListener("toggle", onToggle, true);
   }, [html, questionId]);
 
+  useLayoutEffect(() => {
+    const node = hostRef.current;
+    if (!node) return;
+    enhancePractice(node, questionId);
+    applyPracticeReveal(node, questionId, revealSolutions);
+  }, [html, questionId, revealSolutions]);
+
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- delegated <a class="question-link">
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- delegated <a class="question-link"> and practice <button>s
     <div
       ref={hostRef}
       className="answer-content"
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={innerHtml}
       onClick={(event) => {
         const node = event.target;
         const el = node instanceof Element ? node : node instanceof Node ? node.parentElement : null;
+        if (el && hostRef.current && handlePracticeClick(el, hostRef.current, questionId, revealSolutions, writeClipboard)) return;
         const link = el?.closest("a.question-link");
         if (!(link instanceof HTMLAnchorElement)) return;
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -89,6 +106,7 @@ function QuestionCardView({
   isMastered,
   copiedKind,
   isKeyboardActive,
+  revealSolutions,
   card,
   answer,
   onToggleOpen,
@@ -104,6 +122,7 @@ function QuestionCardView({
   isMastered: boolean;
   copiedKind: CopiedKind | null;
   isKeyboardActive: boolean;
+  revealSolutions: boolean;
   card?: QuestionCardHtml;
   answer?: string;
   onToggleOpen: () => void;
@@ -113,6 +132,8 @@ function QuestionCardView({
   onOpenQuestion: (questionId: string, book?: string | null) => void;
   onFocus: () => void;
 }) {
+  const hasCodingPractice = question.tags.includes("完整编程练习");
+
   return (
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- heading button stays the keyboard control
     <article
@@ -155,14 +176,19 @@ function QuestionCardView({
       </div>
       {question.quick && (
         <div className={`quick-answer${isOpen ? "" : " compact"}`}>
-          <span className="quick-kicker">30 秒口播</span>
+          <span className="quick-kicker">{hasCodingPractice ? "编程题摘要 · 含完整实现与测试" : "30 秒口播"}</span>
           {card?.quickHtml
             ? <p dangerouslySetInnerHTML={{ __html: card.quickHtml }} />
             : <p>{displayPlain(question.quick)}</p>}
         </div>
       )}
+      {hasCodingPractice && (
+        <button type="button" className="coding-answer-toggle" onClick={onToggleOpen} aria-expanded={isOpen}>
+          {isOpen ? "收起题面与代码答案" : "展开题面与代码答案 →"}
+        </button>
+      )}
       {isOpen && answer && (
-        <MemoAnswerContent html={answer} questionId={question.id} onOpenQuestion={onOpenQuestion} />
+        <MemoAnswerContent html={answer} questionId={question.id} revealSolutions={revealSolutions} onOpenQuestion={onOpenQuestion} />
       )}
       {isOpen && !answer && <div className="answer-loading"><span />正在加载完整答案…</div>}
       <footer className="question-footer">

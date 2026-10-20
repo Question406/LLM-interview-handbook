@@ -18,6 +18,7 @@ export type QuestionListProps = {
   openQuestions: ReadonlySet<string>;
   mastered: ReadonlySet<string>;
   focusedQuestionId: string | null;
+  revealSolutions: boolean;
   copied: { id: string; kind: CopiedKind } | null;
   cards?: Record<string, QuestionCardHtml>;
   answers: Record<string, string>;
@@ -175,6 +176,7 @@ function MountedQuestion({
   openQuestions,
   mastered,
   focusedQuestionId,
+  revealSolutions,
   copied,
   cards,
   answers,
@@ -200,6 +202,7 @@ function MountedQuestion({
       isMastered={mastered.has(qualifiedId(handbookId, question.id))}
       copiedKind={copied?.id === question.id ? copied.kind : null}
       isKeyboardActive={focusedQuestionId === question.id}
+      revealSolutions={revealSolutions}
       card={cards?.[question.id]}
       answer={answers[qualifiedId(handbookId, question.id)]}
       onToggleOpen={() => onToggleOpen(question)}
