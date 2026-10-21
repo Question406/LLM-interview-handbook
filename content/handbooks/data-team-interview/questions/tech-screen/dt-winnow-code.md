@@ -4,9 +4,7 @@ section: tech-screen
 order: 23
 level: A
 title: CoderPad：代码近克隆怎么指纹，Winnowing 窗口怎么写？
-quick: >-
-  我会先规范化源码，切 k-gram 哈希，每个窗口只留最小哈希，指纹集合比 Jaccard。
-  许可证头和 import 块要剥掉，否则全世界 Python 文件两两相似。
+quick: "先规范化源码，切成 k-gram 算哈希，每个窗口只留最小的哈希作为指纹，再用 Jaccard 比较指纹集合。许可证头和 import 块要先剥掉，否则大量无关的 Python 文件也会显得相似。"
 companies:
   - apple
 tags:
@@ -30,13 +28,13 @@ sources:
     type: primary
 ---
 
-先规范化源码，切成 k-gram 并计算哈希，每个窗口只保留最小哈希，再用 Jaccard 比较指纹集合。许可证头和 import 块要先去掉，否则许多无关 Python 文件也会显得相似。直接套网页 MinHash 时，空白、重命名和许可证头都可能干扰 shingle。
+代码去克隆要单独处理：空白、重命名和许可证头都会干扰网页 MinHash 用的 shingle。做法是先规范化源码，切成 k-gram 算哈希，每个窗口只留最小的哈希作为指纹，再用 Jaccard 比较指纹集合。许可证头和 import 块要先去掉，否则很多无关的 Python 文件也会显得相似。
 
-Winnowing 是 Moss / 抄袭检测那套窗口最小值。Llama 3 代码后训练还要执行验证，去克隆是上游，避免同一题 40 份拷贝占满 监督微调（SFT）。
+Winnowing 就是 Moss 这类抄袭检测用的窗口最小值方法。Llama 3 的代码后训练还要做执行验证，去克隆在它上游，作用是避免同一道题的 40 份拷贝占满监督微调（SFT）。
 
-## 规范化，再窗口最小值
+## 规范化，再取窗口最小值
 
-先：去注释、压空白、可选地把标识符换成占位（重命名克隆）。再对 token 或字符 k-gram 计算哈希。窗口 $w$ 内只保留最小哈希，保证任意长度 $\ge k+w-1$ 的匹配至少共享一个指纹。
+先去注释、压缩空白，可以选择把标识符换成占位符，用来抓重命名克隆。再对 token 或字符 k-gram 算哈希。窗口 $w$ 内只保留最小的哈希，这样任何长度 $\ge k+w-1$ 的匹配至少会共享一个指纹。
 
 ```python
 import hashlib
@@ -134,16 +132,16 @@ assert winnow([5, 1, 4, 2, 6], w=2) == {1, 2}
 assert jaccard_fp(set(), set()) == 1.0
 ```
 
-阈值按语言定。剥不掉的 `apache license version 2.0` 会让无关文件 $J$ 很高：许可证文件白名单，或先砍文件头 30 行再指纹。
+阈值要按语言定。剥不掉的 `apache license version 2.0` 会让无关文件的 $J$ 很高，办法是把许可证文件放白名单，或者先砍掉文件头 30 行再算指纹。
+
+`drop_idents=True` 能抓重命名克隆，但也可能把实际不同的函数判为相似，所以默认关，只在高价值的题解桶里开。
 
 ## 和执行验证的分工
 
-去克隆解决「同一份拷贝刷高 HumanEval」。执行验证解决「看起来不像克隆但测试是模型自己改的」，见 `dt-code-exec-synth`。两层都要。评测泄漏仍走 `dt-substr-dedup-code` 和 `dt-code-bench-bleed`。
-
-`drop_idents=True` 能抓重命名克隆，也也可能把实际不同的函数判为相似。默认关，只在高价值题解桶开。
+去克隆解决的是「同一份拷贝刷高 HumanEval」；执行验证解决的是「看起来不像克隆，但测试是模型自己改的」，见 `dt-code-exec-synth`。两层都要。评测泄漏仍然走 `dt-substr-dedup-code` 和 `dt-code-bench-bleed`。
 
 ## 追问
 
-- **AST 哈希呢？** 更稳，现场写不完 tree-sitter。口播：生产按语言上 AST 精确去重，Winnowing 做近克隆。
-- **二进制 / notebook？** notebook 先抽代码格。二进制不进文本管线。
-- **k 和 w 怎么选？** $k$ 大约 5 个 token，$w=4$ 是论文量级。短文件指纹少，$J$ 不稳，短于 20 行只做精确哈希。
+- **为什么不用 AST 哈希？** AST 更稳，但现场写不完 tree-sitter。可以说明生产上按语言用 AST 做精确去重，Winnowing 负责近克隆。
+- **二进制和 notebook 怎么办？** notebook 先抽出代码格；二进制文件不进文本管线。
+- **k 和 w 怎么选？** $k$ 大约 5 个 token、$w=4$ 是论文里的量级。短文件的指纹少，$J$ 不稳定，短于 20 行的文件只做精确哈希。

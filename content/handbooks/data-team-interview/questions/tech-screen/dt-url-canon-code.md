@@ -4,7 +4,7 @@ section: tech-screen
 order: 26
 level: A
 title: CoderPad：URL 怎么规范化，opt-out / robots 怎么落到一条拒绝函数？
-quick: "统一规范化 URL，再用于去重、许可拒绝表和评测匹配。小写 scheme、host，去默认端口和 fragment，只删跟踪 query，保留分页参数。host 后缀匹配注意域名边界；记录原 URL 与 canon URL，robots 和 opt-out 另有上游检查。"
+quick: "URL 先统一规范化，再拿去做去重、许可拒绝表和评测匹配：scheme 和 host 转小写，去掉默认端口和 fragment，只删跟踪类 query，保留分页参数。host 后缀匹配要注意域名边界。原 URL 和规范化后的 URL 都要记录，robots 和 opt-out 由上游另做检查。"
 companies:
   - apple
 tags:
@@ -28,9 +28,9 @@ sources:
     type: primary
 ---
 
-先做 URL 规范化（canon），再按拒绝表匹配（deny）。将 scheme、host 转小写，去默认端口，排序保留的 query，移除 fragment。拒绝规则按 host 后缀和 path 前缀检查。精确去重如果对原始 URL 做，`http://Example.com/a?utm_source=x#top` 和 `https://example.com/a` 会当两篇。opt-out 表也要对得上规范化之后的 host。
+去重、许可拒绝表和评测匹配都依赖 URL，如果直接用原始字符串，`http://Example.com/a?utm_source=x#top` 和 `https://example.com/a` 会被当成两篇，opt-out 表也对不上。所以先做 URL 规范化（canon），再按拒绝表（deny）匹配。规范化包括：scheme 和 host 转小写，去默认端口，对保留的 query 排序，移除 fragment。拒绝规则按 host 后缀和 path 前缀检查。
 
-Applebot 公开口径尊重 robots 和「不要用来训基础模型」。抓取去重和许可是同一把钥匙。
+抓取去重和许可检查用的是同一个规范化 URL。
 
 ## 规范化
 
@@ -73,7 +73,7 @@ def canon_url(url):
     return urlunparse((scheme, netloc, path, "", urlencode(query), ""))
 ```
 
-www 去不去按域定。有的站 `www` 和裸域是两套 CMS。登录墙、付费墙不要靠 URL 猜，抓取阶段就不进，Apple 公开口径写了不爬这些。
+要不要去掉 www 按域定，有的站 `www` 和裸域是两套 CMS。登录墙和付费墙不要靠 URL 去猜，在抓取阶段就不进。
 
 ## 拒绝：后缀 host，前缀 path
 
@@ -129,12 +129,12 @@ assert url_denied("garbage", [], []) == (True, "unparseable")
 assert url_denied("https://site.org/public", ["example.com"], ["/private"]) == (False, "ok")
 ```
 
-`example.com` 要挡住 `a.example.com`，不要挡住 `notexample.com`。所以用 `endswith("." + s)`，不要 `s in host`。
+`example.com` 要挡住 `a.example.com`，但不能挡住 `notexample.com`，所以用 `endswith("." + s)`，不要用 `s in host`。
 
-robots / 训练 opt-out 是上游抓取器的表，训练侧再挡一层，防止旧快照混进来。撤回需要精确墓碑记录，不能由 Bloom 单独承担，见 `dt-exact-dedup-code`。命中拒绝的文档进 quarantine，留原 URL 和 canon URL，方便审计误杀。
+robots 和训练 opt-out 是上游抓取器的表，训练侧再挡一层，防止旧快照混进来。撤回需要精确的墓碑记录，因为 Bloom 不支持删除，见 `dt-exact-dedup-code`。命中拒绝的文档进 quarantine，同时留原 URL 和 canon URL，方便审计误杀。
 
 ## 追问
 
-- **https 和 http 当同一页吗？** 默认当。内容哈希再确认；有的站 HTTP 是镜像、HTTPS 是登录后正文。
-- **query 全丢？** 新闻分页 `?page=2` 要留。只丢跟踪参数。
-- **和评测 URL 重叠？** canon 之后才能和冻结评测比。原始字符串比对会漏。
+- **https 和 http 当同一页吗？** 默认当，再用内容哈希确认。有的站 HTTP 是镜像，HTTPS 才是登录后的正文。
+- **query 全部丢掉？** 不行，新闻分页的 `?page=2` 要留，只丢跟踪参数。
+- **和评测 URL 的重叠怎么查？** 规范化之后才能和冻结评测比，用原始字符串比对会漏。

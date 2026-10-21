@@ -4,7 +4,7 @@ section: tech-screen
 order: 13
 level: A
 title: CoderPad：embedding 近邻去语义重复，什么子集才值得上？
-quick: "对已经过精确哈希和 MinHash 的高价值子集，再用 embedding 查找释义重复：ANN 取 top-$k$，余弦相似度超过阈值的归入同簇，保留质量最高的一条。适合许可书、SFT 和通过 verifier 的合成数据；十亿级网页不宜直接全量使用。"
+quick: "MinHash 抓不到换了说法的重复，这一层用 embedding 来补：对已经过精确哈希和 MinHash 的高价值子集，用 ANN 取 top-$k$ 近邻，余弦相似度超过阈值的归入同簇，保留质量最高的一条。适合许可书、SFT 和通过 verifier 的合成数据；成本高，十亿级网页不宜直接全量跑。"
 companies:
   - apple
 tags:
@@ -28,9 +28,9 @@ sources:
     type: primary
 ---
 
-先做精确哈希和 MinHash，再对高价值子集计算 embedding。用 ANN 取 top-$k$ 近邻，将余弦相似度超过阈值的文档归入同簇，保留质量最高的一条。十亿级网页不适合直接全量使用，更不能用 `for i in docs: for j in docs` 两两比较。MinHash 难以发现换说法的重复，这一层用来补充。
+MinHash 看的是词面，换了说法的重复它抓不到，语义去重补的就是这一层。做法是在精确哈希和 MinHash 之后，只对高价值子集算 embedding，用 ANN 取 top-$k$ 近邻，余弦相似度超过阈值的归入同簇，每簇保留质量最高的一条。十亿级网页不适合直接全量跑，更不能写 `for i in docs: for j in docs` 两两比较。
 
-SemDeDup 在 C4 / 网页上证明语义近邻浪费算力。成本比 LSH 高两个数量级。CoderPad 里 ANN 用暴力余弦顶上；口播生产是 Faiss IVF / HNSW，向量离线打。
+SemDeDup 在 C4 和网页上证明了语义近邻会浪费算力，但它的成本比 LSH 高两个数量级。CoderPad 里用暴力余弦代替 ANN；要说明生产上用 Faiss IVF / HNSW，向量离线算好。
 
 ## 合同：先桶，再 ANN，再留一条
 
@@ -99,18 +99,18 @@ assert math.isclose(cosine(l2_norm([3.0, 4.0]), l2_norm([6.0, 8.0])), 1.0)
 assert l2_norm([0.0, 0.0]) == [0.0, 0.0]
 ```
 
-贪心按质量留，只和已留的比余弦，避免簇里留下 boilerplate。生产把内层换成 ANN top-k。
+实现是贪心的：按质量从高到低处理，每条只和已经留下的比余弦，这样簇里不会留下 boilerplate。生产上把内层循环换成 ANN top-k。
 
 ## 阈值和误杀
 
-0.9 对释义紧，对同一主题的不同证明会误杀。数学 / 代码阈值更高，论坛答疑更低。按域扫，抽 100 对看：正当不同解答 vs 改写题。
+阈值 0.9 对释义来说比较紧，但对同一主题的不同证明会误杀。数学和代码的阈值要更高，论坛答疑可以更低。按域扫，抽 100 对来看，区分正当的不同解答和改写过的题。
 
-翻译对是语义近邻。多语桶不要和英语混着 SemDeDup，否则会把母语页当成英语页的重复扔掉，会损害 `dt-locale-data` 讨论的母语覆盖。
+翻译对也是语义近邻。多语言桶不要和英语混在一起做 SemDeDup，否则母语页会被当成英语页的重复扔掉，伤到 `dt-locale-data` 讨论的母语覆盖。
 
-合成数据：同一输入提示 的 $k$ 条 completion 余弦会很高，该由 `dt-rejection-sample-code` 的 验证器（verifier） 留对的，不能只按语义相似度留一条，否则会丢掉不同的正确解法。
+合成数据同理：同一个输入提示的 $k$ 条 completion 余弦会很高。这些应该由 `dt-rejection-sample-code` 的验证器（verifier）留下做对的。只按语义相似度留一条，会丢掉不同的正确解法。
 
 ## 追问
 
-- **为什么不替代 MinHash？** 嵌入模型自己会偏英语、偏新闻。词面转载 MinHash 更稳、更便宜。两层叠，不互相替代。
-- **簇里留中心还是留质量最高？** 留质量最高。中心可能是一篇平庸转载。
-- **10B 网页呢？** 先 MinHash 砍到高价值 1%，再 embed。全量 embed 不是这轮 CoderPad 的答案。
+- **为什么不用它替代 MinHash？** 嵌入模型本身偏英语、偏新闻。词面转载用 MinHash 更稳也更便宜。所以两层叠加使用。
+- **簇里留中心还是质量最高的？** 留质量最高的，中心可能只是一篇平庸的转载。
+- **10B 网页怎么办？** 先用 MinHash 砍到高价值的 1%，再做 embedding。全量 embedding 不是这轮 CoderPad 要的答案。

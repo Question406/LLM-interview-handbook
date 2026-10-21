@@ -39,12 +39,12 @@ sections:
     title: 06 · Director / VP
     description: 全生命周期、蒸馏、adapter、ROI、lineage、guided generation、论文一分钟
   - id: labs
-    title: 07 · 别家公开题怎么迁到 Apple
+    title: 07 · 各家公开题
     description: >-
       后训练数据还覆盖代码执行合成、工具注入、GUI / 网页轨迹、跨次稳定、R1 蒸馏和政策进思考。
       另补 OpenAI 分类器笔试 / 聊天日志挖概念、Anthropic 诚实评测和 Sleeper、DeepMind 评测台、
       DeepSeek 合成坍缩、Phi 教科书、Cohere 偏好采集、Prompt vs RAG vs 微调。
-      题面来自公开面经和论文，答法落到 AFM 约束
+      题面来自公开面经和论文
   - id: good-data
     title: 08 · 什么是好数据
     description: >-

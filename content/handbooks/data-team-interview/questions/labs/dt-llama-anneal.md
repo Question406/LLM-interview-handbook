@@ -3,8 +3,8 @@ id: dt-llama-anneal
 section: labs
 order: 6
 level: A
-title: Llama 3：预训练最后抬高质代码 / 数学（annealing），和 AFM continued PT 怎么对？
-quick: "把可验证的数学、代码能力放在 mid-training 或退火阶段补充，格式和工具行为放在后训练中调整。AFM continued PT 也使用验证过的合成数据和高质量原始数据。Llama 的最后约 40M token 是其公开配方，不能直接当成内部训练配额。"
+title: Llama 3：预训练最后抬高质代码 / 数学（annealing），有什么用？
+quick: "Annealing 在主预训练末段降学习率、上采样高质量数学和代码，补可验证的能力；格式和工具行为留到后训练。Llama 3 最后约 40M token 是它自己的公开配方，换模型要重新定；常用基准的训练集不能混进这一段。它还可以用来低成本评估新数据源。"
 companies:
   - apple
 tags:
@@ -28,15 +28,18 @@ sources:
     type: primary
 ---
 
-可验证的数学和代码能力可以在 mid-training 或 annealing 阶段补充，格式和工具行为在后训练阶段调整。用于评测的基准训练集不要混入这一阶段。AFM 的 continued PT 更长，使用验证合成、高质量原始数据和部分大规模语料；多语比例从 8% 提到 30%，之后再加入视觉并扩展到 65K 上下文。这些阶段都在主预训练之后调整数据配比，补足能力，名字不同并不影响这种比较。见 `dt-pre-mid-post`、`dt-contamination`。
+Annealing 是在主预训练末段降学习率、调整数据配比，补足能力。可验证的数学和代码能力放在 mid-training 或 annealing 阶段补，格式和工具行为留到后训练阶段调整。阶段划分见 `dt-pre-mid-post`。
 
-不这么选的理由：把 Llama 最后约 40M 文本处理单位（token） 的 annealing 当成内部配额，或把 GSM8K / MATH 训练集放进这一段刷 few-shot。40M 是 Llama flagship 末段。AFM mid 是万亿级 token 量级的另一段。
+## Llama 3 的公开配方
 
-接到苹果：许可小集可以用半训小模型评估（新源 30%、旧 mix 70%），替代不了目标模型上的冻结切片。端侧 3B 更接近 Llama 8B 那条：mid 数据更值钱。405B 不吃 GSM8K 训练集仍强，说明大模型可以用 ICL 补小模型要靠 anneal 的洞。合成题要过标准答案，门禁仍用真源。
+Llama 3 在最后 40M token 线性降低学习率，并上采样高质量来源，明确不含常用基准的训练集。公开的 mix 大约是 50% 通用、25% 数学推理、17% 代码、8% 多语。
 
-公开锚点：Llama 3 最后 40M token 线性降学习率并上采样高质源，明确不含常用基准训练集；对照把 GSM8K / MATH 训练集放进 annealing，8B 验证分别约 +24.0% / +6.4%，405B 可忽略。公开 mix 大约 50% 通用、25% 数学推理、17% 代码、8% 多语。
+他们还做了对照：把 GSM8K / MATH 训练集放进 annealing，8B 的验证分数分别约 +24.0% / +6.4%，405B 上的提升可以忽略。405B 不吃 GSM8K 训练集仍然很强，说明大模型能靠 ICL 补上小模型要靠 annealing 才能补的洞。
 
-## 追问
+这里有两个容易犯的错。一是把这 40M 当成通用配额：那是 Llama flagship 末段的数字，别家的同类阶段可以长得多，AFM 2025 报告的 continued PT 就是万亿级 token，用验证过的合成数据和高质量原始数据，多语比例从 8% 提到 30%。二是把 GSM8K / MATH 训练集放进这一段刷 few-shot：用于评测的基准训练集不要混入，见 `dt-contamination`。
 
-- **40M 够吗？** 那是他们 flagship 末段。AFM mid 是万亿级 token 量级的另一段。40M 是 Llama 的数，不是内部配额。
-- **用 annealing 评估小源靠谱吗？** 便宜，适合许可小集。替代不了目标模型上的冻结切片。
+## 实践中的变化
+
+小模型更依赖 mid-training 的数据，这一段的数据更值钱，8B 和 405B 的对照就是例子。合成的数学和代码题要过标准答案，门禁仍用真实来源。
+
+Annealing 还能用来评估许可的小数据集：拿半训的小模型，按新来源 30%、旧 mix 70% 做一段退火，看效果。这种方法便宜，结论最后仍要在目标模型上用冻结切片验证。

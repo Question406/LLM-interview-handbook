@@ -4,7 +4,7 @@ section: tech-screen
 order: 29
 level: A
 title: CoderPad：十亿文档里找高频样板 n-gram，Count-Min 怎么写？
-quick: "用 $d$ 行 $w$ 列计数器，每个 n-gram 经 $d$ 个哈希分别计数，查询时取最小值估计频率。版权声明、导航和 cookie 提示等高频片段，可以在复核后剥除。哈希碰撞只会抬高估计值，因此阈值要留余量，并抽查超阈值候选。"
+quick: "要找的是跨文档反复出现的片段，比如版权声明、导航和 cookie 提示。精确计数需要十亿级哈希表，所以用 Count-Min sketch：$d$ 行 $w$ 列计数器，每个 n-gram 经 $d$ 个哈希各加一，查询取 $d$ 行最小值。哈希碰撞只会让估计偏高，所以阈值要留余量，超阈值的候选抽查复核后再剥除。"
 companies:
   - apple
 tags:
@@ -28,9 +28,11 @@ sources:
     type: primary
 ---
 
-我会先写 $d$ 行 $w$ 列的 Count-Min：每个 gram 用 $d$ 个哈希各加一，估计取 $d$ 行最小值。对超过频率阈值的版权声明、导航和 cookie 提示做抽查，再从正文中剥除。估计值可能因哈希碰撞偏高，因此阈值要留余量。精确计数要一张十亿级哈希表，sketch 用固定内存估频率。MinHash 去近重复文档；同一句版权声明嵌在无数不相关页里，文档级 Jaccard 并不高，要找跨文档高频片段。
+这题要找的是跨文档反复出现的片段：版权声明、导航、cookie 提示这类。它们嵌在无数不相关的页面里，文档级 Jaccard 并不高，MinHash 去近重复文档抓不到，要直接统计片段在多少文档里出现过。精确计数需要一张十亿级的哈希表，所以用 Count-Min sketch，以固定内存估计频率。
 
-误差大约 $O(N/w)$，$N$ 是总增量次数。$d=\lceil\ln(1/\delta)\rceil$ 行控制失败概率。现场 $w=2^{20}$、$d=4$ 量级够讲。
+做法是 $d$ 行 $w$ 列计数器：每个 gram 用 $d$ 个哈希各在一行加一，查询时取 $d$ 行里的最小值作为估计。超过频率阈值的 gram 抽查后再从正文里剥除。估计值可能因哈希碰撞偏高，所以阈值要留余量。
+
+误差大约是 $O(N/w)$，$N$ 是总增量次数；行数 $d=\lceil\ln(1/\delta)\rceil$ 控制失败概率。现场讲 $w=2^{20}$、$d=4$ 这个量级就够了。
 
 ## 最小值那一行才是估计
 
@@ -62,7 +64,7 @@ class CountMin:
         return min(self.table[row][self._index(key, row)] for row in range(self.d))
 ```
 
-第一遍：每个文档的 8-gram 加一（文档内先去重，避免一篇长文把自己的句子打成「全球高频」）。第二遍：估计过阈值的 gram 当样板，从正文里剥或整篇 quarantine。
+整个流程跑两遍。第一遍对每个文档的 8-gram 加一，加之前在文档内先去重，否则一篇长文会把自己反复出现的句子刷成「全球高频」。第二遍查估计值，过阈值的 gram 当作样板，从正文里剥掉，或者把整篇 quarantine。
 
 文档内去重：
 
@@ -113,18 +115,20 @@ assert doc_sketch.estimate("all rights reserved by example corp since the") == 2
 assert grams("too short", n=8) == set()
 ```
 
+## 内存
+
+总共 $d\cdot w$ 个整型。$d=4$、$w=2^{20}$ 大约几十 MB，比存全部 gram 的计数小几个数量级。
+
 ## 失败模式
 
-高估：两个无关稀有 gram 撞同一格子，估计偏高。所以过阈值的要抽查，或第二层精确计数只对候选 gram。Count-Min 不低估，漏报少、误报靠复核。
+第一种是高估：两个无关的稀有 gram 撞到同一个格子，估计就偏高。Count-Min 不会低估，所以漏报少，误报要靠复核：过阈值的 gram 抽查，或者只对候选 gram 再做一层精确计数。
 
-正当高频：`the united states of america`、公式、`for i in range`。按域分 sketch，代码桶和网页桶分开。许可证白名单。
+第二种是正当的高频片段，比如 `the united states of america`、公式、`for i in range`。办法是按域分 sketch，代码桶和网页桶分开，许可证文本放白名单。
 
-和 `dt-boilerplate-code` 的分工：密度法看 DOM 结构；Count-Min 看跨页重复字符串。JS 渲染后的站点两层都要。
-
-内存账：$d\cdot w$ 个整型。$d=4$、$w=2^{20}$ 大约几十 MB。比存全部 gram 计数小几个数量级。
+它和 `dt-boilerplate-code` 是分工关系：密度法看 DOM 结构，Count-Min 看跨页重复的字符串。JS 渲染的站点两层都要用。
 
 ## 追问
 
-- **为什么不用 HyperLogLog？** HLL 估的是基数（有多少不同 gram），不估某一个 gram 出现几次。高频检测用 Count-Min。
-- **能减计数吗？** 标准 Count-Min 不支持删除。opt-out 撤回用精确墓碑，见 `dt-exact-dedup-code`。
-- **阈值怎么定？** 按「出现在多少文档」而不是多少次 文本处理单位（token）。扫文档频率的分位数，人工看 top 100 gram。
+- **为什么不用 HyperLogLog？** HLL 估的是基数，也就是有多少种不同的 gram，不估某一个 gram 出现几次。高频检测要用 Count-Min。
+- **能减计数吗？** 标准 Count-Min 不支持删除。opt-out 撤回要用精确墓碑表，见 `dt-exact-dedup-code`。
+- **阈值怎么定？** 按「出现在多少个文档里」定，不按出现了多少个文本处理单位（token）。扫文档频率的分位数，再人工看前 100 个 gram。

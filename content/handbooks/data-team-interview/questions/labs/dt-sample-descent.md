@@ -4,7 +4,7 @@ section: labs
 order: 57
 level: A
 title: Anthropic 作业：样本轴 double descent，对 data mix 意味着什么？
-quick: "增加样本不保证评测一直变好：在插值区附近，测试误差可能先升再降。调整 data mix 时，仍要保持计算预算不变，对比旧配比和新配比在固定评测集上的表现，不能仅凭 double descent 曲线决定比例。"
+quick: "意味着增加样本不保证评测一直变好：在插值区附近，测试误差可能先升再降，同类数据翻倍也可能变差。所以调 data mix 时要在相同计算预算下，对比新旧配比在固定评测集上的表现，同时看目标任务和旧能力。double descent 曲线提醒你结果可能非单调，比例还是由消融来定。"
 companies:
   - apple
 tags:
@@ -28,16 +28,24 @@ sources:
     type: primary
 ---
 
-Nakkiran 等人的研究表明，改变模型规模、样本数量或训练时长，都可能出现 double descent。增加样本时，在插值区附近测试误差可能先升再降，因此把同类数据翻倍，并不保证效果持续改善。实际调整配比时，我会在相同计算预算下对比新旧 mix，同时报告目标任务和旧能力的固定评测结果。
+对 data mix 来说，它意味着「多加数据」本身不保证变好。增加样本时，测试误差在插值区附近可能先升再降，所以把同类数据翻倍，并不保证效果持续改善。实际调配比时，我会在相同计算预算下对比新旧 mix，同时报告目标任务和旧能力在固定评测上的结果。
 
-不这么选的理由：AceOffer 记过 Anthropic MLE 4 小时作业：设计并跑样本轴 double descent 实验。把它答成「数据越多越好」或「Chinchilla 已经取消了这件事」，作业会挂。Chinchilla 管的是计算最优的参数和 文本处理单位（token） 配比，不保证每一刀过滤或每一桶合成都单调。
+## 为什么会这样
 
-接到苹果：过滤太狠等于有效 $N$ 下降，可能走到曲线的坏区，见 `dt-filter-too-hard`。合成加量若全是近重复，计数涨、有效 $N$ 不涨，见 `dt-global-dedup`。决策仍是 DataComp 式消融：固定模型，只换数据，见 `dt-hold-model-vary-data`。端侧 3B 更靠近小样本区，加脏数据更容易先伤再假涨。
+Nakkiran 等人（arxiv 1912.02292）的研究表明，改变模型规模、样本数量或训练时长，都可能出现 double descent。样本轴上的表现就是上面说的：靠近插值区时，多加样本也可能让测试误差上升。
 
-公开锚点：AceOffer Anthropic ML 目录「Sample-Aspect Double Descent Experiment Design」，报到 2026 年 4 月；arxiv 1912.02292；Chinchilla。
+Chinchilla 管的是计算最优时参数量和 token（文本处理单位）数的配比，它不保证每一次过滤、每一桶合成都让效果单调变好。把这题答成「数据越多越好」或「Chinchilla 已经取消了它」，作业会挂。
+
+## 落到数据决策
+
+过滤太狠等于有效样本数 $N$ 下降，可能走到曲线的坏区，见 `dt-filter-too-hard`。合成数据加量时如果全是近重复，计数涨了，有效 $N$ 却没涨，见 `dt-global-dedup`。做决策仍然靠 DataComp 式的消融：固定模型，只换数据，见 `dt-hold-model-vary-data`。小模型更靠近小样本区，加脏数据更容易出现先变差、再假性上涨。
+
+## 题目来源
+
+AceOffer 的 Anthropic ML 目录里有「Sample-Aspect Double Descent Experiment Design」，是一个 MLE 4 小时作业：设计并跑样本轴 double descent 实验，报道到 2026 年 4 月。
 
 ## 追问
 
-- **作业没 GPU 怎么办？** 小模型、小词表、合成可分数据也能做出形状。面试官看的是你知不知道插值区，不是 ImageNet 分数。
-- **和 epoch 重复什么关系？** Muennighoff 写过约 4 个 epoch 后回报降。那是重复同一批；本题是增加新样本时的非单调。两件事都要能分开讲，见 `dt-repeat-epoch`。
-- **曲线好看就上 mix？** 好看不够。要看产品切片和安全税。double descent 是警告，不是选数的公式。
+- **作业没有 GPU 怎么办？** 用小模型、小词表、合成的可分数据也能做出曲线形状。面试官看的是你知不知道插值区，ImageNet 分数不重要。
+- **和 epoch 重复是什么关系？** Muennighoff 写过大约 4 个 epoch 之后回报下降，那是重复同一批数据；这题讲的是增加新样本时的非单调。两件事要能分开讲，见 `dt-repeat-epoch`。
+- **曲线好看就能上这个 mix 吗？** 不够。还要看产品切片和安全税。double descent 只是提醒曲线可能非单调，选数据还是靠消融。

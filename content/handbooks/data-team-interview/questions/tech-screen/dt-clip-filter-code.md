@@ -4,7 +4,7 @@ section: tech-screen
 order: 27
 level: A
 title: CoderPad：图文对 CLIP 分怎么滤，合成 caption 要不要同一阈值？
-quick: "图像和文本分别生成向量，用余弦衡量匹配程度，按语言与来源校准阈值。网页 alt-text 和合成 caption 分开处理，后者分数可能虚高。CLIP 不检查重复或安全，还需要对应检查器，并用下游对照验证误删。"
+quick: "图像和文本各自编码成向量，用余弦相似度衡量图文是否匹配，再按语言和来源分桶取分位数阈值。合成 caption 要和网页 alt-text 分开设阈值，因为它的 CLIP 分会向教师模型的分布靠拢而虚高。CLIP 分也不检查重复和安全，这些要用各自的检查器，误删要靠下游对照来验证。"
 companies:
   - apple
 tags:
@@ -28,11 +28,13 @@ sources:
     type: primary
 ---
 
-先把图像和文本转成向量，计算余弦相似度，再按语言和来源确定阈值或保留分位数。合成 caption 的 CLIP 分可能偏高，应与网页 alt-text 分开校准。面试重点是说明输入、筛选条件和输出，不要推测内部阈值。
+这题要写的是图文对过滤：图像和文本各自编码成向量，算余弦相似度，作为图文是否匹配的分数，再按语言和来源分桶，每桶取保留分位数作为阈值。合成 caption 要单独设阈值，因为它的分数会偏高。面试时讲清输入、筛选条件和输出就够了。
 
-DataComp / LAION 的 CLIP score 是公开锚点。AFM 公开写了去重后超 100 亿图文对、合成 caption 超 50 亿对。
+公开的参照是 DataComp 和 LAION 的 CLIP score 过滤。合成 caption 在实际数据里占比不小，AFM 2025 报告写了去重后超过 100 亿图文对，其中合成 caption 超过 50 亿对。
 
 ## 计算余弦，再按语言和来源筛选
+
+`clip_score` 先做 L2 归一化，所以分数只看方向、与向量长度无关；维度不一致直接报错。`keep_pair` 先查 caption 长度，再查分数，并返回拒绝原因。`thresholds_by_quantile` 对每个桶单独排序，取第 `keep_frac` 位置的分数当阈值，小桶至少保留一条。
 
 ```python
 import math
@@ -107,18 +109,20 @@ assert thresholds["synth_en"] == 0.95
 assert thresholds_by_quantile([("tiny", 0.4)], keep_frac=0.3) == {"tiny": 0.4}
 ```
 
-`bucket` 先按语言，再按来源（网页 alt / OCR / 合成）。LAION-2B 公开用过 B/32 约 0.28 的硬阈值；DataComp 更好的基线是 L/14 头 30%。现场口播分位数，不要背 0.28 当苹果的数。
+`bucket` 先按语言分，再按来源分（网页 alt、OCR、合成）。用分位数是因为 CLIP 分的绝对值随模型和数据分布变化。LAION-2B 公开用过 B/32 约 0.28 的硬阈值，DataComp 更好的基线是 L/14 分数前 30%。0.28 只对那个模型和那批数据有意义，现场讲分位数做法就行。
 
-还需独立检查过小图片、纯单色图片、仅含文件名 `DSC0001.jpg` 的 caption，以及色情 / CSAM。CLIP 分不能替代安全检查。
+## 合成 caption 为什么会虚高
 
-## 合成 caption 虚高
+用强模型给图写 caption，再拿 CLIP 打分，分数会靠近教师自己的分布。如果把网页 alt-text 的 0.3 分位数阈值直接套到合成桶，合成数据几乎全部保留。所以合成桶要单独检查：人工抽查、与独立 captioner 的一致性，以及 caption 里有没有评测题面（图文泄漏）。多模态合成管线见 `dt-synth-tool-mm`、`dt-multimodal-data`。
 
-用强模型给图写 caption，再拿 CLIP 打分，分数会靠近教师自己的分布。网页 alt-text 的 0.3 分位数套过去，合成几乎全留。合成桶：人工抽查、和独立 captioner 的一致性、以及是否含评测题面（图文泄漏）。多模态合成管线见 `dt-synth-tool-mm`、`dt-multimodal-data`。
+非英语也要单独处理。CLIP 偏向英语，低资源语言要用该语言自己的分位数，或者先过 `dt-lid-code` 再筛。机翻的 caption 要记录来源。
 
-非英语：CLIP 偏英语。低资源语言用该语言分位数，或先过 `dt-lid-code` 再滤。机翻 caption 要记来源。
+## CLIP 分管不到的东西
+
+过小的图片、纯单色图片、只有文件名的 caption（比如 `DSC0001.jpg`），以及色情和 CSAM，都要独立检查。CLIP 分不能替代安全检查。
 
 ## 追问
 
-- **只留高分会不会只剩英文库存图？** 会。所以按语言配额，不要全局 top 30%。
-- **图近重复？** CLIP 分不管复制图。图像侧 pHash / embedding 去重，文本侧 SimHash，见 `dt-simhash-code`。
-- **阈值扫什么指标？** 小模型的检索召回和分类 zero-shot，外加人工看误杀的图表、截图、UI。只报平均 CLIP 分没有对照。
+- **只留高分，会不会只剩英文库存图？** 会，所以要按语言配额，每个语言桶各自取分位数。
+- **近重复的图怎么办？** CLIP 分不管复制图。图像侧用 pHash 或 embedding 去重，文本侧用 SimHash，见 `dt-simhash-code`。
+- **扫阈值时看什么指标？** 看小模型的检索召回和 zero-shot 分类，再人工看被误杀的图表、截图和 UI 图。只报平均 CLIP 分等于没有对照。

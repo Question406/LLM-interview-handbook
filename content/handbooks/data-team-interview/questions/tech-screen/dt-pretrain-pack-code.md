@@ -4,7 +4,7 @@ section: tech-screen
 order: 21
 level: A
 title: CoderPad：预训练怎么把文档拼进固定长度，边界要不要断因果？
-quick: "把文档装入长度为 `seq_len` 的序列，插入 BOS/EOS 标记，并在文档边界切断注意力。padding 不计算 loss。预训练通常监督文档中的大部分 token，SFT 则还要按角色限制监督范围，见 `dt-packed-sft-code`。"
+quick: "把文档贪心装进长度为 `seq_len` 的序列，文档之间插 BOS/EOS，并在文档边界切断注意力，padding 不算 loss。这样既不浪费算力在 pad 上，也不会让模型跨篇续写。预训练一般监督文档里的大部分 token，SFT 还要按角色限制监督范围，见 `dt-packed-sft-code`。"
 companies:
   - apple
 tags:
@@ -28,13 +28,13 @@ sources:
     type: primary
 ---
 
-把文档贪心装入长度为 `seq_len` 的序列，文档之间插入 BOS/EOS，边界处切断 attention，padding 不计算 loss。预训练一般计算文档中大部分 token 的交叉熵，但不同文档不能相互读取。`dt-packed-sft-code` 问哪些角色进 loss。短文档直接 pad 会浪费 50% 算力；别把两篇文章拼成一篇新文章让模型跨篇续写。
+短文档直接 pad 到 `seq_len` 会浪费 50% 的算力，所以要 pack：把文档贪心装进长度为 `seq_len` 的序列，文档之间插 BOS/EOS，padding 不算 loss。拼进同一个序列的文档仍然是各自独立的文章。Efficient Sequence Packing without Cross-contamination 的结论是：长度可以拼，注意力要在文档边界断掉，否则不同文档能相互读取，等于造了假的长上下文。
 
-Efficient Sequence Packing without Cross-contamination：拼长度可以，注意力要在文档边界断掉，否则等于造假长上下文。
+预训练一般对文档里的大部分 token 算交叉熵；哪些角色进 loss 是 SFT 的问题，见 `dt-packed-sft-code`。
 
 ## 贪心装箱，记下边界
 
-文档已经是 token id。目标长度 $L$。当前桶装不下就封桶。超长文档切成 $L$ 块，块间仍插 EOS，避免一本技术手册变成没有句号的超长句。
+输入的文档已经是 token id，目标长度是 $L$。当前桶装不下就封桶。超长文档切成长度 $L$ 的块，块之间仍插 EOS，避免一本技术手册变成没有句号的超长句。
 
 ```python
 def pack_docs(docs, L, bos_id, eos_id, pad_id):
@@ -110,18 +110,18 @@ except ValueError:
     pass
 ```
 
-Attention：同一位置只看见 `doc_ids` 相同且时间步更早的 token。实现可以是块对角因果 mask，或在边界把 KV 清掉。漏了这一步，模型会用上一篇的结尾当下一篇的上文，短网页被错误拼接成「假长上下文」。长上下文能力另用专门数据造，见 `dt-longctx-data`。
+注意力的规则是：每个位置只看得见 `doc_ids` 相同、时间步更早的 token。实现上可以用块对角的因果 mask，或者在边界把 KV 清掉。漏了这一步，模型会拿上一篇的结尾当下一篇的上文，短网页被拼成「假长上下文」。长上下文能力要用专门的数据来造，见 `dt-longctx-data`。
 
-BOS/EOS 进不进 loss：进。它们是文档边界的监督。Pad 不进。
+BOS/EOS 进 loss，因为它们是文档边界的监督信号；pad 不进。
 
-## 长度分布
+## 长度分布和占用率
 
-只贪心会把长文档剩下一截短尾巴，尾巴再和其他短文拼。按长度降序 pack 能提高占用，但会改变每个 batch 的域混合。配额采样要在 pack 之前做完，见 `dt-temp-mix-code`。pack 只是把已抽中的文档塞进 $L$，不要在这里再按长度偏置一次。
+只做贪心，长文档会剩下一截短尾巴，再和其他短文拼在一起。按长度降序 pack 能提高占用率，但会改变每个 batch 的域混合。所以配额采样要在 pack 之前做完（见 `dt-temp-mix-code`），pack 只负责把已经抽中的文档塞进 $L$，不要在这里再按长度偏置一次。
 
-占用率当场报：目标 >90%。低于 80% 说明短文档太多或 $L$ 选错。
+占用率要当场报出来，目标是 90% 以上。低于 80% 说明短文档太多，或者 $L$ 选错了。
 
 ## 追问
 
-- **监督微调（SFT） 能不能同一套 pack？** 能拼长度，mask 完全不同。SFT 还要断 user/tool，见 `dt-packed-sft-code`。
-- **跨文档可见有人故意开？** 当数据增强要显式声明，默认关。评测泄漏也会跨拼进来。
-- **EOS 和 pad 同一个 id？** 不要。否则边界和空白分不开。
+- **监督微调（SFT）能用同一套 pack 吗？** 拼长度的逻辑可以复用，mask 完全不同，SFT 还要屏蔽 user 和 tool，见 `dt-packed-sft-code`。
+- **能不能故意打开跨文档可见？** 默认关。真要打开，必须当成一种显式声明的数据增强；而且跨文档拼接也会把评测泄漏一起带进来。
+- **EOS 和 pad 能用同一个 id 吗？** 不要，否则文档边界和空白就分不开了。

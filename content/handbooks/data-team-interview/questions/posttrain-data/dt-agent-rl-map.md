@@ -4,7 +4,7 @@ section: posttrain-data
 order: 17
 level: S
 title: Agent RL 数据：怎么判断这批环境是好的，怎么把它造出来？
-quick: "Agent RL 的数据需要包含任务、可执行环境和可复现的奖励。质量检查包括说明是否完整、测试是否稳定、奖励能否被钻空子，以及当前模型是否偶尔能成功。扩展时先筛选或按任务维度合成环境，再并行运行 rollout。"
+quick: "Agent RL 的数据是任务、可执行环境和可复现奖励三件一起，轨迹 jsonl 只用来冷启动。质量检查看说明是否完整、测试是否稳定、奖励能否被钻空子，以及当前模型是否偶尔能成功。扩展时先筛选现有任务或按任务维度合成环境，再并行跑 rollout。"
 companies:
   - apple
 tags:
@@ -31,13 +31,13 @@ sources:
     type: secondary
 ---
 
-回答 Agent RL 数据问题时，先区分两件事：SFT 轨迹用于冷启动，RL 则需要可执行的环境和奖励。下面按问题列出对应的判断和题卡，公开资料用于解释这些判断的依据。
+回答 Agent RL 数据问题，先分清两件事：SFT 轨迹用来冷启动，RL 需要的是可执行的环境和奖励。SFT 那部分见 `dt-agent-fireact`、`dt-agent-swegym`。RL 的燃料是许可环境里的执行反馈。
 
-SFT 那组在 `dt-agent-fireact`、`dt-agent-swegym`。苹果侧用户交互默认不进基础模型，燃料是许可环境里的执行反馈。
+下表按面试官可能的问法，列出我先给的判断和对应题卡，公开资料的依据在各卡里。
 
 | 他问 | 我先答 | 卡 |
 | --- | --- | --- |
-| 数据集是什么 | 环境，不是 jsonl | `dt-agent-env-is-data` |
+| 数据集是什么 | 可执行环境；jsonl 只管冷启动 | `dt-agent-env-is-data` |
 | 一条任务好不好 | fail-to-pass、说明够、测在考说明里的事 | `dt-agent-task-quality` |
 | 2 万条怎么剪 | 炸引用、太复杂、质量分差、flaky | `dt-agent-rl-filter` |
 | 奖励怎么写 | 隐藏测 / 状态；别用 patch 相似 | `dt-agent-reward-spec` |
@@ -45,7 +45,7 @@ SFT 那组在 `dt-agent-fireact`、`dt-agent-swegym`。苹果侧用户交互默�
 | 怎么扩 | 先单环境复现，再并行沙箱 | `dt-agent-scale-env` |
 | 门禁涨了算赢吗 | 先查测和泄漏 | `dt-agent-verified-stale` |
 | 一组全零 | 丢掉；留 pass@$k$ 中间带 | `dt-agent-passk-zero` |
-| GUI | 状态检查器，不是点击示范 | `dt-gui-agent-rl` |
+| GUI | 用终局状态检查器打分 | `dt-gui-agent-rl` |
 | 没有 issue 池 | 按轴合成 Docker + 验证器（verifier） | `dt-agent-tmax-synth` |
 | 配方怎么讲 | 先验 + 环境，算法靠后 | `dt-shunyu-second-half` |
 | 客户环境 | 对齐生产、隔离 VM、正确性当门 | `dt-agent-rft-recipe` |
@@ -56,5 +56,5 @@ SFT 那组在 `dt-agent-fireact`、`dt-agent-swegym`。苹果侧用户交互默�
 
 ## 追问
 
-- **和数学 基于可验证奖励的强化学习（RLVR） 差在哪？** 数学题通常根据最终答案评分。Agent 有多步操作，还要处理不稳定测试和钻奖励漏洞的问题。我会先问奖励会不会被改测试，再谈 GRPO。
-- **SFT 轨迹还要吗？** 要，冷启动格式。RL 不靠把 500 条 GPT 轨迹再标一遍。
+- **和数学的基于可验证奖励的强化学习（RLVR）差在哪？** 数学题通常只看最终答案。Agent 有多步操作，还要处理不稳定的测试和钻奖励漏洞的问题。所以我会先问奖励会不会被改测试绕过，再谈 GRPO。
+- **SFT 轨迹还要吗？** 要，用来冷启动格式。RL 阶段要让当前策略在环境里跑出新轨迹，把 500 条 GPT 轨迹再标一遍没有用。

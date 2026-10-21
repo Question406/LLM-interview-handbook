@@ -4,7 +4,7 @@ section: labs
 order: 13
 level: A
 title: Anthropic 编程题：带权重的 DataBatcher，断点续跑怎么写？
-quick: "按 token 预算组成 batch，checkpoint 保存每个数据源的读取 offset 和随机数状态。恢复时从原位置继续，不能只恢复随机种子后从头读。数据源耗尽时把其概率设为零并报告，避免悄悄改变配比；AFM 多语比例 8%→30% 就是调整权重的例子。"
+quick: "按 token 预算组 batch，checkpoint 保存每个数据源的读取 offset 和随机数状态，恢复时从原位置继续读；只恢复随机种子，每个源会从头再读一遍。数据源耗尽时把它的概率设为零并报告，不悄悄改变配比。权重本身由上层决定，调配比就是改 `weights`。"
 companies:
   - apple
 tags:
@@ -25,13 +25,22 @@ sources:
     type: primary
 ---
 
-registry 为每个数据集提供支持 offset 的 iterator。将权重归一化为采样概率，并按 token 数累计 batch。checkpoint 要保存每个源的 offset 和随机数状态，恢复时用 `iterate(name, offset=saved)` 从原位置继续。某个源空了要把概率打零并报出来，不要静默改 mix。AFM 多语 8%→30% 就是改 `weights`，桶内温度再套一层 `n_i**alpha`，见 `dt-temp-mix-code`。
+核心是两件事：batch 按 token 预算凑；断点续跑时保存每个源的 offset 和随机数状态，恢复后从原位置继续读。另外，某个源读完时要把它的概率打零并报出来，让配比的变化看得见，不悄悄把它的配额让给别的源。
 
-不这么选的理由：`random.choices` 按条采样，长文档把配额吃爆；checkpoint 只存 RNG seed，源 iterator 从头再读一遍。CoderPad 味的 mix 题，和 `dt-temp-mix-code` 同一族，考的是可复现的 token 预算，不是「能采样就行」。
+## 为什么常见写法会错
 
-接到苹果：许可源、验证合成、bulk 网页是不同 iterator，权重写在 mix 卡上。DoReMi 每 step 改 `p`，offset 继续，不要为了换权重把 iterator 重置，见 `dt-doremi-mix`。多 worker 时每个源按 worker 切 shard，offset 是本 worker 内的，全局不重复靠 shard 划分。
+最直接的写法是用 `random.choices` 按条采样，再在 checkpoint 里只存 RNG seed。这有两个问题。按条采样时，长文档会把 token 配额吃爆，实际 mix 和设定的权重对不上。只存 seed 的话，恢复后每个源的 iterator 会从头再读一遍，已经训过的样本被重复使用。这是 CoderPad 风格的 mix 题，和 `dt-temp-mix-code` 同一族，考点是可复现的 token 预算。
 
-公开锚点：AceOffer 记过两次（2025-10 到 2026-04）：`DataRegistry` 按名字取 iterator，iterator 接受 `offset`，后面几问加权重、断点和多源耗尽。
+题目来源：AceOffer 记过两次（2025-10 到 2026-04）。`DataRegistry` 按名字取 iterator，iterator 接受 `offset`，后面几问依次加权重、断点和多源耗尽。
+
+## 思路
+
+1. registry 为每个数据集提供支持 offset 的 iterator。
+2. 把权重归一化为采样概率，按 token 数累计，凑满预算就出一个 batch。
+3. checkpoint 保存每个源的 offset 和随机数状态，恢复时用 `iterate(name, offset=saved)` 从原位置继续。
+4. 某个源空了，概率打零并记录下来，供上层报警。
+
+权重怎么定是上层的事。实际 mix 里，许可源、验证过的合成和 bulk 网页各是一个 iterator，权重写在 mix 卡上。AFM 2025 报告把多语比例从 8% 调到 30%，落到这里就是改 `weights`；桶内温度再套一层 `n_i**alpha`，见 `dt-temp-mix-code`。
 
 ```python
 import random
@@ -157,6 +166,6 @@ except ValueError:
 
 ## 追问
 
-- **packed 序列呢？** batch 按 token 凑齐之后，再按 `dt-packed-sft-code` 拼，文档之间 mask。Batcher 不负责 交叉熵损失（CE）。
-- **权重每 step 都变（DoReMi）？** `p` 改掉即可，offset 继续。不要为了换权重把 iterator 重置，见 `dt-doremi-mix`。
-- **多 worker？** 每个源按 worker 切 shard，offset 是「本 worker 内」的。全局不重复靠 shard 划分，不靠共享 iterator。
+- **packed 序列呢？** batch 按 token 凑齐之后，再按 `dt-packed-sft-code` 拼接，文档之间加 mask。Batcher 不负责交叉熵损失（CE）。
+- **权重每 step 都变（DoReMi）怎么办？** 直接改 `p`，offset 继续。不要为了换权重把 iterator 重置，见 `dt-doremi-mix`。
+- **多 worker 呢？** 每个源按 worker 切 shard，offset 是本 worker 内的。全局不重复靠 shard 划分，worker 之间不共享 iterator。

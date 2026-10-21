@@ -4,7 +4,7 @@ section: labs
 order: 15
 level: A
 title: DataComp-LM：从 Common Crawl WET 起步，为什么公开集常吃亏？
-quick: "先检查正文是怎样提取出来的，再讨论质量分类器。WET 是别人已经提取好的文本，WARC 和渲染后的 DOM 则允许重新抽取。DCLM 的实验中，从 HTML 重新提取文本后，Core 指标比使用 WET 高至少 2.5 点；AFM 还使用 headless 浏览器和 LLM 提取主内容。"
+quick: "因为瓶颈往往在正文抽取。WET 是 Common Crawl 预先抽好的纯文本，抽错或漏掉的内容，后面的质量分类器补不回来。DCLM 固定同一套过滤，只把 WET 换成从 WARC 原始 HTML 重新抽取，Core 就高了至少 2.5 点。所以先定抽取，再调分类器和阈值。"
 companies:
   - apple
 tags:
@@ -28,16 +28,30 @@ sources:
     type: primary
 ---
 
-先确认数据许可和 robots 规则，见 `dt-legal-capability`。然后问清输入：是从 WARC 或渲染后的 DOM 提取正文，还是使用别人已经抽好的 WET 文本？抽取后再考虑过滤：启发式不能过于严格，AFM 也曾减弱规则；模型过滤要按语言调整，代码和数学使用适合各自内容的分类器，见 `dt-quality-clf-synth`、`dt-llama-extract`。去重范围要通过下游实验选择，见 `dt-global-dedup`。遇到「开源网页集让分数提高 15%」的说法，先排查抽取质量和评测污染，再分析分类器，见 `dt-synth-bench-trap`。
+公开集吃亏，多半亏在第一步：正文是怎么从网页里抽出来的。C4、RedPajama、Dolma-V1 都直接用 Common Crawl 的 WET，也就是别人已经抽好的纯文本。抽取器漏掉的正文、误收的导航和页脚，后面的质量分类器补不回来。所以这题我会先问输入是 WET 还是原始 WARC，再谈过滤阈值。
 
-一上来就谈 fastText 阈值，会漏掉更早的问题：正文是如何提取的。预训练数据设计题常从「拿一份开源网页集开训」开始。C4 / RedPajama / Dolma-V1 走 WET，抽取器丢失或误收的内容，会限制后面的质量分类器能做到什么。
+## 为什么抽取决定上限
 
-接到苹果：AFM 已经在用 headless 和 LLM 抽主内容，还会处理 JavaScript 渲染带来的内容。AskLLM 全库他们比过，贵，而且没赢 fastText；LLM 提取主内容适合用在规则提取失败的领域页面上，见 `dt-web-extract`。WET 能当弱基线，报告里要写你比的是 WET 还是重抽。输入是 Applebot / 许可页，不是下载一份开源 WET 直接开训。
+质量分类器只能在已有文本里挑。WET 用的是一套通用规则，遇到代码块、表格、公式或 JavaScript 渲染的内容，经常抽成残缺文本，或者混进大量模板文字。分类器看到的输入已经坏了，打分自然不准。代码和数学页面受影响最大，因为它们的价值恰好在这些结构里。
 
-公开锚点：DCLM-Pool 是 2023 年前的 Common Crawl，约 2000 亿文档；同一套 RefinedWeb 启发式下，Resiliparse 和 Trafilatura 的 Core 都比 WET 高至少 2.5 点，Resiliparse 大约快 8 倍。fastText（OpenHermes-2.5 + r/ExplainLikeImFive）赢了 PageRank、语义去重、嵌入线性分类器、AskLLM、困惑度。DCLM-Baseline 大约包含 4T token；他们自己写了这份 baseline 不是生产配方，代码和数学要另补。
+DCLM 做了一个干净的对照：DCLM-Pool 取 2023 年前的 Common Crawl，约 2000 亿文档，固定 RefinedWeb 那套启发式过滤，只换抽取器。用 Resiliparse 或 Trafilatura 从 HTML 重新抽取，Core 指标都比 WET 高至少 2.5 点，其中 Resiliparse 还快约 8 倍。也就是说，换抽取器本身就有稳定收益。
+
+## 抽完之后再做过滤
+
+抽取定下来后，DCLM 比较了多种质量信号：PageRank、语义去重、嵌入上的线性分类器、AskLLM、困惑度，最后赢的是一个 fastText 分类器，正样本取 OpenHermes-2.5 和 r/ExplainLikeImFive。用它筛出的 DCLM-Baseline 约 4T token。论文也写明这只是 baseline，代码和数学需要另外补。
+
+过滤这一步还有两点：启发式规则要留余地，FineWeb 和 AFM 2025 报告都减弱过过强的规则（见 `dt-filter-too-hard`）；模型过滤按语言调整，代码和数学用各自适配的分类器（见 `dt-quality-clf-synth`）。去重范围也要靠下游实验选，见 `dt-global-dedup`。
+
+## 能控制原始抓取时
+
+如果手里有原始 HTML，可以把抽取做得更细：先用 headless 浏览器渲染页面，拿到 JavaScript 生成的内容，再对规则抽取失败的领域页面用 LLM 抽主内容。AFM 2025 报告公开描述过这种做法。LLM 抽取成本高，用在规则失败的那部分页面上就够了，见 `dt-web-extract`、`dt-llama-extract`。
+
+如果有人说「换了某个开源网页集，分数涨了 15%」，我会先排查两件事：抽取质量有没有变，评测有没有被污染（见 `dt-synth-bench-trap`），然后再看分类器。
 
 ## 追问
 
-- **fastText 教的是 OH + ELI5，会不会偏论坛口吻？** 会。教育页面和 API 文档的得分可能被压低。可以按领域使用不同分类器，再通过小模型消融实验选择阈值。DCLM 公开阈值是他们的数。
-- **为什么不直接 AskLLM 全库？** 他们比过，贵，而且没赢 fastText。LLM 抽主内容只给规则失败的领域页，见 `dt-web-extract`。
-- **WET 一点都不能用？** 能当弱基线。报告里要写你比的是 WET 还是重抽，否则别人无法复现。
+- **fastText 用 OpenHermes + ELI5 当正样本，会不会偏论坛口吻？** 会。教育页面和 API 文档可能被压低分数。可以按领域训练不同分类器，再用小模型消融选阈值。DCLM 公开的阈值是在他们的数据上调出来的，换数据要重新调。
+- **为什么不直接用 AskLLM 筛全库？** DCLM 比过，成本高，效果也没赢 fastText。LLM 更适合用在规则抽取失败的那部分页面上。
+- **WET 完全不能用吗？** 可以当弱基线。报告里写清楚比的是 WET 还是重新抽取的文本，别人才能复现结论。
+
+相关：抓取的许可前提见 `dt-legal-capability`。

@@ -4,7 +4,7 @@ section: tech-screen
 order: 6
 level: A
 title: CoderPad：packed SFT 的 loss mask 怎么写，哪些 token 不能进梯度？
-quick: "把 packed 序列中的 prompt、padding 和工具返回排除出监督目标，只计算助手回复的交叉熵。不同样本之间还要切断注意力，避免后一个样本看到前一个答案。漏掉 mask，会让模型同时学习重建用户文本和工具返回。"
+quick: "SFT 学的是给定上下文时助手怎么回答，所以只对助手回复算交叉熵，prompt、padding 和工具返回都排除在监督目标之外。packed 序列里不同样本之间还要切断注意力，否则后一个样本能看到前一个的答案。漏掉 mask，模型就会同时学着重建用户文本和工具返回。"
 companies:
   - apple
 tags:
@@ -25,11 +25,11 @@ sources:
     type: primary
 ---
 
-先定义 packed SFT 的监督范围：prompt、padding 和工具返回默认不计入 loss，只对助手回复计算交叉熵。样本边界还要切断注意力，防止跨样本读取。不能整段计算 CE，也不能只屏蔽 prompt 却遗漏工具 observation，否则训练会包含重建用户邮件和工具 JSON 的目标。
+先想清楚 SFT 在学什么：目标是 $p(\text{assistant}\mid\text{context})$，用户的话、系统提示和工具返回都只是条件，要监督的标签只有助手回复。所以 packed SFT 里只对助手回复算交叉熵，prompt、padding 和工具返回默认不计入 loss；样本边界还要切断注意力，防止跨样本读取。
 
-SFT 的目标是 $p(\text{assistant}\mid\text{context})$。用户话、系统提示、工具返回是条件，不是标签。预训练文档 CE 可以几乎全开；对话和工具轨迹必须按角色 mask。AFM 的工具数据是带执行返回的轨迹，observation 进 损失（loss） 等于背数据库。
+常见的两种写错：整段算 CE，或者只屏蔽了 prompt、漏掉工具 observation。这两种都会让训练目标里混进重建用户邮件和工具 JSON。预训练文档的 CE 可以几乎全开，对话和工具轨迹必须按角色 mask。工具数据通常是带执行返回的轨迹，observation 进了损失（loss），就等于让模型背数据库。
 
-## 先定哪些 文本处理单位（token） 是监督
+## 先定哪些文本处理单位（token）是监督目标
 
 ```python
 import torch
@@ -105,19 +105,19 @@ no_assistant = torch.tensor([ROLE["user"]] * 6)
 assert sft_ce(logits, targets, no_assistant, same_doc).item() == 0.0
 ```
 
-口播这几处：
+代码里有四处要讲清楚：
 
-- 归一化。除以有效 token 数，不要除以 $T$。否则短完成被长 pad 稀释。
-- 边界。packed 必须在样本交界切断注意力或至少切断 loss。只切 loss、不切注意力，会让下一条看见上一条答案。
-- 工具。`tool` 角色永远不进 `superv`。最终对用户的那句 assistant 才进。
-- 隐私。即使用户文本出现在条件里，梯度也不该重建用户原文。苹果默认用户邮件不进全球 FM；就算研究集里有，也只监督摘要侧，见 `dt-privacy-feedback`。
+- 归一化：除以有效 token 数，不要除以 $T$，否则短回复会被长 pad 稀释。
+- 边界：packed 序列必须在样本交界处切断注意力，至少要切断 loss。只切 loss、不切注意力，下一条样本还是能看见上一条的答案。
+- 工具：`tool` 角色永远不进 `superv`，只有最终对用户说的那句 assistant 才进。
+- 隐私：用户文本只出现在条件里，梯度只落在助手输出上。比如邮件摘要任务，只监督摘要那一侧，模型就不会学着重建用户原文，见 `dt-privacy-feedback`。
 
-## 和数据质量的接头
+## 和数据质量的关系
 
-mask 错了，再好的 验证器（verifier） 也没用：模型在背 prompt。抽查一条 packed 样本，打印 `superv` 的位置是否只落在答案。这是 data team 该会的，不一定要 kernel 岗才会。
+mask 错了，再好的验证器（verifier）也没用，因为模型在背 prompt。检查方法很简单：抽一条 packed 样本，打印 `superv` 的位置，看是否只落在答案上。这是 data team 自己就该会做的检查。
 
 ## 追问
 
-- **多轮对话 mask 哪一轮？** 默认只监督当前助手回复，历史当条件。把历史助手话也打开，等于重复旧示范。
-- **思维链要不要 mask 掉最终答之前的 token？** 过程门过了就开；过程假只开最终答，见 `dt-synth-reasoning`。
-- **预训练 packed 呢？** 文档 CE，只去掉 pad 和文档边界。不要把 SFT mask 套到 core pretrain 上。
+- **多轮对话监督哪一轮？** 默认只监督当前这轮助手回复，历史当条件。把历史里的助手话也打开，等于重复训练旧示范。
+- **思维链要不要 mask 掉最终答案之前的 token？** 过程检查通过就打开；过程是假的，就只打开最终答案，见 `dt-synth-reasoning`。
+- **预训练的 packed 序列呢？** 用文档级 CE，只去掉 pad 并处理文档边界，不要把 SFT 的 mask 套到 core pretrain 上。

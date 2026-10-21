@@ -4,7 +4,7 @@ section: posttrain-data
 order: 22
 level: S
 title: Agent 环境要打包成什么，才能既评又训？
-quick: "任务环境包含任务说明与初始资源、连接工具动作的 harness，以及判断结果的 rubric。三者都可安装、可版本化，训练与评测共用逻辑。只有 prompt 模板、没有可执行动作和评分器，还不能支持 Agent RL。"
+quick: "打包成能 pip install 的任务环境：任务说明与初始资源、把工具动作接到真实系统的 harness、判断结果的 rubric。三者都可安装、可版本化，训练和评测共用同一套执行与评分逻辑，否则两边目标会打架。只有 prompt 模板、没有可执行动作和评分器，还撑不起 Agent RL。"
 companies:
   - apple
 tags:
@@ -37,28 +37,29 @@ sources:
     type: primary
 ---
 
-可以交付能 `pip install` 的任务包，包含任务、执行框架（harness）和评分规则（rubric）。训练与评测共用执行和评分逻辑，区别是使用的策略，以及是否把奖励回传用于更新。公开拆法是 Will Brown / Prime Intellect 的任务、harness、rubric；Karpathy 点名的就是 Environments Hub + `verifiers`。
+交付一个能 `pip install` 的任务包，里面有三样东西：任务、执行框架（harness）和评分规则（rubric）。训练和评测共用执行与评分逻辑，区别只在用哪个策略跑，以及奖励是否回传去更新模型。这个拆法来自 Will Brown 和 Prime Intellect；Karpathy 点名的也正是 Environments Hub 加 `verifiers`。
 
-常见误区是：缺 harness 的「agent 数据集」无法 强化学习（RL）。评测用 pytest、训练用字符串包含，两边 grader 会打架。
+## 为什么三样缺一不可
 
-## 三件套
+缺了 harness，所谓「agent 数据集」只是一堆文本，模型的动作改变不了任何东西，没法做强化学习（RL）。评分逻辑不统一也会出问题：评测用 pytest，训练用字符串包含，两个 grader 奖励的是不同的行为，训练分涨了评测分不一定涨。
 
-任务部分提供说明、初始状态和资源，例如仓库快照、网页镜像、fake API。环境必须能从这些内容重新启动。
+## 三件套分别管什么
 
-Harness 将模型工具调用接到 shell、浏览器和文件系统，让动作真正改变环境。超时、沙箱、重试也由执行框架控制，不只写在 prompt 里。
+任务部分提供说明、初始状态和资源，例如仓库快照、网页镜像、fake API。环境必须能从这些内容重新启动，否则 rollout 无法复现。
 
-Rubric 定义最终如何评分。例如隐藏测试权重 1、格式分 0.05、日志项权重 0。训练和评测用同一套规则，避免目标不一致。
+Harness 把模型的工具调用接到 shell、浏览器和文件系统，让动作真正改变环境。超时、沙箱、重试也由 harness 在代码里控制，光写在 prompt 里约束不住模型。
 
-`verifiers` 把这套接到常见 RL trainer。SkyRL 也是同一想法：环境服务和训练解耦，见 `dt-agent-scale-env`。
+Rubric 定义最终怎么评分，例如隐藏测试权重 1、格式分 0.05、日志项权重 0。训练和评测用同一套 rubric，目标才一致。
 
-## 数据组交什么
+`verifiers` 把这套结构接到常见的 RL trainer 上。SkyRL 也是同样的思路，把环境服务和训练解耦，见 `dt-agent-scale-env`。一个环境可以挂很多任务：harness 共享，任务是实例，比如 OSWorld 一个电脑镜像对应很多条 instruction。
 
-记录镜像哈希、依赖锁、rubric 版本和任务 ID，并用这些键关联 rollout 日志。harness 升级要当数据集版本 bump，不然昨天的成功轨迹今天复放失败。
+## 数据组要交付什么
 
-苹果：AFM 的工具平台已经有参考模型、执行环境、人回滚。RL 只是把人从热路径拿掉，三件套还在。用户对话默认不进这套。开源 Hub 能当格式和评测；训练还要许可和 holdout，见 `dt-license-is-quality`、`dt-agent-verified-stale`。
+记录镜像哈希、依赖锁、rubric 版本和任务 ID，并用这些键去关联 rollout 日志。harness 升级要当作数据集版本 bump 处理，否则昨天成功的轨迹今天复放就会失败。
+
+有人工回滚的工具平台也已经具备这三件套，上 RL 主要是把人从热路径上拿掉。AFM 2025 报告里的工具平台就由参考模型、执行环境和人工回滚组成。
 
 ## 追问
 
-- **只有 prompt 模板算环境吗？** 不算。没有副作用、没有 grader，只是 监督微调（SFT） 模板。
-- **一个环境多个任务？** 对。harness 共享，任务是实例。OSWorld 一个电脑镜像很多 instruction。
-- **开源 Hub 能当训练池吗？** 能当格式和评测。训练我会另要许可和 holdout。
+- **只有 prompt 模板算环境吗？** 不算。没有副作用，也没有 grader，它只是监督微调（SFT）模板。
+- **开源 Hub 能直接当训练池吗？** 能用来对齐格式和做评测。拿来训练的话，我会另外确认许可，并留出 holdout，见 `dt-license-is-quality`、`dt-agent-verified-stale`。

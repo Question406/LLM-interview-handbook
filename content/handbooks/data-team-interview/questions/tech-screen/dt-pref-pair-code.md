@@ -4,7 +4,7 @@ section: tech-screen
 order: 16
 level: A
 title: CoderPad：偏好对怎么滤，margin、长度、差不多的对谁扔掉？
-quick: "我会丢掉 $y_w\\approx y_l$ 的对、长度差过大的对、以及标注员自己标「难分」的对。能执行的任务，用独立 verifier 的结果计算 margin，不让生成模型给自己打分。 Llama 3 公开：edited > chosen > rejected，弱档不进 直接偏好优化（DPO）。"
+quick: "偏好对要先过滤再用：丢掉 $y_w\\approx y_l$ 的对、长度差过大的对，以及标注员自己标了「难分」的对。能执行的任务用独立 verifier 的结果当 margin，不让生成模型给自己打分。Llama 3 公开的排序是 edited > chosen > rejected，弱档不进直接偏好优化（DPO）。"
 companies:
   - apple
 tags:
@@ -28,9 +28,9 @@ sources:
     type: primary
 ---
 
-先检查三项：标注是否为平局（tie）、回答长度比，以及偏好分差（margin）。丢掉 $y_w\approx y_l$ 的对、长度差过大的对、标注员自己标「难分」的对。能执行的任务用 验证器（verifier） 当 margin，不用模型自打分。`dt-reward-pref` 是 Panel 选 奖励模型（RM） 还是 直接偏好优化（DPO）；这里给你一堆 `(prompt, y1, y2, vote)`，别 `if vote: keep`。
+这题给你一堆 `(prompt, y1, y2, vote)`，每一对先查三项：是不是平局（tie）、两个回答的长度比、偏好分差（margin）。$y_w\approx y_l$ 的对、长度差过大的对、标注员自己标了「难分」的对，都丢掉。能执行的任务用验证器（verifier）的结果当 margin，不用模型给自己打分。Panel 版 `dt-reward-pref` 问的是选奖励模型（RM）还是直接偏好优化（DPO），这里是把数据门写出来。
 
-Llama 3 公开：人对 chosen 再 edit 成更好的答案，弱档不进 DPO。长度：RM / 人都会偏长，见 `dt-length-hack-data`。过滤时要明确检查长度，不能指望损失函数自动消除偏差。
+要专门查长度，是因为 RM 和人都会偏爱长回答，见 `dt-length-hack-data`。这个偏差要在过滤时明确检查，损失函数不会自动消掉它。Llama 3 的公开做法是让人把 chosen 再编辑成更好的答案，弱档不进 DPO。
 
 ## 三道门，先长度后 margin
 
@@ -94,18 +94,18 @@ assert keep_pair(Pair("q", answer, worse, margin=0.1, tie=False)) == (False, "we
 assert keep_pair(Pair("q", answer, worse, margin=0.1, tie=False, n_edit=1)) == (True, "ok")
 ```
 
-`trivial_lose`：rejected 是空、乱码、明显截断，模型只学「别输出空」。这种对可以进极小的安全桶，不要占 DPO 主集。
+`trivial_lose` 指 rejected 是空、乱码或明显截断。这种对只能教会模型「别输出空」，可以放进一个极小的安全桶，不要占 DPO 主集。
 
-`n_edit>0`：有人改过 chosen，margin 可以放宽。这是 Llama 说 edited 更值钱的工程翻译。
+`n_edit>0` 表示有人改过 chosen，margin 可以放宽。这就是 Llama 说 edited 更值钱的工程实现。
 
 ## 可验证任务
 
-数学 / 代码 / 工具状态：`margin` 来自独立 oracle，不是 RM。一对里 win 过测、lose 不过测，margin 记 1。两个都过或都不过，这对不进偏好，进 `dt-rejection-sample-code` 或扔掉。过程假（答案对、推理胡编）当 lose 可以，但 win 必须过程也过门，见 `dt-math-verifier-code`。
+数学、代码和工具状态这类任务，`margin` 来自独立的 oracle。一对里 win 过了测试、lose 没过，margin 记 1。两个都过或都不过，这对不进偏好数据，转去 `dt-rejection-sample-code` 或者扔掉。过程是假的（答案对、推理胡编）可以当 lose，但 win 必须过程也过门，见 `dt-math-verifier-code`。
 
-工具轨迹按 message 标，不要整段一个 vote，见 `dt-tool-turn-pref`。
+工具轨迹要按 message 标注，不要整段一个 vote，见 `dt-tool-turn-pref`。
 
 ## 追问
 
-- **长度归一以后还滤 ratio 吗？** 仍滤。归一解决的是 RM 训练，滤 ratio 解决的是人标偏差已经写进对里。
-- **RM 分差当 margin？** 可以当候选排序，门禁仍要人抽查。RM 如果偏爱长回答，分差也可能强化 `length_hack`。
-- **丢掉弱对是不是浪费标注？** 弱对进 监督微调（SFT） 当「两种都可」或拿去改协议。把不确定的偏好强行用于 DPO，会给训练增加噪声。
+- **做了长度归一化，还要按长度比过滤吗？** 要。归一化解决的是 RM 训练时的偏差；按比例过滤处理的是人标偏差已经写进了这些对里。
+- **能用 RM 分差当 margin 吗？** 可以拿来给候选排序，门禁仍要人抽查。RM 如果偏爱长回答，分差也可能强化 `length_hack`。
+- **丢掉弱对是不是浪费标注？** 弱对可以进监督微调（SFT），当作「两种都可以」，或者拿去改协议。把不确定的偏好硬塞进 DPO，只会给训练加噪声。
