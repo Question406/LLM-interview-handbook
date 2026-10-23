@@ -4,7 +4,7 @@ section: tech-screen
 order: 26
 level: A
 title: CoderPad：URL 怎么规范化，opt-out / robots 怎么落到一条拒绝函数？
-quick: "URL 先统一规范化，再拿去做去重、许可拒绝表和评测匹配：scheme 和 host 转小写，去掉默认端口和 fragment，只删跟踪类 query，保留分页参数。host 后缀匹配要注意域名边界。原 URL 和规范化后的 URL 都要记录，robots 和 opt-out 由上游另做检查。"
+quick: "URL 先统一规范化，再拿去做去重、许可拒绝表和评测匹配：scheme 和 host 转小写，去掉默认端口和 fragment，只删跟踪类 query，保留分页参数。host 后缀匹配要守住域名边界。原 URL 和规范化后的 URL 都要记录，robots 和 opt-out 由上游另做检查。"
 companies:
   - apple
 tags:
@@ -28,9 +28,9 @@ sources:
     type: primary
 ---
 
-去重、许可拒绝表和评测匹配都依赖 URL，如果直接用原始字符串，`http://Example.com/a?utm_source=x#top` 和 `https://example.com/a` 会被当成两篇，opt-out 表也对不上。所以先做 URL 规范化（canon），再按拒绝表（deny）匹配。规范化包括：scheme 和 host 转小写，去默认端口，对保留的 query 排序，移除 fragment。拒绝规则按 host 后缀和 path 前缀检查。
+我会先把 URL 规范化，再按拒绝表匹配：scheme 和 host 转小写，去默认端口，删跟踪参数，对保留的 query 排序，去掉 fragment；拒绝规则按 host 后缀和 path 前缀查。抓取去重和许可检查用的是同一个规范化 URL。
 
-抓取去重和许可检查用的是同一个规范化 URL。
+比如 `http://Example.com/a?utm_source=x#top` 和 `https://example.com/a`，直接用原始字符串会被当成两篇，opt-out 表也对不上。去重、许可拒绝表和评测匹配都依赖 URL，所以这一步要先做。
 
 ## 规范化
 
@@ -73,9 +73,11 @@ def canon_url(url):
     return urlunparse((scheme, netloc, path, "", urlencode(query), ""))
 ```
 
-要不要去掉 www 按域定，有的站 `www` 和裸域是两套 CMS。登录墙和付费墙不要靠 URL 去猜，在抓取阶段就不进。
+要不要去掉 www 按域定，有的站 `www` 和裸域是两套 CMS。登录墙和付费墙别靠 URL 去猜，在抓取阶段就不进。
 
 ## 拒绝：后缀 host，前缀 path
+
+`example.com` 要挡住 `a.example.com`，但不能挡住 `notexample.com`，所以用 `endswith("." + s)`，别用 `s in host`。
 
 ```python
 def host_denied(host, suffixes):
@@ -102,7 +104,7 @@ def url_denied(url, host_suffixes, path_prefixes):
     return False, "ok"
 ```
 
-### 可执行测试
+测试覆盖规范化的几种情况、非法输入、域名边界和四种拒绝结果：
 
 ```python
 # 大小写、默认端口、跟踪参数、fragment、结尾斜杠都被规范掉
@@ -129,12 +131,20 @@ assert url_denied("garbage", [], []) == (True, "unparseable")
 assert url_denied("https://site.org/public", ["example.com"], ["/private"]) == (False, "ok")
 ```
 
-`example.com` 要挡住 `a.example.com`，但不能挡住 `notexample.com`，所以用 `endswith("." + s)`，不要用 `s in host`。
-
-robots 和训练 opt-out 是上游抓取器的表，训练侧再挡一层，防止旧快照混进来。撤回需要精确的墓碑记录，因为 Bloom 不支持删除，见 `dt-exact-dedup-code`。命中拒绝的文档进 quarantine，同时留原 URL 和 canon URL，方便审计误杀。
+每条 URL 解析一次，拒绝表按后缀和前缀线性查。robots 和训练 opt-out 是上游抓取器的表，训练侧再挡一层，防止旧快照混进来。撤回需要精确的墓碑记录，因为 Bloom 不支持删除，见 `dt-exact-dedup-code`。命中拒绝的文档进 quarantine，同时留原 URL 和 canon URL，方便审计误杀。
 
 ## 追问
 
-- **https 和 http 当同一页吗？** 默认当，再用内容哈希确认。有的站 HTTP 是镜像，HTTPS 才是登录后的正文。
-- **query 全部丢掉？** 不行，新闻分页的 `?page=2` 要留，只丢跟踪参数。
-- **和评测 URL 的重叠怎么查？** 规范化之后才能和冻结评测比，用原始字符串比对会漏。
+**https 和 http 当同一页吗？**
+默认当，再用内容哈希确认。有的站 HTTP 是镜像，HTTPS 才是登录后的正文。
+
+**query 全部丢掉？**
+不行，新闻分页的 `?page=2` 要留，只丢跟踪参数。
+
+**和评测 URL 的重叠怎么查？**
+规范化之后才能和冻结评测比，用原始字符串比对会漏。
+
+**拒绝表里的域名为什么不用 `s in host`？**
+那样 `notexample.com` 会被 `example.com` 误挡。用等于或 `endswith("." + s)` 守住域名边界。
+
+相关：`dt-exact-dedup-code`

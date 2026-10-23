@@ -4,7 +4,7 @@ section: frontier-release
 order: 1
 level: S
 title: Frontier 发模型时，主表还在报哪些数据集？
-quick: "2026 年闭源模型的发布主表主要报告科学推理、仓库修复、终端操作、浏览、桌面操作、长上下文和多模态，已较少以 MMLU、HumanEval 为重点。比较分数前，要核对思考预算、工具、尝试次数、运行框架、子集和报分方。评测集名称也不能当成训练集名称。"
+quick: "2026 年闭源模型的发布主表主要报科学推理、仓库修复、终端操作、浏览、桌面操作、长上下文和多模态，MMLU、HumanEval 已经不是重点。比分数前先核对思考预算、工具、尝试次数、运行框架、子集和报分方。评测集的名字也不能当成训练集的名字。"
 companies:
   - apple
   - openai
@@ -44,20 +44,22 @@ sources:
     type: primary
 ---
 
-2026 年春季以后，闭源前沿模型的发布主表主要报这几类能力：闭卷科学推理、仓库里修 issue、终端里完成工程任务、浏览查事实、在真桌面上操作、长上下文检索，以及必须看图的学科题，下面的能力轴表逐项列出。MMLU、HumanEval 这类已经饱和的榜，主要还出现在开源基座的发布里。另外，模型在某个评测集上报分，不代表它用这个数据集训练。
+这张卡用来对照：在下面的能力轴表里，找到某项 benchmark 测的是哪类能力、造法在哪题、对应哪道数据题。简单说，2026 年春季以后，闭源前沿模型的发布主表主要报这几类：闭卷科学推理、仓库里修 issue、终端里完成工程任务、浏览查事实、在真桌面上操作、长上下文检索，以及必须看图的学科题。MMLU、HumanEval 这类已经饱和的榜，主要还出现在开源基座的发布里。另外，模型在某个评测集上报了分，不代表它用这个数据集训练过。
 
-这章讲发布材料中的评测集怎么制作、测什么能力；训练配方见 `dt-posttrain-map`。我核对过的材料范围是：Google 的对照表是 2026-02-19 的 Gemini 3.1 Pro 模型卡；Anthropic 自家的表我读的是 Opus 4.5 system card；OpenAI 最新一份我逐项读过的发版是 2026-07-09 的 GPT-5.6。之后的模型以当时的卡为准。
+这章讲发布材料里的评测集怎么造、测什么能力，训练配方见 `dt-posttrain-map`。我核对过的材料范围是：Google 的对照表用的是 2026-02-19 的 Gemini 3.1 Pro 模型卡；Anthropic 自家的表我读的是 Opus 4.5 system card；OpenAI 最新一份我逐项读过的发版是 2026-07-09 的 GPT-5.6。之后的模型以当时的卡为准。逐家、逐次发布的数字见 `dt-frontier-who-reports`。
 
 ## 先看设定，再看名字
 
-比较「Opus 比 GPT 高两个点」之前，要确认思考预算、可用工具、尝试次数、运行框架（harness）、评测子集和报分方。设定不同，就不能把分差直接归因于模型。聚合博客可能把不同 harness 下的分数放在同一格里，所以引用时应回到写明设定的官方材料。即使基准名称相同，下面任何一项变了，分数就不是同一个实验：
+比如有人说「Opus 比 GPT 高两个点」，先确认思考预算、可用工具、尝试次数、运行框架（harness）、评测子集和报分方。基准名字一样，下面任何一项变了，分数就不是同一个实验，分差也就不能直接算到模型头上。聚合博客可能把不同 harness 下的分数放进同一格，引用时要回到写明设定的官方材料。
 
-- 思考预算：`no thinking`、64k thinking、`high` / `xhigh` / `max`
-- 工具：无工具、搜索、代码解释器、浏览、电脑操作
-- 尝试次数：single attempt、maj@k、pass@k、多次试验平均
-- harness：同一题用 Terminus-2 和 Codex 可以差十几个点，见 `dt-frontier-code-sets`
-- 子集和版本：SWE-bench Verified 和 Pro，OSWorld 和 OSWorld 2.0，LiveCodeBench 和 LiveCodeBench Pro
-- 数字是谁写的：Google 模型卡里的 Opus 列，是 Google 放进对照表的，不是 Anthropic 新闻稿原句
+| 设定 | 常见的变化 |
+| --- | --- |
+| 思考预算 | `no thinking`、64k thinking、`high` / `xhigh` / `max` |
+| 工具 | 无工具、搜索、代码解释器、浏览、电脑操作 |
+| 尝试次数 | single attempt、maj@k、pass@k、多次试验平均 |
+| harness | 同一题用 Terminus-2 和 Codex 可以差十几个点，见 `dt-frontier-code-sets` |
+| 子集和版本 | SWE-bench Verified 和 Pro，OSWorld 和 OSWorld 2.0，LiveCodeBench 和 LiveCodeBench Pro |
+| 报分方 | Google 模型卡里的 Opus 列是 Google 放进对照表的数，不能当成 Anthropic 新闻稿的原话 |
 
 ## 能力轴
 
@@ -74,14 +76,16 @@ sources:
 | 必须看图才能答的学科题 | MMMU、MMMU-Pro | `dt-frontier-ctx-mm` | `dt-synth-tool-mm` |
 | 长流程职业任务 | GDPval-AA、APEX-Agents、Agents' Last Exam | `dt-frontier-who-reports` | 公开造法不完整，先讲 grader 是什么 |
 
-## 饱和的榜为什么还出现：为了和基座比
+## 追问
 
-HLE 论文写过：前沿模型在 MMLU 上已超过 90%，这张榜分不开代际了。Llama 4 模型卡（2025-04）仍报 MMLU、MMLU-Pro、MATH、MBPP、ChartQA，因为读者要和 Llama 3.1 比，而且那次发的是基座加指令模型，不是 2026 年的 agent 产品。DeepSeek-V3、Qwen3 的技术报告同样把知识、数学、代码、工具榜写进评测节。闭源模型 2026 年春季以后的模型卡，主表已换成上面表里那一列。
+**MMLU 这类饱和的榜，为什么还有人报？**
+为了和上一代基座比。HLE 论文写过，前沿模型在 MMLU 上已超过 90%，这张榜分不开代际了。DeepSeek-V3、Qwen3 的技术报告仍把知识、数学、代码、工具榜写进评测节，也是为了和开源基座比；闭源模型 2026 年春季以后的模型卡，主表已经换成上面能力轴表里那一列。
 
-HumanEval、GSM8K、MATH-500 在这些前沿发布材料里通常不再作为主要指标。如果有人拿这些结果声称模型达到前沿水平，应先确认它们是不是只用来检查基座模型的常规能力有没有退步。
+**Llama 4 为什么还报 MMLU 和 ChartQA？**
+因为读者要拿它和 Llama 3.1 比，而且那次发的是基座加指令模型，不是 2026 年的 agent 产品。Llama 4 模型卡（2025-04）报的是 MMLU、MMLU-Pro、MATH、MBPP、ChartQA。
 
-## 分数变了先查哪类失败
+**有人拿 HumanEval、GSM8K 的分数说模型到了前沿水平，怎么看？**
+先确认这些结果是不是只用来检查基座的常规能力有没有退步。HumanEval、GSM8K、MATH-500 在这些前沿发布材料里通常已经不作为主要指标。
 
-被问到某个分数的涨跌时，先说它对应哪类失败：GPQA 下降，检查闭卷科学知识与推理；BrowseComp 下降，检查能否持续搜索；SWE-bench 上升，先核对测试和泄漏风险（`dt-benchmark-gap`、`dt-agent-verified-stale`）。
-
-逐家、逐次发布的数字见 `dt-frontier-who-reports`。
+**被问到某个分数涨了或跌了，先说什么？**
+先说它对应哪类失败。GPQA 下降，检查闭卷科学知识与推理；BrowseComp 下降，检查能不能持续搜索；SWE-bench 上升，先核对测试和泄漏风险，见 `dt-benchmark-gap`、`dt-agent-verified-stale`。

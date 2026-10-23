@@ -4,7 +4,7 @@ section: tech-screen
 order: 28
 level: A
 title: CoderPad：按长度分层抽样怎么写，短模板淹没长文档怎么避免？
-quick: "按 token 数把文档分进长度桶（2k / 8k / 32k），每桶单独设 token 配额，再从桶里按文档抽。文档是抽样单位，token 是预算单位。如果只按文档数随机打乱，海量短网页会占满名额，书和长文档被抽得太少。"
+quick: "按 token 数把文档分进长度桶（2k / 8k / 32k），每桶单独设 token 配额，再从桶里按文档抽。文档是抽样单位，token 是预算单位。只按文档数随机打乱的话，海量短网页会占满名额，书和长文档被抽得太少。"
 companies:
   - apple
 tags:
@@ -28,11 +28,13 @@ sources:
     type: primary
 ---
 
-做法是按 token 数把文档分进长度桶（2k / 8k / 32k），每桶单独设 token 配额，抽的时候以文档为单位，预算按 token 计。原因很直接：全库只做 `shuffle`，大量短网页会占掉多数文档名额，长上下文材料和书被抽得太少。
+我会按 token 数把文档分进长度桶（2k / 8k / 32k），每桶单独设 token 配额，抽的时候以文档为单位、预算按 token 计。全库只做 `shuffle` 的话，大量短网页会占掉多数名额，长上下文材料和书被抽得太少。
 
 举个例子，10 条 100-token 的网页对 1 条 10k 的书，按条数算网页赢；按 token 配额算，结果正好反过来。`dt-temp-mix-code` 按语言和域切配比，长度是另一条轴：短模板、中等网页、书、长对话。
 
 ## 桶的边界先写死
+
+边界左闭右开，每个桶洗牌后抽到 token 数够配额为止，最后一篇可能略超；桶里文档不够就整桶全取，没有文档的桶单独报出来。
 
 ```python
 from collections import defaultdict
@@ -75,7 +77,7 @@ def sample_by_length(docs, token_quota, rng):
     return picked, empty_buckets
 ```
 
-### 可执行测试
+测试覆盖边界、按 token 配额、空桶和可复现：
 
 ```python
 import random
@@ -110,18 +112,24 @@ assert again == picked
 assert [d.doc_id for d in docs] == before
 ```
 
-空桶要明确报告。设了 32k 配额、语料里却没有对应的文档时，要不要合成或拼接是另一个决定，见 `dt-longctx-data`。如果这里悄悄少抽，后面可能用短文档补齐，表面上占用率很高，实际的长度配比已经变了。
+分桶一遍线性扫，每桶洗牌一次，整体 $O(N)$。空桶要明确报告：设了 32k 配额、语料里却没有对应文档时，要不要合成或拼接是另一个决定，见 `dt-longctx-data`。如果这里悄悄少抽，后面可能用短文档补齐，表面上占用率很高，实际的长度配比已经变了。
 
-## 和 pack 的先后顺序
+## 和 pack 的先后
 
-先按域、语言、长度抽样，再做 `dt-pretrain-pack-code`。pack 之后再按长度补齐，会破坏配额。超长文档切块时，每块继承原文档的域和污染标记，不要切完当新文档重新哈希进 train/holdout。
-
-短桶的质量往往更差，菜单、标签云多，所以短桶的质量阈值可以更严，见 `dt-quality-filter-code`。
-
-长上下文也不必在预训练早期就用短页硬撑到 32k，可以放到 continued PT 阶段再加，AFM 2025 报告就是这样安排的。
+先按域、语言、长度抽样，再做 `dt-pretrain-pack-code`。pack 之后再按长度补齐，会破坏配额。超长文档切块时，每块继承原文档的域和污染标记，别切完当新文档重新哈希进 train/holdout。短桶的质量往往更差，菜单、标签云多，所以短桶的质量阈值可以更严，见 `dt-quality-filter-code`。长上下文也不必在预训练早期就用短页硬撑到 32k，可以放到 continued PT 阶段再加，AFM 2025 报告就是这样安排的。
 
 ## 追问
 
-- **长桶是不是越多越好？** 不是。全是书的话，指令跟随和短答能力会掉，见 `dt-neg-transfer`。长上下文能力要用专门的针和文档 QA 来评，不要拿短题平均分代替。
-- **很长的多轮对话怎么计？** 按整段的 token 数算，不按轮数。工具返回也算进长度，但损失（loss）仍然 mask 掉，见 `dt-packed-sft-code`。
-- **边界 2048 和 2049 差一个 token，就分进两个桶？** 边界附近可以软一点，让少量文档随机进相邻的桶，避免门槛两侧被当成两种数据。
+**长桶是不是越多越好？**
+不是。全是书的话，指令跟随和短答能力会掉，见 `dt-neg-transfer`。长上下文能力要用专门的针和文档 QA 来评，别拿短题平均分代替。
+
+**很长的多轮对话怎么计？**
+按整段的 token 数算，不按轮数。工具返回也算进长度，但 loss 仍然 mask 掉，见 `dt-packed-sft-code`。
+
+**边界 2048 和 2049 差一个 token，就分进两个桶？**
+边界附近可以软一点，让少量文档随机进相邻的桶，免得门槛两侧被当成两种数据。
+
+**桶里文档不够配额怎么办？**
+整桶全取，并且把它报出来。悄悄用短文档补齐，长度配比就变了。
+
+相关：`dt-temp-mix-code`、`dt-longctx-data`、`dt-pretrain-pack-code`、`dt-quality-filter-code`、`dt-neg-transfer`、`dt-packed-sft-code`

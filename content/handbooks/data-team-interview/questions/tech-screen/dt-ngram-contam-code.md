@@ -28,9 +28,11 @@ sources:
     type: primary
 ---
 
-做法是把评测题面切成连续 13 个词的片段，建倒排索引；训练文档逐个片段查表，命中次数超过阈值就隔离检查。不要对整题做 `if text in train`，也不要当场从评测里删题。`dt-contamination` 是 Panel 版，问的是查到之后怎么办；这里要把「查」写成函数。
+我会把评测题面切成连续 13 个词的片段建倒排索引，训练文档逐个片段查表，命中次数超过阈值就把这篇训练文档隔离检查。整题做 `if text in train` 太容易漏，当场从评测里删题也不对。`dt-contamination` 是 Panel 版，问的是查到之后怎么办；这里要把「查」写成函数。
 
-倒排建在评测侧，因为评测是千到万的量级，训练是十亿级，反过来建不动。$n=13$ 是 GPT-3 和 The Pile 公开用过的重叠长度，现场用它就够。单位是词；代码和数学可以改用 token 或字符 n-gram，否则 `i+1` 和 `i + 1` 对不上。
+比如有篇博客原样抄了一道题「a train leaves the station at noon traveling at sixty miles per hour toward the city」，后面跟着答案。它的每个 13-gram 都会命中这道题，这篇博客就该进 quarantine。
+
+倒排建在评测侧，因为评测是千到万的量级，训练是十亿级，反过来建不动。$n=13$ 是 GPT-3 和 The Pile 公开用过的重叠长度，现场用它就够。单位是词；代码和数学可以改用 token 或字符 n-gram，不然 `i+1` 和 `i + 1` 对不上。
 
 ## 先冻评测，再扫训练
 
@@ -68,7 +70,7 @@ def scan_doc(doc_id, text, index, n=13, min_hits=1):
     return {"doc_id": doc_id, "quarantine": bool(flagged), "hits": flagged}
 ```
 
-### 可执行测试
+测试覆盖原样泄漏、无关文档、大小写、`min_hits` 和短题：
 
 ```python
 question = "a train leaves the station at noon traveling at sixty miles per hour toward the city"
@@ -98,20 +100,22 @@ assert not scan_doc("doc-4", one_gram, index, min_hits=2)["quarantine"]
 assert grams("short question", n=13) == ["short question"]
 ```
 
-写完代码，还要讲清阈值、规模和命中后的处理：
+写完我会接着讲阈值、规模和命中后怎么处理。短题总共不到 13 个词，`grams` 会退化成整句，这类题改用 $n=8$ 或字符 50-gram；`min_hits=1` 在长网页上会误杀题面里的习语，高价值评测可以用 1，bulk crawl 可以要求连续命中。规模上，评测 1 万题、每题 200 个 gram，倒排大约百万个键，放内存没问题；训练侧做成 map，每个 shard 只读这份倒排，命中写进 quarantine 表，别先把训练侧的 gram 收集齐再 join。命中之后进 quarantine 的是**训练文档**，评测题留在门禁里，把题删了，你只是看不见泄漏。
 
-1. 阈值。短题总共不到 13 个词，`grams` 会退化成整句，这类题改用 $n=8$ 或字符 50-gram。`min_hits=1` 在长网页上会误杀题面里的习语；高价值评测可以用 1，bulk crawl 可以要求连续命中。
-2. 规模。评测 1 万题、每题 200 个 gram，倒排大约百万个键，放内存没问题。训练侧做成 map：每个 shard 只读这份倒排，命中写进 quarantine 表。不要先把训练侧的 gram 收集齐再 join。
-3. 处理。进 quarantine 的是**训练文档**，评测题留在门禁里。把题删了，你只是看不见泄漏。
-
-它和精确去重是两件事。训练集内部用 `dt-exact-dedup-code` 去复制，本函数只针对冻结评测，两套指纹表不要混成一张 `seen`。
-
-## 哪些泄漏会漏检
-
-改数字、换变量名、翻译成另一种语言，词级 13-gram 都会漏。所以还要检查 URL 和仓库路径，再用题面 embedding 近邻补一层，见 `dt-contamination`。如果同一个教师模型既出训练数据又出评测，n-gram 可能一个都不命中，那属于 `dt-self-improve` 讲的自污染。
+它和精确去重是两件事。训练集内部用 `dt-exact-dedup-code` 去复制，这个函数只针对冻结评测，两套指纹表别混成一张 `seen`。
 
 ## 追问
 
-- **为什么是 13？** 这是公开惯例。更短会误杀习语，更长会漏掉改写。可以按域扫 $n\in\{8,13,50\}$，抽查结果再定。
-- **命中 1 个 gram 就扔？** 许可证、公式、`for i in range` 都会被误杀。按评测 id 聚合，再人工看命中最多的那些。代码评测用 `dt-substr-dedup-code` 更稳。
-- **查到泄漏了，还在旧题上做监督微调（SFT）怎么办？** 旧题不能再作为独立的发布检查。可以降为开发集，发布检查改用按时间隔离的新题，见 `dt-contamination`。
+**为什么是 13？**
+这是公开惯例。更短会误杀习语，更长会漏掉改写。可以按域扫 $n\in\{8,13,50\}$，抽查结果再定。
+
+**命中 1 个 gram 就扔？**
+许可证、公式、`for i in range` 都会被误杀。按评测 id 聚合，再人工看命中最多的那些。代码评测用 `dt-substr-dedup-code` 更稳。
+
+**改了数字或者翻译过的题怎么办？**
+词级 13-gram 会漏。还要检查 URL 和仓库路径，再用题面 embedding 近邻补一层，见 `dt-contamination`。同一个教师模型既出训练数据又出评测时，n-gram 可能一个都不命中，那属于 `dt-self-improve` 讲的自污染。
+
+**查到泄漏了，还在旧题上做 SFT 怎么办？**
+旧题不能再当独立的发布检查。可以降为开发集，发布检查改用按时间隔离的新题，见 `dt-contamination`。
+
+相关：`dt-contamination`、`dt-exact-dedup-code`、`dt-substr-dedup-code`、`dt-self-improve`

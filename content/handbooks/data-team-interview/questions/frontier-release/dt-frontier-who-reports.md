@@ -4,7 +4,7 @@ section: frontier-release
 order: 6
 level: S
 title: 哪家 lab、哪个模型、在哪次发布里报了哪项 benchmark？
-quick: "按每份官方发布材料分开记分数，并写明日期和思考档。比如 Gemini 3.1 Pro 模型卡里的 Opus 分数是 Google 跑的对照，不能算作 Anthropic 自报。"
+quick: "按每份官方发布材料分开记分数，写明日期和思考档。比如 Gemini 3.1 Pro 模型卡里的 Opus 分数是 Google 跑的对照，不能算作 Anthropic 自报。"
 companies:
   - openai
   - anthropic
@@ -54,7 +54,9 @@ sources:
     type: primary
 ---
 
-我按发布材料记分数，不按聚合榜记。下面每张表只属于那一份材料，引用其中任何一个结果，都要同时写出材料日期和思考档。Google 卡里的 Sonnet、Opus、GPT 列是 Google 写进对照表的，思考档写在列名里，不能说成 Anthropic 或 OpenAI 自己报的结果；Anthropic 和 OpenAI 自家博文里的数另列一表。Llama 4 的材料报的是基座和指令模型的学术评测，和 2026 年 agent 产品的发布口径不同。各项评测怎么造、测什么能力，见 `dt-frontier-science`、`dt-frontier-code-sets`、`dt-frontier-agent-sets`、`dt-frontier-ctx-mm`。
+我按发布材料记分数，不按聚合榜记。下面每张表只属于那一份材料，引用里面任何一个结果，都要同时说出材料日期和思考档。
+
+比如 Google 卡里的 Sonnet、Opus、GPT 列，是 Google 写进对照表的，思考档写在列名里，不能说成 Anthropic 或 OpenAI 自己报的结果；Anthropic 和 OpenAI 自家博文里的数另列一表。Llama 4 的材料报的是基座和指令模型的学术评测，和 2026 年 agent 产品的发布口径不同。各项评测怎么造、测什么能力，见 `dt-frontier-science`、`dt-frontier-code-sets`、`dt-frontier-agent-sets`、`dt-frontier-ctx-mm`。
 
 ## Google · Gemini 3.1 Pro 模型卡，2026-02-19
 
@@ -85,7 +87,7 @@ sources:
 
 ## Anthropic · Claude Opus 4.5 system card
 
-这是 4.5 自己报的数，不是上表里的 4.6。
+这是 4.5 自己报的数，和上表里的 4.6 是两代。
 
 | Benchmark | 设定 | 数 |
 | --- | --- | --- |
@@ -96,8 +98,6 @@ sources:
 | MCP Atlas | system card 表 | 62.3% |
 | OSWorld | system card 表 | 66.3% |
 | GPQA Diamond | 64k thinking，200k 上下文，high，5 次平均 | 86.95% |
-
-无 thinking 的 Verified（80.9%）不低于 64k thinking（80.6%）。这说明加思考预算不是在每张榜上都会涨，报分时要把预算写上。
 
 ## OpenAI · GPT-5 发布博文
 
@@ -110,7 +110,7 @@ sources:
 | HealthBench Hard | 健康难子集 | 46.2% |
 | GPQA | GPT-5 pro，无工具 | 88.4% |
 
-博文写明，带工具的 AIME 不能和无工具直接比。2026-02 OpenAI 另发文章说明不再用 SWE-bench Verified 报前沿成绩，见 `dt-agent-verified-stale`。所以 GPT-5 这一行是历史发布记录，不是他们后来的主指标。
+博文写明，带工具的 AIME 不能和无工具直接比。
 
 ## OpenAI · GPT-5.6 博文，2026-07-09
 
@@ -126,13 +126,13 @@ sources:
 | ExploitGym 3 | 把真实漏洞做成可运行的利用 | 两小时上限 24.9%（5.5 为 15.1%）；六小时 33.7% |
 | SEC-Bench Pro | 复杂软件上的概念验证生成 | 71.2%（5.5 为 45.8%） |
 
-生命科学一段只写了相对 5.5 有提升，没有公开数据集名字和分数。内部研究加速一节写的是研究员每天的输出 token 数、内部推理算力占比等用量数据，这些说明产品被使用的程度，不能当作能力评测结果。
+生命科学一段只写了相对 5.5 有提升，没有公开数据集名字和分数。
 
-ExploitBench、ExploitGym、SEC-Bench 卡的是网络安全能力。数据组要知道发版在报它们，判分看的是任务完成度，但面试里不要展开利用步骤。
+ExploitBench、ExploitGym、SEC-Bench 卡的是网络安全能力。数据组要知道发版在报它们，判分看的是任务完成度，面试里不要展开利用步骤。
 
 ## Meta · Llama 4，模型卡 2025-04-05
 
-Scout 每次计算激活 17B 参数，总参数为 109B，包含 16 个专家；上下文长度 10M，预训练约 40T token。Maverick 激活 17B 参数，总参数为 400B，包含 128 个专家；上下文长度 1M，预训练约 22T token。两者的训练数据都截止到 2024-08。模型卡写数据来自公开、许可的内容，加上 Meta 产品信息，包括 Instagram 和 Facebook 上公开分享的帖子，以及用户和 Meta AI 的交互。博客另写 Behemoth（288B 激活、16 专家、总参近 2T）仍在训练，总 mix 超过 30T，并用它给 Maverick 做 codistill。40T、22T 和「超过 30T」分别属于 Scout、Maverick 和 Behemoth，不要加成一个数。
+Scout 每次计算激活 17B 参数，总参数 109B，16 个专家，上下文长度 10M，预训练约 40T token。Maverick 激活 17B 参数，总参数 400B，128 个专家，上下文长度 1M，预训练约 22T token。两者的训练数据都截止到 2024-08。模型卡写数据来自公开、许可的内容，加上 Meta 产品信息，包括 Instagram 和 Facebook 上公开分享的帖子，以及用户和 Meta AI 的交互。博客另写 Behemoth（288B 激活、16 专家、总参近 2T）还在训练，总 mix 超过 30T，并用它给 Maverick 做 codistill。
 
 指令模型、0-shot，Maverick：MMLU Pro 80.5，GPQA Diamond 69.8，LiveCodeBench（2024-10-01 至 2025-02-01）pass@1 43.4，MMMU 73.4，MMMU Pro 59.6，MathVista 73.7，ChartQA 90.0，DocVQA 94.4，MGSM 92.3。基座表用的是 MMLU 5-shot、MATH maj@1、MBPP 3-shot，和指令表不是同一套指标。这次发布没有 SWE-bench Pro、BrowseComp、Terminal-Bench，那是 2025 年 4 月开源发布的口径。
 
@@ -142,6 +142,19 @@ DeepSeek-V3 技术报告和 Qwen3 技术报告的评测节仍覆盖知识、数�
 
 xAI 的发版常同时报竞技场 Elo 和 STEM 榜。2026 年 Grok 的官方逐项表我没有核对进这张卡，所以不写数。
 
-## 面试里怎么总结
+## 追问
 
-「Gemini 3.1 模型卡分别报告科学推理、仓库任务、终端、浏览和长上下文表现。Verified 已经接近 80%，Pro 仍在 50% 多，MRCR 在 1M 长度下只有约 26%。GPT-5.6 的主要发布指标改为浏览、电脑操作和长程职业任务，OpenAI 也已停止用 Verified 报前沿成绩。Llama 4 仍报 MMLU 和图表题，因为它那次发布的是开源基座和指令模型。引用分数时，我会同时说明材料日期和思考档。」
+**面试里怎么用几句话总结？**
+可以这么说：「Gemini 3.1 模型卡分别报告科学推理、仓库任务、终端、浏览和长上下文表现。Verified 已经接近 80%，Pro 仍在 50% 多，MRCR 在 1M 长度下只有约 26%。GPT-5.6 的主要发布指标改为浏览、电脑操作和长程职业任务，OpenAI 也已停止用 Verified 报前沿成绩。Llama 4 仍报 MMLU 和图表题，因为它那次发布的是开源基座和指令模型。引用分数时，我会同时说明材料日期和思考档。」
+
+**Opus 4.5 加了 64k thinking，SWE-bench 怎么没涨？**
+无 thinking 的 Verified 是 80.9%，64k thinking 是 80.6%，后者并不更高。加思考预算不会在每张榜上都涨，所以报分时要把预算写上。
+
+**GPT-5 的 Verified 74.9% 还能当主指标比吗？**
+只能当历史发布记录。2026-02 OpenAI 另发文章说明不再用 SWE-bench Verified 报前沿成绩，见 `dt-agent-verified-stale`，他们后来的主指标已经换了。
+
+**GPT-5.6 博文里研究员每天的 token 用量，能当能力证据吗？**
+不能。内部研究加速一节写的是研究员每天的输出 token 数、内部推理算力占比等用量数据，这些说明产品被用得多，不是能力评测结果。
+
+**Llama 4 的 40T、22T 和「超过 30T」能加起来吗？**
+不能。它们分别属于 Scout、Maverick 和 Behemoth，加成一个数就错了。

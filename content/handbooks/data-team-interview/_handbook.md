@@ -15,7 +15,7 @@ description: >-
   以及 Agent RL：环境即数据、任务过滤、奖励 hack、规模化环境、合成终端任务，
   以及 OpenAI / Meta / Gemini / Anthropic / Tinker 的公开配方。labs 另收别家基模组仍在问的评测台、
   诚实性、分类器笔试、合成坍缩、Phi 教科书、偏好采集。另有一章对照 frontier 发版：
-  各家把哪份评测写进模型卡、数据怎么造、测的是哪项能力。
+  各家把哪份评测写进模型卡、数据怎么造、测的是哪项能力。最后一章是三个案例，用来回答「什么是好数据」类问题。
   依据公开 AFM 技术报告、官方数据口径和论文，不编造内部流程或未公开数字。
 sections:
   - id: overview
@@ -61,4 +61,9 @@ sections:
     description: >-
       GPQA、HLE、SWE-bench、Terminal-Bench、BrowseComp、OSWorld、MRCR 怎么造，
       测哪项能力，以及 OpenAI / Anthropic / Google / Meta 在哪次发布里报了哪一项
+  - id: cases
+    title: 11 · 真实案例
+    description: >-
+      三个可以反复用的案例：网页设计能力从诊断、test-time skill 到 rejection sampling + SFT + RL 内化；
+      Terminal-Bench 爬坡的环境数据；工具调用 RL 的奖励粒度和合成环境
 ---
