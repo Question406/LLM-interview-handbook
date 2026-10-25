@@ -6,6 +6,7 @@ import hljs from "highlight.js";
 import katex from "katex";
 import { marked } from "marked";
 import { companyFacetsForQuestions, loadCompanyRegistry, resolveQuestionCompanies } from "../lib/company-facets.mjs";
+import { splitQuestionStatement, validateCodingStatement } from "../lib/question-statement.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const handbooksRoot = resolve(projectRoot, "content/handbooks");
@@ -214,7 +215,7 @@ function shieldRegions(markdown, patterns, prefix) {
     source,
     restore(text) {
       for (let index = regions.length - 1; index >= 0; index -= 1) {
-        text = text.replaceAll(regions[index].token, regions[index].block);
+        text = text.replaceAll(regions[index].token, () => regions[index].block);
       }
       return text;
     },
@@ -274,7 +275,7 @@ export function linkQuestionRefs(markdown, catalog, currentId, book) {
 
   const restoreRefText = (text) => {
     let output = text;
-    for (const ref of refs) output = output.replaceAll(ref.token, ref.text);
+    for (const ref of refs) output = output.replaceAll(ref.token, () => ref.text);
     return output;
   };
 
@@ -297,7 +298,7 @@ export function linkQuestionRefs(markdown, catalog, currentId, book) {
   }).join("\n");
 
   source = fenced.restore(source);
-  for (const ref of refs) source = source.replaceAll(ref.token, questionMarkdownLink(ref.question, ref.text, book));
+  for (const ref of refs) source = source.replaceAll(ref.token, () => questionMarkdownLink(ref.question, ref.text, book));
   return source;
 }
 
@@ -500,10 +501,15 @@ function linkBareQuestionCodes(html, byId, currentId, book) {
 
 function renderAnswer(question, catalog, book) {
   try {
+    const statement = splitQuestionStatement(question.body);
+    // Eight older cards still contain legacy SVG/HTML answers. Only the newly
+    // authored first section is Markdown; keep their historical code intact.
+    const legacyBody = statement ? statement.rest : question.body;
+    const legacyStatement = statement && question.format === "legacy-html" ? renderMarkdown(linkQuestionRefs(`## 题目描述\n\n${statement.markdown}`, catalog, question.id, book)) : "";
     const answerBody = question.format === "legacy-html"
-      ? decorateQuestionLinks(linkQuestionIdsInHtml(highlightCodeBlocks(renderMathInHtml(question.body)), catalog, question.id, book), catalog)
+      ? legacyStatement + decorateQuestionLinks(linkQuestionIdsInHtml(highlightCodeBlocks(renderMathInHtml(legacyBody)), catalog, question.id, book), catalog)
       : decorateQuestionLinks(renderMarkdown(linkQuestionRefs(question.body, catalog, question.id, book)), catalog);
-    return `<div class="full-answer"><div class="mini-title">完整答案</div>${answerBody}${sourceHtml(question.sources)}</div>`;
+    return `<div class="full-answer"><div class="mini-title">${statement ? "题目与完整答案" : "完整答案"}</div>${answerBody}${sourceHtml(question.sources)}</div>`;
   } catch (error) {
     error.message = `${question.id}: ${error.message}`;
     throw error;
@@ -545,6 +551,11 @@ function parseQuestion(filePath, sectionIds, registry) {
   if (data.format === "markdown" && !sources.length) fail(filePath, "new Markdown questions need at least one source");
 
   const tags = data.tags.map((tag) => tag.trim());
+  const codingPractice = tags.includes("完整编程练习") || id.startsWith("lc-") || /简单测试怎么写/.test(body);
+  if (codingPractice) {
+    const statementError = validateCodingStatement(body);
+    if (statementError) fail(filePath, statementError);
+  }
   let companies;
   try {
     companies = resolveQuestionCompanies({
@@ -572,6 +583,7 @@ function parseQuestion(filePath, sectionIds, registry) {
     updatedAt: asDate(data.updatedAt, filePath, "updatedAt"),
     sources,
     body,
+    hasPractice: codingPractice && !!splitQuestionStatement(body),
   };
 }
 
@@ -699,6 +711,7 @@ function buildHandbook(handbookFile, registry, { write = true } = {}) {
         tags: question.tags,
         companies: question.companies,
         isRealInterview: question.isRealInterview,
+        hasPractice: question.hasPractice,
         searchText: `${question.title.replace(/\$/g, "")} ${question.quick.replace(/\$/g, "")} ${question.tags.join(" ")} ${question.companies.join(" ")}`.replace(/\s+/g, " ").trim(),
         answerPath: `/content/${handbook.id}/${section.id}/${question.id}.json`,
       })),

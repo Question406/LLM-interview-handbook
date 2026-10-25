@@ -50,6 +50,17 @@ test("Markdown code keeps math delimiters literal", () => {
   assert.match(html, /\$HOME/);
 });
 
+test("question linking preserves dollar replacement sequences in literal code", () => {
+  const source = "Before `$T`, `$`, `$&`, and `$$`.\n\n```sh\necho '$` $& $$'\n```\n\nAfter.";
+  const linked = linkQuestionRefs(source, [], "current-question");
+  assert.equal(linked, source);
+  const html = renderMarkdown(linked);
+  assert.match(html, /<code>\$T<\/code>/);
+  assert.match(html, /<code>\$<\/code>/);
+  assert.equal((html.match(/Before /g) ?? []).length, 1);
+  assert.equal((html.match(/After\./g) ?? []).length, 1);
+});
+
 test("coding answers keep comparisons and HTML examples literal while prose HTML stays forbidden", () => {
   const html = renderMarkdown('```python\nif 0 <= y < h and x > 0:\n    print("<button onclick=\\"run()\\" style=\\"color:red\\">x</button>")\n```');
   const visible = html.replace(/<[^>]+>/g, "");

@@ -41,7 +41,13 @@ yarn-error.log*
 /public/_next/
 /outputs/
 /work/
+__pycache__/
 *.tsbuildinfo
+
+# local authoring and browser artifacts
+/.cursor/skills/humanizer/batches/
+/.playwright-mcp/
+/content/handbooks/llm-interview/drafts/statement-repair-*/
 
 # local-only content (personal paper deep-dives)
 /content/handbooks/*/_handbook.local.md

@@ -5,6 +5,7 @@ import { sites } from "@openai/sites-vite-plugin";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
+import { localPracticeProxy } from "./scripts/practice-proxy";
 
 function gzipContentJson() {
   const publicDir = resolve(process.cwd(), "public");
@@ -92,6 +93,7 @@ export default defineConfig(async () => {
       },
     },
     plugins: [
+      localPracticeProxy(),
       gzipContentJson(),
       vinext(),
       sites(),

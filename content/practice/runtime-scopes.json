@@ -1,0 +1,69 @@
+{
+  "p3a-microsoft-max-number-occurrences-in-suffix": {
+    "entrypoints": [
+      "suffix_counts"
+    ],
+    "removeDefinitions": [
+      "topk",
+      "dfs",
+      "above"
+    ],
+    "tests": "assert suffix_counts([3, 1, 3], [0, 1, 2]) == [2, 1, 1]\nassert suffix_counts([-2, -2, -3], [0, 1, 2]) == [2, 1, 1]\n"
+  },
+  "p3a-microsoft-top-k-largest-retain": {
+    "entrypoints": [
+      "topk"
+    ],
+    "removeDefinitions": [
+      "suffix_counts",
+      "dfs",
+      "above"
+    ],
+    "tests": "assert topk([3, 1, 3, 2], 2) == [3, 3]\nassert topk([2, 3, 1], 2) == [2, 3]\nassert topk([5, 5, 5], 2) == [5, 5]\nassert topk([1, 2], 0) == []\n"
+  },
+  "p3a-google-deepmind-graph-dfs": {
+    "entrypoints": [
+      "dfs"
+    ],
+    "removeDefinitions": [
+      "suffix_counts",
+      "topk",
+      "above"
+    ],
+    "tests": "assert dfs([('a', 'b'), ('a', 'c'), ('b', 'c')], 'a') == ['a', 'b', 'c']\nassert dfs([('a', 'c'), ('a', 'b'), ('b', 'd')], 'a') == ['a', 'b', 'd', 'c']\nassert dfs([('a', 'b'), ('a', 'c'), ('b', 'c'), ('b', 'd')], 'a') == ['a', 'b', 'c', 'd']\nassert dfs([], 'x') == ['x']\n"
+  },
+  "p3a-google-deepmind-array-threshold-filter": {
+    "entrypoints": [
+      "above"
+    ],
+    "removeDefinitions": [
+      "suffix_counts",
+      "topk",
+      "dfs"
+    ],
+    "tests": "assert above([1, 5, 7], 4) == (2, [1, 2])\nassert above([4, 5], 4) == (1, [1])\nassert above([], 0) == (0, [])\n"
+  },
+  "p3a-xai-multithreaded-bank-account-bug-hunt": {
+    "entrypoints": [
+      "Account"
+    ]
+  },
+  "p3a-xai-process-vs-thread-verbal": {
+    "entrypoints": [
+      "Account"
+    ]
+  },
+  "kv-prefix-transformer": {
+    "entrypoints": [
+      "TinyTransformer",
+      "slice_cache"
+    ],
+    "preserveMethods": {
+      "TinyTransformer": [
+        "__init__",
+        "norm",
+        "rotate"
+      ]
+    }
+  }
+}

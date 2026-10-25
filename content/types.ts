@@ -15,6 +15,7 @@ export interface HandbookQuestion {
   tags: string[];
   companies: string[];
   isRealInterview: boolean;
+  hasPractice?: boolean;
   searchText: string;
   answerPath: string;
   titleHtml?: string;

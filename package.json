@@ -6,6 +6,9 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "practice:setup": "python3 scripts/practice/setup.py",
+    "practice:test": "python3 scripts/practice/check.py",
+    "practice": "node scripts/start-practice.mjs",
     "content:build": "node scripts/build-content.mjs",
     "content:check": "node scripts/build-content.mjs --check",
     "assets:build": "node scripts/prepare-static-assets.mjs",
@@ -16,6 +19,9 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-python": "^6.2.1",
+    "codemirror": "^6.0.2",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
     "katex": "^0.18.4",
