@@ -4,7 +4,7 @@ section: microsoft
 order: 14
 level: A
 title: Microsoft：约束解码 / JSON 文法，和自由生成的质量
-quick: "文法先编译成 token 掩码：每步只许合法续写，JSON 括号和字段名由运行时保证。工具调用和表单需要这份硬保证。推理题若一上来就把 answer 键卡死，思维链会被挤掉，公开实验里比自由生成再解析更差。先想后填结构，或只约束外壳。"
+quick: "约束解码把 JSON Schema / 文法变成逐 token 掩码，保证机器接口的字段和语法合法。格式约束也会改变生成分布，多步推理可先得出结果再填结构。验收分别看可解析率与答案正确率，副作用与权限仍由工具运行时检查。"
 tags:
   - Microsoft
   - Constrained Decoding
@@ -29,17 +29,13 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+约束解码可以在生成过程中保证 JSON 结构合法，但内容是否正确要另外评。工具参数需要字段、类型和必填项的硬约束；多步推理则要留出先推理再填答案的空间。比如 schema 要求先填 `answer` 再写 `reason`，模型可能先决定答案，之后才补理由。
 
-微软推理 / Copilot / Agent 岗会问：工具参数和表格输出怎么保证是合法 JSON，而不是「prompt 里写请输出 JSON」。公开锚点是 Guidance（正则 / 文法引导生成）、Outlines 那类把 CFG 编成词表掩码的工作，以及 Azure OpenAI 的 structured outputs。质量对照用 *Let Me Speak Freely?*（2024）：越严的格式限制，推理任务掉得越狠。不是某场逐字面经。`realInterview: false`。接到插件时和 `msft-semantic-kernel`、`msft-autogen` 是同一条合同：机器可读的失败，不能靠模型口述。
+## 文法如何限制下一个 token
 
-## 约束是词表上的掩码，不是事后正则
+自由生成在完整词表上 softmax，约束解码先将 JSON Schema / CFG 编成自动机，根据当前前缀只允许合法 token，其余 logit 置为 $-\infty$。logits 与 mask 都是 `[B, V]`，括号、逗号、字段名与 `true/false/null` 由运行时限制。
 
-自由生成：每步在整个词表上 softmax。约束解码：先把 JSON Schema / CFG 编成自动机，当前前缀对应一个状态，下一步只允许进入合法状态的 token。非法 token 的 logit 置成 $-\infty$。括号、逗号、字段名、`true/false/null` 由运行时保证，不靠「请遵守 schema」。
-
-Shape 口播：logits 仍是 `[B, V]`，多了一张同形的 mask。开销在状态迁移和「这个 token 会不会跨过文法边界」：一个 BPE 可能含半个引号，朴素字符级文法会错误地排除本来合法的 token，所以工业实现要在词表上预计算 token 是否可接受。Guidance 把正则 / 选择 / JSON 嵌进提示；Azure structured outputs 把 schema 放到响应格式里，服务端做硬约束。面试画的是这层，不要背 SDK 字段名。
-
-伪代码只表达合同：
+BPE token 可能跨字符边界，例如包含半个引号，朴素字符文法可能误排合法 token。实现需要预计算词表 token 的可接受性，并维护状态迁移。Guidance 把正则、选择、JSON 嵌入提示，Outlines 一类工作将 CFG 编为掩码，Azure structured outputs 在响应格式中接收 schema。本卡根据这些公开工作讨论，不作为逐字真题，`realInterview: false`。
 
 ```python
 def step(logits, fsm):
@@ -51,25 +47,25 @@ def step(logits, fsm):
     return tok
 ```
 
-常见误区是：生成完再 `json.loads`，失败就重试。短字段偶尔能过，长工具参数、嵌套数组可能因反复重试而耗尽 TPM 配额，见 `msft-azure-tpm`。重试还可能换一套字段，下游当两次副作用。
+生成后再 `json.loads` 并反复重试，可能耗尽长工具参数和嵌套数组的 TPM，见 `msft-azure-tpm`，还可能产生不同字段、触发重复副作用。结构化错误应像 `msft-semantic-kernel`、`msft-autogen` 的工具合同一样交给机器处理。
 
-## 质量和自由生成：约束外壳，别约束思路
+## 按任务选择约束位置
 
-*Let Me Speak Freely?* 把限制分成三档：JSON-mode 硬约束、只在提示里要求格式、先自然语言再转结构。推理任务上，越早把输出卡成 JSON，分数掉得越明显。一个具体机制：schema 若把 `answer` 放在 `reason` 前面，模型会先填答案再编理由，思维链被结构挤掉。分类 / 枚举反而可能涨：候选集合变小，乱说话的空间没了。
+Let Me Speak Freely?（2024）对比硬 JSON、prompt 格式要求、自然语言后转结构，发现更早、更严的格式限制会损害部分推理任务。分类与枚举也可能因候选减少而受益，不能一概说自由生成更好。
 
-我会拆产品：
+工具参数、表单、落库字段可用硬约束，让枚举、必填和类型合法。多步推理可先自由生成，或只约束最终 JSON，再二次调用 / 解析成结构；Azure 上会多花一次 TPM，但能分别测出正确率。给用户阅读的散文不必放在 JSON 模式中。
 
-1. **工具参数、表单、要进数据库的字段。** 硬约束。合法比「更会推理」优先。枚举、必填、类型由文法保证。
-2. **要多步推理再给结论。** 先自由生成（或只约束「最终一行是 JSON」），再二次调用或正则抽出结构。Azure 上这是两次 TPM，但比一次 JSON-mode 把 GSM8K 打崩更可测。
-3. **中间思维链给用户看。** 不要用 JSON 模式生成给用户读的散文。约束留给机器接口。
+自由生成可能漏括号、出现未转义换行或发明键，所以验收同时报告可解析率和答案正确率，也加入「合法但错」切片。掩码截断了条件分布，日期格式过窄、枚举漏同义词，都可能逼出合法却不合适的值。
 
-「自由生成质量更好」不是永远成立。自由生成会漏括号、会在字符串里塞未转义换行、会发明 schema 没有的键。产品指标要拆：**可解析率** 和 **答案正确率**。只报其中一个，会把「漂亮但解析失败」或「合法但答错」洗掉。
-
-和 function calling 的衔接：模型该调工具时，解码目标是 `tool_calls` 结构，不是聊天散文。并行工具、必填参数，schema 能提供比提示词更严格的保证。写操作仍要确认，约束不管副作用，见 `msft-semantic-kernel`。
+Function calling 的目标是 `tool_calls`，并行工具与必填参数也可由 schema 限制。约束不管理写操作确认或副作用，执行边界仍见 `msft-semantic-kernel`。
 
 ## 追问
 
-- **约束会不会改变分布，导致「合法但傻」？** 会。掩码是在截断条件分布。schema 过窄（日期只许一个格式、枚举漏同义词）会逼模型选次优合法值。验收要带「合法但错」切片，不要只跑 parser 通过率。
-- **JSON mode 和 JSON Schema 差在哪？** 前者多半只保证能 parse；后者卡字段名、类型、必填。工具调用要后者。只开 JSON mode，模型仍能发明 `cityy`。
-- **和 检索增强生成（RAG） 引用一起用？** 引用 id 做成枚举或正则（只许检索返回的 doc id），比让模型自由写文件名安全。权限仍在检索层做掉，见 `msft-copilot-ground`、`msft-azure-ai-search`。
-- **延迟？** 每步多一次掩码。短 JSON 可忽略；长 schema、大词表要预编译 token 集合。别在热路径上每次从 Schema 现编自动机。
+**JSON mode 与 JSON Schema 差在哪？**
+前者通常保证能解析，后者限制字段、类型和必填。工具调用要避免 `cityy` 这类新键，需要后者。
+
+**RAG 引用也能约束吗？**
+可以把 doc id 限制为本次检索枚举或正则，减少编文件名。权限仍先在检索层做，见 `msft-copilot-ground`、`msft-azure-ai-search`。
+
+**运行时开销如何控制？**
+每步增加掩码，短 JSON 通常较小，长 schema 与大词表要预编译 token 集合，避免热路径现编自动机。

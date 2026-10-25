@@ -4,7 +4,7 @@ section: coding
 order: 11
 level: A
 title: 白板：embedding 与 lm_head 权重共享，梯度怎么流
-quick: "`lm_head.weight` 和 `embed.weight` 是同一个 $[V, D]$ 参数：查表用 $E$，logits 是 $hE^\top$，两条路的梯度累加到同一份 $E$，省下 $VD$ 个参数。"
+quick: "直接让 `lm_head.weight` 引用 `embed.weight` 这个 $[V, D]$ Parameter，输入查表用 $E$，输出算 $hE^\\top$。Autograd 会把两条路径的梯度加到同一份 $E$，optimizer 只维护一份状态，因此省下 $VD$ 个参数；复制数值达不到共享的效果。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,35 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html
     type: primary
 ---
+
+## 题目描述
+
+实现一个 embedding 与输出投影共享权重的最小语言模型。既要支持返回各位置的词表 logits，也要支持给定目标 token 时计算忽略 padding 的 next-token 交叉熵。共享必须是同一个参数对象，而非仅初始化成相同数值。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `TiedLM(vocab, dim, pad=0)`：一个最小语言模型，`nn.Embedding` 和无 bias 的 `lm_head` 共享同一个 `[V, D]` 的 Parameter，中间只有一层 LayerNorm。
+- `forward(ids, targets=None)`：`ids` 是 `[B, T]`。不给 `targets` 时返回 logits `[B, T, V]`；给 `targets` 时在内部做一次 shift（位置 `t` 的 logits 预测 `targets[:, t + 1]`），返回忽略 pad 的平均交叉熵。
+- 约束：B ≥ 1，给 `targets` 时它和 `ids` 形状相同、T ≥ 2，且 shift 之后至少有一个非 pad 目标。
+
+- logits 定义为 `LayerNorm(embed(ids)) @ embed.weight.T`；LayerNorm 使用默认 `eps=1e-5`，初始缩放为 1、偏移为 0。输入 token 均在 `[0,V)` 内。
+### 示例
+
+```text
+model = TiedLM(7, 4, pad=0)
+model.embed.weight is model.lm_head.weight          -> True
+model.embed.weight[1] 改成全 3                       -> model.lm_head.weight[1] 也是全 3
+将 model.embed.weight 全设为 0（LayerNorm 初始 gamma=1、beta=0）
+model(ids=[[1, 2, 3]], targets=[[1, 2, 3]]) -> log(7) ≈ 1.945910
+model(ids=[[1, 2, 3]]) -> 形状 [1,3,7] 的全 0 logits
+```
+
+## 解题思路与参考答案
+
+我会把 lm_head.weight 直接绑定到 embedding 的 Parameter，再验证两者是同一个对象。比如改 embedding 的一行，输出投影同一行也应立刻改变。反向时不需要手动合并梯度，autograd 会累加两条路径；padding_idx 只屏蔽查表路径，输出路径仍可能更新 pad 行。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -90,6 +119,16 @@ class TiedLM(nn.Module):
             ignore_index=self.pad,
         )
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert model.embed.weight is model.lm_head.weight` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -181,6 +220,9 @@ autograd 会把两部分累加到同一块存储上。不要自己再乘 2，也
 
 ## 追问
 
-- **logits 为什么是 $h E^\top$ 而不是 $h E$？** $E$ 的每一行是一个 token 的向量，$h$ 和某一行做点积才得到这个 token 的 logit。写成 $h E$ 形状对不上。
-- **AdamW 的 $m,v$ 怎么处理？** 一份权重对应一份状态。绑定了却给 head 再建一套状态，weight decay 和更新就会作用到一个并不存在的参数上。
-- **扩词表时要注意什么？** embedding 和 head 一起扩，新 id 在两边的初始化是同一行。只扩 embedding 不扩 head，在 tying 下会直接出现 shape 冲突。
+**logits 为什么是 $h E^\top$ 而不是 $h E$？**
+$E$ 的每一行是一个 token 的向量，$h$ 和某一行做点积才得到这个 token 的 logit。写成 $h E$ 形状对不上。
+**AdamW 的 $m,v$ 怎么处理？**
+一份权重对应一份状态。绑定了却给 head 再建一套状态，weight decay 和更新就会作用到一个并不存在的参数上。
+**扩词表时要注意什么？**
+embedding 和 head 一起扩，新 id 在两边的初始化是同一行。只扩 embedding 不扩 head，在 tying 下会直接出现 shape 冲突。

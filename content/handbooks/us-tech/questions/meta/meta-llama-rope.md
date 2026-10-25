@@ -4,9 +4,7 @@ section: meta
 order: 9
 level: A
 title: Meta：Llama 的 RoPE / 长上下文外推（NTK、YaRN 只需概念层）面试怎么讲
-quick: >-
-  RoPE 在偶数维两两旋转，$q_m^\top k_n$ 只依赖相对位移 $n-m$。训练长度之外高频相位没见过，直接拉长会糊。Llama 3.1
-  公开配置是继续训长窗并提高 `rope_theta`。NTK / YaRN 是社区外推旋钮：保高频、放低频，不要说成 Meta 官方配方。
+quick: "RoPE 把偶数维两两旋转，让 $q_m^\\top k_n$ 的位置作用只依赖相对位移 $n-m$。超出训练长度后，相位分布变化会影响注意力；Llama 3.1 的公开做法包括提高 `rope_theta` 和长窗续训，NTK / YaRN 则是要单独验证的社区方法。"
 tags:
   - Meta
   - Llama
@@ -34,7 +32,7 @@ sources:
     type: primary
 ---
 
-Llama / 推理岗常把 RoPE 和长上下文放在一道题里。公式要能写，外推不要背成「把 `max_position_embeddings` 改大」。GQA 省 KV 带宽（`meta-llama-gqa`）和 RoPE 正交：一个切 $H_{kv}$，一个切位置相位。
+RoPE 通过旋转 query 和 key，让点积带上相对位置信息；扩长上下文时，还要处理训练范围之外的相位变化。比如 cache 已有 $S$ 个 token，新 token 的位置就应从 $S$ 接着算，若每步重置到零，位置关系会错。GQA 减少 $H_{kv}$、RoPE 调整位置相位，两者是独立的机制。
 
 ## RoPE 在编码什么
 
@@ -48,30 +46,34 @@ score 只依赖相对位移 $n-m$。第 $i$ 对频率 $\theta_i = \theta_{\mathr
 
 Llama 2 预训练上下文 $4\mathrm{k}$；Llama 3 博客写预训练 $8\mathrm{k}$；Llama 3.1 / 3.2 把窗口做到 $128\mathrm{k}$。公开 conf 里常见把 `rope_theta` 从 $10^4$ 提到 $5\times 10^5$ 量级，这是**改基频**，不是换一套位置编码。
 
-## 外推为什么难，三条概念旋钮
+## 长上下文为什么还要训练和验证
 
 训练只见过有限相位。$m$ 一过训练长度，高频通道转进没见过的区间，注意力模式 分布外数据（OOD，即与训练数据明显不同的数据）。所以「推理时把窗口改成 128k」不等于模型会用 128k。
 
-社区三条路，面试停在概念层：
+社区常见的扩展方式有三类：
 
 - **位置插值（PI）：** 把长窗位置压回训练尺度，$m' = m \cdot L_{\mathrm{train}} / L_{\mathrm{target}}$。实现便宜，近距分辨率变差（局部 token 被拉远）。
 - **NTK-aware：** 提高 $\theta_{\mathrm{base}}$，让高频少转几圈、少进 OOD，低频去够更远。和 Llama 3.1 提高 `rope_theta` 是同一类直觉，但不要把开源 conf 说成 NTK 论文的官方实现。
-- **YaRN：** 按频段混合插值和 NTK，并给注意力温度，减轻「近距也变糊」。是社区方法；**没有公开材料说 Llama 官方训练用了 YaRN**。现场说「同类旋钮，验收看长依赖任务」，不要编配方。
+- **YaRN：** 按频段混合插值和 NTK，并给注意力温度，减轻「近距也变糊」。是社区方法；**没有公开材料说 Llama 官方训练用了 YaRN**。应用到具体模型后，仍要用长依赖任务验收。
 
-Meta 自己的长窗叙事更稳的是：**在目标长度上继续预训练 / 长窗 监督微调（SFT）**，再配合 GQA、tokenizer 压缩（`meta-llama3-tokenizer`）。针-in-haystack 只能说明还能点到远处某个 id，不能说明推理链还完整。
+Meta 公开的长窗训练包括在目标长度上继续预训练 / 长窗监督微调（SFT），再配合 GQA、tokenizer 压缩（`meta-llama3-tokenizer`）。针-in-haystack 只能说明还能点到远处某个 id，不能说明推理链还完整。
 
-## 一个具体错法
+实现时检查 decode 位置：cache 已有 $S$ 个 token，就应取 $m = S, S+1, \ldots$，不能重新用 $0,1,2,\ldots$。这类位置偏移会让长窗评测与配置看起来不一致。
 
-常见误区是：decode 时 RoPE 用当前位置 $0,1,2,\ldots$ 而 cache 里已经有 $S$ 个 token。正确是 $m = S, S+1, \ldots$。这和 OpenAI 风格的 Transformer debug 是同一类位置偏移，只是 Meta 面试更常挂在 Llama 配置上。
+YaRN 温度、NTK 的 $\alpha$ 和 PI 缩放也要分开消融，在同一套长上下文 eval 上比较。只改大 `max_position_embeddings`，或同时打开所有缩放开关，都不足以证明扩窗无损。
 
-另一个常见误区是：把 YaRN 的温度、NTK 的 $\alpha$、PI 的缩放三个开关同时拧，还不做消融。外推超参很脆，要在同一套长上下文 eval 上比，不能口头保证无损。
+相关：`meta-llama-gqa`。
 
 ## 追问
 
-- **为什么高频先坏？** $\theta_i$ 大时 $m\theta_i$ 随 $m$ 转得快，训练没见过的大 $m$ 上相位乱跳。
-- **提高 theta 和插值能一起用吗？** 能，YaRN 就是分段组合。组合后更要测近距（复制、代码缩进）和远距（文档 QA），只报 haystack 不够。
-- **和 ALiBi 的差别？** ALiBi 在 score 上加与距离成正比的偏置，外推叙事不同。Llama 族公开的是 RoPE，别现场把 Llama 说成 ALiBi。
-- **128k 时 GQA 更重要吗？** 是。KV cache 跟 $T\cdot H_{kv}$ 走，$T$ 拉长后带宽更疼，见 `meta-llama-gqa`。
+**为什么高频先坏？**
+$\theta_i$ 大时 $m\theta_i$ 随 $m$ 转得快，训练没见过的大 $m$ 上相位乱跳。
+**提高 theta 和插值能一起用吗？**
+能，YaRN 就是分段组合。组合后更要测近距（复制、代码缩进）和远距（文档 QA），只报 haystack 不够。
+**和 ALiBi 的差别？**
+ALiBi 在 score 上加与距离成正比的偏置，外推叙事不同。Llama 族公开的是 RoPE，别现场把 Llama 说成 ALiBi。
+**128k 时 GQA 更重要吗？**
+是。KV cache 跟 $T\cdot H_{kv}$ 走，$T$ 拉长后带宽更疼，见 `meta-llama-gqa`。
 
 ## 相关题
 

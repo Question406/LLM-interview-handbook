@@ -4,7 +4,7 @@ section: systems
 order: 31
 level: S
 title: "KV Prefix ①：多层 Transformer 的 prefill、decode 与前缀分叉"
-quick: "实际写出每层 K/V 的复用路径，带 RoPE、GQA、残差和门控 MLP；验证整段重算、逐 token decode、分块 prefill 的 logits 一致。"
+quick: "每层复用自己的 K/V，只计算新后缀，RoPE 和因果 mask 从已有 cache 的绝对位置继续。用整段重算、逐 token decode、分块 prefill 和前缀分叉对照 logits，检查缓存正确且不被分支改写。"
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -20,6 +20,37 @@ sources:
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
+
+## 题目描述
+
+实现一个小型、确定性的多层 decoder-only Transformer 前向过程，验证相同前缀的 KV 缓存能用于后缀续算和独立分支。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- 完成给定模型 `TinyTransformer(seed=0,layers=2,vocab=19,width=8,heads=2,kv_heads=1)` 的 `forward(token_ids,cache=None)` 及 `slice_cache(cache,length)`。构造器提供固定 NumPy float64 权重和配置；本题不训练、不修改权重。width % heads = 0，heads % `kv_heads` = 0，d=width/heads 为偶数。
+- `token_ids` 是非空 [T] 整数序列，取值 [0,vocab)。cache 是每层一个 (K,V) 的 tuple，各张量为 [`kv_heads`,S,d]，各层 S 相同；None 表示 S=0。返回 ([T,vocab] logits, 新cache)，新 cache 长度为 S+T，旧 cache 必须保持不变。
+- 模型定义：词嵌入后，各层采用 pre-RMSNorm，`RMSNorm(x)=x/sqrt(mean(x²)+1e-6)`；注意力残差为 `x + Attention(RMSNorm(x)) @ W_o`；接着门控 MLP 残差为 `x + (SiLU(z @ W_gate) * (z @ W_up)) @ W_down`，z 是第二次 RMSNorm，SiLU(a)=a/(1+exp(-a))。最终 logits 为 RMSNorm(x) @ `W_output`。
+- Q/K/V 使用各层给定的 q/k/v 权重；每个 query head 对应连续分组的一个 KV head，分数为 QKᵀ/sqrt(d)，softmax 只含绝对位置 `key_pos`<=`query_pos` 的 key。无 bias、dropout 或其他归一化参数。
+- Q/K 使用相邻偶/奇坐标的 RoPE，角度 theta[p,j]=p*10000**(-2*j/d)，旋转为 (a*cos-b*sin,a*sin+b*cos)。新 token 绝对位置从 S 起，旧 K 已旋转；V 不旋转。每层只缓存自身的紧凑 K/V。
+- `slice_cache(cache,length)` 返回每层前 length 个位置的独立副本，0<=length<=S。`computed_tokens` 每次 forward 增加 T，fingerprint 及权重不变。同一前缀 cache 可用于多个独立后缀，分支不得互相污染。
+
+### 输入输出示例
+
+```text
+默认模型、token_ids=[1,4,2,7,3,8]：
+一次 forward 返回 logits 形状 [6,19]，每层 K/V 形状 [1,6,4]。
+先 forward([1,4,2])，再用其 cache forward([7,3,8])：
+第二次输出等于完整输出的后3行，每层新 cache 形状 [1,6,4]。
+slice_cache(第一次cache,2) -> 每层 K/V 形状 [1,2,4] 的独立副本。
+TinyTransformer(seed=0,layers=1,vocab=2,width=2,heads=1,kv_heads=1)
+forward([1]) 的 logits 约为 [[-0.20505793,0.06097503]]。
+```
+
+## 解题思路与参考答案
+
+我会在每层恢复对应的 K/V，只让新后缀经过前向计算，并从已有 cache 的长度继续计算位置。整段重算、逐 token decode 和分块 prefill 应有一致 logits，两个后缀共享前缀时也不能互相改坏缓存。
 
 ## 完整编程练习（手册原创实现版）
 
@@ -37,7 +68,7 @@ sources:
 
 ### 解题思路与正确性
 
-每一层都要复用该层的 K/V，而非复用第一层或仅保存 token ID。新 Q/K 的 RoPE 位置从已有 cache 长度开始，旧 K 已经旋转，不能二次旋转。矩形因果 mask 使用绝对条件 `key_pos <= old_len + query_offset`。在同一模型、位置与注意力语义下，归纳到每一层即可得到与完整前向一致的后缀隐藏状态。
+比如先算六个 token 的前三项，再把 cache 交给后三项，后缀 logits 应等于完整计算对应的三行。每层要取自己的 K/V；新 Q/K 的 RoPE 从 cache 长度开始，旧 K 已经旋转过，不能再旋转一次。矩形因果 mask 按 `key_pos <= old_len + query_offset` 判断可见性。同一模型、位置和注意力语义保持一致，逐层就能推出后缀隐藏状态与完整前向相同。
 
 ### 完整参考实现（Python 3）
 
@@ -145,6 +176,16 @@ def slice_cache(cache, length):
     return tuple((k[:, :length].copy(), v[:, :length].copy()) for k, v in cache)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(parts), atol=1e-12)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 把实现与以下测试放进同一文件执行；测试覆盖正确性，不是生产环境的性能基准。
@@ -182,9 +223,9 @@ if __name__ == '__main__':
 
 ### 复杂度与追问
 
-设层数L、后缀T、前缀S、宽D：投影与MLP约为 $O(LTD^2)$，注意力约为 $O(LT(S+T)D)$，持久KV空间 $O(LH_{kv}(S+T)d)$。NumPy concat会复制旧cache；本题证明少算前缀，不声称零拷贝或GPU性能。
+设层数 L、后缀长度 T、前缀长度 S、宽度 D。投影与 MLP 约为 $O(LTD^2)$，注意力约为 $O(LT(S+T)D)$，持久 KV 空间是 $O(LH_{kv}(S+T)d)$。NumPy concat 会复制旧 cache，所以这里只验证前缀计算被省下，零拷贝和 GPU 性能还需另做实现与验收。
 
-如果只存了KV，完整命中时能否直接拿到下一token logits？不能；看第⑦题的重放计划。`cache`必须与生成它的模型和位置语义对应，raw张量接口本身不能识别模型混用，第⑤及⑧题补这层约束。
+只存 KV、prompt 完整命中时，还要通过第⑦题的重放计划取末 token logits。`cache` 也必须对应原模型与位置语义，raw 张量接口无法识别模型混用，第⑤及⑧题会补上这层约束。
 
 ## 相关题
 

@@ -4,10 +4,7 @@ section: amazon
 order: 7
 level: S
 title: Amazon：领导力原则怎么落到 ML 决策（上线门禁、客户数据、纠错）？
-quick: >-
-  上线门禁是 Insist on the Highest Standards 加 Customer Obsession：离线不够就别全量。客户数据是 Earn
-  Trust：最小够用、可审计、可删。纠错是 Dive Deep 加 Backbone：指标掉了先停再查，有分歧时用数据讨论，决定了就回滚或修。LP 不是
-  STAR 背诵，是你怎么拒绝一次坏上线。
+quick: "把 LP 放进具体 ML 决策里讲：上线先定客户指标和回滚门禁，客户数据做到最小够用、可审计、可删除，指标变差后按切片查根因。讲经历时说明你当时怎样取舍、采取了什么行动，以及数据证明了什么。"
 tags:
   - Amazon
   - Leadership Principles
@@ -29,50 +26,30 @@ sources:
     type: secondary
 ---
 
-Amazon loop 里 Bar Raiser 不单独问「背 16 条」。技术轮结束会追：你为什么敢上线、数据从哪来、错了怎么办。公开面试指南都写 LP 贯穿每一轮。下面按 ML 决策落。三条线够用：门禁、数据、纠错。别把 16 条各讲一句。
+我会用一次具体的上线或纠错决策讲 LP：当时如何保护客户、依据什么判断可以上线、出现问题后如何处理。Amazon 的公开面试指南说 LP 贯穿每轮，Bar Raiser 会追问这些判断；单独背 16 条很难说明自己怎么做决定。
 
-## 上线门禁：Highest Standards，不是 Bias for Action 的挡箭牌
+讲经历时，可以从〔填：一次你挡住上线，或被数据说服后支持实验的真实情境〕开始。先说受影响的客户指标，例如购买、退货、零结果、政策误导和 PII 泄漏。AUC 高了 0.3 个点还不足以回答客户是否受益。这里的 Customer Obsession 决定看什么结果，Insist on the Highest Standards 决定放行条件。
 
-Customer Obsession 要求指标是客户的：购买、退货、零结果、政策误导、PII 泄漏，不是「AUC 高了 0.3 个点」。Insist on the Highest Standards 要求有书面门禁，例如：
+具体到门禁，我会先写清离线切片：头尾 query、新 ASIN、标识符 query 都要过线，见 `amazon-kendra-hybrid`、`amazon-cold-start`。然后用不改变排序的影子流量查特征漂移和 p99，再做预注册主指标与护栏的 A/B。退货、客服工单、延迟和 Guardrail 漏拦任何一项破线，即使主指标赢了也要停。模型、特征版本和索引别名一起回滚，见 `amazon-p99-stream`、`amazon-feature-store`。
 
-- 离线：切片指标（头 / 尾 query、新 ASIN、标识符 query）都过线，见 `amazon-kendra-hybrid`、`amazon-cold-start`。
-- 影子：线上打分对比，不改变排序，看漂移和延迟 p99，见 `amazon-p99-stream`。
-- A/B：预注册主指标和护栏（退货、客服工单、延迟、Guardrail 漏拦）。护栏破了即使主指标赢也停。
-- 回滚：一键切别名，模型版本和特征版本一起切，见 `amazon-feature-store`。
+Bias for Action 可以体现在可逆的影子和 1% 实验中。Are Right, A Lot 要求主动找失败切片，Frugality 则要求先验证问题，避免再训一个大模型碰运气。如果团队决定做自己反对的实验，Have Backbone; Disagree and Commit 意味着把分歧说清后，继续把护栏和回滚做好。这里补上〔填：你提出的依据、团队最后的决定、实验结果〕，用真实数字说明判断。
 
-Bias for Action 在这里不是「没评完就推全量」。可逆的影子和 1% 实验才是行动；不可逆的全量是赌博。Frugality 也反对「再训一个大模型碰运气」。Are Right, A Lot 要你主动找会失败的切片，而不是只报平均值。
+客户数据的取舍也能体现 Earn Trust。精排不需要原始邮箱时，在进入特征存储前打码或哈希；Bedrock 可配合敏感信息过滤，见 `amazon-guardrails`。Seller 工单的用途和 ACL 要跟着数据走，不能随意进入广告模型。删除请求要落实到离线样本和线上特征；未来点击或测试 ASIN 评测集也不能混进训练。Ownership 表示即使管道由平台团队负责，特征质量告警仍需要自己推动解决。对话中可能含未成年人或医疗信息，Success and Scale Bring Broad Responsibility 要求把规模带来的责任算进设计。
 
-Have Backbone; Disagree and Commit：未满足上线条件，对业务说不。你反对的实验如果团队决定做，就帮它把护栏和回滚写严，而不是上线后冷笑。现场故事要有一次你挡过的上线，或一次你被数据说服后 commit。没有数字的 STAR 在 Amazon 很弱。
+出现问题时，我会先按影响行动：安全、PII 或 p99 护栏破了立刻回滚；只有主指标下降则缩流量，再查 query、ASIN、市场、特征延迟、ANN 索引版本和 Guardrail 误杀。新品探索看 `amazon-cold-start`，编码漂移看 `amazon-two-tower`；离线好线上差先查 `amazon-feature-store`。日志、点时间回放和对照实验能帮助 Dive Deep，根因是标注或政策就改数据与门禁。Invent and Simplify 还意味着考虑删掉会漂移的特征，减少长期维护负担。
 
-## 客户数据：Earn Trust 写进管道，不是写进 wiki
-
-Earn Trust 和 Customer Obsession 叠在数据上：训练用的点击、对话、工单，客户默认你不会拿去训一个会背出他地址的模型。落到决策：
-
-- **最小够用。** 精排不需要原始邮箱；PII 在进特征存储前打码或哈希。Bedrock 场景用 Guardrails 的敏感信息过滤，见 `amazon-guardrails`。
-- **用途绑定。** Seller 工单不能随便进广告模型。标签和 ACL 跟特征走，不跟笔记本走。
-- **可删可审计。** 用户删除请求要能从离线样本和线上特征里落地；说「已经训进权重了」是 Ownership 失败。
-- **泄漏检查。** 用未来点击当特征、用测试 ASIN 的评测集进训练，都是 Earn Trust 对内部评测的背叛：你在骗自己和客户。
-
-Ownership 表示数据质量告警是你的，即使管道是平台团队的。特征对不上就停模型，不要等业务发现推荐「突然变神」。Success and Scale Bring Broad Responsibility：日志里的对话可能含未成年人或医疗，规模本身构成义务，不是「有 ACL 就行」。
-
-## 纠错：Dive Deep，然后 Deliver Results
-
-指标掉了，Dive Deep 禁止停在「可能是季节性」。要切：哪些 query / ASIN / 市场、是否特征延迟、是否 ANN 索引版本错、是否 Guardrail 误杀。工具是日志、特征点时间、对照实验，不是再开一个大模型。
-
-纠错决策树我面试会画：
-
-1. 护栏破（安全、PII、延迟 p99）：立刻回滚，再查。这是 Insist on the Highest Standards。
-2. 主指标掉、护栏还在：先缩流量，定位切片；新品探索过度走 `amazon-cold-start`，编码漂移走 `amazon-two-tower`。
-3. 离线好、线上差：先查训练/服务偏移，见 `amazon-feature-store`，再怀疑模型。
-4. 根因是标注或政策错：改门禁和数据，不是调学习率。
-
-Learn and Be Curious 体现在事后：把失败 case 写进评测集，见 `amazon-titan-eval`。只修线上、不沉淀，下次还踩。Deliver Results 是客户指标回来，不是「我们发了 postmortem」。
-
-Invent and Simplify：纠错时先问能否删掉一条会漂的特征，而不是再加一个校正模型。复杂校正叠在错的特征上，Ownership 会变成永远 oncall。
+最后交代〔填：客户指标是否恢复、恢复用了多久、事后改了哪条门禁〕。Deliver Results 要落到客户结果，Learn and Be Curious 则落到把生产失败写回 `amazon-titan-eval` 的评测集。
 
 ## 追问
 
-- **Bias for Action 和门禁冲突怎么办？** 行动的对象是可逆实验和影子，不是跳过护栏。没数据时用小流量，不是用全站。
-- **业务逼你用更激进的客户数据？** Earn Trust 优先。给一条最小特征和一条带 PII 的对照，用同样的离线增益证明不需要原文；仍要原文就升级审批和留存。有 Backbone 不等于情绪对抗。
-- **回滚算不算 Deliver Results 失败？** 不算。保护客户是结果。失败是发现问题还继续放量。Bar Raiser 想听你回滚得有多快、事后门禁改了哪一条。
-- **技术轮也问 LP 怎么办？** 把门禁、数据、回滚嵌进系统设计，不要最后五分钟另讲一个 STAR。评委听的是你会不会用原则做取舍。
+**业务要快上线，门禁又没过怎么办？**
+先做可逆的小流量或影子实验。Bias for Action 可以缩短获取证据的时间，护栏仍要保留。
+
+**业务坚持使用更激进的客户数据呢？**
+先用最小特征与带 PII 的方案对照，比较离线增益。仍确需原文时升级审批、明确留存并留审计记录，用数据表达分歧。
+
+**回滚算 Deliver Results 失败吗？**
+回滚是在保护客户。应说明回滚速度和后续门禁变化，发现问题后继续放量才会扩大损失。
+
+**技术轮怎么体现 LP？**
+把门禁、数据和回滚放进系统设计的取舍里。评委需要知道你如何用原则做决定，相关经历和结果要来自自己的实际工作。

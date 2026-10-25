@@ -4,8 +4,7 @@ section: anthropic
 order: 5
 level: A
 title: Anthropic OA：爬虫 / 网页抓取分层题，礼貌延迟与去重怎么做？
-quick: >-
-  先把单线程做对：URL 规范化、入队时去重、按主机限速；并发时 visited 的检查和插入必须原子。礼貌延迟靠每个主机的 next_ok，不是全局 sleep。
+quick: "我会先把 URL 规范化，在入队时原子地检查并记录 visited，保证并发下同一地址只抓一次。礼貌延迟按主机维护 next_ok，让不同主机各自等待；单线程正确后再加线程池。"
 tags:
   - 完整编程练习
   - Anthropic
@@ -24,6 +23,34 @@ sources:
     url: https://prachub.com/interview-questions/design-a-concurrent-web-crawler-3
     type: secondary
 ---
+
+## 题目描述
+
+给定一个起始网页和可调用的链接查询函数，编写一个有限网页图的并发爬虫。需要返回从起点能到达的同主机页面集合，处理页面间的环与重复链接；本练习使用注入函数模拟抓取，不发起真实网络请求。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- 接口为 `crawl(start, get_urls, workers=4) -> list[str]`；起始 URL 有合法 hostname，`workers >= 1`。
+- `get_urls(url)` 是线程安全的调用方函数，返回页面上的 URL 列表。图有限，最多有 10000 个不同 URL。
+- 只访问与 `start` 的 hostname 完全相同的 URL；访问前删除 fragment（`#` 及之后的部分），其余 URL 字符不变。每个规范化 URL 最多调用一次 `get_urls`，包括起始页。
+- 返回所有实际纳入抓取的 URL，去重后按字典序排列。不要求访问发生的先后顺序固定。
+- 若某次抓取发生异常，应完成其他已接收的工作，再以 `RuntimeError` 报告失败并保留原始异常原因；不得无限等待。
+
+### 输入输出示例
+
+```text
+get_urls("https://a/x") -> ["https://a/y#f", "https://b/z"]
+get_urls("https://a/y") -> ["https://a/x", "https://a/y"]
+
+crawl("https://a/x", get_urls, workers=3) -> ["https://a/x", "https://a/y"]
+# https://b/z 不同 host，被跳过；a/x、a/y 各只解析一次
+```
+
+## 解题思路与参考答案
+
+我会先在入队时做好去重，再用线程池抓取；礼貌延迟则由每个主机自己的调度时间控制。比如两个线程同时发现同一个链接，只有先登记成功的那个能把它加入队列。
 
 ## 完整编程练习（手册重构版）
 
@@ -50,7 +77,7 @@ crawl("https://a/x", get_urls, workers=3) -> ["https://a/x", "https://a/y"]
 
 ### 解题思路与正确性
 
-检查 `seen` 和放进队列在同一把锁里完成，所以一个 URL 最多入队一次，也就最多被解析一次。如果先抓再标记已访问，两个线程可能同时发现同一个链接，各抓一遍。
+`seen` 的检查和插入放在同一把锁里，登记成功后才入队。这样即使两个线程同时发现同一个链接，也只有一个能把它交给 worker；每个 URL 最多解析一次。若等抓完才标记，两个线程就可能各抓一遍。
 
 结束条件靠 `Queue.join()`。它等的是「未完成任务数」归零，这个计数包括动态新加入的 URL 和正在处理中的 URL。队列某一刻暂时为空，但还有线程在解析、马上会放进新链接，这时 `join()` 不会返回，所以不会提前结束。
 
@@ -115,6 +142,16 @@ def crawl(start, get_urls, workers=4):
         raise RuntimeError(f"crawler failed on {len(errors)} page(s)") from errors[0]
     return sorted(seen)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert crawl("https://a/x", parser, 3) == ["https://a/x", "https://a/y"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -188,7 +225,7 @@ Anthropic 的 CodeSignal 题是分层的，一层的单测全过了才开下一�
 
 上面的练习只去掉了 fragment。真实爬虫在抓取之前，要把 URL 统一成同一个键：host 转小写、去掉默认端口和 fragment、对无意义的 query 参数排序、把相对链接解析成绝对链接。不做规范化，`http://A.com` 和 `http://a.com/` 会被当成两个页面各抓一次。
 
-`visited` 的检查和插入发生在**放进 frontier 的时候**，而不是抓回来之后。先抓再标记已访问，并发时同一个 URL 会被请求两遍。伪代码：
+规范化之后，在放进 frontier 时完成 `visited` 的检查和插入。这和上面参考实现的原子登记是同一个原则。伪代码：
 
 ```python
 def enqueue(self, url, depth):
@@ -207,7 +244,7 @@ OA 里 `seen` 用集合就够了。生产环境再谈 Bloom filter：它的假�
 
 ## 礼貌：每主机一条时间线
 
-用全局 `sleep(1)` 控速是错的。礼貌指的是**每个 host 两次请求之间的最小间隔**，再加上 `robots.txt` 里的 crawl-delay。结构是这样：
+礼貌延迟约束的是每个 host 两次请求之间的最小间隔，还要遵守 `robots.txt` 里的 crawl-delay。全局 `sleep(1)` 会让互不相关的主机也一起等，我会这样调度：
 
 - 全局 frontier 按 BFS 或优先级出队。
 - 出队的 URL 按 host 分到各自的 back queue。
@@ -220,7 +257,7 @@ OA 里 `seen` 用集合就够了。生产环境再谈 Bloom filter：它的假�
 
 ## 并发：锁的粒度
 
-线程池只解决网络等待的问题，真正要设计的是下面几件事：
+线程池可以利用网络等待时间。加上并发后，还要把共享状态的保护和队列容量说清楚：
 
 1. `seen` 的 check-and-add 用一把锁或一个并发集合保护。
 2. 每个 host 一把锁，保护该 host 的队列和 `next_ok`。
@@ -233,7 +270,14 @@ OA 里 `seen` 用集合就够了。生产环境再谈 Bloom filter：它的假�
 
 ## 追问
 
-- **Bloom 假阳性怎么办？** 命中只当作「可能见过」，再回到精确集合确认。不要把 Bloom 当成唯一的 visited。
-- **礼貌和吞吐怎么平衡？** 瓶颈几乎总是 host 不够多、慢主机拖住了进度，而不是连接数不够。只加 worker 而不增加 host 的多样性，只会让同一个 host 被请求得更频繁，违反礼貌。
-- **和 API 限流有什么关系？** 每个 host 的 `next_ok` 就是令牌桶（token bucket）的一个特例，见 `anthropic-rate-limit`。
-- **要不要解析 JavaScript？** OA 只按静态链接处理。现场可以说：动态站点要走另一条渲染队列，成本更高、对站点的压力也更大，默认不做。
+**Bloom 假阳性怎么办？**
+命中只当作「可能见过」，再回到精确集合确认。不要把 Bloom 当成唯一的 visited。
+
+**礼貌和吞吐怎么平衡？**
+瓶颈几乎总是 host 不够多、慢主机拖住了进度，而不是连接数不够。只加 worker 而不增加 host 的多样性，只会让同一个 host 被请求得更频繁，违反礼貌。
+
+**和 API 限流有什么关系？**
+每个 host 的 `next_ok` 就是令牌桶（token bucket）的一个特例，见 `anthropic-rate-limit`。
+
+**要不要解析 JavaScript？**
+OA 只按静态链接处理。现场可以说：动态站点要走另一条渲染队列，成本更高、对站点的压力也更大，默认不做。

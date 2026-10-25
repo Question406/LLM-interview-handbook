@@ -4,7 +4,7 @@ section: systems
 order: 36
 level: S
 title: "KV Prefix ⑥：共享 Prefix + 私有 Suffix 的分段 Attention"
-quick: "不先 concat 公共前缀，不物化重复 KV heads：分别读共享 prefix 和各请求 suffix，用在线 max、指数和及输出累计量合并为同一个 softmax。"
+quick: "分别读取共享 prefix 和私有 suffix，用在线 softmax 合并最大值、指数和与加权输出，得到一次完整 attention。共享前缀靠 batch 广播，GQA 按 head 映射读取，避免复制公共 KV 或物化重复 heads。"
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -23,6 +23,35 @@ sources:
     url: https://arxiv.org/abs/2309.06180
     type: primary
 ---
+
+## 题目描述
+
+实现共享 prefix 与私有 suffix 的分段因果 attention；结果应与对所有可见 key 做一次整体注意力的结果相同。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `segmented_attention(q, segments, q_positions)`：把若干段 KV 合并成一次因果 attention，返回 `[B, Hq, T, d]`。
+- `q` 是 `[B, Hq, T, d]`；`q_positions` 是 `[B, T]`，给出每个 query 的绝对位置。
+- `segments` 里每段是 `(K, V, start, key_valid)`。`K`、`V` 是 `[B 或 1, Hkv, S, d]`，batch 维为 1 表示这段是各请求共享的 prefix；`start` 是该段第一个 key 的绝对位置；`key_valid` 是 `None` 或 `[B 或 1, S]` 的布尔数组。`Hq` 必须是 `Hkv` 的整数倍。
+- 所有段按绝对位置拼起来，构成一组互不重叠的真实 KV。段可以为空，遍历顺序可以任意。
+- query head `h` 共享 KV head `h // (Hq/Hkv)`，权重为全部可见 key 上 `q·k/sqrt(d)` 的整体 softmax，输出为 value 的加权和。因果规则：key 的位置为 `start+j`，仅在不超过 query 位置、且 `key_valid` 为 True 时可见；`None` 代表全有效。某个 query 一个可见 key 都没有时，输出 0。
+- 实现里不允许把共享 prefix 按 B 复制，也不允许把 prefix 和 suffix 拼成一份完整 KV。合法输入保证各段张量形状匹配。
+
+### 输入输出示例
+
+```text
+B=Hq=Hkv=T=d=1；q=[[[[0]]]]，q_positions=[[1]]
+segments = [(K=[[[[0]]]], V=[[[[2]]]], start=0, key_valid=None),
+            (K=[[[[0],[0]]]], V=[[[[6],[100]]]], start=1, key_valid=None)]
+segmented_attention(...) -> [[[[4]]]]
+只可见位置 0 和 1，位置 2 被因果规则屏蔽；交换两段顺序，输出仍为 4。
+```
+
+## 解题思路与参考答案
+
+我会逐段读取共享 prefix 和每个请求的私有 suffix，用在线 softmax 合并到一个分母里。这样公共前缀只存一份，也不用先把完整 KV 拼出来，结果仍与 dense attention 一致。
 
 ## 完整编程练习（手册原创实现版）
 
@@ -51,7 +80,7 @@ query 位置 = [3, 4]
 
 ### 解题思路与正确性
 
-不能对每段分别做 softmax 再平均，因为每段的归一化分母不同。正确做法是在线 softmax：每个 query 维护三样东西，当前见过的最大分数 `m`、按 `m` 平移后的指数和 `l`、按同样方式加权的 V 之和 `acc`。
+例如三个请求共享前三个 token，各自再带两个 suffix token，就可以分别读这两段并累加。每个 query 保存当前最大分数 `m`、相对 `m` 的指数和 `l`，以及同尺度的加权 V 累计量 `acc`。如果每段先各做 softmax 再平均，段间分母不同，就会丢掉真实权重。
 
 读到新的一段时，先算出新的最大值 `m'`，把旧的 `l` 和 `acc` 都乘上 $e^{m-m'}$ 换到新的基准下，再加上这一段的贡献。所有段处理完后，`acc / l` 就是对全部 key 做一次 softmax 的结果。这个合并与段的切分方式、遍历顺序都无关，所以测试里拆段、倒序都能和 dense 对照对上。
 
@@ -128,6 +157,16 @@ def segmented_attention(q, segments, q_positions):
     return np.divide(numerator, running_sum, out=np.zeros_like(numerator),
                      where=running_sum > 0)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(answer, dense_reference(q, k_full, v_full, keep))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

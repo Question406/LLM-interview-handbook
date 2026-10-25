@@ -4,7 +4,7 @@ section: nvidia
 order: 27
 level: A
 title: NVIDIA：视觉 encoder 和 LLM 同卡 serving，prefill 形状为什么不齐
-quick: "ViT 按图片数做规整的 $[B_{\\mathrm{img}}, N_{\\mathrm{patch}}, D_v]$ 前向；LLM prefill 处理文本加视觉 token 的变长 pack。两者 batch 轴不同，调度要拆成两个阶段。"
+quick: "视觉 encoder 和 LLM prefill 要分阶段调度：ViT 的 batch 按图片数计，形状是 $[B_{\\mathrm{img}}, N_{\\mathrm{patch}}, D_v]$，LLM 则把文本和视觉 embedding 拼成变长序列。Chunked prefill 能切 LLM 对 embedding 的消费，不能把整图 encoder 按相同方式切开。"
 tags:
   - NVIDIA
   - Multimodal
@@ -29,11 +29,9 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+同卡 serving 要把视觉编码和 LLM prefill 当成两个阶段，因为它们的 batch 轴和序列形状不同。LLaVA / VILA / Qwen2-VL 一类在 TensorRT-LLM 中由视觉 encoder 和 LLM decoder 组成；Triton 后端文档将两套引擎分别构建，较新的 LLM-API 也可以在同进程运行。理解调度时，先看两边各自在处理什么矩阵。
 
-LLaVA / VILA / Qwen2-VL 一类在 TensorRT-LLM 里是「视觉 encoder + LLM decoder」。Triton 后端文档把视觉引擎和 LLM 引擎拆开建；新一点的 LLM-API 可以同进程跑。NVIDIA serving 岗问的不是 CLIP 原理，是：**同卡时一步 scheduler 看见的 token 形状为什么和纯文本 输入预填充（prefill，即处理输入并建立缓存） 对不上**。我会先写两条流水线的 shape，再讲混 batch 和 chunked prefill 不能切 encoder 内部。
-
-## 两条流水线，两种矩阵
+## 两个阶段的形状为什么不同
 
 视觉侧（ViT / CLIP 塔）：图像预处理成 pixel，encoder 输出对齐到 LLM 隐空间的 embedding。固定分辨率例子：336、patch 14，大约 $N_{\mathrm{patch}}=576$（再加 class token 看实现）。形状规整：
 
@@ -42,7 +40,7 @@ X_{\mathrm{vit}}:[B_{\mathrm{img}}, N_{\mathrm{patch}}, D_v],\qquad
 E_{\mathrm{vis}}:[B_{\mathrm{img}}, N_{\mathrm{vis}}, D].
 $$
 
-这是完整前向，自注意力是对称的、没有 KV cache、没有逐步 逐 token 生成（decode）。算术强度高，GEMM 好看，batch 维是 **图的张数**，不是请求数。
+视觉 encoder 做一次完整前向：自注意力是对称的，不使用 KV cache，也不逐 token decode。它的算术强度较高，GEMM 形状规整，batch 维统计的是图片张数。
 
 LLM 侧：文本 embedding 和 $E_{\mathrm{vis}}$ 按占位符插进同一条序列。一条请求的 prefill 长是 $T_{\mathrm{text}}+N_{\mathrm{vis}}$（多图再加）。IFB 一步看到的是 packed token：
 
@@ -50,11 +48,11 @@ $$
 X_{\mathrm{llm}}:[N_{\mathrm{tok}}, D],\quad N_{\mathrm{tok}}=\sum_i (T_{\mathrm{text},i}+N_{\mathrm{vis},i}).
 $$
 
-Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nvidia-paged-kv`。墙的位置：encoder 偏算力；LLM 长 prefill 也偏算力；随后 decode 偏带宽。同卡意味着 **同一块 SM 时间片要在两种核之间切换**，不是把 ViT 的 $[B,576,D]$ 和 LLM 的 ragged pack 拼成一次 GEMM。
+Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nvidia-paged-kv`。两边的瓶颈也不同：encoder 和 LLM 长 prefill 偏算力，随后 decode 偏带宽。同卡时，SM 时间要分配给这两类核；ViT 的 $[B,576,D]$ 和 LLM 的 ragged pack 不能直接合成一次 GEMM。
 
 动态分辨率（Qwen2-VL 一类）更狠：$N_{\mathrm{vis}}$ 跟图尺寸走，同一 batch 里 256 和 2048 视觉 token 坐一桌。ViT 若还想组成一个 batch，就要 padding 或 packing；NaViT 式 pack 是训练技巧，线上常变成「逐图或按分辨率分桶」。面试把「形状不齐」说成 **$N_{\mathrm{patch}}$ 和 $T_{\mathrm{text}}$ 不是一个轴上的同质长度**。
 
-## 同卡混部的调度坑
+## 怎么安排同卡调度
 
 纯文本 IFB 以 `max_num_tokens` 为预算，一步里 decode 行 + chunked prefill，见 `nvidia-inflight-batch`、`nvidia-chunked-prefill`。多模态多出来的坑：
 
@@ -68,9 +66,9 @@ Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nv
 
 Triton 路径常是两个模型：`multimodal_encoder` 和 LLM engine，用 ensemble 串。这是显式拆阶段，形状各自固定，代价是中间 embedding 的一次设备间拷。同进程同卡省拷，scheduler 必须自己插入 encoder 阶段，不能假装只有一种 prefill kernel。
 
-## 我怎么答取舍
+选择部署方式时，我会先看延迟和吞吐目标。
 
-延迟敏感、图少：同卡，encoder 插在请求 admit 之后、LLM prefill 之前，必要时让 decode 步退避。吞吐敏感、图大：encoder 分池，embedding 缓存按图 hash 复用。Chunk 只切 LLM 侧，page 对齐仍要遵守。别承诺「多模态 IFB 和文本一样只要把图当 token」。图在 encoder 里不是 token，进 LLM 之后才是。
+延迟敏感且图片少时，可以同卡运行，把 encoder 放在请求 admit 之后、LLM prefill 之前，必要时让 decode 步退避。吞吐敏感且图片大时，可以将 encoder 分池，并按图 hash 复用 embedding 缓存。Chunk 只切 LLM 侧，page 对齐仍要遵守。别承诺「多模态 IFB 和文本一样只要把图当 token」。图在 encoder 里不是 token，进 LLM 之后才是。
 
 ## 追问
 

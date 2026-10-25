@@ -4,7 +4,7 @@ section: systems
 order: 30
 level: A
 title: 系统：decode batch 动态，结束序列腾槽、inflight
-quick: "Inflight 是此刻正在一步 逐 token 生成（decode） 的序列，不是排队里的总数。eos 或长度上限一到，立刻还页、还计算槽，waiting 里补人。有效 $B$ 决定能不能喂饱 decode GEMM；CUDA graph 按几档上限 pad，不要每步重捕获。"
+quick: "Inflight 先按本步实际执行的序列来计数；遇到 eos、长度上限或取消，就回收计算槽和 KV 页，再从 waiting 准入新请求。有效 $B$ 决定 decode GEMM 能否摊薄权重读取，准入还要满足 KV 与 token 预算。CUDA graph 可以捕获几档上限，再按有效条数 pad。"
 tags:
   - vLLM
   - NVIDIA
@@ -29,13 +29,9 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+动态 decode batch 在每次 iteration 结束时回收已完成序列的槽和 KV 页，再补入新请求。比如上限 32 槽、其中 3 条刚结束，就能在下一步补最多 3 条，而不用等最长的序列结束。Orca、TensorRT-LLM、vLLM / TGI 分别用 iteration 调度、in-flight batching、continuous batching 描述这类机制；静态 batch 的空洞见 `sys-cont-batch`，NVIDIA 问法见 `nvidia-inflight-batch`，agent 挂起见 `sys-agent-sched`。
 
-Orca 把调度改到 iteration 级，TensorRT-LLM 叫 in-flight batching，vLLM / TGI 叫 continuous batching。`sys-cont-batch` 讲为什么静态 batch 有洞；本题把镜头放在 逐 token 生成（decode） 池里的槽位：谁算 inflight、结束怎么腾、新请求凭什么进来、图捕获怎么跟动态 $B$ 共存。NVIDIA 岗见 `nvidia-inflight-batch`。Agent 把槽挂起而不结束，见 `sys-agent-sched`。
-
-## Inflight 是算力集合，不是队列长度
-
-我会先对齐口径。记 `max_num_seqs` 为槽上限，$B_{\mathrm{run}}$ 为本步真正 launch 的序列数，$B_{\mathrm{wait}}$ 为排队。Inflight 在面试里应等于 $B_{\mathrm{run}}$（外加本步混进来的 输入预填充（prefill，即处理输入并建立缓存） 块），不含 `tool_wait`、不含已经 eos、不含还在 CPU 上的 KV 命中提升。产品仪表若把「已接收未完成」都叫 inflight，要当场对齐口径，否则和 GPU 利用率对不上。
+先把计数口径说清楚。记 `max_num_seqs` 为槽上限，$B_{\mathrm{run}}$ 为本步真正 launch 的序列数，$B_{\mathrm{wait}}$ 为排队。Inflight 在面试里应等于 $B_{\mathrm{run}}$（外加本步混进来的 输入预填充（prefill，即处理输入并建立缓存） 块），不含 `tool_wait`、不含已经 eos、不含还在 CPU 上的 KV 命中提升。产品仪表若把「已接收未完成」都叫 inflight，要当场对齐口径，否则和 GPU 利用率对不上。
 
 每一步大致：
 
@@ -46,20 +42,22 @@ Orca 把调度改到 iteration 级，TensorRT-LLM 叫 in-flight batching，vLLM 
 
 结束腾的是两样：计算行和 KV 页。只腾计算、页按 `max_len` 占着，新请求没有地方写，Orca 的调度会在显存上失败。只腾页、计算仍走稠密 padded GEMM，结束行还在做 mask 废乘加。Ragged / packed kernel 和分页要一起开。
 
-具体形状：上限 32 槽。某步 28 条 decode + 1 条 512 token 的 prefill 块。3 条 eos，还 3 槽和对应页；waiting 里有 5 条，只能再进 3 条（或更少，若 KV 不够）。下一步仍约 29 条活着。静态 batch 里那 3 个空槽会一直陪到全局最长。这就是动态 decode batch 的全部好处：洞在 iteration 边界就被填上。
+具体形状：上限 32 槽。某步 28 条 decode + 1 条 512 token 的 prefill 块。3 条 eos，还 3 槽和对应页；waiting 里有 5 条，只能再进 3 条（或更少，若 KV 不够）。下一步仍约 29 条活着。静态 batch 里那 3 个空槽会一直陪到全局最长。这说明 iteration 调度能及时填上结束序列留下的空槽。
 
-## 动态 $B$、图、和准入策略
-
-Decode GEMM 的 $M=B_{\mathrm{run}}$。$B$ 太小，读完整份权重摊不薄，FP8 也救不了，见 `sys-fp8-gemm`。$B$ 开到 KV 爆边，每步读的历史 KV 变长，TPOT P99 先坏。Frontier 是 SLO 内 goodput，不是瞬时 tokens/s。
+Decode GEMM 的 $M=B_{\mathrm{run}}$。$B$ 太小，读完整份权重摊不薄，FP8 也救不了，见 `sys-fp8-gemm`。$B$ 开到 KV 爆边，每步读的历史 KV 变长，TPOT P99 先坏。最终目标是满足 SLO 的 goodput，因此要同时看吞吐和 P99。
 
 CUDA graph：捕获固定 shape。做法是几档 $B\in\{1,2,4,8,16,32\}$，本步 pad 到 $\ge B_{\mathrm{run}}$ 的最近档。活着的用 `last_page_len` / 有效掩码。每步 $B$ 变就重捕获，启动开销比一步 decode 还贵。FlashInfer 采样的 seed 也要做成 GPU tensor，才能进图，见 `nvidia-cuda-graph`。
 
-准入还会踩：
+准入策略还要处理以下情况：
 
-- **KV 水位。** 新 decode 预留的不是 1 页，是「还要生成的上限」的悲观估计，否则生成到一半 OOM 再抢占，P99 更差。乐观分配 + 抢占（把某条卸 CPU）是另一套，见 `sys-kv-offload`。
-- **长短公平。** 短请求一直插，长请求饿死；只跑长请求，槽被占满。Aging / 配额。
-- **结束突刺。** 很多序列同时 eos（齐步的 batch 作业），$B_{\mathrm{run}}$ 塌一下，下一档 graph 更瘦。作业负载要预期这个锯齿；在线 chat 通常更平滑。
-- **PD 分离。** Decode 池的 inflight 不应被大 prefill 污染。大 prefill 在另一池，搬完 KV 再进入 decode inflight，见 `sys-prefill-decode-disagg`。单池则靠 chunked 把 prefill 块大小卡在 token 预算里。
+**KV 水位。**
+新 decode 预留的不是 1 页，是「还要生成的上限」的悲观估计，否则生成到一半 OOM 再抢占，P99 更差。乐观分配 + 抢占（把某条卸 CPU）是另一套，见 `sys-kv-offload`。
+**长短公平。**
+短请求一直插，长请求饿死；只跑长请求，槽被占满。Aging / 配额。
+**结束突刺。**
+很多序列同时 eos（齐步的 batch 作业），$B_{\mathrm{run}}$ 塌一下，下一档 graph 更瘦。作业负载要预期这个锯齿；在线 chat 通常更平滑。
+**PD 分离。**
+Decode 池的 inflight 不应被大 prefill 污染。大 prefill 在另一池，搬完 KV 再进入 decode inflight，见 `sys-prefill-decode-disagg`。单池则靠 chunked 把 prefill 块大小卡在 token 预算里。
 
 Prefix / radix 命中的请求进入 decode 池时，prefill 后缀可能很短，几乎像直接 inflight。命中率高时 decode 池更满、KV 更紧，要重新调 KV 预留比例，见 `sys-radix-tree`。
 
@@ -69,9 +67,20 @@ Prefix / radix 命中的请求进入 decode 池时，prefill 后缀可能很短�
 
 ## 追问
 
-- **结束为什么必须还页？** 不还页等于内部碎片。动态 batch 的内存前提是分页回收，见 `sys-paged-attn`。
-- **Inflight 含排队吗？** 不含。排队不占 SM。含了就会出现「inflight 很高、GPU 很空」。
-- **和 continuous batching 重复吗？** 那张卡讲洞和 iteration 粒度。这张卡讲 decode 槽、inflight 口径、graph 分档、准入预算。
-- **eos 和 tool_wait 一样腾槽吗？** 都离开 running。eos 释放 KV（或插入 radix 后降引用）；tool_wait 挂起 KV，见 `sys-agent-sched`。
-- **为什么要 token 预算不只看条数？** 一条 8k prefill 块和 32 条 decode 的 FLOPs / 实际耗时完全不同。`max_num_batched_tokens` 封的是一步毫秒。
-- **$B$ 突然掉一半？** 齐步结束或抢占。看结束直方图。作业负载要错开 max tokens；在线负载更该查是不是准入被 KV 堵住。
+**结束为什么必须还页？**
+不还页等于内部碎片。动态 batch 的内存前提是分页回收，见 `sys-paged-attn`。
+
+**Inflight 含排队吗？**
+不含。排队不占 SM。含了就会出现「inflight 很高、GPU 很空」。
+
+**和 continuous batching 重复吗？**
+那张卡讲洞和 iteration 粒度。这张卡讲 decode 槽、inflight 口径、graph 分档、准入预算。
+
+**eos 和 tool_wait 一样腾槽吗？**
+都离开 running。eos 释放 KV（或插入 radix 后降引用）；tool_wait 挂起 KV，见 `sys-agent-sched`。
+
+**为什么要 token 预算不只看条数？**
+一条 8k prefill 块和 32 条 decode 的 FLOPs / 实际耗时完全不同。`max_num_batched_tokens` 封的是一步毫秒。
+
+**$B$ 突然掉一半？**
+齐步结束或抢占。看结束直方图。作业负载要错开 max tokens；在线负载更该查是不是准入被 KV 堵住。

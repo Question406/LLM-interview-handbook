@@ -4,9 +4,7 @@ section: amazon
 order: 15
 level: A
 title: Amazon：Nova 多模态（公开）和 Bedrock 路由怎么接？
-quick: >-
-  Lite / Pro / Premier 支持图像、视频和文档输入；Micro 是文本。族内智能路由不要把带图请求打到 Micro。评的是文档页、截图 OCR、短视频理解加路由后悔率，不是把
-  MMLU 和 Arena 的分数拼在一张表里。嵌入仍常走 Titan 或 Nova 多模态嵌入，应与聊天模型分别管理版本。
+quick: "先按模态选模型，再判断任务难度：Micro 接文本，Lite / Pro / Premier 接图像、视频和文档。带图请求在应用层排除 Micro，并按文档字段、截图定位和视频理解分别评测路由后悔率。嵌入与聊天模型各自管理版本。"
 tags:
   - Amazon
   - Nova
@@ -31,39 +29,33 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗在 `amazon-nova` 之后会追问「那张图打哪一档」。公开用户指南：Micro 文本；Lite / Pro / Premier 文本 + 图 + 视频，文档类型以当时表为准。Intelligent Prompt Routing 仍在同一族里预测质量再 fallback。跨模态请求不是「更长的 prompt」，是需要单独评估的能力。
+带图请求先排除 Micro，再在支持该模态的 Nova 档位里按难度路由。比如「这张发票多少钱」只有几个字，但需要视觉能力，按文本长度把它送到 Micro 就会失败。公开指南列出 Micro 处理文本，Lite / Pro / Premier 支持文本、图、视频，具体文档类型仍要核对用户指南。
 
-## 路由先看模态，再看难度
+## 先确定输入能力，再优化档位
 
-我会在白板上加一列模态，避免只按字数路由：
+应用在调用前检查 content block，有 `image` / `video` / `document` 就禁止 Micro。纯文本短分类和抽槽可用 Micro 或 Lite；图、截图、PDF 页和短视频从 Lite 起。多图对照、长视频和密表再考虑 Pro / Premier。视频有采样上限，长片 FPS 下降会丢高运动细节，可以先抽关键帧或切段，不能承诺 1 GB 内容直接进 Converse。
 
-- **纯文本短分类 / 抽槽。** Micro 或路由到 Lite。和 `amazon-nova` 里简单 FAQ 走小模型同一句。
-- **图、截图、PDF 页、短视频。** 默认 Lite 起。路由器若只能看见文本长度，会把「这张发票多少钱」打到 Micro 然后静默失败。应用层要在调用前看 content block：有 `image` / `video` / `document` 就禁止 Micro。
-- **多图对照、长视频、密表。** Pro / Premier。视频公开有采样上限：长片 FPS 会降，高运动细节会丢。面试讲「先抽关键帧或切段，再选档」，不要承诺「随便丢 1 GB 进 Converse」。
-- **检索。** 生成用 Nova，嵌入用 Titan Text 或 Nova 多模态嵌入（以当时文档为准）。更换 embedding 模型就要重新生成全库嵌入，见 `amazon-titan-embed`、`amazon-bedrock-rag`。
+Bedrock Intelligent Prompt Routing 在同族中预测质量再 fallback。多模态的质量差阈值要单独标定，文本上小模型够用，并不说明发票 OCR 也够用。按模态分别报 `amazon-nova` 中的后悔率和升级率。跨厂比较 Claude / GPT 时要用同一应用集，Bedrock 的智能路由不负责跨族路由。
 
-族内路由的质量差阈值对多模态要单独标定。文本上「小模型够用」推不过发票 OCR。后悔率、升级率仍按 `amazon-nova` 那张表报，但要按模态切片。
+生成可以用 Nova，嵌入则用 Titan Text 或 Nova 多模态嵌入，以文档支持范围为准。更换 embedding 要重嵌全库，生命周期与聊天模型分开管理，见 `amazon-titan-embed`、`amazon-bedrock-rag`。
 
-Token 用量：图和视频会转换成大量视觉 token，首个 token 的等待时间（TTFT） 和 E2E 都涨，见 `amazon-p99-stream`。SLO 按「有无媒体」分组统计，混在一个 InvocationLatency 里你不知道是 decode 生成慢，还是 4K 图像的 prefill 处理慢。
+图和视频会转成大量视觉 token，同时增加 TTFT 和 E2E。SLO 按有无媒体分组，才能分清是 4K 图像 prefill 慢还是 decode 慢，见 `amazon-p99-stream`。
 
-## 评测和护栏
+## 验收看实际视觉任务
 
-门禁沿用 `amazon-titan-eval` 四层，加视觉切片：
+沿用 `amazon-titan-eval` 的门禁，再加视觉切片：文档看字段准确率，金额和日期单独计；截图 UI 看是否读对按钮、指到正确控件；视频看时间戳定位与事件正确性。MMLU、Arena 或 VQA 总分只能提供背景，不能替代这些应用验收。
 
-- 文档：字段级准确，金额 / 日期单独计，不要 BLEU。
-- 截图 UI：能不能指到正确控件或读对按钮字。
-- 视频：时间戳定位 vs 摘要流畅。摘要漂亮但事件错了算失败。
-- 安全：公开表里部分 Nova 档的 Guardrails 标注为 text only。图上的违规、截图里的 PII，不能假设输入护栏已经看过像素。可以先用 OCR 提取文字再检查，或在下游增加检查策略，见 `amazon-guardrails`。
+安全也要核对模态覆盖。公开表中部分 Nova 档的 Guardrails 标为 text only，因此不能假设图上的违规内容和截图 PII 已被输入侧看过。可以 OCR 后检查文字，或增加下游策略，见 `amazon-guardrails`。PDF 同时当纯文本 RAG 又整页当图，会重复计费并增加出错机会；图文检索分工见 `amazon-mm-rag`。
 
-常见误区是：用 Arena 文风分给 Nova Lite 视觉发版；智能路由完全交给 Bedrock、应用不检查模态；把 PDF 当纯文本 检索增强生成（RAG） 又同时整页当图，重复计费还双份幻觉。图 / PDF 检索见 `amazon-mm-rag`。
-
-## 我会怎么收设计题
-
-先钉输入契约（最大边长、页数、视频秒数）和是否必须引用页码。再选默认档，最后加同族路由。知识库、工具、护栏绑应用不绑死 model id，方便 Lite 换 Pro。离线可以全打 Pro 当上限，线上用后悔率证明带图请求没被降到 Micro。护栏和工具绑应用层，换档不换契约。
+落设计时，先定最大边长、页数、视频秒数和页码引用要求，选默认档位，再增加同族路由。知识库、工具和护栏由应用管理，便于 Lite 换 Pro。离线全打 Pro 可作质量上限，线上用后悔率验证带图请求没有被错误降档。
 
 ## 追问
 
-- **为什么不全部 Premier？** 配额和 TTFT。大量「读这张缩略图标签」用 Lite。Highest Standards 指字段对，不是每张图都用最大模型。
-- **路由特征和文本一样吗？** 不够。至少要有模态、页数、是否要定位。短问句配一张密表很难。
-- **和 Claude / GPT 视觉怎么比？** 跨厂用你的应用集，不能只比较三家的 VQA 总分差距。Bedrock 智能路由不做跨族。
-- **视频超时？** 同步 Converse 要加大 SDK 超时；更长的走切段 + 批处理，见 `amazon-batch-infer`。
+**为什么不全用 Premier？**
+配额和 TTFT 都有限。读缩略图标签这类任务可先用 Lite，验收仍以字段正确为准。
+
+**路由特征需要加什么？**
+至少加模态、页数和是否需要定位。短问句配密表也可能很难，字数不足以判断。
+
+**视频超时怎么办？**
+同步 Converse 增加 SDK 超时，更长内容切段加批处理，见 `amazon-batch-infer`。

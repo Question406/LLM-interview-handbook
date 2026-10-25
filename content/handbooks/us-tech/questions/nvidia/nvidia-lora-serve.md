@@ -4,10 +4,7 @@ section: nvidia
 order: 10
 level: A
 title: NVIDIA：多 LoRA 同服务，基础权重共享、adapter 切换成本
-quick: >-
-  底座 $W$ 只放一份。每个 adapter 是一组低秩 $A,B$，输出 $xW+(xB)A$。同服务的内存主项仍是底座和
-  KV，不是 LoRA。切换成本：adapter 已经在 HBM 里只是换指针；要从 CPU 抓进来，才是一次小拷贝。同一
-  batch 混多种 LoRA，要 grouped GEMM，不能假设所有行共用一个 $W'$。
+quick: "多 LoRA 服务共享一份底座 $W$，每个请求用自己的低秩 $A,B$ 计算 $xW+(xB)A$。adapter 在 HBM 中时切换主要是改指针，从 CPU 换入才需要拷贝；同一 batch 混多种 adapter，要把各自的低秩计算分组，底座 GEMM 仍共享。"
 tags:
   - NVIDIA
   - LoRA
@@ -29,11 +26,9 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+多 LoRA 同服务时，底座权重共享一份，每个客户只保留自己的 adapter。TensorRT-LLM / NIM / Triton 的多 LoRA 支持面向的就是这种场景。比如一个 batch 混 8 个 LoRA，底座的大 GEMM 仍可共用，只把低秩增量按 adapter 分组计算，和独立跑 8 次 forward 的开销不同。
 
-NVIDIA 推理栈（TensorRT-LLM / NIM / Triton）把多 LoRA 当成一等功能：很多客户模型是同一底座加各自 adapter。我会按三件事答：底座怎么共享、切换一次 adapter 贵在哪、一个 batch 里混 8 个 LoRA 和 8 次独立 forward 差在哪。不要答「我们为每个客户 deploy 一份 70B」。
-
-## 底座共享
+## 共享权重后怎么计算
 
 LoRA：$W'=W+BA$（或 $W+\alpha BA/r$）。$W$ 是 $[D_{\mathrm{in}}, D_{\mathrm{out}}]$，$B$ 是 $[D_{\mathrm{in}}, r]$，$A$ 是 $[r, D_{\mathrm{out}}]$，$r\ll D$。前向两种写法等价：显式拼出 $W'$，或
 
@@ -43,11 +38,11 @@ $$
 
 Serving 走后者：底座 GEMM 所有请求共用，再加两次瘦 GEMM。$x$ 是 $[B, T, D]$（逐 token 生成（decode） 时 $T=1$）。
 
-显存：70B bf16 底座大约 140GB 量级，一份就够痛。单个 adapter 每层两个线性、若干层，常常几十到几百 MB。一千个 LoRA 仍可能小于再复制一份底座。所以正确图是：HBM 里一份 $W$ 加 adapter 池（热的在 GPU，冷的在 CPU / NVMe）。S-LoRA 把 adapter 也分页，和 KV 的 paged 思想同类，见 `nvidia-paged-kv`。
+显存上，70B bf16 底座大约是 140GB。单个 adapter 每层两个线性、若干层，常常几十到几百 MB。一千个 LoRA 仍可能小于再复制一份底座。因此可以在 HBM 里保留一份 $W$，再维护 adapter 池，热 adapter 放 GPU，冷 adapter 放 CPU / NVMe。S-LoRA 把 adapter 也分页，和 KV 的 paged 思想同类，见 `nvidia-paged-kv`。
 
-## 切换成本
+## 切换和调度的成本
 
-分清三种「切」。
+切换成本取决于具体换了什么：
 
 1. 进程级换模型：把整份 $W$ 卸了再装另一份。秒级，不可接受。多 LoRA 就是为了避免这个。
 2. 请求级换 adapter，底座不动：若 $A,B$ 已在 HBM，切换是绑一份指针 / 改 kernel 参数，微秒到亚毫秒。若在 CPU，HtoD 拷贝按 adapter 字节走，通常远小于一次 70B 权重加载，但仍可能比一步 decode GEMM 显眼：decode 本身就很短。
@@ -55,9 +50,9 @@ Serving 走后者：底座 GEMM 所有请求共用，再加两次瘦 GEMM。$x$ 
 
 热池策略：LRU 留 $K$ 个 adapter 在 GPU。$K$ 太大挤 KV；$K$ 太小，切客户时反复 HtoD，p99 出现「偶发尖刺」。面试把尖刺归因到 adapter miss，不要怪底座。
 
-Compute：额外 FLOPs 大约 $2\cdot B\cdot T\cdot D\cdot r$ 量级（每个 LoRA 线性）。Prefill $T$ 大时这笔能看见；decode $T=1$ 时通常远小于读 KV。所以 decode 路径上，LoRA 的主要风险是调度和内存，不是算术。
+低秩增量带来的额外 FLOPs 大约 $2\cdot B\cdot T\cdot D\cdot r$ 量级（每个 LoRA 线性）。Prefill $T$ 大时这笔能看见；decode $T=1$ 时通常远小于读 KV。所以 decode 路径上，LoRA 的主要风险是调度和内存，不是算术。
 
-## 和 Triton 怎么接
+接入 Triton 时也要保持底座共享。
 
 一种是每个 LoRA 当 Triton 里一个「虚模型」，共享同一份 TensorRT-LLM 引擎实例，请求带 adapter id。另一种是 Python backend 自己维护池。不要为每个 LoRA 起一个 `instance_group` 把 $W$ 复制 N 份，那是把 Triton 的多模型理解反了，见 `nvidia-triton-infer`。
 

@@ -4,9 +4,7 @@ section: amazon
 order: 5
 level: A
 title: Amazon：关键词 + 向量混合检索，何时 BM25 赢 embedding？
-quick: >-
-  精确标识符、罕见专名、条款编号、报错码、型号，倒排 / BM25 赢。同义改写、意图、拼写变体，向量赢。混合检索先合并两路候选，保证召回，再用分数归一或
-  RRF，最后用行为或交叉模型精排。ASIN 这类精确标识符需要词法检索兜底。
+quick: "精确编号、罕见专名和条款原文通常更适合 BM25；同义改写、意图和拼写变体更适合向量检索。先合并两路候选，再做分数归一或 RRF，最后精排；ASIN 这样的标识符保留词法检索。"
 tags:
   - Amazon
   - Kendra
@@ -31,34 +29,23 @@ sources:
     type: primary
 ---
 
-企业搜索和商品搜索岗都会问混合检索。Kendra 的卖点是关键词加语义，不必自己调 BM25；OpenSearch 则把 BM25 子句和 k-NN 子句在检索流程中做分数归一。Kendra 现已不对新客户开放，现场提一句、落到「倒排 + 向量 + 融合」即可。Amazon Science 的 Semantic Product Search 写过纯词法检索的三类不足：同义 / 上下位、形态、拼写。反过来说，词法赢的场景论文没当缺点写，面试要自己补上。
+精确标识符、罕见专名和条款原文，BM25 往往比 embedding 可靠；同义改写和自然语言意图则更适合向量。比如搜 `WH-1000XM5` 时，用户要的是这个型号，语义上相近的「耳机」不能替代它。
 
-## BM25 什么时候赢
+BM25 使用词面匹配和 IDF。ASIN、SKU、订单号、工单 ID、CVE 编号、错误码 `AccessDeniedException`，以及内部包名、`Section 4.2.1` 这样的条款，都需要精确命中。Embedding 会把编号压到向量空间，近邻可能变成另一个编号；罕见型号也可能被常见类目吸走。极短的品牌词和精确类目导航同样适合保留词法路径，双塔对这类 query 本来就不稳。
 
-BM25 吃的是词面和 IDF。下面这些 query，向量经常把真正要的那条挤出 top-$k$：
+法律政策原文、日志字段也有这个要求。Seller Support 搜「危险品锂电池」，语义相近的「电池运输」可能漏掉关键限定，见 `amazon-bedrock-rag`。反过来，`laptop for college student` 对应「轻薄学生本」，以及同义、上下位、形态、轻度拼写和跨语言表达，词面很难覆盖。Amazon Science 的 Semantic Product Search 讨论了这些词法不足；商品标题堆重复属性时，BM25 还可能抬高劣质标题。
 
-- **标识符。** ASIN、SKU、订单号、工单 ID、CVE 编号、错误码 `AccessDeniedException`。Embedding 把长 ID 压成一个点，近邻是「看起来像编号的别的编号」。
-- **罕见专名和型号。** `WH-1000XM5`、内部包名、条款 `Section 4.2.1`。IDF 极高，倒排可以直接匹配；向量空间里被更常见的「耳机」「退货政策」吸走。
-- **用户就要字面。** 法律条款、政策原文、日志字段名。Seller Support 里搜「危险品锂电池」，漏掉带这个短语的条款就是事故，语义近邻「电池运输」不够，见 `amazon-bedrock-rag`。
-- **极短、高精 query。** 品牌词、类目精确导航。双塔对短 query 本来就不稳。
+## 先合并候选，再融合和精排
 
-向量赢的是：`laptop for college student` 对「轻薄学生本」、同义、轻度拼写、跨语言、标题从未出现过的说法。Amazon 商品标题充满属性堆砌，纯 BM25 会把堆了更多重复词的劣质标题刷上去，这才需要语义。
+两路分别召回，再取并集，可以补上 ANN 漏掉的精确 ASIN，见 `amazon-two-tower`。BM25 和余弦分数不在同一量纲，直接 `0.5 * bm25 + 0.5 * cos` 容易让长文档或长尾 IDF 主导排序。OpenSearch 的 hybrid search 先取各路 top，再用 min-max / L2 归一，以及算术或几何平均融合。
 
-别把词法当成遗留。电商里标识符流量占比不低，ANN 漏召回时，可以先尝试合并词法候选，见 `amazon-two-tower`。
-
-## 怎么融，别在分数空间上硬加
-
-BM25 和余弦不在一个量纲。直接 `0.5 * bm25 + 0.5 * cos` 会让长文档或长尾 IDF 主宰。OpenSearch 的做法是子查询分别取 top，再 min-max / L2 归一，用算术或几何平均。RRF 不直接使用分数，通常更容易稳定地融合：
+也可以使用 RRF，只比较名次，避开分数校准：
 
 $$
 \mathrm{RRF}(d)=\sum_{r\in R}\frac{1}{k+\mathrm{rank}_r(d)}
 $$
 
-$k$ 常取 $60$。不依赖分数校准，适合 BM25 和 ANN 两路。Kendra Intelligent Ranking 是另一路：词法先取候选，语义模型重排。面试说清你处在哪一段：**召回并集**还是 **分数融合**还是 **重排**。三段职责不同。并集解决「向量漏掉精确 ASIN」；融合解决「两路都召到了谁排前」；重排解决「相关性还要叠加新鲜度、库存、权限」。
-
-权限和元数据过滤必须在两路都生效。只在向量路上滤 marketplace、词法路漏滤，会检出别国政策。新鲜度同理。
-
-评测按 query 切片，不要只看一个总 nDCG：标识符集、头部商品 query、长尾自然语言、拼写错误。标识符集上向量单独会很难看，这不是模型没训好，是任务不该交给它。线上用点击 / 购买时记住位置偏差：BM25 占了第一屏，行为数据会自我强化，新语义模型离线赢、线上输。冷启动商品更吃这个偏差，见 `amazon-cold-start`。
+这里 $k$ 常取 $60$，适合融合 BM25 和 ANN。并集决定哪些文档有机会进入候选，融合决定两路候选谁排前，后面的精排再考虑相关性、新鲜度、库存和权限。Kendra Intelligent Ranking 则是词法取候选后用语义模型重排的路径。
 
 ```python
 def rrf(rank_lists, k=60):
@@ -69,11 +56,26 @@ def rrf(rank_lists, k=60):
     return sorted(scores, key=scores.get, reverse=True)
 ```
 
-`ranks` 是 doc 到 1-based 名次。两路没有的文档不要塞 0 分进去冒充排过。
+代码中的 `ranks` 是 doc 到 1-based 名次的映射。某一路没有召回的文档，不要用名次 0 冒充已经排过。
+
+## 按 query 类型检查效果
+
+权限、marketplace、元数据和新鲜度过滤要在两路同时生效。向量路滤了 marketplace、词法路漏滤，仍可能返回别国政策。
+
+评测把标识符、头部商品、长尾自然语言和拼写错误分开看，再报 nDCG。标识符切片上纯向量表现差，可能就是匹配方式不适合。线上点击和购买还受位置偏差影响：BM25 已占第一屏，历史行为会继续支持它，新语义模型可能离线赢、线上输。冷启动商品尤其要检查这种偏差，见 `amazon-cold-start`。
+
+Kendra 提供关键词加语义的托管能力，OpenSearch 则方便自行控制 BM25、k-NN、融合与过滤。这里引用的资料注明 Kendra 已不对新客户开放，因此新项目需要先确认可用服务，再按约束选实现。
 
 ## 追问
 
-- **为什么不把 query 和文档都塞进一个大 embedding 就够了？** 标识符和条款编号的碰撞空间太差；延迟上也不能对全库做交叉编码。双塔加倒排是召回，交叉是精排。
-- **Kendra 和 OpenSearch 怎么选？** 新项目别默认 Kendra（已不对新客户开放）。要托管语义重排可以用 Intelligent Ranking 一类服务；要自己控融合和过滤，OpenSearch / Bedrock Knowledge Bases 更常见。选的是约束，不是品牌。
-- **BM25 在 检索增强生成（RAG） 里还要吗？** 要。政策编号、API 名、内部术语和商品 ASIN 是同一类。只向量的 Knowledge Base 会在这些 query 上静默失败，生成看起来很自信。
-- **两路分数能不能学一个融合权重？** 能，但要按 query 类型切片训，否则会被头 query 带跑。上线前先用 RRF 做无参基线，有行为数据再学权重，门禁见 `amazon-lp-ml`。
+**为什么不统一成一个大 embedding？**
+编号和条款的精确匹配仍需要词法路径。双塔与倒排负责召回，交叉模型适合精排，也无法对全库逐对交叉编码。
+
+**Kendra 和 OpenSearch 怎么选？**
+先确认新客户可用性。托管语义重排可考虑 Intelligent Ranking 一类服务；需要自控融合与过滤时，看 OpenSearch / Bedrock Knowledge Bases。
+
+**RAG 也要 BM25 吗？**
+要。政策编号、API 名和内部术语与商品 ASIN 一样，纯向量漏掉时生成端仍可能自信作答。
+
+**可以学习融合权重吗？**
+可以。先用 RRF 建基线，有行为数据后按 query 类型训练和验证，避免头部 query 主导权重。上线门禁见 `amazon-lp-ml`。

@@ -4,8 +4,7 @@ section: coding
 order: 41
 level: S
 title: 白板：GAE 反向递推，done、截断和 value clip 各在哪一行
-quick: >-
-  从后往前递推 $\delta_t$ 和 $A_t$，回合真正结束时两处都乘 $(1-d_t)$；长度截断不算结束，要用 $V(s_T)$ 自举；回报目标 detach，value clip 取 max。
+quick: "从后往前递推 $\\delta_t$ 和 $A_t$，terminal 时两处都乘 $(1-d_t)$，阻止跨回合泄漏。buffer 长度截断仍用 $V(s_T)$ 自举；回报目标 detach，value clip 取两种误差中的 max。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +25,34 @@ sources:
     url: https://arxiv.org/abs/1707.06347
     type: primary
 ---
+
+## 题目描述
+
+给定一段 rollout 的奖励、状态价值、真正终止标记与末状态价值，计算 GAE 优势和回报；另实现带价值裁剪的 value loss。区分“环境真正结束”和“采样缓冲区在回合中途截断”。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `gae(rewards, values, dones, last_value, gamma, lam) -> (advantages, returns)`：`rewards`、`values`、`dones` 都是长度 $T$ 的一维浮点张量。`dones[t] = 1` 只表示第 $t$ 步之后回合真正结束（terminal）。`last_value` 是 buffer 最后一步之后那个状态的值 $V(s_T)$，buffer 在回合中途被截断时用它自举；最后一步是 terminal 时它会被 `(1 - done)` 屏蔽掉。返回的 `returns = advantages + values`，不带梯度。
+- `value_loss(v_pred, v_old, returns, mask, clip) -> scalar`：带 value clip 的均方误差，只在 `mask = 1` 的位置求平均，`mask` 全 0 时返回 0。
+- 同一个 buffer 里不包含「时间限制截断后又开始新回合」的边界：那种边界既要切断递推、又要用真实的 next value 自举，一个 `done` 表达不了。
+
+- 用 `next_value[t]=values[t+1]`（末步取 `last_value`）定义 `delta[t]=rewards[t]+gamma*(1-dones[t])*next_value[t]-values[t]`。目标优势满足 `A[T]=0`，`A[t]=delta[t]+gamma*lam*(1-dones[t])*A[t+1]`。`gamma`、`lam` 在 `[0,1]`，输出形状均为 `[T]` 且不带梯度。
+- value loss 的各张量形状相同，mask 为 0/1，`clip>=0`。定义 `v_clip=v_old+clamp(v_pred-v_old,-clip,clip)`，每位置误差是 `0.5*max((v_pred-returns)^2,(v_clip-returns)^2)`，只对有效位置求平均。
+### 示例
+
+```text
+last_value = 0, gamma = lam = 1, rewards = [1, 2], values = [0, 0], dones = [0, 1]
+-> advantages = [3, 2], returns = [3, 2]
+
+gamma = lam = 1, rewards = [1], values = [0], dones = [0], last_value = 5
+-> advantages = [6]      # 没结束，用 V(s_T) = 5 自举
+```
+
+## 解题思路与参考答案
+
+GAE 用从后往前的递推实现，只需缓存后一步优势 $A_{t+1}$；同时用 done 切断真正结束的回合，并给 buffer 尾部提供自举值。第 $t$ 步的 TD 残差和优势是
 
 ## 完整编程练习（手册重构版）
 
@@ -48,8 +75,6 @@ gamma = lam = 1, rewards = [1], values = [0], dones = [0], last_value = 5
 ```
 
 ### 解题思路与正确性
-
-从最后一步往前算，用一个变量缓存后一步的优势 $A_{t+1}$。第 $t$ 步的 TD 残差和优势是
 
 $$
 \delta_t = r_t + \gamma(1-d_t)V_{t+1} - V_t,\qquad A_t = \delta_t + \gamma\lambda(1-d_t)A_{t+1}.
@@ -93,6 +118,16 @@ def value_loss(v_pred, v_old, returns, mask, clip=0.2):
     loss = torch.maximum(unclipped_error, clipped_error)
     return 0.5 * (loss * mask).sum() / mask.sum().clamp(min=1)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.equal(advantages, torch.tensor([3.0, 2.0]))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -190,11 +225,14 @@ value clip 取 max 而不是 min，和 policy 那边的 min 一样，选的是�
 
 ## 追问
 
-**advantage 要不要再归一化？** PPO 常见做法是在 mini-batch 内减均值、除以标准差。归一化放在 GAE 之后做，回报目标仍用归一化之前的 $A + V$。
+**advantage 要不要再归一化？**
+PPO 常见做法是在 mini-batch 内减均值、除以标准差。归一化放在 GAE 之后做，回报目标仍用归一化之前的 $A + V$。
 
-**$\lambda$ 起什么作用？** $\lambda = 0$ 是一步 TD，偏差大、方差小；$\lambda = 1$ 是蒙特卡洛，无偏但方差大。GAE 在两者之间插值。
+**$\lambda$ 起什么作用？**
+$\lambda = 0$ 是一步 TD，偏差大、方差小；$\lambda = 1$ 是蒙特卡洛，无偏但方差大。GAE 在两者之间插值。
 
-**critic 从哪初始化？** 常见做法是从奖励模型初始化，把最后一层换成标量头。critic 训练不稳时 advantage 全是噪声，这也是 GRPO 去掉 critic 的主要理由之一。
+**critic 从哪初始化？**
+常见做法是从奖励模型初始化，把最后一层换成标量头。critic 训练不稳时 advantage 全是噪声，这也是 GRPO 去掉 critic 的主要理由之一。
 
 ## 相关题
 

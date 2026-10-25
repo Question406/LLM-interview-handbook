@@ -4,7 +4,7 @@ section: coding
 order: 18
 level: A
 title: 白板：packed sequences 的 cu_seqlens 和文档边界 mask
-quick: "把有效 token 拼成一条，`cu_seqlens` 是长 $B+1$ 的前缀和；同一行塞多篇文档时还要块对角因果 mask，否则后一篇会看见前一篇。"
+quick: "先按真实长度拼接有效 token，用长度为 $B+1$ 的 `cu_seqlens` 前缀和标出各段起止。同一行放多篇独立文档时，要用块对角因果 mask，或把每篇当 varlen 序列，防止跨文档注意力。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +26,34 @@ sources:
     url: https://arxiv.org/abs/2307.09288
     type: primary
 ---
+
+## 题目描述
+
+将右侧 padding 的 token batch 压成一维有效 token 流，生成序列边界，并构造隔离不同文档的因果可见性矩阵。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `cu_seqlens_from_lens(lens) -> cu`：`lens` 是 `[B]` 的整数长度，返回 `[B+1]` 的 `int32` 前缀和，`cu[0] = 0`。
+- `pack_tokens(tokens, lens) -> (packed, cu)`：`tokens` 形状 `[B, T]`，右 padding；把每行前 `lens[b]` 个有效 token 拼成 `packed`，形状 `[sum(lens)]`。
+- `doc_causal_keep(doc_ids) -> [T, T] bool`：`doc_ids` 形状 `[T]`，`True` 表示位置 $i$ 可以看位置 $j$，条件是同一文档且 $j\le i$。同一文档的 token 必须连续出现，不能复用同一个 id 去表示两篇独立文档。
+- 约束：$0\le$ `lens[b]` $\le T$，总 token 数不超过 $2^{31}-1$（`int32` 能表示）。`B = 0` 和长度全为 0 都合法。
+
+### 输入输出示例
+
+```text
+tokens = [[1,2,0], [0,0,0], [3,0,0]], lens = [2,0,1]
+pack_tokens(tokens,lens) -> (packed=[1,2,3], cu=[0,2,2,3])
+cu_seqlens_from_lens([]) -> [0]
+doc_causal_keep([0,0,1]) -> [[True,False,False],
+                            [True,True,False],
+                            [False,False,True]]
+```
+
+## 解题思路与参考答案
+
+packed LM 先丢掉 pad，再把有效 token 拼接，并用边界保证独立样本互不关注。`pack_tokens` 按每行有效长度切片，前缀和 `cu` 记录起止，第 $b$ 条样本就是 `packed[cu[b]:cu[b+1]]`。拼完后检查 `cu[-1]` 是否等于总长度。
 
 ## 完整编程练习（手册重构版）
 
@@ -49,8 +77,6 @@ doc_ids = [0, 0, 1]       -> keep = [[T, F, F],
 ```
 
 ### 解题思路与正确性
-
-`pack_tokens` 按每行的有效长度切片再拼接，前缀和 `cu` 记下每段的起止位置：第 $b$ 条样本是 `packed[cu[b]:cu[b+1]]`。拼完后检查 `cu[-1]` 是否等于总长度。
 
 `doc_causal_keep` 把下三角因果条件和“同一文档”条件取与。只有因果的话，第二篇文档的 token 会看到第一篇；加上同文档条件后，mask 变成块对角下三角，跨文档的信息泄漏就被挡住了。
 
@@ -99,6 +125,16 @@ def doc_causal_keep(doc_ids):
     same_doc = doc_ids[:, None] == doc_ids[None, :]
     return causal & same_doc
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert packed.tolist() == [1, 2, 3]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -172,10 +208,14 @@ RoPE 的 `position_ids` 也要一起约定：跨文档时是继续累加，还�
 
 ## 追问
 
-- **`cu_seqlens` 为什么是 $B+1$ 而不是 $B$？** 要同时给出每条的起点和最后的终点。只给长度数组的话，kernel 还得自己做一次 cumsum。
-- **packed 之后还要 attention mask 吗？** varlen 路径用 `cu_seqlens` 切边界，因果在 kernel 里按每条的局部下标处理。再传一份 `[B, T, T]` 的 pad mask 是重复工作，还容易和 packed 布局对不上。
-- **后一篇看见前一篇一定是错的吗？** 不一定。有的 packing 就是故意当超长上下文用。面试时先问清约定，再决定写块对角还是纯因果。
-- **left pad 怎么 pack？** 先按真实长度切出有效部分再拼接。如果带着 pad 去 cumsum，`cu` 会把 pad 也算进序列里。
+**`cu_seqlens` 为什么是 $B+1$ 而不是 $B$？**
+要同时给出每条的起点和最后的终点。只给长度数组的话，kernel 还得自己做一次 cumsum。
+**packed 之后还要 attention mask 吗？**
+varlen 路径用 `cu_seqlens` 切边界，因果在 kernel 里按每条的局部下标处理。再传一份 `[B, T, T]` 的 pad mask 是重复工作，还容易和 packed 布局对不上。
+**后一篇看见前一篇一定是错的吗？**
+不一定。有的 packing 就是故意当超长上下文用。面试时先问清约定，再决定写块对角还是纯因果。
+**left pad 怎么 pack？**
+先按真实长度切出有效部分再拼接。如果带着 pad 去 cumsum，`cu` 会把 pad 也算进序列里。
 
 ## 相关题
 

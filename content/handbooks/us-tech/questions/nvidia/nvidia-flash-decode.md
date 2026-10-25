@@ -4,7 +4,7 @@ section: nvidia
 order: 21
 level: S
 title: NVIDIA：FlashDecoding split-K，和训练用 FlashAttention 差在哪
-quick: "Decode 时 $Q$ 只有一行，沿 query 切填不满 SM；FlashDecoding 沿 KV 长度 split-K，每段出部分 softmax 统计再精确合并。"
+quick: "我会在小 batch、长上下文 decode 时沿 KV 长度做 split-K，让更多 CTA 并行，再用各段 softmax 统计精确合并。训练用 FlashAttention 主要沿 query 行铺开，decode 的 $Q$ 只有一行，直接沿用训练网格容易填不满 SM。"
 tags:
   - 完整编程练习
   - NVIDIA
@@ -29,6 +29,28 @@ sources:
     url: https://arxiv.org/abs/2307.08691
     type: primary
 ---
+
+## 题目描述
+
+实现单 query 的分段注意力统计及合并，模拟 Flash Decode 的输出。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`split_stats(q,k,v,scale)` 输入 q `[D]`、k/v `[Sg,D]`，返回 `(m,ell,O)`。分数定义为 `scale*(k@q)`；m 为段内最大分数，ell 为 `sum(exp(score-m))`，O 为以相同指数权重对 v 求和的未归一化向量。
+
+`merge_mlo(stats)` 返回 `[D]` 输出，必须等于将各段合并后做一次完整 softmax 注意力的结果；ell=0 的空段不贡献，至少有一段非空。`flash_decode(q,k,v,scale,n_split=4)` 输入完整 k/v `[S,D]`，返回相同输出，S>=1、`n_split`>=1；`n_split` 大于 S 时允许空段。要求对大幅值分数仍保持数值稳定。
+
+### 示例
+
+```text
+q=[0], k=[[0],[0],[0]], v=[[1],[2],[6]], scale=1。
+flash_decode 在 n_split=2 或 5 时均返回 [3]。
+若仅有一个 key/value，输出等于该 value。
+```
+
+## 解题思路与参考答案
+
+FlashDecoding 会沿 KV 长度切分工作，再把各段统计合并成同一个 softmax 结果，用来解决单 query 并行度不足。例如 $B=1$、$H=32$ 时，按 query 分配只有几十个 CTA，H100 的一百多个 SM 很多会闲着。
 
 ## 完整编程练习（手册重构版）
 
@@ -116,6 +138,16 @@ def flash_decode(q, k, v, scale, n_split=4):
     return merge_mlo(stats)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(flash_decode(q, k, v, 0.5, n_split), expected)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -170,7 +202,7 @@ expect_value_error(merge_mlo, [(-np.inf, 0.0, np.zeros(4))])
 
 ## 题怎么来的
 
-NVIDIA CUDA / LLM serving 岗问完 `nvidia-flash-attn` 后，常会补一句：那逐 token 生成（decode）呢？Tri Dao、Haziza 等人 2023 年的 Flash-Decoding 博客给出了答案：再加一维并行，沿 KV 的序列长度切。xFormers 的 dispatcher、FlashAttention 2.2+、TensorRT-LLM 的 generation attention 都是同一个思路。回答时可以先画训练核的网格，再画 split-K 的网格。面试官想听的是 occupancy 从哪里来，而不是「它们都叫 Flash」。
+NVIDIA CUDA / LLM serving 岗问完 `nvidia-flash-attn` 后，常会补一句：那逐 token 生成（decode）呢？Tri Dao、Haziza 等人 2023 年的 Flash-Decoding 博客给出了答案：再加一维并行，沿 KV 的序列长度切。xFormers 的 dispatcher、FlashAttention 2.2+、TensorRT-LLM 的 generation attention 都是同一个思路。回答时可以先画训练核的网格，再画 split-K 的网格。比较时要说清楚新增的并行维如何提高 occupancy。
 
 ## 训练核：沿 $Q$ 铺开，瓶颈是 $[T,T]$ 的 IO
 
@@ -219,14 +251,21 @@ xFormers 的 dispatcher 会按问题尺寸在 FA 和 Flash-Decoding 之间切换
 
 GQA 只减少 $H_{\mathrm{kv}}$，query head 数不变，$B\cdot H$ 可能够、也可能不够，长上下文下通常仍需要 split。Hopper 上还可以叠加 TMA 和 warp specialization，那属于实现层面，见 `nvidia-ws-decode`；算法上的区别仍然只是多了这一维并行。
 
-一个常见误区是把 FA-2「避免 sliced-K 式 warp 同步」和 Flash-Decoding 的 **CTA 级 split-K** 当成一回事。前者是训练核不想在 CTA 内部切 $K$；后者是 decode 必须在 CTA 之间切 $K$。
+FA-2 的 sliced-K 调整发生在 CTA 内部，目的是减少 warp 同步；Flash-Decoding 的 split-K 发生在 CTA 之间，用来增加 decode 的并行度。这两个层级要分清。
 
 ## 追问
 
-- **$G=1$ 是什么情况？** 退回到一个 CTA 处理整段 KV，小 batch、长上下文时 SM 会闲着。$T$ 短时反而可能更快，因为少一次合并。
-- **和 FlashAttention 的 sliced-K 什么关系？** FA-1 在 CTA 内切 $K$，需要 shared memory 同步；FA-2 改成切 $Q$。FlashDecoding 的 split 发生在 CTA 之间，必须把部分结果写到 HBM，再合并。
-- **数值上要注意什么？** 段间合并必须走 log-sum-exp，不能把 $G$ 份 softmax 输出直接平均。$m$ 是 fp16 时，$\ell$ 也要用 fp32 累加。
-- **CUDA Graph 还能录吗？** $G$ 随 $T$ 变化，形状不固定。常见做法是把 split 数 pad 到几个固定档位，或者只对 decode 步捕获，见 `nvidia-cuda-graph`。
+**$G=1$ 是什么情况？**
+退回到一个 CTA 处理整段 KV，小 batch、长上下文时 SM 会闲着。$T$ 短时反而可能更快，因为少一次合并。
+
+**和 FlashAttention 的 sliced-K 什么关系？**
+FA-1 在 CTA 内切 $K$，需要 shared memory 同步；FA-2 改成切 $Q$。FlashDecoding 的 split 发生在 CTA 之间，必须把部分结果写到 HBM，再合并。
+
+**数值上要注意什么？**
+段间合并必须走 log-sum-exp，不能把 $G$ 份 softmax 输出直接平均。$m$ 是 fp16 时，$\ell$ 也要用 fp32 累加。
+
+**CUDA Graph 还能录吗？**
+$G$ 随 $T$ 变化，形状不固定。常见做法是把 split 数 pad 到几个固定档位，或者只对 decode 步捕获，见 `nvidia-cuda-graph`。
 
 ## 相关题
 

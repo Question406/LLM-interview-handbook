@@ -4,7 +4,7 @@ section: systems
 order: 37
 level: A
 title: "KV Prefix ⑦：页对齐命中、完整命中与 Chunked Prefill 计划"
-quick: "逻辑命中长度还要按完整页取整；如果只缓存 KV、没有末 token logits，完整命中时也要重放末 token，页级复用可能需要重放整尾页。"
+quick: "先把命中长度向下对齐到完整页，再安排后缀的 chunk。只有 KV、又需要末 token logits 时，即使完全命中也得重放末 token；按页共享时可能要重放整个尾页。"
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -24,6 +24,31 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+给定 prompt 长度、已经命中的前缀 token 数、页大小、后续计算预算以及是否需要末位置 logits，规划本次能复用多少 token，并把必须重新计算的后缀分成连续的绝对位置区间。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+实现 `plan_reuse(prompt_length,matched_tokens,page_size=1,chunk_budget=4,need_last_logits=True)`，返回可复用 token 数和后缀的绝对区间列表。参数必须是整数，`prompt_length`≥1，0≤matched≤`prompt_length`，`page_size` 与 `chunk_budget`≥1。复用只取完整页，后缀 chunk 既不能重叠，也不能留缺口，每块不超过预算。
+
+`need_last_logits`=True 表示索引只持有 KV，而本次需要 prompt 末 token 的 logits，因此至少要重算最后一个 token。只有另存末 logits / hidden state，或本次无需采样时，才设为 False。
+
+返回值为 `(reused, chunks)`，`chunks` 是由 `(start,end)` 组成的 tuple。`reused` 为满足页对齐且不超过 `matched_tokens` 的最大值；需要末 logits 时还须 `reused < prompt_length`。每块从当前后缀起点延伸 `min(chunk_budget, 剩余长度)` 个 token。
+### 示例
+
+```text
+plan_reuse(8,8,4,3,True) -> (4, ((4,7),(7,8)))
+plan_reuse(8,8,1,3,True) -> (7, ((7,8),))
+plan_reuse(8,8,4,3,False) -> (8, ())
+```
+
+## 解题思路与参考答案
+
+我会先按完整页确定可复用前缀，再把待计算后缀切成预算内的 chunk。若只缓存 KV、这次又需要末 token 的 logits，完全命中也要回退，至少重算最后一个 token。
+
 ## 完整编程练习（手册原创实现版）
 
 本题是为理解开源机制而编写的独立练习，不是某家公司的已确认原题，也不是SGLang/vLLM源码逐字翻译。接口、简化条件和测试由手册定义。依赖Python 3与NumPy，使用CPU测试数值及状态语义，不报告GPU吞吐。
@@ -32,7 +57,9 @@ sources:
 
 ### 题面、接口与约束
 
-实现 `plan_reuse(prompt_length,matched_tokens,page_size,chunk_budget,need_last_logits=True)`，返回可复用token数及绝对后缀区间列表。参数全整数，`prompt_length`≥1，0≤matched≤`prompt_length`，`page_size`和`chunk_budget`≥1。复用必须是完整页；后缀chunk无重叠无缺口，每块大小≤预算。`need_last_logits`=True表示索引只持有KV且这次需要输出prompt末token的logits，因此必须至少重算最后一个token；False仅用于已另有末logits/hidden state或无需采样的场景。
+实现 `plan_reuse(prompt_length,matched_tokens,page_size,chunk_budget,need_last_logits=True)`，返回可复用 token 数和后缀的绝对区间列表。参数必须是整数，`prompt_length`≥1，0≤matched≤`prompt_length`，`page_size` 与 `chunk_budget`≥1。复用只取完整页，后缀 chunk 既不能重叠，也不能留缺口，每块不超过预算。
+
+`need_last_logits`=True 表示索引只持有 KV，而本次需要 prompt 末 token 的 logits，因此至少要重算最后一个 token。只有另存末 logits / hidden state，或本次无需采样时，才设为 False。
 
 ### 输入输出示例
 
@@ -40,7 +67,7 @@ prompt长度8、命中8、page size4、chunk budget3：复用4，后缀分成 `[
 
 ### 解题思路与正确性
 
-KV是attention的历史中间状态，并不是末token最终hidden state或词表logits。先确定需要重算的尾token，再按可共享整页边界回退；chunk使用绝对start/end，后续forward的RoPE位置跟cache实际长度走。
+例如 prompt 长度 8，命中 8，page size 为 4，只缓存 KV 时需要回退到位置 4，再重算尾页。KV 是 attention 的历史中间状态，不能直接给出末 token 的最终 hidden state 或词表 logits。先确定尾部重算需求，再按整页边界回退，chunk 使用绝对 start/end，forward 的 RoPE 位置随 cache 实际长度推进。
 
 ### 完整参考实现（Python 3）
 
@@ -61,6 +88,16 @@ def plan_reuse(prompt_length, matched_tokens, page_size=1, chunk_budget=4,
         chunks.append((start, min(prompt_length, start+chunk_budget)))
     return reusable, tuple(chunks)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert plan_reuse(8, 8, 4, 3) == (4, ((4, 7), (7, 8)))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -88,9 +125,9 @@ if __name__ == '__main__':
 
 ### 复杂度与追问
 
-计算复用边界O(1)，输出计划O(后缀长度/`chunk_budget`)。本题只做计划，不触碰物理页和模型；第⑧题把同一planner接入真实多层forward验证。
+确定复用边界需要 O(1)，输出计划需要 O(后缀长度/`chunk_budget`)。本题只生成计划，物理页和模型都不改；第⑧题会把同一 planner 接进多层 forward 验证。
 
-有额外缓存最终hidden/logits时可避免重算最后token，但需说明额外存储与失效条件。不能因为某个框架会重放一token，就声称所有prefix缓存方案都必然如此；这是本练习KV-only契约的选择。
+如果额外缓存最终 hidden / logits，可以避免重算末 token，但要另外管理存储与失效条件。这里的重放来自 KV-only 契约，其他 prefix 缓存方案可能有不同选择。
 
 ## 相关题
 

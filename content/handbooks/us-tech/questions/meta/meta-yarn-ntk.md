@@ -4,9 +4,7 @@ section: meta
 order: 16
 level: A
 title: Meta：NTK / YaRN 长上下文外推，和改 rope_theta 差在哪
-quick: >-
-  PI 把位置除以 $s$，高频局部分辨率一起被压。NTK-aware 改 RoPE 底 $b$，低频多插、高频少动。YaRN 再按波长分段，并给注意力温度。Llama
-  3.1 公开故事是训练时提高 `rope_theta` 并继续训长窗，不是把 YaRN 当官方配方。
+quick: "PI 把位置除以 $s$，同时压缩近距分辨率；NTK-aware 调 RoPE 底 $b$，让低频多插值、高频少动；YaRN 再按波长分段并调注意力温度。Llama 3.1 的公开长窗训练还提高 `rope_theta` 并续训到目标长度，不能由公式相似就推断用了 YaRN。"
 tags:
   - Meta
   - Llama
@@ -34,9 +32,9 @@ sources:
     type: primary
 ---
 
-`meta-llama-rope` 停在概念层。Llama / 长上下文岗追问时，要把 PI、NTK-aware、YaRN、改 `rope_theta` 四条拆开。前三条主要是已训好的 RoPE 模型怎么外推；后一条是训练超参。别说成「Llama 3 用了 YaRN」。
+PI、NTK-aware 和 YaRN 都在调整位置或频率，让已有 RoPE 模型扩展到更长上下文；改 `rope_theta` 则还要看是否配合目标长度训练。例如只把 8k 权重的配置改成 128k，模型并没有因此学会长距离依赖。Llama 3 的公开配方是提高基频并长窗续训，不能由概念相似推断它使用了 YaRN。
 
-## 外推在拧哪根旋钮
+## 各方法改了位置还是频率
 
 RoPE 第 $d$ 对频率 $\theta_d = b^{-2d/|D|}$，波长 $\lambda_d = 2\pi/\theta_d$。训练长度 $L$，目标 $L'$，比例 $s=L'/L$。统一写法：$f'(x_m,m,\theta)=f(x_m,g(m),h(\theta))$。
 
@@ -44,35 +42,39 @@ RoPE 第 $d$ 对频率 $\theta_d = b^{-2d/|D|}$，波长 $\lambda_d = 2\pi/\thet
 - **NTK-aware：** $g(m)=m$，改底 $b' = b\cdot s^{|D|/(|D|-2)}$，于是 $h$ 变成新频率。设计目标是：最低频接近按 $s$ 插值，最高频几乎不动。无微调时往往比 PI 更能撑过原窗。代价：部分维会略微外推到训练没见过的相位，YaRN 论文写明 **NTK 微调效果常不如 PI**；实践里 $s$ 还得设得比名义倍数更大。
 - **YaRN：** NTK-by-parts + 注意力温度。用 $r(d)=L/\lambda_d$（原窗里转了几圈）。$r$ 很小（低频、波长 $\ge L$）就按 $s$ 插值，避免外推；$r$ 很大（高频）完全不插，保住相邻 token 的位置分辨率；中间线性 ramp。Llama 族论文里常用 $\alpha=1,\beta=32$。温度：$1/\sqrt{t}=0.1\ln(s)+1$，等价于把 $q,k$ 再乘这个因子，softmax 不那么糊。兼容 FlashAttention，因为没改注意力核，只改了 RoPE 表。
 
-Code Llama 公开把 RoPE base 提到 $10^6$ 量级，YaRN 把它归成 NTK-aware 的一种手调。那是 Code Llama 的外推旋钮，别安到 Llama 3 预训练头上。
+Code Llama 公开把 RoPE base 提到 $10^6$ 量级，YaRN 把它归成 NTK-aware 的一种手调。这条公开描述针对 Code Llama，不能直接归到 Llama 3 预训练。
 
-## 和改 rope_theta 差在哪
+## 改完公式，是否还在目标长度训练过
 
 Llama 2：常见 $b=10^4$，预训练 $4\mathrm{k}$。Llama 3 / 3.1 公开 conf 把 `rope_theta` 提到 $5\times 10^5$，再在 $8\mathrm{k}\to 128\mathrm{k}$ 上继续预训练（六段、约 $800\mathrm{B}$ token，见 `meta-llama3-pretrain`）。
 
-相同点：提高 $b$，高频在大 $m$ 上少转几圈，直觉和 NTK 一类。差别：
+提高 $b$ 会改变大 $m$ 时的旋转频率，直觉与 NTK 一类；但应用到长窗模型时，还要区分下面几件事：
 
 1. **时机。** `rope_theta` 是训练（含长窗 CPT）用的基频；NTK / YaRN 默认是推理或短微调时改公式。
 2. **有没有在目标长度上见过梯度。** Meta 的叙事是模型在 128k 序列上真的反传过。只改 conf 里的 theta、权重还是 8k 的，是 分布外数据（OOD，即与训练数据明显不同的数据）。
 3. **$s$ 还在不在。** 官方长窗模型推理时按训练长度用 RoPE，不必再套一层 YaRN。社区给老 8k 权外推到 32k / 128k 才需要 $s$。
-4. **开源 `rope_type: llama3`。** 有的权重文件带 `factor`、`low_freq_factor`、`high_freq_factor`，按波长分段，和 YaRN 同类。Herd 论文写的是继续训 + 提高 theta。现场说「实现上可能有分段缩放，训练故事仍是长窗 CPT」，不要把 HuggingFace 字段说成 Meta 训练代码。
+4. **开源 `rope_type: llama3`。** 有的权重文件带 `factor`、`low_freq_factor`、`high_freq_factor`，按波长分段，和 YaRN 同类。Herd 论文写的是继续训 + 提高 theta。这些字段说明实现可能做了分段缩放，不能单凭 HuggingFace 配置字段推断 Meta 的训练代码；公开训练描述仍是长窗 CPT。
 
 Dynamic NTK：每步用当前长度算 $s=\max(1,t/L)$。KV cache 必须存旋转前的 $k$，否则 $s$ 一变历史 key 全错。Llama 3.1 原生 128k 服务不要开这套。
 
-## 一个具体错法
+验收时分别消融 PI、NTK、YaRN 和 theta 调整，并把近距任务（代码缩进、复制）与远距任务（文档 QA）分开报告。四种开关一起改，就很难判断短任务退化来自哪里。
 
-错法一：PI、NTK、YaRN、改 theta 四个开关一起拧，还不做短任务对照。近距（代码缩进、复制）和远距（文档 QA）要分开报。
+实现还要检查位置偏移：逐 token 生成（decode）时，cache 已有 $S$ 个 token，RoPE 却从 $0$ 重新计，公式再正确也会用错位置。
 
-错法二：逐 token 生成（decode） 时 RoPE 从 $0$ 重新计，cache 里已经有 $S$ 个 token。位置公式再漂亮也是错的。这和 OpenAI 风格的位置偏移是同一类 bug。
+Haystack 全对只说明能找到远处信息，多跳推理仍可能中断。长窗训练验收还要看短任务恢复与长依赖能力，见 `meta-llama3-pretrain`。
 
-错法三：haystack 全对就宣称 128k 推理链完整。针能点到，多跳推理仍可能断。长窗训练怎么验收，见 `meta-llama3-pretrain`。
+相关：`meta-llama-rope`。
 
 ## 追问
 
-- **为什么高频先坏？** $\theta$ 大，$m\theta$ 随 $m$ 转得快，过训练长度相位 OOD。PI 用牺牲高频的办法换低频安全。
-- **NTK 微调为什么可能不如 PI？** 部分维外推，微调时这些通道仍 OOD。YaRN 低频强制插值，就是堵这个。
-- **YaRN 的温度能单独用吗？** 能，但论文是和 by-parts 一起拟合的。只乘温度不改频率，长距相位还是没见过。
-- **128k 时该上 GQA 还是 YaRN？** 两者正交。GQA 砍 KV 带宽（`meta-llama-gqa`）；YaRN / theta 砍位置 OOD。长窗上两者都疼。
+**为什么高频先坏？**
+$\theta$ 大，$m\theta$ 随 $m$ 转得快，过训练长度相位 OOD。PI 用牺牲高频的办法换低频安全。
+**NTK 微调为什么可能不如 PI？**
+部分维外推，微调时这些通道仍 OOD。YaRN 低频强制插值，就是堵这个。
+**YaRN 的温度能单独用吗？**
+能，但论文是和 by-parts 一起拟合的。只乘温度不改频率，长距相位还是没见过。
+**128k 时该上 GQA 还是 YaRN？**
+两者正交。GQA 砍 KV 带宽（`meta-llama-gqa`）；YaRN / theta 砍位置 OOD。长窗上两者都疼。
 
 ## 相关题
 

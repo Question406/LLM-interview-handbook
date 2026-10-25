@@ -4,9 +4,7 @@ section: anthropic
 order: 26
 level: A
 title: Anthropic：开源的性能 take-home，是一台 VLIW SIMD 机器
-quick: >-
-  官方仓库 anthropics/original_performance_takehome 是旧版限时作业，不是现在仍在发的那一版。
-  目标是把一个标量核改成更少的周期。一条指令是多个引擎的槽，写在周期结束才生效。多核在这版里是关掉的。
+quick: "我会先保证标量结果正确，再向量化并把独立操作装进同一周期，减少执行周期数。同周期读旧值、周期末才写回，所以依赖链必须跨周期；官方 anthropics/original_performance_takehome 是旧版作业，多核在这版里故意关闭。"
 tags:
   - 完整编程练习
   - Anthropic
@@ -24,6 +22,35 @@ sources:
     url: https://github.com/anthropics/original_performance_takehome/blob/main/problem.py
     type: primary
 ---
+
+## 题目描述
+
+为一台具有多个执行引擎的 VLIW SIMD 模拟机生成确定性指令调度，并执行调度得到所有寄存器的最终值。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- 指令是 `(engine, op, dst, args)`：`op` 取 `+`、`*`、`^`；寄存器值是形状相同的 `uint32` 向量，运算按 $2^{32}$ 取模。寄存器是 SSA 形式：每个 `dst` 只被定义一次，也不能和初始寄存器重名；`args` 可以引用任意一条指令定义的寄存器。
+- `schedule(instructions, initial, slots) -> list[list[int]]`：把指令下标打包成若干个周期（bundle）。`slots[engine]` 是该引擎每周期的槽数，必须为正。同一周期内，所有依赖在该周期开始前已经满足的待执行指令，按原下标升序获得对应引擎的可用槽位。输入的依赖有定义且无环。
+- `execute(instructions, bundles, initial, slots) -> dict`：校验并执行这份调度。同一周期的所有槽读周期开始时的旧状态，周期结束时一起写回，所以一条依赖链不能出现在同一个周期里。每条指令恰好执行一次，每周期各引擎不得超过槽数，也不能使用该周期内刚产生的寄存器值。
+- 目标是结果正确、把独立指令打包到同一周期，不要求最优调度。
+
+### 输入输出示例
+
+```text
+initial = {"a": uint32([1]), "b": uint32([5])}
+instructions = [("alu", "+", "t", ("a", "b")),
+                ("alu", "^", "x", ("a", "b")),
+                ("alu", "*", "out", ("t", "x"))]
+slots = {"alu": 2}
+schedule(instructions, initial, slots) -> [[0, 1], [2]]
+execute(instructions, [[0, 1], [2]], initial, slots)["out"] -> uint32([24])
+```
+
+## 解题思路与参考答案
+
+这题的优化方向是向量化和指令调度：先把标量核跑对，再让独立操作共享一个周期。比如 `valu` 做两条算术时，独立的 `load` 也可以一起执行；但本周期刚产生的值，要到下一周期才能使用。
 
 ## 完整编程练习（手册重构版）
 
@@ -130,6 +157,16 @@ def execute(instructions, bundles, initial, slots):
     return state
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert bundles == [[0, 1], [2]]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -195,7 +232,7 @@ expect_value_error(schedule, [("alu", "+", "a", ("a", "b"))], initial, slots)
 
 ## 题怎么来的
 
-这不是某一次 onsite 泄漏出来的脚本，而是 Anthropic 放在 GitHub 上的早期性能 take-home。README 写明：最初限时 4 小时；Claude Opus 4 超过多数人之后改成 2 小时，起点已经是 18532 个周期，大约比仓库里这份慢起点快 7.97 倍；Opus 4.5 之后，限时作业又换了底座。仓库里放的是“新指令和调试工具，加上最慢的那份起点”。现在招聘发的不是这一份，所以 `realInterview: false`。
+来源是 Anthropic 放在 GitHub 上的早期性能 take-home，并非某次 onsite 泄漏的脚本。README 写明：最初限时 4 小时；Claude Opus 4 超过多数人之后改成 2 小时，起点已经是 18532 个周期，大约比仓库里这份慢起点快 7.97 倍；Opus 4.5 之后，限时作业又换了底座。仓库里放的是“新指令和调试工具，加上最慢的那份起点”。现在招聘发的不是这一份，所以 `realInterview: false`。
 
 验收看 `python tests/submission_tests.py` 打出的周期数。`tests/` 必须和 `origin/main` 一致，`git diff origin/main tests/` 应该为空。
 
@@ -207,7 +244,7 @@ expect_value_error(schedule, [("alu", "+", "a", ("a", "b"))], initial, slots)
 
 仓库自带的 `KernelBuilder.build` 默认一个 bundle 只放一个槽，所以标量核结果对但很慢。加速的办法是把独立的 load、alu、valu、flow 填进同一条指令，并让连续地址走向量槽。
 
-## 不要改的开关
+## 优化时保留机器和测试的约定
 
 `problem.py` 里有多核。README 专门点名了一种错误优化：模型发现多核没有加速，就去改 `N_CORES = 1`。这一版的多核是故意关掉的。如果周期数下降来自改模拟器或改测试，提交测试不会承认。
 
@@ -215,6 +252,8 @@ expect_value_error(schedule, [("alu", "+", "a", ("a", "b"))], initial, slots)
 
 ## 追问
 
-**先向量化还是先打包槽？** 先让标量结果和参考核一致，再把内层循环改成 `vload` 加 `valu`。槽打包不改变结果，只减少周期。如果两件事一起改，结果对不上时就分不清是打包后读到了旧值，还是向量下标错了。
+**先向量化还是先打包槽？**
+先让标量结果和参考核一致，再把内层循环改成 `vload` 加 `valu`。槽打包不改变结果，只减少周期。如果两件事一起改，结果对不上时就分不清是打包后读到了旧值，还是向量下标错了。
 
-**同一周期的依赖怎么排？** 生产者和消费者不能放进同一条指令。中间值先留在 scratch，下一条指令再用。周期结束才写回，就是在要求你把这条依赖显式排开。
+**同一周期的依赖怎么排？**
+生产者和消费者不能放进同一条指令。中间值先留在 scratch，下一条指令再用。周期结束才写回，就是在要求你把这条依赖显式排开。

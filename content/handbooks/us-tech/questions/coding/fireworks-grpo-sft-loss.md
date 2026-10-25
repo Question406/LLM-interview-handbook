@@ -4,7 +4,7 @@ section: coding
 order: 35
 level: S
 title: Fireworks：把 clipped GRPO 写成 SFT 式的加权 logprob loss
-quick: "权重取 detach 后的 ratio × advantage × 单侧 clip mask，加权 NLL 的梯度就等于 clipped GRPO；权重有正有负，不能除以 weights.sum()。"
+quick: "把 ratio × advantage × 单侧 clip mask detach 后当作 NLL 权重，就能得到与 clipped GRPO 相同的梯度。正 advantage 只挡上界，负 advantage 只挡下界；权重可正可负，要按 token 数平均，除以 `weights.sum()` 会改变符号或让分母接近零。"
 tags:
   - 完整编程练习
   - Fireworks
@@ -23,6 +23,33 @@ sources:
     url: https://arxiv.org/abs/2402.03300
     type: primary
 ---
+
+## 题目描述
+
+实现 GRPO 的 clipped 训练目标，并把其对 policy log-prob 的梯度改写为带固定权重的 SFT 损失。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `sft_loss(weights,logprobs) -> Tensor` 返回标量 `-mean(stop_gradient(weights)*logprobs)`，权重允许正负，按 token 数归一化。
+- `compute_grpo_loss_per_rollout(policy_logprobs,sampling_logprobs,advantages,clip_eps=0.2)` 返回标量 `-mean(min(r*A,clip(r,1-eps,1+eps)*A))`，r=exp(`policy_logprobs`-`sampling_logprobs`)，A=advantages，eps=`clip_eps`。
+- `compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs,sampling_logprobs,advantages,epsilon=0.2)` 必须复用 `sft_loss`，并使 `policy_logprobs` 的梯度与上述标准目标一致；不要求两标量数值相同。传给 `sft_loss` 的权重必须停止梯度。
+- 所有数组为相同长度 [N]、N>=1，输入有限，`sampling_logprobs` 和 advantages 固定，0<=eps<1。在恰好 r=1-eps 或 1+eps 的边界，保留对应未越界分支梯度，与 PyTorch clamp 在边界内的导数约定一致。
+
+### 输入输出示例
+
+```text
+sft_loss([1,-1],[-1,-2]) -> -0.5
+其对 logprobs 的梯度为 [-0.5,0.5]
+policy_logprobs=sampling_logprobs=[ln(0.5),ln(0.5)], advantages=[1,-1]
+compute_grpo_loss_per_rollout(policy_logprobs,sampling_logprobs,advantages) -> 0
+```
+
+## 解题思路与参考答案
+
+我会先从 clipped objective 求对 logprob 的导数，再把这个系数 detach 成加权 NLL 的权重。比如负 advantage 的 token 应降低概率，如果把负权重再除以负的权重和，符号就会翻转。验证时比较两版梯度，loss 数值本身不要求相同。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -86,6 +113,16 @@ def compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs, sampling_logpro
     weights = ratio * advantages * active
     return sft_loss(weights, policy_logprobs)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(direct_grad, sft_grad)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

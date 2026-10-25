@@ -4,9 +4,7 @@ section: xai
 order: 13
 level: A
 title: xAI：系统提示缓存，多租户前缀共享
-quick: >-
-  复用的是已经算好的 KV，不是字符串。Token 序列、权重、LoRA、位置都一致才能命中。Grok 类长系统提示适合跨请求共享；多租户只共享真公共前缀，租户条款和用户 PII
-  处分叉。隔离用 cache salt，防的是错命中和时序侧信道，不是 LRU 实现细节。
+quick: "前缀缓存复用已算好的 KV，token 序列、模型权重、LoRA 和位置配置一致才能命中。我会把公共、租户和用户内容分层，用 cache salt 隔离，防错命中与时序侧信道；长工具轨迹则另用 compaction 缩短，已经超窗要先裁剪或拆分。"
 tags:
   - xAI
   - Prefix Cache
@@ -40,9 +38,7 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
-
-Grok 产品有长人格 / 政策系统提示，API 多租户又会在同一前缀上叠不同开发者指令。推理岗问的是：这段 KV 能不能算一次、给许多人用，错命中和租户串话怎么防。公开机制是 vLLM automatic prefix caching、SGLang RadixAttention，底层页表见 `sys-paged-attn`、通用前缀缓存见 `sys-prefix-cache`。xAI 内部缓存拓扑没公开，我只讲命中条件和多租户合同。`realInterview: false`。和 `xai-lru-cache` 的差别：那题是通用并发 LRU；本题是注意力 KV 前缀，不是业务对象缓存。
+我会复用完全一致的公共前缀 KV，在租户策略和用户内容处分叉并隔离。例如模板改一个空格可能改变 token，公共文档相同也不能绕过 ACL 共享私有检索结果。xAI 内部拓扑没有公开，这里按 vLLM automatic prefix caching 和 SGLang RadixAttention 解释；页表见 `sys-paged-attn`，通用机制见 `sys-prefix-cache`。`xai-lru-cache` 讨论业务对象的并发缓存，这里讨论注意力 KV。
 
 ## 命中的是 KV 页，系统提示必须使用相同 token 序列
 
@@ -73,24 +69,31 @@ PagedAttention 的引用计数让共享便宜：多条 block table 指向同一�
 
 限流在入口保护 GPU 队列，缓存命中会改变有效 prefill 成本。计费若按 token，要决定命中的前缀算不算钱。公开 API 各家口径不同；xAI 怎么计费以当时文档为准，面试不要编折扣比例。队列公平仍走 `xai-rate-limiter`，缓存命中不是让大象租户免费占满 KV 池。
 
-## 2026 API: cache vs compaction
+2026 年的 Grok 4.7 文档要求通过 Responses 的 `prompt_cache_key` 或 Chat Completions 的 `x-grok-conv-id`，让连续轮次落到同一服务器；否则冷副本还要完整 prefill。这里复用的仍是相同 token 前缀的 KV。
 
-Grok 4.7 docs tell you to set `prompt_cache_key` (Responses) or `x-grok-conv-id` (Chat Completions) so consecutive turns land on the same server; otherwise you pay full prefill on a cold replica. That is this card: identical token prefix, reuse KV.
-
-Long agent loops get a second API: context compaction (`POST /v1/responses/compact`) folds prior turns into an opaque item and **drops** verbose tool traces. Compaction does not rescue `context_length_exceeded`. Product background: `xai-spacexai-now`.
-
-Interview trap: answering "how do you serve a 500k Grok Build thread" with only LRU or only prefix cache. Name which knob you would turn: stable prefix → cache; tool dump dominates and you still fit in window → compact; already over limit → prune or split first.
+长 agent 循环还有 context compaction：`POST /v1/responses/compact` 把历史轮次压成不透明条目，并丢掉冗长工具轨迹。它不能补救已经发生的 `context_length_exceeded`。因此回答如何服务 500k 的 Grok Build 长线程时，我会按问题选操作：前缀稳定就缓存；工具 dump 很大、但仍在窗口内就 compact；已经超窗就先裁剪或拆分。产品背景见 `xai-spacexai-now`。
 
 ## 追问
 
-- **为什么必须 token 一致？** KV 是离散 token 上的函数。Tokenizer、特殊符号、模板空白都会改 id。字符串相等不是命中条件。
-- **租户想共享同一个 检索增强生成（RAG） 仓库前缀？** 只有仓库对两家都可见且 ACL 相同才能共享。否则检索块进公共缓存就是串租户。宁可多算 prefill。
-- **和 MoE decode 的关系？** 缓存省的是公共前缀的注意力 KV；专家权重每步仍要按新 token 路由。命中不会让专家 GEMM 变齐，见 `xai-moe-decode`。
-- **系统提示每周改一版怎么办？** 版本进 cache key。灰度两份前缀就两份 KV，内存翻倍要算进去。切 100% 后再丢旧根节点。
-- **Cache or compact?** Cache when the prefix must stay exact. Compact when traces are huge and only salient state is needed next. They compose: compact, then the blob becomes the new prefix you try to cache.
+**为什么必须 token 一致？**
+KV 是离散 token 上的函数。Tokenizer、特殊符号、模板空白都会改 id。字符串相等不是命中条件。
+
+**租户想共享同一个 检索增强生成（RAG） 仓库前缀？**
+只有仓库对两家都可见且 ACL 相同才能共享。否则检索块进公共缓存就是串租户。宁可多算 prefill。
+
+**和 MoE decode 的关系？**
+缓存省的是公共前缀的注意力 KV；专家权重每步仍要按新 token 路由。命中不会让专家 GEMM 变齐，见 `xai-moe-decode`。
+
+**系统提示每周改一版怎么办？**
+版本进 cache key。灰度两份前缀就两份 KV，内存翻倍要算进去。切 100% 后再丢旧根节点。
+
+**什么时候缓存，什么时候 compact？**
+前缀必须精确保留时用 cache；轨迹很大、下一步只需要关键状态时用 compact。两者可以组合：compact 后的不透明条目成为下一次尝试缓存的新前缀。
 
 ## 相关题
 
 - [[sys-prefix-cache]]：几乎是同一道题的通用系统版，侧重命中条件和热点前缀挤占在飞 decode。
 - [[p3a-xai-radix-cache]]：同为 xAI，要求手写前缀索引用的 radix tree，只做数据结构。
 - [[kv-prefix-block-hash]]：把租户、adapter、模型版本写进块哈希 key 的代码实现。
+
+本卡依据公开材料整理，标记为 `realInterview: false`。

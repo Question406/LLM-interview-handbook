@@ -24,7 +24,7 @@ sources:
     type: secondary
 ---
 
-JD 经常写混。我面试前会问 recruiter 这一轮的 interviewer 是 research 还是 product eng，然后按下面三条线准备，而不是只看 title。
+Scientist 重点准备假设、消融和证伪，RE 重点准备实现、debug 和训练 / 推理栈，Applied MLE 重点准备延迟、权限、评测和产品权衡。JD 常把这些职责混在一起，所以面试前可以向 recruiter 确认 interviewer 更偏 research 还是 product eng，再按下面三条线调整材料。
 
 ## Research Scientist
 
@@ -36,13 +36,13 @@ OpenAI RE、Anthropic、xAI 很多轮是工程科研混合。你要能实现、�
 
 ## Applied MLE / Product
 
-Apple Siri、Amazon Bedrock、Microsoft Copilot、部分 Meta 应用团队：模型是部件，约束是语音预算、p95、引用、权限、上线门禁。答成「换更大的模型」几乎一定被追问。见 `apple-siri-grounded`、`amazon-bedrock-rag`。
-
-## 交叉地带
+Apple Siri、Amazon Bedrock、Microsoft Copilot、部分 Meta 应用团队：模型是部件，约束是语音预算、p95、引用、权限、上线门禁。方案要说明这些约束怎样满足，换更大的模型也要核算延迟和成本。见 `apple-siri-grounded`、`amazon-bedrock-rag`。
 
 NVIDIA 的解决方案岗位更像 RE + 系统：并行策略、kernel、精度。Tesla 更像 Applied + 数据引擎。别用一套「大模型八股」打所有 JD。
 
 ## 追问
 
-- **简历只有论文没有生产经验？** RE 面把论文代码的训练细节、失败实验和评测漏洞讲透，比编造「我上过线」安全。
-- **只有业务 MLE 经验？** 补上 debug 和系统题的准备，不要假装发过 Llama。产品约束是你的优势，主动用它。
+**简历只有论文没有生产经验？**
+RE 面把论文代码的训练细节、失败实验和评测漏洞讲透，比编造「我上过线」安全。
+**只有业务 MLE 经验？**
+补上 debug 和系统题的准备，不要假装发过 Llama。产品约束是你的优势，主动用它。

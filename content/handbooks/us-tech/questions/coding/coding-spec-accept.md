@@ -4,7 +4,7 @@ section: coding
 order: 31
 level: S
 title: 白板：投机解码接受规则，拒绝后从哪一步重采样
-quick: "草稿 token 按 $\\min(1,p/q)$ 从左到右接受；第一次在第 $i$ 步拒绝时，在第 $i$ 步从残差 $\\max(0,p-q)$ 抽一个 token 并丢掉后续草稿，全部接受则从 $p$ 多抽一个。"
+quick: "草稿 token 从左到右按 $\\min(1,p/q)$ 接受，第一次在第 $i$ 步拒绝时，就在同一步从归一化残差 $\\max(0,p-q)$ 重采样，并丢掉后续草稿。全部接受则从 $p$ 多抽一个 token。接受与残差两条路径的概率相加等于目标分布，因此保持采样分布不变。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +26,33 @@ sources:
     url: https://docs.vllm.ai/en/latest/features/spec_decode.html
     type: secondary
 ---
+
+## 题目描述
+
+实现 speculative decoding 的草稿验证。目标分布为 p、草稿分布为 q，输出已经接受的草稿前缀以及一个修正或 bonus token。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `residual_probs(p_logits,q_logits) -> [V]` 把两组 logits 各自 softmax 成 p/q，返回 max(p-q,0) 的归一化概率。调用方保证残差正质量>0。
+- `spec_accept(draft_ids,log_p,log_q,p_logits,q_logits,bonus_logits) -> (tokens,reject_at)`；`draft_ids` 为 [G]，确实由 q 采样；`log_p`/`log_q` 为 [G]，是每个草稿 token 在对应前缀下的目标/草稿 log-prob；`p_logits`/`q_logits` 为 [G,V]，`bonus_logits` 为 [V]。
+- 每个草稿 token 以 min(1,p(token)/q(token)) 的概率接受。遇到第一次拒绝，输出已接受前缀加一个残差分布的修正 token，并立即停止；`reject_at` 为0开始的拒绝位置。
+- 全接受时，在草稿后追加一个 bonus 分布样本，`reject_at`=None。G=0 仍返回一个 bonus token。使用 PyTorch 随机状态采样，logits 允许 -inf 表示0概率，但各行至少一个有限值。
+
+### 输入输出示例
+
+```text
+p_logits=q_logits=[[0,0],[0,0]], draft_ids=[0,1]
+log_p=log_q=[ln(0.5),ln(0.5)], bonus_logits=[0,-inf]
+spec_accept(draft_ids,log_p,log_q,p_logits,q_logits,bonus_logits) -> ([0,1,0],None)
+residual_probs([-inf,0],[0,-inf]) -> [0,1]
+```
+
+## 解题思路与参考答案
+
+我会从左到右验证草稿，第一次拒绝就停止，换成同一位置的残差采样结果。后面的候选依赖被拒绝的前缀，必须一起丢弃；全部接受时则补采一个 bonus token。下面的代码只实现这轮接受过程，KV 回滚要由调用方处理。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -96,6 +123,16 @@ def spec_accept(draft_ids, log_p, log_q, p_logits, q_logits, bonus_logits):
     output.append(bonus)
     return output, None
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert tokens == [0, 1, 0]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -188,10 +225,14 @@ $p$ 和 $q$ 必须用同一个 tokenizer、同一套词表约束。非法 token 
 
 ## 追问
 
-- **拒绝后为什么不从第 $i+1$ 步抽？** 位置 $i$ 还没有合法的 token。第 $i+1$ 步的草稿以被拒绝的 token 为条件，它的分布已经作废。
-- **残差全为 0 怎么办？** $p=q$ 时不会拒绝。如果数值误差让残差全为 0，退回到从 $p$ 采样，并检查两边的 logprob 是否来自同一套 softmax。
-- **bonus token 算不算投机产出？** 算。全部接受时目标模型已经完成了这次前向，顺手多抽一个，论文的原算法就包含这一步。
-- **什么时候和 greedy 逐 token 解码的结果逐字相同？** $p$ 取 $\arg\max$、$q$ 也用 greedy，且草稿总被接受时。随机采样只保证分布一致，不保证生成的字符串相同；排查 KV 回滚时用 greedy。
+**拒绝后为什么不从第 $i+1$ 步抽？**
+位置 $i$ 还没有合法的 token。第 $i+1$ 步的草稿以被拒绝的 token 为条件，它的分布已经作废。
+**残差全为 0 怎么办？**
+$p=q$ 时不会拒绝。如果数值误差让残差全为 0，退回到从 $p$ 采样，并检查两边的 logprob 是否来自同一套 softmax。
+**bonus token 算不算投机产出？**
+算。全部接受时目标模型已经完成了这次前向，顺手多抽一个，论文的原算法就包含这一步。
+**什么时候和 greedy 逐 token 解码的结果逐字相同？**
+$p$ 取 $\arg\max$、$q$ 也用 greedy，且草稿总被接受时。随机采样只保证分布一致，不保证生成的字符串相同；排查 KV 回滚时用 greedy。
 
 ## 相关题
 

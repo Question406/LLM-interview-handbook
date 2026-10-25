@@ -4,7 +4,7 @@ section: apple
 order: 15
 level: S
 title: Apple：低秩适配器做个性化，和检索怎么选，数据如何不出设备？
-quick: "会变的事实走本地检索；稳定的格式和任务头走 LoRA。公开端侧是冻结量化基础模型加 rank 16（产品）/ rank 32（开发者 toolkit）的 16-bit adapter，几十 MB，热插拔，不把邮箱上传去训 3B。按用户的 adapter 只能在设备上训，默认不联邦平均。"
+quick: "会变的事实走本地检索，稳定格式和任务行为走 LoRA；按用户训练时，数据和权重应留在设备。公开产品 adapter 常为 rank 16，开发者 toolkit 提到 rank 32，16-bit 存储约几十 MB，可在冻结量化底模上热切换；遗忘和版本绑定也要设计。"
 tags:
   - Apple
   - LoRA
@@ -29,7 +29,9 @@ sources:
     type: secondary
 ---
 
-`apple-personalize` 收的是产品口味：事实检索、任务 adapter、DP 学人群。这题要能把秩写上白板，并说明为什么数据不出设备时，低秩适配比再训基础模型、比云端 检索增强生成（RAG） 更贴 AFM。公开：准确率恢复 adapter 是 rank 16、16-bit、几十 MB；开发者 toolkit 提到 rank 32。基础模型 palettize 后冻结。不是某次现场逐字题。
+LoRA 适合调整稳定的任务行为，本地检索适合提供会过期、需要随时删除的用户事实。比如通知摘要的长度约束可以用功能 adapter，今晚的日程仍要查本地工具。低秩让需要训练和切换的参数较少，但不会自动解决事实更新和遗忘。
+
+Apple 公开的准确率恢复 adapter 为 rank 16、16-bit、几十 MB，开发者 toolkit 提到 rank 32，基础模型 palettize 后冻结。这里按公开技术设计解释；产品层面的检索、任务 adapter 和 DP 分工见 `apple-personalize`。
 
 ## 秩决定你能改多少行为、付多少内存
 
@@ -61,7 +63,7 @@ $r$ 怎么选：
 
 PCC：3B + 本地 $E$ 不够时，送最小切片给 server 模型，不是把用户 LoRA 上传融合进全球基础模型。
 
-## 现场对照和错法
+
 
 今日日程数字：检索 / 工具，不要 LoRA。  
 邮件摘要 vs 通知摘要：功能 LoRA，$r=16$ 量级。  
@@ -70,7 +72,7 @@ PCC：3B + 本地 $E$ 不够时，送最小切片给 server 模型，不是把�
 
 评测拆开：有实际证据支持率（检索）、格式分（adapter）、隐私事故（$E$ 或权重是否离设备）、延迟（切换摊还到任务边界，不要每个 token 换一份）。量化回归要在「底模 + recovery + 产品 adapter」整条链上做，见 `apple-ondevice-quant`、`apple-afm-eval`。
 
-常见误区是：把 QLoRA 说成 Apple 的推理方案，QLoRA 是训练时省显存；AFM 是推理时一份量化底加多份小 adapter。另一常见误区是：云端 RAG 同步全邮箱，和公开叙事相反。第三：rank 开到 256 还声称「和检索一样能更新事实」。
+QLoRA 主要解决训练显存，AFM 这里讨论的是推理时一份量化底模加多份小 adapter。云端 RAG 同步全邮箱不符合这里的隐私前提；即使 rank 开到 256，写进权重的事实也无法像检索索引那样直接更新和删除。
 
 ```python
 # 参数量数量级：只算一组 [d, k] 投影
@@ -81,7 +83,11 @@ def lora_params(d, k, r):
 
 ## 追问
 
-- **为什么不直接 输入提示（prompt） 几条范例？** 可以，而且常是第一选择。范例占上下文和 KV，见 `apple-ondevice-kv`。任务头稳定、要常驻，才值得一份几十 MB 的 LoRA。
-- **多 adapter 同时加载？** 权重要加起来，ANE 驻留和切换成本上升。产品是按功能切，一次一份，缓存最近用过的。
-- **用户 LoRA 能不能做备份？** 备份等于数据离设备。若做 iCloud，要按敏感数据通路讲加密和用户控制，不要默认开。
-- **和 Palettization 的关系？** 先压基础模型，再训 recovery LoRA，产品 adapter 从 recovery 初始化。顺序反了，2-bit 上直接训任务，质量通常崩。
+**为什么不直接 输入提示（prompt） 几条范例？**
+可以，而且常是第一选择。范例占上下文和 KV，见 `apple-ondevice-kv`。任务头稳定、要常驻，才值得一份几十 MB 的 LoRA。
+**多 adapter 同时加载？**
+权重要加起来，ANE 驻留和切换成本上升。产品是按功能切，一次一份，缓存最近用过的。
+**用户 LoRA 能不能做备份？**
+备份等于数据离设备。若做 iCloud，要按敏感数据通路讲加密和用户控制，不要默认开。
+**和 Palettization 的关系？**
+先压基础模型，再训 recovery LoRA，产品 adapter 从 recovery 初始化。顺序反了，2-bit 上直接训任务，质量通常崩。

@@ -4,7 +4,7 @@ section: coding
 order: 2
 level: S
 title: 白板：从 logits 写 cross entropy，不要先 softmax 再 log
-quick: "在 log 域算 $\\ell=-z_y+\\mathrm{logsumexp}(z)$，先减行最大值；不要 softmax 后再取 log。pad 用 ignore 下标，分母是有效 token 数。"
+quick: "直接在 log 域算 $\\ell=-z_y+\\mathrm{logsumexp}(z)$，先减行最大值，避免概率下溢后再取 log。先筛掉 ignore 下标，再按有效 token 数平均；causal LM 只 shift 一次。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,30 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.log_softmax.html
     type: primary
 ---
+
+## 题目描述
+
+实现基于 logits 的交叉熵，以及采用 next-token 对齐方式的语言模型交叉熵，正确处理被忽略的位置。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `cross_entropy_logits(logits, target, ignore_index=-100) -> Tensor`：`logits` 形状 `[N, V]`，`target` 形状 `[N]`。返回未被忽略的样本上的平均交叉熵。
+- `lm_ce(logits, labels, ignore_index=-100) -> Tensor`：causal LM 版本，`logits` 形状 `[B, L, V]`，`labels` 形状 `[B, L]`；用位置 t 的 logits 预测位置 t+1 的 label，只 shift 一次。
+- `ignore_index` 可以是任意整数，包括大于 V 的值，也必须被安全忽略；未被忽略的标签保证满足 `0 <= y < V`。
+- 全部标签都被忽略，或者 LM 的序列长度 `L <= 1` 时，返回一个能反传、梯度为 0 的标量 0。
+
+### 输入输出示例
+
+```text
+cross_entropy_logits([[0, 0], [0, 0]], target=[1, 99], ignore_index=99) -> ln 2 ≈ 0.693   # 第二行被忽略
+cross_entropy_logits(logits, target=[99, 99], ignore_index=99)           -> 0，backward 后梯度全为 0
+```
+
+## 解题思路与参考答案
+
+我会直接从 logits 算 log-softmax，再取目标类别的负 logprob。每行先减去最大值，再算 $\log\sum\exp$，全程不物化概率，就能避免概率下溢后出现 $\log 0$。
 
 ## 完整编程练习（手册重构版）
 
@@ -43,8 +67,6 @@ cross_entropy_logits(logits, target=[99, 99], ignore_index=99)           -> 0，
 ```
 
 ### 解题思路与正确性
-
-每行先减去最大值，再算 $\log\sum\exp$，得到 log-softmax，全程不物化概率，所以不会出现 $\log 0$。
 
 被忽略的行要在 `gather` 之前筛掉。如果 `ignore_index` 是 99 而 V 只有 5，先 `gather` 再乘 mask 会直接索引越界。筛选后剩下的标签再做范围检查，平均也只在这些行上做。
 
@@ -85,6 +107,16 @@ def lm_ce(logits, labels, ignore_index=-100):
         ignore_index,
     )
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.isclose(cross_entropy_logits(uniform, torch.tensor([1, 99]), 99), torch.log(torch.tensor(2.0)))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -173,10 +205,14 @@ fp16 下即使减了 max，极端值仍可能溢出，这一步升到 fp32 的�
 
 ## 追问
 
-- **为什么禁止先 softmax 再 log？** 正确类的 logit 很小或词表很大时，$e^{z_y}/\sum e^{z}$ 会下溢成 0，取 log 就是 $-\infty$。log-sum-exp 的写法全程都是有限值。
-- **`F.nll_loss(F.log_softmax(z), y)` 可以吗？** 可以，这就是 `cross_entropy` 的做法。错的是 `nll_loss(softmax(z).log(), y)`。
-- **label smoothing 怎么算？** $q=(1-\varepsilon)e_y+\varepsilon/V$，loss 是对 $q$ 的 CE。PyTorch 的 `label_smoothing` 参数就是这么算的，不是只改 $y$ 那一列。
-- **和 KL 是什么关系？** $\mathrm{CE}(q,\pi)=H(q)+\mathrm{KL}(q\|\pi)$。$q$ 是 one-hot 时 $H(q)=0$，CE 就等于 NLL，也等于 KL。不要把分布自身的熵和 CE 混成一个数，见 `openai-entropy-l1`。
+**为什么禁止先 softmax 再 log？**
+正确类的 logit 很小或词表很大时，$e^{z_y}/\sum e^{z}$ 会下溢成 0，取 log 就是 $-\infty$。log-sum-exp 的写法全程都是有限值。
+**`F.nll_loss(F.log_softmax(z), y)` 可以吗？**
+可以，这就是 `cross_entropy` 的做法。错的是 `nll_loss(softmax(z).log(), y)`。
+**label smoothing 怎么算？**
+$q=(1-\varepsilon)e_y+\varepsilon/V$，loss 是对 $q$ 的 CE。PyTorch 的 `label_smoothing` 参数就是这么算的，不是只改 $y$ 那一列。
+**和 KL 是什么关系？**
+$\mathrm{CE}(q,\pi)=H(q)+\mathrm{KL}(q\|\pi)$。$q$ 是 one-hot 时 $H(q)=0$，CE 就等于 NLL，也等于 KL。不要把分布自身的熵和 CE 混成一个数，见 `openai-entropy-l1`。
 
 ## 相关题
 

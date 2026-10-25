@@ -4,7 +4,7 @@ section: openai
 order: 4
 level: S
 title: OpenAI / InstructGPT：RLHF 为什么要加相对 SFT 的 KL？方向是哪边？
-quick: "奖励里减 $\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})$，即反向 KL $(\\pi_\\theta\\|\\pi_{\\mathrm{ref}})$，防止策略漂离 SFT 去刷 RM。它和 PPO clip 相对 $\\pi_{\\mathrm{old}}$ 的一步约束是两回事。"
+quick: "InstructGPT 在奖励里减去当前策略相对冻结 SFT 的 KL，约束策略长期漂移、减少刷奖励模型。PPO clip 的参照是本批 rollout 的 old 策略，只管这批更新，两者要分别监控和调节。"
 tags:
   - OpenAI
   - RLHF
@@ -23,9 +23,9 @@ sources:
     type: primary
 ---
 
-OpenAI 系对齐岗不一定按国内口径问 GRPO，但 InstructGPT 这篇是默认背景。KL 说错方向，后面 PPO/GRPO 全套都会拧。系统拆分见 `pt-rlhf-why-reverse-kl` 和阿里卡 `ali-grpo-kl-vs-ppo`；本题按 OpenAI 论文原设定收。
+InstructGPT 用相对冻结 SFT 的 KL 惩罚限制长期漂移，PPO clip 则限制当前策略相对本批采样策略的变化。比如一句话 SFT 几乎不会写，RM 却给很高分，ref KL 就会增加代价；即使每步都被 clip 约束，长期仍需要这个参照。这里按 InstructGPT 论文原设定解释。
 
-## 两个锚，不要合成一个 $\beta$
+## 奖励和更新分别参照谁
 
 InstructGPT 的 强化学习（RL） 阶段用 PPO，奖励大致是
 
@@ -44,18 +44,21 @@ $$
 
 clip 管本步更新别太大；ref KL 管整段训练别离开可用语言。两个系数、两个参照，不要答成「KL 就是 PPO」。
 
-## 白板怎么讲失败模式
+实际调参时，$\beta$ 太小会出现回答更长、套话更多、RM 分上涨但人评发现刷分，InstructGPT 也讨论了 RM overoptimization。$\beta$ 太大又会过度约束，几步就用完 KL 预算，reward 几乎不动。
 
-- $\beta$ 太小：长度变长、套话、奖励模型（RM） 分数涨、人工一看在刷分。InstructGPT 自己也写了 基于人类反馈的强化学习（RLHF） 会引入 RM overoptimization。
-- $\beta$ 太大：KL 预算几步就花完，奖励分数（reward） 不动，等于没做 RL。
-- 只 clip 不设 ref：短训可以，长训容易漂。DAPO 一类去掉 KL、改靠 clip 和动态采样，那是另一条实现，答的时候要声明你讲的是 InstructGPT 原设定。
+只做 clip 的短训练可能可用，长训练仍会漂。DAPO 一类移除 KL、依靠 clip 和动态采样，是另一套实现，不能与这里的 InstructGPT 设定混用。
 
 监控四条曲线：相对 old 的 KL、相对 ref 的 KL、reward、平均长度。长度和 reward 一起飙、ref KL 也飙，优先怀疑 hacking 而不是「学得很好」。
 
 SFT 本身是前向 KL $D_{\mathrm{KL}}(p_{\mathrm{data}}\|\pi)$，覆盖示范模式。RLHF 的惩罚项是反向 KL，集中在当前 $\pi_\theta$ 会采样到的地方。把 SFT 说成反向 KL 是常见口误。
 
+相关：`pt-rlhf-why-reverse-kl`、`ali-grpo-kl-vs-ppo`
+
 ## 追问
 
-- **为什么不是 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi_\theta)$？** 那个会强迫覆盖 ref 的全程质量，探索更死。RLHF 要的是「你现在会说的话别太离谱」，所以是 $\pi_\theta$ 在前。
-- **直接偏好优化（DPO） 还要这个 KL 吗？** DPO 把 RM + KL 解析掉了，隐式先验仍是 $\pi_{\mathrm{ref}}$，但实现上不再单独减一项 token KL。
-- **和 GRPO 论文的 $k_3$ KL？** DeepSeekMath 把 KL 加进 loss 而不是扣进 reward，锚仍是 ref。名字都叫 KL，代码位置不同。
+**为什么不是 $D_{\mathrm{KL}}(\pi_{\mathrm{ref}}\|\pi_\theta)$？**
+那个会强迫覆盖 ref 的全程质量，探索更死。RLHF 要的是「你现在会说的话别太离谱」，所以是 $\pi_\theta$ 在前。
+**直接偏好优化（DPO） 还要这个 KL 吗？**
+DPO 把 RM + KL 解析掉了，隐式先验仍是 $\pi_{\mathrm{ref}}$，但实现上不再单独减一项 token KL。
+**和 GRPO 论文的 $k_3$ KL？**
+DeepSeekMath 把 KL 加进 loss 而不是扣进 reward，锚仍是 ref。名字都叫 KL，代码位置不同。

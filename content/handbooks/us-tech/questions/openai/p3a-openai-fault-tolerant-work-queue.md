@@ -4,7 +4,7 @@ section: openai
 order: 613
 level: A
 title: "OpenAI：可靠任务队列：租约、重试、死信与依赖"
-quick: "任务分 pending、running、done、dead 四种状态，每次领取都发一个新 token，只接受当前租约 token 的上报，超时按剩余尝试次数重试或进死信队列，依赖全部 done 才能领取。"
+quick: "任务用 pending、running、done、dead 状态机，每次领取发新租约 token，上报只接受当前有效 token。超时按剩余次数重试或进死信，全部依赖 done 才能领取；至少一次交付仍需要业务幂等。"
 companies:
   - openai
 tags:
@@ -23,15 +23,42 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个带依赖、重试和租约的内存工作队列。worker 领取任务时获得本次租约专属 token；超时或失败后任务可重新派发，迟到的旧 worker 不能完成新租约下的任务。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `Queue.enqueue(job_id, max_attempts, depends=())`：入队。`max_attempts` 至少为 1，包含首次执行；`depends` 只能引用已经入队的任务。
+- `Queue.reserve(now, lease) -> (job_id, token) | None`：按入队顺序取第一个依赖全部 done 的 pending 任务，租约到 `now + lease` 为止，`lease` 必须为正。
+- `Queue.complete(job_id, token, now)` / `Queue.fail(job_id, token, now)`：上报结果，返回是否被接受。只有任务仍在 running 且 token 是当前租约的 token 才接受。
+- `Queue.dlq()`：返回所有 dead 任务。
+- 时间由调用方传入，必须单调不减。`now >= lease_end` 时租约失效；失败或超时后还有尝试次数就回到 pending，否则变成 dead。依赖了 dead 任务的任务保持阻塞，不会自动判失败。
+- 最多 $10^4$ 个任务。
+
+### 示例
+
+```text
+enqueue("a", max_attempts=2); enqueue("b", 1, depends=["a"])
+reserve(now=0, lease=5)          -> ("a", 1)
+complete("a", token=1, now=5)    -> False     # 5 >= 0 + 5，租约已失效
+reserve(now=5, lease=5)          -> ("a", 2)  # 第二次尝试
+complete("a", token=1, now=6)    -> False     # 旧 token
+complete("a", token=2, now=6)    -> True
+reserve(now=6, lease=2)          -> ("b", 3)  # a 已 done，b 解锁
+```
+
+## 解题思路与参考答案
+
+我会先实现任务状态机，再用租约 token 拒绝旧 worker 的迟到上报。状态包括 pending（等待领取）、running（已被领取、租约有效）、done、dead（重试用完，进死信队列）。worker 领取任务时拿到一个租约，租约有截止时间；到期还没上报，任务自动退回 pending，或者在尝试次数用完时变成 dead。
+
 ## 题目
 
 实现一个容错的任务队列，支持入队、worker 领取任务（reserve）、上报成功和上报失败。在此基础上加入租约超时、重试次数上限、死信队列，以及任务之间的 DAG 依赖。
 
 > 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
-
-## 思路
-
-先把每个任务的状态机画清楚：pending（等待领取）、running（已被领取、租约有效）、done、dead（重试用完，进死信队列）。worker 领取任务时拿到一个租约，租约有截止时间；到期还没上报，任务自动退回 pending，或者在尝试次数用完时变成 dead。
 
 关键在于防止「僵尸 worker」：一个 worker 卡住、租约过期，任务被另一个 worker 重新领走，之后第一个 worker 才回来上报完成。解决办法是每次领取都发一个新的唯一 token，上报时必须带上这个 token，只有当前租约的 token 才被接受。
 
@@ -166,6 +193,16 @@ class Queue:
         """返回所有 dead 任务的 id（死信队列）。"""
         return [job_id for job_id, job in self.jobs.items() if job.state == "dead"]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert job_id == "a"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

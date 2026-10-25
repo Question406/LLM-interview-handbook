@@ -4,7 +4,7 @@ section: anthropic
 order: 603
 level: A
 title: "Anthropic：同域爬虫：从 BFS 到并发和分布式"
-quick: "用 hostname 判断同域、去掉 fragment 后在同一把锁里检查并标记 visited；结束条件看未完成工作总数而不是队列是否为空，task_done 放在 finally 里防止异常导致卡死。"
+quick: "我会用 BFS 管待抓 URL，解析 hostname 判断同域，去掉 fragment 后去重。并发时检查和标记 visited 要在同一把锁里完成；未完成工作总数归零才结束，task_done 放在 finally 里，避免异常让主线程一直等。"
 companies:
   - anthropic
 tags:
@@ -23,6 +23,27 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个并发网页遍历器，收集起始页面所在站点能够到达的所有页面。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`crawl(start, get_urls, workers=4)` 返回排序后的 URL 字符串列表。`get_urls`(url) 是注入的线程安全函数，返回该页面的出链，不需要真实联网。只访问与 start 的 hostname 相同的 URL；去掉 URL 的 fragment 后作为页面身份，其他 URL 部分保留。每个规范化后的 URL 最多调用一次 `get_urls`，重复链接和环不能导致重复遍历。
+
+图有限且不超过 10000 个页面，workers 为正整数。使用最多 workers 个并发工作者；发生抓取异常时完成必要的工作收尾并抛出 RuntimeError，不能使调用永久等待。
+
+### 示例
+
+```text
+start = "https://a.test/x"
+x 的出链为 ["https://a.test/y#part", "https://b.test/z"]
+y 的出链为 ["https://a.test/x", "https://a.test/y"]
+返回 ["https://a.test/x", "https://a.test/y"]；x、y 各抓取一次。
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 给一个起始 URL 和一个 `get_urls(url)` 接口（返回页面里的链接），抓取所有与起始 URL 同域的页面，每个页面只抓一次。题目会从单线程 BFS 逐步追问到多线程并发，再到多机分布式。
@@ -31,7 +52,7 @@ sources:
 
 ## 思路
 
-单线程版本就是 BFS：队列存待抓的 URL，`visited` 集合去重。同域判断要用 `urlsplit` 解析出 hostname 再比较，不要用字符串前缀匹配；URL 里的 fragment（`#` 之后的部分）不影响页面内容，入队前去掉。
+我会先用 BFS 写单线程版本，队列保存待抓 URL，`visited` 记录已经安排抓取的页面。同域要用 `urlsplit` 解析 hostname 后比较，字符串前缀不足以判断。URL 中的 fragment（`#` 之后的部分）不改变页面内容，入队前先去掉，这样同一页面不会因锚点不同被重复抓取。
 
 改成多线程时有两个关键点：
 
@@ -138,6 +159,16 @@ def crawl(start, get_urls, workers=4):
         raise RuntimeError(f"{len(errors)} page(s) failed") from errors[0]
     return sorted(visited)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert crawl("https://a/x", get_urls, 3) == ["https://a/x", "https://a/y"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

@@ -4,7 +4,7 @@ section: openai
 order: 10
 level: S
 title: OpenAI：DPO 相对 PPO 少了什么，implicit reward 怎么说
-quick: "DPO 去掉了显式 RM、on-policy rollout、critic 和 PPO clip，但 KL 先验还在。隐式奖励是 $r(x,y)=\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})$。"
+quick: "DPO 直接用偏好对优化策略，省掉显式奖励模型、在线 rollout、critic 和 PPO clip。参考策略和 KL 约束的影响仍保留在 log 概率比里；隐式奖励是 $r(x,y)=\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})$，不需要另训打分头。"
 tags:
   - OpenAI
   - DPO
@@ -26,13 +26,9 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+DPO 用偏好对直接训练策略，省掉 PPO 流程里的奖励模型和在线采样等环节，但参考策略仍然在损失里。比如同一问题有 chosen、rejected 两个回答，DPO 比较的是策略相对 reference 给它们增加了多少 log 概率，再推动 chosen 相对更高。
 
-OpenAI 公开对齐主线是 InstructGPT 的 PPO-RLHF。直接偏好优化（DPO） 不是 OpenAI 的论文，但 Research / 对齐岗会拿它当对照：「既然 KL 约束的最优策略有闭式，为什么还要 RL」。我会按 DPO 原文把 implicit 奖励分数（reward） 写出来，再对照 `openai-instructgpt-kl` 和 `openai-ppo-clip`。不要假装自己在某次 onsite 抽到了这道原题。
-
-## PPO 环里有什么，DPO 砍掉什么
-
-InstructGPT 式 PPO 要：偏好数据 $\to$ 奖励模型 $r_\phi$ $\to$ 当前策略采样 $\to$ 减 ref KL 的奖励 $\to$ GAE / value $\to$ clip 更新。在线、贵、脆，ratio 还可能出现极端值。
+这是一道公开方法对照题：OpenAI 的公开主线是 InstructGPT PPO-RLHF，DPO 来自另一篇论文，不能说成已核实的 onsite 原题。InstructGPT 先用偏好数据 $\to$ 训练奖励模型 $r_\phi$ $\to$ 用当前策略采样 $\to$ 减 ref KL $\to$ 计算 GAE / value $\to$ 做 clip 更新。在线环节成本高、调试复杂，ratio 也可能出现极端值。
 
 KL 约束的 基于人类反馈的强化学习（RLHF） 目标是
 
@@ -52,25 +48,26 @@ $$
 \mathcal{L}_{\mathrm{DPO}}=-\log\sigma\Big(\beta\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\beta\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}\Big).
 $$
 
-所以相对 PPO 少了：显式 RM、on-policy 采样循环、value / GAE、PPO clip。没少：偏好对、冻结的 $\pi_{\mathrm{ref}}$、$\beta$ 这颗温度。说「DPO 没有 KL」是错的；KL 进了最优策略的解析式，代码里变成对 ref 的 log 比。
+推导里用奖励差做偏好预测，$Z(x)$ 就抵消了。实现因而能直接训练策略，显式 RM、on-policy 采样循环、value / GAE、PPO clip 都不再需要；偏好对、冻结的 $\pi_{\mathrm{ref}}$ 和 $\beta$ 仍然保留。KL 的作用通过最优策略解析式进入了对 ref 的 log 比。
 
-隐式奖励怎么说：不是又训了一个打分头。它是「当前策略相对 SFT 愿意把多少 log-mass 分给这句话」。$\beta$ 大，策略不敢离开 ref；$\beta$ 小，偏好对的间隔被放大，容易过拟合那批 chosen/rejected。
+隐式奖励可以理解为当前策略相对 SFT 给这句回答增加了多少 log-mass。$\beta$ 大会更约束策略靠近 ref，$\beta$ 小则放大偏好间隔，容易过拟合 chosen/rejected。
 
-## 我会主动报的失败模式
+实际使用时先冻结 $\pi_{\mathrm{ref}}$，不能让它随 $\theta$ 一起更新，否则 KL 锚也会移动。再检查数据是否太旧：当 $\pi_\theta$ 离采样策略很远，隐式 $r$ 上的 BT 假设会变差，PPO 则至少能在当前 $\pi$ 上采样。DPO 可定期换数据，或改用 online / iterative DPO。
 
-- **off-policy。** 偏好数据若来自旧策略，而 $\pi_\theta$ 已经走远，BT 在隐式 $r$ 上的假设变差。PPO 至少在当前 $\pi$ 上采样。DPO 要定期换数据，或拿 online / iterative DPO。
-- **长度。** log 比沿 token 求和，长回答容易赢。可以归一化长度，或在数据里控制 chosen/rejected 长度。
-- **ref 必须冻。** 把 $\pi_{\mathrm{ref}}$ 跟着 $\theta$ 跑，隐式 KL 锚就没了。
-- **没有 RM 不等于没有 hacking。** 模型可以刷标注员偏好里的表面特征。CAI 那条人写原则的对照见 `anthropic-constitutional-ai`。
+序列 log 比按 token 求和，长回答容易获利，可以做长度归一化或在数据里控制 chosen/rejected 长度。模型也可能利用标注偏好的表面特征，所以仍要独立于偏好数据的 eval。计算损失时在 log 空间算 $\Delta$，使用 `logsigmoid`，避免先 exp 再减。CAI 的原则式反馈可对照 `anthropic-constitutional-ai`。
 
-实现：损失（loss） 在 log 空间算 $\Delta$，`logsigmoid`；不要先 exp 再减。评测仍要一套不在偏好集里的 eval，见 `openai-eval-harness`。
+相关：`openai-instructgpt-kl`、`openai-ppo-clip`、`openai-eval-harness`
 
 ## 追问
 
-- **还要 PPO clip 吗？** 标准 DPO 不要。$\beta$ 和 ref 已经在管步长。有人加 DPOP / hinge，那是变体。
-- **implicit reward 能当 RM 用吗？** 能打偏好对的分数差，但不保证绝对尺度，也不能直接当 best-of-n 的黄金 RM。
-- **和 InstructGPT 三阶段？** DPO 通常接在 监督微调（SFT） 后，替换 RM+PPO。SFT 还在，否则 $\pi_{\mathrm{ref}}$ 太弱。
-- **为什么面试还要会 PPO？** 因为 OpenAI 原设定、在线探索、过程奖励、工具调用 强化学习（RL），DPO 闭式罩不住。
+**还要 PPO clip 吗？**
+标准 DPO 不要。$\beta$ 和 ref 已经在管步长。有人加 DPOP / hinge，那是变体。
+**implicit reward 能当 RM 用吗？**
+能打偏好对的分数差，但不保证绝对尺度，也不能直接当 best-of-n 的黄金 RM。
+**和 InstructGPT 三阶段？**
+DPO 通常接在 监督微调（SFT） 后，替换 RM+PPO。SFT 还在，否则 $\pi_{\mathrm{ref}}$ 太弱。
+**为什么面试还要会 PPO？**
+因为 OpenAI 原设定、在线探索、过程奖励、工具调用 强化学习（RL），DPO 闭式罩不住。
 
 ## 相关题
 

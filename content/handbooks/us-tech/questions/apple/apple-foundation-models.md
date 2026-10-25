@@ -4,9 +4,7 @@ section: apple
 order: 11
 level: S
 title: Apple：Foundation Models 公开叙事怎么讲，端侧和云各自干什么、能力边界在哪？
-quick: >-
-  公开故事是两套互补模型，不是一个万能聊天机器人。约 3B 端侧跑日常、低延迟、私有上下文；更难的推理走 Private Cloud
-  Compute 上的 server 模型。端侧明确不是开放世界 chatbot。路由看任务难度和隐私切片，不看「一律上云」。
+quick: "Apple 的公开方案是端侧与 PCC 上的 server 模型互补：约 3B 的端侧模型处理日常、低延迟和私有上下文任务，更难的推理交给云侧。端侧擅长摘要、抽取和短对话，设计时要按能力与隐私要求决定路由，并保留拒答或非生成 UI。"
 tags:
   - Apple
   - Foundation Models
@@ -31,11 +29,13 @@ sources:
     type: secondary
 ---
 
-Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了个什么」。2024 报告给出端侧约 3B 加 PCC 上的更大 server 模型；2025 更新把端侧压到 2-bit QAT、KV 共享，server 改成 Parallel-Track MoE，并写明：端侧模型不是为开放世界闲聊设计的。面试要能复述这条产品契约，而不是背 MMLU 超过谁。
+Apple 的 Foundation Models 可以按两套互补模型来讲：约 3B 的端侧模型处理日常、低延迟和私有上下文任务，PCC 上更大的 server 模型处理更难的推理。比如邮件摘要可以留在本地，超出本地能力时再考虑把这一轮需要的最小上下文送到云侧。
 
-## 端侧和 PCC 不是同一模型的两个部署点
+2024 报告给出这套端云分工；2025 更新进一步使用端侧 2-bit QAT、KV 共享，以及 server 的 Parallel-Track MoE。公开定位也明确了端侧能力边界：它擅长摘要、抽取和短对话，开放世界知识聊天并非目标。面试时要把这些产品任务和边界说清。
 
-我会先画两套权重、两套约束：
+## 两套模型分别承担什么
+
+两套模型的权重和约束分别是：
 
 - 端侧。约 3B，GQA、共享 embedding、词表公开约 49k。目标是常驻、低功耗、可离线。公开数字：iPhone 15 Pro 上大约 0.6 ms 每个 prompt token、约 30 token/s（投机解码之前）。适合摘要、改写、抽取、短对话、通知、邮件、屏幕上的字。私有上下文默认不出设备，见 `apple-personalize`。
 - Server / PCC。更大、更新架构（2025 公开 PT-MoE、交错局部/全局注意力）。跑在 Apple silicon 的 Private Cloud Compute 上：请求用完丢、不拿用户数据训基础模型。适合更长推理、更重工具、端侧 3B 明显不够的任务。压缩配方不同（公开有 ASTC、约 3.56 bpw），不要和端侧 2-bit 混报，见 `apple-ondevice-quant`。
@@ -44,7 +44,7 @@ Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了
 
 开发者面对的是 Foundation Models 框架：guided generation、工具、rank 32 的 adapter。框架把端侧模型暴露成系统能力，不是让第三方把 3B 当 GPT-4o 用。
 
-## 能力边界要主动说
+## 按能力边界设计路由与评测
 
 2025 更新写得很直：端侧擅长 summarization、entity extraction、短对话、创意短文本；不是 chatbot for general world knowledge。现场我会把「不会做什么」说成设计：
 
@@ -54,9 +54,9 @@ Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了
 
 评测也要按边界报。人评、locale、feature adapter（邮件摘要 vs 通知）比把 3B 丢进开放 chatbot 竞技场更贴近产品。只报 BLEU / MMLU 会被追「那通知摘要为什么还要单独 adapter」，见 `apple-afm-eval`。
 
-常见误区是：把 AFM 讲成「苹果的 GPT，小的在手机、大的在云」。权重、数据、压缩、评测、产品任务四套都不一样。另一常见误区是：声称端侧能做任意 agent。公开叙事是专用工具加热插拔 adapter，不是通用自主代理。
+端侧和云侧在权重、数据、压缩、评测和产品任务上都有区别。端侧 agent 也要围绕专用工具和热插拔 adapter 设计，能力范围要与公开定位一致。
 
-## 我会怎么收设计题
+
 
 先问用户数据能不能离开设备、任务是格式还是事实、延迟是语音还是静默文本。再给三条路径：本地 3B + 检索 / adapter；PCC + 最小切片；拒答或走非生成 UI。量化、KV、采样是实现细节，分别见 `apple-ondevice-quant`、`apple-ondevice-kv`、`apple-topk-sample`。语音通路还要拆首包，见 `apple-siri-latency`。
 
@@ -64,7 +64,11 @@ Apple Intelligence 岗和 Foundation Models 框架岗会问「你们到底训了
 
 ## 追问
 
-- **为什么不把 70B 量化后塞进手机？** 权能压，KV、激活、功耗、热、ANE 静态图不一定压得动。公开选择是 3B 加压缩加 adapter，难的上 PCC。
-- **PCC 和「端侧隐私」矛盾吗？** 不矛盾，如果切片最小、不落盘、不拿去训。矛盾的是「为了方便把整个用户画像同步上去」。
-- **开发者微调会不会把私有数据送回苹果？** 公开 toolkit 是在开发者侧训 adapter，且要跟基础模型版本绑定。产品路径仍应假设用户数据默认不出设备。
-- **和 Siri 的关系？** AFM 是生成底座；Siri 还有 ASR、工具、TTS、有实际证据支持。不要把「Foundation Model 很快」说成整条语音 SLO，见 `apple-siri-latency`。
+**为什么不把 70B 量化后塞进手机？**
+权能压，KV、激活、功耗、热、ANE 静态图不一定压得动。公开选择是 3B 加压缩加 adapter，难的上 PCC。
+**PCC 和「端侧隐私」矛盾吗？**
+不矛盾，如果切片最小、不落盘、不拿去训。矛盾的是「为了方便把整个用户画像同步上去」。
+**开发者微调会不会把私有数据送回苹果？**
+公开 toolkit 是在开发者侧训 adapter，且要跟基础模型版本绑定。产品路径仍应假设用户数据默认不出设备。
+**和 Siri 的关系？**
+AFM 是生成底座；Siri 还有 ASR、工具、TTS、有实际证据支持。不要把「Foundation Model 很快」说成整条语音 SLO，见 `apple-siri-latency`。

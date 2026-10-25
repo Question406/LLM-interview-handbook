@@ -4,7 +4,7 @@ section: systems
 order: 71
 level: B
 title: 系统：rollout 和训练的 tokenizer 不一致，会坏在哪？
-quick: "同一段文本可以变成两串不同的 id。生成用的边界、EOS 和奖励看到的字符串，必须和训练 gather logprob 用的 id 是同一套。 特殊 token 多一个或少一个，mask 会整段错位。"
+quick: "rollout 和训练必须使用一致的 tokenizer 与 chat 模板，否则同一文本可能被编码成不同 id，训练 gather 到的就不是采样动作的概率。EOS、pad、bos 不一致还会让 mask 错位，作业启动时应核对词表与特殊 token。"
 tags:
   - Post-train
   - Tokenizer
@@ -18,25 +18,15 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+rollout 和训练的 tokenizer 不一致，会让训练算错采样动作的概率，即使两边看到的字符串一样。比如开头空格不同、数字切分方式不同，都可能让同一段文本对应不同的 token id。
 
-权重切分不对见 `sys-weight-remap`。这道是词表。推理引擎和训练框架各加载一次 tokenizer 时很容易不是同一个文件。按这个故障拟的。
+logprob 按 id 取值。如果生成侧第 t 个 id 与训练侧重编码后的第 t 个 id 不同，gather 就取到了另一个 token 的概率，重要性采样比也失去意义。EOS、pad、bos 的 id 不一致，则会把回答头尾的 mask 切错，见 `sys-left-pad`、`sys-eos-mask`。
 
-## 会坏的对齐
+奖励也要保持一致。若在解码字符串上跑沙箱，就用生成时同一份 tokenizer 解码；另一份 tokenizer 多解出一个空格，也可能让测试失败。chat 模板同样属于这套约定，一边套模板、一边用裸文本，可能从第一个 token 起就错开。
 
-logprob 是按 id 取的。生成侧的第 t 个 id 若和训练侧重编码之后的第 t 个 id 不同，gather 到的是别的 token 的概率，重要性采样比没有意义。字符串看起来一样，BPE 的边界可以不同，尤其是开头有没有空格、数字怎么切。
+我会在作业启动时让生成与训练进程都打印词表大小、特殊 id 及校验和，不一致就拒绝启动；中途更新 tokenizer，也要同时更新两边。这道题按推理和训练分别加载 tokenizer 时的常见故障拟成，权重切分错误另见 `sys-weight-remap`。
 
-EOS、pad、bos 的 id 不同，mask 会把回答的头或尾切错。见 `sys-left-pad` 和 `sys-eos-mask`。
-
-奖励若在解码后的字符串上做，解码也必须用生成时的那份 tokenizer。训练侧用另一份解码再送进沙箱，测试失败可能只是多了一个空格。
-
-## 怎么固定
-
-作业启动时打印词表大小和这几个特殊 id 的校验和，生成进程和训练进程都打。不一致就拒绝开始。不要在中途热更新 tokenizer 而不更新另一边。
-
-chat 模板也算在里面。一边套了模板、一边用裸文本，id 从第一个 token 就不同。
-
-## 代码
+下面做一个简化的词表和特殊 token 检查：
 
 ```python
 def tokenizer_fingerprint(tok):
@@ -50,10 +40,11 @@ def assert_same(train_tok, rollout_tok):
 
 ## 追问
 
-**词表一样、但添加了额外特殊 token？** 大小可以相同而 id 不同，也可以大小不同。校验和要覆盖特殊 token 的名字和 id，不只比 `vocab_size`。
+**词表一样，只添加了特殊 token 呢？**
+仍要核对名字和 id。大小相同也可能 id 不同，添加 token 也可能改变大小，只比较 `vocab_size` 不够。
 
 ## 相关题
 
-- [[openai-tiktoken]]：特殊 token 单独查表、不进 merge，扩词表是加行，这些正是这里要校验的东西。
-- [[meta-llama3-tokenizer]]：Llama 2 和 Llama 3 的 id 空间不同，是 tokenizer 不一致的典型来源。
-- [[anthropic-bpe-tokenizer]]：手写 BPE 的往返不变量，从实现层面看 encode 的结果取决于哪些东西。
+- [[openai-tiktoken]]：特殊 token 单独查表、不进 merge，扩词表是增加行，解释了为什么这些项也要校验。
+- [[meta-llama3-tokenizer]]：Llama 2 与 Llama 3 的 id 空间不同，是一个具体例子。
+- [[anthropic-bpe-tokenizer]]：手写 BPE 的往返不变量，帮助理解 encode 的结果依赖什么。

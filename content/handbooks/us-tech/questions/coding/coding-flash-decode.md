@@ -4,9 +4,7 @@ section: coding
 order: 25
 level: S
 title: 白板：FlashDecoding 的 split-K，online softmax 怎么沿 KV 切开再合并
-quick: >-
-  Decode 时 $T=1$，FlashAttention 沿 $Q$ 并行吃不满 SM。把 $K,V$ 沿长度切成 $G$ 段，每段各自维护
-  $(m,\ell,O)$，再按同一套 rescale 合并。单段先 softmax 再平均是错的。合并后 $O/\ell$ 才是精确注意力。
+quick: "Decode 的 $T=1$，沿 $Q$ 的并行度不足时，把 $K,V$ 沿长度切成 $G$ 段，各段保留 $(m,\\ell,O)$。合并时按全局最大值 rescale，最后用 $O/\\ell$ 归一化，得到精确注意力。"
 tags:
   - 完整编程练习
   - Coding
@@ -28,6 +26,31 @@ sources:
     url: https://arxiv.org/abs/2205.14135
     type: primary
 ---
+
+## 题目描述
+
+实现单条 query 对长 KV 序列的注意力计算，并提供分段统计与合并接口。无论切分数量如何变化，输出应与整段注意力的数学定义一致。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `split_stats(q,k,v,scale) -> (m,ell,O)`：q 是 `[D]`，k/v 是 `[Sg,D]`、Sg>=1。令分数 `s_i=scale*dot(k_i,q)`，返回 `m=max(s)`、`ell=sum(exp(s-m))` 和 `[D]` 的 `O=sum(exp(s_i-m)*v_i)`，O 尚未归一化。
+- `merge_mlo(stats) -> [D]` 接收上述统计三元组，返回所有分段合起来的注意力输出。允许 ell 为 0 的空段，且至少有一个非空段。
+- `flash_decode(q,k,v,scale,n_split=4) -> [D]` 中 k/v 是 `[S,D]`，S>=1，`n_split`>=1，可以大于 S。结果必须等于 `softmax(scale * (k @ q)) @ v`；空分段不影响结果。输入为有限浮点张量，D>=1。
+
+### 输入输出示例
+
+```text
+q=[0], k=[[1],[2],[3]], v=[[2],[4],[6]], scale=1
+flash_decode(q,k,v,1,n_split=2) -> [4]
+flash_decode(q,k,v,1,n_split=5) -> [4]
+split_stats([0],[[1],[2]],[[2],[4]],1) -> (0,2,[6])
+```
+
+## 解题思路与参考答案
+
+我会沿 KV 长度分段，每段先算最大分数 $m_g$、指数和 $\ell_g$，以及尚未除以 $\ell_g$ 的加权和 $O_g$。合并时取全局最大值 $m$，把每段乘上 $e^{m_g-m}$ 再相加，最后用总的 $O$ 除以总的 $\ell$。这样每个 token 的权重都变成 $e^{s_j-m}/\ell$，和一次性对整段做 softmax 完全一样。
 
 ## 完整编程练习（手册重构版）
 
@@ -51,8 +74,6 @@ flash_decode(q, k[:0], v[:0], 0.5, 2)   -> ValueError
 ```
 
 ### 解题思路与正确性
-
-每段只保存三样东西：段内最大分数 $m_g$、指数和 $\ell_g$、没有除以 $\ell_g$ 的加权和 $O_g$。合并时取全局最大值 $m$，把每段乘上 $e^{m_g-m}$ 再相加，最后用总的 $O$ 除以总的 $\ell$。这样每个 token 的权重都变成 $e^{s_j-m}/\ell$，和一次性对整段做 softmax 完全一样。
 
 不能先在段内做 softmax 再平均：每段用的是自己的分母，平均以后权重和全局 softmax 对不上。
 
@@ -114,6 +135,16 @@ def flash_decode(q, k, v, scale, n_split=4):
             stats.append(split_stats(q, k[start:end], v[start:end], scale))
     return merge_mlo(stats)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(flash_decode(q, k, v, 0.5, n_split), expected)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -206,10 +237,14 @@ Prefill 一般用不着 split-K，因为 $T$ 本身已经提供了足够的并�
 
 ## 追问
 
-- **为什么不能每段先 softmax 再加权平均？** 各段的分母不是全局的 $\ell$，权重对不上。这不是对 FlashAttention 的近似，而是错的。
-- **如果 $O_g$ 已经除过 $\ell_g$，怎么合并？** 用 $O\leftarrow\sum_g e^{m_g-m}\ell_g O_g$，最后再除以 $\ell$。它和未归一化版本差一个 $\ell_g$ 因子，两种约定不要混用。
-- **某一段全是 $-\infty$ 怎么办？** 这段 $\ell_g=0$，合并时跳过。所有段都空则 $\ell=0$，那是 mask 写错了，不是 split 能解决的问题。
-- **和顺序 online softmax 扫 $K$ 块相比有什么不同？** 数学上是同一套 rescale。Flash-Decoding 把「一个 CTA 串行扫所有块」改成「多个 CTA 并行算，再归约」，目的是在 $T=1$ 时提高占用率。
+**为什么不能每段先 softmax 再加权平均？**
+各段的分母不是全局的 $\ell$，权重对不上。这不是对 FlashAttention 的近似，而是错的。
+**如果 $O_g$ 已经除过 $\ell_g$，怎么合并？**
+用 $O\leftarrow\sum_g e^{m_g-m}\ell_g O_g$，最后再除以 $\ell$。它和未归一化版本差一个 $\ell_g$ 因子，两种约定不要混用。
+**某一段全是 $-\infty$ 怎么办？**
+这段 $\ell_g=0$，合并时跳过。所有段都空则 $\ell=0$，那是 mask 写错了，不是 split 能解决的问题。
+**和顺序 online softmax 扫 $K$ 块相比有什么不同？**
+数学上是同一套 rescale。Flash-Decoding 把「一个 CTA 串行扫所有块」改成「多个 CTA 并行算，再归约」，目的是在 $T=1$ 时提高占用率。
 
 ## 相关题
 

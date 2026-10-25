@@ -4,7 +4,7 @@ section: coding
 order: 14
 level: S
 title: 白板：embedding lookup + padding mask，大词表显存
-quick: "`E[ids]` 把 $[B,T]$ 的 id 查成 $[B,T,D]$；`padding_idx` 只让 pad 行为 0、不更新，attention 仍要 pad mask。词表矩阵按 $V\\cdot D$ 占显存。"
+quick: "用 `E[ids]` 把 $[B,T]$ 的 id 查成 $[B,T,D]$，另把 pad 位置转成 attention mask。`padding_idx` 只控制 pad 行的向量和梯度，不能让 softmax 自动忽略它；整张词表按 $V\\cdot D$ 占显存。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,33 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
     type: primary
 ---
+
+## 题目描述
+
+实现 token embedding 查询及 padding mask，并提供一个最小 PyTorch 模块，使 padding 对应的 embedding 不参与梯度更新。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `embed_forward(embed, ids, pad_id=0) -> (x, pad)`：用 `ids: [B, T]` 查表得到 `x: [B, T, D]`，同时返回 `pad: [B, T]`，pad 位置为 True。
+- `attn_pad_mask(pad) -> [B, 1, 1, S]`：把 pad 标记变成能广播到 scores `[B, H, T, S]` 的 key mask。True 表示屏蔽这个 key，和 keep-mask 的约定相反。
+- `SmallLM(vocab, dim, pad=0)`：用 `nn.Embedding(..., padding_idx=pad)` 建表，`forward(ids)` 返回 `(x, pad)`。`padding_idx` 那一行梯度恒为 0。
+- 约束：`ids` 都是合法的词表下标，`pad_id` 在词表范围内。
+
+### 输入输出示例
+
+```text
+embedding 表 = [[0, 0], [1, 2], [3, 4]], pad_id = 0
+ids = [[1, 0]]
+embed_forward(embed, ids, 0)
+-> x = [[[1, 2], [0, 0]]], pad = [[False, True]]
+attn_pad_mask(pad) -> [[[[False, True]]]]
+```
+
+## 解题思路与参考答案
+
+embedding 先按 id 查表，再用单独的 attention mask 屏蔽 pad key。`padding_idx` 让 pad 那一行固定为 0 向量、梯度为 0；key mask 让 attention 不去看 pad 位置。只有前者不够：零向量 key 和 $q$ 的点积是 0，softmax 之后仍有正的权重，必须在 scores 上把 pad key 填成 $-\infty$。
 
 ## 完整编程练习（手册重构版）
 
@@ -44,8 +71,6 @@ attn_pad_mask(pad) -> 形状 (2, 1, 1, 2)，第 2 个 key 为 True
 ```
 
 ### 解题思路与正确性
-
-`padding_idx` 和 attention mask 管的是两件事。`padding_idx` 让 pad 那一行固定为 0 向量、梯度为 0；key mask 让 attention 不去看 pad 位置。只有前者不够：零向量 key 和 $q$ 的点积是 0，softmax 之后仍有正的权重，必须在 scores 上把 pad key 填成 $-\infty$。
 
 key mask 只屏蔽 pad 当 key 的情况，pad 位置作为 query 算出的输出它不会替你处理；后续层和损失里的 `ignore_index` 要另外管。
 
@@ -87,6 +112,16 @@ class SmallLM(nn.Module):
         # 后续 attention 里：scores = scores.masked_fill(attn_pad_mask(pad), float("-inf"))
         return x, pad
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert x.shape == (2, 2, 3)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -154,6 +189,9 @@ Apple 端侧的问题是：词表大，ANE 上的 gather 访存不连续，所�
 
 ## 追问
 
-- **零向量为什么还要 mask？** softmax($[\ldots,0]$) 仍会给 pad 正的注意力权重，必须填 $-\infty$。
-- **`padding_idx` 的梯度是什么？** PyTorch 每步把这一行的 grad 置 0，行向量一直保持 0。不要指望它学出「pad 的语义」。
-- **和 one-hot matmul 有什么区别？** 结果等价，但浪费计算。Lookup 是稀疏 gather，反向只对出现过的行累加梯度。
+**零向量为什么还要 mask？**
+softmax($[\ldots,0]$) 仍会给 pad 正的注意力权重，必须填 $-\infty$。
+**`padding_idx` 的梯度是什么？**
+PyTorch 每步把这一行的 grad 置 0，行向量一直保持 0。不要指望它学出「pad 的语义」。
+**和 one-hot matmul 有什么区别？**
+结果等价，但浪费计算。Lookup 是稀疏 gather，反向只对出现过的行累加梯度。

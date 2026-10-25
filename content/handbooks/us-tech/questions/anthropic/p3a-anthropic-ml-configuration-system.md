@@ -4,7 +4,7 @@ section: anthropic
 order: 627
 level: A
 title: "Anthropic：ML 配置系统：schema、继承与可复现性"
-quick: "把继承合并、命令行覆盖、schema 校验和最终冻结拆成独立步骤，合并语义写清楚，并保存解析后的完整配置和 hash 以便复现。"
+quick: "我会按继承合并、命令行覆盖、schema 校验、冻结结果的顺序处理配置。先明确每一步的合并规则，再保存解析后的完整 JSON、hash 和运行版本，才能知道训练实际用了什么配置并重跑实验。"
 companies:
   - anthropic
 tags:
@@ -23,6 +23,35 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+训练配置由若干可继承的配置项、类型 schema 和命令行覆盖组成。实现配置解析函数，生成最终的只读配置、确定性的 JSON 和内容哈希；相同配置无论重复解析多少次，结果都应一致。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- 接口 `resolve_config(configs, name, schema, overrides=None) -> dict`，返回字段 `config`、`json`、`sha256`。
+- `configs` 按配置名索引；每项可以有按顺序排列的 `parents` 和嵌套字典 `values`。先按父列表从左到右覆盖，再由当前配置的值覆盖：两边同名字段都是字典时逐字段合并，列表及其他值整体替换。
+- `schema` 的结构与最终配置一致，叶子是 `int`、`float`、`str`、`bool` 或 `list` 类型。字段均为必填，类型严格相同，布尔值不作为整数。输入保证继承无环、引用存在且符合 schema。
+- `overrides` 把点分路径（例如 `train.batch`）映射到新叶子值，优先级高于继承和自身配置。
+- 不修改任何传入对象。返回的 `config` 及其嵌套内容不可修改，其中列表冻结成 tuple。`json` 对合并后的普通配置按键排序，使用无多余空白的 UTF-8 JSON；`sha256` 是此 JSON 的 SHA-256 十六进制摘要。
+- 配置数量最多 100，嵌套深度最多 30。
+
+### 输入输出示例
+
+```text
+configs = {
+  "base": {"values": {"train": {"batch": 8, "lr": 0.01}, "tags": ["a"]}},
+  "child": {"parents": ["base"], "values": {"train": {"lr": 0.02}, "tags": ["b"]}}
+}
+schema = {"train": {"batch": int, "lr": float}, "tags": list}
+resolve_config(configs, "child", schema, {"train.batch": 16})["config"]
+-> {"train": {"batch": 16, "lr": 0.02}, "tags": ("b",)}
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 为 ML 训练设计并部分实现一个配置系统。网站没有给出完整的具体要求；常见的需求是：配置可以分层继承（默认值、项目配置、实验配置），可以在命令行覆盖，要有类型校验，并保证实验可以复现。
@@ -31,7 +60,7 @@ sources:
 
 ## 思路
 
-把系统拆成几个互相独立的步骤：
+我会把最终配置在训练开始前一次性解析、校验并冻结，训练代码只读取这个结果。处理顺序要固定，否则同一份实验配置可能因覆盖顺序不同得到不同的值：
 
 1. 解析继承关系：按父配置列表从左到右合并，再合并自身的值，同时检测继承环；
 2. 应用命令行覆盖；
@@ -181,6 +210,16 @@ def resolve_config(configs, name, schema, overrides=None):
         "sha256": hashlib.sha256(canonical.encode()).hexdigest(),
     }
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert result["config"]["train"]["batch"] == 16` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

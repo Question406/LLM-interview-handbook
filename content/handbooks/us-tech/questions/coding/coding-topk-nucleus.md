@@ -4,7 +4,7 @@ section: coding
 order: 8
 level: S
 title: 白板：温度 → top-k → nucleus 的顺序，实现细节
-quick: "先把非法 token 打成 $-\\infty$，再除温度 $T$、稳定 softmax，然后 top-k，最后在剩余质量上做 nucleus；$T=0$ 或 $p=0$ 走 greedy。"
+quick: "采样先屏蔽非法 token，再除温度 $T$，做 top-k，随后在剩余质量重新归一化的分布上做 nucleus 并采样。温度会改变 top-p 的累计质量，所以这一步必须在温度化之后；$T=0$ 或 $p=0$ 直接走 greedy。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +26,29 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html
     type: primary
 ---
+
+## 题目描述
+
+实现带温度、top-k、top-p 和词表 mask 的单 token 采样器。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`sample_temp_k_p(logits,T,k,p,rng,mask=None)` 返回一个整数 token id。logits 为 `[V]`，可包含代表屏蔽的负无穷；mask 为同形布尔数组，True 表示允许，至少有一个合法 token。T>=0，k 为 None 或正整数，p 在 `[0,1]`，rng 为注入的随机数生成器。
+
+处理语义依次为屏蔽非法 token、将 logits 除以 T、保留 top-k、对保留项按指数值做 softmax 归一化、保留累计概率首次达到 p 的最短降序前缀，最后重新归一化并采样。概率相同时 token id 小者优先。T=0 或 p=0 时直接返回合法 token 中 logit 最大者，同分选小 id。
+
+### 示例
+
+```text
+logits=[0,0,0], T=1, k=1, p=1，返回 0。
+logits=[2,1,0], T=0, k=None, p=1, mask=[False,False,True]，返回 2。
+所有情况下均不能返回被 mask 屏蔽的 token。
+```
+
+## 解题思路与参考答案
+
+我会先做合法性 mask，再调温度、做 top-k，最后在剩余概率上累计 top-p，保留首次达到阈值的 token 后重新归一化采样。比如只有一个合法 token，即使温度为 0，也要返回那个 token；全被屏蔽则报错。并列排序和空核行为也要在接口里先定清楚。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -110,6 +133,16 @@ def sample_temp_k_p(logits, T, k, p, rng, mask=None):
     return int(rng.choice(kept, p=kept_probs))
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert all(sample_temp_k_p([0, 0, 0], 1, 1, 1, rng) == 0 for _ in range(20))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -190,9 +223,12 @@ Apple 端侧还会问：词表 $10^5$ 时 top-k 要不要全排序。用 `argpar
 
 ## 追问
 
-- **为什么不能先 top-p 再除温度？** 核取决于当前的概率分布。先截断再改 $T$，等于在另一个分布上定的核，和 Transformers 的默认策略不一致。
-- **$p=0$ 怎么办？** 按定义核是空的，归一化会失败。实现上把它当作 greedy，结果应和 $T=0$ 落到同一个 token。
-- **top-k 和 top-p 谁先？** 先约定再写测试。HF 常见先 k 后 p；两种顺序保留的 token 不同，不要口头含糊过去。
+**为什么不能先 top-p 再除温度？**
+核取决于当前的概率分布。先截断再改 $T$，等于在另一个分布上定的核，和 Transformers 的默认策略不一致。
+**$p=0$ 怎么办？**
+按定义核是空的，归一化会失败。实现上把它当作 greedy，结果应和 $T=0$ 落到同一个 token。
+**top-k 和 top-p 谁先？**
+先约定再写测试。HF 常见先 k 后 p；两种顺序保留的 token 不同，不要口头含糊过去。
 
 ## 相关题
 

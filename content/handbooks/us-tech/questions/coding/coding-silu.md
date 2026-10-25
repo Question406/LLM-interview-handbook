@@ -4,8 +4,7 @@ section: coding
 order: 24
 level: A
 title: 白板：SiLU / Swish 手写，数值上哪里会炸
-quick: >-
-  $\mathrm{SiLU}(x)=x\cdot\sigma(x)$，即 $\beta=1$ 的 Swish；大负数上 $e^{-x}$ 会溢出，$\sigma$ 要按正负分支或用 `tanh` 形式写。Llama 的 SwiGLU 只在 gate 支路用它。
+quick: "SiLU 是 $\\mathrm{SiLU}(x)=x\\cdot\\sigma(x)$，也就是 $\\beta=1$ 的 Swish。手写时要防止大负数使 $e^{-x}$ 溢出，可以只计算 `exp(-abs(x))` 后按符号分支，或用 `tanh` 形式；Llama 的 SwiGLU 在 gate 支路使用它。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +26,33 @@ sources:
     url: https://arxiv.org/abs/1710.05941
     type: primary
 ---
+
+## 题目描述
+
+实现可在大正数和大负数上正常工作的 sigmoid 与 SiLU 接口。除了前向结果正确，还要保证对有限输入求导时不因中间计算出现 inf 或 NaN。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `sigmoid_stable(x)`：数值稳定的 sigmoid，任何有限输入都不溢出，返回 float32。
+- `silu(x)`：$x\cdot\sigma(x)$，用 `sigmoid_stable` 实现。
+- `silu_tanh(x)`：用恒等式 $\sigma(x)=\tfrac12(1+\tanh(x/2))$ 实现的 SiLU，作为独立对照。
+- 输入是有限的浮点张量，可以包含 ±1000 这样的极端值。两个 SiLU 都在 float32 里计算，输出的形状和 dtype 与输入一致；前向和梯度都不能出现 inf/NaN。
+
+- sigmoid 的数学定义是 `sigma(x)=1/(1+exp(-x))`；本题要求实现与该函数相同的有限数值结果。
+### 示例
+
+```text
+silu(0)     = 0
+silu(1000)  ≈ 1000
+silu(-1000) ≈ 0
+```
+
+## 解题思路与参考答案
+
+我会把 SiLU 写成输入乘稳定的 sigmoid，并用极大正负输入同时检查前向和梯度。比如 -1000 的朴素写法前向可能碰巧接近 0，反向却会因为指数溢出产生 NaN。实现里先算不会上溢的指数，再按符号组合 sigmoid。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -79,6 +105,16 @@ def silu_tanh(x):
     x32 = x.float()
     return (x32 * (0.5 * (1.0 + torch.tanh(0.5 * x32)))).to(x.dtype)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.isfinite(ours).all()` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -162,7 +198,11 @@ GELU 是 $x\Phi(x)$（$\Phi$ 是标准正态分布的 CDF），形状和 SiLU �
 
 ## 追问
 
-- **fp16 里朴素的 `x * sigmoid(x)` 在 $-20$ 处会怎样？** fp16 最大约 65504，`exp(20)` 约为 $4.9\times10^8$，会溢出成 inf。前向结果碰巧是 0，但反向梯度是 NaN。稳定写法前向给出 $\approx 0$，梯度也有限。
-- **SiLU 和 Swish 要不要当成两个函数？** 论文里的 Swish 带参数 $\beta$；实现里和 Llama 说的 SiLU 就是 $\beta=1$ 的 Swish。别把它答成另一个不相关的激活函数。
-- **能不能 inplace？** 反向要用 $x$ 来算 $\sigma(x)$。除非融合的 backward 自己存了中间结果，否则不要用 `silu_` 把唯一一份 $x$ 覆盖掉。
-- **和 z-loss 有关吗？** 无关。z-loss 约束的是 logits 的 log-partition，见 `coding-z-loss`；SiLU 是 MLP 里的非线性。
+**fp16 里朴素的 `x * sigmoid(x)` 在 $-20$ 处会怎样？**
+fp16 最大约 65504，`exp(20)` 约为 $4.9\times10^8$，会溢出成 inf。前向结果碰巧是 0，但反向梯度是 NaN。稳定写法前向给出 $\approx 0$，梯度也有限。
+**SiLU 和 Swish 要不要当成两个函数？**
+论文里的 Swish 带参数 $\beta$；实现里和 Llama 说的 SiLU 就是 $\beta=1$ 的 Swish。别把它答成另一个不相关的激活函数。
+**能不能 inplace？**
+反向要用 $x$ 来算 $\sigma(x)$。除非融合的 backward 自己存了中间结果，否则不要用 `silu_` 把唯一一份 $x$ 覆盖掉。
+**和 z-loss 有关吗？**
+无关。z-loss 约束的是 logits 的 log-partition，见 `coding-z-loss`；SiLU 是 MLP 里的非线性。

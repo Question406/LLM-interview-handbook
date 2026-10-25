@@ -4,7 +4,7 @@ section: anthropic
 order: 622
 level: A
 title: "Anthropic：单设备一对一聊天：投递、在线状态与离线队列"
-quick: "1 对 1 聊天用持久消息日志保证离线补取，WebSocket 管理在线连接，presence 只是基于心跳超时的近似。"
+quick: "我会先把每条消息写进持久会话日志，再通过 WebSocket 实时推送；离线后按 cursor 补取。presence 只是心跳推算的在线状态，消息保存和已送达、已读都要有各自的依据。"
 companies:
   - anthropic
 tags:
@@ -43,31 +43,20 @@ sources:
 
 开始回答时复述这些范围，问面试官是否需要已读回执和消息撤回。
 
-### 一套可展开的参考答案
+我会先持久保存消息，再尝试实时投递，这样接收方短暂离线也能补回来。范围先限定在单设备、1 对 1 私聊，只保证会话内有序，不扩展到群聊和频道；是否要已读回执、撤回，需要先问清楚。
 
-**1. 架构与关键路径。** 连接网关维护"用户 → socket"的映射。消息服务先把消息持久写入会话日志；投递服务再查接收方是否在线、连在哪个网关。不在线就留在消息库里，等对方按 cursor 补取。
+比如 Alice 给 Bob 发消息，消息服务找到两人的 `conversation_pair`，追加到会话日志并分配 seq，写成功才回“已发送”。投递服务发现 Bob 的 presence 尚未过期，连接在网关 3，就把消息推过去。Bob 客户端收到后 ack，服务端推进 `delivery_cursor` 并告诉 Alice received；等 Bob 打开会话，再单独上报 read。
 
-**2. 数据模型和状态变化。**
+连接网关维护用户到 socket 的映射，消息数据包括 `message(seq, id, from, to)`，每对用户的 `conversation_pair` 唯一。`presence(last_heartbeat, expires_at)` 只能近似表示在线，sent、received、read 要分别记录。旧心跳可能让已经断开的用户看起来在线，所以持久化不能取决于 presence。
 
-- `conversation_pair`：每对用户唯一。
-- `message(seq, id, from, to)`
-- `delivery_cursor`
-- `presence(last_heartbeat, expires_at)`
+推送失败时消息还在日志里，Bob 重连后按 cursor 拉取，重复消息按 id 去重。比较 Kafka 和 Redis 时，我会先说明各自承担什么角色：要耐久消费者和日志重放的消息流适合 Kafka，低延迟的 presence 和路由表适合 Redis。
 
-sent、received、read 分别记录，不能用"对方在线"代替"已送达"。
-
-**3. 走一遍一条消息。** Alice 给 Bob 发消息，消息服务找到两人的 `conversation_pair`，把消息追加到会话日志并分配 seq，写成功后回给 Alice "已发送"。投递服务查到 Bob 的 presence 未过期、连在网关 3 上，于是把消息推过去。Bob 的客户端收到后回 ack，服务端推进 Bob 的 `delivery_cursor` 并把 received 告诉 Alice；Bob 打开会话时再上报 read。
-
-**4. 失败、重复与恢复。**
-
-- 连接其实已经失效时推送会失败；接收方重连后从 cursor 拉取未收到的消息。
-- 重复消息按 id 去重。
-- presence 是超时近似，服务端不能因为一次旧心跳就认定用户在线，从而丢掉本该保存的离线消息。
-
-**5. 容量和验证指标。** 监控发送的持久确认时延、端到端接收时延、离线补取时延和"误判在线"的比例。每个连接占用的内存和心跳频率决定了网关的规模。
+容量估算看连接数对应的内存和心跳频率，验证时看持久确认、端到端接收和离线补取的时延，再看误判在线的比例。
 
 ### 面试追问与参考回答
 
-**用 Kafka 还是 Redis？** 按角色选，而不是二选一。需要日志重放和耐久消费者的消息流适合 Kafka；低延迟的 presence 和路由表适合 Redis。
+**用 Kafka 还是 Redis？**
+按角色选，而不是二选一。需要日志重放和耐久消费者的消息流适合 Kafka；低延迟的 presence 和路由表适合 Redis。
 
-**Bob 的网络闪断了几秒，这期间的消息会丢吗？** 不会。消息在推送之前已经写进会话日志，推送失败只影响实时性；Bob 重连后报告自己的 `delivery_cursor`，服务端把之后的消息补给他。
+**Bob 的网络闪断了几秒，这期间的消息会丢吗？**
+不会。消息在推送之前已经写进会话日志，推送失败只影响实时性；Bob 重连后报告自己的 `delivery_cursor`，服务端把之后的消息补给他。

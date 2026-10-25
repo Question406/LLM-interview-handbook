@@ -4,7 +4,7 @@ section: alignment
 order: 2
 level: S
 title: 对齐：DPO 的 implicit reward，β 太大太小
-quick: "隐式奖励是 $\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})+\\beta\\log Z(x)$，$Z$ 在 Bradley-Terry 里消掉。$\\beta$ 太大贴着参考学不动，太小则偏离过远、容易 hack。"
+quick: "DPO 从 KL 约束的奖励目标得到隐式奖励 $\\beta\\log(\\pi_\\theta/\\pi_{\\mathrm{ref}})+\\beta\\log Z(x)$，同一输入的偏好差里 $Z$ 会抵消。$\\beta$ 过大可能学不进偏好，过小可能偏离参考并压低 rejected 概率，应结合 KL、两侧 logp、长度和独立胜率调整。"
 tags:
   - OpenAI
   - DPO
@@ -23,31 +23,29 @@ sources:
     type: primary
 ---
 
-OpenAI / DeepMind 对齐和 post-training 岗会把 直接偏好优化（DPO） 当「你能不能从 RLHF 目标推到分类 loss」。别背 $-\log\sigma(\beta\Delta)$ 交差。要能写出隐式奖励、说清 $Z(x)$ 为什么消失、以及 $\beta$ 在理论和训练动态里不是同一件事。KL 方向见 `align-rlhf-kl`。公司章若写了 DPO 实现细节，和本题对照着讲，不要两套符号。
+DPO 把策略相对参考模型的 log 概率比当作隐式奖励，因此可以直接用离线偏好对训练，不必另外训练 RM 或在线 rollout。偏好损失可写作 $-\log\sigma(\beta\Delta)$。理解它时，我会先推清为什么同一题的归一化项会抵消，再解释 $\beta$ 怎样影响策略。
 
-## 隐式奖励从哪来
-
-KL 约束的 基于人类反馈的强化学习（RLHF） 最优策略满足
+KL 约束的 RLHF 最优策略满足：
 
 $$
 \pi^*(y\mid x)=\frac{1}{Z(x)}\pi_{\mathrm{ref}}(y\mid x)\exp\big(r(x,y)/\beta\big),
 $$
 
-$Z(x)=\sum_{y'}\pi_{\mathrm{ref}}(y'\mid x)\exp(r(x,y')/\beta)$。反解奖励：
+其中 $Z(x)=\sum_{y'}\pi_{\mathrm{ref}}(y'\mid x)\exp(r(x,y')/\beta)$。反解得到：
 
 $$
 r(x,y)=\beta\log\frac{\pi^*(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}+\beta\log Z(x).
 $$
 
-这就是 implicit 奖励分数（reward）：策略相对参考的 log 比，加上只依赖 $x$ 的配分函数。Bradley-Terry 只看差值 $r(x,y_w)-r(x,y_l)$，$Z(x)$ 消掉，得到
+隐式奖励由策略与参考的 log 比，以及只依赖输入 $x$ 的配分函数组成。比如同一道题两条回答分别为 chosen 与 rejected，Bradley-Terry 只比较 $r(x,y_w)-r(x,y_l)$，共同的 $Z(x)$ 就消掉了，得到：
 
 $$
 \mathcal{L}_{\mathrm{DPO}}=-\mathbb{E}\Big[\log\sigma\Big(\beta\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}-\beta\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}\Big)\Big].
 $$
 
-现场若只能背 损失（loss）、说不清这一步比例关系，评委会认为你没推过。把 KL 写成正向，闭式不再是「参考乘 $\exp(r/\beta)$」，整段换元报废。
+这套换元依赖正确的 KL 方向，若写成正向 KL，闭式就不再是参考乘 $\exp(r/\beta)$，见 `align-rlhf-kl`。隐式奖励只确定到一个输入函数，不能把 $\beta\log(\pi/\pi_{\mathrm{ref}})$ 跨 prompt 当绝对分，也不能未经 baseline 对齐就与另一 RM 比大小。同一 $x$ 的 best-of-n 可以用，因为它们共享 $Z$。
 
-隐式奖励只识别到 $x$ 的函数。你不能拿 $\beta\log(\pi/\pi_{\mathrm{ref}})$ 当绝对打分去和另一个 奖励模型（RM） 比大小，除非先对齐同一输入提示 的 baseline。用它做 best-of-n 可以，因为同一 $x$ 下 $Z$ 公共。
+下面输入已经在 response token 上求和的 logp，prompt 不进偏好损失：
 
 ```python
 def dpo_loss(pi_w, pi_l, ref_w, ref_l, beta):
@@ -56,34 +54,32 @@ def dpo_loss(pi_w, pi_l, ref_w, ref_l, beta):
     return -torch.nn.functional.logsigmoid(delta).mean()
 ```
 
-只在 回复 token 上求和。Prompt 进 loss 会把「读懂题」当偏好信号。
+## 怎样理解和调整 $\beta$
 
-## $\beta$ 太大、太小
+理论上 $\beta$ 控制 KL 强度：越大，最优 $\pi^*$ 越靠近 $\pi_{\mathrm{ref}}$，$r/\beta$ 的倾斜越弱；太小则把概率集中到少数高奖励句子，容易刷奖励。
 
-理论上 $\beta$ 是 KL 强度：越大，最优 $\pi^*$ 越贴 $\pi_{\mathrm{ref}}$，reward tilt $r/\beta$ 越弱。太小则 $\exp(r/\beta)$ 把质量堆到极少数高奖励句子上，容易 hack。
+有限步训练还要看梯度。$\beta$ 同时缩放 $\sigma$ 的 logit，太大时 $|\beta\Delta|$ 容易饱和，偏好没学进去，win-rate 仍接近 SFT。太小时可能出现 likelihood displacement：rejected likelihood 接近 0，chosen logp 却不升甚至下降。损失只要求相对间隔，因此两侧都要监控，再配合相对参考的 KL、长度和人工或 held-out win-rate。
 
-训练动态里 $\beta$ 还缩放 $\sigma$ 的 logit。$\beta$ 太大：$|\beta\Delta|$ 很容易饱和，梯度变没，看起来像「很稳」，其实偏好没学进去，win-rate 贴 监督微调（SFT）。$\beta$ 太小：隐式奖励尺度过大，策略远离参考；常见失败是 rejected 的 likelihood 被打到接近 0，chosen 的 logp 不升甚至掉（likelihood displacement）。监控要同时看 chosen/rejected logp、相对 ref 的 KL、长度、人工或 held-out win-rate，不要只盯 DPO loss。
+经验量级常在 $0.1$ 到 $0.5$，但 pair margin、reference 质量和长度归一化都会改变有效尺度。按 token 平均或按序列求和，相当于重新标定 $\beta$，换实现先对齐这一点，不能照抄论文的 $0.1$。$\beta$ 与学习率也不同：LR 控制优化器步长，$\beta$ 改目标。KL 几乎为 0 可怀疑 $\beta$ 过大或数据无信息；KL 狂飙且 gold 下降，则查 $\beta$ 过小或 pair 噪声。观察到的 KL 在有限步、不同 LR 和 pair 难度下不保证严格单调。
 
-经验量级常在 $0.1$ 到 $0.5$，但有效 $\beta$ 被长度归一化、pair 的 margin、reference 质量改掉。logp 按 token 平均还是按序列求和，等于偷偷重标定 $\beta$。换实现先对齐这一项，再谈「论文里的 $0.1$」。
-
-$\beta$ 不是学习率。LR 太大是优化器问题；$\beta$ 太大是目标本身不允许离参考远。两者都会「学不动」，归因要看 KL 曲线：KL 几乎为 0 更像 $\beta$ 过大或数据没信息；KL 狂飙、gold 掉，更像 $\beta$ 过小或 pair 噪声。
-
-## 和 PPO 比，面试怎么收
-
-DPO 不 采样轨迹（rollout）、不训单独 RM，离线偏好就能训。代价是数据覆盖当前策略：off-policy 偏好过旧，隐式 RM 会过拟合那批 pair。PPO 在线、贵，但能边采边更新。资源紧、有现成 HH 式 pair，DPO 合理；要持续打新能力、奖励会漂，PPO / GRPO 更合适。DPO 没有淘汰 RLHF。
+有现成 HH 式 pair、资源有限时，DPO 很直接；数据过旧，隐式 RM 也会过拟合旧 pair。要持续探索新能力或奖励变化较大时，PPO / GRPO 在线采样更自然，但成本更高。DPO 是 RLHF 的一条实现路线。这是 OpenAI / DeepMind 对齐岗常用的公开推导主题，公司章实现要沿用同一套符号。
 
 ## 追问
 
-- **$Z(x)$ 为什么不用算？** 同一输入提示 的 chosen/rejected 共享 $Z$，BT 差值里抵消。要绝对分数才需要。
-- **$\beta$ 和观察到的 KL 单调吗？** 稳态方向清楚，有限步、LR、pair 难度下不保证。用 win-rate + KL + 长度一起调。
-- **chosen logp 下降正常吗？** 短训常见，因为 loss 只保证相对间隔。长期 chosen 和 rejected 一起掉，要查 $\beta$、长度归一和 pair 噪声。
-- **还要单独加 token KL 吗？** 目标里已经有 ref；再减一项要声明你改了目标，不能当默认 DPO。
+**$Z(x)$ 为什么不用算？**
+同一题两条回答共享 $Z$，BT 奖励差抵消它；要绝对分数才涉及这一项。
+
+**chosen logp 下降正常吗？**
+短训练可能发生，目标只保证相对间隔。长期两侧一起下降，要查 $\beta$、长度归一化和 pair 噪声。
+
+**还要额外加 token KL 吗？**
+标准目标已包含 ref。再加一项就改变了目标，需要明确说明。
 
 ## 相关题
 
-- [[openai-dpo-loss]]：OpenAI 的问法从「DPO 相对 PPO 砍掉了什么」切入，隐式奖励只是其中一问；这张卡的重点在 $\beta$ 怎么取。
-- [[coding-dpo-weighted]]：白板题，把 DPO 梯度写成加权 logprob，能直接看到 $\beta$ 和 $\sigma(-z)$ 怎样决定每对样本的权重。
-- [[align-ipo]]：IPO 用平方损失把同一个 log 比回归到有限目标，专门处理确定性偏好下间隔被推向无穷的问题。
-- [[align-online-dpo]]：离线 pair 和当前策略脱节之后怎么办，是 DPO 上线后最常见的追问。
-- [[msft-orpo]]：ORPO 拿掉了参考模型，正好对照这里 $\pi_{\mathrm{ref}}$ 和 $\beta$ 起的 KL 锚作用。
-- [[align-kto]]：KTO 只用单条好 / 坏标签，隐式奖励的形式不变，回答「没有 pair 怎么办」。
+- [[openai-dpo-loss]]：相对 PPO 去掉哪些组件。
+- [[coding-dpo-weighted]]：写梯度，看 $\beta$ 与 $\sigma(-z)$ 如何加权样本。
+- [[align-ipo]]：把同一 log 比回归到有限目标。
+- [[align-online-dpo]]：处理旧 pair 与新策略脱节。
+- [[msft-orpo]]：去掉参考模型后的对照。
+- [[align-kto]]：只有单条好 / 坏反馈时的做法。

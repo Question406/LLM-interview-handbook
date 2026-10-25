@@ -21,23 +21,48 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+实现按完整 token 块复用 KV 页句柄的前缀缓存，隔离上下文并防止哈希碰撞误命中。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`Context` 是不可变对象，含字符串字段 model、adapter、tokenizer、`position_and_mask`、tenant、multimodal（默认空串）。`BlockHashCache(block_size=4,hash_fn=None)` 以正整数 `block_size` 为页长；`hash_fn` 可注入用于碰撞测试。
+
+`put(tokens,values,context)` 登记完整页，values 含恰好 floor(len(tokens)/`block_size`) 个不可变不透明页句柄，尾部不满一页不存储。`match(tokens,context)` 返回 `(命中token数,句柄tuple)`，仅能命中从开头连续的完整块。
+
+全部 context 字段及当前块之前的完整 token 前缀都影响复用语义；相同块出现在不同前缀下不能误用。重复登记保留已有句柄。哈希碰撞须被识别而不能返回错误页，发生 put 冲突时不能只发布部分新页。token 为非负整数，每条序列不超过 256，不要求淘汰功能。
+
+### 示例
+
+```text
+block_size=2，put([1,2,3,4,5],["AB","CD"],ctx)。
+match([1,2,3],ctx)=(2,("AB",))。
+match([3,4],ctx)=(0,())。
+将 ctx 的 tenant 改为另一值后，match([1,2],新ctx)=(0,())。
+```
+
+## 解题思路与参考答案
+
 ## 完整编程练习（手册原创实现版）
 
-本题是为理解开源机制而编写的独立练习，不是某家公司的已确认原题，也不是SGLang/vLLM源码逐字翻译。接口、简化条件和测试由手册定义。依赖Python 3与NumPy，使用CPU测试数值及状态语义，不报告GPU吞吐。
+这题用链式块哈希区分「相同 token 块处在不同历史前缀里」的情况，并把模型和租户等计算上下文放入 key。它是手册为理解开源机制写的独立练习，接口、简化条件和测试都由手册定义，并非某家公司已确认原题，也不是 SGLang / vLLM 源码逐字翻译。练习依赖 Python 3 与 NumPy，用 CPU 检查数值和状态语义，不报告 GPU 吞吐。
 
 专题入口：[[kv-prefix-implementation-index]]。
 
 ### 题面、接口与约束
 
-实现 `Context` 和 `BlockHashCache.put/match`。仅缓存完整page，page size正整数；每完整page一个不可变opaque句柄，尾部不足page不入缓存。Context固定六项字符串：模型权重版本、adapter、tokenizer、位置及mask配置、租户和多模态内容指纹。块摘要包含parent hash、当前tokens和context；同时保留完整祖先tokens作精确校验，碰撞抛错而不误复用。put须先验证所有候选碰撞再发布；重复相同key保留已存在句柄。序列≤256token；不实现淘汰。
+实现 `Context` 和 `BlockHashCache.put/match`，只缓存完整 page，page size 必须是正整数。每个完整 page 对应一个不可变的 opaque 句柄，尾部不足一页的 token 不入缓存。
+
+Context 固定包含六项字符串：模型权重版本、adapter、tokenizer、位置及 mask 配置、租户和多模态内容指纹。块摘要要带 parent hash、当前 tokens 和 context，同时保留完整祖先 tokens 做精确校验，发生碰撞就抛错，避免错误复用。put 先检查所有候选碰撞，再发布结果；相同 key 重复写入时保留已有句柄。序列最多 256 token，本题不实现淘汰。
 
 ### 输入输出示例
 
-page size2，存 `[1,2,3,4,5]→[AB,CD]`，查 `[1,2,3]` 仅命中2token；查 `[3,4]` 不能直接拿CD，因为其祖先不是空前缀。改变任一Context字段均miss。
+设 page size 为 2，存入 `[1,2,3,4,5]→[AB,CD]`。查询 `[1,2,3]` 时只命中 2 token；查询 `[3,4]` 时不能直接复用 CD，因为 CD 对应的祖先并非空前缀。改变任何一个 Context 字段都应 miss。
 
 ### 解题思路与正确性
 
-链式摘要记录“这个块位于哪个前缀之后”，不只是块内token。练习额外保留精确key并注入恒定hash函数测试碰撞，确保摘要相等不能绕过语义校验。Context是调用方对有效计算状态的声明，不能填一个永不更新的model名字就宣称安全。
+我会让每个块的摘要接上祖先哈希，记录它是在什么前缀后计算出来的。仅比较块内 token，会把不同历史下的 KV 混在一起。练习额外保留精确 key，并注入恒定 hash 函数测试碰撞，保证摘要相等时仍做语义校验。Context 由调用方声明有效计算状态，权重变化后也必须更新，固定一个 model 名字无法保证安全。
 
 ### 完整参考实现（Python 3）
 
@@ -105,6 +130,16 @@ class BlockHashCache:
             values.append(entry[1])
         return len(values)*self.block_size, tuple(values)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert cache.match([1, 2, 3, 4, 9], context) == (4, ('AB', 'CD'))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

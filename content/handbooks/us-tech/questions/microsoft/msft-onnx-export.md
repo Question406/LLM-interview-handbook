@@ -4,7 +4,7 @@ section: microsoft
 order: 8
 level: A
 title: Microsoft：ONNX / 导出动态轴，训练图和推理图不一致的坑
-quick: "batch 和序列维要显式声明为动态轴，否则按 dummy 形状写死。训练图是整段 teacher forcing，推理还要 eval 模式和带 KV cache 的 decode 图；先对齐 logits 再谈加速。"
+quick: "导出前先确认是 prefill 还是带 KV cache 的 decode 图，并切到 eval。batch、序列和 cache 过去长度按所用导出 API 声明动态维，再以同 dtype、同输入对比 PyTorch 与 ORT logits。数值和多种形状通过后，再调 EP 与性能。"
 tags:
   - Microsoft
   - ONNX
@@ -23,36 +23,23 @@ sources:
     type: primary
 ---
 
-ONNX Runtime / Windows ML / 推理平台岗爱问「为什么导出的模型和 PyTorch 对不齐」。微软是 ONNX 的主推者之一，ORT 又吃训练（ORTModule）和推理两头。题的核心是：**你导出的是哪一张图**。动态轴只是形状问题的一半，另一半是训练时的控制流在推理里根本不存在。
+导出模型要先明确推理时会怎样调用，再定义动态轴，最后验证数值。比如 dummy 是 `[1, 128]`，没有声明 batch 和序列可变，线上 batch 8、长度 512 就可能 shape error，甚至广播错却不报错。
 
-## 动态轴：不声明就冻成 dummy 形状
+ONNX Runtime / Windows ML 中常见的对齐问题，也来自训练前向与自回归推理用图不同。ORTModule 能运行训练，不代表训练图与推理 ORT session 是同一份文件。
 
-trace 导出按一次前向记录算子。dummy 若是 `[1, 128]`，图里的 batch 和序列就被写成 1 和 128。线上 batch 8、长度 512 会直接 shape error，或更糟：静默切错广播。必须把可变维标出来。老 API 是 `dynamic_axes`；较新的 dynamo 导出走 `dynamic_shapes`。两者不要混用。
+## 先确定形状和前向语义
 
-NLP 常见：
+trace 记录 dummy 走过的算子。老 API 用 `dynamic_axes`，较新的 dynamo 导出用 `dynamic_shapes`，按对应路径选用。NLP 的 `input_ids`、`attention_mask` 以及 logits 都要让维 0 batch、维 1 序列可变；KV cache 还有层、头和过去长度，过去长度写死会让第二步 decode 失败。
 
-- 输入 `input_ids`、`attention_mask`：维 0 batch、维 1 序列。
-- 输出 logits：同样两维要动态，否则 ORT 按导出时的词表×长度分配。
-- KV cache：维里还有层、头、过去长度。过去长度必须是动态的，否则逐 token 生成（decode）的第二步就会失败。
+CNN 只标 batch 有时足够，Transformer 通常还需序列。动态 shape 推断失败可检查 opset，`reshape` 用输入尺寸表达，避免在 Python 写死 `x.view(1, -1)`。导出前执行 `model.eval()`，dropout 与 BatchNorm 在 train/eval 下行为不同，不能把训练态随机性当作 ORT 数值问题。
 
-只标 batch、忘了序列，是最常见的不完整导出。CNN 只标 batch 往往够；Transformer 不够。动态维也不是免费：有的算子 shape 推断会失败，要升 opset，或把 `reshape` 写成由输入尺寸算出来的表达式，不要在 Python 里写死 `x.view(1, -1)`。
+训练 teacher forcing 把 `[B, T]` 整段送入，loss 覆盖各位置，不包含逐 token 循环。直接导出 `forward(input_ids)` 仍只是整段前向，最多作为 prefill 基础；decode 需要 KV cache 输入输出，或拆成 prefill / decode 两图，cache 沿长度 concat。
 
-导出前 `model.eval()`。文档写得很直：dropout 和 BatchNorm 在 train/eval 行为不同。带着 dropout 导出，推理会随机掉单元，和 eval 数值永远对不齐。这不是 ORT 的 bug。
+Python `if` 可能把 dummy 分支冻结，变长 decode、early exit、MoE 路由要用 script / dynamo 能捕获的算子或拆图。原地操作和 view 可能不能等价导出；bf16 / fp32 改变也会让 layernorm、softmax 漂移。FlashAttention 未必有对应 ORT EP，退回标准 attention 后需重新测速度。
 
-## 训练图 ≠ 推理图
+## 对齐后再启用加速
 
-LLM 训练一步：teacher forcing（训练时用真实的前文预测下一个 token），整段 `[B, T]` 进模型，损失（loss） 对所有位置。图里没有「按 token 循环」，也没有 KV cache。推理是自回归：每步生成一个 token，cache 沿长度维 concat。你把训练用的 `forward(input_ids)` 直接 export，ORT 里仍是 **整段一次前向**。那只能用于输入预填充（prefill，即处理输入并建立缓存），不能当 decode。要 decode 就得导出带 cache 输入输出的图，或拆成 prefill / decode 两份。
-
-其它会静默分叉的点：
-
-- **控制流。** Python `if` 在 trace 里按 dummy 走的那条分支冻住。变长 decode、early exit、MoE 路由要用 script / dynamo 能看见的算子，或拆成多图。
-- **原地操作和 view。** 训练能跑，ONNX 图可能非法或和自动微分假设冲突。
-- **精度。** 训练 bf16，导出 fp32 或反过来，layernorm 和 softmax 会漂。对齐时用同一 dtype。
-- **自定义核。** FlashAttention 在 PyTorch 里，ORT 未必有等价 EP。导出常退回标准 attention，需要重新测量和说明速度。
-
-我会先在 PyTorch eval 和 ORT 上用同一组输入比 logits（允许 $10^{-4}$～$10^{-3}$ 级差），再谈 EP（CUDA / TensorRT）。数值不对就优化，是在优化一张错图。ORTModule 训练走的是训练图，和推理 ORT session 不是同一份文件，别说「我们训练已经用了 ORT 所以导出一定对齐」。
-
-示例：动态轴的最小导出（注意 `eval`，以及 batch/序列都标）：
+同一输入、同一 dtype 比较 PyTorch eval 与 ORT logits，容差可先参考 $10^{-4}$～$10^{-3}$，通过后再测 CUDA / TensorRT EP。下面是 batch 与序列都动态的最小导出，先设置 `eval`：
 
 ```python
 model.eval()
@@ -75,9 +62,15 @@ torch.onnx.export(
 )
 ```
 
+动态轴保证形状合法，不保证 4k 下 kernel 已优化，ORT / TRT 仍可能按常见形状特化，所以按线上 shape warmup。权重 tying 也要看导出图，embedding 与 lm_head 若复制成两个 initializer，会增加显存。
+
 ## 追问
 
-- **为什么 dummy 长度 32、线上 4k 仍可能慢？** 动态轴只保证合法，不保证 kernel 按 4k 调好。ORT / TRT 仍可能按常见形状特化。要按线上 shape 做 warmup。
-- **训练时的 causal mask 能直接导出吗？** 可以，但 mask 形状也要动态。写死 `[1, 1, 32, 32]` 三角会在长序列上错。
-- **和 TensorRT 的关系？** TRT 可以吃 ONNX。失败往往在动态维和不支持的 op。先 ORT 对齐，再 TRT。
-- **权重共享 / tying？** 导出可能把 embedding 和 lm_head 复制成两份 initializer，显存翻倍。要查图里是否仍是同一份存储。
+**causal mask 能直接导出吗？**
+可以，但 mask 也要动态，写死 `[1, 1, 32, 32]` 的三角矩阵无法覆盖长序列。
+
+**ONNX 与 TensorRT 怎么衔接？**
+TensorRT 可以读取 ONNX，先在 ORT 验证数值，再处理 TRT 的动态维与不支持算子。
+
+**为什么 dummy 32，线上 4k 仍然慢？**
+动态形状不代表所有长度都已做性能特化，需要真实形状的 warmup 和压测。

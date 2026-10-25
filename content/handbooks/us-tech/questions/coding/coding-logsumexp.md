@@ -4,7 +4,7 @@ section: coding
 order: 20
 level: S
 title: 白板：log-sum-exp trick，和 cross entropy 的关系
-quick: "$\\mathrm{logsumexp}(z)=m+\\log\\sum e^{z-m}$（$m=\\max z$）是 softmax 分母的对数；交叉熵就是 $\\mathrm{logsumexp}(z)-z_y$，不用先算概率。"
+quick: "先减最大值，再用 $\\mathrm{logsumexp}(z)=m+\\log\\sum e^{z-m}$（$m=\\max z$）求 softmax 分母的对数。交叉熵直接取 $\\mathrm{logsumexp}(z)-z_y$，不用先算概率；整行 `-inf` 要单独处理。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +27,32 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+实现可在大幅值输入上正常工作的 logsumexp、log-softmax 与逐样本负对数似然接口。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `logsumexp(z, dim=-1, keepdim=False)`：数值稳定地计算 $\log\sum_j e^{z_j}$，`dim` 是约简轴，`keepdim=True` 保留该轴且长度为 1，否则去掉该轴。整行都是 `-inf` 时返回 `-inf`；约简轴长度为正。
+- `log_softmax(z, dim=-1)`：返回 $z-\mathrm{logsumexp}(z)$。每行至少要有一个有限 logit，因此 log-softmax 的输入不含全屏蔽行。
+- `nll_from_logits(logits, target)`：`logits` 是 `[N, V]`，`target` 是 `[N]` 的类别下标，返回每个样本的交叉熵 `[N]`。保证 `0 <= target[i] < V`。
+- 除了全屏蔽行，输入 logits 都是有限值。fp16 / bf16 输入先升到 float32 计算，float64 保持 float64。
+
+### 输入输出示例
+
+```text
+logsumexp([1000, 1000])               -> 1000 + ln 2 ≈ 1000.6931
+logsumexp([-inf, -inf])               -> -inf
+log_softmax([1000, 1001])             -> [-1.3133, -0.3133]
+nll_from_logits([[1000, 1001]], [1])  -> [0.3133]
+```
+
+## 解题思路与参考答案
+
+我会先减每行最大值，把指数控制在安全范围，再把平移量加回结果：先求 $m$，计算 $m+\log\sum_j e^{z_j-m}$。所有 $e^{z_j-m}$ 都落在 $(0,1]$，求和不会溢出，而且结果和原式完全相等。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，CPU 上验证；没有验证 GPU 或性能。
@@ -48,8 +74,6 @@ nll_from_logits([[1000, 1001]], [1])  -> [0.3133]
 ```
 
 ### 解题思路与正确性
-
-先求每行的最大值 $m$，计算 $m+\log\sum_j e^{z_j-m}$。所有 $e^{z_j-m}$ 都落在 $(0,1]$，求和不会溢出，而且结果和原式完全相等。
 
 整行都是 `-inf` 时 $m=-\infty$，直接相减会出现 $-\infty-(-\infty)=\text{NaN}$。所以把这种行的平移量换成 0：此时每一项 $e^{-\infty}=0$，求和为 0，取 log 得到 `-inf`，正是数学上的结果。
 
@@ -98,6 +122,16 @@ def nll_from_logits(logits, target):
     log_probs = log_softmax(logits, dim=-1)                       # [N, V]
     return -log_probs.gather(1, target.unsqueeze(1)).squeeze(1)  # [N]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(logsumexp(logits), torch.logsumexp(logits, -1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -188,10 +222,14 @@ softmax 在 $z\leftarrow z+c$ 下不变，但 $\mathrm{logsumexp}(z+c)=\mathrm{l
 
 ## 追问
 
-- **`log(sum(exp(z)))` 什么时候看起来还能用？** logits 很小，或者用 fp64 的时候。词表上的 CE 和注意力 scores 不要冒这个险。
-- **和 `log_softmax` 谁先谁后？** 先算 logsumexp（或者直接用融合的 log-softmax），CE 再 gather 出目标那一列。不要先 softmax 再取 log。
-- **整行都是 $-\infty$ 怎么办？** 朴素写法里 max 是 $-\infty$，相减后 $\exp$ 和 $\log$ 都会变成 NaN。上面的参考实现把平移量换成 0，logsumexp 返回 $-\infty$；但 log-softmax 和 CE 在这种行上没有定义，所以 mask 要保证每行至少有一个有限值，或者直接跳过这一行。
-- **有温度 $T$ 时呢？** 算 $\mathrm{logsumexp}(z/T)$。先除以 $T$，再做减 max 的 trick，顺序和 `coding-topk-nucleus` 一样。
+**`log(sum(exp(z)))` 什么时候看起来还能用？**
+logits 很小，或者用 fp64 的时候。词表上的 CE 和注意力 scores 不要冒这个险。
+**和 `log_softmax` 谁先谁后？**
+先算 logsumexp（或者直接用融合的 log-softmax），CE 再 gather 出目标那一列。不要先 softmax 再取 log。
+**整行都是 $-\infty$ 怎么办？**
+朴素写法里 max 是 $-\infty$，相减后 $\exp$ 和 $\log$ 都会变成 NaN。上面的参考实现把平移量换成 0，logsumexp 返回 $-\infty$；但 log-softmax 和 CE 在这种行上没有定义，所以 mask 要保证每行至少有一个有限值，或者直接跳过这一行。
+**有温度 $T$ 时呢？**
+算 $\mathrm{logsumexp}(z/T)$。先除以 $T$，再做减 max 的 trick，顺序和 `coding-topk-nucleus` 一样。
 
 ## 相关题
 

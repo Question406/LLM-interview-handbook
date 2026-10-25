@@ -4,7 +4,7 @@ section: google
 order: 16
 level: S
 title: Google：MoE 路由、容量因子和 decode 专家并行怎么落地
-quick: "路由器取 top-$k$ 后按 permute 把 token 排到各专家，pad 到容量 $C$，超出的 drop。decode 时每步 token 很少，all-to-all 变成小消息延迟，常要降 EP 度或复制热点专家。"
+quick: "MoE 先用路由器选 top-$k$ 专家，再把 token 按专家重排、补齐到容量 $C$，批量计算后还原顺序；超过容量的 token 按策略丢弃。Decode 每步 token 少，all-to-all 容易受小消息延迟限制，因此常需降低 EP 度或复制热点专家，同时保持路由权重一致。"
 tags:
   - Google
   - MoE
@@ -29,13 +29,11 @@ sources:
     type: primary
 ---
 
-`google-gemini-moe` 讲的是 Gemini 公开叙事：稀疏、容量、逐 token 生成（decode） 不是折扣券。这题往下抠一层：token 怎样发送到对应专家、容量怎么变成静态 shape、专家并行在 decode 为什么反而不划算。Google 训练代码在 TPU 上跑，XLA 要静态 shape，动态路由是税。Mesh 轴见 `google-tpu-mesh`，SPMD 见 `google-jax-pjit`。
-
-## 路由一步：分数、top-$k$、permute
+MoE 路由落到实现上，就是把 token 按专家重排，补齐到静态容量，再批量计算并还原顺序。比如一批 token 大多选中同一个专家，这个专家会先满，其他专家却可能空着，通信和计算都得等它。TPU 的 XLA 还要求静态 shape，动态路由因此要付出 padding 和重排成本。总体机制见 `google-gemini-moe`，mesh 轴见 `google-tpu-mesh`，SPMD 见 `google-jax-pjit`。
 
 MoE 层输入 $x$ 为 $[n, D]$，$n\approx B\cdot T$。路由器是一条线性：$g=\mathrm{softmax}(x W_r)$，$W_r$ 形状 $[D, E]$，$g$ 形状 $[n, E]$。取每行 top-$k$ 的专家编号和门控权重。Switch 用 $k=1$，dispatch 简单；GShard 常用 $k=2$，第二个专家当残差备份。Gemini 具体 $E,k$ 没公开，现场用 Switch 的语言讲，不要编超参。
 
-实现不是「每个 token 自己 if 专家」。TPU 要整齐 GEMM：
+为了让 TPU 批量执行规整 GEMM，可以按下面的顺序处理：
 
 1. 根据专家 id 把 token permute 成「专家 0 的一段、专家 1 的一段、…」。
 2. 每段 pad 到容量 $C$，得到大约 $[E, C, D]$（或按 EP 切成每芯一块）。
@@ -50,9 +48,7 @@ $$
 \mathcal{L}_{\mathrm{aux}} = \alpha\, E \sum_{i=1}^{E} f_i P_i
 $$
 
-$f_i$ 是实际派到专家 $i$ 的 token 比例，$P_i$ 是路由器给它的平均概率。两者都均匀时最小。ST-MoE 再加 router z-loss，惩罚过大的 logits，训练更稳。面试把 aux 说成「训练技巧」不够，它是在给后面的 all-to-all 减 P99。
-
-## 容量：drop 是产品决策，不是 bug
+$f_i$ 是实际派到专家 $i$ 的 token 比例，$P_i$ 是路由器给它的平均概率。两者都均匀时最小。ST-MoE 再加 router z-loss，惩罚过大的 logits，训练更稳。均衡负载也有系统收益：减少某个专家过载，降低后面 all-to-all 的 P99。
 
 $$
 C=\left\lceil \gamma\cdot n / E\right\rceil
@@ -66,26 +62,31 @@ Drop 的梯度：被丢掉的 token 这层没有专家梯度，路由器仍可�
 
 All-to-all 形状：EP 把 $E$ 个专家铺到芯片上，每芯存 $E/\mathrm{EP}$ 份权重。Dispatch 把 token 按目的 rank 搬走，消息长度随负载变，不是 dense all-reduce 那种固定 $[D]$。尾延迟由收 token 最多的那张卡决定。
 
-## Decode：专家并行要改拓扑
-
 Prefill / 训练：$n$ 大，all-to-all 有体积，还能和计算重叠（要切微批，同批 dispatch 叠不上该批 GEMM）。
 
 Decode：每步 $T=1$，$n$ 等于并发请求数。若 $B=16$、$E=64$、$k=2$，大多数专家这步是空的，少数专家挤一堆。此时：
 
 - $C$ 按公式会小到没意义，实现会设最小容量，或改成「被点名才 launch」。
-- All-to-all 变成短消息，延迟墙，不是带宽墙。
+- All-to-all 变成短消息，主要受固定延迟限制。
 - 单 token 可能跨芯片取专家，比稠密 FFN 更慢。
 
 所以 serving 常常降低 EP 度、复制热专家、输入预填充（prefill，即处理输入并建立缓存） 和 decode 用不同拓扑。训练图原样搬来 decode，是常见错法。路由权重本身必须和训练一致，改的是并行，不是 router。
 
-分组 GEMM、把空专家 skip 掉，能救 GPU；TPU 更爱 pad 成规整块，空槽照算。面试要自己切硬件。MXU 为什么讨厌瘦矩阵，见 `google-tpu-llm`。
+分组 GEMM、把空专家 skip 掉，能救 GPU；TPU 更爱 pad 成规整块，空槽照算。这里要根据硬件分别分析。MXU 为什么讨厌瘦矩阵，见 `google-tpu-llm`。
 
 ## 追问
 
-- **$k=2$ 的第二个专家一定算吗？** GShard 可以：主专家满了再溢出。容量策略和 $k$ 是两件事，别绑死。
-- **为什么训练和推理不能各用一套 router？** 负载统计会漂，质量对不齐。Serving 可以改 EP / 复制，不该偷偷改门控。
-- **共享专家干什么？** 所有 token 都过的稠密 FFN，给路由器减负。公开 Gemini 没写成必选项，当工程开关。
-- **aux loss 权重 $\alpha$ 怎么调？** 先看专家直方图和 drop 率，再看下游。$\alpha$ 太大，路由变均匀但任务专家化被压死；太小，塌缩成几个稠密 FFN。
+**$k=2$ 的第二个专家一定算吗？**
+GShard 可以：主专家满了再溢出。容量策略和 $k$ 是两件事，别绑死。
+
+**为什么训练和推理不能各用一套 router？**
+负载统计会漂，质量对不齐。Serving 可以改 EP / 复制，不该偷偷改门控。
+
+**共享专家干什么？**
+所有 token 都过的稠密 FFN，给路由器减负。公开 Gemini 没写成必选项，当工程开关。
+
+**aux loss 权重 $\alpha$ 怎么调？**
+先看专家直方图和 drop 率，再看下游。$\alpha$ 太大，路由变均匀但任务专家化被压死；太小，塌缩成几个稠密 FFN。
 
 ## 相关题
 

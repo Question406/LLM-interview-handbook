@@ -4,7 +4,7 @@ section: openai
 order: 34
 level: A
 title: OpenAI：多步 tool loop，观察怎么塞回上下文，工具调错和停止条件
-quick: "模型只提议调用，宿主执行。观察按 工具调用 id 写成 role=tool 消息塞回，截断脏输出，不当指令。未知工具名、schema 校验失败、执行失败要回传错误让模型改，不要猜。停止靠最大步数、重复调用熔断、finish 和 token 预算，缺一不可。"
+quick: "模型提出工具调用，宿主校验并执行，再用对应 call id 把结果作为工具消息写回。比如未知工具返回 unknown_tool，让模型修正；副作用请求要受权限和幂等控制，循环还要同时限制步数、耗时、token 和重复调用。"
 tags:
   - OpenAI
   - Tools
@@ -29,11 +29,13 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+我会把 tool loop 写成宿主控制的状态机：模型提议调用，程序校验与执行，结果按 call id 写回，再让模型决定下一步。比如工具名没注册，就返回结构化错误让它修正，不能根据模型给出的名字直接执行。
+
+
 
 `openai-function-calling` 收 字段和类型规范（schema）、JSON mode、并行。这题收循环跑起来之后：观察怎么写回、工具名是幻觉、何时停。Chat Completions 把 `tool_calls` 和后续 `role: tool` 做成一等消息；Assistants / Responses 只是同一状态机的另一套壳。生产执行见 `design-tool-prod`。训练侧见 `openai-agent-rl`。不是某一份隐藏面经。
 
-## 观察是数据，不是新的系统提示
+## 正确写回工具结果
 
 一轮合法循环：
 
@@ -82,11 +84,15 @@ def step(messages, model, registry, budget):
 
 凭证、内网 URL、文件系统根不进参数空间；模型连提议都该被拒。停止之后不要把半截工具结果留在用户气泡里，写审计。
 
-常见误区是：把工具输出拼进 system 输入提示（prompt）；失败时静默重试写操作；只设温度当停止条件。
+工具输出应留在数据消息里，写操作重试需要明确幂等语义；温度控制采样，无法替代循环预算。
 
 ## 追问
 
-- **观察要不要进 KV cache？** 要，它们是后续 decode 的前缀。超长观察等于超长 prefill。该摘要就摘要。
-- **模型编造一个没注册的工具？** 回传 `unknown_tool`，不要动态 `eval` 名字。白名单是宿主合同。
-- **和 JSON mode？** JSON mode 只保证 content 能 parse。要执行副作用必须走 tool loop。对照见 `openai-function-calling`。
-- **训练这个循环吗？** 运行时是上面的状态机。用 强化学习（RL） 改策略见 `openai-agent-rl`；推理时多开几条轨迹见 `openai-test-time`。不要把三者说成同一个开关。
+**观察要不要进 KV cache？**
+要，它们是后续 decode 的前缀。超长观察等于超长 prefill。该摘要就摘要。
+**模型编造一个没注册的工具？**
+回传 `unknown_tool`，不要动态 `eval` 名字。白名单是宿主合同。
+**和 JSON mode？**
+JSON mode 只保证 content 能 parse。要执行副作用必须走 tool loop。对照见 `openai-function-calling`。
+**训练这个循环吗？**
+运行时是上面的状态机。用 强化学习（RL） 改策略见 `openai-agent-rl`；推理时多开几条轨迹见 `openai-test-time`。不要把三者说成同一个开关。

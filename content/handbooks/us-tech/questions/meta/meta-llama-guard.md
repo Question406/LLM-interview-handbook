@@ -4,7 +4,7 @@ section: meta
 order: 17
 level: A
 title: Meta：Llama Guard 当独立安全分类器，和基座对齐怎么分工
-quick: "Guard 是另训的 Llama 分类器，不是把 chat 模型的拒答头拆出来。它读「策略 + 对话」，生成 safe / unsafe 和类别；分数取首 token 概率。基座负责有用且尽量不伤人；Guard 做输入输出闸门，策略可换、可独立升级。"
+quick: "Llama Guard 是独立训练的因果 LM 安全分类器，输入风险策略和对话，输出 safe / unsafe 与风险类别，用首 token 概率设阈值。基座对齐负责改变生成行为，Guard 提供可独立更新的输入输出检查，两者互补，同时要量延迟、FPR 与过度拒答。"
 tags:
   - Meta
   - Llama
@@ -29,40 +29,34 @@ sources:
     type: primary
 ---
 
-Llama / 安全 / 推理平台岗会问：为什么不把安全完全做进 chat 模型。公开答案是 **两套模型、两种损失、两种发布节奏**。Llama Guard 论文（2023）是 Llama 2-7B 指令微调；Llama Guard 3 挂在 Llama 3.1-8B 上，Herd 论文建议和 3.1 一起部署。不要把 Prompt Guard、Code Shield 和 Guard 混成一个 checkpoint。
+Llama Guard 与基座对齐分开，是为了让安全分类按独立的策略、损失和发布节奏更新。基座学习怎样有用地回答与拒绝，Guard 则读输入或输出，给出可调阈值的风险判定，同一 Guard 也能服务多个基座。
 
-## Guard 实际在算什么
+原始 Guard（2023）基于 Llama 2-7B 指令微调，Guard 3 用 Llama 3.1-8B，Herd 建议与 3.1 一起部署。它仍是因果 LM，输入含明文风险 taxonomy、要判 user prompt 还是 assistant response、完整对话，输出首 token `safe` 或 `unsafe`，unsafe 时下一行列类别。分数从首个生成 token 读取，不是另接 $[D, 2]$ 线性头。
 
-它还是因果 LM，但任务是分类。输入里带：**风险 taxonomy 的明文说明**、要判的是 user 输入提示（prompt） 还是 assistant response、对话内容。输出约定：先生成一个 token `safe` 或 `unsafe`；若 unsafe，下一行列出违反的类别编号。二分类分数读**第一个生成 token** 的概率，再设阈值。不是另接一个 $[D, 2]$ 线性头。好处是换策略、换输出格式时，可以用同一套指令微调或 zero-shot / few-shot 改 prompt。
+例如同一句“怎么做炸弹”，用户侧是在提出请求，回答侧则要分清是教了还是拒绝，两种指令的标签可能不同。训练时丢类别、打乱编号等增强，使策略可以作为文本替换，支持 zero-shot / few-shot 适配；实际改 taxonomy 仍要在自己的政策集画 PR，不能保证无损。与 OpenAI Moderation、ToxicChat 的公开对比也因 taxonomy 不同，只能谨慎比较量级。
 
-论文把 **prompt 分类** 和 **response 分类** 拆成两种指令。同一句「怎么做炸弹」：用户侧是求助/攻击，模型侧是教了还是拒了，标签可以不同。一个 chat 模型的 基于人类反馈的强化学习（RLHF） 拒答，分不清这两层。
+## 部署时怎样分工
 
-taxonomy 可替换：训练时做过丢类别、打乱编号的增强，所以推理时只留你关心的几条策略，模型应只按留下的条判。现场别保证 zero-shot 换政策无损，要在你的政策测试集上画 PR。公开对比过 OpenAI Moderation、ToxicChat；taxonomy 对不齐，数字只能当量级。
+预训练、SFT、DPO 的安全改变基座生成分布，政策变更可能要重训，也可能影响能力，合成 SFT 还会改变拒答风格，见 `meta-synth-sft`。Guard 作为独立 7B/8B 检查器可单独改 prompt 或微调权重，无需每次改政策重训 405B；系统仍需正则、工具白名单与检索过滤等其他边界。
 
-Llama Guard 3：对齐 MLCommons 危害类型，另加 Code Interpreter Abuse，覆盖多语言和工具调用。Herd 论文写系统级安全靠它抬，也可能增加对良性请求的误拒。面试主动报 **FPR / 拒答率**，不要只报「更安全」。
+主模型生成外再跑 Guard，相当于额外 $8\mathrm{B}$ prefill，也可只对高风险流量用，不能当零成本。短输入通常较容易接受，长上下文要考虑量化、分类窗口截断或触发词后的满窗检查，同时验证覆盖。分类不能只看最后一句，RAG 检索片段与代码工具结果也需进入 response 判定，避免遗漏有害引用。
 
-## 和基座对齐的分工
+模板必须与训练一致，多一个 `begin_of_text` 或角色头，都可能使首 token 分布漂移。用首 token $\log p(\texttt{unsafe})$ 设阈值，别把 Guard 的文本当聊天回答，也别把 chat 回复“我不能帮你”当稳定风险分。只拦输出会让越狱先进入主模型上下文，输入检查也有意义。
 
-我会画三条线：
+按类别可用 1-vs-all，每次 prompt 只放一个类别读 unsafe 概率，但成本乘类别数，生产常先二分类、再对 unsafe 解多标签。Guard 3 对齐 MLCommons 危害并加 Code Interpreter Abuse，覆盖多语言工具调用；Herd 也提示系统安全提高时良性请求误拒可能增加，要同时报 FPR 与拒答率。
 
-1. **预训练 / 监督微调（SFT） / 直接偏好优化（DPO） 里的安全。** 基座要学会拒绝、要有用、要不过度拒答。这是行为对齐，损失是 next-token 或偏好。换产品政策意味着重训或再对齐，贵、慢、还可能伤能力。合成 SFT 也会把拒答风格洗进去，见 `meta-synth-sft`。
-2. **Guard。** 独立 7B/8B，专判输入输出。策略在 输入提示里，权重点可以独立发版。主模型一次生成，Guard 再跑一次前向（或只对高风险流量开）。延迟和成本是 $8\mathrm{B}$ 的 输入预填充（prefill，即处理输入并建立缓存），不是「免费的安全层」。
-3. **系统策略。** 正则、工具白名单、检索过滤。Guard 是 LLM 闸门，不是唯一闸门。
-
-常见误区是：把 Guard 的生成文本当 chat 回复，或把 chat 模型的「我不能帮你」当成分类分数。前者格式一漂阈值就坏；后者没有稳定的 unsafe 概率。另一个常见误区是：只拦输出、不拦输入：越狱 prompt 已经进了上下文，主模型可能在内部推理里被带偏，再靠输出分类补就晚了。
-
-分数怎么用：首 token $\log p(\texttt{unsafe})$ 设阈值。要按类别拦，用 1-vs-all：每次 prompt 只放一个类别，看该次 unsafe 概率。吞吐会乘上类别数，生产上常先二分类再对 unsafe 做多标签解码。
-
-## 部署时我会主动说的坑
-
-Guard 的 chat 模板必须和训练一致，多一个 `begin_of_text` 或角色头，首 token 分布就偏。分类要覆盖整段 user/assistant，不是只看最后一句。和 检索增强生成（RAG） / 工具：要把检索片段、代码执行结果一并送进 response 分类，否则模型「引用了有害段落」会漏。
-
-和评测：安全数字很容易自污染：把公开 jailbreak 写进 SFT 再在同一套上报表。Guard 的测试集要和训练 taxonomy 对齐，并留一块政策外 holdout。能力评测见 `meta-llama-eval`，别用 MMLU 证明安全。Guard 和基座可以不同步发版：基座一周升一次，政策变了只换 Guard prompt 或只微调 8B，这才叫独立分类器：政策变了不必重训基座。
+测试集需与 taxonomy 对齐，并留政策外 holdout，避免公开 jailbreak 既进 SFT 又被拿来报告安全。能力套餐见 `meta-llama-eval`，MMLU 无法证明安全。基座可一周升级一次，政策变化只换 Guard prompt 或微调 8B，体现独立维护的价值。
 
 ## 追问
 
-- **为什么不在基座上加一个分类头？** 能。失去的是「策略当文本、可 zero-shot 改 taxonomy」。独立模型还能对多个基座复用同一闸门。
-- **和 RLHF 拒答重复吗？** 互补。RLHF 改生成分布；Guard 是事前/事后二分类，阈值可调，不必每次改政策都重训 405B。
-- **延迟怎么办？** 短 prompt 上 8B prefill 往往可接受；长上下文要量化、截断分类窗口，或只对触发词打满窗。不要默认为零成本。
-- **误拒怎么收？** 调阈值、few-shot 加硬负例、对产品政策微调。Herd 已经警告 Guard 3 可能抬 FPR。
-- **和 Prompt Guard / Code Shield 是一个模型吗？** 不是。Prompt Guard 拦注入，Code Shield 拦不安全代码；Llama Guard 是对话危害分类。不要绑成一个 checkpoint。
+**能给基座加分类头吗？**
+能，但策略文本替换与 zero-shot taxonomy 适配方式会变，独立模型也更便于跨基座复用。
+
+**与 RLHF 拒答重复吗？**
+互补，RLHF 改生成行为，Guard 做事前事后检查与阈值决策。
+
+**误拒怎么降？**
+调阈值、few-shot 加硬负例，或按产品政策微调，同时量 PR、FPR 和任务效果。
+
+**Prompt Guard、Code Shield 是同一模型吗？**
+不是。前者拦注入，后者拦不安全代码，Llama Guard 做对话危害分类，不能绑成一个 checkpoint。

@@ -4,8 +4,7 @@ section: coding
 order: 28
 level: A
 title: 白板：ALiBi 斜率加到 scores 上，decode 用 cache 长度当 query 位
-quick: >-
-  每个 head 一个固定正斜率 $m_h$，softmax 前给 scores 加 $m_h(j-i)$；decode 时 query 位等于旧 cache 长度，bias 形状 `[1, H, 1, S]`。
+quick: "ALiBi 在 softmax 前给每个 head 的 scores 加 $m_h(j-i)$，远处历史得到更负的偏置，未来位置另加因果 mask。decode 时新 query 的位置就是旧 cache 长度，偏置形状 `[1, H, 1, S]`；与 prefill 最后一行对照就能检查偏移。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +26,32 @@ sources:
     url: https://huggingface.co/docs/transformers/en/model_doc/bloom
     type: secondary
 ---
+
+## 题目描述
+
+实现 ALiBi 的每头斜率和因果位置偏置接口。输入包括 query 的绝对位置、key 序列长度以及 head 斜率；输出必须同时表达距离惩罚和未来位置不可见的约束。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `alibi_slopes(n_heads) -> Tensor[H]`：生成每个 head 的斜率。`n_heads=H` 是任意正整数。若 H 是 2 的幂，第 i 项为 `2^(-8*(i+1)/H)`（i 从 0 开始）。否则令 m 为不超过 H 的最大 2 的幂，先取 m 头的全部斜率，再按下标 0、2、4…取 2m 头的斜率，补到 H 项。
+- `alibi_score_bias(q_pos, s_len, slopes) -> Tensor[1, H, T, S]`：`q_pos` 是 `[T]` 的 query 绝对位置，key 位置是 `0..s_len-1`。可见位置（`j <= q_pos[t]`）的值是 `m_h * (key_pos - query_pos)`，未来位置是 $-\infty$。
+- `decode_alibi(cache_len, slopes) -> Tensor[1, H, 1, cache_len + 1]`：`cache_len` 是不含新 token 的旧 cache 长度，也就是新 token 的绝对下标。
+- 假定 `n_heads` 为正整数，所有张量在 CPU 上。
+
+### 示例
+
+```text
+alibi_slopes(8) -> [1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256]
+alibi_slopes(3) -> [1/16, 1/256, 1/4]
+decode_alibi(2, slopes=[0.5]) -> [[[[-1.0, -0.5, 0.0]]]]
+alibi_score_bias(q_pos=[0], s_len=2, slopes=[0.5]) -> [[[[0.0, -inf]]]]
+```
+
+## 解题思路与参考答案
+
+我会先为每个 query head 生成固定斜率，再把相对距离乘斜率加到 attention scores，最后单独屏蔽未来位置。比如旧 cache 长度为 2，新 query 位于 2，三个 key 的距离就是 -2、-1、0；这应与 prefill 最后一行完全相同。
 
 ## 完整编程练习（手册重构版）
 
@@ -92,6 +117,16 @@ def decode_alibi(cache_len, slopes):
     q_pos = torch.tensor([cache_len])
     return alibi_score_bias(q_pos, cache_len + 1, slopes)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(alibi_slopes(3), torch.tensor([1 / 16, 1 / 256, 1 / 4]))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -168,10 +203,14 @@ ALiBi 的典型用法是训练时用短序列、测试时用长序列：偏置�
 
 ## 追问
 
-- **为什么写 $m(j-i)$，而不是 $-m|i-j|$ 再另加因果 mask？** 在因果条件下两者只差一个符号约定，关键是 $j\le i$ 时偏置 $\le 0$。如果对未来位置也加上绝对值形式的偏置而忘了 mask，非法 key 仍会分到概率；如果符号写反，未来位置还会变成正数。
-- **decode 时 query 位置用 $S$ 还是 $S-1$？** 看这一步的 $K$ 有没有已经 concat 进去。concat 之后 $S_{\mathrm{new}}=S_{\mathrm{old}}+1$，query 位置是 $S_{\mathrm{new}}-1$，也就是 $S_{\mathrm{old}}$。
-- **能和 RoPE 同时用吗？** 公开的 BLOOM 不用 RoPE。叠两套位置信号需要训练上的依据，白板默认二选一。
-- **斜率要不要学？** 论文用的是固定几何序列，不进优化器。改成可学习参数会改变外推行为，那就不是原版 ALiBi 了。
+**为什么写 $m(j-i)$，而不是 $-m|i-j|$ 再另加因果 mask？**
+在因果条件下两者只差一个符号约定，关键是 $j\le i$ 时偏置 $\le 0$。如果对未来位置也加上绝对值形式的偏置而忘了 mask，非法 key 仍会分到概率；如果符号写反，未来位置还会变成正数。
+**decode 时 query 位置用 $S$ 还是 $S-1$？**
+看这一步的 $K$ 有没有已经 concat 进去。concat 之后 $S_{\mathrm{new}}=S_{\mathrm{old}}+1$，query 位置是 $S_{\mathrm{new}}-1$，也就是 $S_{\mathrm{old}}$。
+**能和 RoPE 同时用吗？**
+公开的 BLOOM 不用 RoPE。叠两套位置信号需要训练上的依据，白板默认二选一。
+**斜率要不要学？**
+论文用的是固定几何序列，不进优化器。改成可学习参数会改变外推行为，那就不是原版 ALiBi 了。
 
 ## 相关题
 

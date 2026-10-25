@@ -4,7 +4,7 @@ section: openai
 order: 5
 level: S
 title: OpenAI：从零实现 KV cache，有/无 cache greedy 必须对齐
-quick: "prefill 写下整段 K/V，decode 每步只算新 token 的 q/k/v 并沿时间维拼接；有 cache 和全量重算的 greedy 输出必须逐 token 相同。"
+quick: "prefill 先存整段 K/V，decode 每步只计算新 token 的 Q/K/V 并追加缓存。验收用同一 prompt、关闭 dropout 的 greedy 对照：缓存和全量重算必须逐 token 相同，再谈分页、量化与回滚。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -26,6 +26,40 @@ sources:
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
+
+## 题目描述
+
+用 NumPy 实现带增量 KV cache 的因果多头注意力。相同权重和 token 序列下，一次性处理完整序列与逐 token 传入缓存应得到一致结果；同时支持 GQA、有效 key mask 和可选 RoPE。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None, key_valid=None, use_rope=False)`：用 NumPy 写因果多头注意力，返回 `(output, new_cache)`。其数学输出为各 query 对可见 key 的缩放点积 softmax 加权 V，再按 head 拼接并右乘 `wo`；分数除以 `sqrt(d)`。query head h 使用 KV head `floor(h/(heads/Hkv))`。
+- `rope(x, start)`：对 `[B, H, T, d]` 的张量做旋转位置编码，第 `t` 个 token 的绝对位置是 `start + t`。
+- 形状：`x` 是 `[B, T, D]`，`wq`、`wo` 是 `[D, D]`，`wk`、`wv` 是 `[D, Hkv * d]`，其中 `d = D / heads`、`Hkv = kv_heads`（默认等于 `heads`）。`heads` 必须整除 `D`，也必须是 `Hkv` 的整数倍。
+- `cache` 是一对 `[B, Hkv, prefix, d]` 的 K/V，只存紧凑的 KV heads。返回的新 cache 长度是 `prefix + T`。
+- `key_valid` 是 `[B, prefix + T]` 的布尔数组，True 表示这个 key 可见。某个 query 的 key 全被屏蔽时，输出 0，不能出现 NaN。
+- 打开 RoPE 时 `d` 必须是偶数。当前这段 token 的位置从 `prefix` 开始编号；cache 里的旧 K 已经旋转过，不能再转一次。
+- 没有 dropout 和 bias。输入有限，B ≤ 8、T ≤ 256、D ≤ 128。假定形状满足上述条件。
+
+- `output` 形状为 `[B,T,D]`；query 绝对位置为 `prefix+t`，只允许访问 key 下标不超过该值且 `key_valid=True` 的位置。投影采用右乘权重，不转置传入矩阵。
+- RoPE 对相邻坐标对 `(x[2i],x[2i+1])` 作角度 `position*10000^(-2i/d)` 的二维旋转，即 `(a*cos(theta)-b*sin(theta), a*sin(theta)+b*cos(theta))`。只旋转 Q 和 K，V 不旋转。
+### 示例
+
+```text
+单 head，wq = wk = 0（所以 Q = K = 0），wv = wo = I，x = [[[2, 4], [6, 8]]]（B=1）
+query 0 只能看 key 0             -> [2, 4]
+query 1 对 key 0、1 均匀平均      -> [4, 6]
+完整 output = [[[2,4],[4,6]]]，new_cache 的 K/V 形状均为 [1,1,2,2]
+
+任意固定权重下：
+mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
+```
+
+## 解题思路与参考答案
+
+我会先把“有 cache 与全量重算的 greedy token 逐个相同”作为验收条件，再实现缓存。比如同一段输入先 prefill、之后逐 token 喂入，每一步都应该与整段重新计算一致；位置偏移和因果 mask 写错，shape 往往还对，只有对照才能发现。
 
 ## 完整编程练习（手册重构版）
 
@@ -174,6 +208,16 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     return output, (k, v)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(pieces, axis=1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -319,25 +363,28 @@ def decode_step(q, k_t, v_t, k_cache, v_cache):
     return attn @ v, k, v
 ```
 
-几个容易出错的地方：
+先查新 token 的位置：RoPE / 绝对位置从 `k_cache.size(2)` 开始，写成 0 通常不会报错，但无法与全量路径对齐。padding 后还要按各序列实际长度算位置，用 batch 最大长度会把短序列转错。
 
-- **位置**：新 token 的 RoPE / 绝对位置是 `k_cache.size(2)`，不是 0。写错不会报错，只是和全量重算对不上，见 `openai-rope-offset`。
-- **mask**：一次只 decode 1 个 token、cache 本身是合法前缀时，没有「未来 key」需要挡。一次塞进多个新 token（chunked decode）时，仍然要加一块相对 cache 的因果 mask；把 mask 填成 0 会让未来位置分到概率，见 `openai-softmax-bug`。上面练习里的分块 decode 测试测的就是这一点。
-- **层**：每一层都有自己的一份 cache，不能只改最外层。
-- **batch**：padding 后各序列长度不同，cache 长度要按每条序列自己算，不要用 batch 里的最大长度去给短序列旋转位置。
+再查 mask。合法前缀上单 token decode 没有未来 key；chunked decode 一次喂多个新 token，就要加上 cache 偏移的因果 mask。把 mask 填成 0 会给未来位置分概率，分块测试能抓住。每层还要独立保存自己的 cache，不能只改最外层。
+
+相关实现问题可看 `openai-rope-offset`、`openai-softmax-bug`。
 
 复杂度：每层不用 cache 时，生成到长度 $t$ 要 $O(t^2 d)$；用 cache 时单步是 $O(t d)$。cache 显存和 $2 L T H_{\mathrm{kv}} d$ 成正比（$L$ 是层数），优化放到后面再谈。
 
-## 时间不够怎么收
+## 正确性通过以后再优化
 
 先保证 greedy 对齐，再提 paged KV、量化 cache 和投机解码的回滚（`openai-speculative-decoding`）。如果面试官追问「为什么 decode 还是慢」，就转到 prefill 和 decode 的计算形态差异，见 `openai-prefill-decode`。
 
 ## 追问
 
-- **和 full attention 差在哪？** 数学上应该完全一致。对不上就是实现 bug，KV cache 不是近似算法。
-- **cache 要不要存 $Q$？** 不用。下一步的 $q$ 只来自新 token。
-- **拒绝草稿后为什么还要动 cache？** 投机解码会把未验证的 token 写进 KV。拒绝后必须截断，否则后面的注意力会看到一段实际上不存在的前缀。
-- **GQA 的 cache shape 是什么？** `[B, H_kv, S, D]`，不是 `[B, H_q, S, D]`。
+**和 full attention 差在哪？**
+数学上应该完全一致。对不上就是实现 bug，KV cache 不是近似算法。
+**cache 要不要存 $Q$？**
+不用。下一步的 $q$ 只来自新 token。
+**拒绝草稿后为什么还要动 cache？**
+投机解码会把未验证的 token 写进 KV。拒绝后必须截断，否则后面的注意力会看到一段实际上不存在的前缀。
+**GQA 的 cache shape 是什么？**
+`[B, H_kv, S, D]`，不是 `[B, H_q, S, D]`。
 
 ## 相关题
 

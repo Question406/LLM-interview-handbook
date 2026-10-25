@@ -4,7 +4,7 @@ section: coding
 order: 27
 level: A
 title: 白板：sliding window 和因果 mask 合成，prefill 与 decode 的 shape
-quick: "位置 $i$ 只看满足 $i-W \\lt j \\le i$ 的 key，窗口外打 $-\\infty$；prefill 偏置是 `[1, 1, T, S]`，decode 是 `[1, 1, 1, S]`，query 下标是 cache 长度。"
+quick: "把因果和窗口两个条件相与：位置 $i$ 只看满足 $i-W \\lt j \\le i$ 的 key，其他位置设成 $-\\infty$。Prefill 偏置是 `[1, 1, T, S]`，decode 只有一个 query，偏置是 `[1, 1, 1, S]`，query 的绝对下标取 cache 长度。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +26,30 @@ sources:
     url: https://arxiv.org/abs/2309.17453
     type: primary
 ---
+
+## 题目描述
+
+生成滑动窗口因果注意力的加性 mask，统一处理 prefill 和单步 decode。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`swa_causal_bias(q_pos,s_len,window)` 返回 `[1,1,T,S]` 的浮点 bias，其中 `q_pos` 是 T 个 query 的绝对位置，S=`s_len`，key 位置依次为 0 到 S-1。window 为正整数，包含当前位置在内；对 query 位置 q，仅当 `q-window < key_position <= q` 时可见。可见位置填 0，其余填负无穷。
+
+`prefill_swa_bias(seq_len,window)` 对完整序列生成 T=S=`seq_len` 的 bias。`decode_swa_bias(cache_len,window)` 的唯一 query 位于 `cache_len`，key 总数为 `cache_len`+1。
+
+### 示例
+
+```text
+decode_swa_bias(cache_len=4,window=2)
+返回形状 [1,1,1,5]，最后一维为 [-inf,-inf,-inf,0,0]。
+prefill_swa_bias(seq_len=2,window=1) 的二维可见矩阵为
+[[0,-inf],[-inf,0]]。
+```
+
+## 解题思路与参考答案
+
+我会先写每个 query 的绝对位置，再把“key 不在未来”和“key 在最近窗口内”相与，得到可见位置。比如窗口 2、query 位置 3，只能看到 key 2 和 3。Decode 复用同一个函数，令 query 位置等于 cache 长度，结果应与 prefill 的最后一行一致。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -78,6 +102,16 @@ def decode_swa_bias(cache_len, window):
     """单步 decode：新 token 的下标是 cache_len，key 长度是 cache_len + 1。"""
     return swa_causal_bias(torch.tensor([cache_len]), cache_len + 1, window)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert prefill.shape == (1, 1, 5, 5)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -156,10 +190,14 @@ Decode 时 $T=1$，`[1, S]` 很小，物化也无所谓。真正省显存的是 
 
 ## 追问
 
-- **窗口外打 $0$ 行不行？** 不行，$0$ 仍会参与 softmax。必须是 $-\infty$，或者在 fused kernel 里直接跳过。
-- **decode 的偏置为什么是 `[1, 1, 1, S]`？** 这一步只有一个 query，head 和 batch 维靠广播。写成 `[1, 1, S, S]` 是把 prefill 的形状照抄过来了。
-- **和 attention sink 一起用怎么写？** 滑窗丢掉远处历史时，开头几个 sink token 要额外标成可见，否则注意力质量会被重新分配，生成质量下降，见 `openai-attention-sink`。
-- **$j=i-W$ 算不算在窗口里？** 和训练时的约定一致就行。Mistral 风格是长度为 $W$、包含当前位置的窗口，即 $j=i-W$ 不可见；单测时用小 $W$ 数一数每行可见的 key 个数。
+**窗口外打 $0$ 行不行？**
+不行，$0$ 仍会参与 softmax。必须是 $-\infty$，或者在 fused kernel 里直接跳过。
+**decode 的偏置为什么是 `[1, 1, 1, S]`？**
+这一步只有一个 query，head 和 batch 维靠广播。写成 `[1, 1, S, S]` 是把 prefill 的形状照抄过来了。
+**和 attention sink 一起用怎么写？**
+滑窗丢掉远处历史时，开头几个 sink token 要额外标成可见，否则注意力质量会被重新分配，生成质量下降，见 `openai-attention-sink`。
+**$j=i-W$ 算不算在窗口里？**
+和训练时的约定一致就行。Mistral 风格是长度为 $W$、包含当前位置的窗口，即 $j=i-W$ 不可见；单测时用小 $W$ 数一数每行可见的 key 个数。
 
 ## 相关题
 

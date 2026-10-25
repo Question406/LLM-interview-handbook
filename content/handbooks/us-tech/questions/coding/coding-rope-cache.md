@@ -4,7 +4,7 @@ section: coding
 order: 21
 level: A
 title: 白板：RoPE 的 cos/sin cache，decode 时怎么 index
-quick: "预计算 `[max_seq, D/2]` 的 $\\cos,\\sin$ 表，用绝对的 `position_ids` 查表；decode 一步的位置是 `cache_len`，只旋转当前的 $q,k$。"
+quick: "先预计算 `[max_seq, D/2]` 的 $\\cos,\\sin$ 表，再用每个 token 的绝对 `position_ids` 查表。Decode 新 token 的位置是 `cache_len`，只旋转当前 $q,k$；历史 K 已经旋转过，不能再做一遍。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,33 @@ sources:
     url: https://arxiv.org/abs/2307.09288
     type: primary
 ---
+
+## 题目描述
+
+实现可复用的 RoPE 三角函数表与旋转接口，同时支持 prefill 和带缓存的 decode 绝对位置编号。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `RopeCache(dim, max_seq=4096, base=10000.0)`：dim 为正偶数，`max_seq` 为正整数、base 为正数。预计算 `[max_seq,dim/2]` 的 cos/sin 表，注册为不写入 checkpoint 的 PyTorch buffer。
+- 表的定义为 `theta[p,j] = p * base**(-2*j/dim)`，`j=0..dim/2-1`；两张表分别是 cos(theta)、sin(theta)。
+- `.at(position_ids) -> (cos,sin)` 接受 `[T]` 或 `[B,T]` 的整数位置，所有位置在 `[0,max_seq)` 内；返回形状为输入前缀加 `[dim/2]` 的两张表。
+- `position_ids_for(cache_len, q_len, batch, device=None)` 返回 `[batch,q_len]` 的整数位置，各行均为 `cache_len..cache_len+q_len-1`。`cache_len` 非负。
+- `apply_rope(x,cos,sin)` 返回与 x 同形状的张量，x 为 `[B,H,T,D]`。cos/sin 为 `[T,D/2]` 或 `[B,T,D/2]`，在 head 维广播。相邻二元组 `(a,b)` 在对应角度下变为 `(a*cos-b*sin, a*sin+b*cos)`。不修改 x。
+
+### 输入输出示例
+
+```text
+position_ids_for(cache_len=3,q_len=2,batch=2) -> [[3,4],[3,4]]
+RopeCache(4,max_seq=8).at([0]) -> (cos=[[1,1]],sin=[[0,0]])
+apply_rope([[[[1,2,3,4]]]],cos,sin) -> [[[[1,2,3,4]]]]
+```
+
+## 解题思路与参考答案
+
+我会把 cos/sin 按绝对位置建成表，prefill 和 decode 都用同一套查表函数。比如 cache 里已有 5 个 token，新 token 就取位置 5 的那一行；如果每一步都从 0 开始，代码能跑，但有缓存和完整前向的结果会不一致。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -97,6 +124,16 @@ def apply_rope(x, cos, sin):
     rotated_odd = x_even * sin + x_odd * cos
     return torch.stack((rotated_even, rotated_odd), dim=-1).flatten(-2)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.equal(positions, torch.tensor([[3, 4], [3, 4]]))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -183,8 +220,10 @@ prefill 时 `cache_len=0`，整段 $Q,K$ 用 $0..T-1$ 旋转，再把 $K,V$ 写�
 
 ## 追问
 
-- **$V$ 要不要用 cos 表旋转？** 不要。RoPE 不旋转 $V$，cache 里的 $V$ 就是内容本身。
-- **cos 表要不要和权重一起存进 checkpoint？** 不必，它由 `dim, base, max_seq` 重算即可。但为长上下文换 base 时，必须和训练时一致。
+**$V$ 要不要用 cos 表旋转？**
+不要。RoPE 不旋转 $V$，cache 里的 $V$ 就是内容本身。
+**cos 表要不要和权重一起存进 checkpoint？**
+不必，它由 `dim, base, max_seq` 重算即可。但为长上下文换 base 时，必须和训练时一致。
 
 ## 相关题
 

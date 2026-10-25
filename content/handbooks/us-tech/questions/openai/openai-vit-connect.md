@@ -4,7 +4,7 @@ section: openai
 order: 28
 level: S
 title: OpenAI：ViT / patch embed 怎么接到 LLM，投影、对齐预训练、分辨率插值
-quick: "投影层把 ViT 的 patch 特征映到 LLM 维度，当普通 token 拼进序列。先只训投影做图文对齐，再做视觉指令微调；换分辨率要插值位置编码再微调，或按原边长切块。"
+quick: "先把 ViT 的 patch 特征投影到 LLM 维度，再作为视觉 token 接入序列；典型公开配方先训练连接器对齐，再做视觉指令微调。比如分辨率从 336 变成 672，patch 网格和位置表都变了，要插值并微调，或按原训练边长切块；不能只改 image_size。"
 tags:
   - OpenAI
   - ViT
@@ -32,11 +32,13 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+ViT 接 LLM，先把 patch 特征映射成语言模型能接收的维度，再让图文训练建立语义对齐。比如图像分辨率提高，patch 数也会增加，投影层只能改特征宽度，无法替你处理网格位置和上下文成本。
+
+
 
 OpenAI 没把 GPT-4o 的视觉塔图纸放出来。面试要的是你能从公开配方搭一条 ViT → 投影 → LLM 的处理流程，并说清哪一段冻、哪一段更新、分辨率变了位置编码怎么动。原生端到端见 `openai-mm-gpt`；这题是连接器。LLaVA / CLIP / ViT / Flamingo 是能写在白板上的来源，别说成「OpenAI 内部就是 LLaVA」。
 
-## 投影：shape 先对，语义后对
+## 先接好特征，再训练对齐
 
 ViT：图 $H\times W$，patch $P$，得到 $N=(H/P)\times(W/P)$ 个 patch，可选 CLS。每个 patch 线性 embed 到 $D_{\mathrm{vis}}$，加二维展平后的位置编码，过 Transformer，取最后一层 patch 特征 $Z\in\mathbb{R}^{N\times D_{\mathrm{vis}}}$（有人丢 CLS，有人留）。
 
@@ -57,9 +59,9 @@ def project_patches(z, w1, b1, w2, b2):
     return h @ w2.T + b2
 ```
 
-常见误区是：把 CLIP 的图文对比向量（一张图一个）直接当视觉 token 序列。对比学习的全局向量没有 patch 网格，读不了「左上角的数字」。要用 ViT 的 patch 特征，或至少 spatial feature map。
+要读取「左上角的数字」这类空间信息，需要 ViT patch 特征或 spatial feature map；一张图一个的 CLIP 全局向量没有保留完整 patch 网格。
 
-## 对齐预训练：先对准空间，再听指令
+
 
 典型两阶段（LLaVA）：
 
@@ -82,7 +84,11 @@ AnyRes / 动态分辨率还要把不同 $N$ 的图 pack 进同一 batch，paddin
 
 ## 追问
 
-- **投影维为什么常 $D_{\mathrm{vis}}\to D_{\mathrm{lm}}$ 而不是反过来？** 要进 LM 残差，必须是 $D_{\mathrm{lm}}$。压回 $D_{\mathrm{vis}}$ 再让 LM 自己涨维，等于没对齐。
-- **Perceiver 固定 $K$ 能不能随分辨率加大 $K$？** 能，但那是新超参，要对齐阶段重训。宣传「任意分辨率、token 数不变」时，空间信息在压缩里丢。
-- **RoPE 怎么加到视觉 token 上？** 拼进 LM 之后走 LM 的位置；视觉塔内部仍用 ViT 的 2D 位置。两套不要混成一个下标。LM 侧下标接在文本后面，见 `openai-rope-offset` 那种 off-by-one。
-- **只训投影够不够上产品？** 做 caption 原型够。要指令遵循、拒答、工具，必须有视觉指令数据；对齐阶段不会凭空出现。
+**投影维为什么常 $D_{\mathrm{vis}}\to D_{\mathrm{lm}}$ 而不是反过来？**
+要进 LM 残差，必须是 $D_{\mathrm{lm}}$。压回 $D_{\mathrm{vis}}$ 再让 LM 自己涨维，等于没对齐。
+**Perceiver 固定 $K$ 能不能随分辨率加大 $K$？**
+能，但那是新超参，要对齐阶段重训。宣传「任意分辨率、token 数不变」时，空间信息在压缩里丢。
+**RoPE 怎么加到视觉 token 上？**
+拼进 LM 之后走 LM 的位置；视觉塔内部仍用 ViT 的 2D 位置。两套不要混成一个下标。LM 侧下标接在文本后面，见 `openai-rope-offset` 那种 off-by-one。
+**只训投影够不够上产品？**
+做 caption 原型够。要指令遵循、拒答、工具，必须有视觉指令数据；对齐阶段不会凭空出现。

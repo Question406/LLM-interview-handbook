@@ -4,7 +4,7 @@ section: coding
 order: 43
 level: A
 title: 白板：DPO 的梯度写成加权 logprob，权重是什么，什么时候大
-quick: "DPO 的 policy 梯度等于加权 logprob 差：chosen 权重 $+c$、rejected 权重 $-c$，$c=\\mathrm{sg}(\\beta\\sigma(-z))$；排反时权重大，排对时趋于 0。"
+quick: "把 DPO 写成加权 logprob 时，chosen 和 rejected 的权重分别为 $+c$、$-c$，其中 $c=\\mathrm{sg}(\\beta\\sigma(-z))$。当前排反的偏好对权重大，已经排对时权重趋于 0；替身只保证梯度相同。"
 tags:
   - 完整编程练习
   - Coding
@@ -19,6 +19,28 @@ sources:
     url: https://arxiv.org/abs/2305.18290
     type: primary
 ---
+
+## 题目描述
+
+实现基于序列对数概率的 DPO 损失，以及与其具有相同策略梯度的加权损失。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`seq_logprob(tok_logp,mask)` 接收 `[B,T]` 的 token 对数概率及同形有效 token mask，返回 `[B]` 的逐序列有效 token 对数概率之和，不取长度平均。
+
+`dpo_loss(pol_w,pol_l,ref_w,ref_l,mask_w,mask_l,beta=0.1)` 与 `dpo_loss_weighted(...)` 返回标量。w、l 分别为偏好与非偏好回答，二者长度可不同；策略和参考模型对应回答的形状一致。beta>0，参考模型和 mask 不参与求导。令各序列和为 $P_w$、$P_l$、$R_w$、$R_l$，`z=beta*((P_w-R_w)-(P_l-R_l))`。DPO 的目标值是 `-log(sigmoid(z))` 的 batch 均值；加权目标是 `-w*(P_w-P_l)` 的均值，其中 `w=beta*sigmoid(-z)` 作为停止梯度的权重。两目标值可以不同，但对策略概率的梯度须相同。
+
+### 示例
+
+```text
+B=T=1，所有 mask 为 True，beta=1。
+四组 logp 都为 0：DPO=0.69314718，加权损失=0。
+仅 pol_w=1，其余为 0：DPO≈0.31326169，加权损失≈-0.26894142。
+```
+
+## 解题思路与参考答案
+
+DPO 可以写成梯度等价的加权 logprob：先从 loss $-\log\sigma(z)$ 推出每对样本的权重，再把权重固定下来反传。对 $z$ 求导得 $-\sigma(-z)$，而 $z$ 对 policy 的梯度是 $\beta(\nabla\log\pi_w-\nabla\log\pi_l)$。所以每对样本的梯度等于 $-\beta\sigma(-z)$ 乘以“chosen 序列 logprob 减 rejected 序列 logprob”的梯度。
 
 ## 完整编程练习（手册重构版）
 
@@ -40,8 +62,6 @@ z > 0  -> dpo_loss < ln 2      # chosen 相对 reference 涨得比 rejected 多
 ```
 
 ### 解题思路与正确性
-
-DPO loss 是 $-\log\sigma(z)$。对 $z$ 求导得 $-\sigma(-z)$，而 $z$ 对 policy 的梯度是 $\beta(\nabla\log\pi_w-\nabla\log\pi_l)$。所以每对样本的梯度等于 $-\beta\sigma(-z)$ 乘以“chosen 序列 logprob 减 rejected 序列 logprob”的梯度。
 
 把系数 $c=\beta\sigma(-z)$ 放在 `no_grad` 里算出来当常数，再构造 $-c\,(\log\pi_w-\log\pi_l)$，它对 policy 的梯度就和 DPO 一样。两边都对 batch 求平均，测试直接比较两种写法对 `pol_w`、`pol_l` 的梯度。
 
@@ -81,6 +101,16 @@ def dpo_loss_weighted(pol_w, pol_l, ref_w, ref_l, mask_w, mask_l, beta=0.1):
     margin = seq_logprob(pol_w, mask_w) - seq_logprob(pol_l, mask_l)
     return -(weight * margin).sum() / batch_size
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(expected, actual, atol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -177,11 +207,14 @@ $\sigma(-z)$ 可以读成模型当前“把这一对排反了”的概率。$z \
 
 ## 追问
 
-**chosen 的 logprob 为什么也会下降？** 梯度只约束 $\log\pi_w - \log\pi_l$ 这个差，没有约束 $\log\pi_w$ 本身。两者一起降、rejected 降得更快，loss 照样在下降。常见的补救是在 chosen 上加一项监督微调（SFT）loss，在加权形式里就是给 chosen 的 token 权重再加一个正常数。
+**chosen 的 logprob 为什么也会下降？**
+梯度只约束 $\log\pi_w - \log\pi_l$ 这个差，没有约束 $\log\pi_w$ 本身。两者一起降、rejected 降得更快，loss 照样在下降。常见的补救是在 chosen 上加一项监督微调（SFT）loss，在加权形式里就是给 chosen 的 token 权重再加一个正常数。
 
-**$\beta$ 大小有什么影响？** $\beta$ 同时出现在 $z$ 里和权重前面。$\beta$ 大时 $z$ 很快饱和，权重很快掉到 0，模型离参考模型不远就停了；$\beta$ 小时要走很远才饱和。
+**$\beta$ 大小有什么影响？**
+$\beta$ 同时出现在 $z$ 里和权重前面。$\beta$ 大时 $z$ 很快饱和，权重很快掉到 0，模型离参考模型不远就停了；$\beta$ 小时要走很远才饱和。
 
-**IPO 呢？** 记 $h = \Delta_w - \Delta_l$，其中 $\Delta=\log\pi_\theta(y\mid x)-\log\pi_{\mathrm{ref}}(y\mid x)$。IPO 的 loss 是 $\big(h - \frac{1}{2\tau}\big)^2$，梯度系数是 $-2\big(h - \frac{1}{2\tau}\big)$，对 $h$ 是线性的：间隔不够时为正，把 chosen 往上推；间隔超过 $\frac{1}{2\tau}$ 时变成负的，往回拉。DPO 的系数永远为正，只是趋于 0。见 `align-ipo`。
+**IPO 呢？**
+记 $h = \Delta_w - \Delta_l$，其中 $\Delta=\log\pi_\theta(y\mid x)-\log\pi_{\mathrm{ref}}(y\mid x)$。IPO 的 loss 是 $\big(h - \frac{1}{2\tau}\big)^2$，梯度系数是 $-2\big(h - \frac{1}{2\tau}\big)$，对 $h$ 是线性的：间隔不够时为正，把 chosen 往上推；间隔超过 $\frac{1}{2\tau}$ 时变成负的，往回拉。DPO 的系数永远为正，只是趋于 0。见 `align-ipo`。
 
 ## 相关题
 

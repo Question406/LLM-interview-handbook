@@ -4,7 +4,7 @@ section: microsoft
 order: 615
 level: S
 title: "Microsoft AI / Copilot：MAI AI Infra：roofline、CUDA 与精度转换梯度"
-quick: "先用 FLOPs 和访存量判断 matmul 是计算受限还是带宽受限，再讨论布局与融合；FP32 转 FP16 的 cast 在数学上让梯度原样通过，但 FP16 范围窄，小梯度会下溢、大值会溢出。"
+quick: "我会先把计算量除以算力、最少访存量除以带宽，用较大的耗时判断 matmul 瓶颈，再谈布局和融合。FP32 转 FP16 的 cast 在反向计算中让梯度通过，但小梯度会下溢、大值会溢出，因此还要讨论 loss scaling 和 FP32 累加、主权重。"
 companies:
   - microsoft
 tags:
@@ -23,6 +23,31 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个矩阵乘法 roofline 估算器和支持不整除分块的矩阵乘法。估计基于给定峰值参数与理想访存量，不要求实测特定硬件。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `roofline(m,k,n,flops_per_s,bytes_per_s,bytes_per_element=2)` 估计 A[m,k] 与 B[k,n] 相乘并写出 C[m,n] 的代价，返回字典，键为 `compute_seconds`、`memory_seconds`、`lower_bound`、`arithmetic_intensity`。
+- 计算量约定为 2*m*k*n FLOPs；理想数据量为 `bytes_per_element`*(m*k+k*n+m*n) 字节，即 A/B 各读一次、C 写一次。`compute_seconds` 是纯计算耗时，`memory_seconds` 是纯传输耗时，`lower_bound` 是两者取大的理想下界，`arithmetic_intensity` 是 FLOPs/字节。
+- 各维度和峰值参数均为正数；峰值是调用方假设，不代表某种精度下的硬件保证。
+- `gemm_blocked(a,b,block=32)` 输入二维有限浮点数组 `[m,k]`、`[k,n]`，返回与 a@b 一致的 `[m,n]`，不修改输入。block>=1，维度<=256，边缘块可以不足 block。
+
+### 输入输出示例
+
+```text
+roofline(2,2,2,1e9,1e9,2)
+-> compute_seconds=16e-9, memory_seconds=24e-9, lower_bound=24e-9, arithmetic_intensity=2/3
+gemm_blocked([[1,2]],[[3],[4]],block=1) -> [[11]]
+```
+
+## 解题思路与参考答案
+
+我会把性能估算和数值精度分开回答：先用 roofline 判断瓶颈，再检查 cast 后的表示范围。例如 $10^{-9}$ 在 FP32 中能表示，转成 FP16 就成了 0；反向规则让梯度通过，也补不回已经丢失的数值。
+
 ## 题目
 
 读一段 Transformer 代码，估算其中 matmul 的耗时并实现一个 kernel，然后分析把残差从 FP32 转成 FP16 时，梯度在 cast 这一步怎么传、会出什么数值问题。
@@ -38,7 +63,7 @@ sources:
 - 数学上，cast 是恒等映射，反向时梯度原样穿过去（只是换了 dtype）。
 - 数值上，FP16 的表示范围很窄。最小的正规格化数约 $6 \times 10^{-5}$，再小只能靠次正规数撑到约 $6 \times 10^{-8}$，更小的梯度直接变成 0；最大值约 65504，过大的激活或梯度会溢出成 inf。尾数只有 10 位，大量小数累加时还会丢精度，所以累加通常在 FP32 里做。
 
-这就是混合精度训练要做 loss scaling、并保留 FP32 主权重的原因。性能预测要写明硬件和并行假设，不能只给一个数字。
+所以混合精度训练会做 loss scaling，并保留 FP32 主权重。性能预测则要附上硬件和并行假设，单独报一个耗时没有可比性。
 
 ## 完整编程练习（手册重构版）
 
@@ -116,6 +141,16 @@ def gemm_blocked(a, b, block=32):
                 )
     return out
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.isclose(estimate["compute_seconds"], 16e-9)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

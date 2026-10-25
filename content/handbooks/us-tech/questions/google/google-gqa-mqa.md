@@ -4,10 +4,7 @@ section: google
 order: 2
 level: A
 title: Google：MHA、MQA、GQA 怎么选？KV 显存差多少？
-quick: >-
-  MHA 是 $H$ 组独立 K/V；MQA 全 query head 共用 1 组 K/V；GQA 是 $H_{\mathrm{kv}}$ 组，$1 <
-  H_{\mathrm{kv}} < H$。Decode 显存和带宽跟 $H_{\mathrm{kv}}$ 成正比。Gemini / PaLM 一类推理优化默认从
-  MQA/GQA 讲起，不要只背公式。
+quick: "MHA 为每个 query head 保留独立 K/V，MQA 让所有 query head 共用一组 K/V，GQA 则用 $H_{\\mathrm{kv}}$ 组，满足 $1 < H_{\\mathrm{kv}} < H$。Decode 的 KV 显存和读取带宽都与 KV head 数成正比，我会根据质量和目标并发选择共享程度。"
 tags:
   - Google
   - GQA
@@ -26,11 +23,9 @@ sources:
     type: primary
 ---
 
-Google 论文把 MQA 做出来，GQA 是折中。国内也高频，系统写法见 `arch-gqa`。美国 Google / DeepMind 推理岗会把它问成「你怎么给 decode 降 KV」，别答成名词对比。
+要降低 decode 的 KV 开销，可以让多个 query head 共享 K/V。MQA 共享得最彻底，所有 query head 共用一组；GQA 保留几组，在质量和带宽之间折中。比如把 32 组 KV 减到 8 组，cache 约变成原来的四分之一。MQA 来自 Google 论文，系统写法也见 `arch-gqa`。
 
-## 三档
-
-注意力仍是 $QK^\top V$。变的是 $K,V$ 的 head 数。
+注意力仍是 $QK^\top V$，共享改变的是 $K,V$ 的 head 数。先算一条请求的 KV 占用：
 
 $$
 \mathrm{KV\ bytes} \approx 2 \cdot L \cdot T \cdot H_{\mathrm{kv}} \cdot d_{\mathrm{head}} \cdot \mathrm{bytes}
@@ -44,19 +39,22 @@ $L$ 层数，$T$ 上下文。$H_q$ 只影响当前 token 的 Q 投影，几乎�
 
 训练时 GQA 要对齐：同一组 query head 共享 KV 投影。从已有 MHA checkpoint 升 GQA，GQA 论文用 mean pool 已有 KV heads 初始化，比随机更好。
 
-## 面试怎么落到 Gemini 式系统
-
 先问服务的是 输入预填充（prefill，即处理输入并建立缓存） 还是 逐 token 生成（decode）。Prefill 是计算密集，MQA 省不了多少 FLOPs；decode 是内存密集，MQA/GQA 是重要的优化手段。再问上下文：8k 和 1M 的 KV 差两个数量级，GQA + 量化 cache 才够塞。
 
 MQA 掉点通常来自 KV 表达不够，不是 softmax 写错。补救：加 $H_{\mathrm{kv}}$、加窗口注意力、加 MLA 一类低秩 KV（那是 DeepSeek 的另一条线，见 `kuaishou-gqa-mqa-mla`）。Google 面到这就停在 GQA 也可以。
 
-实现注意：attention kernel 里要把 $K$ repeat 成 $H_q$ 组，或走 GQA 专用 kernel。形状不对时，head 维的广播会出错。手写一步 decode 见 `code-kv-cache-step`。
+实现时，attention kernel 里要把 $K$ repeat 成 $H_q$ 组，或走 GQA 专用 kernel。形状不对时，head 维的广播会出错。手写一步 decode 见 `code-kv-cache-step`。
 
 ## 追问
 
-- **训练也要用 MQA 吗？** 可以全程 GQA；也可以 MHA 训练、推理再 merge。后者有转换误差，要在验证集上量。
-- **和多 query 的「query」混淆？** MQA 的 query 仍是多 head，少的是 key/value head。
-- **TPU vs GPU？** 带宽/计算比不同，但 KV 随 $T$ 线性涨这件事不变。TPU 上更要关心 padding 和 SPMD 切分，那是另一题。
+**训练也要用 MQA 吗？**
+可以全程 GQA；也可以 MHA 训练、推理再 merge。后者有转换误差，要在验证集上量。
+
+**和多 query 的「query」混淆？**
+MQA 的 query 仍是多 head，少的是 key/value head。
+
+**TPU vs GPU？**
+带宽/计算比不同，但 KV 随 $T$ 线性涨这件事不变。TPU 上更要关心 padding 和 SPMD 切分，那是另一题。
 
 ## 相关题
 

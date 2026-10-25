@@ -4,7 +4,7 @@ section: openai
 order: 1
 level: S
 title: OpenAI：给一份带 bug 的 Transformer，怎么查？KV cache 怎么加？
-quick: "先固定 greedy + eval，按 mask、softmax 轴、缩放、位置偏移、target shift 五类查 bug；再加 KV cache，保证有/无 cache 的输出逐 token 一致。"
+quick: "先用 eval、greedy 和固定 seed 得到可复现结果，再检查 mask、softmax 轴、缩放、位置偏移和 target shift。修好后再加 KV cache，并让有/无 cache 输出逐 token 一致；比如 cache 路径每步误用位置 0，shape 虽然正常，结果仍会偏。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -26,6 +26,38 @@ sources:
     url: https://www.1point3acres.com/interview/thread/1134115
     type: candidate-first-hand
 ---
+
+## 题目描述
+
+完成一个可用于 Transformer 正确性排查的因果多头注意力实现。给定投影权重、输入、历史 KV 和有效 key 信息，返回注意力输出与更新缓存；全量计算、增量解码和前缀复用必须遵守相同语义。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None, key_valid=None, use_rope=False)`：用 NumPy 写因果多头注意力，返回 `(output, new_cache)`。其数学输出为各 query 对可见 key 的缩放点积 softmax 加权 V，再按 head 拼接并右乘 `wo`；分数除以 `sqrt(d)`。query head h 使用 KV head `floor(h/(heads/Hkv))`。
+- `rope(x, start)`：对 `[B, H, T, d]` 的张量做旋转位置编码，第 `t` 个 token 的绝对位置是 `start + t`。
+- 形状：`x` 是 `[B, T, D]`，`wq`、`wo` 是 `[D, D]`，`wk`、`wv` 是 `[D, Hkv * d]`，其中 `d = D / heads`、`Hkv = kv_heads`（默认等于 `heads`）。`heads` 必须整除 `D`，也必须是 `Hkv` 的整数倍。
+- `cache` 是一对 `[B, Hkv, prefix, d]` 的 K/V，只存紧凑的 KV heads。返回的新 cache 长度是 `prefix + T`。
+- `key_valid` 是 `[B, prefix + T]` 的布尔数组，True 表示这个 key 可见。某个 query 的 key 全被屏蔽时，输出 0，不能出现 NaN。
+- 打开 RoPE 时 `d` 必须是偶数。当前这段 token 的位置从 `prefix` 开始编号；cache 里的旧 K 已经旋转过，不能再转一次。
+- 没有 dropout 和 bias。输入有限，B ≤ 8、T ≤ 256、D ≤ 128。假定形状满足上述条件。
+
+- `output` 形状为 `[B,T,D]`；query 绝对位置为 `prefix+t`，只允许访问 key 下标不超过该值且 `key_valid=True` 的位置。投影采用右乘权重，不转置传入矩阵。
+- RoPE 对相邻坐标对 `(x[2i],x[2i+1])` 作角度 `position*10000^(-2i/d)` 的二维旋转，即 `(a*cos(theta)-b*sin(theta), a*sin(theta)+b*cos(theta))`。只旋转 Q 和 K，V 不旋转。
+### 示例
+
+```text
+单 head，wq = wk = 0（所以 Q = K = 0），wv = wo = I，x = [[[2, 4], [6, 8]]]（B=1）
+query 0 只能看 key 0             -> [2, 4]
+query 1 对 key 0、1 均匀平均      -> [4, 6]
+完整 output = [[[2,4],[4,6]]]，new_cache 的 K/V 形状均为 [1,1,2,2]
+
+任意固定权重下：
+mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
+```
+
+## 解题思路与参考答案
 
 ## 完整编程练习（手册重构版）
 
@@ -174,6 +206,16 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     return output, (k, v)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(pieces, axis=1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -292,7 +334,7 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 - 来源：Exponent 2025 候选人报告；一亩三分地 MLE phone screen 摘要。
 - 题面大意：给一份约 300 行的 Transformer，四个标注区间里各有一个 bug。修好之后实现 KV cache。几乎不给提示。
 
-这题很容易一上来就去改「感觉不对」的几行。OpenAI 这一轮要的是可复现的定位过程：先让生成结果确定下来，再按张量约定把 bug 分类。KV cache 既是加分项也容易翻车，位置偏移写错时，结果会悄悄地和 full attention 对不上。
+我会先让结果可复现，再按张量约定定位 bug，修完后才加 KV cache。比如位置偏移写错，代码不报错，cache 路径却会悄悄偏离完整前向；固定 greedy 和 eval 后，逐 token 对照才能判断改动是否正确。
 
 ## 先固定观测，再按五类查
 
@@ -308,7 +350,7 @@ shape 断言比读代码快：decode 时 `q` 是 `[B,H,1,D]`，`k` 是 `[B,H,S,D
 
 公开报告里的四个区间，大致落在位置编码、因果 mask、输出投影和训练循环这几类。不要把时间花在没有标注的「风格重构」上。
 
-## KV cache：先讲正确性不变量，再讲省算力
+## 用同一前缀验证 KV cache
 
 prefill 一次写下整段的 $K,V$。decode 时只算当前的 $q_t,k_t,v_t$，沿时间维接到 cache 后面，再用 $q_t$ 和所有历史 key 做点积。单步成本从 $O(t^2 d)$ 降到 $O(t d)$。张量步骤见 `code-kv-cache-step`，显存公式见 `arch-kv-cache`。
 
@@ -320,9 +362,12 @@ cache 要贯穿每一层，不能只改最外层的 attention。GQA 时 cache �
 
 ## 追问
 
-- **为什么 mask 不能用 0？** $\mathrm{softmax}([s, 0])$ 仍会给未来位置正的权重。必须填 $-\infty$，softmax 之后才是 0。
-- **cache 显存怎么降？** 显存和 $H_{\mathrm{kv}}\cdot T\cdot d$ 成正比。可以用 GQA/MQA、量化、paged 共享，见 `arch-gqa`。
-- **投机解码（speculative decoding）和 cache 怎么配合？** 拒绝草稿 token 时，要把 cache 回滚到验证通过的前缀，不能只改输出文本。
+**为什么 mask 不能用 0？**
+$\mathrm{softmax}([s, 0])$ 仍会给未来位置正的权重。必须填 $-\infty$，softmax 之后才是 0。
+**cache 显存怎么降？**
+显存和 $H_{\mathrm{kv}}\cdot T\cdot d$ 成正比。可以用 GQA/MQA、量化、paged 共享，见 `arch-gqa`。
+**投机解码（speculative decoding）和 cache 怎么配合？**
+拒绝草稿 token 时，要把 cache 回滚到验证通过的前缀，不能只改输出文本。
 
 ## 相关题
 

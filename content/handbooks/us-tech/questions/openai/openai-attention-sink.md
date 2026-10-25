@@ -4,7 +4,7 @@ section: openai
 order: 22
 level: A
 title: OpenAI：滑窗 / streaming attention 为什么开头几个 token 不能扔
-quick: "softmax 必须归一，用不掉的注意力会堆到一直可见的开头 token 上。滑窗把它们丢掉，分布被重写，PPL 就崩。StreamingLLM 保留约 4 个 sink 加最近窗口。"
+quick: "流式生成时可以保留最初几个 attention sink，再加最近窗口，避免驱逐句首后注意力分布突然变化。StreamingLLM 默认保留 4 个 sink，显存保持在 $O(k+W)$；中间事实已被丢掉，长距离检索仍需要其他记忆。"
 tags:
   - OpenAI
   - Attention
@@ -29,49 +29,36 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+对长度 $T$ 的流式生成，我会保留最初 $k$ 个 attention sink，再保留最近 $W$ 个 token 的 KV。比如问题只依赖最近两句，满注意力训练的模型删掉句首后却立刻输出异常，这通常不能只用“忘了早期事实”解释：那些位置承担了稳定注意力分布的作用。
 
-Serving 想做无限长对话：KV cache 不能随 $T$ 线性涨到爆。直觉是滑窗：只留最近 $W$ 个 $K,V$。对训练时看得到全文的模型，这个直觉是错的。StreamingLLM（Xiao et al.）把现象明确固定下来：丢掉句首几个 token 之后，即使窗口里还有很多最近上下文，困惑度也会出现数值异常。OpenAI 的推理岗会把它和 KV cache 实现放在一起问，cache 形状见 `openai-kv-cache-impl`。
-
-这不是「开头语义更重要所以不能扔」。很多 sink 是 `bos` 或几乎没有词义的占位。这些位置接收了其他 key 不需要的注意力质量，删掉后会改变 softmax 的分配。
-
-## 为什么质量和会涌向位置 0
-
-第 $t$ 个 query 的注意力是
+StreamingLLM（Xiao et al.）系统展示了这个现象。很多 sink 是 `bos` 或没有多少词义的占位，关键在位置一直可见。第 $t$ 个 query 的注意力是
 
 $$
 a_t = \mathrm{softmax}\bigl(q_t K_{0:t}^\top / \sqrt{d_k}\bigr),\qquad \sum_s a_{t,s}=1.
 $$
 
-当前 token 并不需要把质量认真分给所有历史。没有额外的「off」logit 时，用不掉的质量必须落到某个 key 上。训练里位置 0 几乎对每个 query 可见，梯度也稳定，于是前几列变成全局的 dump。注意力图上你会看到：深层、头的后半，初始 token 吃掉很大一块质量，中间 token 反而淡。
+softmax 要让总和为 1，没有额外“off”logit 时，当前 query 用不到的注意力质量仍得落到某个 key。训练中位置 0 几乎对所有 query 可见、梯度稳定，前几列就承担了这个作用。注意力图里，深层及头的后半可看到初始 token 占很大质量，中间位置较淡。
 
-滑窗若从 cache 里删掉 $0..t-W$，等于突然拿走 dump。softmax 把那块质量重新分给窗口内还在的 key，相对强度全变，$v$ 的加权和不是「略少一点历史」，是另一种分布。所以失败模式不是「早期事实忘了」，是立刻胡言，哪怕问题只依赖最近两句。
+从 cache 删除 $0..t-W$ 后，这些质量重新分给窗口里的 key，$v$ 的加权和随之改变，哪怕最近上下文足够，困惑度也可能异常。StreamingLLM 默认保留 $k=4$ 个初始 sink，第一个尤其关键，再加最近 $W$ 个 KV，中间丢弃，显存由 $O(T)$ 变为 $O(k+W)$。
 
-StreamingLLM 的修法很土，也因此好记：
+这个设计维持局部生成稳定，中间事实既然不在 cache，就无法再读出第 100 万个 token 的内容。长距离检索需要长窗训练、RAG 或其他记忆。Mistral 在训练时就用 SWA，窗口外的可见性假设不同，窗口内也可能有局部 sink；开始设计前要先问 checkpoint 是满注意力训练还是窗口训练。
 
-- cache 里永远留 $k$ 个 sink（论文默认 $k=4$，第一个尤其关键）；
-- 再留最近 $W$ 个 token 的 KV；
-- 中间的全部丢掉。
+位置处理也要明确。按本题给定的实现约定，留下的 key 使用原绝对位置做 RoPE；重新编成 $0..W-1$ 会改变相对差 $m-n$，即使 shape、归一化和范数正常，输出也对不齐。sink 的 $K,V$ 沿时间维放在窗口前，key 长 $k+W$，decode query 长 1。sink、窗口和当前 token 按时间顺序拼好，就能沿用因果 mask。
 
-显存从 $O(T)$ 变成 $O(k+W)$。这不是把窗口训到无限长，也不是针在干草堆里还能抄出第 100 万个 token 的事实。它保证流式生成不崩。真要长距离检索，还得靠训练长窗、检索增强生成（RAG） 或其它记忆，见 `openai-long-ctx-train`。
-
-和训练时就用滑窗（Mistral 的 SWA）不是同一件事。那种模型从没假设能看见无限过去，窗口外本来就没有 dump 到句首的契约；即便如此，窗口内仍可能出现局部 sink。面试先问：这个 checkpoint 是满注意力训的，还是窗口训的。
-
-## 位置编号不要跟着窗口重写
-
-丢掉中间 KV 之后，剩下的 key 仍应带着原来的绝对位置去做 RoPE。若把窗口重新编成 $0..W-1$，相对差 $m-n$ 全变，和 `openai-rope-offset` 同一类 silently wrong：shape 对、softmax 仍归一、输出范数正常，只是和「不重编号」对不齐。StreamingLLM 明确保留初始位置下标。
-
-实现上 sink 的 $K,V$ 沿时间维拼在窗口前面，attention 的 key 长度是 $k+W$（逐 token 生成（decode） 一步时 query 长为 1）。因果性：sink 在过去，窗口是最近过去，当前 token 在末尾，不需要新发明一种 mask，只要 concat 顺序对。
-
-常见误区是：把 sink 理解成「重要 prompt 要 pin 住」。系统提示当然可以 pin，但 StreamingLLM 的 $k=4$ 即使不是系统提示也有效；反过来，只 pin 长系统提示而丢掉真正的位置 0，照样可能崩。另一个变体是给 softmax 加一个常驻的 sink logit（off-by-one 一类），让质量可以倒向「虚无」。那是改函数，不是改 cache 驱逐。可以说，但要标明不是 StreamingLLM 原文的驱逐策略。
+pin 系统提示不能替代保留初始 sink：$k=4$ 即使没有系统提示也有效，长系统提示被保留而位置 0 被丢弃仍可能出问题。给 softmax 常驻 sink logit、让质量流向“虚无”的 off-by-one 一类变体，改变的是函数，需与 StreamingLLM 的 cache 驱逐方案分开讲。这是公开系统题，不代表某次 OpenAI onsite 原题。
 
 ## 追问
 
-- **$k=1$ 够不够？** 往往第一个 token 已经是主 sink，论文用 4 更稳。要看注意力图，不要口头保证。
-- **能和外推 RoPE 一起用吗？** 能，但是两件事：sink 管驱逐后分布还合不合法；RoPE 基频管距离编码。先保证不重编号。
-- **输入预填充（prefill，即处理输入并建立缓存） 很长怎么滑？** 仍然保留 sink + 尾部窗口；中间 prefill 的 KV 可以不留。这和 paged attention 的块分配正交。
-- **为什么说不是长上下文训练？** 中间事实已经不在 cache 里，模型不可能读到。它只保证局部生成的注意力还像训练时那样有垃圾桶。
+**只留 $k=1$ 行吗？**
+第一个通常是主 sink，论文用 4 更稳，具体仍要看注意力图。
 
-## 相关题
+**能和 RoPE 外推一起用吗？**
+可以。sink 管驱逐后的分布，RoPE 基频管距离编码，位置处理先保证一致。
 
-- [[coding-rope-cache]]：RoPE 的 cos/sin 表按绝对位置查，是「不重编号」在代码里的落点。
+**很长的 prefill 怎么处理？**
+保留初始 sink 和尾部窗口，中间 KV 可以不保存；这与 PagedAttention 的块分配分开处理。
+
+**为什么不等于长上下文训练？**
+中间内容已经不可见，只维持局部注意力的稳定，无法恢复被删的事实。
+
+相关：`openai-kv-cache-impl`、`openai-long-ctx-train`、`openai-rope-offset`、[[coding-rope-cache]]（代码里按绝对位置查 cos/sin 表）

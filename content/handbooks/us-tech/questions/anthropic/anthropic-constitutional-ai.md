@@ -4,7 +4,7 @@ section: anthropic
 order: 3
 level: S
 title: Anthropic：Constitutional AI 和 RLHF 差在哪？监督从哪来？
-quick: "基于人类反馈的强化学习（RLHF） 的偏好来自人；CAI 用一份书面 constitution，让模型自己批评 / 改写，再对 AI 反馈做 强化学习（RL）（RLAIF）。人从逐条打偏好，改成写原则和抽查。它不取消人，也不等于「没有奖励模型」。"
+quick: "RLHF 通常由人给回答偏好；CAI 让模型按人写的 constitution 批评、改写，再用 AI 比较产生偏好，训练偏好模型并做 RLAIF。人的工作转向原则设计、反例和抽查，偏好模型与强化学习仍然存在。"
 tags:
   - Anthropic
   - Constitutional AI
@@ -23,18 +23,13 @@ sources:
     type: primary
 ---
 
-Anthropic 研究 / 对齐岗会把这篇当背景，不一定照读论文提问。和 OpenAI InstructGPT 对照着讲最清楚：人都在环里，但人做的事从「每条偏好」变成「原则 + 抽查」。基于人类反馈的强化学习（RLHF） 细节见 `openai-instructgpt-kl` 和 `pt-rlhf-why-reverse-kl`。
+CAI 与 RLHF 的主要区别在反馈从哪里来。RLHF 由人逐条比较回答，CAI 由人先写原则，再让 AI 按原则批评、改写和比较。比如一条回答太容易拒绝，constitution 就需要包含避免过度拒答的要求，反馈模型也要据此判断。
 
-## 两段：SL 批评改写，再 RLAIF
+## 原则怎样变成训练信号
 
-论文流程：
+论文先做监督阶段：模型读一条有害或越界回答，按 constitution 批评，再改写，用这些改写结果做 SL，让策略更无害且仍然有用。然后进入 RL 阶段，由模型按原则比较两条回答，产生偏好数据，训练偏好模型，再用 PPO 更新策略，这一阶段就是 RLAIF。
 
-1. **监督阶段。** 有害或越界的回答，模型按 constitution 条款批评自己，再改写成更无害的版本。用这些改写做 SL，得到更无害但仍有用的策略。
-2. **强化学习（RL） 阶段。** 用模型（可另有一套）按同一套原则比较两条回答，产生偏好，训偏好模型，再 PPO。这就是 RLAIF：反馈来自 AI，原则来自人。
-
-Constitution 是可版本化的规则列表（人权、非歧视、避免过度拒绝、尊重法律等），不是一句「要无害」。条款会冲突：无害 vs 有帮助。面试要能举一条冲突并说怎么打破：通常无害优先，但过度拒绝要单独写条款压回去。Claude 公开 constitution 就是给人审的，不是隐藏 system 输入提示（prompt）。
-
-## 和 RLHF 比
+Constitution 是可版本化的条款列表，包括人权、非歧视、尊重法律、避免过度拒绝等。原则会冲突，例如有帮助与无害，通常优先无害，同时用单独条款限制过度拒绝。公开 constitution 也供人审查，区别于隐藏的 system prompt。
 
 | | RLHF (InstructGPT) | CAI |
 | --- | --- | --- |
@@ -43,12 +38,19 @@ Constitution 是可版本化的规则列表（人权、非歧视、避免过度�
 | 主要风险 | 标注员偏好、讨好 | 模型自嗨、条款漏洞、过度拒绝 |
 | 规模 | 标注吞吐限制 | 原则一旦写好，反馈更便宜 |
 
-CAI 仍然有偏好模型和 RL。换成「完全没有 RM」就答偏了。它解决的是 harmlessness 标注贵、人也不愿反复看有害内容，不是把对齐变成无监督。
+CAI 降低了 harmlessness 标注的成本，也减少人反复查看有害内容的负担。它仍使用偏好模型和 RL，监督来自人制定的原则。InstructGPT 与 KL 的相关解释见 `openai-instructgpt-kl`、`pt-rlhf-why-reverse-kl`。
 
-Sycophancy、钻奖励规则的空子 在 RLAIF 里照样在。评委若用「模型自己给自己打分会不会崩溃」，答：批评模型和被训模型要隔离版本，条款要有反例测试，人抽查的是原则失败模式而不是全量偏好。self-rewarding 的隔离见 `pt-self-rewarding-idpo`。
+## 反馈更便宜后，仍要查偏差
+
+RLAIF 也会出现 sycophancy 和钻奖励规则的空子。批评模型与训练模型要隔离版本，条款要配反例，人重点抽查原则失败模式；self-rewarding 的隔离问题见 `pt-self-rewarding-idpo`。
 
 ## 追问
 
-- **和 RLHF 能叠吗？** 能。常见是 helpfulness 仍走人类偏好，harmlessness 走 CAI。不要说 CAI 替换了全部 RLHF。
-- **constitution 写进 system prompt 算 CAI 吗？** 只是推理期约束。CAI 指用条款生成训练数据。prompt alone 没有新偏好分布。
-- **computer use 的确认框算 constitution 吗？** 不算。那是产品层权限，见 `cu-sensitive-action-confirm`。条款约束的是语言 / 决策倾向，不能替代 OS 级确认。
+**CAI 能和 RLHF 一起用吗？**
+能。Helpfulness 可继续用人类偏好，harmlessness 使用 CAI，具体任务分开验证。
+
+**把 constitution 放进 system prompt 就算 CAI 吗？**
+那只是推理期约束。CAI 还要用条款生成批评、改写或偏好训练数据。
+
+**computer use 确认框属于 constitution 吗？**
+不属于。确认框是产品权限，见 `cu-sensitive-action-confirm`。条款影响语言和决策倾向，执行前的 OS 级权限仍由宿主管理。

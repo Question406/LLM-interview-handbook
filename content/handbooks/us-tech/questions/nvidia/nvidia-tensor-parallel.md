@@ -4,10 +4,7 @@ section: nvidia
 order: 3
 level: S
 title: NVIDIA：张量并行切 QKV/MLP，通信是哪一次 all-reduce，和序列并行差在哪
-quick: >-
-  TP 切的是层内矩阵的列/行，不是样本。QKV 和 MLP 上投影走列并行，本地算完；输出投影和 MLP
-  下投影走行并行，正向各一次 all-reduce。序列并行切的是激活的 $T$ 维，把那次 all-reduce 拆成
-  reduce-scatter + all-gather，用来省 LayerNorm / Dropout 的激活，不是另一种切权重。
+quick: "张量并行沿层内权重矩阵的输入维或输出维切分。Megatron 的 QKV 和 MLP 上投影用列并行，输出投影和下投影用行并行，正向各需一次 all-reduce；序列并行沿激活的 $T$ 维切分，将相应通信组织为 reduce-scatter 和 all-gather，减少 LayerNorm、Dropout 等处的激活副本。"
 tags:
   - NVIDIA
   - Tensor Parallel
@@ -32,9 +29,9 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+Megatron 的张量并行会把同一层的矩阵乘法分到多张卡上：QKV 和 MLP 上投影按列切，输出投影和下投影按行切。按列切时，每张卡算自己的输出片段；按行切时，每张卡只算出完整输出的一部分贡献，需要把结果相加。因此一层正向的两次 all-reduce，分别落在注意力输出投影和 MLP 下投影之后。
 
-NVIDIA 训练 / CUDA / NeMo 岗爱从 Megatron 一层往下挖。万亿怎么切见 `nvidia-trillion-train`；这题更窄。我会先画一层，标 QKV 和 MLP 的权重切在哪一维、正向到底几次集合通信，再主动说序列并行不是「再切一次 TP」。要落到通信落点，别背 3D 并行表。
+我会先沿着一层的数据流解释这两次通信，再讲序列并行怎么减少激活副本。整个模型的并行配置见 `nvidia-trillion-train`。
 
 ## 一层里切什么
 
@@ -48,7 +45,7 @@ Transformer 的默认接法（Megatron 论文）：
 4. MLP 上投影（$D\to 4D$）：列并行，GeLU 本地。
 5. MLP 下投影（$4D\to D$）：行并行，正向 all-reduce ②。
 
-一层正向就是这两次。反向对称：列并行的输入梯度要再 reduce 一次，所以论文说 forward / backward 各两次 all-reduce。把「QKV 切完就要 all-reduce」说出来是常见误区：QKV 刚切完每卡算的是自己的 head，还没有东西需要对齐。
+一层正向就是这两次。反向时，列并行各卡对同一输入的梯度贡献需要相加，因此 forward、backward 各有两次 all-reduce。QKV 刚投影后，每卡持有自己的 head，可以先本地做注意力，不需要立即通信。
 
 ```python
 # x: [B, T, D]，已在 TP 组内对齐
@@ -63,21 +60,23 @@ return ln(y + h)
 
 ## 和序列并行差在哪
 
-序列并行切的是激活的时间维，不是再切一份权重。LayerNorm、Dropout、残差沿 $D$ 独立、沿 $T$ 可分。没有 SP 时，行并行后面的 all-reduce 让每卡都持有完整 $[B, T, D]$，LN 也在完整序列上做，激活显存按 TP 度数复制。有 SP 时：行并行之后改 reduce-scatter（沿 $T$），每卡只留 $[B, T/N, D]$，LN / Dropout 在分片上做；下一层列并行之前再 all-gather（沿 $T$）把序列拼回来。
+序列并行沿激活的 $T$ 维切分，权重切法保持原来的 TP。LayerNorm、Dropout 和残差可以各自处理一部分 token：每个 token 的完整 $D$ 维仍留在同一卡，序列的 $T$ 维则分开。没有 SP 时，行并行后面的 all-reduce 让每卡都持有完整 $[B, T, D]$，LN 也在完整序列上做，激活显存按 TP 度数复制。有 SP 时：行并行之后改 reduce-scatter（沿 $T$），每卡只留 $[B, T/N, D]$，LN / Dropout 在分片上做；下一层列并行之前再 all-gather（沿 $T$）把序列拼回来。
 
-通信量：一次 all-reduce 的字节数，和 reduce-scatter + all-gather 同阶，都是 $2(N-1)/N$ 倍消息大小。省下的是激活，不是通信。SP 绑在同一个 TP 组上，度数相同；单独说「我做了序列并行」却没有 TP，对不上 Megatron 的实现。
+再算通信量，一次 all-reduce 的字节数，和 reduce-scatter + all-gather 同阶，都是 $2(N-1)/N$ 倍消息大小。省下的是激活，不是通信。SP 绑在同一个 TP 组上，度数相同；单独说「我做了序列并行」却没有 TP，对不上 Megatron 的实现。
 
-不要和 context parallel / ring attention 混：那是把注意力自己的 $T$ 切开，每卡算一段 Q，K/V 沿环传。SP 不解决超长注意力的 $T^2$，只解决 TP 下 LN 激活翻倍。
-
-## 通信落在哪、卡往哪摆
+context parallel、ring attention 则进一步切开注意力本身的 $T$，每卡算一段 Q，K/V 沿环传。这里的 SP 只减少 TP 下 LN 等位置的激活副本，不能解决超长注意力的 $T^2$ 开销。
 
 两次 all-reduce 的 payload 都是 $[B, T, D]$ 量级，延迟敏感。NVLink 域内（一台 8 卡 $N=8$）通常划得来；跨节点做大 TP，PCIe / IB 延迟会把 kernel 切碎，MFU 掉。所以常见是节点内 TP，节点间 PP / DP。集合算法见 `nvidia-nccl-allreduce`。
 
-粗算：bf16 下 $B=4,T=2048,D=8192$，一次 all-reduce 大约 $134\,\mathrm{MB}$；NVLink 六百 GB/s 只要零点几毫秒。同层 MLP 的 FLOPs 高一个数量级，单节点往往还是计算瓶颈。一上 IB，带宽低一个数量级，TP 就可能变成通信瓶颈。面试落到「为什么 TP 不跨机」，用这组数量级比背「NVLink 更快」有用。
+可以用 bf16 的例子算数量级： $B=4,T=2048,D=8192$，一次 all-reduce 大约 $134\,\mathrm{MB}$；NVLink 六百 GB/s 只要零点几毫秒。同层 MLP 的 FLOPs 高一个数量级，单节点往往还是计算瓶颈。一上 IB，带宽低一个数量级，TP 就可能变成通信瓶颈。这组数量级能说明为什么通常把 TP 留在机内，并让机间承担 PP、DP。
 
 ## 追问
 
-- **反向那两次在哪？** 列并行对 $x$ 的梯度要 all-reduce（各卡只看到 $D/N$ 的输出，反传到完整 $D$ 要对齐）；行并行的权重梯度本地可算。和正向两次配对，不是另起一套拓扑。
-- **QKV 不 fuse 成一块列并行？** 三次独立列并行也对，通信次数不变，只是 kernel 启动变多。fuse 是为了占满 Tensor Core，不是为了少一次 all-reduce。
-- **ZeRO-3 能替代这两次 all-reduce 吗？** 能把参数打散，但层内 GEMM 仍要一块完整乘。TP 是在算力上切开大矩阵；ZeRO 是在存储上切开状态。万亿 dense 通常两个都要，见 `nvidia-trillion-train`。
-- **vocab 并行呢？** embedding / softmax 沿词表切，那是另一组 all-reduce / all-gather，不要算进「一层两次」里。
+**反向那两次在哪？**
+列并行对 $x$ 的梯度要 all-reduce（各卡只看到 $D/N$ 的输出，反传到完整 $D$ 要对齐）；行并行的权重梯度本地可算。和正向两次配对，不是另起一套拓扑。
+**QKV 不 fuse 成一块列并行？**
+三次独立列并行也对，通信次数不变，只是 kernel 启动变多。fuse 是为了占满 Tensor Core，不是为了少一次 all-reduce。
+**ZeRO-3 能替代这两次 all-reduce 吗？**
+不能直接替代。ZeRO-3 分片保存参数，使用时仍要组装对应矩阵来算；TP 才把层内大 GEMM 的计算分给多卡。万亿 dense 通常两个都要，见 `nvidia-trillion-train`。
+**vocab 并行呢？**
+embedding / softmax 沿词表切，那是另一组 all-reduce / all-gather，不要算进「一层两次」里。

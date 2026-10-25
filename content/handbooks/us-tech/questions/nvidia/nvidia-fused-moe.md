@@ -4,7 +4,7 @@ section: nvidia
 order: 26
 level: S
 title: NVIDIA：fused MoE 的 permute、grouped GEMM、unpermute
-quick: "Permute 按 expert 把 token 行聚齐，grouped GEMM 一次处理各组不同的 $M_i$，unpermute 乘 top-$k$ 权重写回原序。fused 指 gather、激活和 scatter 不回 HBM。"
+quick: "先按 expert 把 token 行聚齐，再用 grouped GEMM 处理不同的 $M_i$，最后按原位置乘 top-$k$ 权重合并输出。融合主要省掉 gather、激活和 scatter 的 HBM 往返；decode 时每个专家分到的 token 太少，仍会限制利用率。"
 tags:
   - NVIDIA
   - MoE
@@ -29,13 +29,11 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+fused MoE 先把 token 按 expert 聚齐，再成组计算，最后写回原来的顺序；融合省的是中间数据的搬运。NVIDIA 专家并行博客具体提到 `expandInputRowsKernel`、activation、`finalizeMoeRoutingKernel` 和 grouped GEMM。解释时可以沿这条数据路径，说明哪些步骤能放进同一 CTA，哪些必须等 EP 的 all-to-all 完成。训练侧为什么要避免 $E$ 次 launch，见 `nvidia-moe-gemm`。
 
-`nvidia-moe-gemm` 讲训练侧为什么不能 $E$ 次 launch。Serving 岗会再问：TRT-LLM / vLLM 的 `fused_moe` 到底融了什么。NVIDIA 专家并行博客点名 `expandInputRowsKernel`、activation、`finalizeMoeRoutingKernel`，以及 grouped GEMM。我会按 permute → grouped → unpermute 走一遍，标出哪些可以藏进同一 CTA，哪些必须在 EP 的 all-to-all 之后。
+## token 怎么从路由走到输出
 
-## 为什么要先 permute
-
-一层 MoE：hidden $x$ 是 $[N, D]$，router 给出每个 token 的 top-$k$ expert id 和门控权重。Expert $i$ 的 MLP 是
+一层 MoE 的 hidden $x$ 形状是 $[N, D]$。router 为每个 token 选出 top-$k$ expert id 和门控权重，随后 expert $i$ 用下面的 MLP 计算输出：
 
 $$
 y_i=\mathrm{SiLU}(x W_{\mathrm{gate},i})\odot (x W_{\mathrm{up},i}),\quad
@@ -58,7 +56,7 @@ z = grouped_gemm(h, Wd, sizes)
 y = unpermute_weighted(z, inv, w)          # [N, D]
 ```
 
-Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核。Megatron 训练侧常单开；推理 fused 核把 **gather 索引塞进 GEMM 的 A 读取**，把 **scatter + 门控乘** 塞进第二段 GEMM 的 epilogue，中间激活不写满 HBM。这才是 fused 的含义。不是神奇地少算 FLOPs，是少几次 $NkD$ 的往返。
+Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核，Megatron 训练侧常单独执行。推理中的 fused 核可以在读取 GEMM 的 A 时完成 gather，在第二段 GEMM 的 epilogue 中完成 scatter 和门控乘法，中间激活也不必完整写回 HBM。FLOPs 没有因此减少，减少的是几次 $NkD$ 数据的往返。
 
 TRT-LLM 的 Triton / CUTLASS / DeepGEMM 后端都走这套骨架。Triton 核注释写得很直：`sorted_token_ids` 按 expert 聚齐并 pad 到 `BLOCK_M` 的倍数，无效 pad 行要 mask，否则脏数据进累加器。
 
@@ -70,7 +68,7 @@ EP 大于 1：permute 之前先 all-to-all，每卡只看到自己那 $E/\mathrm
 
 CUDA Graph：`group_sizes` 每步变。要么 pad 到固定容量再 mask，要么 piecewise graph。Fused 核能减少 launch 次数，让 Graph 更容易录，见 `nvidia-cuda-graph`。
 
-## 融到哪一步算过头
+融合也有边界。
 
 可以融：token sort 的元数据、第一段 grouped、SiLU$\odot$、量化 cast、第二段 grouped、scatter 加权。不要把 router 的 softmax 硬塞进 GEMM：$E$ 很大时 router 是另一类核。共享 expert（DeepSeek 一类）形状和 routed expert 不同，$K,N$ 不一致，grouped 要求拆核或共享那路单独 GEMM。
 

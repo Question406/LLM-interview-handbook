@@ -4,7 +4,7 @@ section: systems
 order: 38
 level: S
 title: "KV Prefix ⑧：把 Radix Tree 接进 Transformer——可运行 Prefix Engine"
-quick: "完整走一遍：查前缀、恢复每层 KV、只算后缀、greedy decode、把新 KV 插回树，并和 cold run 对比 token、每层 KV 和少算的 token 数。"
+quick: "用 radix tree 找到公共前缀，恢复每层 KV 后只算后缀，再 greedy decode，并把生成后的 KV 插回树。用 cold run 对照生成 token、每层 KV 和实际少算的 token，才能验证真正复用了计算。"
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -23,6 +23,41 @@ sources:
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
+
+## 题目描述
+
+实现一个冻结模型上的前缀 KV 复用引擎。相同模型和 scope 的请求可以共享已计算前缀；模型或 scope 不同则不能互相复用。复用后生成结果必须与空缓存执行一致，并准确报告节省了多少计算。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `TinyTransformer(seed=0, layers=2, vocab=19, width=8, heads=2, kv_heads=1)`：冻结权重的单请求因果模型，包含 RMSNorm、RoPE、GQA 和门控 MLP。`forward(token_ids, cache=None) -> (logits, new_cache)`，`cache` 是每层一个 `(K, V)`，形状 `[kv_heads, 已缓存长度, head_dim]`。模型的 `fingerprint` 是配置和全部权重的哈希，`computed_tokens` 累计送进 forward 的 token 数。
+- `RadixCache`：按 token 粒度压缩边的前缀树，每个 token 对应一个不可变的 KV 句柄。`match(tokens, namespace) -> (命中长度, 句柄序列)`，`insert(tokens, values, namespace) -> 已存在的前缀长度`；重复前缀沿用树里已有的句柄。
+- `plan_reuse(prompt_length, matched_tokens, page_size, chunk_budget, need_last_logits) -> (可复用长度, chunks)`：返回不超过命中长度的最大完整页前缀；`need_last_logits=True` 时复用长度必须小于 prompt 长度，因为 cache 只存 KV。后缀覆盖 `[复用长度,prompt_length)`，按预算返回连续半开区间，无重叠无缺口。
+- `PrefixEngine(model).generate(prompt, new_tokens, scope="default", chunk_budget=1024) -> (生成的 token, 统计)`：namespace 是 `(模型指纹, scope)`。查命中后恢复各层 KV，按 chunk 只 forward 未复用的后缀，再 greedy 生成 `new_tokens` 个 token（$\ge 0$，没有 EOS 提前停止）。每个生成的 token 也送进一次 forward，这样插回树的 cache 覆盖 prompt 加全部生成文本。
+- 统计里有 `matched`（树上命中长度）、`reused`（实际复用长度）、`prefill_computed`（prompt 里重新计算的 token 数）、`total_computed`（这次调用 forward 的总 token 数）。
+
+- `token_ids` 和 prompt 是非空的一维整数序列，token 在 `[0,vocab)`；forward 返回的 logits 是 `[当前输入长度,vocab]`。`layers>=1`，`width` 能被 `heads` 整除，`heads` 能被 `kv_heads` 整除，`head_dim` 为正偶数。
+- RadixCache 的输入 `values` 与 tokens 等长，返回的句柄序列与命中 token 一一对应；命中是同一 namespace 内最长公共前缀。不同 scope 的 KV 不能共享，模型权重在引擎使用期间保持冻结。greedy 分数并列时取最小 token id。
+### 示例
+
+```text
+使用 model=TinyTransformer(seed=8,layers=3)，engine=PrefixEngine(model)。
+先 generate([1, 2, 3, 4], 2)，树里存下 [1, 2, 3, 4] + 2 个生成 token
+
+generate([1, 2, 3, 7, 8], 3, chunk_budget=1)
+-> 命中并复用 3 个 token，prefill 只算 [7, 8] 两个，再加 3 次 decode，共计算 5 个
+-> cold run（空树）要算 5 + 3 = 8 个
+-> 生成的 token 和每一层 KV 都与 cold run 一致
+
+generate([1, 2], 2)
+-> 树上命中 2 个（在一条边的中间），但只复用 1 个，重算最后一个 token 拿 logits
+```
+
+## 解题思路与参考答案
+
+我会先从 radix tree 查公共前缀，恢复每层 KV，只把未复用的后缀送进 Transformer，再生成并把新 KV 插回树。验收同时比较 cold run 的 token、每层 KV 和计算计数；树命中了多少，还要落实成 forward 真正少算了多少。
 
 ## 完整编程练习（手册原创实现版）
 
@@ -54,9 +89,9 @@ generate([1, 2], 2)
 
 ### 解题思路与正确性
 
-前缀缓存的价值要体现在送进 forward 的 token 变少，而不只是树返回了一个命中长度。所以每层的 KV 恢复出来后，模型只接收未复用的 token；位置从已缓存长度开始，RoPE 和因果 mask 都按绝对位置算，结果和从头计算一致。
+例如 prompt 命中前三个 token，就恢复这三个位置在每层的 KV，只计算剩余后缀。新位置从已缓存长度开始，RoPE 和因果 mask 都按绝对位置计算，才能与完整重算对齐。
 
-生成的 token 也要插回树里，下一轮对话带着上一轮的回答来时才能继续命中。完全命中时仍通过 `plan_reuse` 重放最后一个 token，而不是试图从 KV 里凭空得到最后的 logits。
+生成后的 token 也插回树，下一轮携带上一轮回答时便能继续命中。如果 prompt 完全命中，`plan_reuse` 仍会重放最后一个 token，因为仅有 KV 还无法取得最终 logits。
 
 namespace 里的模型指纹隔离不同权重：即使两个引擎共享一棵树，也不会用错 KV。scope 隔离租户或会话的共享策略。
 
@@ -392,6 +427,16 @@ class PrefixEngine:
         }
         return generated, stats
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert child.parent is node` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

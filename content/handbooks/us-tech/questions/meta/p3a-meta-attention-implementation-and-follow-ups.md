@@ -4,7 +4,7 @@ section: meta
 order: 813
 level: A
 title: "Meta Superintelligence/MLE：Attention 与 Flash/Linear 追问"
-quick: "手写标准 attention（QK 转置、缩放、mask、softmax、乘 V），说明权重矩阵带来的二次空间，再讲清 FlashAttention 仍是精确计算、linear attention 则改变了模型本身。"
+quick: "标准 attention 先算缩放后的 QK 转置，屏蔽不可见位置，再沿 key 轴 softmax 并乘 V。权重矩阵带来二次空间；FlashAttention 用分块和在线 softmax 保持精确结果，linear attention 则改变计算形式，输出也不同。"
 companies:
   - meta
 tags:
@@ -22,6 +22,27 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个 NumPy 版本的多头缩放点积注意力，正确处理广播 mask 和因果可见性。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`attention(q, k, v, mask=None, causal=False)` 接收 float64 数组：q 为 `[B,H,T,D]`，k 为 `[B,H,S,D]`，v 为 `[B,H,S,Dv]`；返回 `[B,H,T,Dv]`。每个 query 对 key 的分数为内积除以 `sqrt(D)`，在可见 key 上按 `exp(score)/sum(exp(score))` 归一化为 softmax 概率，再对 v 加权求和。
+
+mask 是可广播到 `[B,H,T,S]` 的布尔数组，True 表示可见。causal=True 时 T=S，位置 i 只能看到 j<=i；该约束与 mask 同时生效。某一 query 没有可见 key 时，其输出为全零且不含 NaN。B、H 不超过 4，T、S 不超过 128，各特征维均为正。
+
+### 示例
+
+```text
+q = k = 全 1 数组，形状 [1,1,2,1]
+v = [[[[2],[4]]]], causal = True
+返回 [[[[2],[3]]]]。
+相同输入但 mask 全为 False 时，返回同形全零数组。
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 先手写一个标准的缩放点积注意力，然后分析时间和空间复杂度，最后口头回答两个追问：FlashAttention 是怎么省显存的，linear attention 和它有什么本质区别。
@@ -30,12 +51,9 @@ sources:
 
 ## 思路
 
-实现部分按 QK 转置、除以 $\sqrt{D}$、套 mask、沿 key 轴 softmax、乘 V 的顺序写。复杂度分析的重点是中间那张 `[T, S]` 的注意力权重矩阵：它让空间随序列长度二次增长，长序列时显存先撑不住。
+我会按 QK 转置、除以 $\sqrt{D}$、套 mask、沿 key 轴 softmax、乘 V 的顺序实现。比如某一行没有任何可见 key，就要明确返回全 0，避免全是负无穷时产生 NaN。复杂度的瓶颈在中间 `[T, S]` 权重矩阵，序列拉长后它占用二次空间。
 
-两个追问要分清楚性质：
-
-- FlashAttention 用分块加在线 softmax，避免把整张权重矩阵写回 HBM，减少的是显存读写；它算出来的结果和标准注意力完全一样。
-- Linear attention 用核函数近似代替 softmax，换来对序列长度线性的复杂度，但输出已经变了，是另一种模型，不能说成「同样结果、更快的实现」。
+FlashAttention 用分块和在线 softmax，减少整张权重矩阵的 HBM 读写，结果仍是精确的标准注意力。Linear attention 则用核函数近似替代 softmax，获得对序列长度线性的复杂度，输出也随之改变。下面先实现标准版本，最后再比较两种优化。
 
 ## 完整编程练习（手册重构版）
 
@@ -64,7 +82,7 @@ attention(q, k, v, mask=zeros((2, 2), dtype=bool))  -> [[[[0], [0]]]]
 
 softmax 前减去每行最大值，防止 `exp` 溢出。全屏蔽行的最大值是 $-\infty$，直接相减会得到 `-inf - (-inf) = NaN`，所以把这种行的最大值换成 0，分母为 0 的行再用 `np.divide(..., where=denom > 0)` 输出 0。
 
-三个常见错误各自破坏一个不变量，也各有能抓住它的测试：缩放写错只在 $D$ 不是 1 时露馅，所以随机对照测试用 $D = 4$；softmax 轴写错会让每个 query 的权重和不再是 1，$T \ne S$ 的输入能暴露；mask 语义反了，因果测试和全屏蔽测试都会失败。
+测试要分别覆盖缩放、归一化轴和 mask 语义。缩放写错在 $D$ 不是 1 时才容易发现，所以随机对照用 $D = 4$；$T \ne S$ 能暴露 softmax 轴错误，因为每个 query 的权重和应为 1；因果和全屏蔽用例则检查 mask 是否反了。
 
 ### 完整参考实现（Python 3）
 
@@ -117,6 +135,16 @@ def attention(q, k, v, mask=None, causal=False):
 
     return np.einsum("bhts,bhsv->bhtv", weights, v)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(attention(q, q, v, causal=True), [[[[2.0], [3.0]]]])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

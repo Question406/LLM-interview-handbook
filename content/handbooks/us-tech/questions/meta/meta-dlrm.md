@@ -4,9 +4,7 @@ section: meta
 order: 5
 level: A
 title: Meta：DLRM 推荐，稀疏 embedding 和 MLP 怎么切并行
-quick: >-
-  稠密特征走 bottom MLP，类别 id 走巨型 embedding 表，交互（两两点积）后再进 top MLP 出 CTR。表太大，embedding
-  用模型并行；MLP 小，用数据并行。两段之间用 all-to-all 把各卡查出的向量对齐到样本维。
+quick: "DLRM 让稠密特征走 bottom MLP、类别 id 查 embedding，做两两点积交互后由 top MLP 预测 CTR。巨型表按表或行分片，较小 MLP 用数据并行，再用 all-to-all 为每张卡拼齐其样本的 embedding，反向沿相反方向送回梯度。"
 tags:
   - Meta
   - DLRM
@@ -28,44 +26,31 @@ sources:
     type: secondary
 ---
 
-广告 / 推荐 / RecSys MLE 在 Meta 几乎都会碰到「稀疏表 + 小 MLP」。DLRM 是 2019 年的公开骨架，线上还会叠很多东西；面试用它把并行切分讲清楚就够。Feed 排序的级联和多目标见 `meta-newsfeed-rank`，本题只收模型怎么切。
+DLRM 的并行通常分成两部分：巨型 embedding 表做模型分片，较小 MLP 做数据并行，中间用 all-to-all 对齐样本的特征向量。原因是推荐模型的瓶颈常在稀疏 lookup 与通信，不能直接套 dense Transformer 的切法。
 
-## 模型四段，别画成纯 Transformer
+一条样本有连续特征 $x_{\mathrm{dense}}$ 和用户、广告、页面、hash 桶等类别 id。Bottom MLP 先把连续特征投到与 embedding 一样宽；每个类别特征查表 $E_f \in \mathbb{R}^{V_f \times d}$，其中 $V_f$ 可到千万、亿，所有表可达 TB 级。Lookup 输入为 `[B]` int64，输出 `[B, d]`；多值兴趣 id 要 sum / mean pooling，访问更不规则。
 
-一条样本大约是：连续特征 $x_{\mathrm{dense}}$，再加上很多类别 id（用户、广告、页面、hash 桶）。前向：
+论文默认将这些向量和 dense 投影两两点积，得到约 $O(F^2)$ 个交互标量，再送 top MLP、CTR / CVR 头，用 logloss 训练，见 `meta-ranking-logloss`。这是 2019 DLRM 的公开基线，线上还会叠级联、延迟预算与新鲜特征，Feed 多目标见 `meta-newsfeed-rank`。
 
-1. **Bottom MLP：** $x_{\mathrm{dense}}$ 映射到和 embedding 同宽的向量。
-2. **Embedding：** 每个稀疏特征一张表 $E_f \in \mathbb{R}^{V_f \times d}$，lookup 得到向量。$V_f$ 可以到千万、亿，表合计 TB 级，这是推荐和 LLM 最大的差别。
-3. **Interaction：** 论文默认是 embedding 向量（含 dense 投影）两两点积，拼成交互特征。复杂度大约 $O(F^2)$ 个标量，不是大 GEMM。
-4. **Top MLP：** 接到 CTR / CVR 头，训练常用 logloss，见 `meta-ranking-logloss`。
+## 表和样本怎样分摊
 
-现场别一上来改成「把 id 当 token 做 Transformer」。可以提，但要先承认 DLRM 的工业假设：lookup 是瓶颈、MLP 很浅、特征交叉用点积就够当基线。
+MLP 较小，每卡复制一份、各算 $B/N$ 样本很合适；TB 级 embedding 不能每卡复制。Table-wise 将整张表放一张卡，实现简单，但 uid、广告 id 热表可能打满一张卡，冷表却空闲。Row-wise 按 id 段分散大表，负载更均衡，lookup 可能跨卡。按列切 $d$ 也可做，但 interaction 与 pooling 更复杂，较少采用。
 
-Lookup 的 shape：batch 里每个特征是 `[B]` 的 int64 下标，输出 `[B, d]`。多值特征（一个用户一堆兴趣 id）是变长，需要 pooling（sum / mean），这会让 embedding 核更不规则。
+每张卡查自己负责的表，再 all-to-all，使第 $i$ 张卡收齐其样本的全部 embedding，才能执行 interaction 与 top MLP。反向再把稀疏梯度 all-to-all 发给持有那些行的卡，更新本地表。只有命中的行有梯度，优化器和通信按 nnz 处理，避免整表 dense all-reduce。
 
-## 并行：表切模型，MLP 切数据
+FSDP 切的是同一组 dense 状态，DLRM 切的是特征表与行，见 `meta-fsdp2`。大 MLP 也可叠 FSDP，但不能用 ZeRO-3 代替这里的 embedding 并行。
 
-MLP 参数相对小，**数据并行**（每卡一份 MLP，样本切 $B/N$）很合适。Embedding 表放不下、也没必要每卡复制：
+热 id 频繁读写，Adam fp32 状态也随表行占空间。可以按频率分表，热小表放 GPU、冷表放 CPU 或多卡，或用 hash 碰撞换容量、AdaGrad / Row-wise 优化器减少状态。通信量约为 $B \cdot F \cdot d \cdot \mathrm{bytes}$，反向再来一次，$F$、$d$ 增大时网络可能先于 GEMM 饱和，要关注 RDMA 与拓扑，FlashAttention 解决不了。动态下标与集体通信也容易让 `torch.compile` graph break，见 `meta-pytorch-compile`。
 
-- **Table-wise（按表切）：** 整张表放在一张卡上。实现简单，但热表（uid、广告 id）会把某张卡打满，冷表空转。
-- **Row-wise（按行切）：** 一张大表按 id 段切到多卡。负载更匀，一次 lookup 可能要跨卡。
-- 列切 / 把 $d$ 切开比较少见，交互和 pooling 会变烦。
-
-训练一步的通信是 all-to-all，跟 Transformer 层内 all-reduce 不是一路。直觉：我这张卡负责若干部表，但 mini-batch 里每条样本的 id 落在所有表上。各卡先按自己管的表做 lookup，再 all-to-all，让第 $i$ 张卡凑齐它那份样本的全部 embedding，才能做 interaction + top MLP。反向把梯度 all-to-all 回去，更新本地表。
-
-和 FSDP 比（`meta-fsdp2`）：FSDP 切同一套 dense 权重的副本；DLRM 切不同特征的表。两套可以叠（大 MLP 再 FSDP），但面试先把 all-to-all 说完，别用 ZeRO-3 顶替 embedding 并行。
-
-## 面试要能点的坑
-
-Embedding 是 **随机写入 + 极不均衡**。Hot id 的行被所有 batch 碰到，Adam 的 fp32 状态也随行走，热行又慢又费。常见工程：频率分表（热表小、驻 GPU；冷表 CPU / 多卡）、hash 碰撞换容量、AdaGrad / Row-wise 优化器减少状态。
-
-All-to-all 的字节数大约是 $B \cdot F \cdot d \cdot \mathrm{bytes}$ 量级（再乘一次反向）。$d$ 和 $F$ 变大，网络先于 GEMM 饱和，所以推荐训练常谈 RDMA / 拓扑，FlashAttention 帮不上忙。`torch.compile` 在这种动态下标 + 集合通信上很容易 graph break，见 `meta-pytorch-compile`。
-
-评估不要只报 AUC。广告出价吃的是校准过的概率，见 `meta-ads-calibration`。DLRM 论文本身是系统+模型基线，线上还有级联、延迟预算、特征新鲜度。
+广告还需校准概率，AUC 之外看 predicted vs observed，见 `meta-ads-calibration`。
 
 ## 追问
 
-- **推理和训练切分一样吗？** 可以同一套表分片。推理 batch 和 QPS 不同，有时会把热表复制多份换延迟。不要假设训练拓扑原样上线。
-- **为什么不把 embedding 也 DDP？** 复制 TB 级表不现实。DDP 适合 MLP。
-- **Interaction 换成 Transformer？** 能，算力和 serving 延迟会跳一个量级，要有级联或蒸馏。先把 baseline 并行讲对再升级。
-- **稀疏梯度怎么做？** 只有被 lookup 到的行有梯度。优化器和通信都要按 nnz 走，不要对整张表做 dense all-reduce。
+**推理沿用训练分片吗？**
+可以沿用，但 batch 与 QPS 不同，热表可能复制多份换低延迟，不能原样照搬拓扑。
+
+**embedding 为什么不直接 DDP？**
+每卡复制 TB 级表不现实，DDP 更适合小 MLP。
+
+**交互能换 Transformer 吗？**
+可以，但算力和 serving 延迟会明显增加，需要级联或蒸馏支持。先把 lookup、浅 MLP、点积交互的基线讲清。

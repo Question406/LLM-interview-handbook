@@ -4,7 +4,7 @@ section: coding
 order: 33
 level: S
 title: 白板：一步 decode，取 q、concat KV、GQA repeat、出 logits
-quick: "当前 token 用位置 `cache_len` 做 RoPE，$k,v$ 沿序列维接进 cache；cache 保持 $H_{\\mathrm{kv}}$ 个头，只在算分数时 repeat 成 $H_q$，输出 logits `[B, 1, V]`。"
+quick: "当前 token 在 `cache_len` 位置做 RoPE，把 $k,v$ 沿序列维追加进 cache，再计算注意力和 `[B, 1, V]` logits。cache 始终保留 $H_{\\mathrm{kv}}$ 个头，只在注意力计算时扩展到 $H_q$。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +27,34 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+实现带分组查询注意力（GQA）与 KV cache 的一次 decoder 生成调用。输入已经投影并完成位置旋转的本步 Q/K/V，返回词表 logits 以及追加后的紧凑缓存。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `repeat_kv(x, n_rep)`：把 `[B, H_kv, S, D]` 的每个 KV 头连续复制 `n_rep` 次，得到 `[B, H_kv * n_rep, S, D]`，语义等同 `repeat_interleave(n_rep, dim=1)`。
+- `decode_step(q, k_t, v_t, cache_k, cache_v, w_o, w_head, n_rep)`：做一步生成。`q` 是 `[B, H_q, 1, D]`，本步的 `k_t`、`v_t` 是 `[B, H_kv, 1, D]`，三者都已经用当前位置做过 RoPE。`cache_k`、`cache_v` 是 `[B, H_kv, S, D]`，$S$ 可以是 0。返回 `(logits, new_cache_k, new_cache_v)`，logits 是 `[B, 1, V]`，新 cache 长度为 $S+1$，仍然只有 $H_{\mathrm{kv}}$ 个头。
+- `w_o` 是 `[H_q * D, H_q * D]`，`w_head` 是 `[V, H_q * D]`，按 PyTorch 线性层的约定用 `x @ w.T`。
+- 必须满足 `H_q == H_kv * n_rep`。不修改传入的 cache 张量。
+- 每个 query head 对应重复后的 KV head，分数为 dot(q,k)/sqrt(D)，对全部缓存及当前 key 做 softmax，加权 V 后按 head 顺序拼成 Hq*D，经过 `w_o` 和 `w_head` 得到 logits。没有 dropout 或额外 bias，输入有限，`n_rep`>=1。
+
+### 输入输出示例
+
+```text
+B=Hq=Hkv=D=n_rep=1；旧 cache 长度为 0
+q=[[[[0]]]], k_t=[[[[0]]]], v_t=[[[[2]]]]
+w_o=[[1]], w_head=[[3],[4]]
+decode_step(q,k_t,v_t,empty_cache_k,empty_cache_v,w_o,w_head,1) -> logits=[[[6,8]]]
+new_cache_k=[[[[0]]]], new_cache_v=[[[[2]]]]
+```
+
+## 解题思路与参考答案
+
+一步 decode 先把本步 $k,v$ 接到 cache 末尾，让当前 query 对所有已缓存 key 计算注意力，再做输出投影和词表层。当前 query 是序列里最新的位置，所有已缓存的 key 都在它之前或就是它自己，所以 $T=1$ 时因果 mask 退化成「全部可见」，不需要再造一张下三角。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
@@ -48,8 +76,6 @@ B=2, H_q=4, H_kv=2, n_rep=2, D=2, V=5, cache 长度 S=0
 ```
 
 ### 解题思路与正确性
-
-先把本步的 $k,v$ 接到 cache 末尾，再让 query 对全部 key 做 softmax。当前 query 是序列里最新的位置，所有已缓存的 key 都在它之前或就是它自己，所以 $T=1$ 时因果 mask 退化成「全部可见」，不需要再造一张下三角。
 
 GQA 的 repeat 只在算分数前做，写回的 cache 保持 $H_{\mathrm{kv}}$ 个头。`repeat_kv` 用 `expand` 加 `reshape`，第 $h$ 个 query 头对应第 $\lfloor h / n_{\mathrm{rep}}\rfloor$ 个 KV 头，和 `repeat_interleave` 一致。
 
@@ -89,6 +115,16 @@ def decode_step(q, k_t, v_t, cache_k, cache_v, w_o, w_head, n_rep):
     logits = hidden @ w_head.T                              # [B, 1, V]
     return logits, cache_k, cache_v
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert logits.shape == (2, 1, 5)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -180,9 +216,12 @@ softmax 的轴必须是 key 长度那一维。写成 `dim=0` 或沿 head 维，�
 
 ## 追问
 
-- **为什么 logits 是 `[B, 1, V]`，不是 `[B, S, V]`？** 一步只需要当前 token 的分类头。算整段既浪费，也容易在 shift 上把自己绕进去。
-- **先 repeat 再写入 cache 行不行？** 带宽和显存都会乘上 $n_{\mathrm{rep}}$，GQA 省下的东西全白费。repeat 只应该发生在算分数时。
-- **MQA 怎么处理？** $H_{\mathrm{kv}}=1$、$n_{\mathrm{rep}}=H_q$，同一个函数照样成立，见 `coding-mq-attn`。
+**为什么 logits 是 `[B, 1, V]`，不是 `[B, S, V]`？**
+一步只需要当前 token 的分类头。算整段既浪费，也容易在 shift 上把自己绕进去。
+**先 repeat 再写入 cache 行不行？**
+带宽和显存都会乘上 $n_{\mathrm{rep}}$，GQA 省下的东西全白费。repeat 只应该发生在算分数时。
+**MQA 怎么处理？**
+$H_{\mathrm{kv}}=1$、$n_{\mathrm{rep}}=H_q$，同一个函数照样成立，见 `coding-mq-attn`。
 
 ## 相关题
 

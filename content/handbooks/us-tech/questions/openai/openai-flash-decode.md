@@ -4,7 +4,7 @@ section: openai
 order: 31
 level: S
 title: OpenAI：FlashDecoding 为什么沿 KV 长度做 split-K，decode 时和 FlashAttention 差在哪
-quick: "Decode 时 $T_q=1$，并行度只剩 $B\\cdot H$；FlashDecoding 沿 KV 长度切段并行，再按 log-sum-exp 精确合并，$BH$ 已够大时不必切。"
+quick: "decode 每步只有一个 query，batch 和 head 太少时难以占满 GPU，FlashDecoding 就沿 KV 长度再切一维并行。各段保存 softmax 统计，用 log-sum-exp 精确合并；$BH$ 已够大时不切，避免额外归约开销。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -30,6 +30,31 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现单 query 对分段 KV 的注意力统计及合并。长序列被分成任意数量的片段后，归一化结果必须与完整注意力一致。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `split_stats(q,k,v,scale) -> (m,ell,O)`：q 是 `[D]`，k/v 是 `[Sg,D]`、Sg>=1。令分数 `s_i=scale*dot(k_i,q)`，返回 `m=max(s)`、`ell=sum(exp(s-m))` 和 `[D]` 的 `O=sum(exp(s_i-m)*v_i)`，O 尚未归一化。
+- `merge_mlo(stats) -> [D]` 接收上述统计三元组，返回所有分段合起来的注意力输出。允许 ell 为 0 的空段，且至少有一个非空段。
+- `flash_decode(q,k,v,scale,n_split=4) -> [D]` 中 k/v 是 `[S,D]`，S>=1，`n_split`>=1，可以大于 S。结果必须等于 `softmax(scale * (k @ q)) @ v`；空分段不影响结果。输入为有限浮点张量，D>=1。
+
+### 输入输出示例
+
+```text
+q=[0], k=[[1],[2],[3]], v=[[2],[4],[6]], scale=1
+flash_decode(q,k,v,1,n_split=2) -> [4]
+flash_decode(q,k,v,1,n_split=5) -> [4]
+split_stats([0],[[1],[2]],[[2],[4]],1) -> (0,2,[6])
+```
+
+## 解题思路与参考答案
+
+FlashDecoding 通过沿 KV 长度切段，补足单 token decode 的并行度。比如 $B=1$、$H=32$，A100 有 108 个 SM，只沿 batch 和 head 发 CTA 就会有大量 SM 空闲；让多个 CTA 分段读同一个 query 的 KV，再合并结果，才可能把带宽用起来。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，在 CPU 上做数值验证，没有验证 GPU、多卡或性能。
@@ -53,7 +78,7 @@ flash_decode(q, k[:0], v[:0], 0.5, 2)   -> ValueError
 
 ### 解题思路与正确性
 
-每段只保存三样东西：段内最大分数 $m_g$、指数和 $\ell_g$、没有除以 $\ell_g$ 的加权和 $O_g$。合并时取全局最大值 $m$，把每段乘上 $e^{m_g-m}$ 再相加，最后用总的 $O$ 除以总的 $\ell$。这样每个 token 的权重都变成 $e^{s_j-m}/\ell$，和一次性对整段做 softmax 完全一样。
+分段后保存段内最大分数 $m_g$、指数和 $\ell_g$，以及未除以 $\ell_g$ 的加权和 $O_g$，就足够还原全局结果。合并时取全局最大值 $m$，把每段乘上 $e^{m_g-m}$ 再相加，最后用总的 $O$ 除以总的 $\ell$。这样每个 token 的权重都变成 $e^{s_j-m}/\ell$，和一次性对整段做 softmax 完全一样。
 
 不能先在段内做 softmax 再平均：每段用的是自己的分母，平均以后权重和全局 softmax 对不上。
 
@@ -116,6 +141,16 @@ def flash_decode(q, k, v, scale, n_split=4):
     return merge_mlo(stats)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(flash_decode(q, k, v, 0.5, n_split), expected)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -168,9 +203,7 @@ expect_value_error(merge_mlo, [(-np.inf, 0.0, np.zeros(4))])
 - 追问「$G$ 怎么选」：让 batch × head × $G$ 大致盖住 SM 数，再看 $S$。$G$ 太大时部分结果变多、归约变重，每段也短到填不满一个 tile。
 - 追问「如果 $O_g$ 已经除过 $\ell_g$」：合并改成 $O=\sum_g e^{m_g-m}\ell_g O_g$，最后再除以 $\ell$。两种约定不要混用。
 
-## 题怎么来的
-
-Flash-Decoding 是 Dao、Haziza、Massa、Sizov 公开的推理 kernel，不是 OpenAI 内部的代号。推理岗常把它接在 `openai-prefill-decode` 后面问：既然 FlashAttention 已经不物化 $[T,T]$，逐 token 生成（decode）为什么还慢？答案在并行度，不在公式。片上 softmax 的推导见 `google-flash-attention`、`nvidia-flash-attn`、`coding-online-softmax`。
+Flash-Decoding 是 Dao、Haziza、Massa、Sizov 公开的推理 kernel。它接着 `openai-prefill-decode` 讨论 decode 的占用率：FlashAttention 已经避免物化 $[T,T]$，但单 query 时仍有其他瓶颈。片上 softmax 推导可对照 `google-flash-attention`、`nvidia-flash-attn`、`coding-online-softmax`。
 
 ## Decode 的并行度不够
 
@@ -197,14 +230,18 @@ $$
 
 因果 mask 在这里不是主要因素：decode 一步里没有未来的 key。Paged KV 只改变物理布局，split 仍按逻辑上的 $T$ 切，见 `openai-continuous-batching`。投机解码的验证步 $T_q=\gamma\gt 1$，并行度回来了，通常不必 split-K，见 `openai-speculative-decoding`。
 
-常见的错误说法有三种：说 FlashDecoding 把复杂度变成了线性；说它和 FlashAttention 的公式不同；在大 batch 上默认开启 split。回答时要讲清何时切、怎么合并、何时不切。
+FlashDecoding 保持同一套精确注意力公式，也没有改变 decode 原有的线性算术量。切分增加并行度的同时引入归约，所以大 batch 是否启用要根据 SM 占用率测量。
 
 ## 追问
 
-- **和 split-K GEMM 什么关系？** 思想相同：M 维太窄，就把 K 维切开来填满 SM，最后归约。区别是注意力的归约必须带 LSE，不能把各段 $O_s$ 直接平均。
-- **GQA 的 $H_{\mathrm{kv}}$ 更少，还要不要 split？** 更需要。KV 头少意味着发起 load 的 CTA 更少，长 $T$ 下更打不满带宽。
-- **数值会和单核结果 bit exact 吗？** 不会。浮点归约顺序变了，会有 ulp 级的差异。回归测试应该检查 greedy 解码出的 token 是否一致，不要用逐位比较。
-- **训练要不要用 FlashDecoding？** 不需要。训练时 $T_q$ 很大，prefill 式的 FlashAttention 才是主路径。FlashDecoding 是专门解决推理 decode 占用率的方案。
+**和 split-K GEMM 什么关系？**
+思想相同：M 维太窄，就把 K 维切开来填满 SM，最后归约。区别是注意力的归约必须带 LSE，不能把各段 $O_s$ 直接平均。
+**GQA 的 $H_{\mathrm{kv}}$ 更少，还要不要 split？**
+更需要。KV 头少意味着发起 load 的 CTA 更少，长 $T$ 下更打不满带宽。
+**数值会和单核结果 bit exact 吗？**
+不会。浮点归约顺序变了，会有 ulp 级的差异。回归测试应该检查 greedy 解码出的 token 是否一致，不要用逐位比较。
+**训练要不要用 FlashDecoding？**
+不需要。训练时 $T_q$ 很大，prefill 式的 FlashAttention 才是主路径。FlashDecoding 是专门解决推理 decode 占用率的方案。
 
 ## 相关题
 

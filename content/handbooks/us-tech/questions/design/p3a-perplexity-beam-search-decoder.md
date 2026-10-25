@@ -23,6 +23,31 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+给定一个返回下一 token 对数概率的回调，实现无长度惩罚、带 EOS 停止条件的 beam decoder。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `beam_search(next_logprobs, start, eos, width, max_new)`：`start` 是已有 token id 列表，`eos` 是终止 token id；从 `start` 开始最多生成 `max_new` 个 token，返回剩下的所有 beam，格式是 `[(tokens, score), ...]`，按分数降序。
+- `next_logprobs(tokens)` 返回词表上 V 个已归一化的 log 概率。合法 log 概率不含 NaN 且不大于 0；值为 $-\infty$ 的扩展直接丢弃。
+- 每一步只扩展未结束的 beam，已生成 EOS 的 beam 原样保留。所有候选按累计 log 概率降序、token 序列升序排序，截断到 `width` 个。EOS 保留在返回的序列里，没有长度惩罚，初始分数为 0，仅累加新生成 token 的 log 概率。
+- `width >= 1`，`max_new >= 0`。$V \le 100$，`max_new` 不超过 30。
+
+### 输入输出示例
+
+词表是 {0, 1}，1 是 EOS，模型每步都给出 P(0) = 0.4、P(1) = 0.6：
+
+```text
+beam_search(model, [], eos=1, width=1, max_new=10)  -> [([1], log 0.6)]
+beam_search(model, [], eos=1, width=2, max_new=2)   -> [([1], log 0.6), ([0, 1], log 0.24)]
+beam_search(model, [8], eos=1, width=1, max_new=0)  -> [([8], 0.0)]
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 给一段写了一半的 beam search，把它补完整，要处理 beam 大小、最大生成 token 数和停止条件。
@@ -31,7 +56,7 @@ sources:
 
 ## 思路
 
-每个 beam 保存 token 序列、累计 log 概率和是否已结束。每一步只扩展活跃的 beam，把所有扩展结果放进同一个候选池，按分数全局截断到 `width` 个。已经结束的序列不再生成，但仍然留在池里参与排序。
+我会让每个 beam 记录 token 序列、累计 log 概率和结束标记，每步把活跃 beam 的扩展放在一起，全局取前 `width` 个。已经生成 EOS 的序列不再扩展，但仍参与排序，这样高分的已完成序列不会被丢掉。
 
 停止条件有两种：生成步数到了 `max_new`，或者截断后所有 beam 都已经结束。如果题目要求长度归一化，或者「凑够 k 个完成序列就停」这类提前停止，排序分数和停止判断都要跟着改，要先和面试官对齐评分定义。
 
@@ -104,6 +129,16 @@ def beam_search(next_logprobs, start, eos, width, max_new):
     return [(list(tokens), score) for tokens, score, _ in beams]
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert result[0][0] == [1]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -132,9 +167,11 @@ assert {tuple(tokens) for tokens, _ in result} == {(1,), (0, 1), (0, 0)}
 
 设词表大小为 V，最多生成 L = `max_new` 步，宽度为 W。每一步最多产生 $W \cdot V$ 个候选，排序是 $O(WV \log(WV))$；复制 token 元组还要乘上序列长度。总时间约 $O(L \cdot WV \log(WV))$，候选池占 $O(WV \cdot L)$ 空间。排序可以换成 `heapq.nlargest`，降到 $O(WV \log W)$。
 
-如果追问怎么加长度惩罚：把排序用的分数换成 $\text{score} / \text{len}^{\alpha}$。这会改变「最优」的定义，短序列不再天然占优，要和面试官确认用哪种归一化。
+**怎么加入长度惩罚？**
+把排序用的分数换成 $\text{score} / \text{len}^{\alpha}$。这会改变「最优」的定义，短序列不再天然占优，要和面试官确认用哪种归一化。
 
-如果追问真实模型怎么做：活跃 beam 应该拼成一个 batch 一次前向，截断后按每个新 beam 的 parent 下标重排 KV cache。
+**真实模型里怎样批量执行？**
+活跃 beam 应该拼成一个 batch 一次前向，截断后按每个新 beam 的 parent 下标重排 KV cache。
 
 ## 相关题
 

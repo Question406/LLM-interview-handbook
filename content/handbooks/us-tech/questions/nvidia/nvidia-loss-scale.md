@@ -4,7 +4,7 @@ section: nvidia
 order: 12
 level: A
 title: NVIDIA：混合精度 loss scaling，overflow 怎么发现和恢复
-quick: "FP16 梯度容易下溢，所以 loss 先乘 $S$，更新前再除掉。检测到 inf/nan 就跳过这一步并把 $S$ 减半，连续若干步正常再加倍。BF16 通常不需要。"
+quick: "FP16 小梯度容易下溢，我会先把 loss 乘 $S$，更新前再把梯度除回去。发现 inf/nan 就跳过本步、保留原权重和动量，并减半 $S$；连续若干步正常再加倍，BF16 通常不需要这套全局缩放。"
 tags:
   - NVIDIA
   - Mixed Precision
@@ -26,11 +26,9 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+Loss scaling 用一个全局乘数保护 FP16 的小梯度：反向前放大 loss，更新前再除回去，发现溢出则跳过本步并减小乘数。AMP / Apex / Megatron 都有这类混合精度路径，但要先确认 dtype，BF16 通常不用全局缩放，FP8 则按 tensor 的 amax 管理 scale。INT8 / SmoothQuant 见 `nvidia-int8-quant`，FP8 的做法见 `nvidia-fp8`。
 
-NVIDIA 把混合精度写成了 AMP / Apex / Megatron 的默认路径。我会先问 dtype：fp16 才需要全局 loss scaling，bf16 通常不用，FP8 走的是另一套 tensor amax。这不是量化题。INT8 / SmoothQuant 见 `nvidia-int8-quant`；FP8 每张量 amax 见 `nvidia-fp8`。本题只处理全局 loss scaling：发现溢出、丢掉这一拍、改 $S$、权重保持上一拍的干净值。
-
-## 为什么要乘 $S$
+## 缩放为什么有用
 
 FP16 最大有限值大约 $65504$，最小正规数大约 $6\times 10^{-5}$ 量级。反向里很多梯度比这个还小，flush 成 0，训练看起来 loss 在动、参数几乎不更新。做法：
 
@@ -38,11 +36,11 @@ $$
 L' = S\cdot L,\qquad \nabla_{\mathrm{fp16}} = S\cdot \nabla,\qquad \nabla_{\mathrm{fp32}} = \nabla_{\mathrm{fp16}}/S.
 $$
 
-Master 权重和 Adam 状态留 fp32，$S$ 在更新前剥掉。这是 2017 混合精度论文的核心，不是「把模型改成 fp16 就完了」。$S$ 常用 $2^{10}$ 到 $2^{16}$ 起步。太大：乘法之后的激活 / 梯度超过 65504，变成 inf。太小：下溢还在。
+Master 权重和 Adam 状态保留 fp32，更新前把 $S$ 除掉，这是 2017 混合精度论文的核心做法。$S$ 常从 $2^{10}$ 到 $2^{16}$ 起步；太大时激活或梯度会超过 65504 变成 inf，太小又保护不了下溢的梯度。
 
 BF16 指数和 fp32 同宽，动态范围够，一般不用 loss scale。今天 LLM 训练默认 bf16，这题仍会问，因为 Megatron 还能走 fp16，而且它和 FP8 的溢出故事容易被混在一起。
 
-## 溢出怎么发现
+## 怎么检测溢出并恢复
 
 不能等 loss 变成 nan 再猜。AMP 的路径是：`unscale_` 之后在 fp32 梯度上做 inf/nan 检查（CUDA 上有融合 kernel，不必把整份梯度 DtoH）。Megatron / GradScaler 维护一个 `found_inf` 标志。只要任何一个参数的梯度里有 inf 或 nan，这一 step 视为溢出。
 
@@ -67,9 +65,9 @@ scaler.update()
 
 Nsight 里你看不到 overflow 这个计数器，除非自己 log。训练曲线上：偶发 step 被 skip，global step 仍加 1 但权重没动，loss 下一步通常回来。连续 skip 说明 $S$ 还是太大，或者真的数值炸了（LR、数据、除零），不能只靠再减 $S$。
 
-## 动态恢复
+检测到溢出后，动态缩放器这样调整：
 
-溢出：丢弃本步梯度（权重、动量保持上一份干净值），$S \leftarrow S/2$。连续 `growth_interval` 步没有 inf：$S \leftarrow 2S$，上限封顶。这是在搜「刚好不炸」的最大 $S$，让更多小梯度活在 fp16 里。
+溢出时丢弃本步梯度，权重和动量维持上一份干净值，并令 $S \leftarrow S/2$。连续 `growth_interval` 步没有 inf，再令 $S \leftarrow 2S$，直到设定上限。这样逐步寻找不触发溢出的较大 $S$，尽可能保住 FP16 中的小梯度。
 
 跳过的 step 不要用脏梯度做一次「很小的更新」，那会把 inf 写进 Adam。也不要 rewind 一长段 checkpoint，除非 inf 来自数据损坏而不是 scale。分布式下 inf 标志要 all-reduce：一张卡炸了、别的卡仍 step，权重立刻分叉。通信原语见 `nvidia-nccl-allreduce`。
 

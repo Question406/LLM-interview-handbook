@@ -4,8 +4,7 @@ section: openai
 order: 2
 level: S
 title: OpenAI：noisy 链路上实现 all_gather，轮数 bound 怎么推？
-quick: >-
-  先写对 ring all_gather；有噪声时把目标改成“误差 $\varepsilon$ 内恢复 float”，只需传约 $\log_2(\mathrm{range}/\varepsilon)$ 位，再按位做重复码。
+quick: "我会先写对 ring all_gather，再和面试官约定噪声模型、值域与允许误差。若允许误差 $\\varepsilon$，有界 float 可量化成约 $\\log_2(\\mathrm{range}/\\varepsilon)$ 位；练习再用重复码和 union bound 给出 BSC 下的保守轮数上界。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -24,6 +23,34 @@ sources:
     url: https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
     type: secondary
 ---
+
+## 题目描述
+
+模拟一个有噪声的单向环 all-gather：每个节点最初只有自己的实数，通信结束后每个节点都要得到全体节点值的估计。使用指定的量化和二进制翻转信道模型，返回重建结果与通信统计。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `noisy_ring_all_gather(values, extent, eps, flip_p, delta, rng) -> (result, stats)`：模拟同步的单向环 `all_gather`。`values` 形状 `[N]`，第 $i$ 个节点一开始只持有 `values[i]`。返回的 `result` 形状 `[N, N]`，第 `rank` 行是该节点按 origin 排列的全体估计；`stats` 包含量化位宽 `bits`、重复次数 `repetitions` 和总通信轮数 `rounds`。
+- 每个值都在 $[0, \text{extent}]$ 内。先等间距量化，保证没有传输错误时绝对误差不超过 `eps`。
+- 信道是 BSC：每次传输每个 bit 独立地以概率 $p$（`flip_p`，$0\le p<1/2$）翻转。每个 bit 重复发送奇数 $R$ 次，接收端多数表决。$R$ 的取值要保证全网所有消息中任何一个 bit 译码出错的总概率不超过 `delta`。
+- 只模拟 BSC，不混用加性高斯信道。$N\le 16$，量化位宽不超过 32 位；所有参数均满足上述合法范围。
+
+- `N>=1`，`extent>0`、`eps>0`、`0<delta<1`，均为有限数值；`rng` 为调用者提供的 NumPy Generator，用于可复现的信道随机数。量化格点为 `j*extent/L`（j=0..L），`L=max(1,ceil(extent/(2*eps)))`，等距中点向上取整；量化位宽为至少 1 的 `ceil(log2(L+1))`。自身持有的数也返回该量化表示。
+### 示例
+
+```text
+values = [0, 0.5, 1], extent = 1, eps = 0.05, flip_p = 0
+-> 每个 rank 的结果相同，每个估计误差 ≤ 0.05
+
+values = [0.3], extent=1, eps=0.05, flip_p=0, delta=0.01（N = 1）
+-> result = [[0.3]]，rounds = 0
+```
+
+## 解题思路与参考答案
+
+我会先保证无噪声的 ring all_gather 正确，再按约定的信道推轮数。关键是先确认是否要求 bit-exact：允许有界绝对误差时，float 只需要传足够的有效位；要求无损时就不能自行量化。比如下面练习允许 0.05 误差，就可以先压成离散格点，再保护这些 bit。
 
 ## 完整编程练习（手册重构版）
 
@@ -48,9 +75,9 @@ values = [0.3]（N = 1）
 
 ### 解题思路与正确性
 
-量化：取 $K=\lceil \text{extent}/(2\varepsilon)\rceil$ 个间隔，间隔宽度 $\text{extent}/K\le 2\varepsilon$，四舍五入到最近的格点，误差不超过 $\varepsilon$。每个值需要 $b=\lceil\log_2(K+1)\rceil$ 位。
+先把值域切成 $K=\lceil \text{extent}/(2\varepsilon)\rceil$ 个间隔，每段宽 $\text{extent}/K\le 2\varepsilon$。四舍五入到最近格点，误差最多 $\varepsilon$，传格点编号需要 $b=\lceil\log_2(K+1)\rceil$ 位。
 
-重复码：一个 bit 发 $R$ 次，多数表决出错需要至少一半次数被翻转。由 Hoeffding 不等式，出错概率至多 $\exp(-R(1-2p)^2/2)$。每个值要沿环走 $N-1$ 跳，每跳都重新译码再转发，所以全网一共有 $N(N-1)b$ 次“一个 bit 过一跳”的事件。用 union bound，令 $N(N-1)b\cdot\exp(-R(1-2p)^2/2)\le\delta$，得到
+每个 bit 重复发 $R$ 次，再多数表决；至少一半翻转才会译错。由 Hoeffding 不等式，出错概率至多 $\exp(-R(1-2p)^2/2)$。每个值要沿环走 $N-1$ 跳，每跳都重新译码再转发，所以全网一共有 $N(N-1)b$ 次“一个 bit 过一跳”的事件。用 union bound，令 $N(N-1)b\cdot\exp(-R(1-2p)^2/2)\le\delta$，得到
 
 $$
 R \ge \frac{2\ln\bigl(N(N-1)b/\delta\bigr)}{(1-2p)^2},
@@ -58,7 +85,7 @@ $$
 
 再取成奇数。
 
-环的模拟：第 $r$ 步，rank $i$ 把 origin 为 $(i-r)\bmod N$ 的值发给 rank $i+1$。每一步先让所有节点同时发送，再统一写入，新收到的数据只能在下一步转发，避免模拟里出现零延迟的多跳。
+环上第 $r$ 步，rank $i$ 把 origin 为 $(i-r)\bmod N$ 的值发给 rank $i+1$。每一步先让所有节点同时发送，再统一写入，新收到的数据只能在下一步转发，避免模拟里出现零延迟的多跳。
 
 ### 完整参考实现（Python 3）
 
@@ -122,6 +149,16 @@ def noisy_ring_all_gather(values, extent, eps, flip_p, delta, rng):
     stats = {"bits": bits, "repetitions": repetitions, "rounds": (n - 1) * repetitions}
     return result, stats
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.max(np.abs(out - values)) <= 0.02 + 1e-12` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

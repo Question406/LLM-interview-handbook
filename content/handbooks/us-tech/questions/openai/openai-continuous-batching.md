@@ -4,9 +4,7 @@ section: openai
 order: 12
 level: A
 title: OpenAI：continuous batching / iteration-level 调度解决什么
-quick: >-
-  请求级 batch 要等最慢那条生成完，短请求被 padding 和队头阻塞。iteration-level 每步允许新请求加入、完成的
-  退出，GPU 一直对着「当前还活着的 token」。没有可分页的 KV，变长 append 会把显存预留打满。
+quick: "连续批处理按一次 decoder iteration 调度：完成的请求释放 KV，等待请求补进来，活跃请求各生成一个 token。这样短请求结束后槽位能继续工作；KV 分页和 chunked prefill 则分别解决内存预留、长输入拖慢单步的问题。"
 tags:
   - OpenAI
   - Continuous Batching
@@ -28,50 +26,30 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+continuous batching 把调度单位缩小到一次 decoder iteration，让完成的请求退出、新请求补进来。比如三条请求还要 8、40、200 步，静态批次会让空出的槽一直等最长请求；连续批处理在第 8 步和第 40 步就能补入下一条，让 GPU 继续处理活跃 token。
 
-这是推理系统题，不是某一份能点名的 OpenAI onsite 原题。Orca 把调度从 request-level 改成 iteration-level；vLLM 用 PagedAttention 让 KV 可以按页增长。ChatGPT 类产品的并发来自大量不同长度的对话，我会按「浪费从哪来」答，并接到 `openai-prefill-decode`。
+请求级 batch 先凑满 $B$ 条、pad 到最大长度，再一起 decode 到最慢请求 EOS。长度 20 和 200 放一起会浪费 padding，短请求还会等待收批或长请求结束。KV 若按 `max_new_tokens` 预留连续空间，实际可能只用 10%，余量却占住显存。裸 tokens/s 看着还行，满足时延 SLO 的完成数 goodput 可能很差；训练的固定 $T$ 不存在同样的在线到达问题。
 
-## 请求级 batch 在浪费什么
+Orca 用 iteration-level 调度，每步先释放已结束请求的 KV，再在空位 prefill 新请求，活跃序列各生成 1 个 token。batch 成员每步可变，GPU 不再为结束槽继续做 GEMM。每个请求独立保存 `position`、采样 RNG、停止条件和 KV page 表，batch 维的第 $i$ 个位置代表当前 slot，没有统一的全局 `T`。
 
-静态 batch：凑满 $B$ 条，pad 到这个 batch 的 max length，一起 逐 token 生成（decode），直到最慢那条 EOS。三处浪费：
+只改调度还不够。连续 `cat` 的 KV 仍迫使系统按上限预留，vLLM 的 PagedAttention 把 KV 切成固定 page，逻辑连续、物理可分散；新增 token 时申请页，请求结束归还，投机解码拒绝也可通过还页 rollback。attention kernel 要支持 ragged 长度或 page 间接寻址，写死 `[B, H, T_max, D]` 再 pad 会损失调度收益。
 
-1. **Padding。** 长度 20 和长度 200 坐一桌，短的每步都在算 pad。
-2. **队头阻塞。** 先到的短请求必须等这个 batch 收齐，或者等长请求结束。
-3. **KV 预留。** 不知道一条会生成多长，只能按 `max_new_tokens` 预留连续显存。实际往往用了 10%，剩下的 page 锁死，并发上不去。
+新请求的完整 prefill 若塞进一个 iteration，又会拖慢这一轮 decode。可以用 chunked prefill，每轮只处理部分 prompt，把剩余预算留给 decode；分离 prefill、decode 池则需要另做架构权衡。解释时画静态 batch 的空槽和连续批的活 token 时间线，就能把这两种瓶颈区分清楚。
 
-所以裸 tokens/s 可能还行，goodput（满足延迟 SLO 的完成数）很差。这和训练的固定 $T$ 完全不是同一个问题。
-
-具体想一个 batch：三条请求还要 8、40、200 步。请求级调度会让前两条陪着第三条空转 160 步。iteration-level 下，第 8 步和第 40 步各腾出一个槽，等待队列里的新 输入预填充（prefill，即处理输入并建立缓存） 可以立刻填上。吞吐差的就是这些空槽，不是模型 FLOPs。
-
-## iteration-level 在干什么
-
-Orca 的想法：调度单位是一次 decoder iteration，不是一次完整请求。每步：
-
-- 已结束的序列出队，释放它的 KV。
-- 等待中的新请求，在有空位时 prefill 并加入。
-- 活着的序列各生成 1 个 token，batch 形状每步都变。
-
-GPU 不再为已经结束的位置做 GEMM。连续批（continuous batching）说的就是这个：batch 成员随时间连续替换，而不是一个栅栏等所有人。
-
-没有 paging 时，KV 仍要连续 `cat`，变长仍迫使你按上限预留。vLLM 把 KV 切成固定 page，逻辑上连续、物理上散。新 token 申请一页，结束就还页。投机解码拒绝时还页就等于 rollback，见 `openai-speculative-decoding`。
-
-和 prefill 的关系：新请求的 prefill 若整段塞进同一 iteration，会打爆这一步的时延。常见补丁是 chunked prefill：一步只消化部分 输入提示（prompt），其余 slot 留给 decode，避免 `openai-prefill-decode` 里说的队头阻塞。彻底拆池则是另一档架构。
-
-实现上每条请求至少要：当前 `position`、采样 RNG、结束条件、以及 KV 的 page 表。batch 维不再对应「第 $i$ 个固定样本」，而是当前活着的 slot。attention kernel 必须能吃 ragged 长度，或先按 page 间接寻址。写死 `[B, H, T_max, D]` 再 pad，等于把 continuous batching 的收益吐回去。
-
-可以画两个时间线：上面是静态 batch 的空白 pad，下面是每步都满的活 token。状态存在哪：每条请求一份 KV 指针 + 采样状态，没有全局 `T`。
+这张卡依据 Orca、vLLM 等公开系统讨论推理调度，不指向一份已确认的 OpenAI onsite 原题。
 
 ## 追问
 
-- **和动态 batching 的差别？** 很多框架的 dynamic batch 只是凑请求再整段跑完。continuous 是跑的过程中成员还在变。
-- **公平性？** 长生成会占着 KV。要有 max tokens、优先级、或抢占（抢占必须能把 KV offload / 丢弃）。
-- **batch 越大越好吗？** decode 在带宽饱和前是的；再大 首个 token 的等待时间（TTFT） 排队变差。对着 SLO 调，不对着 MFU 调。
-- **训练能不能这么调度？** 没必要。训练样本长度可切齐，没有在线到达过程。
+**和 dynamic batching 有什么差别？**
+很多 dynamic batching 只在开始前凑请求，continuous batching 在运行过程中仍更换成员。
 
-## 相关题
+**长请求会不会一直占资源？**
+会占着 KV，需要 max tokens、优先级或抢占；抢占后 KV 要 offload 或丢弃。
 
-- [[meta-vllm]]：vLLM 的公开讲法，把 continuous batching 和 PagedAttention 放在一起讲。
-- [[google-tpu-decode]]：TPU 上做连续批，难点换成静态 shape 和重编译。
-- [[sys-paged-attn]]：每步能换成员，靠的是按块分配 KV；那题讲块表本身。
-- [[nvidia-kv-offload]]：抢占后的 KV 卸到哪里，以及什么时候卸载还不如量化。
+**batch 越大越好吗？**
+decode 在带宽饱和前常受益，再大可能恶化 TTFT 和排队。按 SLO 调，不能只追 MFU。
+
+**训练也要这样调吗？**
+通常没必要，训练可把样本切齐，也没有在线到达过程。
+
+相关：`openai-prefill-decode`、`openai-speculative-decoding`、[[meta-vllm]]（连续批与 PagedAttention）、[[google-tpu-decode]]（静态 shape 与重编译）、[[sys-paged-attn]]（块表）、[[nvidia-kv-offload]]（抢占与量化的取舍）

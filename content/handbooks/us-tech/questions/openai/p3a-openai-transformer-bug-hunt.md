@@ -4,7 +4,7 @@ section: openai
 order: 603
 level: S
 title: "OpenAI：Transformer Bug Hunt：让训练与输出恢复正确"
-quick: "按形状、因果 mask、位置索引、label shift 的顺序逐项检查，每修一处就看 loss 和小样本输出，最后用极小数据集能否过拟合来确认梯度链通了。"
+quick: "按 shape、因果 mask、位置索引和 label shift 逐项排查，每项都用最小输入验证。每修一处就对照 loss 和小样本输出，最后看几条数据能否过拟合，确认梯度链接通。摘要只说大约四处 bug，这份练习单独验证缩放、softmax 轴和 mask 语义。"
 companies:
   - openai
 tags:
@@ -23,7 +23,32 @@ sources:
     type: secondary
 ---
 
-## 题目
+## 题目描述
+
+实现一个注意力调试练习的正确目标函数，明确分数缩放、mask 可见性与全屏蔽行语义。原面试未公开完整 Transformer 程序，本练习仅重构可验证的注意力子问题。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `attention(q,k,v,mask=None,causal=False)` 输入 NumPy 数组 q[B,H,T,D]、k[B,H,S,D]、v[B,H,S,Dv]，返回 [B,H,T,Dv]。
+- 对每个 query/key 的分数定义为 dot(q,k)/sqrt(D)，输出为可见 key 分数的 softmax 概率对 V 的加权和。softmax 的归一化范围是同一 query 的 key 轴。
+- mask 是可广播到 [B,H,T,S] 的 bool 数组，True 表示可见；None 表示没有额外屏蔽。causal=True 时 T=S，位置 i 只允许 key j<=i，且须同时满足 mask。
+- 没有任何可见 key 的行输出全0。使用 float64 验证，输入有限；1<=B,H<=4，1<=T,S<=128，D,Dv>=1。不得修改输入。
+
+### 输入输出示例
+
+```text
+q = k = ones((1, 1, 2, 1)), v = [[[[2], [4]]]]
+attention(q, k, v, causal=True)                     -> [[[[2], [3]]]]
+attention(q, k, v, mask=zeros((2, 2), dtype=bool))  -> [[[[0], [0]]]]
+```
+
+因果版本里第 0 个位置只能看自己，输出 2；第 1 个位置两个分数相同，取两个 value 的平均 3。
+
+## 解题思路与参考答案
+
+我会先用最小样本逐项验证 shape、因果 mask、位置索引和 label shift，每修一处就重新对照输出。比如 attention 的 softmax 沿错轴可能完全不报错，却让每个 query 的权重不再归一化。最后用几条数据过拟合检查梯度链，完整模型的缺陷不能只凭“能运行”验收。
 
 面试给一份 Transformer 模型代码、训练脚本和测试，里面被故意植入了错误。候选人要定位并修好这些 bug，让训练能正常收敛、输出恢复正确。
 
@@ -122,6 +147,16 @@ def attention(q, k, v, mask=None, causal=False):
 
     return np.einsum("bhts,bhsv->bhtv", weights, v)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(attention(q, q, v, causal=True), [[[[2.0], [3.0]]]])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

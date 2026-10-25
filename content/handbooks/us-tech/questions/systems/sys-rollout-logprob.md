@@ -4,9 +4,7 @@ section: systems
 order: 45
 level: S
 title: 系统：on-policy 时 rollout 的 logprob 和训练前向对不上，先查什么？
-quick: >-
-  同一份权重、同一次采样，旧 logprob 和新 logprob 应该一致，重要性采样比是 1。
-  对不上时先看 micro batch 是否相同、temperature 和 logprob 的归约方式是否相同，再看是不是用了上一版权重。
+quick: "第一次 on-policy 更新前，同权重、同概率定义下的新旧 logprob 应接近一致，重要性采样比应接近 1。先核对 temperature、top-p、micro batch 和 logprobs_mode，再查 mask、shift 与权重版本，避免把实现差异误当成 off-policy。"
 tags:
   - Post-train
   - GRPO
@@ -24,25 +22,17 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+第一次 on-policy 更新前，如果权重和 logprob 定义一致，新旧 logprob 应接近相等，重要性采样比也应接近 1。对不上时先核对采样与训练实现，再判断是否真的用了旧策略。
 
-verl issue 2996 报的是：GRPO 把 `train_batch_size` 设成等于 `ppo_mini_batch_size`，本该 on-policy，`old_log_prob` 和训练前向再算的 `log_prob` 仍然不一样。后续讨论把它收成一类一致性问题，不是单次面经。面试问「比为什么不是 1」时，按这个清单答。Anthropic 那道 GRPO 脚本见 `anthropic-grpo-debug`，那里的比偏离 1 还有 mini-epoch 这一个原因。
+verl issue 2996 就报告过这个现象：`train_batch_size` 等于 `ppo_mini_batch_size`，GRPO 本该 on-policy，`old_log_prob` 与训练重算的 `log_prob` 仍不同。这是一类一致性问题的公开案例，并非单次面经。
 
-## 先排除的三件事
+我会先对齐 temperature 和 top-p。采样经过 temperature、重算却用裸 logits，每个 token 的 logprob 都可能偏，偏差也不是全局常数。再核对 `logprobs_mode`：一边记录 temperature 与 top-p 截断后的概率，另一边用完整词表 log_softmax，二者定义不同，clip 仍围绕 1，却在使用失配的比值。
 
-采样时的 temperature、top-p 必须和重算 logprob 时相同。采样用了 temperature，重算用裸 logits，每个 token 的对数概率都会偏，而且偏的方向随 token 变，不是一个全局常数。
+接着核对 micro batch。issue 中的临时办法是让 rollout 的 `log_prob_micro_batch_size_per_gpu` 与训练的 `ppo_micro_batch_size_per_gpu` 相同。batch 形状、padding 和变长序列归约不一致，都可能造成差异。
 
-两边的 micro batch 要一样。issue 的临时办法是让 采样轨迹（rollout） 算 logprob 的 `log_prob_micro_batch_size_per_gpu` 等于训练的 `ppo_micro_batch_size_per_gpu`。batch 形状不同，padding 和变长序列的归约会差一截。
+这些检查过后，再查是否额外 step 过，或 rollout 用上一版权重。那才是真实 off-policy，应保留采样 logprob 作分母并 `detach`。全对或全错的 GRPO 组优势为 0，无论比值是否为 1 都不更新，可以先滤掉这些组再看其余组的均值。Anthropic 的 `anthropic-grpo-debug` 还会因为 mini-epoch 让比值偏离 1。
 
-`logprobs_mode` 要一致。有的实现存的是被 temperature 除过、再经过 top-p 截断后的分布，有的是训练前向的完整词表 log_softmax。用错一份，clip 的区间仍然围着 1，但比值已经不在 1 附近。
-
-## 然后才是算法
-
-确认上面三件之前，不要把偏差解释成 off-policy。真的 off-policy 是：这一批在更新之前又 step 了一次，或者采样用的是上一版权重。这时比可以离开 1，要用采样时存下来的 logprob 做分母，并且 `detach`。
-
-全对全错的 GRPO 组优势是 0，比是不是 1 都不会产生更新。先把这种组滤掉，再看剩下的组里比的均值。
-
-## 代码
+下面计算响应 mask 内的平均重要性采样比：
 
 ```python
 import torch
@@ -56,13 +46,15 @@ def importance_ratio(new_logp, old_logp, mask):
 
 ## 追问
 
-**能不能直接用 rollout 引擎吐出的 logprob，不再重算？** 可以，verl 用 `calculate_log_probs` 打开这条路。前提是那份 logprob 的定义和 损失（loss） 里的一致。省一次前向，少一次对账的机会。
+**能直接用 rollout 引擎返回的 logprob 吗？**
+可以，verl 的 `calculate_log_probs` 支持这条路径，前提是概率定义与损失（loss）一致。这样省一次前向，也少了一次重新核对两边结果的机会。
 
-**差在 1e-3，要不要停？** bf16 上最后几位可以差。差到比值均值明显离开 1，或随序列位置变大，就是 mask、shift 或权重版本错了，不是舍入。
+**差 1e-3 要停吗？**
+bf16 最后几位可能有误差。若均值明显偏离 1，或偏差随序列位置变大，要查 mask、shift 或权重版本，不能归因于舍入。
 
 ## 相关题
 
-- [[anthropic-grpo-debug]]：Anthropic 调试题修完 bug 后会问 ratio 为什么不是 1，这张就是那个追问的排查顺序。
-- [[p3a-anthropic-rl-fundamentals-grpo-debug]]：同一道 Anthropic 题的另一份整理，追问 on-policy 和 off-policy 时 ratio 为什么偏离 1。
-- [[coding-tis-mismatch]]：排除了 bug 之后剩下的真实 mismatch，用截断重要性权重 $\min(\pi_{\mathrm{old}}/\mu, C)$ 修正。
-- [[coding-token-logprob]]：训练端重算 logprob 的白板题，shift 和温度正是这里要先排除的两项。
+- [[anthropic-grpo-debug]]：修完 bug 后解释 ratio 为什么仍不等于 1。
+- [[p3a-anthropic-rl-fundamentals-grpo-debug]]：同一 Anthropic 题的另一份整理。
+- [[coding-tis-mismatch]]：排除 bug 后的真实 mismatch，用 $\min(\pi_{\mathrm{old}}/\mu, C)$ 截断重要性权重。
+- [[coding-token-logprob]]：训练端重算 logprob，核对 shift 与温度。

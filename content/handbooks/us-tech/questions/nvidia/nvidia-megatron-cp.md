@@ -4,10 +4,7 @@ section: nvidia
 order: 18
 level: S
 title: NVIDIA：Megatron context parallel，环上传 KV
-quick: >-
-  Megatron CP 每卡只常驻一段 $T/\mathrm{CP}$ 的激活和 KV。注意力时 Q 不动，K/V 沿 CP 组环状
-  P2P；概念上的 all-gather / reduce-scatter 被收成点对点。因果 mask 让靠后的 rank 活多，Megatron 用
-  zigzag（一头一尾两块）把负载拉平，并直接调 FlashAttention / cuDNN 核。
+quick: "Megatron CP 把序列分到多卡，每卡常驻 $T/\\mathrm{CP}$ 的激活和 KV，注意力时保留本地 Q，让 K/V 沿环传递并累积精确输出。因果 mask 会造成工作量不均，所以用 zigzag 的头尾配对切块，并复用 FlashAttention / cuDNN 核。"
 tags:
   - NVIDIA
   - Megatron
@@ -32,11 +29,9 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+Megatron CP 让每张卡保留本地 Q，把其他卡的 KV 块依次传过来，用在线 softmax 合并注意力结果。和 Ring Attention 对照时，Megatron 强调复用 FlashAttention / cuDNN 核，并跳过因果 mask 下无效的计算、平衡各卡负载。配置入口是 `--context-parallel-size` 和 P2P 通信类型；CP、TP、SP 分别搬什么，见 `nvidia-context-parallel`。
 
-`nvidia-context-parallel` 把 CP 和 TP / SP 的通信对象分开了。NVIDIA 训练岗会往下挖：Megatron-Core / NeMo 到底怎么传 KV、因果 mask 为什么会偏负载。论文对照是 Ring Attention；Megatron 的差是 (1) 复用现成 FlashAttention / cuDNN 核，(2) 去掉下三角上的废算并做负载均衡。`--context-parallel-size`、P2P 通信类型是开关，不是答案。
-
-## 环上搬什么
+## KV 怎么沿环传递
 
 CP 组大小 $N$。序列切成块，每卡前向只存自己那一段的 KV，激活也按 $T$ 分片，所以 Linear / LN 不用改。注意力：本地 $Q_i$ 必须见到全部 $K,V$。朴素 all-gather 会让每卡瞬时再持有一份完整 KV，把省下的激活吐回去。Megatron 把这次 all-gather（反向对应 reduce-scatter）收成环：
 
@@ -46,7 +41,7 @@ CP 组大小 $N$。序列切成块，每卡前向只存自己那一段的 KV，�
 
 通信发生在「一张卡和它在其他 TP 组里的对端」之间。文档例子：$T=8\mathrm{k}$，每卡 4k；GPU0 与 GPU2 组成 CP 组互换 KV，GPU1 与 GPU3 另一组：因为 TP=2 时相邻卡先组成 TP，CP 跨过去。总卡数 $\mathrm{TP}\times\mathrm{CP}\times\mathrm{PP}\times\mathrm{DP}$。KV 体积跟 $H_{\mathrm{kv}}$ 走，GQA / MQA 直接减通信量，见 `google-gqa-mqa`。
 
-Overlap：第 $k$ 块的 FA 和下一跳 P2P 叠。块太小，核启动和延迟吃掉重叠；块太大，单卡又放不下。这是 CP 的 MFU 旋钮，不是 TP 那两次 all-reduce 的旋钮，见 `nvidia-tensor-parallel`、`nvidia-nccl-allreduce`。
+计算第 $k$ 块 FA 时，可以同时传下一跳 KV。块太小，核启动和通信延迟会抵消重叠收益；块太大，单卡又可能放不下。因此 CP 的 MFU 要结合块大小调，和 TP 的两次 all-reduce 需要分别分析，见 `nvidia-tensor-parallel`、`nvidia-nccl-allreduce`。
 
 ## 因果 mask 和 zigzag
 
@@ -58,7 +53,7 @@ Megatron 的修法：把序列切成 $2N$ 块，每张卡拿一块靠前 + 一�
 
 正向每卡只留本地 KV 块，反向再 gather：用通信换激活。这和 checkpoint 正交；长上下文两者常一起开。万亿 3D 并行里 CP 是第四维，见 `nvidia-trillion-train`。
 
-## 和 SP、推理切块不要并句
+和 SP、推理切块比较时，要看序列在哪个阶段被切开。
 
 SP 仍只切 LN / Dropout，GEMM 前要把 $T$ 拼回，见 `nvidia-context-parallel`。训练 CP 是空间上切开一条序列。Serving 的长 输入提示（prompt） 更常走 chunked 输入预填充（prefill，即处理输入并建立缓存） 或 prefill / 逐 token 生成（decode） 分池，那是时间上切开，见 `nvidia-chunked-prefill`。推理引擎里也可以对 prefill 做 context parallel，KV 再汇到 decode 池，那是另一张部署图。
 

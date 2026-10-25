@@ -4,7 +4,7 @@ section: openai
 order: 6
 level: S
 title: OpenAI：attention 里 softmax 轴和 mask 用 0 会怎样，怎么单测
-quick: "softmax 要沿 key 维（`dim=-1`）归一，因果 mask 要在 softmax 前填 $-\\infty$；乘 0 的 mask 会让未来 token 分到 $e^0=1$ 的权重。"
+quick: "softmax 沿 key 维（`dim=-1`）归一，因果 mask 在 softmax 前填 $-\\infty$，未来概率才为零。比如乘零只把 logit 变成 0，仍留下 $e^0=1$ 的权重；用小矩阵检查行和、未来位置概率，再做有/无 cache 对照。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -26,6 +26,29 @@ sources:
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
+
+## 题目描述
+
+实现支持因果 mask、紧凑 K/V 缓存和可选 RoPE 的多头注意力接口。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`mha(x,wq,wk,wv,wo,heads,kv_heads=None,cache=None,key_valid=None,use_rope=False)` 返回 `(out,new_cache)`。x 为 `[B,T,D]`，wq、wo 为 `[D,D]`；令 H=heads、Hkv=`kv_heads`（默认 H）、d=D/H，wk/wv 为 `[D,Hkv*d]`，H 可被 Hkv 整除。输出为 `[B,T,D]`，query 头 h 使用编号 `floor(h/(H/Hkv))` 的 K/V 头，分数除以 sqrt(d)，对可见 key 按 `exp(score)/sum(exp(score))` 归一化后加权 V，只看绝对位置不晚于自身的 key。
+
+cache 是 `(k,v)`，各为 `[B,Hkv,prefix,d]`；新缓存长度为 prefix+T，不复制到 H 个头。`key_valid` `[B,prefix+T]` 中 True 为有效 key，与因果约束同时生效，全屏蔽 query 输出全零而无 NaN。
+
+`rope(x,start)` 对 `[B,H,T,d]` 的相邻偶奇维成对旋转，位置为 start+t，基数 10000：第 i 对角度为 `(start+t)*10000^(-2*i/d)`，一对 `(a,b)` 变为 `(a*cos-b*sin,a*sin+b*cos)`；`use_rope` 时 d 为偶数，缓存中的旧 K 已旋转，不得重复旋转。无 bias、dropout；输入有限，B<=8、T<=256、D<=128。
+
+### 示例
+
+```text
+B=1,T=2,D=2,heads=1，x=[[[2,4],[6,8]]]。
+wq=wk 为零矩阵，wv=wo 为单位矩阵，无 cache、无 RoPE。
+out=[[[2,4],[4,6]]]，new_cache 长度为 2。
+逐 token 传入并复用缓存，输出应与上述完整输入相同。
+```
+
+## 解题思路与参考答案
 
 ## 完整编程练习（手册重构版）
 
@@ -174,6 +197,16 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     return output, (k, v)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(pieces, axis=1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -291,7 +324,7 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 - 轮次：给一份带 bug 的 Transformer。公开复述里，softmax 的维度和因果 mask 是高频的植入点。
 - 来源：Exponent 2025 报告；整体查法见 `openai-transformer-debug`。
 
-这类 bug 不会产生 NaN，生成的文字也「看起来像语言」，所以没法靠 loss 曲线找。更可靠的做法是用 shape 和一块小矩阵把错误固定下来。
+我会用一个小矩阵分别检查归一化维度和未来位置概率：每个 query 沿 key 的权重和应为 1，未来位置应为 0。比如把 mask 乘到分数上，只会把非法 logit 变成 0，softmax 后仍有概率；这些错误不一定产生 NaN，不能只靠生成文字或 loss 曲线判断。
 
 ## 题怎么来的
 
@@ -343,9 +376,12 @@ def test_softmax_axis():
 
 ## 追问
 
-- **padding mask 和因果 mask 谁先？** 都放在 softmax 之前，两者取逻辑或之后一次性填充。padding 的 key 也必须是 $-\infty$，否则短序列会去看 pad。
-- **为什么要减 max？** 防止 `exp` 溢出。轴要对：`max` 沿 key 维取，`keepdims=True`，不要对整个 batch 减同一个标量。
-- **逐 token 生成（decode）一步还要 mask 吗？** 单个 token 且 cache 已是合法前缀时，通常不需要。一次送入多个新 token 时，仍然要加相对 cache 的因果块。
+**padding mask 和因果 mask 谁先？**
+都放在 softmax 之前，两者取逻辑或之后一次性填充。padding 的 key 也必须是 $-\infty$，否则短序列会去看 pad。
+**为什么要减 max？**
+防止 `exp` 溢出。轴要对：`max` 沿 key 维取，`keepdims=True`，不要对整个 batch 减同一个标量。
+**逐 token 生成（decode）一步还要 mask 吗？**
+单个 token 且 cache 已是合法前缀时，通常不需要。一次送入多个新 token 时，仍然要加相对 cache 的因果块。
 
 ## 相关题
 

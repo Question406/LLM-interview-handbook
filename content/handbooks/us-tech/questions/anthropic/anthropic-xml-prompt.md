@@ -4,9 +4,7 @@ section: anthropic
 order: 6
 level: A
 title: Anthropic：为什么偏爱 XML 标签组织 tool / 条款，解析失败怎么降级？
-quick: >-
-  XML 风格开闭标签是边界，不是协议。instructions、documents、example
-  切开以后，模型少把资料当成命令。解析失败时不要执行半截 tool：先按标签名抽块，再退回纯文本，并把错误还回去。
+quick: "XML 风格标签能把 instructions、documents、example 分开，让模型更容易分清指令和资料。解析时先按标签名抽取完整块，失败再退回纯文本并返回错误；半截工具参数不执行，真正的工具调用交给 API schema。"
 tags:
   - Anthropic
   - Prompt
@@ -25,15 +23,15 @@ sources:
     type: primary
 ---
 
-Claude 文档把 XML 风格标签当成复杂 prompt 的默认切法。研究 / 应用岗会问「为什么不是 Markdown 标题」。我的答法：标签给的是可嵌套、可点名、可机械抽取的边界；条款、检索文档、用户输入、tool 结果四类东西经常挤在同一上下文，没有边界就会串角色。这不是把模型变成 XML 校验器。
+XML 风格标签适合把复杂 prompt 中的不同内容分开，因为它能嵌套、能按名字指代，也方便程序抽取。比如条款、检索文档、用户输入和 tool 结果挤在同一个上下文时，边界不清就容易让模型把资料当成指令。标签能减少这类混淆，但不能保证模型输出合法 XML。
 
 ## 标签在干什么
 
 官方说法很具体：输入提示里同时有指令、上下文、示例、可变输入时，用描述性标签包起来，减少误读。没有「模型只认某一组神圣标签名」，但名字要稳定，后文要用同一名字指代。「看 documents 里的合同」比「看上面那段」稳。
 
-嵌套是正经需求：documents 下面多个 document，每个有 source 和 document_content。条款同理：constitution 下面一条条 principle。tool 结果用 result 包原始输出，避免用户或网页里的句子看起来像系统指令。这和 `anthropic-prompt-injection` 是同一条边界：不可信内容进资料标签，指令留在系统侧。
+嵌套可以这样组织：documents 下面多个 document，每个有 source 和 document_content。条款同理：constitution 下面一条条 principle。tool 结果用 result 包原始输出，避免用户或网页里的句子看起来像系统指令。这和 `anthropic-prompt-injection` 是同一条边界：不可信内容进资料标签，指令留在系统侧。
 
-和 JSON 比：模型在网上见过大量尖括号文本，少转义；写 diff、写代码时 JSON 要逃引号和换行。Anthropic 讲 agent-computer interface 时明确说过，格式开销大会把模型写进死角。所以给模型看的用标签或接近自然语言的字段；给运行时执行的用 JSON Schema。两层不要混成「模型直接吐我去 `eval` 的字符串」。
+模型在网上见过大量尖括号文本，这种格式需要的转义较少。用 JSON 包 diff 或代码时，则要转义引号和换行。Anthropic 讲 agent-computer interface 时明确说过，格式开销大会把模型写进死角。所以给模型看的用标签或接近自然语言的字段；给运行时执行的用 JSON Schema。两层不要混成「模型直接吐我去 `eval` 的字符串」。
 
 ## 解析失败怎么降级
 
@@ -60,9 +58,9 @@ def grab(text, tag):
 
 条款场景的降级更保守：某条 principle 抽不出来，就当该条不存在并告警，不要用模型「补写一条类似的」。补写等于改 constitution。CAI 里条款是人写的版本化规则，见 `anthropic-constitutional-ai`。
 
-## 和原生 tool use 的分工
+原生 tool use 和这些标签各有用途。
 
-现在 API 的 tool 调用是结构化 `tool_use` 块加 JSON 参数，不是让你从散文里抠标签。XML 还在两头：system 里组织文档与条款；自定义 ACI 里给模型看的 tool 说明。解析失败走 `is_error` 结果，让模型换参数，不要在宿主侧「智能修复后执行」。修复执行是注入的经典口子。
+现在 API 的 tool 调用使用结构化 `tool_use` 块和 JSON 参数，不需要从散文里抽取标签。XML 还在两头：system 里组织文档与条款；自定义 ACI 里给模型看的 tool 说明。解析失败走 `is_error` 结果，让模型换参数，不要在宿主侧「智能修复后执行」。修复执行是注入的经典口子。
 
 ## 追问
 

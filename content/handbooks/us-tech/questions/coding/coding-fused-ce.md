@@ -4,7 +4,7 @@ section: coding
 order: 29
 level: S
 title: 白板：融合 linear 和 cross entropy，不要物化 `[B, T, V]` logits
-quick: "沿词表分块算 $hW^\\top$，用 running $(m,\\ell)$ 攒 logsumexp，目标 logit 用 $h^\\top w_y$ 单独算；前向不分配完整的 `[N, V]` logits。"
+quick: "沿词表分块算 $hW^\\top$，用 running $(m,\\ell)$ 累计 logsumexp，目标 logit 则单独算 $h^\\top w_y$。这样前向不分配完整 `[N, V]` logits；训练峰值显存的收益还需要自定义 backward 或重算。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +27,28 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+在不能保存完整词表 logits 矩阵的条件下，实现线性输出层与交叉熵的组合。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`fused_linear_ce(h,weight,target,ignore_index=-100,chunk=4096)` 返回平均交叉熵标量。h 为 `[N,D]`，weight 为 `[V,D]`，target 为 `[N]` 整数标签；未忽略标签在 `[0,V)`，`ignore_index` 可为任意整数。第 i 个样本的词表 logits 是 h[i] 与 weight 各行的内积，交叉熵使用完整词表归一化。
+
+只对 target 不等于 `ignore_index` 的样本取平均。全部忽略时返回仍连接计算图的标量 0，使 h、weight 的梯度均为 0。chunk 为正整数，运算中不能分配完整 `[N,V]` logits，应限制同时处理的词表列数不超过 chunk；结果和梯度须与完整交叉熵一致。
+
+### 示例
+
+```text
+h=[[0]], weight=[[1],[2]], target=[0], chunk=1
+返回约 0.69314718。
+若 target=[99], ignore_index=99，返回 0，h 和 weight 梯度均为 0。
+```
+
+## 解题思路与参考答案
+
+我会沿词表分块计算，因为交叉熵 $\ell=-z_y+\mathrm{logsumexp}(z)$ 只依赖目标 logit $z_y$ 和每行 logsumexp，不需要先保留整张 logits。$z_y=h^\top w_y$ 可以直接取出权重的第 $y$ 行做点积。logsumexp 沿词表分块累计：每一行维护到目前为止的最大值 $m$ 和以 $m$ 为基准的指数和 $\ell$；新块的最大值更大时，旧的 $\ell$ 乘以 $\exp(m_{\text{old}}-m_{\text{new}})$ 换到新基准，再加上新块的指数和。第一块时 $m=-\infty$，$\exp(-\infty)=0$，旧和自然清零。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证；这是分块前向的参考实现，没有写自定义 backward，也没有测显存。
@@ -47,8 +69,6 @@ target 全是 99                  -> 0，h 和 weight 的梯度全为 0
 ```
 
 ### 解题思路与正确性
-
-交叉熵 $\ell=-z_y+\mathrm{logsumexp}(z)$ 只需要两样东西：目标 logit $z_y$ 和每行的 logsumexp。$z_y=h^\top w_y$ 可以直接取出权重的第 $y$ 行做点积。logsumexp 沿词表分块累计：每一行维护到目前为止的最大值 $m$ 和以 $m$ 为基准的指数和 $\ell$；新块的最大值更大时，旧的 $\ell$ 乘以 $\exp(m_{\text{old}}-m_{\text{new}})$ 换到新基准，再加上新块的指数和。第一块时 $m=-\infty$，$\exp(-\infty)=0$，旧和自然清零。
 
 被忽略的目标先替换成 0 再 gather，避免 `ignore_index` 大于 V 时越界；平均只在有效位置上做。
 
@@ -92,6 +112,16 @@ def fused_linear_ce(h, weight, target, ignore_index=-100, chunk=4096):
     nll = -target_logit + running_max + running_sum.log()
     return nll[keep].mean()
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(fused, reference, atol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -174,9 +204,12 @@ Weight tying 时 $W$ 就是 embedding 矩阵，见 `coding-weight-tying`。fused
 
 ## 追问
 
-- **为什么不能先 softmax 再 log？** 原因和未融合的 CE 一样：概率会下溢成 0，取 log 得到 $-\infty$。融合不改变这条数值约束。
-- **label smoothing 怎么办？** 目标不再是单列，只算 $z_y$ 不够，要对整行算 $-q\log\pi$。仍然可以分块，但每块都要累加 $q_c\log\pi_c$，实现明显更复杂。
-- **$(m,\ell)$ 能用 fp16 存吗？** 应该升到 fp32。词表上的 sumexp 和注意力里一样容易溢出。
+**为什么不能先 softmax 再 log？**
+原因和未融合的 CE 一样：概率会下溢成 0，取 log 得到 $-\infty$。融合不改变这条数值约束。
+**label smoothing 怎么办？**
+目标不再是单列，只算 $z_y$ 不够，要对整行算 $-q\log\pi$。仍然可以分块，但每块都要累加 $q_c\log\pi_c$，实现明显更复杂。
+**$(m,\ell)$ 能用 fp16 存吗？**
+应该升到 fp32。词表上的 sumexp 和注意力里一样容易溢出。
 
 ## 相关题
 

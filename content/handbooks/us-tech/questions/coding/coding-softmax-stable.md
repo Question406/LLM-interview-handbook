@@ -4,7 +4,7 @@ section: coding
 order: 1
 level: S
 title: 白板：数值稳定 softmax，为什么减 max，轴怎么选
-quick: "沿「谁和谁比概率」的那一维减去该行最大值，再 exp 归一化：分布不变，指数落在 $(0,1]$ 不会溢出；分类是最后一维，注意力是 key 维。"
+quick: "先确定哪些位置一起分配概率，再沿那一维逐行减 max、取 exp 并归一化。分子分母同乘常数，分布保持不变，同时每行至少有一项指数是 1，避免溢出和整行下溢；分类沿词表维，attention 沿 key 维。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,32 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
     type: primary
 ---
+
+## 题目描述
+
+用 NumPy 实现按指定轴归一化的 softmax 和 log-softmax，适用于数值较大的 logits 和合法的屏蔽项。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `softmax(x, axis=-1)`：沿指定轴做数值稳定的 softmax，输出形状和输入相同。
+- `log_softmax(x, axis=-1)`：沿指定轴做数值稳定的 log-softmax。
+- 输入里允许出现 `-inf`，表示这个位置被屏蔽，对应概率精确为 0。
+- 归一化轴非空，每行至少有一个有限值，不含 NaN 或 `+inf`。
+- 不修改输入；内部用 float64 计算。
+
+### 输入输出示例
+
+```text
+softmax([1000, 1000])    -> [0.5, 0.5]
+softmax([0, -inf])       -> [1, 0]
+```
+
+## 解题思路与参考答案
+
+我会沿指定轴逐行减最大值，再取指数并除以该行指数和。比如 [1000, 1000] 先变成 [0, 0]，就能稳定得到 [0.5, 0.5]。代码还要明确全屏蔽行的处理；这份练习选择报错，避免对全 -inf 的行继续归一化。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -83,6 +109,16 @@ def log_softmax(x, axis=-1):
     shifted = _shift_by_row_max(x, axis)
     return shifted - np.log(np.exp(shifted).sum(axis=axis, keepdims=True))
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(probs[0], probs[1])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -163,9 +199,12 @@ NVIDIA 的面试官可能会追问：约简沿最后一维时，warp 可以连�
 
 ## 追问
 
-- **为什么不对整个 batch 减一个标量？** 减一个全局常数不改变精确的数学分布，风险在于其他行的指数可能全部下溢。逐行减 max 能保证每行至少有一个指数等于 1。
-- **fp16 还要升精度吗？** 减 max 之后大多数情况够用。遇到极端 logits，或者 entropy 这类约简，可以把这一步放到 fp32 里算，再转回去。
-- **和 log-sum-exp 的关系？** $\log\sum e^{z}=m+\log\sum e^{z-m}$，softmax 的分母就是它的指数。交叉熵损失（CE）直接用 log-sum-exp 计算，不需要把 $p$ 算出来，见 `coding-logsumexp`。
+**为什么不对整个 batch 减一个标量？**
+减一个全局常数不改变精确的数学分布，风险在于其他行的指数可能全部下溢。逐行减 max 能保证每行至少有一个指数等于 1。
+**fp16 还要升精度吗？**
+减 max 之后大多数情况够用。遇到极端 logits，或者 entropy 这类约简，可以把这一步放到 fp32 里算，再转回去。
+**和 log-sum-exp 的关系？**
+$\log\sum e^{z}=m+\log\sum e^{z-m}$，softmax 的分母就是它的指数。交叉熵损失（CE）直接用 log-sum-exp 计算，不需要把 $p$ 算出来，见 `coding-logsumexp`。
 
 ## 相关题
 

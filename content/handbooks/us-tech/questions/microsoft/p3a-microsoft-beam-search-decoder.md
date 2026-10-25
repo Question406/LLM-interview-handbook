@@ -4,7 +4,7 @@ section: microsoft
 order: 606
 level: S
 title: "Microsoft AI / Copilot：Beam Search：从 greedy 到 top-K 扩展"
-quick: "每步把所有未结束 beam 的扩展放进同一个候选池，按累计 log 概率全局截断到 width 个，已生成 EOS 的序列原样保留，用小词表穷举来校验。"
+quick: "每步将所有未结束 beam 的扩展与已结束序列一起比较，按累计 log 概率全局保留 width 条。EOS 后不再扩展，有限宽度不保证全局最优；用小词表、足够宽的搜索与穷举对照验证。"
 companies:
   - microsoft
 tags:
@@ -23,6 +23,33 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个确定性 beam search 解码器。模型以任意当前 token 序列为输入，返回下一 token 的 log 概率；维护限定数量的候选，按累计分数选择并返回最终候选序列。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `beam_search(next_logprobs, start, eos, width, max_new)`：从 `start` 开始最多生成 `max_new` 个 token，返回剩下的所有 beam，格式是 `[(tokens, score), ...]`，按分数降序。
+- `next_logprobs(tokens)` 返回词表上 V 个已归一化的 log 概率。假定不含 NaN 且各项不大于 0；值为 $-\infty$ 的扩展直接丢弃。
+- 每一步只扩展未结束的 beam，已生成 EOS 的 beam 原样保留。所有候选按累计 log 概率降序、token 序列升序排序，截断到 `width` 个。EOS 保留在返回的序列里，没有长度惩罚。
+- `width >= 1`，`max_new >= 0`。$V \le 100$，`max_new` 不超过 30。
+
+### 示例
+
+词表是 {0, 1}，1 是 EOS，模型每步都给出 P(0) = 0.4、P(1) = 0.6：
+
+```text
+beam_search(model, [], eos=1, width=1, max_new=10)  -> [([1], log 0.6)]
+beam_search(model, [], eos=1, width=2, max_new=2)   -> [([1], log 0.6), ([0, 1], log 0.24)]
+beam_search(model, [8], eos=1, width=1, max_new=0)  -> [([8], 0.0)]
+```
+
+## 解题思路与参考答案
+
+每一步把所有 beam 的扩展放在同一个池里，用累计 log 概率全局保留最好的 `width` 条；遇到 EOS 的序列不再扩展，但仍参与比较。比如 width 为 1 时就是 greedy，宽度足够覆盖所有路径时才等价于穷举。
+
 ## 题目
 
 模型接口已经给好，输入一个 token 序列，返回下一个 token 的 log 概率。要求在它外面实现解码逻辑和 beam 的管理。
@@ -33,11 +60,9 @@ sources:
 
 每个 beam 记三样东西：token 序列、累计 log 概率、是否已经结束。每一步对未结束的 beam 枚举所有下一个 token，把累计 log 概率加上这一步的 log 概率，然后在所有候选里全局选最好的 `width` 个。已经生成 EOS 的 beam 单独保留，不再扩展。
 
-几个容易出错的地方：
+累计分数用 log 概率相加，直接连乘会让长序列下溢成 0。全局截断只留下固定数量候选；若每条 beam 都单独留 `width` 个，池会越来越大，也不再是同一搜索算法。
 
-- 不要把概率直接连乘，序列一长就下溢成 0。用 log 概率相加。
-- 截断要全局做。每个 beam 各留 `width` 个子候选，候选池会越来越大，结果也不对。
-- 长度惩罚、EOS 处理和提前停止规则都会改变「最优序列」的定义，动手前要和面试官确认。
+长度惩罚、EOS 和提前停止会改变最优的定义，先和面试官约定，再实现与测试。
 
 验证时用一个小词表、可以手算的模型，把 beam 开到足够宽，和穷举结果对比。
 
@@ -107,6 +132,16 @@ def beam_search(next_logprobs, start, eos, width, max_new):
 
     return [(list(tokens), score) for tokens, score, _ in beams]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert result[0][0] == [1]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

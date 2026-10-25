@@ -4,9 +4,7 @@ section: systems
 order: 41
 level: A
 title: 系统：流水线里优化器为什么不能在稳态中间 step？
-quick: >-
-  一个优化器步对应一整批 microbatch 的梯度加总。GPipe 和 1F1B 都是排空之后才更新权重。
-  稳态中间 step，还在流水线里的 microbatch 会混用旧权重和新权重，这一步不再是同步 SGD。
+quick: "GPipe 和 1F1B 的一次优化器更新，要等整批 microbatch 的反向与通信结束、流水线排空后再执行。若在稳态中间 step，在途 microbatch 就会混用新旧权重，累加出的梯度不再对应同一次同步 SGD 更新。"
 tags:
   - Pretrain
   - Pipeline Parallel
@@ -24,21 +22,15 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+GPipe 和 1F1B 都要等流水线排空、这一批梯度与通信全部完成，再执行一次优化器更新。否则在途的 microbatch 会混用新旧权重，梯度就不再对应同一个参数版本。
 
-图上米色的格子经常被问成「这里能不能顺手更新」。GPipe 和 Megatron 的 1F1B 都把优化器放在流水线排空之后。这道是按这两篇的调度拟的，不是某一场的逐字题。气泡本身见 `nvidia-pipeline-bubble`。
+假设有 $P$ 个 stage、$M$ 个 microbatch。这一批每个 microbatch 的前向和反向都使用本步开始时的权重，梯度在各 stage 本地累加。最后一个反向及通信结束后才调用 `optimizer.step`，下一批前向再读取新权重。
 
-## 一步的边界
+1F1B 稳态会交替执行一个新前向和一个老反向。老反向所用的激活来自旧权重；如果这时 step，后面的前向已经读到新权重，累积梯度里却还有旧权重的贡献，无法给这一步指定一个明确的 $\theta$。图上出现空槽，也不意味着可以在那个位置更新。
 
-$P$ 个 stage、$M$ 个 microbatch。每个 microbatch 的前向和反向都用**这一步开始时**的同一份权重。梯度在本地累加。最后一个反向结束、通信也结束，才 `optimizer.step`，然后才允许下一批的前向读新权重。
+Zero Bubble 会把反向拆成对激活的 B 和对权重的 W，用 W 填空槽，优化器仍要等所需梯度齐全。为避免 step 前的梯度范数和 inf 检查触发全局 all-reduce、打断流水线，它可以先按局部状态更新，在下一步 warmup 收到全局结果后决定是否回滚。这需要完整的回滚机制，不能理解成稳态里每格都能 step。
 
-1F1B 的稳态是「一个新前向、一个老反向」交替，不是「反向完了就可以更新」。那个老反向用的激活，是旧权重算出来的。若在这里 step，下一格前向用新权重，梯度却还在加旧权重的贡献，这一步没有一个明确的 $\theta$。
-
-## 和 Zero Bubble 的差别
-
-Zero Bubble 把反向拆成对激活的 B 和对权重的 W，W 可以填进空槽。优化器仍然要等该等的梯度到齐。他们为了不在 step 前做一次全局 all-reduce（梯度范数、inf 检查会把流水线打断），会先按局部状态更新，下一步 warmup 里拿到全局结果再决定回滚。那是「先更新、错了撤」，不是「稳态里每格都 step」。没实现回滚就照抄，数值和同步 SGD 对不上。
-
-## 代码
+下面示意 1F1B 排空后才更新：
 
 ```python
 def one_f1b(forward, backward, opt, num_micro, num_stages, stage):
@@ -53,8 +45,12 @@ def one_f1b(forward, backward, opt, num_micro, num_stages, stage):
     opt.step()  # after the pipeline is drained
 ```
 
+这道题按 GPipe 和 Megatron 调度拟成，并非某次逐字面经。气泡本身见 `nvidia-pipeline-bubble`。
+
 ## 追问
 
-**梯度累积和流水线叠在一起，step 几次？** 仍是每个 global step 一次。流水线的 $M$ 和累积的 $K$ 都只增加「加进这份梯度的 microbatch 数」。
+**再加梯度累积，step 几次？**
+每个 global step 仍只更新一次。流水线的 $M$ 和累积的 $K$ 都在增加进入这份梯度的 microbatch 数量。
 
-**最后一级先算完 损失（loss），能不能先更新最后一级？** 不能。前面的 stage 还在用旧权重产生激活。各 stage 的 `step` 要对齐到同一次迭代，否则下一圈前向和反向的权重版本错开。
+**最后一级先算完损失（loss），能先更新吗？**
+不能。前面的 stage 仍在用旧权重产生激活，各 stage 的 `step` 必须对齐到同一次迭代，否则下一轮的前向、反向权重版本会错开。

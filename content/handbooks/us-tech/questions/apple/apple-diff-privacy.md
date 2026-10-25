@@ -4,10 +4,7 @@ section: apple
 order: 5
 level: S
 title: Apple：差分隐私在个性化语言模型里怎么讲 ε，和「数据不出设备」的关系？
-quick: >-
-  「不出设备」是数据最小化，没有 $\varepsilon$。DP 是：即使加噪后的统计离开设备，邻居数据集的输出仍
-  $e^{\varepsilon}$-不可区分。个性化 LM 的私有上下文应留在端上做检索 / adapter；只有要学人群规律时才花
-  $\varepsilon$。不要把 PCC、本地 DP、训练数据三者说成一件事。
+quick: "数据不出设备说明这条路径没有发布数据，本身没有一个可报的 $\\varepsilon$。DP 约束的是发布结果对单条记录的敏感度；个性化上下文优先留在端上，只有发布人群统计时再讨论噪声、每日条数和合成预算。"
 tags:
   - Apple
   - Differential Privacy
@@ -32,47 +29,46 @@ sources:
     type: secondary
 ---
 
-Apple MLE 基础轮会把隐私问得很死，Exponent 指南也点了 data privacy 和 on-device。这题容易答成口号。个性化语言模型要把三个机制拆开，再决定 $\varepsilon$ 花在哪。Apple 2017 的 Learning with Privacy at Scale 讲的是本地 DP 做频率统计；2024 的 foundation model 文讲的是训练不用用户私有数据。面试里两篇都要能指到，不要混成「Apple 有 DP 所以模型是私密的」。
+“数据不出设备”和差分隐私解决不同环节：前者让私有上下文留在本地，后者约束发布结果能透露多少个体信息。比如让 Siri 回答下周的会议，可以用本地证据；要统计大家常用哪个 emoji，才需要讨论上传的加噪统计和 $\varepsilon$。
 
-## $\varepsilon$ 在说什么
+Apple 2017 的 Learning with Privacy at Scale 讲本地 DP 频率统计，2024 foundation model 材料讲训练不用用户私有数据，Exponent MLE 指南也提到隐私和 on-device。回答时要把这些公开声明的范围分清楚。
 
-机制 $M$ 满足 $\varepsilon$-DP：对至多差一条记录的邻居 $D,D'$，以及对任意可测集合 $S$，
+## 先解释预算约束什么
+
+机制 $M$ 满足 $\varepsilon$-DP，是指对至多差一条记录的邻居 $D,D'$ 和任意可测集合 $S$，都有
 
 $$
 \Pr[M(D)\in S] \le e^{\varepsilon}\Pr[M(D')\in S].
 $$
 
-$\varepsilon$ 越小噪声越大、隐私越强。$\varepsilon=0$ 是输出与数据独立；$\varepsilon\to\infty$ 没有 DP 承诺。本地 DP（LDP）在设备上先随机化再上传，服务器自始至终看不到真值，不信任 curator。中心 DP 是服务器先收齐再加噪，信任面更大。Apple 键盘 / Safari 分析走的是 LDP。
+它限制一条记录变化能给输出分布带来多大差别。$\varepsilon$ 越小通常要更大噪声，隐私越强；$\varepsilon=0$ 是输出与数据独立，$\varepsilon\to\infty$ 就没有 DP 承诺。本地 DP（LDP）在设备先随机化，服务器从未看见真值，不需要信任 curator；中心 DP 先收真值再加噪，需要更大的信任面。Apple 键盘、Safari 分析用 LDP。
 
-公开参数可以举他们自己的例子：流行 emoji 的 Count Mean Sketch，$\varepsilon=4$，$m=1024$，$k=2^{16}$，词典约 2600；高耗电域名的 Hadamard CMS，$\varepsilon=4$，每条记录可以只发 1 bit。这是按事件的 $\varepsilon$，外加每日条数上限。追问 composition：同一用户 $n$ 次提交，最坏 $\varepsilon_{\mathrm{tot}}\le\sum\varepsilon_i$。只报 per-event $\varepsilon$、不提每日上限和跨天累加，会被认为没读过定义。
+公开 emoji 用例采用 Count Mean Sketch，$\varepsilon=4$、$m=1024$、$k=2^{16}$，词典约 2600；高耗电域名的 Hadamard CMS 同样 $\varepsilon=4$，每条记录可只发 1 bit。CMS 把 one-hot 哈希后，每个坐标以 $1/(e^{\varepsilon/2}+1)$ 翻转，单条像噪声，大量用户聚合后才能估频率。哈希碰撞有额外工程余量，但不能替代 $\varepsilon$ 的保证。
 
-CMS 的直觉：one-hot 哈希之后，每个坐标以 $1/(e^{\varepsilon/2}+1)$ 翻转。单条记录像噪声，海量用户平均出频率。哈希碰撞额外给了一点否认能力，但那是工程余量，不要说碰撞可以替代 $\varepsilon$。
+这些是事件预算，另有每日条数上限。同一用户提交 $n$ 次，最坏合成 $\varepsilon_{\mathrm{tot}}\le\sum\varepsilon_i$，还得考虑跨天累加。只报单次预算会漏掉持续采集的风险。
 
-## 三件不是一回事
+## 放回个性化语言模型里
 
-端侧推理：数据不离开设备，没有 $\varepsilon$，用来读邮件、日历、屏幕并生成答案。
+端侧推理读取邮件、日历或屏幕，条件是 $(q,E_{\mathrm{local}})$，用本地检索或 adapter 保留证据，评测答案是否被本地事实支持。没有上传的路径就不虚构 $\varepsilon$。量化和端侧推理也能帮助上下文留在设备。
 
-Private Cloud Compute：请求到 Apple silicon 服务器，公开叙述是无持久化、无苹果可读日志。这是机密计算，不是 DP，没有 $\varepsilon$。用来补端上 3B 不够的大模型。
+PCC 把请求交给 Apple silicon 服务器，公开叙述是无持久化、无苹果可读日志，用来补端上 3B 能力。这属于机密计算，没有 DP 的 $\varepsilon$。DP 遥测则上传加噪的人群统计，用来学新词、新槽或 UI 模式；设计上要有事件级 LDP、条数限制、去标识，emoji 与 Safari 等用例分仓、不在服务端拼接。
 
-本地 DP 遥测：加噪统计上传，有 $\varepsilon$。用来学「大家常用哪个 emoji」，不是学「你的邮件写了什么」。
+改进全球 QuickType 或发现新俚语，可用 CMS / SFP，报告 per-event $\varepsilon$、每日 $n$ 和 opt-in。SFP 在未知词典拼出高频新词，仍是频率统计。foundation model 公开原则是不使用私有个人数据或交互训练基础模型，不能把它解释成上传邮件再训 AFM。
 
-Foundation model 公开原则：不用用户私有个人数据或交互来训练基础模型。所以个性化默认不是把你的邮件送去再训一版 AFM。端上能完成的，用本地检索或本地 adapter，见 `apple-personalize`。只有当你设计的是从人群里学新词、新槽、新 UI 模式，才进入 DP：事件级 LDP、条数上限、去标识、按用例拆仓（emoji 记录和 Safari 记录在服务端不拼接）。
-
-常见错答：「数据不出设备，所以 $\varepsilon$ 很小。」不出设备意味着这条路径没有发布函数，谈 $\varepsilon$ 没有意义。另一错答：「我们上了 DP，所以可以把原文上传。」$\varepsilon=4$ 的 CMS 保护的是频率估计，不是把八千字邮件加一点高斯噪声当训练集。高维梯度 / 长文本的 LDP 效用通常烂掉，那是 DP-SGD 加中心 DP 或安全聚合的另一题，Apple 公开键盘系统没有声称在训 LLM。
-
-## 个性化 LM 里 $\varepsilon$ 怎么开口
-
-产品目标若是「Siri 知道我下周的会」：证据留在设备，生成条件是 $(q,E_{\mathrm{local}})$，评测回答是否由本地证据支持，见 `apple-siri-grounded`。没有上传，就不编一个 $\varepsilon$。
-
-产品目标若是「改进全球 QuickType / 发现新俚语」：沿用 CMS / SFP，报告 per-event $\varepsilon$、每日 $n$、opt-in。SFP 用来在未知词典里拼高频新词，仍然是频率，不是把用户句子原文送去 监督微调（SFT）。
-
-若有人逼问「用户 adapter 能不能上传」：要么完全不上（设备侧训、设备侧存），要么对梯度做 DP-SGD 并按用户合成预算。$\varepsilon$ 要按用户级不是按 token 级报告，否则长对话把预算打爆。Apple 公开 AFM 训练叙述里没有这条路径，面试里把它标成「若做，约束是这些」，不要假装已经上线。
-
-和 `apple-ondevice-quant` 连一句：量化、端侧推理是为了让个性化上下文根本不必离开设备；DP 是为了那些你决定发布的聚合统计。两条杠杆，不要用一条口号代替。
+$\varepsilon=4$ 的 CMS 也不意味着八千字邮件加一点高斯噪声就能上传训练。长文本、高维梯度的 LDP 效用通常很差，DP-SGD、中心 DP、安全聚合需要另行设计；公开键盘系统没有宣称在训练 LLM。若讨论上传用户 adapter，可选择设备训练、设备存储，或者假设另做梯度 DP-SGD 并按用户合成预算。预算按用户级报告，按 token 报会漏掉长对话累积；公开 AFM 叙述没有这条上传路径，要明确这是假设方案。
 
 ## 追问
 
-- **PCC 算 DP 吗？** 不算。PCC 限制的是谁能看见明文；DP 限制的是输出分布对单条数据的敏感度。可以同时有，但回答必须拆。
-- **$\varepsilon=4$ 算不算大？** 学术界常觉得偏松，尤其是只按天、不按生命周期合成。面试答：报 Apple 公开用例的数，同时承认 composition 和攻击面，不要替 2017 的参数做现代 LLM 的担保。
-- **opt-in 失败了怎么办？** 系统保持不采集。DP 不是绕过同意的许可证。
-- **和联邦学习？** FL 本身不是 DP。无噪声的梯度平均会被成员推断。要保护个体，仍然要 DP 或安全聚合，预算另算。
+**PCC 算 DP 吗？**
+不算。PCC 控制谁能看明文，DP 控制输出分布对记录的敏感度，两者可同时使用，但要分别解释。
+
+**$\varepsilon=4$ 算大吗？**
+学术讨论常认为偏松，尤其缺少生命周期合成时。可以引用 Apple 公开用例，同时交代 composition 和攻击面，不能用 2017 参数替现代 LLM 作担保。
+
+**opt-in 失败怎么办？**
+保持不采集。DP 不会替代用户同意。
+
+**联邦学习就有 DP 吗？**
+没有。无噪声梯度平均仍可能被成员推断，需要另加 DP 或安全聚合，预算另算。
+
+相关：`apple-personalize`、`apple-siri-grounded`、`apple-ondevice-quant`

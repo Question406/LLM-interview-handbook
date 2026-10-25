@@ -4,7 +4,7 @@ section: overview
 order: 8
 level: A
 title: 面试前该精读的公开论文栈（Attention、GQA、InstructGPT、DPO、vLLM、Llama）
-quick: "六篇够撑住大多数 RE 技术轮：Attention 的契约、GQA 怎么省 KV、InstructGPT 的 基于人类反馈的强化学习（RLHF） 目标、直接偏好优化（DPO） 的隐式奖励、 vLLM 的分页 KV、Llama 的工程取舍。精读是能默写关键式和失败模式，不是背摘要。"
+quick: "先精读 Attention、GQA、InstructGPT、DPO、vLLM 和 Llama 这六篇，分别掌握张量计算、省 KV、RLHF 目标、隐式奖励、分页缓存和工程取舍。每篇要能写出关键式并解释实现会在哪里失败，再按岗位补论文。"
 tags:
   - Papers
   - 备考
@@ -35,17 +35,17 @@ sources:
     type: primary
 ---
 
-美国 lab 很少要你报冷门方法名，但会假设这六篇你推过。和六周计划配套，见 `us-llm-re-prep`。公司怎么问见 `us-prep-map`。下面每篇只留面试用的那一页；细节卡链到本手册已有 id。
+这张卡把六篇基础论文串成一条准备路线：从 attention 和 KV，到 RLHF / DPO 的目标函数，再到分页推理和 Llama 工程取舍。每篇都准备关键式、实现约束和失败模式，下面列的是面试时要能讲清的内容。它与六周计划 `us-llm-re-prep` 配套，公司问法见 `us-prep-map`，细节可以沿对应 id 继续读。
 
 ## Attention 与 GQA
 
-Vaswani：QKV、缩放点积、因果 mask 在 softmax 前打 $-\infty$、多头在 $d_k$ 上分。面试事故几乎全是 shape：softmax 沿错轴、没除 $\sqrt{d_k}$、逐 token 生成（decode） 位置用成 0。把这篇读成「张量契约」，然后去改带 bug 的实现，见 `openai-transformer-debug`、`coding-softmax-stable`。
+Vaswani 那篇先掌握 QKV 和缩放点积：因果 mask 要在 softmax 前打 $-\infty$，多头在 $d_k$ 上分。面试事故几乎全是 shape：softmax 沿错轴、没除 $\sqrt{d_k}$、逐 token 生成（decode） 位置用成 0。把这篇读成「张量契约」，然后去改带 bug 的实现，见 `openai-transformer-debug`、`coding-softmax-stable`。
 
 GQA（Ainslie）：KV 头数 $H_{\mathrm{kv}} < H_q$，query 分组共享 KV。省的是 **KV cache 带宽和显存**，不是 FLOPs 故事的全部。MQA 是 $H_{\mathrm{kv}}=1$ 的极端。要能写 $KV \propto H_{\mathrm{kv}}\cdot T\cdot d$。Google / Meta 电面常问「为什么 GQA 不是免费」，见 `google-gqa-mqa`、`meta-llama-gqa`。和 RoPE、GQA 一起出现时，先钉 cache 再钉旋转，见 `meta-llama-rope`。
 
 ## InstructGPT 与 直接偏好优化（DPO）
 
-InstructGPT：监督微调（SFT） 铺指令格式，奖励模型（RM） 吃对比，PPO 最大化奖励并减反向 KL 到 SFT 参考。要能写清 KL 哪边是 $\pi_\theta$，以及 clip 对 old、KL 对 ref 不是同一项，见 `align-rlhf-kl`。论文自己写了 RM 会被 overoptimize、长度会涨。Hacking 见 `align-reward-hack`。RM 怎么训见 `align-reward-model`。
+InstructGPT 先用 SFT 学指令格式，再让 RM 从回答对比中学习奖励，PPO 最大化奖励并减去相对 SFT 参考的反向 KL。要能写清 KL 哪边是 $\pi_\theta$，以及 clip 对 old、KL 对 ref 不是同一项，见 `align-rlhf-kl`。论文自己写了 RM 会被 overoptimize、长度会涨。Hacking 见 `align-reward-hack`。RM 怎么训见 `align-reward-model`。
 
 DPO：把「RM + 反向 KL」解析成隐式奖励 $r=\beta\log(\pi/\pi_{\mathrm{ref}})+\beta\log Z(x)$，$Z$ 在 BT 差里消掉。要能从最优策略反解，而不是背 $-\log\sigma(\beta\Delta)$。$\beta$ 太大贴参考，太小 rejected 被打穿，见 `align-dpo`。IPO 把间隔钉在有限靶，见 `align-ipo`。有 pair 用 DPO；只有赞踩看 `align-kto`；在线采样看 `align-grpo`、`align-online-dpo`。
 
@@ -59,18 +59,20 @@ Llama 2 报告：预训练数据与 GQA、SFT / 基于人类反馈的强化学�
 
 六篇之外按岗加一篇：NVIDIA 加 Megatron / FlashAttention；Anthropic 加 CAI；代码岗加 SWE-bench。加了也只精读失败模式，不要冲数量。
 
-## 怎么读才算精读
-
 每篇一张纸：问题、关键式、shape 或复杂度、作者承认的失败、你若实现会踩的坑。合上论文能推 DPO 换元、能画 paged KV、能说明 GQA 省的是哪项显存，才算过。读了二十篇摘要、推导写不出，电面仍会暴露理解不足。
 
 现场可以说「InstructGPT 的 KL 在当前策略上取」；不能说「我读过」然后方向写反。
 
 ## 追问
 
-- **只要 Llama 3 博客行不行？** 工程细节可以，推导仍要回到 Attention / DPO 原文。
-- **GRPO 要不要加进栈？** 推理岗要。先有 PPO/DPO 再读 DeepSeekMath 的 group baseline，见 `align-grpo`。
-- **vLLM 和 FlashAttention 哪篇优先？** Serving / NVIDIA 先 vLLM 与分页；训练 kernel 岗先 FlashAttention，见 `google-flash-attention`、`nvidia-flash-attn`。
-- **和国内主题手册重复？** 那本按主题切；这里只收「美国轮次默认你会的那六篇」，问法更偏 debug 和系统。
+**只要 Llama 3 博客行不行？**
+工程细节可以，推导仍要回到 Attention / DPO 原文。
+**GRPO 要不要加进栈？**
+推理岗要。先有 PPO/DPO 再读 DeepSeekMath 的 group baseline，见 `align-grpo`。
+**vLLM 和 FlashAttention 哪篇优先？**
+Serving / NVIDIA 先 vLLM 与分页；训练 kernel 岗先 FlashAttention，见 `google-flash-attention`、`nvidia-flash-attn`。
+**和国内主题手册重复？**
+那本按主题切；这里只收「美国轮次默认你会的那六篇」，问法更偏 debug 和系统。
 
 ## 相关题
 

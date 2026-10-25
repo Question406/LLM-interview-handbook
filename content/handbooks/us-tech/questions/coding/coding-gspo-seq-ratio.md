@@ -4,7 +4,7 @@ section: coding
 order: 38
 level: A
 title: 白板：GSPO 的序列级 ratio，写成 token 上的加权 logprob loss
-quick: "GSPO 的序列 ratio 是 token ratio 的几何平均（log ratio 取均值再 exp），clip 在整条序列上做；等价的加权 logprob 权重是 $\\mathrm{sg}(s_iA_i\\cdot\\mathrm{active}_i)/|y_i|$。"
+quick: "先对有效 token 的 log ratio 取均值再 exp，得到 GSPO 的序列级 ratio，并按整条序列做 clip。改写成加权 logprob 时，每个 token 的权重为 $\\mathrm{sg}(s_iA_i\\cdot\\mathrm{active}_i)/|y_i|$，整体停止梯度。"
 tags:
   - 完整编程练习
   - Coding
@@ -22,6 +22,33 @@ sources:
     url: https://arxiv.org/abs/2402.03300
     type: primary
 ---
+
+## 题目描述
+
+给定当前策略和旧策略在回答 token 上的 log-prob、序列优势与有效位置 mask，实现 GSPO 序列级损失。还要提供一个加权 log-prob 形式，其对当前策略的梯度与直接损失一致，但不要求两者的前向损失值相同。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `gspo_loss(policy_logprobs, old_logprobs, advantages, mask, eps_low=3e-4, eps_high=4e-4) -> 标量`：GSPO 的 clipped 目标，取负作为 loss，对 batch 取平均。
+- `gspo_loss_sft_style(...)`：同样参数，写成监督微调（SFT）式的加权 logprob，对 `policy_logprobs` 的梯度必须和 `gspo_loss` 一致。
+- `sequence_log_ratio(policy_logprobs, old_logprobs, mask) -> [B]`：两者共用的辅助函数，算每条序列的 $\log s_i$。
+- 约束：`*_logprobs`、`mask` 是 `[B, T]`，每条序列至少有一个有效的 response token；`advantages` 是 `[B]`，视为常量。序列 ratio 是 `exp(masked_mean(new - old))`，不是 token ratio 的算术平均。`eps_low`、`eps_high` 均非负。
+
+- 记每序列有效长度为 `L_i=sum(mask_i)`、`log_s_i=sum(mask_i*(new_i-old_i))/L_i`、`s_i=exp(log_s_i)`，损失定义为 `-mean_i(min(s_i*A_i, clamp(s_i,1-eps_low,1+eps_high)*A_i))`。旧 log-prob 不接收梯度。
+- SFT 形式里，每条序列有效 token 的常量权重为 `stop_gradient(s_i*A_i*active_i/L_i)`，对所有有效 token 的加权当前 log-prob 求和后除以 B 并取负。`active_i` 在 `A_i>=0 且 s_i<=1+eps_high` 或 `A_i<0 且 s_i>=1-eps_low` 时为 1，其余为 0。
+### 示例
+
+```text
+一条序列，两个 token 的 ratio 是 [4, 1/4]，A = 1
+序列 ratio s = exp((log 4 + log 1/4) / 2) = 1   -> gspo_loss = -1
+算术平均 (4 + 0.25) / 2 = 2.125                 -> 错误写法
+```
+
+## 解题思路与参考答案
+
+GSPO 先把 token ratio 合成序列级 ratio，再对整条回答做 clip。几何平均等于先平均 log ratio 再求 exp，因此 $\log s_i$ 就是 mask 内 `new - old` 的均值。clip 和 PPO 一样分正负两侧，只是作用在整条序列上：一条回答要么所有 token 都有梯度，要么都没有。
 
 ## 完整编程练习（手册重构版）
 
@@ -43,8 +70,6 @@ sources:
 ```
 
 ### 解题思路与正确性
-
-几何平均等于先对 log ratio 取平均再求 exp，所以 $\log s_i$ 就是 mask 内 `new - old` 的均值。clip 和 PPO 一样分正负两侧，只是作用在整条序列上：一条回答要么所有 token 都有梯度，要么都没有。
 
 改写成加权 logprob 时，由 $\nabla s_i = s_i\cdot\frac{1}{|y_i|}\sum_t\nabla\log\pi_\theta(y_{i,t})$，每个 token 的权重是 $\mathrm{sg}(s_iA_i\cdot\mathrm{active}_i)/|y_i|$。权重要除以这条序列的有效长度，并且整体 detach，否则梯度会多出别的项。
 
@@ -92,6 +117,16 @@ def gspo_loss_sft_style(policy_logprobs, old_logprobs, advantages, mask, eps_low
     weight = (s * advantages * active / lengths).detach()                      # [B]
     return -(weight[:, None] * policy_logprobs * mask).sum() / advantages.shape[0]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(grad_clipped, grad_weighted, atol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -185,11 +220,14 @@ $$
 
 ## 追问
 
-**一条回答整体被 clip，是不是浪费了很多 token？** 是。GSPO 论文报告它 clip 掉的 token 比例比 GRPO 高得多，但训练效率仍然更好。他们的解释是 token 级梯度噪声太大，丢掉一些整条回答，换来更干净的信号。
+**一条回答整体被 clip，是不是浪费了很多 token？**
+是。GSPO 论文报告它 clip 掉的 token 比例比 GRPO 高得多，但训练效率仍然更好。他们的解释是 token 级梯度噪声太大，丢掉一些整条回答，换来更干净的信号。
 
-**想要 token 级 advantage 怎么办？** 论文给了 GSPO-token：$s_{i,t} = \mathrm{sg}(s_i)\cdot\pi_\theta(y_{i,t})/\mathrm{sg}(\pi_\theta(y_{i,t}))$。它的数值等于 $s_i$，但梯度分别走各自的 token。所有 token 的 advantage 相同时，它和 GSPO 完全等价。
+**想要 token 级 advantage 怎么办？**
+论文给了 GSPO-token：$s_{i,t} = \mathrm{sg}(s_i)\cdot\pi_\theta(y_{i,t})/\mathrm{sg}(\pi_\theta(y_{i,t}))$。它的数值等于 $s_i$，但梯度分别走各自的 token。所有 token 的 advantage 相同时，它和 GSPO 完全等价。
 
-**MoE 为什么特别需要这个？** 同一条回答在更新前后可能被路由到不同的 expert，token 级 ratio 波动很大，GRPO 在 MoE 上要靠 routing replay 才能稳定。序列级 ratio 对单个 token 的波动不敏感。
+**MoE 为什么特别需要这个？**
+同一条回答在更新前后可能被路由到不同的 expert，token 级 ratio 波动很大，GRPO 在 MoE 上要靠 routing replay 才能稳定。序列级 ratio 对单个 token 的波动不敏感。
 
 ## 相关题
 

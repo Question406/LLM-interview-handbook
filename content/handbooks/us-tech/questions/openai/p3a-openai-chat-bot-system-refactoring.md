@@ -4,7 +4,7 @@ section: openai
 order: 612
 level: A
 title: "OpenAI：聊天机器人重构：从全局状态到事件总线"
-quick: "先用现有输入输出写行为测试固定行为，再拆出命令解析、按命令注册的 bot handler 和实例内的会话状态；改成事件总线时要定义订阅顺序和取消方式，并用 is_bot 标记防止 bot 的回复再次触发 bot。"
+quick: "先用现有输入输出固定行为，再把命令解析、注册 handler 和会话状态拆开；事件总线还要明确顺序、取消订阅和异常语义。比如 bot 回复本身也是消息，用 is_bot 标记切断再次触发，不能靠回复文本恰好不含 slash。"
 companies:
   - openai
 tags:
@@ -22,6 +22,34 @@ sources:
     url: https://www.1point3acres.com/interview/problems/company/openai/chat-bot-system-refactoring
     type: secondary
 ---
+
+## 题目描述
+
+把聊天消息、日志和 slash 命令机器人组织成可独立测试的事件系统。用户消息应按顺序记录，机器人回复不能递归触发命令。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `EventBus()` 创建事件总线。`subscribe(event, handler)` 返回退订函数；`emit(event,payload)` 按注册顺序同步调用 handler(payload)，使用 emit 开始时的订阅快照，异常向上传播。
+- `Chat(bus)` 提供 `send(channel,user,text,is_bot=False)`，消息字典含同名四字段，作为 `message` 事件发布；`log` 顺序记录所有消息，`history(channel)` 返回该频道的消息字典列表。
+- `register(name,handler)` 注册以 / 开头的命令，handler(message,argument) 返回回复字符串。text 的第一个空白分隔单词是命令，余下文本为 argument，无参数时为 ""；未注册命令不回复。
+- 自动回复在同频道以 user="bot"、`is_bot`=True 发送，用户消息在其回复之前记录；`is_bot`=True 的消息只记录，不执行命令。
+- `default_chat()` 返回注册完默认命令的 Chat：/away 回复 "away: "+argument，/meet 回复 "https://meet.example/"+channel，/taco 回复 "thanks "+argument。最多1000条消息。
+
+### 输入输出示例
+
+```text
+chat = default_chat()
+chat.send("a", "u", "/away lunch")   -> log: ["/away lunch", "away: lunch"]
+chat.send("b", "u", "hi")            -> 只多一条 "hi"，没有 bot 回复
+chat.send("a", "bot", "/taco u", is_bot=True)   -> 只记录这一条，不触发 /taco
+chat.send("b", "u", "/meet")         -> bot 回复 "https://meet.example/b"
+```
+
+## 解题思路与参考答案
+
+我会先用行为测试锁住当前输出，再把命令解析、bot handler 和会话状态分开，最后引入事件总线。比如 `/away` 触发回复后，回复本身又是一条消息，如果没有 `is_bot` 标记就可能递归触发，所以事件顺序和停止条件要一起验证。
 
 ## 题目
 
@@ -142,6 +170,16 @@ def default_chat():
     chat.register("/taco", lambda message, argument: "thanks " + argument)
     return chat
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert [message["text"] for message in chat.log] == ["/away lunch", "away: lunch"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

@@ -4,7 +4,7 @@ section: systems
 order: 34
 level: S
 title: "KV Prefix ④：共享 KV 页的引用计数与 Copy-on-Write"
-quick: "多个请求共享同一物理前缀页；只有写共享的未满尾页才复制，尾页已满就直接分配新页；分配失败时页表和引用数保持不变。"
+quick: "共享前缀页只复制页表并增加引用计数；追加时若尾页未满且共享，先分配并复制整页，再写新 token。满尾页继续共享，直接另开新页；分配失败则保留原页表、长度与引用数。"
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -23,6 +23,42 @@ sources:
     url: https://arxiv.org/abs/2309.06180
     type: primary
 ---
+
+## 题目描述
+
+实现可共享 prefix 的分页 KV 存储，支持序列分叉、追加、读取与释放，并确保不同分支写入互不影响。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `PagePool(blocks, layers, heads, block_size, dim)`：物理页池。一个物理页保存所有层的 K/V，`storage` 形状是 `[P, L, 2, H_kv, B, d]`（$P$ 页，$L$ 层，K/V 两份，$H_{kv}$ 个 KV head，每页 $B$ 个 token，头维 $d$）。
+- `new() -> Sequence`：空序列。`Sequence` 保存页号表 `pages` 和逻辑长度 `length`。
+- `fork(seq) -> Sequence`：只复制页表，并给每一页的引用数加 1，不复制 KV。
+- `append(seq, token_kv)`：追加一个 token，`token_kv` 形状 `[L, 2, H_kv, d]`。如果尾页未满且被共享，先复制（copy-on-write）再写；如果尾页已满，直接分配一个新页，原来的满页继续共享。
+- `read(seq)`：返回该序列的连续 KV 副本，形状 `[L, 2, H_kv, length, d]`。
+- `release(seq)`：给每页引用数减 1，只有减到 0 才把页放回空闲列表。同一序列不能释放两次，也不能拿到别的池里用。
+- `validate(live_sequences)`：检查引用数、页表长度和空闲列表是否一致。
+- 页池不够时抛 `MemoryError`，并且序列长度、页表和引用数都保持不变。所有操作串行执行。
+
+### 输入输出示例
+
+```text
+pool = PagePool(blocks=4,layers=1,heads=1,block_size=4,dim=1)
+prefix = pool.new()
+依次 pool.append(prefix,token(1))、pool.append(prefix,token(2))
+其中 token(v) 是形状 [1,2,1,1]、所有元素均为 v 的张量。
+a=pool.fork(prefix)，b=pool.fork(prefix)
+pool.append(a,token(3))，pool.append(b,token(9))
+pool.read(prefix) -> [[[[[1],[2]]], [[[1],[2]]]]]
+pool.read(a) -> [[[[[1],[2],[3]]], [[[1],[2],[3]]]]]
+pool.read(b) -> [[[[[1],[2],[9]]], [[[1],[2],[9]]]]]
+三者形状依次为 [1,2,1,2,1]、[1,2,1,3,1]、[1,2,1,3,1]。
+```
+
+## 解题思路与参考答案
+
+我会用引用计数共享物理前缀页，只有写入共享的未满尾页时才做 Copy-on-Write。比如同一个两 token 前缀分成 A、B，两者各自追加不同 token，就要先分开尾页，保留原前缀内容。
 
 ## 完整编程练习（手册原创实现版）
 
@@ -54,9 +90,9 @@ read(B)      -> [1, 2, 9]
 
 ### 解题思路与正确性
 
-逻辑长度决定哪些 token 有效。页的引用数统计的是所有还活着的持有者，生产系统里缓存索引自己也算一个。
+判断页内哪些 token 有效，要看序列的逻辑长度。引用数则统计仍持有这页的所有者，生产系统里的缓存索引也算一份，不能在请求结束时直接 free。
 
-COW 的顺序很重要：先分配新页，成功后再给旧页减引用、改请求的页表。这样分配失败时什么都没改，`MemoryError` 之后状态和调用前完全一样。尾页已满时也一样，先分配再把新页号加进页表。
+实现 COW 时先分配新页，成功后才减少旧页引用并修改请求页表。这样 `MemoryError` 不会留下改了一半的状态，调用前后的长度、页表和引用数一致。尾页已满时也先分配，再把新页号加入页表。
 
 复制和写入都针对整页的全部层和 K/V 两份，避免只保护了一层，或者只复制了 K 漏掉 V。
 
@@ -170,6 +206,16 @@ class PagePool:
         unreferenced = {block for block, refs in enumerate(self.refs) if refs == 0}
         assert set(self.free) == unreferenced, "free list does not match unreferenced blocks"
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert self.refs[block] == 0, f"free block {block} still has references"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

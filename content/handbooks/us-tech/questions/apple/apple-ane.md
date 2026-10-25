@@ -4,10 +4,7 @@ section: apple
 order: 7
 level: S
 title: Apple：Neural Engine 约束（静态 shape、算子白名单）对 Transformer 设计的影响？
-quick: >-
-  ANE 要静态 shape、有限算子、fp16/int8、张量布局接近 $[B,C,1,S]$，Linear 常改成 $1\times 1$
-  Conv。动态核、可变长 nucleus、IEEE $-\infty$ mask、随意 reshape 都会整段掉出 ANE。Transformer
-  要按这些约束改注意力、KV、采样，而不是把 GPU 图原样导出。
+quick: "我会按 ANE 能编译的静态图来设计 Transformer：固定 shape 和 KV 槽位，采用合适的布局、算子与 dtype，再验证整网是否驻留。某层回退到 CPU/GPU 会增加拷贝和耗电，量化之前先把这类问题定位清楚。"
 tags:
   - Apple
   - Neural Engine
@@ -32,38 +29,40 @@ sources:
     type: secondary
 ---
 
-Apple 2022 就把 Transformer 往 ANE 上搬写成公开指南；2024 的 AFM 明确 on-device 跑在 Neural Engine 上，并提到高效 KV 更新。面试不是问「ANE 是 NPU 吗」，是问你敢不敢为芯片改模型。GPU 上漂亮的动态图，在这里会变成 CPU 回退和拷贝，把 30 token/s 打穿。量化细节见 `apple-ondevice-quant`，采样见 `apple-topk-sample`。
+Transformer 上 ANE，要先围绕静态 shape、算子和布局改计算图，再检查整网是否驻留。比如 decode 每步把 KV `torch.cat` 长一格，在 GPU 上很自然，在静态图里就需要预分配槽位或另设更新路径；回退到 CPU/GPU 还会引入拷贝，影响原本约 30 token/s 的目标。
 
-## 硬件认什么图
+Apple 2022 的指南讲了 Transformer 的 ANE 部署，2024 AFM 也明确端侧运行于 Neural Engine，并提到高效 KV 更新。设计时我会先问上下文上限、当前讨论 prefill 还是 decode，再画训练 GPU 图、导出前 ANE 图和运行时 cache 状态。
 
-公开实现和后续 Core ML 路径里，反复出现的约束可以收成四条：
+## 先把图改成硬件能执行的形状
 
-1. 静态 shape。输入、输出、中间张量两次调用不能变。Decode 不能让 KV 沿时间维长一格，除非那一格在导出时就按 $S_{\max}$ 分配好。做法：cache 预分配 $[B,H_{\mathrm{kv}},S_{\max},d_h]$，用 position 写入当前槽；或只读 cache 加外置拼接，模型返回本步新 $k,v$。Core ML 的 stateful 模型把 KV 登记成跨 `predict` 存活的 state。编译产物往往是一组入口，每个对应一个 `(context_len, extend_len)`。
-2. 布局和算子。ANE 更适合处理卷积。`Linear` 的 $[B,S,D]$ 常改写成 $1\times 1$ Conv2d，激活排成 $[B,D,1,S]$（BC1S）。最后一维要按 64 字节对齐；写成 1 会触发离谱 padding。Rank 超过 5 直接拒。dtype 主 fp16 / int8；Python 里随手写的 fp32 字面量可能生成 ANE 无法处理的缓冲，整段切到 GPU。
-3. 白名单与驻留。不在 ANE 的 op（某些 gather、动态分支、奇怪的 softmax 轴）会让编译器切图，中间结果来回拷。小模型上拷贝比计算还贵。原则是整网留在 ANE，而不是「大部分在 ANE」。
-4. Softmax / mask。大空间维上的 softmax 不好切块。公开 ANE Transformer 会按 head 拆 softmax 以保住 L2。Mask 用有限大负数，不要赌 $-\infty$，原因在 `apple-ondevice-quant`。有的实现里 score 甚至是 $KQ$ 而不是 $QK^\top$，mask 的 shape 跟着转置，写成 GPU 习惯可能悄悄出错。
+静态路径里输入、输出、中间张量的 shape 要固定，上限记作 $S_{\max}$。KV 可预分配为 $[B,H_{\mathrm{kv}},S_{\max},d_h]$，按 position 写入槽位；也可以只读 cache、外置拼接，模型只返回本步新 $k,v$。Core ML stateful 模型把 KV 注册为跨 `predict` 保留的 state，编译产物往往按 `(context_len, extend_len)` 提供多个入口。
 
-Apple 还公开用 Talaria 看每层时延和功耗，指导 palettization 比特。面试提到「不是只看 BLEU，还看这一层会不会掉出 ANE」就对味了。
+ANE 偏好卷积，`Linear` 的 $[B,S,D]$ 常改写成 $1\times 1$ Conv2d，激活排成 $[B,D,1,S]$，也就是 BC1S，接近 $[B,C,1,S]$。最后一维按 64 字节对齐，设成 1 可能引起大量 padding；Rank 超过 5 会被拒。主要 dtype 是 fp16/int8，一个 fp32 字面量也可能生成无法放在 ANE 的缓冲，把整段切到 GPU。
 
-## Transformer 要改的设计，不是只改导出脚本
+不支持的 gather、动态分支或 softmax 轴会让编译器切图，小模型上拷贝可能比计算更贵。公开实现按 head 拆 softmax 来保住 L2，mask 用有限大负数，避免 $-\infty$ 带来的问题。有的 score 写成 $KQ$，mask 也得跟着转置；照搬 $QK^\top$ 的 GPU 布局可能悄悄算错。
 
-这些约束会反向逼架构：
+## 再确定模型和运行策略
 
-- GQA / 共享 embedding。 AFM on-device 用 grouped-query attention、输入输出 embedding 共享，词表 49k。KV 带宽和驻留是一等公民，和 `google-gqa-mqa` 同一笔账，只是墙从 HBM 换成了手机 DRAM / ANE SRAM。
-- 固定块 输入预填充（prefill，即处理输入并建立缓存）。 一次吃 64 或 128 个新 token，用 mask 盖住 padding。变长 输入提示（prompt） 就 pad 到下一个编译好的档位。档位太稀，浪费算力；太密，二进制膨胀。
-- 解码步尽量没有数据依赖控制流。 Top-k 固定 $k$ 比 nucleus 友好。MoE 路由、条件 adapter 切换，都要嘛静态 max expert，要嘛在 CPU 上换 weight 再跑一段纯静态图。AFM 的做法是整基础模型不变，热插拔几十 MB 的 LoRA，见 `apple-personalize`。
-- KV 更新必须是 ANE 认的 slice。 随机 scatter 容易回退。Apple 文里专门写了 neural engine 上的 KV update，面试要能说出「预分配加定点写入 / 只读拼接」两种，不要画一个 `torch.cat` 就结束。
-- 2025 的 KV sharing。 模型切成两块，第二块复用第一块末层 KV，cache 降约 37.5%，prefill 还可以跳过第二块。这是为端侧带宽改深度结构，不是训完再剪枝的边角。
+AFM on-device 用 GQA、共享输入输出 embedding 和 49k 词表，以减少 KV 带宽和驻留压力。prefill 可固定为每次 64 或 128 个新 token，变长 prompt pad 到下一档并用 mask 遮住；档位太稀浪费算力，太密又增大二进制。
 
-视觉侧 HyperDETR 一类文章还说明：为了整网留在 ANE，他们把 decoder 和 Transformer 路径解耦，用 $1\times 1$ 动态卷积出 mask。语言侧同样精神：宁可改模块边界，也不要在 ANE 里塞一个编译不过的 attention 变体。
+decode 尽量去掉数据依赖控制流，固定 $k$ 的 top-k 比可变 nucleus 好处理。MoE 或条件 adapter 要静态限定 max expert，或在 CPU 换 weight 后再跑静态段。AFM 的基础模型保持固定，热插拔的是几十 MB 的 LoRA。KV 更新同样要用支持的 slice，随机 scatter 可能回退。
 
-## 我会怎么答设计题
+2025 的 KV sharing 把模型分两块，第二块复用第一块末层 KV，cache 降约 37.5%，prefill 还能跳过第二块。视觉侧 HyperDETR 也通过解耦 decoder 与 Transformer 路径，用 $1\times 1$ 动态卷积出 mask，让整网留在 ANE。这些例子说明模块边界本身也可以为硬件调整。
 
-先问上下文上限和是 prefill 还是 逐 token 生成（decode）。再画三张图：训练用的 GPU 图、导出前的 ANE 图（Conv、BC1S、静态档位）、运行时的 cache 状态。主动列失败模式：某层 LayerNorm 手写分解后掉 CPU；mask 用了 $-\infty$ 出 NaN；nucleus 让采样回 CPU 占了好几毫秒。验收：Instruments / Core ML 的 compute unit 全是 Neural Engine，以及 greedy 下与 CPU 参考逐 token 一致。哪一层掉出 ANE，先看这条 op 的 shape、dtype 和是否在白名单，再谈「再量化一点」。
+验收时用 Talaria 看每层时延和能量、指导 palettization，再用 Instruments / Core ML 检查 compute unit。greedy 输出要与 CPU 参考逐 token 对齐。手写 LayerNorm 掉 CPU、$-\infty$ mask 出 NaN、nucleus 回 CPU 花几毫秒，都应具体定位到 shape、dtype 和算子支持。
 
 ## 追问
 
-- **为什么不一直用 GPU？** GPU 带宽和功耗对后台常驻的 Siri / 输入法不友好。ANE 是能效路径。Llama 3.1 那篇 Core ML 文在 Mac 上走 GPU，是另一条产品线，别和 iPhone AFM 混。
-- **动态 shape 将来会不会有？** 即使运行时弹性变好，面试仍按今天的静态档位答。产品要的是可预测时延，见 `apple-siri-latency`。
-- **FlashAttention？** ANE 不是那套 CUDA tiling。等价物是编译器认的切头 softmax 加驻留，不要把论文 kernel 名直接搬过来。
-- **算子不在白名单怎么办？** 改写成 Conv / 高阶 LayerNorm / 静态 slice，或接受这段在 CPU 并把它移出热路径。不要在热路径上「先对了再优化」。采样见 `apple-topk-sample`：固定 $k$ 比可变 nucleus 更容易留在同一张静态图里。掉出 ANE 的第一反应是查 compute unit，不是先加更大的模型。
+**为什么不一直用 GPU？**
+后台常驻的 Siri、输入法重视功耗和带宽，ANE 提供能效路径。Core ML 的 Llama 3.1 文在 Mac 走 GPU，属于另一条产品线，不能套到 iPhone AFM。
+
+**动态 shape 将来更灵活，还要固定档位吗？**
+这道设计题仍按静态档位展开，即使运行时弹性增加，产品也需要可预测的时延。
+
+**能直接上 FlashAttention 吗？**
+不能直接搬 CUDA tiling。这里要找编译器支持的切头 softmax 和驻留方式。
+
+**算子不支持怎么办？**
+改成 Conv、高阶 LayerNorm 或静态 slice；必须在 CPU 做的部分移出热路径。先查 compute unit，采样优先比较固定 top-k 与可变 nucleus，再决定改图。
+
+相关：`apple-ondevice-quant`、`apple-topk-sample`、`google-gqa-mqa`、`apple-personalize`、`apple-siri-latency`

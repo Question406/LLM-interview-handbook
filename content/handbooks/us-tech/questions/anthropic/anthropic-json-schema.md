@@ -4,7 +4,7 @@ section: anthropic
 order: 18
 level: A
 title: Anthropic：structured output 约束解码和事后再解析，各挡哪类错误？
-quick: "约束解码把 schema 编成文法，使模型无法采样非法 token，保证 JSON 结构合法。它不保证数字落在业务区间、URL 不越权、枚举语义对。范围、PII、授权仍要宿主再校验。Prompt 里求「只输出 JSON」然后正则捞，是在赌采样。"
+quick: "约束解码把 schema 编成文法，每一步屏蔽非法 token，保证 JSON 结构合法；它解决不了金额范围、PII、授权和枚举语义。我的做法是用 strict tool 约束工具参数、用 JSON outputs 约束最终回答，再由宿主校验业务条件。"
 tags:
   - Anthropic
   - Structured output
@@ -23,9 +23,9 @@ sources:
     type: primary
 ---
 
-应用岗会把「Claude 偶发把 JSON 包进代码围栏」问到解码层。官方 structured outputs 有两条：整段回答走 `output_config.format` 的 `json_schema`；工具参数走 `strict: true`。两者都是文法约束采样，不是再跑一次评委模型。面试要能把「形状正确」和「语义正确」拆开。
+我会用约束解码保证结构，再由宿主程序检查业务语义。例如金额字段可以是合法数字，却仍超出允许区间。官方 structured outputs 中，最终回答用 `output_config.format` 的 `json_schema`，工具参数用 `strict: true`；两条路径都在采样时施加文法约束。
 
-## 约束解码保证的是形状
+## 结构在哪一步得到保证
 
 Schema 编译成文法。每一步不合法的续写候选被 mask 掉，模型抽不到会破坏括号、类型、`required` 的 token。于是 `json.loads` 和缺字段这一类循环可以去掉。对象必须 `additionalProperties: false`，否则文法不知道能不能多键。首次使用某个 schema 时需要编译，会增加首个 token 的等待时间（TTFT）；编译结果大约缓存一天，改结构或工具集才失效。改 `description` 通常不使文法失效。
 
@@ -33,9 +33,9 @@ Schema 编译成文法。每一步不合法的续写候选被 mask 掉，模型�
 
 它不保证：数字在业务范围里；字符串是合法订单号；路径不指向系统目录；枚举选了合法值但是用错工具。`anthropic-tool-use` 里写过：schema 过了还要政策检查。约束输出格式不等于校验产品必须满足的业务条件。
 
-## 再解析挡什么、什么时候还需要
+## 宿主还要检查什么
 
-旧路径：输入提示（prompt） 要求 JSON → 从围栏里切片 → `json.loads` 失败就 `is_error` 重试。它挡的是「模型爱说人话」。代价是尾延迟、重试烧输出 token、错误提示本身又占窗口。约束解码把这层几乎删掉。
+旧路径是在 prompt 里要求 JSON，收到回复后从围栏中切片，再用 `json.loads` 解析，失败就通过 `is_error` 重试。这能补救模型夹带说明文字的问题，但重试会增加尾延迟、输出 token 和错误提示占用的窗口。约束解码可以省去这类语法补救的大部分工作。
 
 仍要宿主校验：
 
@@ -52,15 +52,20 @@ if not (0 <= data["score"] <= 1):
     raise ValueError("score out of range")
 ```
 
-## 和 XML 提示、MCP、缓存的分工
-
 给模型看的长资料用 `anthropic-xml-prompt` 的标签边界；给运行时执行的用 JSON Schema。MCP server 的 `inputSchema` 仍是 JSON Schema，但远程 server 必须自己再校验一遍，不能信 client 已经约束过，见 `anthropic-mcp`。换 `output_config.format` 会让对话前缀失效，降低 `anthropic-prompt-cache` 的命中率。
 
 常见误区是：schema 写成自由字符串 `cmd`；打开 `additionalProperties`；把约束解码当越权防护。评测延迟时要把冷编译和热请求分开报。数值区间、字符串长度写进 description 只是提示，这些条件仍要由宿主程序校验。
 
 ## 追问
 
-- **文法会不会逼模型胡填 required 字段？** 会。宁可用可选字段 + 宿主默认，也不要把「必须有 URL」写进 schema 却没有合法值。
-- **和 tool_choice 强制调用？** `tool_choice` 决定调不调；`strict` 决定参数合不合文法。强制调用加宽 schema，等于强迫执行一次可能无意义的副作用。
-- **流式怎么 parse？** 约束下前缀始终是合法 JSON 前缀，可以边收边喂增量解析器。不要等闭合再正则。
-- **失败了还要不要重试？** 语法失败应接近 0。语义失败回传具体校验错误，最多两三次，和非幂等工具的重试政策一致。
+**文法会不会逼模型胡填 required 字段？**
+会。宁可用可选字段 + 宿主默认，也不要把「必须有 URL」写进 schema 却没有合法值。
+
+**和 tool_choice 强制调用？**
+`tool_choice` 决定调不调；`strict` 决定参数合不合文法。强制调用加宽 schema，等于强迫执行一次可能无意义的副作用。
+
+**流式怎么 parse？**
+约束下前缀始终是合法 JSON 前缀，可以边收边喂增量解析器。不要等闭合再正则。
+
+**失败了还要不要重试？**
+语法失败应接近 0。语义失败回传具体校验错误，最多两三次，和非幂等工具的重试政策一致。

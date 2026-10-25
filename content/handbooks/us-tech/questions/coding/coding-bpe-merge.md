@@ -4,8 +4,7 @@ section: coding
 order: 7
 level: A
 title: 白板：BPE 训练一步 merge，词表膨胀；词尾标记写成 endofword 禁止 XML
-quick: >-
-  统计相邻 pair 频次，合并最高频的一对，词表加 1；训练每轮重数频次，encode 只按顺序回放 merge 表。词尾写成 `endofword`，不用 XML 标签。
+quick: "BPE 训练先统计相邻 pair，选最高频的一对，从左到右非重叠合并，记录顺序并让词表加 1。比如 a a a 的 pair 计数是 2，但一次只替换前两个；encode 回放固定 merge 表，词尾标记用 `endofword`。"
 tags:
   - 完整编程练习
   - Coding
@@ -24,6 +23,29 @@ sources:
     url: https://github.com/openai/tiktoken
     type: primary
 ---
+
+## 题目描述
+
+实现 BPE 训练中的一次合并操作，只选择一个相邻 token 对并在语料中替换。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`bpe_one_merge(corpus, merges)` 返回 `(new_corpus,new_merges)`。corpus 是 token 字符串列表的列表，每个内层列表表示独立词或序列，词结束标记若需要已包含在 token 中；merges 是已有合并对的有序列表。
+
+统计每个序列内部相邻 token 对的出现次数，包括相互重叠的出现，不跨序列边界。选择频次最高的一对，并列时选 Python 字符串二元组字典序较大的一对。仅将该获选对在每个序列中从左到右、不重叠地替换为两 token 拼接的字符串，并将获选对追加到历史。正常合并不修改输入；若没有任何相邻对，直接返回原 corpus、merges 对象。
+
+### 示例
+
+```text
+corpus = [["a","b"],["b","c"]], merges = []
+返回 ([["a","b"],["bc"]], [("b","c")])。
+corpus = [["a","a","a"]], merges = []
+返回 ([["aa","a"]], [("a","a")])。
+```
+
+## 解题思路与参考答案
+
+我会先统计各列表内部的相邻 pair，按频次和约定的 tie-break 选一对，再从左到右非重叠替换。比如 a a a 中相邻的 a a 出现两次，真正替换时却只能用前两个 a，第三个要保留；训练下一轮再重新计数。
 
 ## 完整编程练习（手册重构版）
 
@@ -89,6 +111,16 @@ def bpe_one_merge(corpus, merges):
         new_corpus.append(output)
     return new_corpus, list(merges) + [(left, right)]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert output == [["aa", "a"]]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -156,9 +188,12 @@ Sennrich et al. 2016 提出的 BPE 是 GPT / Claude 词表的前身。Anthropic 
 
 ## 追问
 
-- **词表为什么会膨胀？** 每 merge 一次就多一个符号。目标 50k 的词表 ≈ 基础符号数 + merge 次数，并不是把整词全塞进去。
-- **WordPiece / Unigram 有什么不同？** WordPiece 按合并后的似然增益选 pair；Unigram 是子词级的语言模型，从大词表往下剪。BPE 是确定性地按频次 merge。Claude 和 GPT 都属于 BPE 家族。
-- **为什么要词尾标记？** 没有它，词中间的 `st` 和词尾的 `st` 会共享统计；逐 token 解码时也分不清词的边界。写成 `endofword`，不要用 XML。
+**词表为什么会膨胀？**
+每 merge 一次就多一个符号。目标 50k 的词表 ≈ 基础符号数 + merge 次数，并不是把整词全塞进去。
+**WordPiece / Unigram 有什么不同？**
+WordPiece 按合并后的似然增益选 pair；Unigram 是子词级的语言模型，从大词表往下剪。BPE 是确定性地按频次 merge。Claude 和 GPT 都属于 BPE 家族。
+**为什么要词尾标记？**
+没有它，词中间的 `st` 和词尾的 `st` 会共享统计；逐 token 解码时也分不清词的边界。写成 `endofword`，不要用 XML。
 
 ## 相关题
 

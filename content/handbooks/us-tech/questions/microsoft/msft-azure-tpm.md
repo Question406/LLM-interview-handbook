@@ -4,7 +4,7 @@ section: microsoft
 order: 5
 level: A
 title: Microsoft：Azure OpenAI TPM/RPM 限流，产品层排队和降级
-quick: "TPM 管每分钟 token 数，RPM 管每分钟请求，429 是配额墙不是模型坏了。产品层要有队列、退避、缓存，以及降到小模型或抽取式答案。别把限流当成「再调一次 temperature」。"
+quick: "TPM 限制输入与输出 token，RPM 限制请求数，短时间尖峰也可能触发 429。调用方按真实 token 需求做租户准入与有界队列，尊重 Retry-After，再按约定缩上下文、换小模型或返回检索摘录。稳定基线可考虑 PTU，突发仍需降级。"
 tags:
   - Microsoft
   - Azure OpenAI
@@ -26,49 +26,37 @@ sources:
     type: primary
 ---
 
-Azure / Copilot 产品岗会把限流问成系统设计，不是「429 怎么 retry」。公开文档里配额按 **Tokens-per-Minute（TPM）** 分到每个部署，RPM 按模型比例跟着 TPM 走，不是两个独立旋钮。评委要听：计数口径、排队、降级，以及什么时候该买预留吞吐而不是在应用里死等。
+先判断请求撞的是 TPM 还是 RPM，再做有界排队、退避和降级。短 prompt 高 QPS 通常先撞请求数，长文档即使请求少也可能撞 token 配额；429 表示容量准入受限，调整 temperature 解决不了这个问题。
 
-## 先分清 TPM、RPM 和 429
+## 配额如何分配与计数
 
-订阅在某一 region、某一模型上有一份配额。创建部署时把 TPM 切给这个 deployment，推理就按这个上限准入。RPM 通常按容量单元成比例（老聊天模型常见大约每 1000 TPM 配 6 RPM，推理模型比例不同，别背死数字）。文档还写：服务会在 **1 秒或 10 秒** 的短窗上看速率，所以即使「这一分钟平均没超」，尖峰仍会 429。
+Azure 文档按订阅、region 和模型提供配额，再把 TPM 分给 deployment。RPM 通常按模型容量单元比例跟着 TPM 分配，两者不能独立调；老聊天模型常见每 1000 TPM 约 6 RPM，推理模型比例不同。服务还按 1 秒或 10 秒短窗检查，整分钟平均不超也可能在尖峰返回 429。
 
-计入 TPM 的是 **输入提示（prompt） + completion**，不是只算输出。把整份仓库塞进上下文，账单和限流一起炸，这和 `msft-copilot-ground`、`msft-long-context` 是同一条预算。流式请求照样占 token 配额，不会因为 chunk 多就另算一套魔法配额。
+TPM 包含 prompt + completion，流式也照常占用。全仓库输入同时放大费用和配额压力，见 `msft-copilot-ground`、`msft-long-context`。
 
-429 的产品含义：
+Standard 用共享池，可能动态收紧，按 `Retry-After` / `retry-after-ms` 退避，重试要有上限。Provisioned（PTU）提供预留容量，打满也会限制，文档建议按 header 等待；溢出到 Standard 是需显式设计的 spillover。预留也受超长 prompt、低缓存命中等 workload shape 影响。
 
-- **Standard（按量）：** 共享池，可能被动态削；看 `Retry-After` / `retry-after-ms`，指数退避，但退避不是无限队列。
-- **Provisioned（PTU）：** 买的是预留容量。打满就是硬顶，文档建议按 header 等满再试，而不是瞎 jitter。溢出可以 spillover 到 Standard，那是明确的降级，不是偷偷多用预留。
+## 网关把排队和降级统一起来
 
-常见误区是：把 429 当「模型抽风」去换 prompt。先看是 TPM 还是 RPM：短 prompt 高 QPS 先撞 RPM；长文档摘要先撞 TPM。
+按租户 / 用户使用令牌桶，大小对齐部署 TPM，超额进入有界队列。比如最长等待 2 秒，同时限制深度，队列满就返回可重试失败。交互聊天优先于批量 embedding，批量走离峰或独立部署。让客户端无穷 `while True: retry` 会形成惊群，加剧 429。
 
-## 产品层：排队、削峰、降级，不要让用户直接撞墙
+重复问题可缓存，语义缓存要遵守 Copilot ACL。系统提示和检索块用前缀缓存；分类、正则或小模型能做的就减少 4o 调用，Phi / mini 可承担这类任务，见 `msft-phi-slm`。
 
-我会在网关做三件事，而不是让每个客户端自己 `while True: retry`。
+降级提前写进产品约定：先缩上下文或摘要检索结果，再换 mini / 本地区域的小部署；仍不可用时走模板加检索摘录，只显示引用；最后明确告知用量高、预计等待和重试方式。避免静默重试直到超时。
 
-**排队和准入。** 按租户 / 用户令牌桶，桶的大小对齐部署 TPM，不要对齐「我们希望的 QPS」。超限的请求进有界队列，队列有最大等待（比如 2 秒）和最大深度。队列满了立刻失败并返回可重试信号，比让线程堵在 OpenAI SDK 里要干净。优先级：交互式聊天高于批量嵌入，批量走离峰或单独部署。
+监控拆开 429 率、队列等待 p95、降级率、缓存命中和 prompt/completion TPM，并按 region、模型分组。East US 满额后不能盲目跨区，数据驻留与网络 RTT 都可能限制切换。两个部署各分一半 TPM，也不等于增加了 region+模型总配额。
 
-**削峰。** 重复问题缓存（语义缓存要小心权限，见 Copilot ACL）。系统提示和检索块能共享就前缀缓存。能抽成分类 / 正则 / 小模型的，不要每条都打 4o。Phi / mini 部署是这条线上的减压阀，见 `msft-phi-slm`。
-
-**降级阶梯，要写进产品合同，不要临场编：**
-
-1. 同模型，缩短上下文（少召回几块、摘要检索结果）。
-2. 换更小 / 更便宜的部署（mini、本地区域）。
-3. 非生成路径：模板 + 检索摘录，只展示引用，不写长答案。
-4. 明确失败：「当前用量高，请稍后」，带预计等待。沉默重试到超时是更差的 UX。
-
-监控要拆：429 率、队列等待 p95、降级触发率、缓存命中、prompt/completion 各自的 TPM。只看平均延迟会把限流尖峰洗掉。配额要按 region 和模型分开报，East US 的 GPT 配额满了，不一定能把流量盲切到另一个区：数据驻留和网络 RTT 都是约束。
-
-PTU 适合基线可预测的生产流量（Copilot 工作时间）；突发和实验走 Standard。面试别说「全部 PTU 就没有 429」：workload shape（超长 prompt、低缓存命中）仍能打满预留。
+工作时间等可预测基线适合考虑 PTU，突发与实验用 Standard。质量 A/B 还需标记降级流量并分开分析，否则限流导致的小模型替换会被误解成新 prompt 质量下降。
 
 ## 追问
 
-- **TPM 和 RPM 哪个先撞？** 短请求高并发先 RPM；长上下文少请求先 TPM。用真实 prompt/completion 尺寸估，不要用「每分钟用户数 × 1」。
-- **为什么重试会让 429 更糟？** 无 jitter 的同步重试会叠成惊群。要尊重 `Retry-After`，客户端合并，服务端排队。
-- **多部署负载均衡？** 可以，但配额是 region+模型总和。两个部署各一半 TPM，不是两份配额。跨区要考虑合规。
-- **和模型质量 A/B？** 限流降级会污染质量实验。流量标记「是否降级」，分析时拆开，否则你会以为新 prompt 变差了。
+**估算配额用每分钟用户数就够了吗？**
+不够。要结合真实请求数与 prompt/completion 长度，分别算 TPM 和 RPM。
 
-## 相关题
+**怎样避免重试惊群？**
+尊重 `Retry-After`，Standard 配合指数退避与 jitter，统一服务端排队并合并客户端重试；PTU 按服务 header 指示等待。
 
-- [[anthropic-rate-limit]]：站在 API 提供方设计 RPM/TPM 限流器，本题是调用方撞上这堵墙之后怎么办。
-- [[p3a-xai-rate-limiter-design]]：出站限流保护下游供应商额度，和本题产品层的排队、退避是同一侧的问题。
-- [[design-chat-serving]]：服务方的整体设计，限流只是入口一环，后面还有优先级队列和前缀缓存。
+**可以多部署负载均衡吗？**
+可以分配流量，但共享 region+模型总配额，跨区还要检查驻留要求。
+
+相关：[[anthropic-rate-limit]]、[[p3a-xai-rate-limiter-design]]、[[design-chat-serving]]

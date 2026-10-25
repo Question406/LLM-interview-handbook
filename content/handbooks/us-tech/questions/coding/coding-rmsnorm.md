@@ -4,8 +4,7 @@ section: coding
 order: 5
 level: A
 title: 白板：RMSNorm 比 LayerNorm 少了什么，Llama 为什么用
-quick: >-
-  RMSNorm 不减均值、通常也没有 $\beta$，只沿最后一维算 $x/\mathrm{RMS}(x)$ 再乘 $\gamma$；Llama 用它是因为算得少、质量接近 LN，不是两者等价。
+quick: "RMSNorm 沿最后一维把 $x$ 除以 $\\mathrm{RMS}(x)$，再乘 $\\gamma$，省掉 LayerNorm 的减均值，通常也没有 $\\beta$。Llama 选择它是为了减少约简和读写开销，同时保持接近 LN 的质量；两者在输入均值非零时结果不同。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +26,33 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.RMSNorm.html
     type: primary
 ---
+
+## 题目描述
+
+实现一个 PyTorch RMSNorm 层，并提供与不带仿射参数的 LayerNorm 对照接口。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `RMSNorm(dim, eps=1e-6)`：`nn.Module`，可训练参数 `weight` 形状 `[dim]`，初始化为 1。`forward(x)` 输入 `x` 为 `[..., dim]` 浮点张量，返回同形张量 `x / sqrt(mean(x², last_dim) + eps) * weight`。
+- 内部用 float32 计算，输出 dtype 与输入相同。
+- `vs_layernorm(x, eps=1e-6) -> (ln, rms)`：对照用，返回不带仿射参数的 LayerNorm 和 RMSNorm 结果。
+- `eps > 0`。
+
+### 输入输出示例
+
+```text
+x = [3, 4]
+RMS = sqrt((9 + 16) / 2 + eps) = sqrt(12.5 + eps) ≈ 3.536
+RMSNorm(x) ≈ [0.849, 1.131]                     # 均值没被减掉
+LayerNorm(x) = [-1, 1]（无仿射）                 # 先减均值 3.5
+```
+
+## 解题思路与参考答案
+
+我会沿最后一维求平方均值，加 eps 后取倒数平方根，乘回输入，再乘可训练的 weight。这样保留了输入的均值方向；例如 [3, 4] 经 RMSNorm 后仍全为正，而 LayerNorm 会先减去 3.5。统计量在 float32 里算，最后把结果转回输入 dtype。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -85,6 +111,16 @@ def vs_layernorm(x, eps=1e-6):
     rms_norm = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + eps)
     return layer_norm, rms_norm
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(y, reference)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -150,15 +186,18 @@ Llama 里 `eps` 常见 $10^{-5}$ 或 $10^{-6}$。norm 要在 fp32 里算，因�
 
 ## Llama 为什么换
 
-不是因为 RMSNorm 和 LN 等价。公开的理由是少一次求均值、少一套 $\beta$、kernel 更简单，而在 7B 到 70B 上质量没有下降。GQA、RoPE、SwiGLU 和 RMSNorm 是同一套 Llama 积木，RMSNorm 是其中最便宜的一块，见 `meta-llama-gqa`。不要回答「RMSNorm 一定更准」。
+公开的理由是少一次求均值、少一套 $\beta$，kernel 更简单，而在 7B 到 70B 上质量没有下降。RMSNorm 和 LN 在一般输入上仍会给出不同结果。GQA、RoPE、SwiGLU 和 RMSNorm 是同一套 Llama 积木，RMSNorm 是其中最便宜的一块，见 `meta-llama-gqa`。不要回答「RMSNorm 一定更准」。
 
 Llama 用 pre-norm：每个 attention / FFN 子层的入口做 RMSNorm，残差在子层外面加。统计量只沿 $D$ 算，所以 decode 时 $T=1$ 和训练时 $T$ 很长得到的结果一致，逐步生成不会漂移。NVIDIA 会追问 kernel：RMSNorm 是一次 reduction 加一次 rsqrt，比 LN 少一次减均值的读写，对带宽敏感的逐 token 生成（decode）有点用，但不是主要的显存开销。
 
 ## 追问
 
-- **把均值再减掉还叫 RMSNorm 吗？** 不叫，那是去掉 $\beta$ 的 LN 变体。Llama 明确不减均值。
-- **$\gamma$ 能去掉吗？** 能跑，但失去了按通道恢复尺度的自由度。公开 checkpoint 都保留了 `weight`。
-- **和 BatchNorm、或者沿 $T$ 标准化是一回事吗？** 都不是，轴始终是特征维 $D$。沿 $T$ 标准化会让 padding 污染统计量，逐步 decode 时也和训练对不上。
+**把均值再减掉还叫 RMSNorm 吗？**
+不叫，那是去掉 $\beta$ 的 LN 变体。Llama 明确不减均值。
+**$\gamma$ 能去掉吗？**
+能跑，但失去了按通道恢复尺度的自由度。公开 checkpoint 都保留了 `weight`。
+**和 BatchNorm、或者沿 $T$ 标准化是一回事吗？**
+都不是，轴始终是特征维 $D$。沿 $T$ 标准化会让 padding 污染统计量，逐步 decode 时也和训练对不上。
 
 ## 相关题
 

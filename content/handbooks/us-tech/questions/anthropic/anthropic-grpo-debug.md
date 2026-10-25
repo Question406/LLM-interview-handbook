@@ -4,7 +4,7 @@ section: anthropic
 order: 25
 level: S
 title: Anthropic：RL Fundamentals，修一段有 bug 的 GRPO
-quick: "跑一段一两百行的 GRPO 找 bug：multinomial 吃了原始 logits、奖励全相同的组优势变 NaN，第三处没公开；修完会问 ratio 为什么不是 1。"
+quick: "我会先检查采样输入和组内优势：multinomial 要吃概率或非负权重，奖励全相同时优势应为 0。公开转述中的 GRPO 脚本约一两百行，第三处 bug 没公开；修完还要解释 ratio 为什么可能离开 1。"
 tags:
   - 完整编程练习
   - Anthropic
@@ -27,6 +27,28 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+实现组内奖励归一化和带裁剪的策略损失，用于检查一个小型 GRPO 训练步骤。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`advantages(rewards)` 接收 NumPy 浮点数组 `[P,G]`，每行是一道 prompt 的 G 个奖励，返回同形数组：每组减去本组均值，再除以该行组内总体标准差（ddof=0）；标准差小于 `1e-8` 的组全部返回 0。
+
+`loss_grad(new, old, adv, mask, eps=0.2)` 返回 `(loss, grad)`。`new`、`old` 是 `[P*G,T]` 的采样 token 对数概率，`adv` 是 `[P*G]`，`mask` 是同形布尔数组，True 表示计入损失；`0 < eps < 1`。令 `r=exp(new-old)`，每个有效 token 的损失定义为 `-min(r*A, clip(r,1-eps,1+eps)*A)`，其中 A 是该序列的优势。`loss` 是有效 token 的均值，`grad` 是对 new 的导数，形状与 new 一致。old、adv 是常量；不加入额外参考模型 KL 项。全部 token 被屏蔽时返回 0 和全零梯度。
+
+### 示例
+
+```text
+advantages([[1,1],[0,2]]) = [[0,0],[-1,1]]
+new = old = [[0],[0]], adv = [1,-1], mask = [[True],[True]]
+loss = 0, grad = [[-0.5],[0.5]]
+```
+
+## 解题思路与参考答案
+
+我会先跑出错误，再沿着采样、组内优势和 ratio 逐项检查。比如一组奖励全相同，优势应当全是 0，出现 NaN 就先看标准差和除零；第三处 bug 的具体代码没有公开，练习里的实现不能当成原题答案。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试。原题是 PyTorch 脚本，这里用 NumPy 手写前向和梯度，CPU 上验证。
@@ -47,7 +69,7 @@ loss_grad(new=old, ...)       -> 每个 token 的 ratio 都是 1
 
 ### 解题思路与正确性
 
-优化器做的是最小化，所以损失是 surrogate 取负：$-\min(\rho A, \mathrm{clip}(\rho, 1-\varepsilon, 1+\varepsilon) A)$，其中 $\rho = \exp(\text{new} - \text{old})$。
+先把优化目标的符号定清楚：优化器最小化损失，所以 surrogate 要取负，写成$-\min(\rho A, \mathrm{clip}(\rho, 1-\varepsilon, 1+\varepsilon) A)$，其中 $\rho = \exp(\text{new} - \text{old})$。
 
 对单个 token，`min` 选中 clip 分支时损失与 `new` 无关，梯度为 0。这只发生在两种情况：$A>0$ 且 $\rho>1+\varepsilon$，或 $A<0$ 且 $\rho<1-\varepsilon$，也就是策略已经朝有利方向走得太远。其他情况下 `min` 选中原始的 $\rho A$，梯度是 $-A\rho$，再除以有效 token 数。
 
@@ -99,6 +121,16 @@ def loss_grad(new, old, adv, mask, eps=0.2):
     grad = -adv * ratio * ~clipped_out * mask / num_tokens
     return loss, grad
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(advantages([[1, 1], [0, 2]]), [[0, 0], [-1, 1]])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -215,11 +247,14 @@ Clip 只在「这一步还想往更远处推」的那一侧把梯度掐掉，即
 
 ## 追问
 
-**全对的一组加了 eps 之后，优势是不是一个很小的正数？** 不是。每个回报减去组均值后是 0，除以任何正数仍是 0。eps 解决的只是 NaN。
+**全对的一组加了 eps 之后，优势是不是一个很小的正数？**
+不是。每个回报减去组均值后是 0，除以任何正数仍是 0。eps 解决的只是 NaN。
 
-**为什么不把优势放进 logprob 的计算图里？** 优势是这批样本上的权重。如果让它跟着 $\pi_\theta$ 变，就多出一条没有推导依据的梯度。
+**为什么不把优势放进 logprob 的计算图里？**
+优势是这批样本上的权重。如果让它跟着 $\pi_\theta$ 变，就多出一条没有推导依据的梯度。
 
-**第一步 ratio 就是 1，clip 还有什么用？** 第一步确实没用。只有到第二个 epoch，或者采样和打分不是同一次前向时，才会有 token 的 $\rho$ 离开 1。如果只更新一次、logprob 也来自同一次前向，clip 什么都不做。
+**第一步 ratio 就是 1，clip 还有什么用？**
+第一步确实没用。只有到第二个 epoch，或者采样和打分不是同一次前向时，才会有 token 的 $\rho$ 离开 1。如果只更新一次、logprob 也来自同一次前向，clip 什么都不做。
 
 ## 相关题
 

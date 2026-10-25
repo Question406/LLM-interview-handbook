@@ -4,7 +4,7 @@ section: amazon
 order: 16
 level: A
 title: Amazon：Converse tool use，toolConfig、并行工具和 Guardrail 怎么接？
-quick: "你自建循环：toolConfig 给出 schema，模型回 toolUse，你跑完再回 toolResult。一次可以多块并行，只读才并行，写要幂等。Guardrail 默认不评工具定义、参数和结果，别以为开了护栏 JSON 就安全。和托管 Agents 的差别是编排所有权在你。"
+quick: "Converse 的工具循环由应用执行：toolConfig 描述接口，模型返回 toolUse，应用执行后按 toolUseId 回传 toolResult。无依赖的只读工具可以并行，写操作要处理幂等和确认；Guardrail 不覆盖工具定义、参数和结果，这些还得应用检查。"
 tags:
   - Amazon
   - Bedrock
@@ -29,13 +29,13 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗把 function calling 问成 Converse，而不是「你会不会 ReAct」。公开文档：client-side 模式下模型 **不执行** 工具；你在 `toolConfig` 里给 `toolSpec`（名、描述、JSON Schema），响应里 `stopReason` 为 `tool_use`，content 里一块或多块 `toolUse`。你执行后用同一 `toolUseId` 回 `toolResult`。托管循环见 `amazon-bedrock-agents`。
+Converse 的 client-side tool use 由应用负责执行循环，模型只提出调用请求。比如查库存和查政策可以并行，先查订单再退款则有依赖，要串行。应用在 `toolConfig` 中给出 `toolSpec` 的名称、描述和 JSON Schema；响应 `stopReason` 为 `tool_use` 时，执行 content 里的 `toolUse`，再用同一个 `toolUseId` 回传 `toolResult`。
 
-## 调用约定：schema、并行和停止
+## 调用怎样执行，失败怎样返回
 
-`toolChoice` 可以 auto / any / 指定某个工具。`auto` 不等于安全：把退款和搜政策放同一列表，是在请误调。根 schema 要是 object，必填写清。
+`toolChoice` 可以是 `auto`、any 或指定工具；它决定选工具的方式，不保证权限和参数正确。退款与搜政策放在同一列表时，要额外检查误调。根 schema 设为 object，并写清必填项。
 
-并行：一轮多个 `toolUse` 时，必须一次带回全部 `toolResult`，缺一块对话非法。只读（查库存、查条款）可并行；有依赖（先查订单再退款）要串。写操作默认不自动重试，除非幂等键。模型并行点两次 `create_ticket` 没有幂等就是两张单。
+一轮有多个 `toolUse`，就要一次带回全部 `toolResult`，漏一个会导致对话非法。只读且无依赖的请求可以并行。写操作只有具备幂等键时才自动重试；否则两次 `create_ticket` 就可能建出两张单。
 
 ```python
 def handle_tool_use(msg, run_tool):
@@ -56,26 +56,32 @@ def handle_tool_use(msg, run_tool):
     return {"role": "user", "content": results}
 ```
 
-失败不要丢。文档建议 `status: error` 让模型改参或问人，而不是你在客户端吞掉再让它幻觉「已经办了」。步数、实际耗时、总 token 用量都要设硬上限，见 `amazon-p99-stream`。
+失败也要回传。用 `status: error` 让模型看到错误，再改参或向用户澄清；客户端吞掉错误，模型就可能声称已经完成。循环还要给步数、实际耗时和总 token 用量设硬上限。
 
-## Guardrail 盖不住工具 JSON
+## 工具参数和结果还要应用检查
 
-官方 Converse + Guardrails 表写得很直：评用户 / 系统 / 模型文本；**不评** `toolConfig` 定义、模型生成的 `toolUse.input`、你回的 `toolResult`。早期还有「工具和护栏不能同开」的报错；现在即使同开，政策层仍有洞。
+原文所引 Converse + Guardrails 表说明，它检查用户、系统和模型文本，不检查 `toolConfig` 定义、模型生成的 `toolUse.input` 或回传的 `toolResult`。早期还有工具和护栏不能同开的报错；即使两者可以同时开，也需要应用覆盖这些边界。
 
-所以面试要主动加应用层：
+所以应用层还要做这些检查：
 
 - 工具名允许名单、参数校验（金额上限、marketplace）。
 - 不可逆动作 return control 或人工确认，不要因为 Guardrail 过了就打生产 Lambda。
 - `toolResult` 当不可信输入截断，防检索块 / 网页注入，见 `amazon-guardrails`、`amazon-bedrock-rag`。
 - 流式时完整参数没闭合不能执行。首个 token 的等待时间（TTFT） 好看执行不了，E2E 才是工具 SLO。
 
-评测：选对工具、参数合法、误调、写操作重复、工具失败后的幻觉率。不要报「对话像客服」。换 Nova 档位契约不动，见 `amazon-nova`。
+评测看工具选择、参数合法性、误调、写操作重复，以及工具失败后声称成功的比例。换 Nova 档位时，这些契约仍然固定。
 
-常见误区是：把 OpenAPI 一贴当 IAM；并行写库；以为 Contextual grounding 会检查 tool JSON。
+OpenAPI 不能替代 IAM，Contextual grounding 也不检查 tool JSON；写库并行执行前仍要处理依赖和幂等。
+
+相关：`amazon-bedrock-agents`、`amazon-p99-stream`、`amazon-nova`。
 
 ## 追问
 
-- **和 Agents 怎么选？** 工具少、要 trace、能接受托管编排 → Agents / AgentCore。要事务、补偿、精细重试 → Converse 自建。混合很常见。
-- **toolChoice 指定工具就安全吗？** 只保证会调，不保证参数对、用户同意。
-- **并行和 p99？** 并行只读能降实际耗时；尾部往往是最慢那个工具。按最慢依赖报，不要报平均值。
-- **为什么 Guardrail 不评 toolResult？** 结果可能很长、结构化、含业务 PII 策略不同。所有权在应用，Bar Raiser 要听这句话。
+**和 Agents 怎么选？**
+工具少、要 trace、能接受托管编排 → Agents / AgentCore。要事务、补偿、精细重试 → Converse 自建。混合很常见。
+**toolChoice 指定工具就安全吗？**
+只保证会调，不保证参数对、用户同意。
+**并行和 p99？**
+并行只读能降实际耗时；尾部往往是最慢那个工具。按最慢依赖报，不要报平均值。
+**为什么 Guardrail 不评 toolResult？**
+结果可能很长、结构化、含业务 PII 策略不同。所有权在应用，Bar Raiser 要听这句话。

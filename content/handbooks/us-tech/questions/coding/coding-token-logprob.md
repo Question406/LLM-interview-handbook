@@ -4,7 +4,7 @@ section: coding
 order: 42
 level: S
 title: 白板：从 logits 取 response 的 token logprob，shift、temperature 和显存
-quick: "位置 $t$ 的 logits 预测第 $t+1$ 个 token，所以 `logits[:, :-1]` 对 `ids[:, 1:]`；训练端要除以和采样时相同的温度 $T$，再用目标 logit 减 `logsumexp`。"
+quick: "位置 $t$ 的 logits 预测第 $t+1$ 个 token，先把 `logits[:, :-1]` 与 `ids[:, 1:]` 对齐，再除以采样温度 $T$。用目标 logit 减 `logsumexp` 得到 token logprob，response mask 也同样左移；显存紧张时沿序列切块计算。"
 tags:
   - 完整编程练习
   - Coding
@@ -22,6 +22,34 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.logsumexp.html
     type: primary
 ---
+
+## 题目描述
+
+从语言模型 logits 中提取真实下一个 token 的 log-prob，并提供限制临时 float32 张量大小的分块版本。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `token_logprobs(logits, input_ids, temperature=1.0) -> [B, L-1]`：`logits` 是 `[B, L, V]`，`input_ids` 是 `[B, L]`。输出的第 `t` 列是位置 `t` 的 logits 给 `input_ids[:, t+1]` 的 log 概率，在 float32 里计算。
+- `token_logprobs_chunked(logits, input_ids, temperature=1.0, chunk=1024)`：结果相同，但沿序列维每次只把 `chunk` 个位置转成 float32，限制临时显存。
+- 要求 `temperature > 0`、`chunk >= 1`，且 `logits` 的前两维和 `input_ids` 形状一致。
+- `L <= 1` 时没有可预测的下一个 token，返回形状 `[B, 0]` 的空张量。
+- 函数不处理 response mask。调用方要把 mask 也左移一位（`mask[:, 1:]`）再和结果对齐。
+- 精确定义：先对 logits[:, :-1, :]/temperature 在词表轴计算 log-softmax，再取目标 `input_ids`[:,1:] 对应的值。token id 均在 [0,V)，输入有限。
+
+### 输入输出示例
+
+```text
+logits=zeros([1,3,4]), input_ids=[[1,2,3]], temperature=1
+两种接口均返回 [[-ln(4),-ln(4)]]，形状 [1,2]
+logits=zeros([1,1,4]), input_ids=[[2]] -> [[]]，形状 [1,0]
+```
+
+## 解题思路与参考答案
+
+我会先 shift 一位，再按采样时相同的温度缩放 logits，用 gather 取目标 token 的 logit，减去这一行的 logsumexp。比如输出的第 0 列对应输入第 1 个下标的 token，mask 也必须按同一规则对齐。词表很大时再沿序列切块，限制 float32 临时副本。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -99,6 +127,16 @@ def token_logprobs_chunked(logits, input_ids, temperature=1.0, chunk=1024):
     return torch.cat(pieces, dim=1)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(token_logprobs(logits, ids, 0.7), reference, atol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -165,11 +203,11 @@ def token_logprobs(logits, input_ids, temperature):
 
 ## 错在哪
 
-**没有 shift。** causal LM 在位置 $t$ 输出的是 $p(x_{t+1}\mid x_{\le t})$。这段代码在位置 $t$ 的分布上取的是 $x_t$ 的概率，每个 token 都错开了一位。
+先看位置对齐。 causal LM 在位置 $t$ 输出的是 $p(x_{t+1}\mid x_{\le t})$。这段代码在位置 $t$ 的分布上取的是 $x_t$ 的概率，每个 token 都错开了一位。
 
-**temperature 没用上。** 采样时的分布是 $\mathrm{softmax}(z/T)$，采样轨迹（rollout）里存下的 logprob 也是这个分布下的。训练端用 $\mathrm{softmax}(z)$ 重算，即使权重完全一样，第一步的 ratio 也不是 1，clip 会被无意义地触发。$T$ 必须和采样时完全一致。
+再看温度。 采样时的分布是 $\mathrm{softmax}(z/T)$，采样轨迹（rollout）里存下的 logprob 也是这个分布下的。训练端用 $\mathrm{softmax}(z)$ 重算，即使权重完全一样，第一步的 ratio 也不是 1，clip 会被无意义地触发。$T$ 必须和采样时完全一致。
 
-**精度和显存。** logits 往往是 bf16，直接做 `log_softmax` 精度不够；先 `.float()` 又会复制一份 `[B, L, V]`。$V$ 在 15 万左右、$L$ 一万时，一条序列的 fp32 logits 就有 6 GB，batch 稍大就是几十 GB。
+最后核对精度与显存。 logits 往往是 bf16，直接做 `log_softmax` 精度不够；先 `.float()` 又会复制一份 `[B, L, V]`。$V$ 在 15 万左右、$L$ 一万时，一条序列的 fp32 logits 就有 6 GB，batch 稍大就是几十 GB。
 
 ## 改法
 

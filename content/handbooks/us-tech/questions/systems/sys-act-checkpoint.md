@@ -4,9 +4,7 @@ section: systems
 order: 3
 level: A
 title: 系统：activation checkpoint 重算 vs 存，和序列并行叠
-quick: >-
-  前向只留段边界激活，反向再放一遍前向。显存从按层 $O(L)$ 降到大约 $O(\sqrt{L})$ 量级，代价是多一段
-  forward。和序列并行叠：SP 先把 LayerNorm / dropout 的激活按 $T$ 切开，checkpoint 再砍段内大张量。
+quick: "Activation checkpoint 只保留段边界激活，反向再运行段内前向，用计算换 HBM。它能与序列并行叠加：SP 减少 LN / dropout 的复制，checkpoint 再减少反向保留的中间量，是否提速要看省下显存能否换来更合适的 batch。"
 tags:
   - NVIDIA
   - Training
@@ -31,26 +29,19 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+Activation checkpoint 是前向少存中间结果、反向按需重算，用额外计算换激活显存。比如长序列卡住 microbatch 时，省下空间后可以扩大 $B$ 或 $T$，GEMM 更饱满，整体未必更慢；本来已经 compute-bound，则更可能增加耗时。
 
-NVIDIA Megatron、Google 长上下文预训练、Meta FSDP 训 Llama，都会问激活显存怎么砍。名字容易和权重落盘撞车：activation checkpointing 管的是这一 step 的 HBM；落盘管容错。OpenAI 白板也可能直接让你写 checkpoint 的边界（见 `openai-grad-checkpoint`）。追问通常是：你重算的是便宜算子还是大 GEMM，和 FlashAttention、序列并行是不是重复交税。
+这里讨论训练 step 内的 HBM，区别于容错时把状态写盘。NVIDIA Megatron、Google 长上下文训练、Meta FSDP 都涉及这项选择；OpenAI 白板版可见 `openai-grad-checkpoint`。配置时要明确重算便宜算子还是大 GEMM，以及是否与 FlashAttention、序列并行重复处理同一批张量。
 
-## 存什么、重算什么
-
-不 checkpoint 时，每层把反向要用的激活留在 HBM。Transformer 里这份东西跟 $B\cdot T\cdot L\cdot h$ 走，长序列时经常比参数还大。ZeRO 再怎么切状态也碰不到它。
+不 checkpoint 时，每层把反向要用的激活留在 HBM，随层数约为 $O(L)$。Transformer 里这份东西跟 $B\cdot T\cdot L\cdot h$ 走，长序列时经常比参数还大。ZeRO 再怎么切状态也碰不到它。
 
 做法：只在段边界留一份激活，段内中间结果丢掉。反向进入该段，从边界再 forward 一遍，恢复张量再算梯度。Chen et al. 的结论是：边界选得好，激活显存大约 $O(\sqrt{L})$，额外计算是常数倍前向。实务很少每一算子都重算，常见是每个 Transformer block 一个边界，或 selective：只重算便宜的 LayerNorm / dropout / 注意力分数，大 GEMM 的输出该存还是存。
 
-两笔账分开说：
+因此要同时量激活 HBM 降幅、额外 forward FLOPs，以及重算能否与集体通信错开。
 
-- 省：激活 HBM，往往是峰值的大头。
-- 付：额外 forward FLOPs，以及重算和集体通信能不能错开。
+已经 compute-bound、batch 也喂饱了，再付百分之二十到三十的 FLOPs 是纯税。本来被显存卡住、microbatch 开不大、GEMM 很瘦，用省下的显存把 $B$ 或 $T$ 加倍，算术强度提高后，实际耗时也可能缩短。是否划算，要用这个负载变化前后的 step time 来判断。
 
-已经 compute-bound、batch 也喂饱了，再付百分之二十到三十的 FLOPs 是纯税。本来被显存卡住、microbatch 开不大、GEMM 很瘦，用省下的显存把 $B$ 或 $T$ 加倍，算术强度上去，实际耗时反而更好。面试要讲这个拐点，别背「checkpoint 一定更快」或「一定更慢」。
-
-一个数量级：不 checkpoint 时激活大致跟 $B\cdot T\cdot L\cdot h$ 走；每 block 留一个边界，激活大约按 $\sqrt{L}$ 降，前向大约再付 $1\times$。Selective 只重算 LN / dropout，额外 FLOPs 可以压到百分之十以下，显存降幅仍可观。这才是和「每层全重算」的差别。
-
-## 和序列并行怎么叠
+一个数量级：不 checkpoint 时激活大致跟 $B\cdot T\cdot L\cdot h$ 走；每 block 留一个边界，激活大约按 $\sqrt{L}$ 降，前向大约再付 $1\times$。Selective 只重算 LN / dropout，额外 FLOPs 可以压到百分之十以下，显存降幅仍可观。Selective 与每层全重算的主要差别，就在于额外 FLOPs 和保存张量的取舍。
 
 Megatron 的序列并行（见 `sys-seq-parallel`）先解决一件 TP 留下的浪费：LayerNorm、dropout 的激活在 TP 组里是复制的。SP 把它们按序列维切开，每卡只留 $T/\mathrm{TP}$。这和 checkpoint 不是替代关系：
 
@@ -62,11 +53,15 @@ Korthikanti 的 selective recomputation 正是这个组合：SP 切序列局部�
 
 和 PP 一起用要注意：重算拉长每个 stage 的计算，1F1B 的气泡公式要重算一遍。只在某个 stage 开激进 checkpoint，负载会更不齐。
 
-不要说成也能省 KV。Decode 下一步还要用历史 KV；activation checkpoint 只作用于训练图的正反向。状态侧的分片见 `sys-zero-stages`。
+这不会省掉 decode 下一步需要的历史 KV，activation checkpoint 作用于训练图的正反向。状态侧的分片见 `sys-zero-stages`。
 
 ## 追问
 
-- **每层都 checkpoint 好不好？** 显存最省，计算接近再付一次前向。目标是刚好放下目标 $B\times T$，不是越大越好。
-- **和 CPU offload 怎么选？** Offload 走 PCIe；checkpoint 留在 GPU 上重算。带宽差的机器优先 checkpoint。优化器太大才轮到 ZeRO offload。
-- **为什么有时开了更快？** 之前被显存卡住。省下的激活换成更大 batch，把额外 forward 赚回来。已经喂满 Tensor Core 再开就是税。
-- **FSDP + checkpoint 峰值在哪？** 常在某层权重 gather 齐、同时重放该段激活。错开 prefetch。
+**每层都 checkpoint 好不好？**
+显存最省，计算接近再付一次前向。目标是刚好放下目标 $B\times T$，不是越大越好。
+**和 CPU offload 怎么选？**
+Offload 走 PCIe；checkpoint 留在 GPU 上重算。带宽差的机器优先 checkpoint。优化器太大才轮到 ZeRO offload。
+**为什么有时开了更快？**
+之前被显存卡住。省下的激活换成更大 batch，把额外 forward 赚回来。已经喂满 Tensor Core 再开就是税。
+**FSDP + checkpoint 峰值在哪？**
+常在某层权重 gather 齐、同时重放该段激活。错开 prefetch。

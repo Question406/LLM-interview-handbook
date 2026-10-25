@@ -4,7 +4,7 @@ section: xai
 order: 500
 level: A
 title: "xAI：完整编程题与答案导航（含来源索引）"
-quick: "编程题已补齐题面、示例、参考代码与测试。直接点击本章标有「完整编程练习」的题卡，再点「展开题面与代码答案」；本导航保留来源与题目链接。"
+quick: "用这张导航查完整练习和原始来源：先点题卡，再展开题面与代码答案。下表另标明已读题干和仅见目录标题的范围，链接数包含重复变体，不能当作独立真题数。"
 companies:
   - xai
 tags:
@@ -20,6 +20,8 @@ sources:
     url: https://www.1point3acres.com/interview/problems/company/xai
     type: secondary
 ---
+
+这张导航把已整理题卡和来源证据放在一起。练习题卡提供题面、示例、参考代码与测试；需要核实面经时，再看下方来源索引标出的读取范围。
 
 ## 已整理的题卡
 
@@ -95,4 +97,4 @@ sources:
 - [Speculative Edits 原帖](https://www.1point3acres.com/interview/thread/1193219)：核实复用原代码草稿、要求与greedy一致；模型模拟接口由手册定义。
 - [ML/Infra 原帖](https://www.1point3acres.com/interview/thread/1171574)：核实DP/FSDP starter，作者评论补充第二轮图像分块/转轴。
 
-当前30张xAI题卡均有完整编程练习或场景参考回答。新补6张，其中N-gram与输入框仅由标题重构，不标已核实真题。
+当前 30 张 xAI 题卡都有完整编程练习或场景参考回答。新补的 6 张中，N-gram 和输入框题仅按标题重构，因此不标为已核实真题。

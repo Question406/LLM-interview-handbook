@@ -4,7 +4,7 @@ section: openai
 order: 32
 level: A
 title: OpenAI：sliding window attention 和全局 sink 怎么共存
-quick: "滑窗后 softmax 仍要归一，sink 不会消失。共存有三种：全局层和窗层交替、少数全局 token 永远可见、分母里加学到的 sink logit。gpt-oss 用第一种加第三种。"
+quick: "SWA 限制可见历史，softmax 仍要归一化，因此 attention sink 的问题仍在。可以混合全局层与窗层、保留全局 token，或在分母加入学到的 sink logit；gpt-oss 用全局/局部交替与分母 sink，后者是参数，不是占用 KV 的真实 token。"
 tags:
   - OpenAI
   - Sliding window
@@ -29,11 +29,13 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+滑窗与 sink 可以共存，要先区分是哪一种 sink：有的保留句首 KV，有的在 softmax 分母里加可学习 logit，还有的用全局层或全局 token 保持远距离信息。窗口改变可见集合，softmax 仍需把概率归一化，所以窗口内没有相关内容时，仍可能需要吸收多余概率的位置。
+
+
 
 满注意力 KV 随 $T$ 涨。滑窗（Longformer / Mistral）把每层可见历史限制在 $W$ 内。StreamingLLM 又说：满注意力训出来的模型，推理时若把句首一起扔掉，softmax 会崩，见 `openai-attention-sink`。OpenAI 公开的 gpt-oss 把两件事写进同一张模型卡：层间交替带宽 128 的窗和全密集，并且每个头在 softmax 分母里学一个 bias，使注意力可以谁都不看。推理岗要的是共存方式，不是背 128 这个数字当秘密。
 
-## 窗把谁挡住，质量往哪倒
+## 窗口改变可见历史
 
 因果滑窗：位置 $t$ 的 query 只看见 $[t-W+1, t]$（再截到 0）。计算和 KV 都是 $O(W)$，不是 $O(T)$。Mistral 整网都是窗；gpt-oss / Gemma 2 是一层全图、一层窗交替。混合时窗层 cache 停在 $W$，全局层仍 $O(T)$，总 KV 大约减半（1:1 交替），不是减到 $O(W)$。
 
@@ -44,7 +46,7 @@ Softmax 仍强制 $\sum_j p_{t,j}=1$。窗口里没有「off」时，多余质�
 
 所以「上了 SWA 就不用管 sink」是错的。窗只是换了可见集合；归一化还在。反过来，只在推理时保留 StreamingLLM 的 $k$ 个句首 + 尾窗，那是驱逐策略，针对满注意力训出来的 checkpoint，和训练时就写死窗 mask 不是同一契约。面试第一句先问：这个权重是窗训的，还是满注意力训完再滑。
 
-## 三种共存，别并成一个「sink」
+## 按实现区分共存方式
 
 1. 层混合。 奇数层满注意力，偶数层窗（gpt-oss：带宽 128，随 GPT-3 的 banded / dense 交替）。长距离事实走全局层；局部流畅走窗层。Cache 按层种类型分配：窗层环形缓冲，全局层线性涨。位置编码仍用绝对下标，不要把窗重编成 $0,\ldots,W-1$，见 `openai-rope-offset`。
 
@@ -62,11 +64,15 @@ StreamingLLM 仍可叠在满注意力模型的 逐 token 生成（decode） 驱�
 
 RoPE：剩下的 key 带着原来的绝对位置旋。滑窗丢中间 KV 后若重编号，相对差全变，和 `openai-attention-sink` 同一类 silently wrong。
 
-常见误区是：说 SWA 把复杂度变成 $O(1)$ 就没有 sink；把 gpt-oss 的 bias 说成「永远 attend BOS」；把训练窗和推理驱逐当成同一开关。
+SWA 的窗口开销不能笼统写成 $O(1)$，也不能据此忽略 sink。gpt-oss 的分母 bias 与保留 BOS 不同，训练窗和推理驱逐也要分别说明。
 
 ## 追问
 
-- **全窗、没有全局层，长距离怎么走？** 信息要一层一层沿窗传，有效感受野大约 $L\cdot W$。$W=128$、层数不够时，针在干草堆里会丢。所以 gpt-oss 留了密集层，并给密集层上到 128k（YaRN），见 `openai-long-ctx-train`。
-- **窗层还要不要 FlashAttention？** 要。局部 $S$ 也不该写回 HBM。Decode 时窗层 $T=W$ 很小，split-K 往往不划算，见 `openai-flash-decode`。
-- **推理时给窗层也 pin 句首？** 窗训模型通常不必。满注意力模型的 streaming 要 pin。先看训练 mask。
-- **和 GQA？** 正交。GQA 减头数，SWA 减时间维。gpt-oss 两者都用。
+**全窗、没有全局层，长距离怎么走？**
+信息要一层一层沿窗传，有效感受野大约 $L\cdot W$。$W=128$、层数不够时，针在干草堆里会丢。所以 gpt-oss 留了密集层，并给密集层上到 128k（YaRN），见 `openai-long-ctx-train`。
+**窗层还要不要 FlashAttention？**
+要。局部 $S$ 也不该写回 HBM。Decode 时窗层 $T=W$ 很小，split-K 往往不划算，见 `openai-flash-decode`。
+**推理时给窗层也 pin 句首？**
+窗训模型通常不必。满注意力模型的 streaming 要 pin。先看训练 mask。
+**和 GQA？**
+正交。GQA 减头数，SWA 减时间维。gpt-oss 两者都用。

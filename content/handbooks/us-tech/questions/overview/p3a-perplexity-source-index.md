@@ -21,6 +21,8 @@ sources:
     type: secondary
 ---
 
+准备时先从下面已整理的题卡挑题，再到来源表核对读到的是详情还是目录标题。27 条记录里有重复变体和仅标题线索，不能直接算成 27 道独立真题。
+
 ## 已整理的题卡
 
 - [[p3a-perplexity-in-memory-file-system]]

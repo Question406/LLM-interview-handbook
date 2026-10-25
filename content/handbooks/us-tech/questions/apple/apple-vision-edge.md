@@ -4,7 +4,7 @@ section: apple
 order: 17
 level: S
 title: Apple：端侧视觉 token 预算和 ANE 静态 shape 怎么卡？
-quick: "视觉 token 数 $(H/P)\\times(W/P)$ 进同一条上下文和 KV。ANE 要预编译分辨率档，不能 AnyRes 现场切。先算 $N_{\\mathrm{vis}}$ 占了多少 $S_{\\max}$，再决定缩略、切 ROI 还是上云。动态 padding 掉出 ANE 比看不清字更常见。"
+quick: "视觉 token 与文本、输出共享上下文和 KV，先按 $(H/P)\\times(W/P)$ 算数量，再检查总数是否在 $S_{\\max}$ 内。比如多张截图会挤占工具证据和生成空间；端侧要预编译分辨率与切块档位，按任务选缩略图、ROI 或 PCC，并验证计算仍留在 ANE。"
 tags:
   - Apple
   - Neural Engine
@@ -29,7 +29,9 @@ sources:
     type: secondary
 ---
 
-屏幕理解、Visual Intelligence、端侧 AFM 多模态都会问「一张图要几个 token」。云端 AnyRes 把大图切成 $g$ 块再加全局缩略，token 数近线性增长，见 `msft-llava`。手机上的限制是 ANE 静态 shape、SRAM 和已经预分配的 $S_{\max}$，见 `apple-ane`、`apple-ondevice-kv`。MM1 说分辨率和 token 数主导质量。按这些公开约束收。
+端侧视觉预算要把图像、文本和输出一起算，因为视觉 token 也占同一条上下文和 KV。比如一张图放得下，多张截图加全局缩略图却可能挤掉工具证据，这时要减图或裁 ROI。
+
+云端 AnyRes 可以把图切成 $g$ 块再加全局缩略图，token 数随之增长，见 `msft-llava`。手机还受 ANE 静态 shape、SRAM 和预分配 $S_{\max}$ 限制，见 `apple-ane`、`apple-ondevice-kv`。MM1 发现分辨率和 token 数影响质量，所以预算要同时考虑看清小字和实际导出。
 
 ## 先写预算，再谈切图
 
@@ -65,11 +67,15 @@ ANE 额外约束：
 
 Prefill 复杂度按 $(N_{\mathrm{vis}}+N_{\mathrm{text}})^2$ 估。图一进，首 token 被视觉编码器加 输入预填充（prefill，即处理输入并建立缓存） 吃掉，和 `apple-siri-latency` 的 0.6 ms/prompt-token 不是同一段。验收看 Instruments：视觉塔和 LLM 是否都留在 Neural Engine，以及 greedy 与 CPU 参考一致。
 
-常见误区是：把动态 AnyRes 当端侧默认；视觉 token 另开一条不占 KV 的「旁路」；训练用 224、线上 pad 到 448 还不做分辨率适配。剪枝若让 $N_{\mathrm{vis}}$ 变成数据依赖长度，会直接掉 ANE，见 `apple-token-prune`。
+动态 AnyRes 不能直接作为端侧默认路径，视觉 token 也要计入 KV。训练用 224、线上 pad 到 448 时，需要验证分辨率适配。剪枝若让 $N_{\mathrm{vis}}$ 变成数据依赖长度，会直接掉 ANE，见 `apple-token-prune`。
 
 ## 追问
 
-- **为什么不把图压成 32 个 query？** 能压，BLIP-2 那条。省 $S$，损定位和小字。端侧屏幕任务通常不能。
-- **视频？** 帧数乘 $N_{\mathrm{vis}}$。必须抽帧或先字幕，不要 1 fps $\times$ 576 往静态 cache 里塞。
-- **和 PCC 怎么切？** 私有屏幕默认端上低 $R$；要高 $R$ 文档理解再上 PCC，仍不是把原图拿去训下一版。
-- **padding 会不会让模型看见黑边？** 会。训练要含同样档位的 pad，mask 掉 pad 位置，mask 用有限大负数，见 `apple-ondevice-quant`。
+**为什么不把图压成 32 个 query？**
+能压，BLIP-2 那条。省 $S$，损定位和小字。端侧屏幕任务通常不能。
+**视频？**
+帧数乘 $N_{\mathrm{vis}}$。必须抽帧或先字幕，不要 1 fps $\times$ 576 往静态 cache 里塞。
+**和 PCC 怎么切？**
+私有屏幕默认端上低 $R$；要高 $R$ 文档理解再上 PCC，仍不是把原图拿去训下一版。
+**padding 会不会让模型看见黑边？**
+会。训练要含同样档位的 pad，mask 掉 pad 位置，mask 用有限大负数，见 `apple-ondevice-quant`。

@@ -4,7 +4,7 @@ section: coding
 order: 37
 level: A
 title: 白板：RLOO 的 leave-one-out baseline，向量化写法和它跟 GRPO 差在哪
-quick: "RLOO 的 baseline 是同组其余 $G-1$ 条奖励的均值，向量化为 `(sum - r) / (G - 1)`；它是减组均值的 $\\frac{G}{G-1}$ 倍，GRPO 多了按 prompt 变化的除以 std。"
+quick: "RLOO 把同组其余 $G-1$ 条奖励的均值当 baseline，用 `(sum - r) / (G - 1)` 就能向量化计算。它的 advantage 是减组均值的 $\\frac{G}{G-1}$ 倍；GRPO 还会除以每个 prompt 自己的 std，所以不同题的缩放也会不同。"
 tags:
   - 完整编程练习
   - Coding
@@ -25,6 +25,30 @@ sources:
     url: https://arxiv.org/abs/2402.03300
     type: primary
 ---
+
+## 题目描述
+
+一批 prompt 各生成 G 条 rollout，奖励按 prompt 分组连续存放。为每条 rollout 计算 leave-one-out 优势：以同组其他回答的平均奖励为 baseline，并返回与输入排列一致的一维优势数组。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `rloo_advantage(rewards, G) -> [B * G]`：`rewards` 是 `[B * G]` 的标量奖励，每个 prompt 的 $G$ 条 rollout 连续排布。每条回答的 baseline 是同组其余 $G-1$ 条奖励的均值，不包含自己，也不做 std 归一。
+- 约束：$G \ge 2$，奖励个数能被 $G$ 整除。
+
+### 示例
+
+```text
+rewards = [1, 0, 0], G = 3   -> [1, -0.5, -0.5]
+rewards = [3, 1],    G = 2   -> [2, -2]
+rewards 跨两个 prompt 时，只在各自的 G 条之间比较，不能混组
+```
+
+## 解题思路与参考答案
+
+我会把奖励 reshape 成每个 prompt 一行，先求组内总和，减掉当前回答，再除以其余回答的数量，最后用当前奖励减去这个 baseline。比如两条回答时，它们直接互相作 baseline。关键是先确认 rollout 排布，避免把不同 prompt 的回答混进同一组。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -69,6 +93,16 @@ def rloo_advantage(rewards, G):
     baseline = (grouped.sum(dim=1, keepdim=True) - grouped) / (G - 1)
     return (grouped - baseline).reshape(-1)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(adv, torch.tensor([1.0, -0.5, -0.5, 0.0, 0.0, 0.0]))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

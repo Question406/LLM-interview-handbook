@@ -4,7 +4,7 @@ section: xai
 order: 609
 level: A
 title: "xAI：嵌套事务 KV：begin、commit 与 rollback"
-quick: "嵌套事务按栈处理：读写只看最内层，commit 把最内层合并进父层，rollback 只丢弃最内层，删除在 overlay 写法里要用 tombstone 防止旧值从外层漏出来。"
+quick: "嵌套事务按栈处理，commit 只提交最内层，rollback 只丢当前层。完整副本版读写顶层；overlay 版只存改动，读取从内向外找，删除要写 tombstone，防止旧值从父层重新出现。"
 companies:
   - xai
 tags:
@@ -23,15 +23,42 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现支持嵌套事务的键值存储，并提供快照和独立分支；不同事务层与分支间必须具有明确的数据隔离语义。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `KV(data=None)`：可选初始数据，构造时深拷贝一份。
+- `get(key)`：返回当前可见的值，不存在返回 `None`。返回的是深拷贝。
+- `set(key, value)`：值必须可 JSON 序列化且不能是 `None`（`None` 留给「不存在」）。
+- `delete(key) -> bool`：删掉返回 `True`，键本来不存在返回 `False`。
+- `begin()` / `commit()` / `rollback()`：事务可以嵌套。`commit` 只把最内层合并进父层，`rollback` 只丢弃最内层；没有打开的事务时两者都抛 `ValueError`。
+- `snapshot() -> int`：记录当前可见数据，返回快照 id。快照之后的写入不影响它。
+- `fork(snapshot_id) -> KV`：从快照创建独立的新实例；id 不存在抛 `ValueError`。
+- 最多 $10^4$ 次操作。事务外的写入立即生效；事务内的写入只影响当前事务可见状态。
+
+### 输入输出示例
+
+```text
+set("a", 1); begin(); set("a", 2); get("a")   -> 2
+rollback(); get("a")                           -> 1
+id = snapshot(); b = fork(id); b.set("a", 3)
+get("a")                                       -> 1
+b.get("a")                                     -> 3
+```
+
+## 解题思路与参考答案
+
+我会用栈表示嵌套事务，先约定 commit 只提交最内层。基准实现让每层保存完整工作副本：`begin` 复制顶层，读写只碰顶层，`commit` 用顶层替换父层，`rollback` 直接丢掉顶层。这样语义最容易验证，代价是 `begin` 要复制全部数据。
+
 ## 题目
 
 实现一个内存 KV 存储，支持 `get`、`set`、`delete`，并支持可以嵌套的事务：`begin` 开启一层，`commit` 提交，`rollback` 回滚。事务内的读要能看到本事务自己的写入。
 
 > 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
-
-## 思路
-
-把事务看成一个栈。最直观的写法是每层保存完整工作副本：`begin` 复制顶层，读写只碰顶层，`commit` 用顶层替换父层，`rollback` 直接丢掉顶层。这样语义最容易验证，代价是 `begin` 要复制全部数据。
 
 面试里更常被期待的是 overlay 写法：每层只记本事务改过的键，删除记一个 tombstone，读取从最内层往外查，遇到 tombstone 就当不存在。子事务提交时把改动和 tombstone 合并进父层，只有最外层提交才写进基础存储；回滚只丢当前层。
 
@@ -131,6 +158,16 @@ class KV:
             raise ValueError(f"unknown snapshot id: {snapshot_id}")
         return KV(self.snapshots[snapshot_id])
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert store.get("a") is None` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

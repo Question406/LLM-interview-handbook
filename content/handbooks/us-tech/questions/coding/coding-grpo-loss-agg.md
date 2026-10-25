@@ -4,7 +4,7 @@ section: coding
 order: 36
 level: S
 title: 白板：GRPO 的 token loss 怎么聚合成一个数？三种写法的长度偏置
-quick: "seq-mean 给每个 token $1/(B|o_i|)$ 的权重，长的错答案被罚得轻；token-mean 和 Dr. GRPO 的常数归一没有这种长度偏置，pad 都不进分子分母。"
+quick: "先 mask 掉 prompt 和 pad，再决定分母：seq-mean 按每条长度平均，token-mean 按全 batch 有效 token 平均，Dr. GRPO 除固定常数。seq-mean 让长错答案的单 token 惩罚变小；梯度累积时，token-mean 要用 global batch 的总 token 数。"
 tags:
   - 完整编程练习
   - Coding
@@ -25,6 +25,29 @@ sources:
     url: https://arxiv.org/abs/2402.03300
     type: primary
 ---
+
+## 题目描述
+
+实现三种 token 损失聚合方式，明确每种方式的归一化口径。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+输入 `per_tok`、mask 均为 `[B,T]`，mask 为 1 的位置是回答 token，为 0 的位置是 prompt 或 padding。`loss_seq_mean(per_tok,mask)` 先按每条序列的有效 token 数取均值，再对 B 条序列取均值；空序列贡献 0，但仍占 batch 的一个位置。`loss_token_mean(per_tok,mask)` 是全部有效 token 的总损失除以其总数。
+
+`loss_const_norm(per_tok,mask,max_len)` 为有效 token 总损失除以 `B*max_len`，其中 `max_len` 为不小于 T 的正整数。全部 mask 为 0 时三者均返回连接计算图的 0，输入损失梯度为 0。
+
+### 示例
+
+```text
+per_tok=[[1,3,99],[2,4,6]], mask=[[1,1,0],[1,1,1]]
+loss_seq_mean = 3
+loss_token_mean = 3.2
+loss_const_norm(max_len=4) = 2
+```
+
+## 解题思路与参考答案
+
+我会先用 mask 清掉分子里的 pad，再比较三种分母，判断每个有效 token 最终得到多少权重；例如题面 pad 位置的 99 就不能进入任何一项。区别只在分母：seq-mean 用每条回答自己的长度，token-mean 用全 batch 的有效 token 数，常数归一用固定的 `B * max_len`。不能拿 padding 长度 T 当作回答的真实长度。
 
 ## 完整编程练习（手册重构版）
 
@@ -50,8 +73,6 @@ loss_const_norm(max_len=4)  -> 2     # 16 / (2 * 4)
 ```
 
 ### 解题思路与正确性
-
-三种写法的共同点是先用 mask 把分子里的 pad 清零，pad 位置上的 99 不能进任何一项。区别只在分母：seq-mean 用每条回答自己的长度，token-mean 用全 batch 的有效 token 数，常数归一用固定的 `B * max_len`。不能拿 padding 长度 T 当作回答的真实长度。
 
 因为分母不同，三种目标一般不相等，每个 token 拿到的梯度权重也不同。对 `per_tok` 求梯度就能直接看到这些权重，测试里把三种权重都检查了一遍。
 
@@ -91,6 +112,16 @@ def loss_const_norm(per_tok, mask, max_len):
         raise ValueError(f"max_len must be an int >= T={seq_len}, got {max_len!r}")
     return (per_tok * mask).sum() / (batch * max_len)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert loss_seq_mean(per_tok, mask) == 3` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -201,11 +232,14 @@ token-mean 最容易在 micro-batch 上写错。如果每个 micro-batch 除以�
 
 ## 追问
 
-**选哪个？** 没有唯一答案。在长推理任务上，token-mean 和常数归一都比 seq-mean 稳，回答长度不会被 loss 本身推着走。常数归一的 loss 数值会随 batch 里有效 token 数变化，学习率要按这个尺度调。
+**选哪个？**
+没有唯一答案。在长推理任务上，token-mean 和常数归一都比 seq-mean 稳，回答长度不会被 loss 本身推着走。常数归一的 loss 数值会随 batch 里有效 token 数变化，学习率要按这个尺度调。
 
-**KL 项和 entropy 项也要这样聚合吗？** 要用同一种。policy loss 用 token-mean、KL 用 seq-mean，相当于给两项配了不同的长度权重，$\beta$ 的含义也跟着变了。
+**KL 项和 entropy 项也要这样聚合吗？**
+要用同一种。policy loss 用 token-mean、KL 用 seq-mean，相当于给两项配了不同的长度权重，$\beta$ 的含义也跟着变了。
 
-**全被 mask 掉的回答怎么办？** 被截断到长度 0 或被 overlong 过滤掉的回答，`mask.sum(-1)` 是 0，seq-mean 必须 clamp 分母，否则会出现 0/0。练习里的约定是让这条回答贡献 0、仍计入 $B$，这会把其他回答的权重一起稀释；更合理的做法通常是把它排除出 $B$，分母改用有效回答数。哪些位置应该是 0 见 `sys-adv-bcast`、`sys-eos-mask`。
+**全被 mask 掉的回答怎么办？**
+被截断到长度 0 或被 overlong 过滤掉的回答，`mask.sum(-1)` 是 0，seq-mean 必须 clamp 分母，否则会出现 0/0。练习里的约定是让这条回答贡献 0、仍计入 $B$，这会把其他回答的权重一起稀释；更合理的做法通常是把它排除出 $B$，分母改用有效回答数。哪些位置应该是 0 见 `sys-adv-bcast`、`sys-eos-mask`。
 
 ## 相关题
 

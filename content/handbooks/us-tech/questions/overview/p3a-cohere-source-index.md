@@ -21,6 +21,8 @@ sources:
     type: secondary
 ---
 
+先从下面的题卡进入练习，再看来源表核对每条线索读到了什么程度。4 条来源里包含重复变体和仅标题记录，不能直接当作 4 道独立真题。
+
 ## 已整理的题卡
 
 - [[p3a-cohere-numpy-top-k-sampling]]

@@ -4,7 +4,7 @@ section: systems
 order: 10
 level: S
 title: 系统：专家并行，token 调度不均和 all-to-all
-quick: "EP 按专家切卡，每卡只驻留一部分 expert。前向是 router 之后 all-to-all 把 token 发送到对应专家，本地 GEMM，再 all-to-all 送回。实际耗时经常卡在动态 all-to-all 和热点专家，不是 GEMM。Aux loss / 容量 / 偏置在打负载，不是装饰。"
+quick: "专家并行让每张卡只保存一部分 expert，路由后先 all-to-all 发送 token，本地计算，再把输出送回原 rank 加权。它节省专家权重的单卡驻留，但动态通信和热点专家会拖慢整步。调容量、aux loss 和偏置时，要同时看质量与负载尾部。"
 tags:
   - Google
   - NVIDIA
@@ -29,11 +29,7 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
-
-Google Switch / GShard、NVIDIA Megatron-MoE、Meta Mixtral 推理、DeepSeek 的 EP，问的都是：专家怎么切、token 如何发送到对应专家。和 dense 三维并行（见 `sys-3d-parallel`）不是同一张图。Google 侧 MoE 产品直觉见 `google-gemini-moe`。OpenAI 会追不均衡时 all-to-all 的尾延迟；NVIDIA 会追 kernel 和 NVLink 域。
-
-## 切的是专家，搬的是 token
+EP 按专家集合切卡，每张卡只保存一部分 expert，token 按路由结果发送过去计算，再送回原来的 rank。比如大部分 token 都选中同一卡上的专家，那张卡会同时承担更多通信和计算，其他卡也得等它。这是 Switch / GShard、Megatron-MoE、Mixtral 和 DeepSeek EP 都会面对的问题；与 dense 三维并行的区别见 `sys-3d-parallel`，Google 侧机制见 `google-gemini-moe`。
 
 Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。MoE 有 $E$ 个 expert，$E$ 可以远大于卡数。还用 TP 把每个 expert 复制到所有卡，显存吃不下。EP 的定义：**每张卡只存 $E/\mathrm{EP}$ 个 expert**，token 按路由结果搬家。
 
@@ -46,9 +42,7 @@ Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。M
 
 通信量粗算 $2k\cdot T\cdot d$ 字节量级（dispatch + combine），外加变长索引。均值好看，尾部由 **收 token 最多的那张卡** 决定：它既算得多，all-to-all 也更堵。这和 dense all-reduce「每卡同样大的固定消息」完全不同。
 
-## 不均和 all-to-all 才是墙
-
-Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子：每个 expert 只收 $C\cdot T/E$ 个 token，超出的 drop 或溢出到 backup。容量太小，质量掉；太大，热点卡照样拖尾。Auxiliary load-balancing 损失（loss）、DeepSeek 的 bias 修正、专家 dropout，目的都是让直方图平一点，让 all-to-all 可预测。面试把这些说成「训练技巧」不够，要说到 **它们是在给通信减 P99**。
+Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子：每个 expert 只收 $C\cdot T/E$ 个 token，超出的 drop 或溢出到 backup。容量太小，质量掉；太大，热点卡照样拖尾。Auxiliary load-balancing 损失（loss）、DeepSeek 的 bias 修正、专家 dropout，目的都是让直方图平一点，让 all-to-all 可预测。这些措施既影响训练负载，也能减少通信 P99。
 
 和 DP / TP 叠：
 
@@ -56,7 +50,7 @@ Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子�
 - TP：切单个 expert 内部矩阵，通信规则、适合 NVLink。
 - EP：切专家集合，通信是不规则 all-to-all。
 
-常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP 吞吐会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批。记住：**同批 dispatch 叠不上该批 GEMM**。
+常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP 吞吐会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批。同批 dispatch 与该批 GEMM 有先后依赖，重叠要跨微批安排。
 
 推理侧 输入预填充（prefill，即处理输入并建立缓存） 的 $T$ 大，all-to-all 有体积；逐 token 生成（decode） 每步 token 少，all-to-all 变成小消息延迟墙。所以 MoE serving 经常 prefill / decode 用不同 EP 度，或 decode 把 expert 复制一份换通信。不要把训练拓扑原样搬到 decode。
 
@@ -64,10 +58,17 @@ Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子�
 
 ## 追问
 
-- **EP 等于专家数、每卡一个 expert 好吗？** 可以，但 $k>1$ 时 combine 仍跨卡；过细的 EP 让 GEMM 太小，算力喂不饱。
-- **和 TP 的 all-reduce 差在哪？** TP 尺寸固定、对端固定；EP all-to-all 变长、目的 rank 随 router 变。尾部由热点 expert 决定。
-- **Token drop 为什么伤 overlap？** 每步 shape 变，静态 CUDA graph 失效；部分 token 走 skip，计算更不齐。
-- **为什么训练和推理路由不能各搞一套？** 训练看到的 expert 负载和推理不一致，质量会漂。Serving 可以改并行度，不该偷偷改 router。
+**EP 等于专家数、每卡一个 expert 好吗？**
+可以，但 $k>1$ 时 combine 仍跨卡；过细的 EP 让 GEMM 太小，算力喂不饱。
+
+**和 TP 的 all-reduce 差在哪？**
+TP 尺寸固定、对端固定；EP all-to-all 变长、目的 rank 随 router 变。尾部由热点 expert 决定。
+
+**Token drop 为什么伤 overlap？**
+每步 shape 变，静态 CUDA graph 失效；部分 token 走 skip，计算更不齐。
+
+**为什么训练和推理路由不能各搞一套？**
+训练看到的 expert 负载和推理不一致，质量会漂。Serving 可以改并行度，不该偷偷改 router。
 
 ## 相关题
 

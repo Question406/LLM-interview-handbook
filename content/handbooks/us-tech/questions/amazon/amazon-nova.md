@@ -4,10 +4,7 @@ section: amazon
 order: 11
 level: A
 title: Amazon：Nova / Titan 当 Bedrock 模型族，怎么评、怎么路由？
-quick: >-
-  Titan 是早一代 Amazon FM（文本、嵌入、图像）；Nova 是新一代生成族（Micro / Lite / Pro /
-  Premier）。路由只在同一族里用智能提示路由，用质量差阈值决定走小模型还是 fallback。评的是应用的验收要求，以及小模型路由导致质量下降的比例，不是把
-  MMLU 当上线门禁。嵌入仍常走 Titan，不要和聊天模型混成一个排行榜。
+quick: "生成侧按能力和延迟选择 Nova Micro / Lite / Pro / Premier，检索嵌入侧单独评 Titan。Bedrock 智能提示路由只在同族内预测质量差，小模型不够时 fallback。换档仍用原应用评测集，并单独报告后悔率、升级率和 p99。"
 tags:
   - Amazon
   - Nova
@@ -32,39 +29,38 @@ sources:
     type: primary
 ---
 
-Bedrock 应用岗和 AGI org 都会把「用哪颗 Amazon 模型」问成系统设计。公开叙事：Titan 是 Amazon 第一代托管 FM；Nova 是后续生成模型族，按能力 / 时延 / 价位分档。Intelligent Prompt Routing 文档写明：在 **同一模型族** 里预测质量，再决定走小的还是 fallback 大的。应用评测底座见 `amazon-titan-eval`。本题补族内路由和换代，不把 BLEU 再讲一遍。
+先把生成和嵌入分开选，再考虑路由。Titan 是 Amazon 较早的托管 FM，覆盖文本、嵌入和图像；Nova 是后续生成模型族，按能力、延迟和价位分档。例如简单 FAQ 可以用小模型，长政策对照或多跳工具任务再考虑大模型，不能用一张混合排行榜同时决定聊天与检索模型。
 
-## 区分生成模型和嵌入模型
+## 默认档位确定后，再增加路由
 
-先在白板上分两行：
+生成侧，Nova Micro 是低延迟文本模型，Lite 偏低成本多模态，Pro 折中质量和速度，Premier 提供更强能力，也常用作蒸馏教师。输入模态、SFT / RFT 支持范围以用户指南为准。检索与 RAG 可用 Titan Text Embeddings V2，评价看 MTEB 的检索部分和领域数据，见 `amazon-titan-embed`。聊天 Arena 分数不适合给 embedding 发版。
 
-- **生成。** Nova Micro（低时延文本）、Lite（便宜多模态）、Pro（质量 / 速度折中）、Premier（最强，也常当蒸馏教师）。输入模态和是否支持 监督微调（SFT） / RFT 以当时用户指南为准，面试要说「以文档为准」，不要背死一张过期表。
-- **嵌入。** 检索和检索增强生成（RAG）仍大量用 Titan Text Embeddings V2（可变维、长上下文）。这是另一条模型卡，评 MTEB / 领域检索，见 `amazon-titan-embed`。不要用聊天 Arena 分数给 embedding 发版。
+旧 Titan 文本生成端点要按客户依赖管理，新应用默认考虑 Nova 族；嵌入索引有独立生命周期。换 embedding 必须全库重编，见 `amazon-bedrock-rag`。
 
-Titan 文本生成还在账上出现时，把它当遗留端点：新应用默认 Nova 族，旧索引别偷偷换 embedding。换 embedding = 全库重编，见 `amazon-bedrock-rag`。
+Bedrock Intelligent Prompt Routing 在同族内工作，例如 Nova Lite ↔ Pro，Claude Haiku ↔ Sonnet。它预测小模型相对大模型的质量差，超过设定阈值就 fallback。公开博客用 ARQGC 描述相对随机路由的质量与成本。Nova、Claude、Llama 跨族选择则需要自建业务路由器和应用评测，不能直接比较三家的 MMLU 差值。
 
-路由：Bedrock 的智能提示路由在族内工作，例如 Nova Lite ↔ Pro，或 Claude Haiku ↔ Sonnet。路由器预测「这笔请求用小模型会不会差太多」；差过你设的质量阈值，就走 fallback。公开博客用 ARQGC 这类指标描述「相对随机路由的质量 / 成本」。跨族硬拼（Nova vs Claude vs Llama）不是这个功能；那是你自己的业务路由器，要用应用评测集，不能把三个厂的 MMLU 相减。
+## 路由也要单独验收
 
-## 评测：底座不动，路由单独成一张表
+换 Nova 档位或打开路由时，应用评测集保持不动。沿用 `amazon-titan-eval` 的检索、证据支持、任务和系统四层，系统包括 TTFT 和端到端 p99，见 `amazon-p99-stream`。
 
-换 Nova 档位或打开路由时，**应用评测集不要跟着改**。否则你分不清是模型好了还是题换了。门禁沿用 `amazon-titan-eval` 四层：检索、有实际证据支持、任务、系统（首个 token 的等待时间（TTFT）和端到端 p99，见 `amazon-p99-stream`）。在此之上加路由层：
+额外记录后悔率：路由到小模型的请求中，用大模型或人复核，小模型明显更差的比例。再看升级率，也就是多少请求最后打到 Pro / Premier；如果始终 100% 升级，成本并没有省下来。两项都按短分类、抽槽、简单 FAQ、多跳工具、长政策对照切片，思路与 `amazon-kendra-hybrid` 的 query 切片相同。
 
-- **后悔率。** 路由到小模型后，用大模型（或人）当裁判，小模型明显更差的比例。这是「省了钱但伤了客户」的直接量。
-- **升级率。** 多少请求实际打到 Pro / Premier。一直 100% 打大模型，路由器等于没干活。
-- **切片。** 短分类、抽槽、简单 FAQ 应走 Micro / Lite；多跳工具、长政策对照走 Pro / Premier。切片和 `amazon-kendra-hybrid` 的标识符 vs 语义是同一思想：简单查询不要浪费大模型。
-- **安全。** Guardrails 挂在路由之后仍要对输入 / 输出都跑，见 `amazon-guardrails`。小模型不是更安全，只是更便宜。
+安全策略在换档后仍对输入和输出生效，见 `amazon-guardrails`。小模型价格低并不说明更安全。延迟也按最终模型分别报分位数，小模型与大模型的混合分布可能拉长 p99。只靠 prompt 长度路由会漏掉短而难的问题，也会把长模板误判为难题。
 
-蒸馏 / 微调：公开材料里 Premier 可当教师，Micro / Lite / Pro 可 SFT。评测集要和训练隔离。Seller 政策助手这种，金标仍是条款 id，不是金句。
+公开材料中 Premier 可作教师，Micro / Lite / Pro 可做 SFT，训练和评测仍需隔离。Seller 政策助手的金标是条款 id，允许不同的正确措辞。Titan 的 MTEB 与 Nova 的 Arena 分分别解释对应能力，不能拼成「Amazon 最强模型」一条分数。
 
-常见误区是：把 Titan Embeddings 的 MTEB 分和 Nova Pro 的 Arena 分画在一张图上「选 Amazon 最强模型」。另一常见误区是：路由只用输入提示（prompt）的长度作特征。短问题也可以很难，长 prompt 也可以是粘贴的模板。第三：开了路由就不报 p99。小模型快、大模型慢，混合分布会把尾巴拉开，必须按落地模型分位报。
-
-## 我会怎么收设计题
-
-先钉任务和 SLO，再选默认档位，最后才加路由器。路由器用于优化已确定的系统。知识库、工具、护栏绑在应用上，不绑死某一个 model id，方便把 Titan Text 换成 Nova 而不改契约。成本用 token 用量和升级率说明，不要报美元价签。离线评测可以全打 Pro 当上限，线上再开路由，用后悔率证明仍然满足应用要求。训练这些模型是不是 Trainium，公开层不要编，栈差异见 `amazon-trainium`。
+具体落地先定任务与 SLO，再选默认档位，最后用路由优化成本。知识库、工具和护栏由应用管理，换 Titan Text 到 Nova 时保持契约。成本用 token 用量和升级率衡量；离线可全用 Pro 测上限，线上再用后悔率确认路由仍达标。训练是否使用 Trainium 只讲公开材料，栈差异见 `amazon-trainium`。
 
 ## 追问
 
-- **为什么不全部上 Premier？** 时延和配额。大量可抽取 / 可分类流量用 Micro，Insist on the Highest Standards 指任务正确，不是每张工单都用最大模型。
-- **路由错了怎么发现？** 用影子流量：将同一请求异步发给 fallback 模型，比较质量差异；线上用改写率、升级工单、Guardrail 干预。预注册，不要上线后才找指标。
-- **Titan 还要不要？** 生成侧看是否仍有客户绑旧 model id；嵌入侧 V2 仍是 RAG 主路径之一。两套生命周期分开。
-- **和自建分类器路由？** 可以。Bedrock 路由省事、同族；自建可以吃业务特征（marketplace、是否含 ASIN、是否要工具）。两者都要用同一应用评测集验收。
+**为什么不全用 Premier？**
+受时延和配额约束，许多抽取与分类流量用 Micro 就能完成。Highest Standards 要求任务正确。
+
+**路由错了怎么发现？**
+用影子流量异步把同一请求发给 fallback，比较质量差。线上预注册改写率、升级工单和 Guardrail 干预指标。
+
+**Titan 还需要保留吗？**
+生成侧看旧 model id 的客户依赖，嵌入侧 V2 仍是 RAG 路径之一，分别管理。
+
+**什么时候自建路由器？**
+需要 marketplace、ASIN、工具需求等业务特征时可以自建。Bedrock 的同族路由更省维护，两者都用同一应用集验收。

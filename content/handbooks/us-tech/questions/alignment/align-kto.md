@@ -4,9 +4,7 @@ section: alignment
 order: 18
 level: A
 title: 对齐：KTO 只用 binary 反馈
-quick: >-
-  KTO 不需要 $(y_w,y_l)$ pair，只要「这条好 / 这条坏」。隐式奖励仍是 $\log(\pi/\pi_{\mathrm{ref}})$，损失按前景理论把好样本推到
-  KL 基线之上、坏样本推到之下。适合线上点赞点踩；两类都要有，且 $z_0$ 估计偏移会影响整批样本。
+quick: "KTO 用单条回答的好 / 坏标签训练，不要求同一题的成对偏好。它将 $\\log(\\pi/\\pi_{\\mathrm{ref}})$ 与 KL 基线比较，好样本向上推、坏样本向下推；两类覆盖、标签噪声和基线估计都会影响更新。"
 tags:
   - KTO
   - DPO
@@ -28,19 +26,17 @@ sources:
     type: primary
 ---
 
-生产日志经常是一条回复上的赞/踩，不是同一输入提示 下两条候选的对比。KTO（Ethayarajh 等人）把前景理论用于对齐：人对损失比收益敏感，且反馈可以 unpaired。对齐岗追这题，是看你会不会在没有 pair 时硬套 直接偏好优化（DPO）。对比 `align-dpo`、`align-ipo`。
+KTO 适合只有单条回答点赞、点踩的数据，不需要为每条反馈再找同一题的另一条候选。它保留相对 $\pi_{\mathrm{ref}}$ 的隐式奖励 $\log(\pi/\pi_{\mathrm{ref}})$，让好回答高于一条 KL 基线、坏回答低于基线。
 
-## 没有 pair 时目标还剩什么
-
-DPO / IPO 的 $\Delta$ 需要同一 $x$ 上的 $y_w$ 和 $y_l$，$Z(x)$ 才能消掉。线上往往只有 $(x,y,\text{good/bad})$。KTO 仍用隐式奖励
+DPO / IPO 要同一 $x$ 的 $y_w$、$y_l$ 才能构造 $\Delta$ 并消去 $Z(x)$，线上日志却常只有 $(x,y,\text{good/bad})$。Ethayarajh 等人的 KTO 用前景理论处理这种 unpaired 反馈，隐式奖励为：
 
 $$
 r_\theta(x,y)=\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)},
 $$
 
-再和一个参考 KL 基线 $z_0$ 比。$z_0$ 是 batch 上 $r_\theta$ 的估计（实现里常用停梯度的均值），扮演「当前策略相对参考有多偏」的锚。好样本希望 $r_\theta>z_0$，坏样本希望 $r_\theta<z_0$。再用 $\sigma$ 包一层，并给好/坏不同权重 $\lambda_D,\lambda_U$（损失厌恶：踩往往权更大）。
+再与参考 KL 基线 $z_0$ 比较。$z_0$ 是 batch 上 $r_\theta$ 的估计，常用停梯度均值，表示策略偏离参考的程度。好样本希望 $r_\theta>z_0$，坏样本希望 $r_\theta<z_0$，经 $\sigma$ 映射后，用 $\lambda_D,\lambda_U$ 分别加权。前景理论的损失厌恶对应坏反馈往往权更大。
 
-直观：你没有「谁赢谁输」的间隔，只有「这个样本应该高于还是低于基线」。基线估计偏了，所有样本的判断都可能受影响。这是面试要盯的实现细节，不是背 prospect theory 名词。
+因此一条点赞不再需要匹配某个点踩，但整批判断会受基线影响。$z_0$ 必须 `detach`，否则模型可能靠移动基线减小损失。$r$ 只统计回答 token，prompt 不参与好坏信号：
 
 ```python
 def kto_terms(r, z0, lam_d, lam_u, desirable):
@@ -50,36 +46,30 @@ def kto_terms(r, z0, lam_d, lam_u, desirable):
     return torch.where(desirable, pos, neg).mean()
 ```
 
-只在回复的 token 上算 $r$。Prompt 进 $r$ 会把「读懂题」当好坏信号。$z_0$ 必须 `detach`，否则模型会靠改锚而不是改策略来刷损失。
+## 数据和监控怎样准备
 
-## 数据：两类都要，且不是假 pair
+两类反馈都要覆盖。只有赞会进一步强化原有文风，难压坏模式；只有踩可能让回答过短、过度拒绝。实际生产里，点踩可能偏安全或失败工具调用，点赞偏闲聊，切片失衡就改变了训练目标。
 
-只有赞、没有踩，模型会把已有文风再推高，坏模式压不掉。只有踩，容易过度拒绝和短回复。生产上踩还偏安全与失败工具调用，赞偏闲聊，切片不平衡等于偷偷改目标。
+不能随便给一条赞配一条踩做 DPO：不同输入不满足同一 $x$ 的比较假设，BT 间隔没有对应含义。有真实 pair 时，DPO / IPO 通常更直接，见 `align-dpo`、`align-ipo`。点赞点踩也有误点、讽刺和长度噪声，低一致率来源应降权或丢弃，长度偏见见 `align-length-bias`。
 
-不要把 KTO 数据「合成」成 DPO pair 再训：随机给一条踩配一条赞，破坏了同一 $x$ 的对比假设，BT 间隔没有意义。反过来，有真 pair 时 DPO / IPO 通常更直接，KTO 不是免费升级。
+模型也可以生成 binary 标签，但要隔离反馈 critic，见 `align-rlaif`。当前策略给自己贴赞的 self-rewarding 会让标签、基线与策略一起漂。KTO 仍是离线或准离线更新，策略离开数据分布后需要迭代刷新，见 `align-online-dpo`；真正在线 rollout 且奖励可验证时，可考虑 GRPO / PPO，见 `align-grpo`。
 
-Binary 标签噪声很大：误点、讽刺、长度。KTO 会认真把噪声点推到锚的某一侧。一致率低的来源降权或丢掉。长度偏见照样在：更长更容易被赞，见 `align-length-bias`。
-
-和 RLAIF 的关系：可以用模型打 binary 标签，但仍要隔离 价值评估模型（critic），见 `align-rlaif`。Self-rewarding 用当前策略给自己贴赞，锚和策略一起漂，最险。
-
-## 什么时候选 KTO
-
-有大规模 unpaired 反馈、凑 pair 要重采样太贵：KTO 合理。有现成 HH 式 pair：先 DPO / IPO。要在线 采样轨迹（rollout） 且奖励可验证：GRPO / PPO，见 `align-grpo`。KTO 仍是离线（或准离线）更新，策略一旦偏离数据分布，$r_\theta$ 和 $z_0$ 的含义都变，需要迭代刷新，见 `align-online-dpo`。
-
-监控：好样本 $r-z_0$、坏样本 $z_0-r$、KL、长度、held-out 任务。损失下降但两边 $r$ 一起掉，是位移而不是对齐。$\lambda_U$ 过大表现为过度拒绝，见 `align-over-refuse`。
-
-白板一句话：DPO 拟合相对间隔；KTO 拟合相对一条 KL 锚的符号。没有锚的 binary 交叉熵（直接把 logp 当分类）可能破坏参考语言模型原有的生成能力。
+我会监控好样本 $r-z_0$、坏样本 $z_0-r$、KL、长度和 held-out 任务。损失下降但两边 $r$ 一起下降，可能只是整体位移；$\lambda_U$ 过大则可能过度拒绝，见 `align-over-refuse`。参考模型也必须保留，否则 $r$ 绝对尺度漂移，点赞容易退化成提高所有 token 似然，直接用 logp 做 binary 分类可能破坏原来的生成能力。
 
 ## 追问
 
-- **为什么还要 $\pi_{\mathrm{ref}}$？** 没有参考，$r$ 绝对尺度漂，赞会变成「提高所有 token 的似然」。
-- **$z_0$ 用全局常数行吗？** 早期能跑。策略移动后要用 batch 估计，且 detach，否则学锚不学策略。
-- **能和 DPO 混吗？** 可以按数据源分 loss。不要把假 pair 和真 binary 搅成一个 $\Delta$。
-- **点踩是不是比 pair 更真？** 更便宜，更噪，更偏使用分布。真不真取决于谁点、何时点，不是二进制本身。
+**$z_0$ 能固定吗？**
+早期可以尝试，策略移动后应随 batch 估计并停梯度，否则基线不再匹配当前策略。
+
+**能与 DPO 混用吗？**
+能，按来源分别计算 loss，保留真 pair 与真 binary 的语义，别混成假的 $\Delta$。
+
+**点踩比 pair 更真实吗？**
+它便宜、贴近使用分布，也更噪。可靠性取决于谁在什么情境下点，而非二进制形式本身。
 
 ## 相关题
 
-- [[align-dpo]]：KTO 沿用 DPO 的隐式奖励 $\log(\pi/\pi_{\mathrm{ref}})$，先看 DPO 才知道 KTO 只改了哪里。
-- [[align-ipo]]：IPO 仍要 pair，只改损失形状，正好和 KTO 改数据形式对照。
-- [[msft-orpo]]：ORPO 省掉的是参考模型，KTO 省掉的是成对标注。
-- [[align-online-dpo]]：线上点赞点踩是 KTO 的数据来源，迭代 DPO 讲的是线上数据怎么持续回流训练。
+- [[align-dpo]]：隐式奖励来源。
+- [[align-ipo]]：仍用 pair、改变损失形状。
+- [[msft-orpo]]：省参考模型与省成对标注的区别。
+- [[align-online-dpo]]：线上反馈持续回流。

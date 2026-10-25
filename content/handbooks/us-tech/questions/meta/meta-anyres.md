@@ -4,7 +4,7 @@ section: meta
 order: 26
 level: A
 title: Meta：任意分辨率切块（AnyRes / 动态 tile）和上下文预算
-quick: "按长宽比把图切成至多 $K$ 块 tile 再编码（Llama 3.2 默认 $K=4$）。LLaVA AnyRes 的视觉 token 进 LM 窗口；Llama 3.2 走 cross-attn，LM 窗口几乎不涨，但视觉 KV 会涨。"
+quick: "动态切块先按长宽比选择至多 $K$ 个 tile，保留细节又限制视觉计算，Llama 3.2 默认 $K=4$。LLaVA AnyRes 的视觉 token 占 LM 窗口，Llama 3.2 通过 cross-attn 读图，文本长度几乎不涨，但视觉 KV 与生成开销仍随 tile 数增加。"
 tags:
   - Meta
   - Llama
@@ -29,11 +29,9 @@ sources:
     type: secondary
 ---
 
-文档 VQA、截图、地图会问「分辨率不够怎么办」。公开两条线要分开讲：LLaVA-NeXT 把 **AnyRes** 写成网格切块 + 一张全局缩略图，视觉 token **进 LM 序列**；Llama 3.2 / Mllama 是 **长宽比感知的 tile**，默认最多 $4$ 块，视觉表示进 cross-attn，见 `meta-llama-vision`。面试说「任意分辨率」而不说 $K$、不说吃的是哪一段计算，等于没答。Gemini 侧可变分辨率 / packing 见 `google-gemini-mm`。
+任意分辨率图像通常先按长宽比切成有限数量的 tile，再编码，避免把文档小字或截图 UI 一次缩小后丢掉。接着要看融合方式：LLaVA AnyRes 把视觉 token 放进 LM 序列，Llama 3.2 / Mllama 则通过 cross-attn 读取独立视觉表示，两者的预算账不同。
 
-## 切块在选什么
-
-固定 $S\times S$ 的 ViT 不能直接吃 4k 截图。做法是：保持长宽比，把图画到 $r\times c$ 块 tile 的画布上，$r\cdot c\le K$，选浪费像素最少的网格。Mllama 在 $K=4$ 时公开候选大约是 $1\times1$、$1\times2$、$1\times3$、$1\times4$、$2\times1$、$2\times2$、$3\times1$、$4\times1$。竖长海报走 $4\times1$，宽屏截图走 $1\times4$，接近方形走 $2\times2$。块不够的位置用 aspect-ratio mask 盖掉，不要让 pad 块进注意力。
+固定 $S\times S$ 的 ViT 不能直接接 4k 截图，可以把图按比例放到 $r\times c$ 的 tile 画布，满足 $r\cdot c\le K$，选择浪费像素少的 $(r,c)$ 网格。Mllama 默认 $K=4$，候选约为 $1\times1$、$1\times2$、$1\times3$、$1\times4$、$2\times1$、$2\times2$、$3\times1$、$4\times1$。竖海报可选 $4\times1$，宽截图选 $1\times4$，近方形选 $2\times2$，不足的 pad tile 用 aspect-ratio mask 屏蔽。
 
 ```python
 def pick_tiles(h, w, tile=560, max_tiles=4):
@@ -46,24 +44,28 @@ def pick_tiles(h, w, tile=560, max_tiles=4):
     return min(cands, key=waste)
 ```
 
-Meta Guard 3 Vision 论文写图像会 rescale 成 **$4$ 块 $560\times 560$**。Patch $14$ 时单块约 $(560/14)^2=1600$ 个 patch。这是公开实现细节，不是「一张图一个向量」。LLaVA-NeXT 的 AnyRes 网格是 $\{2\times2,\,1\times\{2,3,4\},\,\{2,3,4\}\times1\}$，并且 **额外留一张低分辨率全图**，怕切块之后丢全局。3.2 的「全局」主要在视觉塔后 $8$ 层 global encoder 里跨 tile 做自注意力，不是再往 LM 里塞一套缩略图像素 token。别把两种「全局」说成同一个算子。
+Guard 3 Vision 论文写到 rescale 为 $4$ 块 $560\times 560$，patch 为 $14$ 时每块约 $(560/14)^2=1600$ 个 patch。LLaVA-NeXT AnyRes 使用 $\{2\times2,\,1\times\{2,3,4\},\,\{2,3,4\}\times1\}$ 网格，再加一张低分辨率全图保留整体语义。3.2 的跨 tile 全局信息主要由视觉塔后的 $8$ 层 global encoder 自注意力混合，不等同于额外往 LM 加缩略图 token。架构见 `meta-llama-vision`，Gemini 的可变分辨率 / packing 见 `google-gemini-mm`。
 
-## 预算：吃窗还是吃旁路
+## 视觉预算算在哪里
 
-同一句「$4$ 块」在两种融合里价钱完全不同。
+LLaVA 拼接方式每块产生 $P$ 个 token，缩略图再加 $P$。例如 $K=4$、$P=576$，约 $5\times576=2880$ 个视觉 token 进入 LM 自注意力，占用 $128\mathrm{k}$ 窗口中的 $T$，prefill FLOPs 随 $(T_{\mathrm{txt}}+T_{\mathrm{vis}})^2$ 增长。多图、视频帧、高 $K$ 都会挤占聊天历史，需要先决定分辨率与块数。
 
-**拼接进 LM（LLaVA AnyRes）。** 每块 ViT 出 $P$ 个 token，再加缩略图 $P$ 个。粗算 $K=4$、$P=576$ 时约 $5\times576=2880$ 个视觉 token 进自注意力。它们占 $128\mathrm{k}$ 里的位置，和聊天记录抢 $T$，输入预填充（prefill，即处理输入并建立缓存） FLOPs 是 $(T_{\mathrm{txt}}+T_{\mathrm{vis}})^2$。多图、高 $K$、视频帧会先把窗打满。产品上要先压分辨率、再决定切几块。
+Llama 3.2 文本端只有少量 image 占位符，但视觉 encoder 按 tile 增长，cross-attn 读取的视觉长度 $N\approx K\cdot P$。$K=4$、$P=1600$ 时视觉长度 $N$ 约为 $6.4\mathrm{k}$ 个表示，八层 cross-attn 都能读取，decode 每步还要对它们计算 $QK^{\top}$。$128\mathrm{k}$ 文本窗保留，TTFT、视觉 KV 和 TPOT 仍有成本。
 
-**Llama 3.2 cross-attn。** 文本序列几乎不涨（几个 image 占位符）。涨的是：视觉 encoder 按 tile 线性；cross-attn 的 $N\approx K\cdot P$；逐 token 生成（decode） 每步对这 $N$ 做一次 $QK^{\top}$。$K=4$、$P=1600$ 时 $N$ 约 $6.4\mathrm{k}$，八层 cross-attn 都能看见。**$128\mathrm{k}$ 文本窗还在，但首 token 延迟和视觉 KV 显存已经按 $K$ 涨。** 把「不占上下文」说成「免费」，是错的。
+Serving 分别量 encoder 时延、视觉 KV 字节、cross-attn 增加的 TPOT。图不变、只追加文本时可缓存视觉 $K/V$，不重跑 ViT。Batch 的 tile 数不同，要 pad 到 `max_num_tiles` 并正确 mask，否则 $2\times2$ 与 $1\times1$ 的形状对不上。文本 PagedAttention 管文本自注意力 cache，视觉旁路另算，见 `sys-paged-attn`、`meta-vllm`。
 
-Serving 账三列：encoder 时延、视觉 KV 字节、对 TPOT 的 cross-attn 增量。图不变应缓存视觉 $K/V$；用户只追加一句文本，不要重跑 ViT。Batch 里不同图 $K$ 不同，要 pad 到 `max_num_tiles` 再用 mask，否则 $2\times2$ 和 $1\times1$ 不能拼 batch。分页 KV 管的是 **文本自注意力** 的 cache，见 `sys-paged-attn`；视觉旁路要单独算，不要假定 vLLM 一开 PagedAttention 图就不占显存，见 `meta-vllm`。
-
-常见误区是：所有图都 pad 成正方形再缩到 $224$，字和 UI 没了。错法二：把 $K$ 开到 $6\times6$ 还不改位置编码和训练分布，推理切块训练没见过，OCR 会花。错法三：用 haystack 文本长度证明「视觉长上下文」，测的不是读图。
+网格选错或漏 mask 会让竖图横图质量不稳定；所有图先 pad 正方形再缩到 $224$，容易丢文字。把 $K$ 直接开到 $6\times6$、不改位置编码和训练分布，也可能让 OCR 出错。Haystack 文本长度更不能证明视觉读图的长上下文能力。
 
 ## 追问
 
-- **为什么不无限切？** Encoder、$N$、延迟都线性（或更差）。公开默认 $K=4$ 是质量和成本的折中。文档密集再涨 $K$，风景图不必。
-- **缩略图还要吗？** 拼接式 AnyRes 要，否则只有局部块、没有「这是一张发票」。3.2 把跨块混合放在 vision global 层；两种实现不要混着画。
-- **竖图 / 横图质量差？** 往往是网格选错或 pad 没 mask。先报选了哪个 $(r,c)$，再谈模型。
-- **多图对话？** Mllama 按图 pad 到 batch 内最大图数；Guard 3 Vision 公开只保证 **每条一条图**。多图安全见 `meta-mm-safety`，别默认 Guard 能吃图集。
-- **和 NaViT 呢？** NaViT 是可变分辨率 pack 进同一 ViT batch。AnyRes / 3.2 tile 是推理时选离散网格。面试抓住「谁吃 LM 窗」即可。
+**为什么不无限切？**
+Encoder、视觉长度和延迟都会增加，默认 $K=4$ 是质量成本折中，密集文档与风景图不必用同样块数。
+
+**还需要缩略图吗？**
+拼接式 AnyRes 需要全局图辅助理解局部，3.2 则在 vision global 层混合，画架构时要分开。
+
+**多图怎么处理？**
+Mllama 按 batch 内最大图数 padding。Guard 3 Vision 公开保证的是每条一张图，多图安全见 `meta-mm-safety`，不能直接假定支持图集。
+
+**NaViT 有什么不同？**
+它将可变分辨率图 pack 进同一个 ViT batch；AnyRes / 3.2 tile 选择离散网格，还需区分视觉 token 是否进入 LM 窗口。

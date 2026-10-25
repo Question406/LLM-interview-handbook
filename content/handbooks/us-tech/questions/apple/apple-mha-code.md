@@ -4,7 +4,7 @@ section: apple
 order: 1
 level: A
 title: Apple / Siri MLE：手写 Multi-Head Attention，shape 和 mask 怎么收？
-quick: "把 $[B,T,d]$ 投影并拆成 $[B,H,T,d_h]$ 的 Q/K/V，算 $QK^\\top/\\sqrt{d_h}$，softmax 前加因果和 padding mask，再乘 V、合并 heads。"
+quick: "我会先把 $[B,T,d]$ 的输入投影并拆成 $[B,H,T,d_h]$ 的 Q/K/V，计算 $QK^\\top/\\sqrt{d_h}$，在 softmax 前加因果和 padding mask，再乘 V、合并 heads。比如带 cache 解码时，新 query 的绝对位置从旧 cache 长度开始，完整序列与逐 token 结果应一致。"
 tags:
   - 完整编程练习
   - Apple
@@ -23,6 +23,34 @@ sources:
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
+
+## 题目描述
+
+用 NumPy 实现支持紧凑 KV cache、GQA 和可选 RoPE 的因果多头注意力；完整序列与逐段解码应表示同一注意力运算。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None, key_valid=None, use_rope=False)`：用 NumPy 写因果多头注意力，返回 `(output, new_cache)`。`Q=x@wq`、新 `K=x@wk`、新 `V=x@wv`；query head `h` 对应 KV head `h // (heads/Hkv)`。注意力权重为可见 Q/K 缩放点积的 softmax，缩放因子为 `1/sqrt(d)`，值向量加权结果经 `wo` 输出；绝对位置 `prefix+t` 的 query 仅可见不晚于自身的 key。
+- `rope(x, start)`：对 `[B, H, T, d]` 的张量做旋转位置编码，返回同形数组。相邻分量 `(2j,2j+1)` 按角度 `(start+t) * 10000^(-2j/d)` 做二维旋转，第 `t` 个 token 的绝对位置是 `start + t`。
+- 形状：`x` 是 `[B, T, D]`，`wq`、`wo` 是 `[D, D]`，`wk`、`wv` 是 `[D, Hkv * d]`，其中 `d = D / heads`、`Hkv = kv_heads`（默认等于 `heads`）。`heads` 必须整除 `D`，也必须是 `Hkv` 的整数倍。
+- `cache` 是一对 `[B, Hkv, prefix, d]` 的 K/V，只存紧凑的 KV heads。返回的新 cache 长度是 `prefix + T`。
+- `key_valid` 是 `[B, prefix + T]` 的布尔数组，True 表示这个 key 可见。某个 query 的 key 全被屏蔽时，输出 0，不能出现 NaN。
+- 打开 RoPE 时 `d` 必须是偶数。当前这段 token 的位置从 `prefix` 开始编号；cache 里的旧 K 已经旋转过，不能再转一次。
+- 没有 dropout 和 bias。输入有限，B ≤ 8、T ≤ 256、D ≤ 128。输出形状为 `[B, T, D]`。
+
+### 输入输出示例
+
+```text
+x = [[[2, 4], [6, 8]]], heads = kv_heads = 1
+wq = wk = 全零 2×2 矩阵，wv = wo = 2×2 单位矩阵
+cache = None, key_valid = None, use_rope = False
+mha(...) 的 output -> [[[2, 4], [4, 6]]]
+new_cache 的 K、V 形状均为 [1, 1, 2, 2]。
+```
+
+## 解题思路与参考答案
 
 ## 完整编程练习（手册重构版）
 
@@ -171,6 +199,16 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     return output, (k, v)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(pieces, axis=1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -288,9 +326,9 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 - 来源：一亩三分地 2026-03 Siri MLE phone screen 讨论。公开回复里提到的高频 ML coding 有：采样（top-k / top-p）、k-means、attention、KV caching、MLP 反向传播。
 - 各组差异很大：有的是 30 分钟 coding 加 30 分钟 ML 问答，有的偏 case study。具体以 recruiter 邮件为准。
 
-完整的 attention 实现见 `code-attention`，KV cache 的单步更新见 `code-kv-cache-step`，采样见 `code-sampling`。这里按 Apple 电面的节奏来写：先把 shape 写对，再把 mask 讲清楚，最后提数值稳定。
+我会按投影、拆 head、加 mask、softmax、乘 V 和合并的顺序实现，再用完整序列与逐 token cache 对照检查。比如一段 token 接在旧 cache 后面，因果 mask 和 RoPE 都要从旧长度开始，不能把位置重新当成 0。完整 attention 见 `code-attention`，单步 cache 更新见 `code-kv-cache-step`，采样见 `code-sampling`。
 
-## 白板最小闭环
+## 从 shape 推到 mask
 
 要求 $d_{\mathrm{model}}$ 能被 $H$ 整除，每个 head 的维度是 $d_h=d_{\mathrm{model}}/H$。
 
@@ -303,17 +341,20 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 
 同一批面经里还有采样追问：先除温度，再做 top-k / top-p；nucleus 是在温度缩放之后的分布上截断的。不要先截断再除 $T$。细节见 `code-sampling`。
 
-## Apple 口味
+## 端侧还要检查 KV 和数值
 
-Siri 的注意力题常会转到端侧约束：head 数怎么定，KV 要不要用 GQA，量化之后 mask 还能不能用 $-\infty$。只回答「和云端用同一份 PyTorch」是不够的。可以这样说：端上 decode 更受 KV 带宽限制，所以 GQA 和量化 cache 比继续加 head 更重要；在 int8 scores 上做 mask 时要用足够负的数，不能默认 fp32 里的 `-1e9` 也一定安全。
+Siri 的注意力题常会转到端侧约束：head 数怎么定，KV 要不要用 GQA，量化之后 mask 还能不能用 $-\infty$。端侧实现需要额外检查 KV 带宽和量化后的数值。可以这样说：端上 decode 更受 KV 带宽限制，所以 GQA 和量化 cache 比继续加 head 更重要；在 int8 scores 上做 mask 时要用足够负的数，不能默认 fp32 里的 `-1e9` 也一定安全。
 
 如果组里做语音，可能会追问 self-attention 和 cross-attention 的区别。cross-attention 是另一套 shape：Q 来自 decoder 当前的状态，K/V 来自 encoder 的输出（encoder 记忆），并且 cross 这一层不加因果 mask。
 
 ## 追问
 
-- **为什么要除以 $\sqrt{d_h}$？** 点积的方差随维数增长，不缩放的话 softmax 容易饱和。
-- **换成 Multi-Query / GQA，代码差在哪？** $K,V$ 的 head 维变成 $H_{\mathrm{kv}}$，算 attention 前 repeat 一下（上面的参考实现就是这样）。产品约束见 `apple-siri-grounded`，选型对照见 `google-gqa-mqa`。
-- **k-means 为什么也会出现？** 同一条面经把聚类也当作 ML coding 基本功。不要把时间全押在 Transformer 上，准备一个 20 行左右的向量化 k-means。
+**为什么要除以 $\sqrt{d_h}$？**
+点积的方差随维数增长，不缩放的话 softmax 容易饱和。
+**换成 Multi-Query / GQA，代码差在哪？**
+$K,V$ 的 head 维变成 $H_{\mathrm{kv}}$，算 attention 前 repeat 一下（上面的参考实现就是这样）。产品约束见 `apple-siri-grounded`，选型对照见 `google-gqa-mqa`。
+**k-means 为什么也会出现？**
+同一条面经把聚类也当作 ML coding 基本功。不要把时间全押在 Transformer 上，准备一个 20 行左右的向量化 k-means。
 
 ## 相关题
 

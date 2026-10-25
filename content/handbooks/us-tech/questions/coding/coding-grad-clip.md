@@ -4,8 +4,7 @@ section: coding
 order: 10
 level: A
 title: 白板：global norm clip， inf/nan 怎么处理
-quick: >-
-  把所有梯度看成一个向量算 $L_2$ 总范数 $g$，超过阈值就整体乘 $\mathrm{max}/(g+\varepsilon)$；$g$ 非有限时报错或跳过 step，混合精度先 unscale。
+quick: "先算所有梯度拼成一个向量后的 $L_2$ 范数 $g$，有限且超阈值时才统一缩放。NaN/Inf 时按约定报错或跳过 step，不能边检查边改梯度；混合精度先 unscale，再 clip。"
 tags:
   - 完整编程练习
   - Coding
@@ -24,6 +23,29 @@ sources:
     url: https://arxiv.org/abs/1211.5065
     type: primary
 ---
+
+## 题目描述
+
+训练中多个参数共享一个梯度范数上限。实现全局范数计算与原位裁剪，保持各参数梯度的相对比例，并允许部分参数没有梯度。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `total_grad_norm(params) -> float` 返回所有非空梯度合并后的 L2 范数；跳过 `grad is None`，没有梯度则返回 0。
+- `clip_grad_norm_(params, max_norm, eps=1e-6, error_if_nonfinite=True) -> float` 返回裁剪前的范数，并把所有梯度原位乘同一个系数 `min(1, max_norm/(norm+eps))`。
+- params 可以是序列或只可遍历一次的生成器，梯度形状可以各不相同。本练习输入梯度均有限，`max_norm` 为有限非负数、eps 为正数；无需实现非有限梯度校验扩展。
+
+### 输入输出示例
+
+```text
+grad = [3, 4], max_norm = 2.5  -> grad 变成 [1.5, 2.0]，返回 5.0
+grad = [3, 4], max_norm = 10   -> grad 不变，返回 5.0
+```
+
+## 解题思路与参考答案
+
+超过阈值时，所有梯度统一乘 $\mathrm{max}/(g+\varepsilon)$，保持整个梯度向量的方向。global norm clip 要分两步：先完整计算所有梯度的总范数并确认有限，再用同一个系数缩放。如果边算边改，遇到后面某个参数的 NaN 时，前面的梯度已经被改过了，没法回到原状。
 
 ## 完整编程练习（手册重构版）
 
@@ -46,8 +68,6 @@ grad = [nan, 1], max_norm = 1  -> RuntimeError，grad 不变
 ```
 
 ### 解题思路与正确性
-
-先把所有梯度的范数完整算出来、确认有限，再统一缩放。如果边算边改，遇到后面某个参数的 NaN 时，前面的梯度已经被改过了，没法回到原状。
 
 所有梯度乘的是同一个系数 $\mathrm{max\_norm}/(g+\varepsilon)$，整个梯度向量的方向不变，只是长度缩短。逐参数各自裁剪会让不同参数的缩放比例不同，方向就变了。系数不小于 1 时什么都不做，保证不会把小梯度放大。
 
@@ -94,6 +114,16 @@ def clip_grad_norm_(params, max_norm, eps=1e-6, error_if_nonfinite=True):
             param.grad.mul_(scale)
     return norm
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert norm == 5` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -198,6 +228,9 @@ NVIDIA 还会问：clip 改变的是梯度向量的长度，不改变各坐标�
 
 ## 追问
 
-- **为什么用全局范数而不是逐层？** 全局 clip 保持层与层之间的相对尺度；逐层 clip 相当于每层各自做一次归一化，深层和浅层的步长被强行拉到一样。
-- **$g=0$ 是什么情况？** 所有参数都没有梯度，比如忘了 backward，或者 loss 全被 mask 掉了。这时不要 step。$\varepsilon$ 只是除零保护。
-- **和 grad scaler 的顺序？** unscale → clip → step → scaler.update。顺序反了，阈值就是错的，还可能把 inf 写进 master weight。
+**为什么用全局范数而不是逐层？**
+全局 clip 保持层与层之间的相对尺度；逐层 clip 相当于每层各自做一次归一化，深层和浅层的步长被强行拉到一样。
+**$g=0$ 是什么情况？**
+所有参数都没有梯度，比如忘了 backward，或者 loss 全被 mask 掉了。这时不要 step。$\varepsilon$ 只是除零保护。
+**和 grad scaler 的顺序？**
+unscale → clip → step → scaler.update。顺序反了，阈值就是错的，还可能把 inf 写进 master weight。

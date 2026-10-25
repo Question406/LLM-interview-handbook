@@ -4,10 +4,7 @@ section: meta
 order: 4
 level: S
 title: Meta：FSDP / FSDP2 切什么、通信何时发生、和 ZeRO-3 的关系
-quick: >-
-  FULL_SHARD 把参数、梯度、优化器状态都按 data-parallel rank 切成 $1/N$。Forward / backward 前
-  all-gather 出完整层，算完再丢掉；backward 后 reduce-scatter 梯度。语义对齐 ZeRO-3。FSDP2 用
-  DTensor 按参数第 0 维切，不再做 FlatParameter。
+quick: "FSDP 的 FULL_SHARD 将参数、梯度和优化器状态分给数据并行 ranks，计算某个 unit 前 all-gather 参数，反向后 reduce-scatter 梯度，优化器在本地分片更新。它与 ZeRO-3 的状态分片语义相近，FSDP2 改用逐参数 DTensor，峰值还需算完整 unit 缓冲与激活。"
 tags:
   - Meta
   - FSDP
@@ -32,45 +29,31 @@ sources:
     type: primary
 ---
 
-Meta 训练栈岗（PyTorch / Llama pretrain / Recsys 大模型）默认讲 FSDP，DeepSpeed 反而是旁支。FairScale 的 FSDP 从 Meta 进了 PyTorch；FSDP2 是同一条产品线的重写。和 `nvidia-trillion-train` 的 3D 并行不互斥：FSDP 是数据并行这一轴怎么切状态。
+FSDP 在数据并行这一轴上分摊模型状态，计算时临时拼出所需 unit 的参数，算完再释放完整副本。它能减少每张卡常驻的参数、梯度和优化器状态，但不会切激活，也不能代替层内张量并行。
 
-## 切什么：先对齐 ZeRO 表
+普通 DDP 每卡保存完整参数 $P$、梯度 $G$、Adam 状态 $O$，包括 fp32 副本与一阶二阶矩，约 $12$ 字节/参数。ZeRO-1 只分 $O$，ZeRO-2 再分 $G$，ZeRO-3 将 $P$、$G$、$O$ 都分片。FSDP 的 `FULL_SHARD` 对应 ZeRO-3，`SHARD_GRAD_OP` 对应 ZeRO-2，forward 期间保留完整参数，少一次 all-gather，但占更多显存。
 
-普通 DDP：每张卡一份完整参数 $P$、一份梯度 $G$、一份 Adam 状态 $O$（fp32 副本 + 一阶二阶，大约 $12$ 字节/参数量级）。ZeRO 的三级是逐项分片：
+每卡常驻参数约为 $P/N$，峰值还要加当前 FSDP unit 的完整参数缓冲。比如整网只包一个 unit，一次 gather 70B 就可能爆显存；每层一个 unit，峰值较低，但通信次数增加。激活仍是 $O(B\cdot T\cdot L\cdot d)$，长序列还要 checkpoint / FlashAttention。
 
-- ZeRO-1：只切 $O$
-- ZeRO-2：切 $O$ 和 $G$（参数仍复制）
-- ZeRO-3：切 $P$、$G$、$O$
+## 一次计算怎样通信
 
-FSDP 的 `FULL_SHARD` 对齐 ZeRO-3；`SHARD_GRAD_OP` 对齐 ZeRO-2（forward 期间参数是完整的，省掉一次 all-gather，显存更高）。面试先说这张表，再谈 API 名字。不要答「FSDP 是另一种流水线并行」。
+对一个 `fully_shard` module，forward 前 all-gather 本地参数分片，形成完整 unit 做 GEMM；forward 后默认 reshard，留下参数分片和 backward 所需激活。Backward 前再 all-gather，除非策略选择继续缓存完整权重；backward 后 reduce-scatter 梯度，各卡只保留自己的 $G$。最后 optimizer step 在本地分片执行，不会再拼回全部 $P$ 或 Adam；全局 grad norm 可对分片另做一次归约。
 
-每张卡稳态大约持有 $P/N$ 的参数分片，外加**当前正在算的那一个 FSDP unit 的完整参数缓冲**。所以 wrap 粒度决定峰值：整网一个 unit，一次 all-gather 就可能超出显存；每层一个 unit，通信次数变多但峰值低。激活还是 $O(B\cdot T\cdot L\cdot d)$，FSDP 不替你解决激活，该上 checkpoint / FlashAttention 还是要上。
+DDP 是参数常驻、整网梯度 all-reduce，FSDP 则把通信放到 unit 边界，便于 prefetch：计算第 $\ell$ 层时异步 gather 第 $\ell+1$ 层。每个 unit 的 AG / RS 都是 $O(\mathrm{numel})$ 量级，与 ZeRO-3 类似，过碎会被启动延迟拖慢，过厚则增加缓冲与难以重叠的气泡，所以 wrap 粒度要测。
 
-## 通信何时发生
+FSDP1 将参数 flatten、拼接、padding 为 `FlatParameter` 再均分，通信形状整齐，但部分参数冻结、混合精度、state dict 与 TP 组合更麻烦。FSDP2 的 `torch.distributed.fsdp.fully_shard` 在每个参数 dim-0 上形成 `DTensor`，module 仍决定通信组，一组做 collective，却不用真的拼成单根 1D 参数。
 
-对一个已 `fully_shard` 的 module，时间线是：
+FSDP2 要自底向上 wrap，`named_parameters()` 保留原名字与分片 DTensor，sharded state dict 可不经 all-gather 保存，也更方便冻结参数与 TP/HSDP mesh 组合。FairScale 的 FSDP 经 Meta 进入 PyTorch，FSDP2 是这条路线的重写，和 DeepSpeed ZeRO-3 的内存语义相近，区别在实现与可组合性。DTensor / `torch.compile` 的关系见 `meta-pytorch-compile`。
 
-1. Forward 前：对该 unit 的参数 **all-gather**，本地分片变成完整权重，再做 GEMM。
-2. Forward 后：默认 **reshard**，丢掉完整副本，只留分片。激活留下给 backward。
-3. Backward 前：再 all-gather 一次参数（除非策略选择缓存未切分权重）。
-4. Backward 后：对梯度 **reduce-scatter**，每张卡只留自己那一份 $G$，完整梯度丢掉。
-5. Optimizer step 只作用在本地分片上，**这一步没有把 $P$ 重新拼起来**。
-
-和 DDP 的差别：DDP 是整网梯度 all-reduce，参数始终完整；FSDP 把集合通信拆到 unit 边界，才能和计算重叠。Prefetch：算第 $\ell$ 层时异步 all-gather 第 $\ell+1$ 层。讲不出 overlap，评委会觉得你只背了分片表。
-
-通信量：每个 unit 的 all-gather / reduce-scatter 都是 $O(\mathrm{numel})$ 量级，和 ZeRO-3 同类。层太碎，启动延迟吃掉带宽；层太厚，缓冲显存和无法重叠的气泡都会难看。所以才要调 wrap。
-
-## FSDP1 → FSDP2，以及和 TP 怎么叠
-
-FSDP1：一组参数 flatten、拼接、padding 成 `FlatParameter`，再均分。集合通信好做（尺寸整齐），但冻结部分参数、混合精度、state dict 都别扭，和张量并行组合要很多胶水。
-
-FSDP2（`torch.distributed.fsdp.fully_shard`）：每个参数在 dim-0 上切成 `DTensor`，逻辑上仍按你调用 `fully_shard` 的 module 打成一个通信组（一组一次 collective），但不再真的拼成一根 1D 向量。文档强调：自底向上 wrap；`named_parameters()` 仍是原名加分片 DTensor；sharded state dict 不必为了保存再 all-gather。对冻结参数、和 TP/HSDP 组 mesh，这是 Meta 现在推的原因。
-
-和 ZeRO-3：**内存语义同类，实现和可组合性不同。** DeepSpeed 是引擎；FSDP2 吃 PyTorch 的 DTensor / torch.compile（见 `meta-pytorch-compile`）。万亿 dense 通常还要 TP，单靠 FSDP 只能把复制去掉，切不了层内大 GEMM，见 `nvidia-trillion-train`。推荐侧巨型 embedding 表也不是 FSDP 的主战场，那是按表切的 all-to-all，见 `meta-dlrm`。
+万亿 dense 还常需 TP 来切层内大 GEMM，FSDP 只去掉状态复制，与 3D 并行可共存，见 `nvidia-trillion-train`。推荐的巨型 embedding 则多是表分片 all-to-all，见 `meta-dlrm`。
 
 ## 追问
 
-- **Optimizer 的通信呢？** Step 在分片上本地做。需要全局 grad norm 时再对分片做一次归约，不要想象成又 all-gather 全量 Adam。
-- **HSDP 是什么？** 机内切分、机间复制（或反过来按 mesh 定义）。机间流量从「每层全量 all-gather」降到副本组之间，适合节点内 NVLink 快、跨机较慢。
-- **为什么会比 DDP 慢？** 两次 all-gather + reduce-scatter，若没 prefetch、wrap 太碎、或 CPU offload 同步，MFU 会掉。显存够的小模型继续 DDP 更简单。
-- **和 pipeline 一起用吗？** 可以。PP 切层、FSDP 切层内状态。气泡、microbatch 和 FSDP unit 的 prefetch 会互相抢流，配置要比单用 FSDP 更小心。
+**HSDP 是什么？**
+按 mesh 定义机内分片、机间复制，或反过来。节点内 NVLink 快、跨机慢时，可减少跨机每层全量 gather 的成本。
+
+**为什么可能比 DDP 慢？**
+多了两次 all-gather 和 reduce-scatter，没 prefetch、wrap 太碎或 CPU offload 同步都会降低 MFU。显存够的小模型用 DDP 更简单。
+
+**能配 pipeline 吗？**
+能，PP 切层，FSDP 切状态，但 microbatch、气泡和 prefetch 可能争流，需要一起配置。

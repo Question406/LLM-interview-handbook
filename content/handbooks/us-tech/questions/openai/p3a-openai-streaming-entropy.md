@@ -4,7 +4,7 @@ section: openai
 order: 617
 level: S
 title: "OpenAI：流式熵：logits 在线累积与数值稳定"
-quick: "流式计算 softmax 熵时只维护最大 logit、相对最大值的指数和、以及按指数加权的 logit 偏移和，遇到更大的最大值时把后两项一起重新标定，熵等于 log 配分函数减去 logit 的期望。"
+quick: "流式状态保存当前最大 logit、相对它的指数和，以及指数加权的 logit 偏移和。更大 logit 到来时，把后两项换算到同一最大值，再累加；最后用 log 配分函数减 logit 期望求熵。两个分块也按同样方式合并，因此不用保存全部历史。"
 companies:
   - openai
 tags:
@@ -23,7 +23,27 @@ sources:
     type: secondary
 ---
 
-## 题目
+## 题目描述
+
+实现可合并的流式 softmax 熵统计，不能保存全部 logits。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`Entropy()` 构造空状态。`add(logit)` 加入一个有限浮点 logit 并返回自身；`merge(other)` 将另一状态代表的全部样本合并到当前状态并返回自身；`value()` 返回非空状态中所有 logits 的 softmax 概率熵。
+
+概率定义为 `p_i=exp(x_i)/sum_j exp(x_j)`，熵为 `-sum_i p_i*log(p_i)`，使用自然对数。单元素熵为 0。状态空间必须为 O(1)，不能保存历史 logits，合并结果与统一加入相同样本一致；要求在极端 logits 下仍稳定，绝对误差不超过 1e-10。
+
+### 示例
+
+```text
+Entropy().add(5).value()=0。
+Entropy().add(1000).add(1000).value()≈0.6931471805599453。
+分别收集 [1000,999] 与 [-1000,1001] 后合并，其 value 与依次加入四个数相同。
+```
+
+## 解题思路与参考答案
+
+我会保存三个相对当前最大 logit 的统计量，逐项更新，最后直接求熵。比如两个 1000 的 logits 不该先算 e 的 1000 次方，只需要知道两项相对最大值都是 0，就能得到 log(2)。新最大值出现时，指数权重和偏移都要一起换算，分块合并也复用这一步。
 
 给一组 logits，先计算 softmax 分布的熵；再改成流式版本，logits 逐个到达，不能保存全部历史；最后支持把两个分块的结果合并。
 
@@ -130,6 +150,16 @@ class Entropy:
             raise ValueError("entropy of an empty stream is undefined")
         return math.log(self.z) - self.r / self.z
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.isclose(whole.value(), expected)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

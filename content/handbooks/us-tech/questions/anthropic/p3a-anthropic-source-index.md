@@ -4,7 +4,7 @@ section: anthropic
 order: 500
 level: A
 title: "anthropic：一亩三分地来源索引（2026-10-18）"
-quick: "本次记录 79 条具体来源，包含重复变体与仅标题线索；已整理题卡见正文，不能将条目数直接当成独立真题数。"
+quick: "这张索引用来找已整理的题卡和对应来源。目录实际记录了 79 条，里面有重复变体和只有标题的线索，不能把它当作 79 道独立真题。"
 companies:
   - anthropic
 tags:
@@ -20,6 +20,8 @@ sources:
     url: https://www.1point3acres.com/interview/problems/company/anthropic
     type: secondary
 ---
+
+先从下面的题卡找具体练习，需要核实来源时再看后面的目录表。表中有些只有标题，证据还不足以补出完整题干。
 
 ## 已整理的题卡
 

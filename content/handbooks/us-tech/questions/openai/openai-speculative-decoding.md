@@ -4,7 +4,7 @@ section: openai
 order: 8
 level: A
 title: OpenAI：投机解码拒绝草稿时为什么要 rollback KV
-quick: "草稿 token 会先写入 target 的 KV。验证只接受一个前缀，拒绝点之后的 $K,V$ 对应的是从未采用的文本，必须 截断到接受长度。只改输出字符串、不回滚 cache，后续注意力会使用一段未被采纳的前缀。"
+quick: "验证草稿时，target 已经为整段草稿写入 KV；若只接受前缀，就必须把 target 和 draft 的 cache 都截回接受长度。比如第 $k+1$ 个草稿被拒绝，后面的 $K,V$ 属于未提交文本，不能继续参与注意力，RoPE offset 也要随新长度回退。"
 tags:
   - OpenAI
   - Speculative Decoding
@@ -23,11 +23,13 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+拒绝草稿后必须回滚 KV，因为验证前向已经把草稿对应的状态写进 cache。比如接受前 $k$ 个、拒绝第 $k+1$ 个，输出文本里没有被拒绝的草稿，cache 里也不能留下它，否则下一步会读到未采用的历史。
 
-不是我能指到的某一份公开「原题 PDF」。OpenAI 推理 / RE 轮在 KV cache 之后常追：加速 decode 时草稿和验证怎么共享状态。论文是 Leviathan 等人的 speculative decoding。我会把它当成 `openai-kv-cache-impl` 的正确性延伸来答，而不是背一个加速比。
 
-## 算法我先讲清楚，再碰 cache
+
+这张卡按 Leviathan 等人的 speculative decoding 论文整理，是 `openai-kv-cache-impl` 的正确性延伸，没有对应的公开逐字原题。
+
+## 接受前缀决定 cache 长度
 
 小草稿模型 $q$ 一次提出 $\gamma$ 个 token $x_{t+1},\ldots,x_{t+\gamma}$。目标模型 $p$ 用一次平行前向（这段很像短 输入预填充（prefill，即处理输入并建立缓存））算出这 $\gamma$ 个位置的 logits。然后从左到右接受：以 $\min(1, p(x)/q(x))$ 的概率留下草稿 token，直到第一次拒绝。拒绝处从修正分布再抽一个真正的 token。期望接受长度大于 1 时，target 的前向次数就少了。
 
@@ -49,7 +51,7 @@ v_cache = v_cache[:, :, : S + n_accept, :]
 # 再 append 拒绝处新采样 token 的 k_t, v_t
 ```
 
-## 实现取舍我会主动讲
+## 再看草稿成本与调度
 
 验证那一步是 compute-bound 的小 prefill，草稿模型本身仍是 decode。加速比取决于 $q$ 有多接近 $p$、$\gamma$ 取多大。$\gamma$ 太大，拒绝来得早，白写的 KV 和白算的草稿变多。$\gamma$ 太小，一次前向摊不回。
 
@@ -63,10 +65,14 @@ v_cache = v_cache[:, :, : S + n_accept, :]
 
 ## 追问
 
-- **不 rollback 能靠 mask 挡掉幽灵 token 吗？** 能硬挡，但长度、位置、page 表全要记一份额外状态，还容易漏一层。截断更干净。
-- **草稿模型要不要和 target 共享 tokenizer？** 要，否则接受规则没有同一 $x$ 可比。
-- **和 Medusa / 多头草稿？** 草稿来源变了，rollback 不变量不变：未提交的位置不准留在 cache 里。
-- **拒绝后要不要重算 prefill？** 不要。接受前缀的 KV 是合法的，只丢拒绝点及其后。
+**不 rollback 能靠 mask 挡掉幽灵 token 吗？**
+能硬挡，但长度、位置、page 表全要记一份额外状态，还容易漏一层。截断更干净。
+**草稿模型要不要和 target 共享 tokenizer？**
+要，否则接受规则没有同一 $x$ 可比。
+**和 Medusa / 多头草稿？**
+草稿来源变了，rollback 不变量不变：未提交的位置不准留在 cache 里。
+**拒绝后要不要重算 prefill？**
+不要。接受前缀的 KV 是合法的，只丢拒绝点及其后。
 
 ## 相关题
 

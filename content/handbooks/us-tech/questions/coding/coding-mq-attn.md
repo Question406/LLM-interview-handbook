@@ -4,8 +4,7 @@ section: coding
 order: 22
 level: A
 title: 白板：MQA 单 KV head，怎么对 query heads broadcast
-quick: >-
-  MQA 的 K、V 只有一个 head（`[B, 1, S, d_h]`），Q 仍有 H 个 head；matmul 时让 K、V 沿 head 维广播，不要 repeat 成 H 份再写进 cache。
+quick: "MQA 的 Q 有 H 个 head，K/V 只有 `[B, 1, S, d_h]` 一组。计算 matmul 时沿 head 维广播即可，cache 保留单头，避免物化 H 份；softmax 仍沿 key 长度求。"
 tags:
   - 完整编程练习
   - Coding
@@ -24,6 +23,30 @@ sources:
     url: https://arxiv.org/abs/2305.13245
     type: primary
 ---
+
+## 题目描述
+
+实现共享一组 K/V 的多查询注意力，以及对应投影接口。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`mqa(q,k,v,attn_bias=None)` 中 q 为 `[B,H,T,dh]`，k、v 可为 `[B,1,S,dh]` 或 `[B,S,dh]`；返回 `[B,H,T,dh]`。H 个 query 头共享同一 K/V。分数是 query/key 内积除以 sqrt(dh)，加 `attn_bias` 后沿 S 用 `exp(score)/sum(exp(score))` 归一化，再加权 v。
+
+`attn_bias` 可广播到 `[B,H,T,S]`，用负无穷屏蔽位置，假定每个 query 至少有一个可见 key。不能为了共享注意力物化 H 份相同 K/V。
+
+`mqa_projections(x,wq,wk,wv,n_heads)` 接收 x `[B,T,D]`、wq `[D,D]`、wk/wv `[D,dh]`，其中 dh=D/`n_heads`，返回 q `[B,H,T,dh]` 和 k/v `[B,1,T,dh]`。
+
+### 示例
+
+```text
+q 形状 [1,2,1,1]，全为 0；k 形状 [1,1,2,1]，全为 0。
+v=[[[[2],[4]]]]，无 bias。
+mqa 返回 [[[[3]],[[3]]]]。
+```
+
+## 解题思路与参考答案
+
+MQA 直接用单头 K/V 和多头 Q 做广播 matmul：`q @ k.transpose(-2, -1)` 是 `[B, H, T, d_h] @ [B, 1, d_h, S]`，K 的 head 维从 1 广播到 H，输出 `[B, H, T, S]`。所有 query head 用的是同一组 key，这正是 MQA 的定义。softmax 沿最后一维（key）做，再乘同样广播的 V，得到 `[B, H, T, d_h]`。
 
 ## 完整编程练习（手册重构版）
 
@@ -45,8 +68,6 @@ mqa(q [2, 4, 3, 2], k [2, 1, 3, 2], v [2, 1, 3, 2]) -> [2, 4, 3, 2]
 ```
 
 ### 解题思路与正确性
-
-`q @ k.transpose(-2, -1)` 是 `[B, H, T, d_h] @ [B, 1, d_h, S]`，PyTorch 会把 K 的 head 维从 1 广播到 H，得到 `[B, H, T, S]`。所有 query head 用的是同一组 key，这正是 MQA 的定义。softmax 沿最后一维（key）做，再乘同样广播的 V，得到 `[B, H, T, d_h]`。
 
 广播只发生在计算时，不分配 H 份 K、V，所以 cache 只需要存 `[B, 1, S, d_h]`。投影侧，`wk`、`wv` 的输出宽度是 $d_h$，元素数只够一个 KV head；如果误写成 `[D, D]`，view 成一个 head 时就会对不上。
 
@@ -91,6 +112,16 @@ def mqa_projections(x, wq, wk, wv, n_heads):
     v = (x @ wv).view(batch, seq_len, 1, head_dim).transpose(1, 2)
     return q, k, v
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert q.shape == (2, 4, 3, 2)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -166,10 +197,14 @@ Decode 一步 $T=1$，GEMM 很小，时间花在读历史 KV 上，MQA 的读带
 
 ## 追问
 
-- **broadcast 和 repeat 哪个对？** 只要 repeat 只发生在算子内部，两者数值都对。但 cache 布局必须按 $H_{\mathrm{kv}}=1$ 存。
-- **head 维还是 $D/H$ 吗？** 是。$Q$ 仍按 $H$ 个头切；$K$ 只有一个头，宽度同样是 $d_h$，不是整条 $D$。
-- **K 用 $d_h$、V 用别的宽度可以吗？** 标准 MQA 不这样做。GQA 和 MQA 改的是 KV head 的数量，不是 head 维度。
-- **softmax 沿哪一维？** 仍是 key 长度那一维。沿 $H$ 做 softmax 是 `openai-transformer-debug` 那类轴错误，在 MQA 里更隐蔽，因为 $K$ 本身没有 $H$ 维。
+**broadcast 和 repeat 哪个对？**
+只要 repeat 只发生在算子内部，两者数值都对。但 cache 布局必须按 $H_{\mathrm{kv}}=1$ 存。
+**head 维还是 $D/H$ 吗？**
+是。$Q$ 仍按 $H$ 个头切；$K$ 只有一个头，宽度同样是 $d_h$，不是整条 $D$。
+**K 用 $d_h$、V 用别的宽度可以吗？**
+标准 MQA 不这样做。GQA 和 MQA 改的是 KV head 的数量，不是 head 维度。
+**softmax 沿哪一维？**
+仍是 key 长度那一维。沿 $H$ 做 softmax 是 `openai-transformer-debug` 那类轴错误，在 MQA 里更隐蔽，因为 $K$ 本身没有 $H$ 维。
 
 ## 相关题
 

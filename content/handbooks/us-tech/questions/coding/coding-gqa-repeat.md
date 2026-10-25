@@ -4,7 +4,7 @@ section: coding
 order: 16
 level: A
 title: 白板：GQA 把 KV head repeat 成 query heads，shape 怎么断言
-quick: "cache 里 K/V 保持 `[B, H_kv, S, D]`，算分数前沿 head 轴 `repeat_interleave` 成 `H_q` 份；用 repeat 会打乱分组。"
+quick: "cache 中的 K/V 保持 `[B, H_kv, S, D]`，计算前沿 head 轴用 `repeat_interleave` 扩到 $H_q$。先断言 $H_q$ 能被 $H_{\\mathrm{kv}}$ 整除，再让相邻的一组 query head 共用同一个 KV head。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,33 @@ sources:
     url: https://arxiv.org/abs/2307.09288
     type: primary
 ---
+
+## 题目描述
+
+实现 grouped-query attention 的 KV head 扩展和注意力计算；多个 query head 按指定顺序共享同一个 KV head。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `repeat_kv(x, n_rep)`：`x` 形状 `[B, H_kv, S, D]`，返回 `[B, H_kv * n_rep, S, D]`。相邻的 `n_rep` 个输出 head 来自同一个 KV head。`n_rep` 必须是正整数。
+- `gqa_attn(q, k, v)`：`q` 形状 `[B, H_q, T, D]`，`k`、`v` 形状 `[B, H_kv, S, D]`，返回 `[B, H_q, T, D]`。不带 mask 的缩放点积注意力，每个 query 的输出为 `softmax(q·k / sqrt(D))` 对相应 value 的加权和；允许 `T != S`。
+- $H_q$ 必须是 $H_{\mathrm{kv}}$ 的正整数倍，$T, S \ge 1$，输入形状匹配。
+
+### 输入输出示例
+
+```text
+x 形状 [1,2,1,1]，两个 KV head 的数值依次为 2、7。
+repeat_kv(x, 2) -> [[[[2]], [[2]], [[7]], [[7]]]]，形状 [1,4,1,1]。
+
+q = 全零数组 [1,4,1,1]，k = 全零数组 [1,2,2,1]
+v = [[[[2],[4]], [[10],[14]]]]，形状 [1,2,2,1]
+gqa_attn(q,k,v) -> [[[[3]], [[3]], [[12]], [[12]]]]
+```
+
+## 解题思路与参考答案
+
+我会先检查头数能否整除，再在 head 轴后插入大小为 `n_rep` 的组维，用 `expand` 扩展视图，再 `reshape` 把 `[H_kv, n_rep]` 合并为 `H_q`。合并后第 $h$ 个 query head 对应的 KV head 是 $\lfloor h / n_{\mathrm{rep}}\rfloor$，正好是 GQA 训练时的分组方式。
 
 ## 完整编程练习（手册重构版）
 
@@ -43,8 +70,6 @@ repeat_kv 之后的 head 顺序 -> [k0, k0, k1, k1]
 ```
 
 ### 解题思路与正确性
-
-在 head 轴后面插一个大小为 `n_rep` 的组维，用 `expand` 复制（不拷贝内存），再 `reshape` 把 `[H_kv, n_rep]` 合并成 `H_q`。合并后第 $h$ 个 query head 对应的 KV head 是 $\lfloor h / n_{\mathrm{rep}}\rfloor$，正好是 GQA 训练时的分组方式。
 
 之后就是普通的缩放点积注意力。softmax 升到 fp32 计算再转回输入精度。测试拿 PyTorch 的 `scaled_dot_product_attention` 加 `repeat_interleave` 作对照。
 
@@ -87,6 +112,16 @@ def gqa_attn(q, k, v):
     probs = torch.softmax(scores.float(), dim=-1).to(q.dtype)
     return torch.matmul(probs, v_rep)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.equal(repeat_kv(kv, 2)[:, :, 0, 0], torch.tensor([[0.0, 0.0, 2.0, 2.0]]))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -165,10 +200,14 @@ $W_Q$ 输出 `H_q * D` 维，$W_K, W_V$ 输出 `H_kv * D` 维。`view` 成 `[B, 
 
 ## 追问
 
-- **`repeat` 和 `repeat_interleave` 差在哪？** 后者（以及 expand + reshape）得到 `[k0, k0, ..., k1, k1, ...]`；`repeat` 沿 head 维得到 `[k0, k1, ..., k0, k1, ...]`。和 $W_Q$ 的分组对不上时不会报错，只会悄悄算出错误的数值。
-- **逐 token 生成（decode）每步都要 repeat 吗？** 当前步的 $K_t, V_t$ 仍按 $H_{\mathrm{kv}}$ 写入 cache。算注意力时再对已缓存的 $K,V$ 做 repeat，或者走 GQA kernel 在寄存器里广播。
-- **$H_q$ 能不被 $H_{\mathrm{kv}}$ 整除吗？** 标准 GQA 不行，面试时直接做检查并报错。
-- **和 MQA 比？** MQA 是 $H_{\mathrm{kv}}=1$、$n_{\mathrm{rep}}=H_q$，见 `coding-mq-attn`。70B 选 GQA 而不是 MQA，主要是为了模型质量，不是因为 MQA 难实现。
+**`repeat` 和 `repeat_interleave` 差在哪？**
+后者（以及 expand + reshape）得到 `[k0, k0, ..., k1, k1, ...]`；`repeat` 沿 head 维得到 `[k0, k1, ..., k0, k1, ...]`。和 $W_Q$ 的分组对不上时不会报错，只会悄悄算出错误的数值。
+**逐 token 生成（decode）每步都要 repeat 吗？**
+当前步的 $K_t, V_t$ 仍按 $H_{\mathrm{kv}}$ 写入 cache。算注意力时再对已缓存的 $K,V$ 做 repeat，或者走 GQA kernel 在寄存器里广播。
+**$H_q$ 能不被 $H_{\mathrm{kv}}$ 整除吗？**
+标准 GQA 不行，面试时直接做检查并报错。
+**和 MQA 比？**
+MQA 是 $H_{\mathrm{kv}}=1$、$n_{\mathrm{rep}}=H_q$，见 `coding-mq-attn`。70B 选 GQA 而不是 MQA，主要是为了模型质量，不是因为 MQA 难实现。
 
 ## 相关题
 

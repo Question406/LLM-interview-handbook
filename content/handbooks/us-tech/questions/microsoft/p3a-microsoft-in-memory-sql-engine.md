@@ -4,7 +4,7 @@ section: microsoft
 order: 601
 level: A
 title: "Microsoft AI / Copilot：CSV 初始化的内存 SQL 引擎"
-quick: "用 CSV 初始化内存 SQL 引擎时，先定下引号、转义和字段类型的规则再建表，然后把 WHERE、ORDER BY 和 SELECT 投影分开实现。"
+quick: "我会先确认 CSV 的引号、转义和字段类型，再把查询拆成筛选、排序、投影。这里用 csv.reader 解析，所有值按字符串比较，所以 \"10\" 会排在 \"2\" 前；投影放最后，避免提前丢掉排序所需的列。"
 companies:
   - microsoft
 tags:
@@ -23,6 +23,31 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个面向 CSV 字符串的简化内存表查询器，不需要解析完整 SQL。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`Table(csv_text)` 读取标准 CSV：首行为唯一列名，数据行列数一致，双引号允许字段内包含逗号及转义引号。所有单元格都是字符串，不做数字类型推断。`insert(row)` 接收恰含全部列名的字符串值字典并追加一行。
+
+`query(columns,where=(),order=())` 返回投影后的行字典列表。columns 是要返回的列名；where 是 `(列名,比较符,比较值)` 列表，以 AND 连接，支持 `==`、`!=`、`<`、`>`；比较均按字符串字典序。order 是 `(列名,descending)` 列表，前面的列优先，完全同键时保留插入顺序。最多 10000 行、100 列。
+
+### 示例
+
+```text
+CSV 内容：
+name,score
+a,2
+b,10
+query(["name"],order=[("score",False)]) = [{"name":"b"},{"name":"a"}]
+query(["name"],where=[("score",">","1")]) = [{"name":"a"},{"name":"b"}]
+```
+
+## 解题思路与参考答案
+
+我会先按约定正确解析 CSV，再依次执行筛选、排序和投影。例如字段里有 `"x,y"` 时，直接按逗号切分就会把一列拆成两列，因此解析交给 `csv.reader`。
+
 ## 题目
 
 用一段 CSV 文本初始化一张内存表，然后分阶段支持 SELECT、WHERE 和 ORDER BY。
@@ -33,7 +58,7 @@ sources:
 
 先和面试官确认 CSV 的规则：字段里能不能有引号和逗号，怎么转义，所有字段是不是都当字符串，还是要推断类型。这些规则定下来之后再建表结构。如果题目给的是简化的 CSV 契约，就按契约处理，不要自己扩成一个完整数据库。
 
-条件筛选、排序和投影分开实现。多个条件、多个排序键时，要讲清楚优先级：这里的约定是条件之间都是 AND，排序键越靠前优先级越高。
+查询的执行顺序是先筛选、再排序、最后投影。多个条件用 AND 连接，排序键越靠前优先级越高；这些规则先固定下来，后续扩展才不会改变已有查询的含义。
 
 相关题：[[p3a-openai-in-memory-database-sql]]（同一份练习代码，那道题更关注分阶段扩展和索引优化）。
 
@@ -134,6 +159,16 @@ class Table:
             matched.sort(key=lambda row: row[column], reverse=descending)
         return [{column: row[column] for column in columns} for row in matched]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert table.query(["name"], order=[("score", False)]) == [{"name": "b"}, {"name": "a"}]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

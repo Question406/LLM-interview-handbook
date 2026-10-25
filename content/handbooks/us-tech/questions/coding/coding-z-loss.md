@@ -4,7 +4,7 @@ section: coding
 order: 23
 level: A
 title: 白板：PaLM z-loss，为什么往 logits 上加这一项
-quick: "z-loss 在 CE 上加 $10^{-4}(\\log Z)^2$：CE 对 logits 平移不变，$\\log Z$ 却会漂移，bf16 下数值变差；z-loss 把它拉回 0 附近，不改分类结果。"
+quick: "PaLM 在 CE 上加 $10^{-4}(\\log Z)^2$，把 log-partition 拉回 0 附近。CE 对 logits 整体平移不敏感，$\\log Z$ 却可能持续漂移，低精度下会损害数值稳定性；z-loss 约束这个自由度，分类 argmax 仍由相对大小决定。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,30 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.logsumexp.html
     type: primary
 ---
+
+## 题目描述
+
+实现包含 z-loss 的语言模型交叉熵，分别返回总损失、交叉熵与未乘系数的 z-loss。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `ce_with_z_loss(logits, target, ignore_index=-100, z_coef=1e-4) -> (total, ce, z_loss)`：令 `log Z = log(sum(exp(logits), last_dim))`，`total = ce + z_coef * z_loss`。返回总 loss、交叉熵和未乘系数的 $\mathrm{mean}(\log Z^2)$，三者都只对有效 token 平均。
+- 约束：`logits` 是 `[B, T, V]`，`target` 是 `[B, T]`，取值是合法下标或 `ignore_index`；`z_coef >= 0`。所有 token 都被忽略时返回可以反传的 0。
+
+### 输入输出示例
+
+```text
+logits = [[[0,0]]], target = [[0]], z_coef = 0.1
+ce_with_z_loss(...) -> (0.74119248, 0.69314718, 0.48045301)  # 近似值
+仅将 target 改为 [[-100]] -> (0,0,0)，反向梯度均为 0
+```
+
+## 解题思路与参考答案
+
+我会用一次 logsumexp 同时计算 CE 和 z-loss，再对两者使用相同的有效 token mask。比如把一行 logits 整体加 50，CE 保持不变，z-loss 应变大，这正好检查它是否约束了 CE 管不到的整体平移。全 ignore 时则返回可反传的 0。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -77,6 +101,16 @@ def ce_with_z_loss(logits, target, ignore_index=-100, z_coef=Z_COEF):
     z_loss = (log_z.square() * mask).sum() / denom
     return ce + z_coef * z_loss, ce, z_loss
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(ce, torch.tensor(math.log(2)))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -153,10 +187,14 @@ $\lambda=10^{-4}$ 是 PaLM 公开的值。太大会过度强迫 $z\approx 0$，�
 
 ## 追问
 
-- **为什么不直接 clip logits？** clip 在边界外梯度为 0，还会损伤 logits 之间的相对差。$z^2$ 是平滑的，而且只约束整体平移这一个自由度。
-- **$z$ 能不能直接用 `log(sum(exp))` 算？** 不行。$x$ 很大时 `exp` 溢出成 inf，辅助损失本身就成了 NaN。必须用 log-sum-exp 技巧，见 `coding-logsumexp`。
-- **推理时还加吗？** 不加，它只存在于训练图里。推理时的 softmax 不需要 $z\approx 0$。
-- **和 weight decay 有什么关系？** weight decay 管参数的范数，z-loss 管 logits 的绝对尺度。两者可以同时使用。
+**为什么不直接 clip logits？**
+clip 在边界外梯度为 0，还会损伤 logits 之间的相对差。$z^2$ 是平滑的，而且只约束整体平移这一个自由度。
+**$z$ 能不能直接用 `log(sum(exp))` 算？**
+不行。$x$ 很大时 `exp` 溢出成 inf，辅助损失本身就成了 NaN。必须用 log-sum-exp 技巧，见 `coding-logsumexp`。
+**推理时还加吗？**
+不加，它只存在于训练图里。推理时的 softmax 不需要 $z\approx 0$。
+**和 weight decay 有什么关系？**
+weight decay 管参数的范数，z-loss 管 logits 的绝对尺度。两者可以同时使用。
 
 ## 相关题
 

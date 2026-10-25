@@ -4,7 +4,7 @@ section: amazon
 order: 19
 level: A
 title: Amazon：LLM rerank 和 embedding 召回怎么叠？
-quick: "先召回较多候选，再逐步精排缩小范围。embedding / BM25 取 $k$，交叉编码器或 Bedrock Rerank 缩减到 $n$，必要时再用 LLM 只看前十几条。别让 LLM 给一千条打分。评的是 nDCG 加端到端答案是否有证据支持，不是 rerank 模型自己的公开榜。"
+quick: "先用 embedding / BM25 召回，再用交叉编码器或 Bedrock Rerank 缩小候选；指令复杂时，才让 LLM 比较前十几条。每层分别测 Recall、nDCG 和最终答案的证据支持，候选漏了先修召回。"
 tags:
   - Amazon
   - Rerank
@@ -29,41 +29,44 @@ sources:
     type: secondary
 ---
 
-Seller 政策和商品问答把检索问成「向量不够再上大模型」。公开层 Bedrock 有 Rerank API 和 Knowledge Bases 里的 rerankingConfiguration；模型卡上是 Amazon Rerank 1.0 和 Cohere Rerank 3.5 一类交叉编码器。LLM 当 reranker 是你自己的第三段，不是默认托管。底座召回见 `amazon-titan-embed`、`amazon-kendra-hybrid`。
+我会先用低成本检索保住召回，再逐层精排，LLM 只处理最后的一小组候选。比如条款在 embedding 第 12 名，直接取 top-5 生成就会漏；先扩大候选再精排才有机会找回来。
 
-## 三层，不要一层吃到饱
+Bedrock 提供 Rerank API，以及 Knowledge Bases 的 rerankingConfiguration，公开模型包括 Amazon Rerank 1.0、Cohere Rerank 3.5 一类交叉编码器。LLM rerank 是可选的额外阶段，底层召回仍由 `amazon-titan-embed`、`amazon-kendra-hybrid` 中的模型负责。
 
-记 query $q$，语料 $\mathcal{D}$。画三段：
+## 候选逐层缩小
 
-1. **召回。** BM25 并上 embedding ANN，取 $k$（常见 50–100）。标识符、条款号走词法；同义走向量。分数空间不同，用 RRF 或各自归一后再融，见 `amazon-kendra-hybrid`。这一层要高召回，允许包含不相关候选。
-2. **交叉精排。** Bedrock Rerank / Cohere 对 $(q, d_i)$ 打相关分，收到 $n$（10–20）。它看的是 query–文档对，不是双塔点积。公开文档写：用 reranker 可以少塞一些块给生成，降成本和延迟。索引仍用 Titan 或你选的 embedding，**不要用 rerank 模型去建库**。
-3. **LLM rerank（可选）。** 只对 $n$ 条做列表式比较：「哪三条真正回答 $q$，其余丢掉」。适合指令细、要否定句（「不适用于危险品」）的政策题。不要对 $k=1000$ 跑 Converse。token 消耗和 p99 延迟都会大幅增加，见 `amazon-p99-stream`。
+记 query 为 $q$，语料为 $\mathcal{D}$。先把 BM25 和 embedding ANN 候选合并，取 $k$，常见为 50 到 100。编号和条款号靠词法，同义表达靠向量。两路分数用 RRF 或分别归一再融合，见 `amazon-kendra-hybrid`。这一层允许混入不相关文档，主要避免漏召回。
 
-不等式：
+接着，交叉编码器对 $(q, d_i)$ 逐对判断相关性，收缩到 $n$，例如 10 到 20。它同时看 query 和文档，与双塔点积不同。Bedrock 文档提到，rerank 可以减少送给生成模型的块，降低成本和延迟。索引仍用 Titan 或所选 embedding 建立，rerank 模型不用于建库。
+
+如果指令特别细，或要辨别「不适用于危险品」这样的否定条件，再让 LLM 对这 $n$ 条做列表比较，挑出真正回答问题的三条。对 $k=1000$ 跑 Converse 会消耗大量 token 并拖高 p99，见 `amazon-p99-stream`。候选规模应满足：
 
 $$
 |\mathrm{LLM\ candidates}|\ll |\mathrm{rerank\ in}|\ll |\mathrm{recall}|.
 $$
 
-常见误区是：embedding top-5 直接生成，条款编号在第 12 名；反过来 LLM 给全库打分。另一错：rerank 用和生成同一个 Nova 聊天模型、输入提示（prompt） 还写「请打 1–10 分」——校准差、贵、不稳定。交叉编码器是为相关分训的。
+直接让 Nova 对每条打 1 到 10 分，相关性分数往往难校准，成本和稳定性也需要验证。交叉编码器本身就是为相关评分训练的，可先作为稳定基线。
 
-## 和生成、评测怎么接
+## 接生成前，检查质量和预算
 
-生成只看 rerank 后的 $n$ 条短块，引用必须能指回块 id，见 `amazon-bedrock-rag`。图 / PDF 先决定 OCR 还是视觉检索，再进同一套漏斗，见 `amazon-mm-rag`。不要文本召回完又把整页 PNG 塞进 LLM rerank。
+生成只读取精排后的 $n$ 个短块，引用指回块 id，见 `amazon-bedrock-rag`。图 / PDF 先定 OCR 或视觉检索，再进入漏斗，见 `amazon-mm-rag`；避免文字检索之后又把整页 PNG 加进 LLM rerank。
 
-评测拆开：
+评测分别报召回 Recall@$k$、精排 nDCG@$n$ 和条款准确率，以及最终答案的证据支持、任务成功，见 `amazon-titan-eval`。标识符 query 单独切片。精排更准但生成仍胡编，应用还不满足上线条件。
 
-- 召回：Recall@$k$，标识符切片单独报。
-- 精排：nDCG@$n$、条款级准确。
-- 端到端：有实际证据支持、任务成功，见 `amazon-titan-eval`。精排变好但生成胡编，不算发版。
+预算可以先按召回 50 到 100ms、rerank 50 到 150ms，生成占更大部分；新增 LLM rerank 后要单独统计 p99。Knowledge Bases 开启 rerank 会覆盖默认排序，要区分默认 ranker 和所选 rerank 模型。
 
-延迟预算：召回 50–100ms，rerank 50–150ms，生成才是大头。LLM rerank 若上了，要进 p99 分组统计。Knowledge Bases 里打开 rerank 会覆盖默认排序；面试说清「默认 ranker 和你选的 rerank 模型不是同一个东西」。
-
-换 embedding 要全库重编；换 rerank 模型不用重编，只要重放查询。这是为什么精排是成本较低的迭代环节。Guardrails 仍挂生成，不替代「检索到了不该看的文档」—— ACL 在召回过滤，见 `amazon-guardrails`。
+换 embedding 要全库重编，换 rerank 只需重放查询，因此精排迭代成本较低。权限过滤仍放召回层，Guardrails 继续检查生成，不能补救召回了无权查看的文档，见 `amazon-guardrails`。
 
 ## 追问
 
-- **为什么不跳过交叉编码器、直接 LLM？** 交叉编码器便宜、稳定、为相关分训。LLM 擅长指令和否定，但贵。叠，不替换。
-- **$k$ 太小怎么办？** 精排救不了召回。先加词法并集或扩 $k$，再谈 rerank。
-- **和两塔精排？** 商品侧两塔见 `amazon-two-tower`。政策 检索增强生成（RAG） 更常交叉编码器。不要混淆商品点击模型和条款相关性评分。
-- **Rerank 1.0 和 Cohere 怎么选？** 以当时区域和模型表为准。用你的政策集标定 nDCG，不要背公开 demo 分。
+**能跳过交叉编码器直接用 LLM 吗？**
+可以尝试，但要验证成本和稳定性。交叉编码器适合便宜地缩小候选，LLM 再处理复杂指令与否定条件。
+
+**$k$ 太小怎么补？**
+先扩大 $k$ 或合并词法候选。没进入候选的文档，精排无法找回来。
+
+**商品双塔和政策精排是一回事吗？**
+目标不同。商品双塔见 `amazon-two-tower`；政策 RAG 更常用 query 与条款的交叉相关评分，不能直接混用点击模型。
+
+**Rerank 1.0 和 Cohere 怎么选？**
+先确认区域和模型支持表，再用自己的政策集测 nDCG。

@@ -4,7 +4,7 @@ section: xai
 order: 750
 level: S
 title: "xAI：图像 Patchify 与 CNN 输入轴转置"
-quick: "原帖作者在评论里补充的第二轮：先 reshape 拆出 patch 网格轴，再 transpose 把通道移到 patch 内高宽之前、送入 CNN；具体形状由练习约定。"
+quick: "先 reshape 拆出 patch 网格，再 transpose 把通道放到每个 patch 的高宽前，最后合并成 CNN 输入。检查具体像素和逆变换，才能发现形状正确但内容错位的情况；原帖未披露具体形状，这里的 NHWC 是练习约定。"
 companies:
   - xai
 tags:
@@ -22,15 +22,34 @@ sources:
     type: candidate-first-hand
 ---
 
+## 题目描述
+
+实现图像 patch 拆分、还原和每个 patch 上的 1×1 卷积，保持明确的维度顺序。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`patchify(images,ph,pw)` 接收 NumPy images `[B,H,W,C]`，返回 `[P,C,ph,pw]`，其中 P=B*(H/ph)*(W/pw)。ph、pw 为正整数并分别整除 H、W；patch 排序依次按 batch、patch 行、patch 列，patch 内保留原空间顺序。
+
+`unpatchify(patches,B,H,W,C)` 恢复 `[B,H,W,C]`，与 patchify 互逆。`conv1x1(patches,weight,bias)` 输入 weight `[O,C]`、bias `[O]`，每个空间位置的 C 维向量经线性投影加 bias，返回 `[P,O,ph,pw]`。各维不超过 128，不做 padding 或插值，只使用 NumPy。
+
+### 示例
+
+```text
+images 为 arange(16) 排成 [1,4,4,1]，ph=pw=2。
+patchify 输出形状 [4,1,2,2]：第一个 patch 为 [[0,1],[4,5]]，第二个为 [[2,3],[6,7]]。
+unpatchify 恢复原 images。
+weight=[[2]],bias=[1] 时，第一个 patch 的卷积结果为 [[1,3],[9,11]]。
+```
+
+## 解题思路与参考答案
+
+我会先用 reshape 拆出 patch 网格轴和 patch 内部轴，再用 transpose 把通道移到内部高宽之前，最后合并成一批 CNN 输入。reshape 保持元素顺序，轴的位置要靠 transpose 调整。
+
 ## 题目
 
 把一批图像切成固定大小的图块（patch），并把通道轴移到高宽之前，整理成 CNN 能直接吃的输入格式，再送进一个卷积层。考的是多维数组的 reshape 和 transpose 能不能写对。
 
 > 来源：一亩三分地 xAI 原帖（thread 1171574），原帖作者在评论里补充了第二轮的内容：把图像拆成图块，通道移到高宽之前，再送入 CNN。原帖没有给出具体形状和接口，下面的函数签名、形状约定、实现和测试都是手册补的练习约定，不作为已确认的面试事实。
-
-## 思路
-
-关键是分两步走：先用 reshape 把轴「拆开」，再用 transpose 把轴「换位」，最后 reshape 合并。
 
 以 NHWC 输入 `[B, H, W, C]` 为例：
 
@@ -112,6 +131,16 @@ def conv1x1(patches, weight, bias):
         raise ValueError("bias must be [O]")
     return np.einsum("pchw,oc->pohw", patches, weight) + bias[None, :, None, None]
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert patches.shape == (4, 1, 2, 2)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

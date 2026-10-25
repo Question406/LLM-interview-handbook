@@ -22,6 +22,28 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+用 NumPy 实现 top-k 类别采样：先限定允许出现的类别集合，再按该集合中的 logits 概率抽样。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `sample(logits, k, rng) -> int`：`logits` 是一维有限数组，`k` 是 $[1, V]$ 内的整数，`rng` 是 NumPy `Generator`。只保留最大的 k 个 logits，logit 相同时 token id 小的优先进入候选。返回采到的原词表 token id。
+- 候选中 id `i` 的采样概率为 `exp(logits[i]) / sum(exp(logits[j]) for j in 候选)`；`k=1` 总是返回选中的最大项。
+- 词表大小 $V \le 10^5$。
+
+### 输入输出示例
+
+```text
+sample([1, 2, 3, 4], k=1, rng) -> 3          # 永远是最大的那个
+sample([1, 2, 3, 4], k=2, rng) -> 2 或 3
+sample([0, 0, 0],    k=1, rng) -> 0          # 并列时取 id 小的
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 用 NumPy 实现 top-k 采样：给一组 logits，只在最大的 k 个里按 softmax 概率随机选一个 token。要检查 k 的取值范围，并能解释它和 greedy 解码、top-p 采样的关系。
@@ -30,7 +52,7 @@ sources:
 
 ## 思路
 
-分三步：先选出 logit 最大的 k 个 token 作为候选；再只在候选上做 softmax；最后用调用方传入的 `rng` 按概率采样，并把结果映射回原词表的 token id。
+我会先保留 logit 最大的 k 个 token，在这些候选上做稳定 softmax，再用传入的 `rng` 按概率抽样，返回原词表 id。比如 k = 1 时只有一个候选，结果就是 greedy；候选数组中的位置和原 token id 要分开，避免采样后返回错编号。
 
 几个容易错的细节：
 
@@ -90,6 +112,16 @@ def sample(logits, k, rng):
     return int(rng.choice(candidates, p=probs))
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert sample([1, 2, 3, 4], 1, rng) == 3` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -135,9 +167,12 @@ expect_value_error([[1, 2]], 1, rng)
 
 设词表大小为 V。参考实现的全排序是 O(V log V) 时间、O(V) 空间；候选上的 softmax 和采样是 O(k)。
 
-- 换成 top-p 怎么写？对全部 logits 做稳定 softmax，按概率降序排序后求累计和，保留累计和第一次达到 p 之前（含这一项）的 token，再在这些 token 上重新归一化后采样。它和 top-k 的区别是候选个数随分布变化，并不是把 k 换成一个固定的概率阈值逐项过滤。
-- 加上 temperature 怎么办？在选候选之前把 logits 除以温度 T。T 不改变排序，所以不影响 top-k 选哪些 token，只改变候选之间的概率差距。
-- 批量采样时，可以对 `[B, V]` 的 logits 沿最后一维做同样的操作，用 `rng.random(B)` 和累计概率做逆变换采样，避免 Python 循环。
+**换成 top-p 怎么写？**
+对全部 logits 做稳定 softmax，按概率降序排序后求累计和，保留累计和第一次达到 p 之前（含这一项）的 token，再在这些 token 上重新归一化后采样。它和 top-k 的区别是候选个数随分布变化，并不是把 k 换成一个固定的概率阈值逐项过滤。
+**加上 temperature 怎么办？**
+在选候选之前把 logits 除以温度 T。T 不改变排序，所以不影响 top-k 选哪些 token，只改变候选之间的概率差距。
+**批量采样怎么做？**
+可以对 `[B, V]` 的 logits 沿最后一维做同样的操作，用 `rng.random(B)` 和累计概率做逆变换采样，避免 Python 循环。
 
 ## 相关题
 

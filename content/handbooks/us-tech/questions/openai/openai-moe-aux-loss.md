@@ -4,7 +4,7 @@ section: openai
 order: 13
 level: A
 title: OpenAI：MoE 辅助损失和负载均衡，路由塌缩怎么发现
-quick: "辅助损失把 token 分配比例 $f_i$ 和平均路由概率 $P_i$ 对齐，逼专家均匀吃 token。塌缩是几乎所有质量进同一个专家， 其它专家梯度消失。看专家占用直方图、路由熵、drop 率，不要只看 loss 下降。"
+quick: "我会用 Switch 的辅助损失约束路由集中，再逐层看专家占用、路由熵和 drop 率。语言 loss 还在降时也可能只剩一个专家在学习，所以要把真实负载和匹配 FLOPs 的 dense 基线一起检查。"
 tags:
   - OpenAI
   - MoE
@@ -26,9 +26,7 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
-
-万亿稀疏模型的公开教科书是 Switch / GShard / ST-MoE，不是某篇 OpenAI 技术报告里的结构图。GPT-4 是否 MoE 没有官方确认，面试里不当事实。问到负载均衡，我按 Switch 的 aux 损失（loss） 答，并声明这是训练稳定性，不是推理 cache。并行大图见 `nvidia-trillion-train`。
+MoE 负载均衡要防止路由长期集中到少数专家，再用真实占用检查辅助损失是否有效。比如一个专家越来越强，路由把更多 token 交给它，其他专家收不到梯度，即使训练 loss 继续下降，有效容量也可能只像一个 dense 小模型。这里按 Switch、GShard、ST-MoE 的公开训练方法讲；GPT-4 是否 MoE 没有官方确认，不能据此作推断。
 
 ## aux loss 在惩罚什么
 
@@ -53,21 +51,24 @@ ST-MoE 还加了 router z-loss，压 logits 的绝对值，减少 fp16 下的不
 
 塌缩：$\max_i f_i\to 1$，路由熵 $-\sum P_i\log P_i\to 0$。表现是训练 loss 还在降（那个赢家专家在学），但有效参数量和 dense 小模型差不多，后面加专家不涨点。all-to-all 上有的 rank 空转、有的打满。
 
-我会看的仪表：
+我会逐层画专家占用直方图，塌缩常从局部开始，全局平均会遮住它。把 $L_{\mathrm{aux}}$ 和 $\mathrm{std}(f)$ 并排看：aux 小而占用差异大，可能损失与负载口径不同，或 dropless 实现没有把 drop 算进 $f$。
 
-1. 每层专家占用直方图，而不是一个全局平均值。塌缩常从某一层开始。
-2. $L_{\mathrm{aux}}$ 和真实 $\mathrm{std}(f)$。aux 已经很小但 $\mathrm{std}(f)$ 很大，说明公式和你关心的均衡不是一回事，或者 dropless 实现没把 drop 算进 $f$。
-3. dropped token 比例。capacity 太紧时「均衡」是靠扔掉 token 装出来的。
-4. 验证集 vs FLOP 匹配的 dense 基线。稀疏模型不赢，先怀疑路由而不是数据。
+再看 dropped token 比例，capacity 太紧时看似均匀可能只是丢掉了溢出 token。验证集还要比较 FLOP 匹配的 dense 基线；稀疏模型没赢，先查路由是否真的用了这些参数。
 
-常见误区是：把 aux 加进 eval loss 一起报；用训练 batch 的 $f_i$ 当推理负载（推理 top-1 更尖，要单独测）。推理若做 expert parallelism，还要看 逐 token 生成（decode） 步的 all-to-all 延迟，那是 `openai-prefill-decode` 的 MoE 版。
+aux 与 eval 语言 loss 分开报，训练 batch 的 $f_i$ 也不能当推理负载，推理 top-1 更尖，需要单独测。expert parallelism 还要计 decode 每步的 all-to-all 延迟，可联系 `openai-prefill-decode`。
+
+相关：`nvidia-trillion-train`
 
 ## 追问
 
-- **没有 aux 能训吗？** 小 $N$、强噪声有时能，大 $N$ 几乎都会塌。aux、capacity、甚至 token 选择的 jitter 是一套。
-- **均衡一定均匀最好？** 不一定。数据本身就偏领域时，完全均匀会伤害质量。aux 是防死专家，不是业务 SLO。
-- **和 dropout 的差别？** dropout 随机遮激活；塌缩是离散路由的赢家通吃，梯度根本到不了冷专家。
-- **共享专家？** DeepSeek 一类把一部分 FFN 做成 always-on，减轻对 aux 的依赖。要声明这是另一条实现。
+**没有 aux 能训吗？**
+小 $N$、强噪声有时能，大 $N$ 几乎都会塌。aux、capacity、甚至 token 选择的 jitter 是一套。
+**均衡一定均匀最好？**
+不一定。数据本身就偏领域时，完全均匀会伤害质量。aux 是防死专家，不是业务 SLO。
+**和 dropout 的差别？**
+dropout 随机遮激活；塌缩是离散路由的赢家通吃，梯度根本到不了冷专家。
+**共享专家？**
+DeepSeek 一类把一部分 FFN 做成 always-on，减轻对 aux 的依赖。要声明这是另一条实现。
 
 ## 相关题
 

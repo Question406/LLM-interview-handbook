@@ -4,7 +4,7 @@ section: nvidia
 order: 20
 level: A
 title: NVIDIA：chunked prefill 把长 prompt 切开和 decode 混部
-quick: "长输入一次性处理完，会让正在逐 token 生成的请求等太久。Chunked prefill 把输入切成小块，与其他请求的生成步骤放在同一批里处理。块大小受每批 token 预算限制，并要对齐 KV 缓存页；它仍在同一套设备上执行。"
+quick: "我会把长 prompt 分块，每轮先推进已有请求的 decode，再用剩余 token 预算处理输入块，避免长 prefill 让生成停顿。块要足够大以利用矩阵计算，也要小到满足 token 间隔，并对齐 KV 页；这仍是在同一套设备上混部。"
 tags:
   - NVIDIA
   - Chunked Prefill
@@ -29,9 +29,7 @@ sources:
     type: primary
 ---
 
-大模型推理分成两个阶段：prefill 一次处理输入，decode 每一步生成一个新 token。长输入如果必须在一次调度中全部处理完，就可能占住 GPU，让其他正在生成的请求停下来等。
-
-Chunked prefill 的做法是把长输入切成块。每轮处理一块输入，同时推进其他请求的 decode。vLLM 使用 chunked prefill 这个名称，TensorRT-LLM 称为 chunked context。Sarathi 和 Sarathi-Serve 讨论了这种减少生成停顿的调度方式。
+Chunked prefill 把长输入切成块，每轮处理一块，同时推进其他请求的 decode，避免生成过程被长输入打断。比如完整 8k 输入占住 GPU 几百毫秒时，正在输出的请求就会明显停顿。大模型的 prefill 处理输入，decode 则每步生成一个新 token，分块让两类工作可以交替推进。vLLM 使用 chunked prefill 这个名称，TensorRT-LLM 称为 chunked context。Sarathi 和 Sarathi-Serve 讨论了这种减少生成停顿的调度方式。
 
 ## 为什么长输入会影响其他请求
 
@@ -55,9 +53,7 @@ Decode 每条请求的 $Q$ 长度为 1，每步要读取权重和历史 KV，通
 
 除最后一块外，TRT-LLM 要求块长度是 KV block size 的整数倍，常见块大小为 64，以便对齐缓存页，见 `nvidia-paged-kv`。
 
-## 块大小为什么需要权衡
-
-Decode 的小矩阵运算需要大量读内存，prefill 块则提供更大的矩阵计算。放在同一轮，可以改善 GPU 利用率，同时避免完整 8k 输入让一轮持续几百毫秒。
+选择块大小时，Decode 的小矩阵运算需要大量读内存，prefill 块则提供更大的矩阵计算。放在同一轮，可以改善 GPU 利用率，同时避免完整 8k 输入让一轮持续几百毫秒。
 
 $U$ 太大时，单个输入块仍会让生成请求等待；$U$ 太小时，输入被切得太碎，首 token 延迟会变差，内核执行太短，CUDA Graph 也更难使用，见 `nvidia-cuda-graph`。块应大到能有效执行矩阵乘法，又小到每轮时间满足 token 间隔要求。
 
@@ -65,15 +61,20 @@ $U$ 太大时，单个输入块仍会让生成请求等待；$U$ 太小时，输
 
 这不保证每条请求都更快。某条短输入原本一轮就能处理完，现在可能需要与 decode 请求分享预算，TTFT 反而变长。评估应看排队、平均和最坏延迟，不能只看原本最快的请求。
 
-## 和 prefill/decode 分离部署有什么区别
-
-分块调度仍在同一张 GPU、同一轮里混合输入处理和生成。分离部署则把 prefill 与 decode 放在不同设备池，必须跨设备传输 KV。
+和分离部署相比，分块调度仍在同一张 GPU、同一轮里混合输入处理和生成。分离部署则把 prefill 与 decode 放在不同设备池，必须跨设备传输 KV。
 
 所以一个是调度方式，一个是部署方式。引擎与 Triton 的集成见 `nvidia-trt-llm` 和 `nvidia-triton-infer`。
 
 ## 面试追问
 
-- **每块只放一个 token 行不行？** 会让 prefill 接近逐 token 的 decode，难以利用大矩阵计算，首 token 延迟很差。
-- **如何使用 CUDA Graph？** 混合批次的 token 数会变化，完整图较难捕获。常见做法是纯 decode 使用图，带输入块的批次用普通执行或分段图。
-- **为什么需要分页 KV？** 分块和动态批处理使各请求的缓存逐步增长。继续按最大长度连续预留，会重新引入浪费与碎片问题。
-- **只有长文档，没有交互式生成呢？** 分块仍可降低峰值工作集，但混合调度收益较小，可以考虑更大的 $U$ 或独立 prefill 池。
+**每块只放一个 token 行不行？**
+会让 prefill 接近逐 token 的 decode，难以利用大矩阵计算，首 token 延迟很差。
+
+**如何使用 CUDA Graph？**
+混合批次的 token 数会变化，完整图较难捕获。常见做法是纯 decode 使用图，带输入块的批次用普通执行或分段图。
+
+**为什么需要分页 KV？**
+分块和动态批处理使各请求的缓存逐步增长。继续按最大长度连续预留，会重新引入浪费与碎片问题。
+
+**只有长文档，没有交互式生成呢？**
+分块仍可降低峰值工作集，但混合调度收益较小，可以考虑更大的 $U$ 或独立 prefill 池。

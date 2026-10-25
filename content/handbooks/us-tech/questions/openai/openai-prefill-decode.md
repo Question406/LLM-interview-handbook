@@ -4,7 +4,7 @@ section: openai
 order: 11
 level: A
 title: OpenAI：prefill 和 decode 计算形态差在哪，调度为什么要拆
-quick: "prefill 一次处理整段 prompt，是算力密集的大 GEMM；decode 每步只有 1 个 query，时间花在读历史 KV 上，受带宽限制。混在一起长 prefill 会堵住 decode，所以要拆开调度。"
+quick: "prefill 一次处理整段 prompt，主要是高算术强度的大 GEMM；decode 每步处理一个 query，要反复读历史 KV，更受带宽限制。比如长 prefill 混进正在生成的请求，会拖慢后续 token，因此需要 chunked prefill 或分池调度，并把 KV 搬运算进收益。"
 tags:
   - OpenAI
   - Prefill
@@ -26,7 +26,9 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+prefill 和 decode 的资源需求不同：前者一次读整段输入、计算大矩阵，后者逐 token 生成、反复读取 KV。比如一个 8k prompt 开始 prefill，同 batch 的 decode 就可能等待，首 token 和后续 token 的延迟因此互相影响。
+
+
 
 ChatGPT 类服务的延迟拆成「第一个 token」和「后续 token」。OpenAI 推理 / 系统岗会问你为什么不能用训练时那套大 GEMM 去调度在线流量。公开系统论文里 DistServe 把 输入预填充（prefill，即处理输入并建立缓存） 和 逐 token 生成（decode） 拆到不同机器；我按计算形态答，不编造内部集群拓扑。KV 正确性见 `openai-kv-cache-impl`。
 
@@ -46,10 +48,14 @@ Prefill 同一 $t$ 则是完整 $B=1$ 的大矩阵乘，算术强度高一个数
 
 静态大 batch 里塞进一个 8k prefill，同 batch 的 decode 请求要等这次重计算做完，TTFT 和 TPOT 互相拖死。这就是拆的原因：
 
-- **批大小。** Decode 靠大 batch 摊 HBM；prefill 太大 batch 会爆激活，反而要切 chunk。
-- **并行。** Prefill 吃张量并行的大 GEMM；decode 更在意 replica 和 KV 布局，TP 切太碎会让每步同步盖过计算。
-- **硬件。** 高算力卡跑 prefill，高带宽 / 便宜卡跑 decode，中间传 KV。DistServe 的点是 goodput：满足 TTFT 和 TPOT SLO 的吞吐，不是裸 tokens/s。
-- **chunked prefill** 是折中：把长 输入提示（prompt） 切成小块和 decode 交替，减轻队头阻塞，但仍在同一套执行器里抢算力。彻底拆是把 KV 作为跨池产物交出去。
+**批大小。**
+Decode 靠大 batch 摊 HBM；prefill 太大 batch 会爆激活，反而要切 chunk。
+**并行。**
+Prefill 吃张量并行的大 GEMM；decode 更在意 replica 和 KV 布局，TP 切太碎会让每步同步盖过计算。
+**硬件。**
+高算力卡跑 prefill，高带宽 / 便宜卡跑 decode，中间传 KV。DistServe 的点是 goodput：满足 TTFT 和 TPOT SLO 的吞吐，不是裸 tokens/s。
+**chunked prefill**
+是折中：把长 输入提示（prompt） 切成小块和 decode 交替，减轻队头阻塞，但仍在同一套执行器里抢算力。彻底拆是把 KV 作为跨池产物交出去。
 
 投机解码的验证步又是一小段 prefill，见 `openai-speculative-decoding`。调度器要把「验证 prefill」和「用户 prompt prefill」当同一类计算，不要塞进 decode worker 的带宽假设里。
 
@@ -59,11 +65,15 @@ KV 从 prefill 池交到 decode 池有拷贝或 RDMA 成本。上下文越长，
 
 量化 KV 同理：它降 decode 读带宽，对 prefill GEMM 几乎没帮助，别拿来当 TTFT 的主杠杆。
 
-拆的是资源画像，不是两套权重。权重可以复制；KV 必须跟着 decode 走，迁移 KV 的代价要算进 SLO。
+分池时权重可以复制，KV 则必须交到 decode 池；因此资源匹配的收益要扣掉 KV 迁移成本，并一起算进 SLO。
 
 ## 追问
 
-- **训练为什么不拆？** 训练每步都是满 $T$ 的正反向，没有「一个 token 的自回归循环」。
-- **第一 token 慢一定是 prefill？** 也可能是排队、tokenizer、或者 batch 里被别的长 prompt 堵住。先看队列再看 kernel。
-- **paged KV 能代替拆分吗？** 不能。paging 解决显存碎片，见 `openai-continuous-batching`。拆分解决两种 kernel 的资源画像。
-- **MoE decode 呢？** 每步还要 all-to-all 专家，decode 更不像 dense GEMM，更不能和 prefill 混排。
+**训练为什么不拆？**
+训练每步都是满 $T$ 的正反向，没有「一个 token 的自回归循环」。
+**第一 token 慢一定是 prefill？**
+也可能是排队、tokenizer、或者 batch 里被别的长 prompt 堵住。先看队列再看 kernel。
+**paged KV 能代替拆分吗？**
+不能。paging 解决显存碎片，见 `openai-continuous-batching`。拆分解决两种 kernel 的资源画像。
+**MoE decode 呢？**
+每步还要 all-to-all 专家，decode 更不像 dense GEMM，更不能和 prefill 混排。

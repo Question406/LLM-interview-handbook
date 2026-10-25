@@ -4,7 +4,7 @@ section: openai
 order: 18
 level: S
 title: OpenAI：Kaplan 和 Chinchilla 差在哪，compute-optimal 坐标别背错
-quick: "Compute-optimal 是等 FLOPs 下 loss 最低的 $(N,D)$。Kaplan 把算力多分给参数（$N\\propto C^{0.73}$）；Chinchilla 让两者同速增长（$N,D\\propto C^{0.5}$），约 20 token/参数。"
+quick: "Compute-optimal 是固定训练 FLOPs 下使 loss 最低的 $(N,D)$ 分配：Kaplan 得到 $N\\propto C^{0.73}$，更多预算给参数；Chinchilla 得到 $N,D\\propto C^{0.5}$，参数与数据一起增加，约 20 token/参数。比如比较模型大小时，要先确认图上是否固定了 FLOPs，不能把同 token 数的曲线当成同算力。"
 tags:
   - OpenAI
   - Scaling
@@ -29,9 +29,11 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+Kaplan 和 Chinchilla 的主要差别，是固定训练算力后，参数量与数据量怎么分配。Kaplan 倾向更大模型、相对更少数据，Chinchilla 则让两者一起增长。比如 Chinchilla 的 70B 配 1.4T token，得到约 20 token/参数；这个比对应训练算力最优附近的配置。
 
-Kaplan et al. 是 OpenAI 自己的 scaling 论文；Hoffmann et al. 的 Chinchilla 是 DeepMind 后来修正了「大模型、少数据」的最优分配结论。LLM 研究岗几乎必问。错法不是记不住公式，是把两张图的坐标轴混为一谈：一张是固定 token 数看模型大小，一张是固定 FLOPs 看怎么分 $N$ 和 $D$。GPT-4 报告继续讲 scale，但不公开拟合系数，我会用 Kaplan / Chinchilla 的公开拟合答，不编内部曲线。
+
+
+Kaplan et al. 是 OpenAI 自己的 scaling 论文；Hoffmann et al. 的 Chinchilla 是 DeepMind 后来修正了「大模型、少数据」的最优分配结论。LLM 研究岗几乎必问。比较结论前要先看坐标轴：一张是固定 token 数看模型大小，一张是固定 FLOPs 看怎么分 $N$ 和 $D$。GPT-4 报告继续讲 scale，但不公开拟合系数，我会用 Kaplan / Chinchilla 的公开拟合答，不编内部曲线。
 
 Transformer 的训练 FLOPs 近似
 
@@ -73,7 +75,11 @@ $$
 
 ## 追问
 
-- **为什么是 $6ND$ 不是 $2ND$？** $2ND$ 只算前向。训练还有反向，激活那条路上 matmul 大约再倍一倍。推理算力不是 $6ND$。
-- **现在都 overtrain，Chinchilla 废了吗？** 没废。它回答「这块训练预算怎么分」。产品目标换成推理成本，最优会移到更小 $N$、更大 $D$。
-- **Kaplan 说数据不重要？** 没有。他们有 $L(D)$，只是 compute-optimal 把指数分给 $N$ 更多。
-- **GPT-4 的曲线能背吗？** 报告只有定性。白板用 Kaplan / Chinchilla 的公开拟合，声明假设。
+**为什么是 $6ND$ 不是 $2ND$？**
+$2ND$ 只算前向。训练还有反向，激活那条路上 matmul 大约再倍一倍。推理算力不是 $6ND$。
+**现在都 overtrain，Chinchilla 废了吗？**
+没废。它回答「这块训练预算怎么分」。产品目标换成推理成本，最优会移到更小 $N$、更大 $D$。
+**Kaplan 说数据不重要？**
+没有。他们有 $L(D)$，只是 compute-optimal 把指数分给 $N$ 更多。
+**GPT-4 的曲线能背吗？**
+报告只有定性。白板用 Kaplan / Chinchilla 的公开拟合，声明假设。

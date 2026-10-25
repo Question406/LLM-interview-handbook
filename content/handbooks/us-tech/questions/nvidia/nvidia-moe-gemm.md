@@ -4,7 +4,7 @@ section: nvidia
 order: 19
 level: S
 title: NVIDIA：MoE grouped GEMM 和专家并行 kernel
-quick: "top-$k$ 后每个 expert 的 $M_i$ 又小又不齐，循环 $E$ 次 GEMM 浪费 launch 和 Tensor Core。先按 expert permute，再用一次 grouped GEMM 算完；EP 则先 all-to-all 再本地 grouped。"
+quick: "我会先按 expert 聚齐 token，再用 grouped GEMM 一次提交一组专家计算，减少逐 expert launch 的开销。每个 expert 的 $M_i$ 很小又不齐，Tensor Core 仍可能利用不足；启用 EP 后，还要先 all-to-all 分发 token，再本地计算并送回。"
 tags:
   - NVIDIA
   - MoE
@@ -29,15 +29,13 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+MoE 的专家计算可以先按 expert 重排 token，再用 grouped GEMM 一次提交多个专家的矩阵乘法，避免在 host 上逐个启动。Megatron-Core / NeMo / Transformer Engine 的训练路径，以及 TensorRT-LLM 服务 Mixtral / DeepSeek 一类模型时，都要处理这个问题。专家放不进单卡时，还需要 EP 搬运 token；dense 的 3D 并行见 `nvidia-trillion-train`。
 
-NVIDIA 训 MoE（Megatron-Core / NeMo / Transformer Engine）或用 TensorRT-LLM 服务 Mixtral / DeepSeek 一类，会问「专家怎么变成一次核」。万亿 dense 的 3D 并行见 `nvidia-trillion-train`；本题是第四轴 EP + grouped GEMM。评委要听 permute、一次 launch、all-to-all，不接受「MoE 就是稀疏 MLP」。
-
-## 为什么 naive GEMM 很慢
+## 为什么要按专家重排并成组计算
 
 一层 MoE：router 给出 $[N, E]$ 的分数，每个 token 取 top-$k$（常 $k=1$ 或 $2$）。Expert $i$ 拿到 $M_i$ 行，两段 MLP（或 SwiGLU 的两三次 GEMM）。$N$ 是这步的 token 数（训练里 $B\cdot T$，推理 逐 token 生成（decode） 里接近瞬时 batch）。
 
-常见误区是：对每个 expert 各 launch 一次 GEMM。问题有三：
+如果每个 expert 单独 launch 一次 GEMM，会遇到这些开销：
 
 1. **Launch。** $E=8$ 已经烦，$E=128$ 加上 decode 的短步，host 间隙能比核本身长。CUDA Graph 也难录：$M_i$ 每步在变，见 `nvidia-cuda-graph`。
 2. **Tile。** Tensor Core 喜欢 $M$ 对齐到 64/128。$M_i=7$ 的 expert 走边角，占用和吞吐一起掉。这是 decode 路径上 MoE 特有的瘦 $M$，不是泛泛 occupancy 题。
@@ -54,15 +52,15 @@ h = silu(grouped_gemm(x_perm, W_gate, group_sizes)) * grouped_gemm(
 z = unpermute(grouped_gemm(h, W_down, group_sizes))
 ```
 
-Permute / unpermute 本身也是带宽核，Megatron 有 router / permute fusion 把 top-k 和辅助损失收短。面试顺序：先 grouped，再融合。
+Permute / unpermute 本身也要消耗内存带宽。Megatron 用 router / permute fusion 合并 top-k 和辅助损失等步骤，所以除了 grouped GEMM，还要检查重排和路由的开销。
 
-## 专家并行：先搬家，再 grouped
+## 专家分到多卡后怎么通信
 
 $E$ 大于单卡能放的 expert 数时，每张卡只驻留 $E/\mathrm{EP}$ 个 expert。前向：router 之后 all-to-all（或 all-gather）把 token 送到对应卡，本地 grouped GEMM，再 all-to-all 送回。通信对象是 token 激活 $[M_{\mathrm{local}}, D]$，不是 TP 那种 $[B, T, D]$ 的层内 all-reduce，见 `nvidia-tensor-parallel`。
 
 瓶颈经常不在 GEMM：动态 all-to-all 的形状每步变，热点 expert 让某张卡的 $M$ 过大、别的卡空转。Aux loss、expert bias、capacity + drop，用于缓解负载不均。Nsight 上看 NCCL 是否和 grouped 重叠，以及各 rank 的 $M_i$ 直方图，见 `nvidia-nccl-allreduce`。
 
-和 TP 叠：每个 expert 内部仍可列 / 行切，通信更碎。Megatron 文档会建议 MoE 路径开序列并行，否则 LN 激活按 TP 复制。并行折叠（attention 一套 TP / CP，MoE 一套 EP）是更新的故事，面试提一句「两套网格可以不对齐」，细节没跑过不装。长上下文那一维仍是 CP，见 `nvidia-megatron-cp`。
+和 TP 叠：每个 expert 内部仍可列 / 行切，通信更碎。Megatron 文档会建议 MoE 路径开序列并行，否则 LN 激活按 TP 复制。并行折叠允许 attention 使用一套 TP / CP 网格、MoE 使用一套 EP 网格，两套网格可以不对齐；具体实现需要结合实际运行经验说明。长上下文那一维仍是 CP，见 `nvidia-megatron-cp`。
 
 推理：decode 每步每条序列只新增 $k$ 个 token-expert 对，$M_i$ 更碎。In-flight 把瞬时 $B$ 做大，才能给 grouped 凑出像样的 $M$，见 `nvidia-inflight-batch`。TRT-LLM 同样走 MoE plugin / grouped，而不是 Python 循环 expert，见 `nvidia-trt-llm`。
 

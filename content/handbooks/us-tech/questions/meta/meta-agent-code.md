@@ -4,10 +4,7 @@ section: meta
 order: 30
 level: A
 title: Meta：代码 agent——仓库索引、补丁评测，和 AI coding 面试差在哪
-quick: >-
-  面试轮 `meta-ai-coding` 考你怎么指挥现成助手把测试跑绿。本题考系统设计：索引要检查权限并及时更新，agent
-  循环是读 / 搜 / 补丁 / 沙箱测试，评测用 fail-to-pass 而不是 HumanEval。公开锚点是 Code Llama 和
-  SWE-bench，不要编内部代码助手架构。
+quick: "代码 agent 系统要把权限与 commit 一起纳入仓库索引，再由宿主控制读文件、搜索、打补丁和沙箱测试的循环。验收用 issue 补丁的 fail-to-pass 与 pass-to-pass，加上误改、权限和索引新鲜度；AI coding 面试则是在评候选人如何使用现成助手。"
 tags:
   - Meta
   - Code agent
@@ -32,38 +29,34 @@ sources:
     type: secondary
 ---
 
-和 `meta-ai-coding` 差在评什么人。那一轮是 **60 分钟、多文件仓库、编辑器里带 LLM**：考拆任务、读 diff、跑测试。本题是 **GenAI 系统设计**：你要建的是那个助手后面的系统。白板骨架和 `design-code-assistant` 同源，但 Meta 岗会把模型换成 Llama / Code Llama，评测口径钉在补丁和 CI，而不是补全接受率。不是某次现场逐字题。
+代码 agent 的核心是按权限找到当前版本的代码，提出补丁，再在可控环境中验证。它与 `meta-ai-coding` 的区别在于：那一轮 60 分钟、多文件仓库、编辑器带 LLM，考人怎样拆任务、审 diff、跑测试；这里要设计助手背后的索引、工具与执行系统。这道系统题来自公开材料，并非逐字面经，整体架构见 `design-code-assistant`。
 
-## 索引：符号比 embedding 先干活
+仓库索引可以按路径、语法树符号、文本块和可选 embedding 分层。标识符精确拼写适合 BM25，自然语言 issue 用 dense 补充。每个 commit 增量更新改动路径，删除文件立即退索引，避免引用不存在的 API；embedding 升级双写，新旧向量不能混排。整仓塞进 $128\mathrm{k}$ 仍有权限、新鲜度、p95 和中间信息丢失问题，默认采用检索加定点 `read_file`。
 
-仓库不是一篇文档。分层：路径 + 树解析符号（函数 / 类）+ 文本块 + 可选 embedding。标识符拼写 BM25 很强；dense 补自然语言 issue。增量按 commit：改了的路径重切，删了的文件立刻从索引消失，否则 agent 会引用幽灵 API。
+权限键为 `repo_id + acl + commit`，先 ACL 过滤再 ANN，只搜用户能 clone 的路径。无权限时不要通过“检索为空”与“有结果但拒绝”的差别泄露仓库存在性。进上下文前扫描 `.env`、私钥和高熵串，私有代码默认不进权重，客户仓也不直接抽成评测题。索引滞后单独报 SLA，包括删除后多少秒退出补全和 agent 检索。
 
-权限键是 `repo_id + acl + commit`。用户只能检索他能 clone 的路径。跨私有仓的「语义相似」是泄漏。无权限时不要用「检索为空 vs 有结果但拒绝」区分仓库在不在。私有代码默认不进权重；评测集别从客户仓抽。密钥扫描在进上下文前做：`.env`、私钥、高熵串直接丢，不要靠模型「注意别泄漏」。
+## 工具循环与补丁验证
 
-整仓塞进 $128\mathrm{k}$ 不是答案：权限、新鲜、p95、中间丢失。索引 + 定点 `read_file` 更像工程师。Embedding 升级要双写，新旧向量不能混排。
+宿主控制读文件、grep / 符号搜索、打补丁、跑测试的循环，模型只提交结构化调用，调用 schema 仍由宿主检查，见 `design-tool-prod`、`design-agent-harness`。补全需要几十到一百多毫秒延迟，仓库 agent 则以任务完成和误改为重点，可花秒到分钟，不能让两者随意共用一个 70B 服务池。补全更需要前缀缓存，agent 更需要工具与沙箱。
 
-检索查询要先按 ACL 过滤再 ANN，不要先召回再丢弃：向量碰撞不能把邻仓文件打进上下文。存在性泄漏：无权限时检索为空和「有结果但拒绝」不要可区分。索引滞后单独报 SLA：文件删除后多少秒从补全和 agent 检索里消失。
+沙箱关闭网络或使用白名单，以只读镜像配可写工作树，限制 CPU、内存和短 TTL。写操作先给 diff，再应用；隐藏测试和只读测试树防止改测试、删断言、把 flaky 测试标 skip。超时必须清理进程，避免让 decode 槽位一直等工具。
 
-## Agent 循环和沙箱
+Code Llama 是 infilling、长窗、Python 特化的专用代码基座；Llama 3 Herd 在训练 mix 中包含代码并报 HumanEval / MBPP。但函数补全分数不能证明能修多文件 issue，工具调用的早期自监督背景见 `meta-toolformer`。
 
-产品不是行内补全。补全 SLO 是几十到一百多毫秒，见 `design-code-assistant`；仓库 agent 的 SLO 是任务完成和误改，实际耗时可以秒到分钟。工具数量应少，行为应明确可靠：读文件、搜（grep / 符号）、打补丁、跑测试。循环写在宿主，模型只出结构化调用，见 `design-tool-prod`、`design-agent-harness`。
+SWE-bench 给 issue 与仓库快照，提交补丁后用作者测试判定：fail-to-pass 必须通过，pass-to-pass 不能回归。Resolved 率要同时注明 Full / Lite / Verified 子集、是否看过测试、gold 补丁是否泄露、步数和工具集。Verified 是人工筛选题，不能与 Full 混报；公开 PR、解法博客进入预训练的风险见 `meta-llama-eval`。
 
-沙箱：无网或白名单、只读镜像加可写工作树、CPU / 内存配额、短 TTL。写操作先出 diff 再应用。失败模式：改测试来「通过」、删断言、把 flake 标 skip。隐藏测试和只读测试树防这个。超时要能杀进程，不要让 逐 token 生成（decode） 槽位空等。
-
-Code Llama 公开故事是专用代码基座（填充 infilling、长窗、Python 特化），Herd 把代码当 mix 的一档并报 HumanEval / MBPP。Agent 题不要停在 HumanEval：那是函数补全，不是修 issue。工具调用的自监督前史见 `meta-toolformer`；生产中的调用 schema 仍要由宿主检查。
-
-## 评测：fail-to-pass，不要口头 resolved
-
-SWE-bench：给定 issue 文本和仓库快照，系统交补丁，跑作者测试。**fail-to-pass 必须过，pass-to-pass 不能回归。** 报 resolved 率要写：子集（Full / Lite / Verified）、是否泄漏 gold 补丁、是否看见测试文件、步数和工具集。Verified 是人滤过的题面，不能和 Full 混报。污染：公开 PR 和解法博客会进预训练，见 `meta-llama-eval`。
-
-内部产品集应是「内部 issue → 补丁 → CI」，口径仍要 fail-to-pass。人评看 diff 是否最小、是否改测试作弊。指标再加：步数、误改文件数、沙箱逃逸（零容忍）、索引滞后 SLA（删除后多少秒从检索消失）。
-
-和 AI coding 面试对照表：面试给你失败测试和现成 runner，考的是人；agent 系统要自己建 runner、镜像、超时和权限。面试里模型是可选助手；这里模型是循环里的策略网络，宿主必须不信任它。IDE 补全和仓库 agent 不要共用一个 70B 池：补全要前缀缓存和低延迟；agent 要工具循环和沙箱，见 `design-code-assistant`。
+内部产品同样按“issue → 补丁 → CI”验收，再看 diff 是否最小、是否改测试作弊、步数、误改文件数、沙箱逃逸（零容忍）和索引删除 SLA。HumanEval 高分仍可能在环境、权限、多文件修改中失败。
 
 ## 追问
 
-- **为什么不把 monorepo 塞长上下文？** 难以保证权限隔离和内容及时更新，p95 也做不到。索引 + 定点读是默认。
-- **HumanEval 高就能发代码助手？** 不能。那是单函数合成；产品失败在多文件、环境、权限。
-- **和 AI-enabled coding 轮重复吗？** 不。那轮评候选人怎么用助手；本题评你怎么设计助手。
-- **测试可见怎么办？** 产品上可以跑测；评测要声明是否可见。隐藏测试防改测试作弊。
-- **Code Llama 还是 Llama 3？** 专用代码基座对 infilling 和仓库续写仍有用；通用 70B/405B 更强的是指令和工具。Agent 里两者可以分工，不要说成一个 checkpoint 包打天下。
+**为什么不用长上下文装整个 monorepo？**
+默认很难同时满足权限、新鲜度与 p95，检索后定点读取更可控。
+
+**测试可见怎么办？**
+产品可正常跑测试，评测必须声明可见性，并用隐藏测试防止作弊。
+
+**Code Llama 和 Llama 3 怎么选？**
+专用基座可负责 infilling、仓库续写，通用 70B/405B 可负责指令和工具，按任务分工验证，不假定一个检查点包办全部。
+
+**与 AI-enabled coding 轮重复吗？**
+不重复。那轮评人怎样使用现成 runner，这里要自己设计 runner、镜像、权限和超时，并校验模型动作。

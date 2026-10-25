@@ -4,7 +4,7 @@ section: coding
 order: 3
 level: A
 title: 白板：AdamW 一步更新，m/v、bias correction、decoupled decay
-quick: "AdamW 先更新并纠偏 $m,v$ 再走自适应步；权重衰减直接乘在参数上，不加进梯度，否则就成了被 $\\sqrt{v}$ 缩放的耦合 L2。"
+quick: "AdamW 用梯度更新并纠偏 $m,v$，再按自适应步长更新参数，权重衰减单独作用于更新前的参数。比如梯度为零时仍会按比例衰减；把 decay 加进梯度会让它进入矩估计、被 $\\sqrt{v}$ 缩放，得到耦合 L2。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,29 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html
     type: primary
 ---
+
+## 题目描述
+
+实现一次 AdamW 参数更新，返回更新后的参数和优化器状态。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`adamw_step(p,g,m,v,t,lr=0.001,b1=0.9,b2=0.999,eps=1e-8,wd=0.01)` 返回 `(new_p,new_m,new_v)`，不修改输入。p、g、m、v 是同形浮点张量，依次为当前参数、梯度、此前一阶矩、此前二阶矩；t 是从 1 开始计数的本次更新序号。
+
+采用标准 AdamW 定义：一阶矩按 b1 平滑梯度，二阶矩按 b2 平滑梯度平方，使用第 t 步的偏差校正；参数更新包含自适应梯度项及独立于梯度的 `lr*wd*p` 权重衰减。分母为校正二阶矩的平方根加 eps。b1、b2 在 `[0,1)`，eps 为正，lr、wd 非负。
+
+### 示例
+
+```text
+p=[1], g=[0], m=[0], v=[0], t=1, lr=0.1, wd=0.2
+返回 new_p=[0.98], new_m=[0], new_v=[0]。
+p=[1], g=[2], m=v=[0], t=1, lr=0.1, wd=0
+返回 new_p 约为 [0.9], new_m=[0.2], new_v=[0.004]。
+```
+
+## 解题思路与参考答案
+
+我会先更新一阶、二阶矩并做 bias correction，再把解耦衰减和自适应更新分别作用到参数。最直观的检查是梯度为零：参数仍应按学习率与 weight decay 的乘积衰减，示例从 1 变成 0.98。
 
 ## 完整编程练习（手册重构版）
 
@@ -73,6 +96,16 @@ def adamw_step(p, g, m, v, t, lr=1e-3, b1=0.9, b2=0.999, eps=1e-8, wd=0.01):
     p = p - lr * m_hat / (v_hat.sqrt() + eps)
     return p, m, v
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(new_params, reference)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -157,12 +190,15 @@ $$
 
 ## 耦合 L2 错在哪
 
-Adam 加 L2 是把正则写进损失：$g \leftarrow g+\lambda\theta$，然后整体除以 $\sqrt{v}$。$|g|$ 大的坐标 $v$ 也大，衰减项被自适应分母缩小，正则强度就和梯度尺度绑在了一起。AdamW 把 $\lambda\theta$ 留在参数空间里单独作用，论文标题里的 decoupled 指的就是这一点。不要回答成「AdamW 就是 Adam 换了个名字」。
+Adam 加 L2 是把正则写进损失：$g \leftarrow g+\lambda\theta$，然后整体除以 $\sqrt{v}$。$|g|$ 大的坐标 $v$ 也大，衰减项被自适应分母缩小，正则强度就和梯度尺度绑在了一起。AdamW 把 $\lambda\theta$ 留在参数空间里单独作用，论文标题里的 decoupled 指的就是这一点。因此解释 AdamW 时，需要指出衰减没有进入自适应分母。
 
 混合精度下的顺序是：先 `unscale_`，再梯度裁剪，最后 `optimizer.step()`。梯度裁剪见 `coding-grad-clip`。$t$ 是 optimizer step 的计数，用 gradient accumulation 时，累积多个 micro-step 才加一次 $t$。
 
 ## 追问
 
-- **$\beta_1=0.9$ 和 $\beta_2=0.999$ 在纠偏上有什么不同？** $1-\beta_2^t$ 要几千步才接近 1，$v$ 的纠偏持续得比 $m$ 久得多。漏掉 $\beta_2$ 的纠偏，$v$ 被低估，分母偏小，前期步长会偏大；漏掉 $\beta_1$ 的纠偏则让前期步长偏小。
-- **把 weight decay 加进 $g$ 会怎样？** 衰减被 $1/\sqrt{v}$ 缩放，实际强度和 $\eta,\lambda$ 的直觉对不上，梯度大的坐标几乎不衰减。
-- **和 SGD + L2 比呢？** SGD 加 L2 的更新本来就是 $\theta \leftarrow (1-\eta\lambda)\theta-\eta g$，衰减已经和梯度分开。是 Adam 的自适应分母让 L2 变成了耦合的。
+**$\beta_1=0.9$ 和 $\beta_2=0.999$ 在纠偏上有什么不同？**
+$1-\beta_2^t$ 要几千步才接近 1，$v$ 的纠偏持续得比 $m$ 久得多。漏掉 $\beta_2$ 的纠偏，$v$ 被低估，分母偏小，前期步长会偏大；漏掉 $\beta_1$ 的纠偏则让前期步长偏小。
+**把 weight decay 加进 $g$ 会怎样？**
+衰减被 $1/\sqrt{v}$ 缩放，实际强度和 $\eta,\lambda$ 的直觉对不上，梯度大的坐标几乎不衰减。
+**和 SGD + L2 比呢？**
+SGD 加 L2 的更新本来就是 $\theta \leftarrow (1-\eta\lambda)\theta-\eta g$，衰减已经和梯度分开。是 Adam 的自适应分母让 L2 变成了耦合的。

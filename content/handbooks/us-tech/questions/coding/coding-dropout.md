@@ -4,8 +4,7 @@ section: coding
 order: 9
 level: S
 title: 白板：dropout mask 训练/推理缩放（inverted dropout）
-quick: >-
-  训练时每个元素以概率 $p$ 置零，留下的乘 $1/(1-p)$，期望不变；推理原样返回，不再乘 $1-p$。PyTorch 默认就是这种 inverted dropout。
+quick: "训练时以概率 $p$ 丢掉元素，保留下来的除以 $1-p$，让输出期望保持为输入。推理直接返回原值；attention dropout 放在 softmax 权重上，不放在 logits 上。"
 tags:
   - 完整编程练习
   - Coding
@@ -24,6 +23,32 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.dropout.html
     type: primary
 ---
+
+## 题目描述
+
+实现训练与推理行为不同的 dropout，以及应用在注意力权重上的 dropout。训练时每个元素独立随机保留或置零，并保持期望值不变；推理时不随机丢弃元素。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `dropout(x, p, training, generator=None) -> Tensor`：inverted dropout。训练时每个元素以概率 $1-p$ 保留，保留下来的除以 $1-p$；推理（`training=False`）或 `p == 0` 时原样返回 `x`。
+- 传入同样种子的 `torch.Generator`，结果可复现。
+- `attn_with_dropout(scores, p, training, generator=None)`：对已经加过 mask 的注意力 logits `[B, H, T, S]` 做 softmax，再对权重做 dropout。
+- 要求 `0 <= p < 1` 且有限。输入是浮点张量，输出形状与输入相同；attention softmax 沿最后一维计算，合法输入保证每个 query 至少有一个可见 key。
+
+### 示例
+
+```text
+dropout([1, 2, 3], p=0.5, training=False) -> [1, 2, 3]
+dropout([1, 2, 3], p=0, training=True) -> [1, 2, 3]
+训练态 p=0.5、输入全为 1 时，每个输出只能是 0 或 2。
+attn_with_dropout(scores=[[[[0, 0]]]], p=0, training=True) -> [[[[0.5, 0.5]]]]
+```
+
+## 解题思路与参考答案
+
+inverted dropout 在训练时采样 mask，并把保留的元素除以 $1-p$；推理时原样返回。保留概率是 $1-p$，因此每个元素的期望为 $(1-p)\cdot x/(1-p) = x$，两种模式的尺度就对齐了。
 
 ## 完整编程练习（手册重构版）
 
@@ -45,8 +70,6 @@ dropout(x, 1.0, training=False)       -> ValueError
 ```
 
 ### 解题思路与正确性
-
-保留概率是 $1-p$，保留的元素除以 $1-p$，所以每个元素的期望是 $(1-p)\cdot x/(1-p) = x$，和推理时的原样输出一致。
 
 attention 的 dropout 作用在 softmax 之后的权重上。被丢掉的权重直接变成 0，剩下的放大，所以 dropout 之后每一行**不再**和为 1，这是正常的：期望意义上每行仍然和为 1。
 
@@ -76,6 +99,16 @@ def attn_with_dropout(scores, p, training, generator=None):
     weights = torch.softmax(scores, dim=-1)
     return dropout(weights, p, training, generator)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.equal(first, second)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -157,6 +190,9 @@ $p=0$ 等于关掉 dropout。$p=1$ 时训练输出全是 0，$1/(1-p)$ 也没有
 
 ## 追问
 
-- **为什么推理时不乘 $1-p$？** inverted dropout 在训练时已经保持了激活的期望。推理再乘一次，激活会整体缩小，和训练出来的 checkpoint 不匹配。
-- **mask 要不要传梯度？** 离散的 mask 当作常数。反向传播就是把上游梯度乘上同一份 `mask / (1 - p)`，不需要对 Bernoulli 采样求导。
-- **和 DropConnect 有什么区别？** Dropout 丢的是激活，DropConnect 丢的是权重。白板默认写逐元素丢激活。Transformer 里 FFN 和 attention 的 dropout 各有各的 $p$。
+**为什么推理时不乘 $1-p$？**
+inverted dropout 在训练时已经保持了激活的期望。推理再乘一次，激活会整体缩小，和训练出来的 checkpoint 不匹配。
+**mask 要不要传梯度？**
+离散的 mask 当作常数。反向传播就是把上游梯度乘上同一份 `mask / (1 - p)`，不需要对 Bernoulli 采样求导。
+**和 DropConnect 有什么区别？**
+Dropout 丢的是激活，DropConnect 丢的是权重。白板默认写逐元素丢激活。Transformer 里 FFN 和 attention 的 dropout 各有各的 $p$。

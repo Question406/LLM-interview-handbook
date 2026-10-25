@@ -4,7 +4,7 @@ section: systems
 order: 6
 level: S
 title: 系统：PagedAttention 块表、复制、前缀共享
-quick: "KV 切成固定 token 数的块，逻辑序列经 block table 映射到不连续物理页。分配按需、结束即回收，几乎消掉外部碎片。 相同前缀用 copy-on-write 共享物理块；写时再拆页。注意力公式不变，改的是寻址。"
+quick: "PagedAttention 把 KV 分成固定 token 数的块，用 block table 将连续的逻辑序列映射到可分散的物理页。按需分配和引用计数减少浪费，共享前缀在写入分叉时做 copy-on-write；注意力公式保持不变。"
 tags:
   - vLLM
   - NVIDIA
@@ -29,49 +29,42 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+vLLM 的 SOSP'23 论文中，PagedAttention 改的是 KV 的分配和寻址：把连续的逻辑序列映射到可以不连续的物理页，注意力计算本身保持不变。这样请求可以按实际长度增长，多条序列也能共享同一段前缀。
 
-vLLM 的 SOSP'23 论文、Hugging Face TGI、NVIDIA TensorRT-LLM 都把 KV 做成分页。NVIDIA 岗爱问 kernel 怎么按 block table gather（实现细节见 `nvidia-paged-kv`）；OpenAI serving 爱问为什么 continuous batching 离开分页会 OOM，以及 KV 在代码里怎么长（见 `openai-kv-cache-impl`）。先把「像虚拟内存」讲清楚，再讲复制和前缀共享，别说成改了注意力公式。
+传统实现给每条请求预留 `max_len` 的连续 KV，实际回答短就浪费预留空间，空闲区零散又可能凑不出一整段。PagedAttention 把 KV 切成固定 token 数的 block，论文常用 16，每条序列用 block table 记录逻辑块号到物理块号。kernel 在 GPU 上查表、gather K/V，再算 $QK^{\top}$ 和加权 $V$，表本身远小于 KV。
 
-## 块表：逻辑连续、物理可散
+生成写满一块再分配新页，请求结束释放页引用。只有缓存和其他请求都不再持有、引用数降到 0，页才回 free list。完整生命周期见 [[kv-prefix-paged-cow]]。这样 `sys-cont-batch` 才能在请求结束后补入新请求；单纯调高 `max_num_seqs`，解决不了连续预留导致的碎片和 OOM。
 
-传统为每条请求预留 `max_len` 连续 KV：内部浪费（实际长度远小于预留）和外部碎片（空闲区凑不出一整段）。PagedAttention 把 cache 切成固定 token 数的 block（论文里常用 16），每条序列一份 **block table**：逻辑块号到物理块号。Attention kernel 按表去 gather K/V，再算 $QK^{\top}$ 和加权 $V$。数学不变，变的是寻址。
+## 共享与代价
 
-按需分配：逐 token 生成（decode） 每写满一块再要新页。请求结束只释放该请求的页引用；只有缓存及其他请求也不再持有、引用数降到0，页才回free list。完整生命周期与COW实现见 [[kv-prefix-paged-cow]]。这才让 `sys-cont-batch` 的「结束就补位」在显存上可行。没有分页，调度器有策略也没地方放新 KV，只能按 max length 预留，并发被碎片打死。
+例如页大小 16 token、上下文 2k、实际只生成 200，连续预留可能浪费约 1800 token 的槽；分页主要浪费最后一页没填满的几格。八路并行采样时，公共的 2k 前缀可以只占一份物理页，多条 block table 指向它，引用计数增加。分叉后若要写共享页，先 copy-on-write 复制成私有页再写，避免改坏其他序列。
 
-页大小是权衡：太小，表项和间接访问多，kernel 难向量化；太大，块内内部碎片回来，接近连续预留。实现里常见十几到几十 token 一页。TGI 直接用了 vLLM 的 CUDA kernel；TensorRT-LLM 自己做 paged KV，语义同一套。
+并行采样、beam、多个用户共用 system prompt 都适合这种共享。跨请求该命中什么前缀，由 `sys-prefix-cache` 的缓存策略决定，CoW 则是底层的页共享机制。前缀不共享时也可以复制，但会多占几千 token 的物理空间。
 
-一般不把 KV 换出到 CPU 当「缺页」。PCIe 太慢，decode 走带宽墙。分配失败通常是抢占：把某条请求的 KV 踢回 CPU 或直接暂停，不是去盘上取。类比操作系统到映射和碎片为止，别讲成真的 swap。
+页太小会增加表项和间接访问，妨碍 kernel 向量化与 L2 命中；页太大又增加块内碎片。常见大小是十几到几十 token，还要配合 kernel tile，改页大小需同步改 attention kernel。块表驻留 GPU，逐步往返 CPU 查表会增加延迟。
 
-## 复制和前缀共享
+论文报告 naive 系统 KV 浪费可达百分之六十到八十，分页后接近只剩几个百分点的块内碎片，相对 Orca / FasterTransformer 吞吐常见两到四倍，长序列更明显。收益主要来自同样 HBM 能容纳更多并发，decode 仍受内存带宽限制。TGI 使用 vLLM 的 CUDA kernel，TensorRT-LLM 自己实现 paged KV，使用同类寻址方式。
 
-并行采样、beam、同一 system 输入提示（prompt） 的多用户，逻辑前缀相同。block table 可以让多条序列指向同一批物理块，引用计数加一。这是共享，不是把 KV 拷一份。新 token 要写时 **copy-on-write**：先把该块复制成私有页再写，避免改到别人的前缀。
-
-论文里的数字：naive 系统 KV 浪费可到百分之六十到八十；分页把浪费压到接近块内碎片那几个百分点，吞吐相对 Orca / FasterTransformer 常见两到四倍，长序列更明显。收益来自更高并发（同样 HBM 能多塞请求），不是单步 softmax 更快。Decode 仍是 memory-bound。
-
-举个形状：16 token 一页、上下文 2k、实际生成 200。连续预留浪费约 1800 token 的槽；分页只多浪费最后一页里未写满的那几格。八路并行采样共享同一输入提示 前缀时，那 2k 只占一份物理页，直到各路开始写自己的 token 才 CoW 拆页。
-
-Kernel 侧不要忽略 gather 成本：block table 在 GPU 上，按页间接访问 K/V。页太碎，L2 命中差；页太大，内部碎片回来。虚拟内存类比停在映射、不到 swap，因为 decode 走 HBM 墙，PCIe 换页会把 TPOT 打穿。
-
-和 FlashAttention、KV 量化分层：Flash 减单步 HBM I/O；分页减分配碎片；量化让每页更窄。页里可以是 FP8 KV，算子仍按表 gather。不要说「vLLM 等于 PagedAttention」，它还叠了 continuous batching 和调度。前缀跨请求的缓存策略见 `sys-prefix-cache`。
-
-错误说法：PagedAttention 是近似注意力；页表存在 CPU 上每步往返；没有分页也能靠把 `max_num_seqs` 开大吃满 GPU。前两个错在机制，后一个错在碎片会先 OOM。
+虚拟内存的类比适合解释映射和碎片，不宜延伸成磁盘 swap。PCIe 换页对 decode 太慢，分配失败通常采用抢占，把某条请求 KV 移到 CPU 或暂停；生产中一般避免频繁换出。FlashAttention 减少算子 HBM I/O，分页减少分配浪费，KV 量化减少每页字节，三者可叠加，例如页内放 FP8 KV、仍按表 gather。vLLM 也还包含 continuous batching 和调度，不能只用分页概括它。
 
 ## 追问
 
-- **是近似 attention 吗？** 不是。$K/V$ 物理上不连续，kernel 按 block table gather 再算，数值应与连续 KV 一致。
-- **块表存在哪？** 每条序列一份小表，通常在 GPU 上给 kernel 查。元数据远小于 KV 本身。
-- **为什么 copy-on-write 而不是一开始复制？** 共享前缀可能几千 token。写时再拆，省的是那一段物理页，直到真正分叉。
-- **和操作系统换页完全一样吗？** 映射和碎片像。生产上很少把 KV 换到 CPU；缺页是分配失败或抢占，不是去磁盘取。
-- **页大小 16 是不是魔法数？** 不是。要能被 kernel tile 整除，又不能让块内碎片回到连续预留。改页大小要一起改 attention kernel。
-- **CoW 和 prefix cache 是一层吗？** 不是。CoW 是页级共享原语；prefix cache 是跨请求命中策略。没有分页，前缀共享就得 memcpy。
-- **Beam / 并行采样为什么特别吃分页？** 公共前缀可以共享物理页，分叉后再 CoW。连续预留会把每条 beam 的 max length 都占满。
+**它是近似注意力吗？**
+不是。$K/V$ 物理位置不同，按表取回后，数值应与连续 KV 一致。
+
+**CoW 和 prefix cache 是同一层吗？**
+不是。CoW 负责页级共享与分叉写入，prefix cache 决定跨请求命中条件。连续预留若为各 beam 各留最大长度，会重复占用公共前缀；分页让它们共享后再独立增长。
+
+**它和操作系统缺页一样吗？**
+主要相似在映射和碎片。KV 分配失败是抢占或拒绝分配，不能指望去磁盘取页维持正常 TPOT。
 
 ## 相关题
 
-- [[nvidia-paged-kv]]：几乎是同一道题的 NVIDIA 问法，多讲 block size 写成 1 会怎样和抢页失败。
-- [[coding-paged-table]]：白板写 block table 和 append 的编程版。
-- [[kv-prefix-paged-cow]]：把 refcount 和 CoW 完整写出来的练习，含分配失败回滚。
-- [[meta-vllm]]：Meta 问法，把分页、continuous batching 和 GQA 放在一起讲。
-- [[sys-prefix-cache]]：CoW 之上那一层：跨请求怎么判断前缀算不算命中。
-- [[openai-continuous-batching]]：有了分页之后，每步换 batch 成员的调度那一侧。
+- [[nvidia-paged-kv]]：NVIDIA 问法 `nvidia-paged-kv`，讨论 block size 为 1 和抢页失败；也是前文 kernel 按表 gather 的实现细节。
+- [[coding-paged-table]]：手写 block table 和 append。
+- [[kv-prefix-paged-cow]]：refcount、CoW 和分配失败回滚。
+- [[meta-vllm]]：合讲分页、continuous batching 与 GQA。
+- [[sys-prefix-cache]]：跨请求的前缀命中条件。
+- [[openai-continuous-batching]]：每步更换 batch 成员的调度。
+
+相关实现：`openai-kv-cache-impl`。

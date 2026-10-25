@@ -21,6 +21,8 @@ sources:
     type: secondary
 ---
 
+这组题按「统计每日余量 → 无限切换 → 最多 K 次切换」练，下面的来源表可核对每个版本读到的题干范围。
+
 ## 已整理的题卡
 
 - [[p3a-mistral-daily-gpu-remaining]]

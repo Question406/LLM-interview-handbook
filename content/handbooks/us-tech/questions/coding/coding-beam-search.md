@@ -4,8 +4,7 @@ section: coding
 order: 12
 level: A
 title: 白板：beam search vs greedy vs sampling，长度惩罚
-quick: >-
-  Greedy 每步取 $\arg\max$；beam 保留 $k$ 条前缀按累计 log-prob 扩展，$k=1$ 就是 greedy；sampling 从分布里抽。短句累计 log-prob 天生更大，要加长度惩罚。
+quick: "Greedy 每步取 $\\arg\\max$，beam 保留 $k$ 条前缀按累计 log-prob 扩展，$k=1$ 就退化为 greedy，sampling 则从分布中抽样。beam 要让 EOS 后停止扩展、按 parent 重排 KV，并用长度惩罚缓解短句分数偏高；最后重排与搜索中使用惩罚也要分清。"
 tags:
   - 完整编程练习
   - Coding
@@ -24,6 +23,34 @@ sources:
     url: https://huggingface.co/docs/transformers/en/generation_strategies
     type: secondary
 ---
+
+## 题目描述
+
+给定查询下一 token log-prob 的函数和起始 token 序列，生成最多指定数量的候选序列。需要遵守 EOS 停止语义和确定性的分数平票规则，并实现对最终候选的长度惩罚重排接口。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `beam_search(next_logprobs, start, eos, width, max_new) -> list[(tokens, score)]`：`next_logprobs(tokens)` 返回固定词表上每个 token 的 log 概率（$\le 0$，`-inf` 表示禁用）。每轮只扩展还没结束的 beam；生成 EOS 的 beam 不再扩展，但继续和其他 beam 竞争宽度。每轮按累计 log-prob 降序、token 序列字典序升序截断到 `width` 条，结果确定。`max_new = 0` 时直接返回 prompt。
+- `rank_with_length_penalty(beams, prompt_length=0, alpha=0.6)`：对最终候选按 GNMT 长度惩罚重新排序。长度只算新生成的 token，包含 EOS。这只是对结果重排，不等于在搜索过程中使用长度惩罚，也不保证找到全局最优。
+- `width >= 1`，`max_new >= 0`，`alpha >= 0`。
+- 起始 beam 的 score 为0，score 为新生成 token log-prob 之和。start 即使含 EOS 也作为提示词，只有新增 EOS 才结束生成。有限词表，每个活跃前缀至少有一个允许 token。
+- 长度重排的归一化分数是 `score / (((5+L)/6)**alpha)`，L=len(tokens)-`prompt_length`，允许 L=0。按该分数降序、token序列字典序升序排序，返回原 (tokens,score) 对，不改分数值。
+
+### 输入输出示例
+
+```text
+next_logprobs 对任意前缀都返回 [ln(0.4), ln(0.6)]
+beam_search(next_logprobs, start=[], eos=1, width=2, max_new=2)
+-> [([1], ln(0.6)), ([0, 1], ln(0.24))]
+beam_search(next_logprobs, start=[9], eos=1, width=2, max_new=0)
+-> [([9], 0.0)]
+```
+
+## 解题思路与参考答案
+
+我会让每条 beam 保存 token 前缀、累计 log-prob 和结束标记，每轮扩展未结束的前缀，再保留分数最高的几条。比如示例中第一轮已经生成 EOS 的句子，下一轮仍参与候选比较，但不再追加 token，也不重复加 EOS。
 
 ## 完整编程练习（手册重构版）
 
@@ -94,6 +121,16 @@ def rank_with_length_penalty(beams, prompt_length=0, alpha=0.6):
     return sorted(beams, key=lambda beam: (-penalized(beam), beam[0]))
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert [tokens for tokens, _ in results] == [[1], [0, 1]]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -156,7 +193,7 @@ expect_value_error(rank_with_length_penalty, [([0], -1.0)], 0, -0.1)
 
 ## 题怎么来的
 
-解码三件套是 greedy、beam 和 sampling。Anthropic / Apple 会让你比较它们，而不是默写 `generate` 的参数。翻译、代码补全常用 beam；聊天常用温度加 nucleus，见 `coding-topk-nucleus`。长度惩罚来自 GNMT（Wu et al.）：不加惩罚，短句会占满结果。
+解码三件套是 greedy、beam 和 sampling。Anthropic / Apple 的相关题会比较它们的行为和代价，回答时可以结合 `generate` 的参数解释。翻译、代码补全常用 beam；聊天常用温度加 nucleus，见 `coding-topk-nucleus`。长度惩罚来自 GNMT（Wu et al.）：不加惩罚，短句会占满结果。
 
 ## greedy / beam / sampling
 
@@ -188,9 +225,12 @@ $|y|$ 是生成长度，$\alpha$ 常取 $0.6$ 到 $1$，$\alpha=0$ 等于不惩�
 
 ## 追问
 
-- **为什么不用概率相乘？** 长序列下概率会下溢成 0。log 域相加数值稳定，也和交叉熵损失（CE）里的 log-softmax 一致。
-- **最终为什么不看活跃集合？** 没生成 EOS 的前缀和已完成的句子不可比。只有一个完成句都没有时才退回活跃集合。
-- **$k$ 越大一定越好吗？** 不一定。$k$ 大时结果更偏短、更千篇一律，还需要长度惩罚和多样性约束；KV 带宽也随 $k$ 增长。
+**为什么不用概率相乘？**
+长序列下概率会下溢成 0。log 域相加数值稳定，也和交叉熵损失（CE）里的 log-softmax 一致。
+**最终为什么不看活跃集合？**
+没生成 EOS 的前缀和已完成的句子不可比。只有一个完成句都没有时才退回活跃集合。
+**$k$ 越大一定越好吗？**
+不一定。$k$ 大时结果更偏短、更千篇一律，还需要长度惩罚和多样性约束；KV 带宽也随 $k$ 增长。
 
 ## 相关题
 

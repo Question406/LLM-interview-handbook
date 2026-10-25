@@ -4,7 +4,7 @@ section: coding
 order: 30
 level: A
 title: 白板：QK RMSNorm 再 RoPE，Qwen / 部分 Llama 变体怎么写
-quick: "对每个 head 的 $q,k$ 沿 $D$ 做 RMSNorm（有 $\\gamma$ 无 $\\beta$，不碰 $v$），然后再 RoPE；GQA 时 $k$ 按 $H_{\\mathrm{kv}}$ 份用自己的 `k_norm`。"
+quick: "对每个 head 的 $q,k$ 先沿 $D$ 做 RMSNorm，再按训练架构的顺序做 RoPE；归一化有 $\\gamma$、无 $\\beta$，不处理 $v$。GQA 的 $k$ 只有 $H_{\\mathrm{kv}}$ 份，要先用自己的 `k_norm` 处理，最后需要时再 repeat。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +26,31 @@ sources:
     url: https://arxiv.org/abs/2010.04245
     type: primary
 ---
+
+## 题目描述
+
+实现 Q/K 的 RMSNorm 与位置旋转组合，明确归一化和 RoPE 的作用顺序。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`rmsnorm_last(x,weight,eps=1e-6)` 沿最后一维用均方根归一化，不减均值；分母为 `sqrt(mean(x²)+eps)`，再乘长度为 d 的 weight，weight=None 视为全 1。统计使用 float32，输出转回输入 dtype，不含 bias。
+
+`apply_rope(x,cos,sin)` 接收 `[B,H,T,d]` 和 `[T,d/2]` 的 cos/sin 表，对最后一维相邻的偶、奇分量成对旋转：一对 `(a,b)` 变为 `(a*cos-b*sin,a*sin+b*cos)`。
+
+`qk_norm_then_rope(q,k,wq,wk,cos,sin)` 返回处理后的 `(q,k)`，先分别 RMSNorm，再 RoPE。q 为 `[B,Hq,T,d]`、k 为 `[B,Hkv,T,d]`，头数可不同，d 为正偶数；本题不处理 V。
+
+### 示例
+
+```text
+q=k=[[[[2,2]]]]，wq=wk=[1,1]，cos=[[1]], sin=[[0]]。
+返回的 q、k 均约为 [[[[1,1]]]]（考虑 eps 后略小于 1）。
+相同设置的全零输入仍返回全零。
+```
+
+## 解题思路与参考答案
+
+我会先沿每个 head 的最后一维分别归一化 Q、K，再做 RoPE，V 保持不变。GQA 的 Q、K 头数不同也没关系，各自沿头维计算即可；顺序则必须匹配 checkpoint，因为逐维缩放和旋转一般不能交换。下面先给可执行练习，再解释架构和缓存的边界。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -88,6 +113,16 @@ def qk_norm_then_rope(q, k, w_q, w_k, cos, sin):
     k = rmsnorm_last(k, w_k)
     return apply_rope(q, cos, sin), apply_rope(k, cos, sin)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert q_out.shape == q.shape` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -183,10 +218,14 @@ $\varepsilon$ 可以和层 norm 的不同，实现里常用 $10^{-6}$，统计�
 
 ## 追问
 
-- **一定要在 RoPE 之前吗？** Qwen3 和常见的 Gemma 路径是在之前，公开讨论里 Llama 4 一类是在之后。加载权重前先看 `q_norm` 插在哪里，不要猜。
-- **$V$ 要不要 norm？** 标准 QK-Norm 不做。$V$ 是被加权求和的内容，不是点积的两边。
-- **和点积的 $1/\sqrt{D}$ 缩放重复吗？** 不重复。缩放是常数，RMSNorm 随每个样本、每个 head 变化，两者都要保留。
-- **decode 时历史 $K$ 还要 norm 吗？** 写入 cache 时做过了，就不要再做。对 cache 再 norm 一次，等于用当前的 $\gamma$ 去改旧向量，逐步生成的结果会和一次性输入预填充（prefill，即处理整段输入并建立缓存）的结果对不齐。
+**一定要在 RoPE 之前吗？**
+Qwen3 和常见的 Gemma 路径是在之前，公开讨论里 Llama 4 一类是在之后。加载权重前先看 `q_norm` 插在哪里，不要猜。
+**$V$ 要不要 norm？**
+标准 QK-Norm 不做。$V$ 是被加权求和的内容，不是点积的两边。
+**和点积的 $1/\sqrt{D}$ 缩放重复吗？**
+不重复。缩放是常数，RMSNorm 随每个样本、每个 head 变化，两者都要保留。
+**decode 时历史 $K$ 还要 norm 吗？**
+写入 cache 时做过了，就不要再做。对 cache 再 norm 一次，等于用当前的 $\gamma$ 去改旧向量，逐步生成的结果会和一次性输入预填充（prefill，即处理整段输入并建立缓存）的结果对不齐。
 
 ## 相关题
 

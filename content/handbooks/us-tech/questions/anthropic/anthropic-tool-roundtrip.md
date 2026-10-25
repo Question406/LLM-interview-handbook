@@ -4,7 +4,7 @@ section: anthropic
 order: 30
 level: A
 title: Anthropic：tool 往返结果过大、截断、cache 前缀被破坏，怎么处理？
-quick: "工具结果是下一轮前缀的一部分。过大要截断并标明截断，不要静默丢弃尾部内容。截断长度、错误包装、时间戳只要抖一下，输入提示（prompt） cache 从那一块起全 miss。静态的是 tools 和 system，结果当可变后缀。"
+quick: "我会给工具输出设固定上限，超限时明确告诉模型截掉了什么，再让它按需读剩余内容。tools 和 system 保持稳定，最新结果放在缓存点之后；改写旧结果、改变截断长度或回贴顺序，都会让后面的缓存失效。"
 tags:
   - Anthropic
   - Tool use
@@ -26,17 +26,15 @@ sources:
     type: primary
 ---
 
-Agent serving 岗会从 `anthropic-tool-use` 追到「结果太大怎么办」。Messages API 的往返是：模型出 `tool_use`，宿主执行，把 `tool_result` 当 user 块贴回去。下一次请求把这段历史整段再送。所以结果既是模型的观察，也是缓存前缀的一部分。
+我会在宿主侧限制工具结果的大小，并把变化的结果放在缓存前缀之后。Messages API 里，模型先给出 `tool_use`，宿主执行后把 `tool_result` 作为 user 块回传；下一轮还会发送这段历史。因此，结果过大会挤满窗口，结果的字节或位置变化也会破坏缓存。工具循环本身见 `anthropic-tool-use`。
 
-## 过大：截断是合同，不是静默丢
+## 输出过大时怎么处理
 
 一次 `cat`、一次网页、一张未压缩截图，都能把窗口打满。我会在宿主设硬顶：字符数或估计的 token 数，超了就切，并在结果里写明「truncated, kept first N chars, original M」。模型才能决定再 `grep` 或换工具，而不是以为文件只有这么长。
 
-三条路：
+日志和 HTML 可以保留头尾，在中间注明省略，这样比只留开头更容易保住报错。大文件可以写到沙箱路径，先回路径和前几行，让模型按需读取，Claude Code 那类 agent 默认就采用这种方式。
 
-1. 头尾保留。日志、HTML 常把头和尾拼起来，中间写省略。比只留开头更不容易丢掉报错。
-2. 外置。大文件写到沙箱路径，结果只回路径和前几行，逼模型按需读。这是 Claude Code 那类 agent 的默认。
-3. 摘要。只在结果确定是自然语言散文时用。代码、JSON、表格摘要会丢键，下一轮参数就编。
+如果结果是自然语言散文，还可以做摘要。代码、JSON 和表格不适合这么做：摘要可能漏掉键，模型下一轮就可能编出不存在的参数。
 
 截图的占用更大：每张按 `anthropic-vision` 的 $T_{\mathrm{vis}}$ 计，二十步不丢历史，视觉 token 能到三万。只留最近 1–2 张，旧的改成文本动作记录。`is_error` 的结果不要再塞半截 HTML；给错误码和可修的字段。
 
@@ -54,15 +52,11 @@ def pack_result(text, tool_use_id):
 
 截断阈值要固定。这一轮 8k、下一轮 6k，缓存从 `tool_result` 那一块起全部作废。
 
-## 前缀：结果一变，后面全 miss
+## 怎么保持缓存前缀稳定
 
 `anthropic-prompt-cache` 的命中条件是字节级前缀：`tools` → `system` → `messages`。`tool_result` 在 messages 里。你若把 breakpoint 打在「含最新工具结果」的那一块，每次结果不同就等于每次重写缓存，付写溢价还不命中。
 
-正确切法：
-
-- 工具定义、系统提示、长文档打 breakpoint，跨请求不变。
-- 本轮 `tool_result`、检索片段、时间戳放在点后面，当可变后缀。
-- 文档允许在 `tool_result` 上打点，只适合「同一结果会被立刻再读很多次」的预热，不适合每步都变的 agent。
+我会把 breakpoint 放在跨请求不变的工具定义、系统提示和长文档上。本轮 `tool_result`、检索片段和时间戳放到点后面，作为可变后缀。文档也允许在 `tool_result` 上打点，但适合的是同一个结果马上会被反复读取的预热场景；每步结果都变的 agent 很难从中获益。
 
 破坏前缀的常见手法：
 
@@ -76,7 +70,7 @@ def pack_result(text, tool_use_id):
 
 并行 `tool_use` 必须按模型给出的块顺序回传，缺一块请求会拒。Computer use 一批多个动作，更要按序贴结果，见 `anthropic-computer-use`。
 
-## 和流式、MCP、窗口
+流式、MCP 和窗口预算也会影响结果处理。
 
 流式还没拼完 JSON 就执行，结果形状会漂，见 `anthropic-streaming-tools`。MCP 服务器返回的资源当数据，描述进上下文等于可执行 输入提示（prompt），见 `anthropic-mcp`。窗口预算：文本结果按 tokenizer 计，图按 $T_{\mathrm{vis}}$ 计，两者抢同一条 $T$，见 `anthropic-long-context`。
 

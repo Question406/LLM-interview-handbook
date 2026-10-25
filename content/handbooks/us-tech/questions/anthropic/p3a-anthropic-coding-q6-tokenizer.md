@@ -4,7 +4,7 @@ section: anthropic
 order: 608
 level: A
 title: "Anthropic：最长匹配 Tokenizer：UNK 合并与 trie"
-quick: "把词表建成 trie，从当前位置往下走并记住最后一个完整 token，走不通时输出它；没有匹配就输出 UNK 并前进一个字符，连续 UNK 可以合并但不能吞掉后面的有效 token。"
+quick: "我会把词表建成 trie，每次从当前位置向下匹配，并记住最后一个完整 token。走不通就输出它；完全匹配不上时输出 UNK 并前进一个字符，连续 UNK 只合并输出，不影响后面的有效 token。"
 companies:
   - anthropic
 tags:
@@ -23,6 +23,30 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个确定性的词表分词器。给定 Unicode 文本和 token 到整数 id 的词表，从文本开头依次识别 token，输出 token id 列表；不能匹配词表的字符按指定的未知 token 规则处理。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `tokenize(text, vocab, unk=-1, merge_unk=True) -> list[int]`：按 Unicode 字符处理，每一步取当前位置最长的词表 token，输出它的 id。
+- 没有任何 token 能匹配时输出 `unk`，并恰好消耗一个字符。`merge_unk=True` 时，连续的未知字符只输出一个 `unk`；已知 token 会打断这段连续。
+- 词表不能含空串，也不能有 token 的 id 等于 `unk`。
+- 词表最多 $10^4$ 个 token，文本最多 $10^5$ 个字符。
+
+### 示例
+
+```text
+vocab = {"ab": 1, "a": 2}
+tokenize("ab??a?", vocab)                   -> [1, -1, 2, -1]
+tokenize("ab??", vocab, merge_unk=False)    -> [1, -1, -1]
+tokenize("abc", {"a": 1, "abcd": 2})        -> [1, -1]
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 给一个词表（字符串到 token id 的映射），把输入文本切成 token id 序列。每一步都取当前位置能匹配到的最长词表 token。遇到词表里没有的字符输出 UNK，并支持把连续的未知字符合并成一个 UNK。
@@ -31,7 +55,7 @@ sources:
 
 ## 思路
 
-把词表建成 trie。从当前位置出发沿 trie 往下走，每经过一个「完整 token」的节点就记下位置和 id；走不下去时，回到最后记下的那个位置，输出对应的 token。
+我会用 trie 做最长匹配，并在搜索时记下最后一个完整 token。具体说，从当前位置沿 trie 往下走，每遇到完整 token 的节点就更新它的位置和 id；路径走不通后，回到最后记住的位置，输出那个 token，再继续处理剩下的文本。
 
 这里有一个容易错的地方：走得最远的路径不一定是完整 token。比如词表有 `a` 和 `abcd`，文本是 `abc`，trie 能走到 `abc`，但 `abc` 不是 token，正确输出是 `a`，然后从 `b` 继续。所以必须记住「最后一个完整 token」，而不是停在哪里就输出哪里。
 
@@ -121,6 +145,16 @@ def tokenize(text, vocab, unk=-1, merge_unk=True):
             in_unknown_run = False
     return output
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert tokenize("ab??a?", vocab) == [1, -1, 2, -1]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

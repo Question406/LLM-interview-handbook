@@ -4,9 +4,7 @@ section: openai
 order: 25
 level: A
 title: OpenAI：长上下文怎么训，RoPE 基频、续训和文档 packing
-quick: >-
-  默认 RoPE 基频 $10^4$ 只覆盖训练窗。拉长窗先改 $\theta$（Code Llama 用 $10^6$ 一档），再在真实长文档上低 lr
-  续训。packing 必须用文档 mask，不能靠结束符碰运气。插值 / YaRN 是外推旋钮，补不了「从没见过长依赖」。
+quick: "我会先选定 RoPE 基频或插值方案，再用低学习率在真实长依赖数据上续训，并逐档验证中间位置。短文 packing 要隔开文档注意力；只把窗口参数拉长或把短网页拼满，不能替代长文训练。"
 tags:
   - OpenAI
   - Long context
@@ -34,17 +32,15 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
-
-GPT-4 把 32k / 128k 做成产品；研究岗会问「从 4k 基座怎么接到这个窗」。公开配方多来自 RoPE 论文、位置插值、YaRN、Code Llama 的基频改法，不是 OpenAI 内部 wiki。评测切片见 `anthropic-long-context` 和 `msft-long-context`；本题只收怎么训。Decode 时位置下标写错是另一题，见 `openai-rope-offset`。
+我会同时调整位置编码和训练数据，再验证长距离依赖是否真的学会。比如从 4k 基座扩到 32k、128k，光把短网页拼满窗口，模型仍可能只学会许多独立短篇，中间证据依然用不好。GPT-4 有 32k / 128k 产品窗口，这里的训练方法引用 RoPE、PI、YaRN、Code Llama 的公开配方，不冒充 OpenAI 内部实现。
 
 ## 基频、插值、续训
 
 RoPE 第 $i$ 对维度的角频率 $\theta_i=\theta^{-2i/d}$，默认 $\theta=10^4$。位置 $m$ 的旋转是 $\theta_i m$。训练长度 $L$ 之外，高频相位是模型没见过的，直接把窗拉到 $8L$ 会糊。三条公开路：
 
-1. **加大 $\theta$。** 把基频抬到 $10^5$–$10^6$，近处仍靠高频分辨，远处少转圈。Code Llama 公开用 $10^6$，再在长序列上续训。这是我会先写的生产向做法。
-2. **位置插值（PI）。** 推理或短续训时把位置缩成 $m' = m\cdot L_{\mathrm{train}}/L_{\mathrm{target}}$，让新窗仍落在旧相位范围。近处分辨率被稀释，短依赖可能伤。
-3. **NTK / YaRN。** 低频多放、高频少动，介于「只改 $\theta$」和「全局缩位置」之间。社区外推常用；不要说成 OpenAI 官方配方。Llama 侧概念见 `meta-llama-rope`。
+我会先试 Code Llama 这类加大 $\theta$ 后续训的路径，把基频提高到 $10^5$–$10^6$，近处靠高频分辨，远处减少旋转圈数；Code Llama 公开用了 $10^6$。
+
+另一条是 PI，把位置缩成 $m' = m\cdot L_{\mathrm{train}}/L_{\mathrm{target}}$，使目标窗落进原相位范围，代价是近处分辨率被稀释。NTK / YaRN 对不同频率区别处理，低频多放、高频少动，介于只改基频和统一缩位置之间，是社区公开外推方案。Llama 的具体概念可看 `meta-llama-rope`。
 
 只改公式、不看长文档，模型仍然不会用中间那些 token。我会做 continual pretrain：从短窗 checkpoint 出发，压低 lr（常是预训练峰值的 $1/10$–$1/30$），在真实长文档上再跑一段，窗可以阶梯涨（8k → 32k → 128k）。数据必须是真的长依赖：仓库、书、长对话、论文，而不是把短网页 pack 满 128k 假装长上下文。后者模型只学到「很多短篇拼在一起」，Lost in the Middle 仍然会在中间位置掉点。
 
@@ -66,12 +62,18 @@ scores = scores.masked_fill(~attn_mask[:, None], float("-inf"))
 
 Lost in the Middle 是评测现象：证据在中间比在头尾差。训练上能做的是：长文档、位置均匀的监督、不要只把答案放在末段。它不是靠把 $\theta$ 再乘十就能消失的。
 
+相关：`anthropic-long-context`、`msft-long-context`、`openai-rope-offset`
+
 ## 追问
 
-- **只插值不续训行不行？** 短外推有时能跑，长窗和中间位置通常要数据。产品 128k 不要赌零样本插值。
-- **packing 不加 mask 最坏怎样？** 模型把相邻无关文档当上下文，检索和引用会串台。吞吐看起来很高，评测是脏的。
-- **和 sink / 滑窗什么关系？** 滑窗是推理驱逐；长窗训练是让模型真的见过长距离。两者都要时，先保证 RoPE 下标，见 `openai-rope-offset`。
-- **Math 用 $6ND$ 算长窗续训吗？** 可以估 FLOPs，但 $D$ 应计新增长上下文 token，不要把短窗预训练的 token 再数一遍充数，见 `openai-scaling-laws`。
+**只插值不续训行不行？**
+短外推有时能跑，长窗和中间位置通常要数据。产品 128k 不要赌零样本插值。
+**packing 不加 mask 最坏怎样？**
+模型把相邻无关文档当上下文，检索和引用会串台。吞吐看起来很高，评测是脏的。
+**和 sink / 滑窗什么关系？**
+滑窗是推理驱逐；长窗训练是让模型真的见过长距离。两者都要时，先保证 RoPE 下标，见 `openai-rope-offset`。
+**Math 用 $6ND$ 算长窗续训吗？**
+可以估 FLOPs，但 $D$ 应计新增长上下文 token，不要把短窗预训练的 token 再数一遍充数，见 `openai-scaling-laws`。
 
 ## 相关题
 

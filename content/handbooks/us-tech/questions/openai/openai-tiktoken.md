@@ -4,7 +4,7 @@ section: openai
 order: 21
 level: A
 title: OpenAI：tiktoken / BPE 和 SentencePiece 差在哪，特殊 token 和词表怎么扩
-quick: "两边都可以是 BPE，差在预分词。tiktoken 先用正则切块再按有序 merge 表合；SentencePiece 常把空格当普通字符 （码点 U+2581），也可走 Unigram。特殊 token 不进 merge，encode 时单独查表。扩词表是加行到 $[V, D]$，不是改已有 merge 的语义。"
+quick: "tiktoken 与 SentencePiece 都可以用 BPE，区别主要在预分词和空格处理，SentencePiece 还支持 Unigram。tiktoken 在切块后按 merge 顺序编码，特殊 token 另查原子 id；扩表时 embedding 与 lm_head 要同步增加 $[V, D]$ 的行，并保持旧 id 稳定。"
 tags:
   - OpenAI
   - tiktoken
@@ -29,7 +29,9 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+tiktoken 和 SentencePiece 不能只按「是否 BPE」区分，要先看预分词、空格和特殊 token 的处理。比如 tiktoken 先用正则切块，再在块内部合并；SentencePiece 常把空格表示为 U+2581，也可以采用 Unigram。
+
+
 
 OpenAI 的公开分词器是 tiktoken：Rust 核、Python 包装，编码名 `r50k_base` / `p50k_base` / `cl100k_base` / `o200k_base`。Anthropic 编码轮会手写 BPE，见 `anthropic-bpe-tokenizer` 和 `coding-bpe-merge`。OpenAI 研究岗更常问：和 SentencePiece 到底差哪一步、特殊 token 为什么不会被 BPE 拆掉、上新工具标记时 embedding 怎么长。词尾标记写成 `endofword`，不要写成 XML 闭合标签，构建器会当成 HTML。
 
@@ -40,7 +42,7 @@ Sennrich BPE：从字符（或已标词尾的词内字符）出发，反复合�
 关键差别在 BPE 之前：
 
 - tiktoken / GPT-2。正则预分词先切出「单词块 / 数字块 / 标点块」，再在块内部 merge。空格常附着在后一块上。跨块的 pair 根本不会合，所以 `hello` 和前面带空格的 `hello` 可以是两个 id。这是有意的：空格变成特征，而不是被吃进字母。
-- SentencePiece。默认把整句当 unicode 序列，空格变成普通符号（U+2581），不依赖语言特定正则。算法可以是 BPE 或 Unigram LM。Unigram 是另一套：维护一个很大的候选词表，用 EM 丢概率低的片，逐 token 生成（decode） 是 Viterbi，不是按 merge 优先级扫。把 SentencePiece 说成「就是 tiktoken」会在这一步翻车。
+- SentencePiece。默认把整句当 unicode 序列，空格变成普通符号（U+2581），不依赖语言特定正则。算法可以是 BPE 或 Unigram LM。Unigram 是另一套：维护一个很大的候选词表，用 EM 丢概率低的片，逐 token 生成（decode） 是 Viterbi，不是按 merge 优先级扫。因此还要说明采用的是 BPE 还是 Unigram。
 
 `cl100k_base`（GPT-3.5 / GPT-4）和 `o200k_base`（GPT-4o）是不同 merge 表和不同预分词，压缩率、多语言、空白处理都不一样。不要拿 GPT-2 的 50k 词表去估 4o 的上下文 token 数。计费和上下文窗口都是 tiktoken 的 token，不是空白分词。
 
@@ -55,16 +57,20 @@ Sennrich BPE：从字符（或已标词尾的词内字符）出发，反复合�
 1. 只加特殊符。 merge 表不动，$V\leftarrow V+k$。embedding / lm_head 从 $[V, D]$ 变成 $[V+k, D]$。新行初始化用旧表均值或很小的随机，旧行保持预训练值。词表绑定（tying）时两份权重一起改。
 2. 继续 BPE 训练。 在旧 merge 后续加新 pair，旧 id 必须稳定，否则所有 checkpoint 作废。一般不值得为几个工具名去做；加特殊符更干净。
 
-常见误区是：把新工具名当普通字符串，指望 BPE 切完模型自己「认」。切出来的是若干子词，边界监督没了。另一常见误区是：扩表后忘记 lm_head，logits 维和 id 对不上，交叉熵损失（CE） 直接读垃圾，那种 NaN 见 `openai-loss-spike`。
+若工具名需要作为边界监督，普通字符串可能被切成多个子词，需要明确是否注册为特殊 token。扩表还要同步 lm_head，否则 logits 维与 id 不一致，会破坏交叉熵损失（CE）计算，相关 NaN 排查见 `openai-loss-spike`。
 
 encode 对每个预分词块按 merge 优先级扫，实现上 tiktoken 用预处理好的核，复杂度按块长而不是按语料再训练。
 
 ## 追问
 
-- **为什么 GPT-2 要正则预分词？** 避免跨空格疯狂合并，让词边界稳定，也让空格成为可学习特征。SentencePiece 用显式空格符达到类似目的。
-- **Unigram 和 BPE 谁可逆？** 字节级 BPE 对字节可逆。Unigram 依赖词表覆盖；覆盖不全就要 fallback。
-- **旧模型 embedding 怎么迁到新词表？** 旧 token 字符串对齐拷贝；对不上的行新初始化，再在新数据上短训。不要打乱旧 id。
-- **`o200k_base` 只是 $V$ 更大吗？** 不只是。预分词和 merge 都换了，同样英文通常更短，多语言更明显。
+**为什么 GPT-2 要正则预分词？**
+避免跨空格疯狂合并，让词边界稳定，也让空格成为可学习特征。SentencePiece 用显式空格符达到类似目的。
+**Unigram 和 BPE 谁可逆？**
+字节级 BPE 对字节可逆。Unigram 依赖词表覆盖；覆盖不全就要 fallback。
+**旧模型 embedding 怎么迁到新词表？**
+旧 token 字符串对齐拷贝；对不上的行新初始化，再在新数据上短训。不要打乱旧 id。
+**`o200k_base` 只是 $V$ 更大吗？**
+不只是。预分词和 merge 都换了，同样英文通常更短，多语言更明显。
 
 ## 相关题
 

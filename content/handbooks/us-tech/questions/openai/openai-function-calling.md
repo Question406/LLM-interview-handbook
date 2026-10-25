@@ -4,7 +4,7 @@ section: openai
 order: 20
 level: A
 title: OpenAI：tool / function calling 的 schema、失败、并行，和 JSON mode 差在哪
-quick: "JSON mode 只保证 content 是合法 JSON；function calling 返回 `tool_calls`，由宿主校验并执行；Structured Outputs 用约束解码让参数符合 schema。并行只用于互不依赖的调用。"
+quick: "JSON mode 约束输出是 JSON，function calling 让模型提议工具名与参数，执行仍由宿主负责。Structured Outputs 可约束 schema，但资源权限和副作用还要校验；多个调用只有在互不依赖时才适合并行。"
 tags:
   - OpenAI
   - Function calling
@@ -29,11 +29,11 @@ sources:
     type: secondary
 ---
 
-## 题怎么来的
+我会先说清输出格式与执行权限的边界：模型可以提议调用，宿主解析、校验后才执行。比如查三个城市的天气可以并行；第二个工具要用第一个返回的 id，就必须等结果进上下文再调，否则容易用到空 id 或编造的 id。
 
-2023 年 OpenAI 把 function calling 做成 Chat Completions 的一等能力，后来补了并行调用和 Structured Outputs。LLM 团队问这题，不是让你背 API 字段名，是看你是否把模型当不可信的调用方。产品设计对照见 `design-chat-tools`；Anthropic 把同一件事叫 tool use，见 `anthropic-tool-use`。我会按 OpenAI 的三条通道答：JSON mode、function calling、带 schema 的约束解码。
+OpenAI 2023 年把 function calling 加进 Chat Completions，后来增加并行和 Structured Outputs。这三类能力分别控制输出语法、行动路由和参数形状，设计时需要分开讲。
 
-## 三条通道不要并成一句「会输出 JSON」
+## 先确认返回内容代表什么
 
 JSON mode（`response_format` 为 json object）：模型在助手 content 里吐一个能 `json.loads` 的对象。文档写明 输入提示里还得要求 JSON，否则可能空转。它不选工具、不保证有哪些键、不保证类型。适合「抽字段进对象」。不适合「去查天气」。
 
@@ -43,17 +43,13 @@ Structured Outputs：在 json schema 或 `strict` 工具上做约束解码，只
 
 Schema 要让错误形状难出现：枚举代替自由字符串、数字带范围、副作用工具把「预览」和「提交」拆开。一个自由字符串命令字段等于把 shell 交给模型。描述里写何时不要调，和相近工具的差别；模型通过工具说明理解如何调用工具接口（ACI），不是靠你心里想的语义。
 
-## 并行、失败、循环
+## 再处理执行和恢复
 
-并行调用：同一助手步里多个 `tool_calls`，适用于互相不依赖的读，比如三个城市的天气。第二个调用需要第一个的返回值时，不能并行，要走「调一次 → 结果进上下文 → 再调」。API 上的并行开关管的是「允许模型一次提议多个」，不是自动拆依赖图。依赖关系处理错误的表现是：第二个工具吃到空 id 或幻觉 id。
+API 的并行开关只允许模型在同一步提议多个 `tool_calls`，依赖图仍由系统处理。解析失败、缺字段或类型错时，把校验错误作为工具结果回填，让模型修改，宿主不要猜着补参数。
 
-失败分三类，回传方式不同：
+超时、404、权限等执行失败，回传错误标记和可读原因。只读工具可以有限重试，扣款、发邮件、删数据这类副作用默认不重试，先做幂等键。JSON 合法但工具选错、该调未调，属于策略错误：要用黄金工具名和不该调用的拒答集评测，MMLU 测不到这些。
 
-1. **解析 / schema 失败。** 参数不是对象、缺必填、类型错。没上约束解码时很常见。把校验错误当工具结果贴回去，让模型改，不要自己猜着补字段。
-2. **工具执行失败。** 超时、404、权限。用错误标记加可读原因。只读工具可有限次重试；扣款、发邮、删数据默认不重试，要幂等键。
-3. **模型不该调却调 / 该调不调。** 这是策略，不是 JSON 坏了。用 eval：该调的黄金工具名、不该调的拒答集。别拿 MMLU 代替，指令遵循见 `openai-if-eval`。
-
-循环：最大步数、重复同一调用的熔断、以及「已经有结果还在调」。没有步数上限的 agent 会在 5xx 上烧完预算。凭证、内网 URL、文件系统根目录不进工具参数空间，模型连提议都应当被宿主拦下。
+循环还要有最大步数、重复调用熔断，以及已有结果仍继续调用的检查，避免在 5xx 上耗完预算。凭证、内网 URL、文件系统根目录排除在可提议的参数范围外，由宿主拦截。下面的顺序就是先白名单、再解析、schema 和 policy，最后执行。
 
 ```python
 def dispatch(call, registry, policy):
@@ -66,11 +62,17 @@ def dispatch(call, registry, policy):
     return fn(args)
 ```
 
-对照：JSON mode 是 content 语法；function calling 是侧信道上的行动提议；strict schema 是解码器帮你做类型检查。三者可以叠，但叠完仍要把执行权留在自己手里。
+这几层可以一起使用，执行前的资源所有权和副作用检查仍留在宿主。
+
+相关：`design-chat-tools`、`anthropic-tool-use`、`openai-if-eval`
 
 ## 追问
 
-- **为什么参数当初是字符串？** 早期生成不一定是合法 JSON，字符串让 API 能先把 token 收回来再 parse。strict 之后可以当对象看，宿主仍要 parse 失败分支。
-- **强迫 `tool_choice` 某函数？** 抽取型任务可以。对话助手用 auto，否则模型不能直接用自然语言收尾。
-- **并行会打乱顺序吗？** 执行可并发，写回对话时要带 工具调用 id 对齐，不要按结束时间乱序张冠李戴。
-- **和 JSON mode 能互替吗？** 抽结构用 JSON mode 或 json schema；要执行副作用必须走工具加宿主。
+**为什么参数当初是字符串？**
+早期生成不一定是合法 JSON，字符串让 API 能先把 token 收回来再 parse。strict 之后可以当对象看，宿主仍要 parse 失败分支。
+**强迫 `tool_choice` 某函数？**
+抽取型任务可以。对话助手用 auto，否则模型不能直接用自然语言收尾。
+**并行会打乱顺序吗？**
+执行可并发，写回对话时要带 工具调用 id 对齐，不要按结束时间乱序张冠李戴。
+**和 JSON mode 能互替吗？**
+抽结构用 JSON mode 或 json schema；要执行副作用必须走工具加宿主。

@@ -4,8 +4,7 @@ section: coding
 order: 17
 level: A
 title: 白板：SwiGLU / Llama MLP，门控和中间维为什么是 8/3
-quick: >-
-  $\mathrm{SwiGLU}(x)=(\mathrm{SiLU}(xW_g)\odot xW_u)W_d$，三个无 bias 的线性层；中间维取 $\tfrac{8}{3}D$ 再向上对齐，参数量和 $4D$ 宽的旧 FFN 大致持平。
+quick: "SwiGLU 先让 gate 分支经过 SiLU，再与线性的 up 分支逐元素相乘，最后用 down 投回原维度：$\\mathrm{SwiGLU}(x)=(\\mathrm{SiLU}(xW_g)\\odot xW_u)W_d$。Llama 用三个无 bias 线性层，中间维取 $\\tfrac{8}{3}D$ 后向上对齐，使参数量与旧 $4D$ FFN 大致相同。"
 tags:
   - 完整编程练习
   - Coding
@@ -27,6 +26,31 @@ sources:
     url: https://arxiv.org/abs/2307.09288
     type: primary
 ---
+
+## 题目描述
+
+实现 Llama 风格前馈层的隐藏维度计算规则，以及使用该维度的 SwiGLU 模块。模块有 gate、up、down 三个可训练线性映射，前两者输出同一隐藏维度，最终输出回到原特征维度。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `llama_ffn_hidden(dim, multiple_of=256, ffn_mult=None) -> int`：按 Llama 的规则算中间维。先取 $h=\lfloor 8D/3\rfloor$；给了 `ffn_mult` 就再乘它并向下取整；最后向上取整到 `multiple_of` 的倍数。
+- `SwiGLU(dim, hidden=None)`：三个无 bias 的线性层，gate 和 up 是 $D\to H$，down 是 $H\to D$。`hidden` 不给时用 `llama_ffn_hidden(dim)`。
+- `SwiGLU.forward(x)`：输入 `[..., D]`，输出同形状，计算 `down(silu(gate(x)) * up(x))`。
+
+### 示例
+
+```text
+llama_ffn_hidden(4096)                 -> 11008   # floor(8 * 4096 / 3) = 10922，对齐到 256
+llama_ffn_hidden(8192, 4096, 1.3)      -> 28672
+SwiGLU(4, hidden=6) 所有权重设为 0；输入任意形状 [2,3,4] 的有限张量 -> 同形状全 0 张量
+```
+
+## 解题思路与参考答案
+
+我会写 gate、up、down 三个线性层，只在 gate 上用 SiLU，两支相乘后再做 down 投影。因为多了一张矩阵，中间维要缩到 8/3 倍再按实现对齐；例如 4096 维模型对齐后是 11008。测试既要比输出，也要确认三个权重都有梯度。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -81,6 +105,16 @@ class SwiGLU(nn.Module):
         return self.w_down(F.silu(self.w_gate(x)) * self.w_up(x))
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert llama_ffn_hidden(4096) == 11008` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -125,7 +159,7 @@ assert not torch.allclose(y, wrong)
 
 Shazeer 提出的几种 GLU 变体里，Llama 选了 SwiGLU。Meta 手写 Transformer 时会要求写 MLP 这一块：它不是 `Linear-ReLU-Linear`，而是门控乘上投影，再做下投影。如果把中间宽度写成 $4D$，参数量会超过论文的设定。激活函数本身见 `coding-silu`；前面的归一化是 RMSNorm，见 `coding-rmsnorm`。
 
-## 门控，不是两层 MLP
+## 门控分支怎样连接
 
 输入 $x$ 的形状是 `[B, T, D]`：
 
@@ -139,12 +173,15 @@ $$
 
 HuggingFace 里这三个矩阵叫 `gate_proj` / `up_proj` / `down_proj`。
 
-## 别和 GELU FFN 混
+## 加载不同 FFN 权重时检查什么
 
 GPT-2 风格是 `gelu(x W_1) W_2`，中间维 $4D$。PaLM 也用 SwiGLU，但中间维的取整规则不同。对 checkpoint 时要看 `intermediate_size` 和有没有 bias，不要按 $4D$ 去猜。如果有 Dropout，它放在 MLP 输出之后、加回残差之前；Llama 预训练默认不用，见 `coding-dropout`。
 
 ## 追问
 
-- **为什么是 $8/3$ 而不是 $4$？** 门控多了一张 $D\times H$ 的矩阵。取 $H=\tfrac{8}{3}D$，三张矩阵的参数量约等于旧的两张 $4D$ 宽矩阵，目的是匹配参数量。
-- **SiLU 和 Swish 是什么关系？** $\mathrm{SiLU}(x)=x\cdot\sigma(x)$，就是 $\beta=1$ 的 Swish。手写数值见 `coding-silu`。
-- **gate 和 up 能共用一张权重吗？** 那就不是 SwiGLU 了。参数会变少，质量一般会下降。
+**为什么是 $8/3$ 而不是 $4$？**
+门控多了一张 $D\times H$ 的矩阵。取 $H=\tfrac{8}{3}D$，三张矩阵的参数量约等于旧的两张 $4D$ 宽矩阵，目的是匹配参数量。
+**SiLU 和 Swish 是什么关系？**
+$\mathrm{SiLU}(x)=x\cdot\sigma(x)$，就是 $\beta=1$ 的 Swish。手写数值见 `coding-silu`。
+**gate 和 up 能共用一张权重吗？**
+那就不是 SwiGLU 了。参数会变少，质量一般会下降。

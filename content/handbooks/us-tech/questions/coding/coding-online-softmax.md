@@ -4,8 +4,7 @@ section: coding
 order: 15
 level: S
 title: 白板：FlashAttention 的 online softmax，两遍归约怎么写
-quick: >-
-  一遍流式扫描同时维护 running max 和 sumexp，max 变大时把旧的和与已累加的输出一起 rescale；每个 tile 各自 softmax 是错的。
+quick: "一遍扫描维护 running max 和 sumexp，最大值变大时把旧和换到新基准，第二遍即可写 softmax。注意力还同步 rescale 已累加的输出，最后归一化，不能让各 tile 独立 softmax。"
 tags:
   - 完整编程练习
   - Coding
@@ -28,6 +27,31 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+实现只能分块读取分数或 key/value 的数值稳定归一化接口。先为非空分数向量返回足以重建 softmax 的统计量，再提供使用这些统计量的归一化接口，以及单 query 的分块 attention 接口。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `online_stats(x) -> (m, ell)`：一遍扫描非空的有限向量 `x`，返回全局最大值 $m$ 和 $\ell=\sum_j e^{x_j-m}$。
+- `softmax_from_stats(x, m, ell)`：用上面的统计量做第二遍，返回 softmax 概率。
+- `online_attn_row(q, k, v, scale, tile=16)`：单个 query 的注意力，`q` 是 `[D]`，`k`、`v` 是 `[S, D]`。按每块 `tile` 个 key 扫描，不物化长度为 $S$ 的完整分数向量，返回 `softmax(k @ q * scale) @ v`，形状 `[D]`。假定 `S >= 1`、`tile >= 1`。
+- 分数都是有限值，不处理整行被 mask 成 $-\infty$ 的情况。
+
+### 示例
+
+```text
+online_stats([1000, 1000])                 -> m = 1000, ell = 2
+softmax_from_stats([1000, 1000], 1000, 2)  -> [0.5, 0.5]    # 不会因 exp(1000) 溢出
+online_attn_row(q=[1], k=[[0],[0]], v=[[2],[4]], scale=1, tile=1) -> [3]
+```
+
+## 解题思路与参考答案
+
+online softmax 把求 max 和 sumexp 合进一遍扫描，随后用全局统计量写出概率。扫描时保持 $\ell=\sum_{j\le i} e^{x_j-m}$，$m$ 是目前见过的最大值。新的最大值 $m'$ 出现时，旧的和要乘 $e^{m-m'}$ 换到新标尺，再加上新元素的 $e^{x_i-m'}$。扫完后 $m$ 和 $\ell$ 就是全局统计量。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，CPU 上用 float64 验证，没有验证 GPU kernel 或性能。
@@ -48,8 +72,6 @@ online_attn_row(q, k, v, 0.5, tile=3)      -> 与 softmax(k @ q / 2) @ v 一致�
 ```
 
 ### 解题思路与正确性
-
-扫描过程中始终维护不变量 $\ell=\sum_{j\le i} e^{x_j-m}$，其中 $m$ 是目前见过的最大值。新的最大值 $m'$ 出现时，旧的和要乘 $e^{m-m'}$ 换到新标尺，再加上新元素的 $e^{x_i-m'}$。扫完后 $m$ 和 $\ell$ 就是全局统计量。
 
 注意力里还要维护未归一化的输出 $O=\sum_j e^{s_j-m}v_j$。它和 $\ell$ 用同一个 rescale 系数 $\alpha=e^{m-m'}$：每来一块 key，先把旧的 $O$ 和 $\ell$ 乘 $\alpha$，再加上本块的贡献。最后返回 $O/\ell$。第一块时 $m=-\infty$，$\alpha=0$，旧值本来就是 0，不需要特判。
 
@@ -100,6 +122,16 @@ def online_attn_row(q, k, v, scale, tile=16):
         running_max = new_max
     return output / running_sum
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert m == 1000` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -184,9 +216,12 @@ decode 时 $T_q=1$，分数只是 `[1, S]`。online 省下的是把长度为 $S$
 
 ## 追问
 
-- **和减 max 的稳定 softmax 是什么关系？** 每一步减的是当前的 running max，而不是最终的全局 max；用 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$ 把旧的 $\ell$ 和 $O$ 换到新标尺上，效果等价于从头减全局 max。
-- **为什么 FlashAttention 仍然有归一化这一步？** 统计量 $m,\ell$ 一遍就能扫完，但写出归一化后的 $P$ 仍要再访问 $x$。注意力把这「第二遍」融进了 $PV$ 的累加里，训练时反向再重算一次。
-- **块内先 softmax、再把各块加权平均，能凑合吗？** 不能。那是错误的归一化，不算 FlashAttention 的近似。
+**和减 max 的稳定 softmax 是什么关系？**
+每一步减的是当前的 running max，而不是最终的全局 max；用 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$ 把旧的 $\ell$ 和 $O$ 换到新标尺上，效果等价于从头减全局 max。
+**为什么 FlashAttention 仍然有归一化这一步？**
+统计量 $m,\ell$ 一遍就能扫完，但写出归一化后的 $P$ 仍要再访问 $x$。注意力把这「第二遍」融进了 $PV$ 的累加里，训练时反向再重算一次。
+**块内先 softmax、再把各块加权平均，能凑合吗？**
+不能。那是错误的归一化，不算 FlashAttention 的近似。
 
 ## 相关题
 

@@ -4,7 +4,7 @@ section: coding
 order: 13
 level: A
 title: 白板：Gumbel-max 采样，和 softmax 温度的关系
-quick: "按温度抽硬类别用 argmax(z/τ+g)；Gumbel-softmax 松弛是 softmax((z+g)/τ)，它的 τ 不改变固定噪声下的类别，两种温度不能混用。"
+quick: "硬采样先缩放 logits，再用 argmax(z/τ+g)，得到温度采样。Gumbel-softmax 松弛用 softmax((z+g)/τ)，它的 τ 只改变连续输出和梯度，在固定噪声下不改变选中的类别。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,34 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.functional.gumbel_softmax.html
     type: primary
 ---
+
+## 题目描述
+
+实现 Gumbel 噪声、离散类别采样以及可选 hard 输出的可微 Gumbel-softmax 接口。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `gumbel_noise(shape, generator=None, device=None, dtype=torch.float32) -> Tensor`：生成标准 Gumbel 噪声 $g=-\log(-\log U)$。
+- `gumbel_max(logits, tau=1.0, generator=None) -> LongTensor[...]`：输出形状为 logits 去掉最后一维；沿最后一维从 $\mathrm{softmax}(\text{logits}/\tau)$ 抽一个类别。
+- `gumbel_softmax(logits, tau=1.0, hard=False, generator=None) -> Tensor`：输出与 logits 同形。标准松弛 $\mathrm{softmax}((\text{logits}+g)/\tau)$。`hard=True` 时前向输出 one-hot，反向沿松弛输出传梯度（straight-through）。
+- `tau` 必须是有限正数。logits 可以用 $-\infty$ 做 mask，但每行至少有一个有限值；合法输入不含 NaN 或 $+\infty$。
+
+### 输入输出示例
+
+```text
+logits = [[-inf, 0, -inf]], tau = 1
+gumbel_max(logits) -> [1]
+gumbel_softmax(logits, hard=True) -> [[0, 1, 0]]
+
+logits = [0, 2], tau = 0.5 时，gumbel_max 多次独立抽样中
+类别 1 的理论概率约为 0.982；不要求单次或有限次实验精确命中此比例。
+```
+
+## 解题思路与参考答案
+
+Gumbel-max 给 logits 加独立的标准 Gumbel 噪声，再取最大值；$\arg\max_i(z_i+g_i)$ 与从 $\mathrm{softmax}(z)$ 抽样同分布。要按温度 $\tau$ 抽类别，就先把 logits 缩放成 $z/\tau$，再加标准噪声。
 
 ## 完整编程练习（手册重构版）
 
@@ -43,8 +71,6 @@ z = [0, 2]，30000 次 gumbel_max(z, tau=0.5)  -> 选中类别 1 的比例 ≈ s
 ```
 
 ### 解题思路与正确性
-
-$\arg\max_i(z_i+g_i)$ 与从 $\mathrm{softmax}(z)$ 抽样同分布。要按温度 $\tau$ 抽类别，就先把 logits 缩放成 $z/\tau$，再加标准噪声。
 
 Gumbel-softmax 的 $\tau$ 除的是 $z+g$ 整体。对固定噪声，除以正数不改变 argmax，所以这个 $\tau$ 只控制连续输出有多尖、梯度有多大，不改变 `hard=True` 选出的类别。这就是两种温度不能混用的原因。
 
@@ -93,6 +119,16 @@ def gumbel_softmax(logits, tau=1.0, hard=False, generator=None):
     one_hot = torch.zeros_like(soft).scatter_(-1, index, 1.0)
     return one_hot + soft - soft.detach()  # 前向值是 one_hot，梯度来自 soft
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert abs(samples.float().mean() - expected) < 0.015` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -168,9 +204,12 @@ $y$ 与 `multinomial(softmax(z))` 同分布。
 
 ## 追问
 
-- **为什么等价于 softmax 采样？** Gumbel 分布是 max-stable 的：独立的 Gumbel 变量平移后取最大值仍是 Gumbel，可以算出 $\arg\max_i(\log\pi_i+g_i)=i$ 的概率正好是 $\pi_i$。面试里说到这一步就够了。
-- **两种温度相同吗？** 不同。硬类别温度先缩放 logits 再加标准噪声；松弛温度缩放的是 logits 与噪声的和，改变的是连续输出和梯度。
-- **能替代 nucleus 吗？** 不能，它不会自动截尾。要 nucleus 仍然先按 `coding-topk-nucleus` 截断，再在核上做 Gumbel-max。
+**为什么等价于 softmax 采样？**
+Gumbel 分布是 max-stable 的：独立的 Gumbel 变量平移后取最大值仍是 Gumbel，可以算出 $\arg\max_i(\log\pi_i+g_i)=i$ 的概率正好是 $\pi_i$。面试里说到这一步就够了。
+**两种温度相同吗？**
+不同。硬类别温度先缩放 logits 再加标准噪声；松弛温度缩放的是 logits 与噪声的和，改变的是连续输出和梯度。
+**能替代 nucleus 吗？**
+不能，它不会自动截尾。要 nucleus 仍然先按 `coding-topk-nucleus` 截断，再在核上做 Gumbel-max。
 
 ## 相关题
 

@@ -4,7 +4,7 @@ section: xai
 order: 600
 level: A
 title: "xAI：Twitter 分析平台：数据校验、Grok worker 与限流"
-quick: "Twitter 分析 take-home 先交付一条能重跑的端到端流程：按推文 id 去重入库，worker 调模型打分并记录重试和失败，入口限流和调用外部模型的出站限流分开计量。"
+quick: "先交付可重跑的端到端流程：校验推文、按 id 去重入库、worker 调模型并持久化成功或失败。入口和出站额度分开，模型调用用 request_id 幂等并有限重试；完整交付再补服务接口和容器化，练习只实现核心逻辑。"
 companies:
   - xai
 tags:
@@ -23,15 +23,44 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个可重启的 SQLite 文本打分流水线，包含输入去重、固定窗口额度、任务领取、失败重试与状态持久化。模型由调用方注入，不访问真实社交平台。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `Pipeline(db_path, model, in_limit=100, out_limit=10, width=60)`：用 SQLite 持久化。启动时把上次残留的 running 任务重置成 pending。
+- `ingest(records, now)`：只接受 `{"id": 非空字符串, "text": 字符串}` 这种记录。每个长度为 `width` 的固定窗口里，最多 `in_limit` 条合法记录可以进入（重复 id 也占额度）。id 已存在的不会重复入库。返回 `(inserted, rejected)`：新插入的条数、因非法或超额被拒绝的条数。
+- `run_one(now)`：原子地领取一条 pending 任务，受全局出站窗口限制，调用 `model(text, request_id=id)`。返回值必须是 [0, 1] 内的有限数，成功记为 done，异常或越界记为 failed。返回任务 id；没有任务或额度用完时返回 `None`。
+- `retry(id)`：failed 且尝试次数小于 3 的任务重新排队，返回是否成功。
+- `rows()`：按 id 返回所有记录，便于检查。
+- `shutdown()`：关闭连接，之后再调用其他方法抛 `RuntimeError`。调用方要先等所有 `run_one` 返回。
+- 语义是至少一次：模型适配层必须按 `request_id` 做幂等，不能声称外部调用恰好一次。时间非负，每次 `run_one` 只处理一条，最多 10000 条记录。
+- `in_limit`/`out_limit` 为正整数、width>0，窗口编号 floor(now/width)。重复 id 保留首次入库文本；新任务 status=pending、score=None、attempts=0。`run_one` 按 id 升序选择 pending，每次领取 attempts 加1，多个工作线程不得重复领取同一任务。
+- rows() 返回 tuple 列表，每行为 (id,text,status,score,attempts)。窗口计数仅在单实例内保存，重启后清零；数据库只持久化任务行，不承诺跨重启的严格配额。
+
+### 输入输出示例
+
+```text
+pipeline = Pipeline(path, model, out_limit=1)
+model 对任意 text 都返回 0.5。
+ingest([{"id":"a","text":"A"},{"id":"a","text":"A2"},{"id":"b","text":"B"}],now=0) -> (2,0)
+run_one(0) -> "a"，a 变成 done，分数0.5
+run_one(1) -> None，b 仍为 pending
+run_one(60) -> "b"，b 变成 done，分数0.5
+```
+
+## 解题思路与参考答案
+
+我会先把数据校验、去重入库、模型打分和失败恢复连成一条可重跑的流程，再补接口与容器化。比如重复导入同一推文，不应产生第二个任务；模型失败也要能查到状态，再决定是否重试。去重、任务状态、配额、配置和测试需要分别处理。
+
 ## 题目
 
 这是一道 take-home：读取一份推文数据集，校验每条记录后入库，再异步调用 Grok 之类的模型给推文打分。还要加上入口和出站两套限流，并把整个服务容器化。
 
 > 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
-
-## 思路
-
-先交付一条能从头跑到尾、可以重跑的最小流程，再逐步加功能。几个关键设计：
 
 - 去重：用推文 id 做主键，同一份数据导入两次不会产生重复任务。
 - 任务状态：每条推文有 pending、running、done、failed 几种状态，并记录尝试次数。worker 失败要落库，支持有限次数的重试。
@@ -217,6 +246,16 @@ class Pipeline:
                 self.closed = True
                 self.db.close()
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert pipeline.ingest(records, 0) == (2, 1)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

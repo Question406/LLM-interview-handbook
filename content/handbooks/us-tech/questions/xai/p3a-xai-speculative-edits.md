@@ -4,7 +4,7 @@ section: xai
 order: 750
 level: S
 title: "xAI：代码编辑 Speculative Edits：复用原代码草稿"
-quick: "把原代码当作草稿，每次让模型批量验证一段，接受和模型预测一致的前缀；第一次分歧时取模型的预测并丢掉后面的结果，这样输出和逐 token 贪心完全相同。"
+quick: "原代码作为草稿批量验证，只接受与确定性模型预测一致的连续前缀；首次分歧时输出该位置的模型预测，丢弃后面的预测。练习随后退回 greedy，EOS 和长度上限的行为保持一致，因此输出与逐 token 贪心相同。"
 companies:
   - xai
 tags:
@@ -22,15 +22,37 @@ sources:
     type: candidate-first-hand
 ---
 
+## 题目描述
+
+实现确定性模型上的 speculative edits。原文本作为 draft，模型一次能验证一段候选 token；返回的 token 必须与普通逐 token greedy 解码完全相同，同时记录模型调用次数。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `verify(prefix, candidates) -> list`：模拟模型。返回长度与 `candidates` 相同的列表，第 $i$ 项是以 `prefix + candidates[:i]` 为上下文时的 argmax。模型固定、确定性，平局按统一规则打破。
+- `greedy(verify, limit, eos=-1)`：逐 token 解码，返回 `(tokens, calls)`。
+- `edits(verify, draft, block, limit, eos=-1)`：每次最多验证 `block` 个草稿 token，只接受与预测一致的连续前缀；第一次不一致时输出该位置的模型预测，之后永久切回 greedy。返回 `(tokens, calls)`。
+- EOS 不放进输出；`limit = 0` 时不调用模型；`block >= 1`，`limit >= 0`。
+
+### 示例
+
+```text
+verify 对任意上下文都预测目标续写 [1,2,3]（已生成对应前缀后预测下一项），随后预测 EOS=-1。
+greedy(verify, limit=10) -> ([1,2,3],4)
+edits(verify, draft=[1,9,3], block=2, limit=10) -> ([1,2,3],3)
+# 首次批量验证接受 1、将 9 修正为 2；随后预测 3 和 EOS。
+```
+
+## 解题思路与参考答案
+
+我会批量验证原代码草稿，只接受连续匹配的前缀，并在首次分歧后丢弃后续预测。模型在位置 $i$ 的预测只依赖前面的上下文，这正是它能与 greedy 保持一致的原因。把 `prefix + draft[pos:pos+block]` 一次送进模型，第 $i$ 个输出就是「假设前 $i$ 个草稿 token 都对」时的下一个 token。只要前面的草稿 token 都和预测一致，这个上下文就和 greedy 当时看到的一模一样，预测也就一样。
+
 ## 题目
 
 代码编辑场景下，模型要输出的新代码大部分和原代码相同。题目要求实现普通的 greedy 解码和 speculative edits：把原代码当作草稿，让模型一次验证多个 token，从而减少调用次数，同时输出必须和 greedy 完全一致。要处理草稿全部匹配、中途分歧和输出长度上限这几种情况。
 
 > 来源：一亩三分地 xAI 候选人原帖（thread 1193219）。原帖明确要求 greedy 与 speculative edits 输出相同、复用原代码作为草稿、处理全匹配、分歧与长度上限，并以加速为目标；`verify` 的模拟接口、函数签名和测试是手册补的练习约定，原帖没写的条件不当作已确认的面试事实。
-
-## 思路
-
-核心观察是：模型在位置 $i$ 的预测只依赖它前面的上下文。把 `prefix + draft[pos:pos+block]` 一次送进模型，第 $i$ 个输出就是「假设前 $i$ 个草稿 token 都对」时的下一个 token。只要前面的草稿 token 都和预测一致，这个上下文就和 greedy 当时看到的一模一样，预测也就一样。
 
 所以每一轮验证时：
 
@@ -123,6 +145,16 @@ def edits(verify, draft, block, limit, eos=-1):
             out.append(token)
     return out, calls
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert edits(verify, draft, 2, limit)[0] == greedy(verify, limit)[0]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

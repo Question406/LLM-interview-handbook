@@ -4,9 +4,7 @@ section: openai
 order: 14
 level: A
 title: OpenAI：activation checkpoint 省显存的代价，和 ZeRO 怎么叠
-quick: >-
-  Checkpoint 不存整段激活，反向时再前向一遍，激活显存从 $O(L)$ 降到按切段的 $O(\sqrt{L})$ 或每层常数，代价是
-  额外计算（常见多 20%–40% 时间）。ZeRO 切的是参数 / 梯度 / 优化器。长上下文两者都要，谁也替不了谁。
+quick: "Checkpoint 只保存段界激活，反向时重算中间结果，用额外计算换显存；ZeRO 则分片参数、梯度和优化器状态。先看是哪类显存超预算，长上下文训练常需要同时使用两者。"
 tags:
   - OpenAI
   - Gradient Checkpointing
@@ -28,43 +26,30 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+Activation checkpointing 用重计算减少激活显存，ZeRO 分片模型状态，两者能叠加。比如同一份 7B bf16 模型，ZeRO-2 已把 Adam 状态分摊到多卡，长上下文仍可能 OOM，因为每张卡还要留自己 microbatch 的激活。
 
-OpenAI 规模的训练岗会问显存账，不一定点名某篇内部 wiki。公开来源是 checkpoint 的亚线性激活论文和 ZeRO。万亿怎么切并行见 `nvidia-trillion-train`；本题只讲「重计算」和「分片状态」怎么叠。Adam 状态有多大见 `openai-adamw`。
+Transformer 前向要为每层反向保留激活，总量随 $B\cdot T\cdot L\cdot d$ 增长。checkpoint 只存段界输入，反向进入一段时再前向计算其中激活。每层都重算时，前向粗占 fwd+bwd 的三分之一，实际时间常多 20%–40%，约 $+30\%$ 量级。每 $\sqrt{L}$ 层存一次是论文的亚线性方案，激活可从 $O(L)$ 降到 $O(\sqrt{L})$；按每层 checkpoint 则保留每层常数的入口存储，不能把入口一起丢掉。
 
-## 省的是哪一类显存，代价是什么
+选择性 checkpoint 会按算子划分，比如重算注意力、FFN，留下 LayerNorm、残差短连接。FlashAttention 已避免在 HBM 留完整 `[B,H,T,T]` 分数，它只覆盖注意力，与其他段的重算仍可配合。这是训练图中的重计算边，和 `torch.no_grad` 不同。
 
-一次 Transformer 正向，每层要留下给反向用的激活，总量跟 $B\cdot T\cdot L\cdot d$ 走，长上下文时它占用甚至超过参数。Activation checkpointing（也叫 recompute）：只在段界存一份，反向走进这一段时把中间激活当场再算出来。
+把显存账写具体：$B=2$、$T=8\mathrm{k}$、$L=32$、$d=4096$，仅每层一份 hidden 就有 $B T L d \times 2$ 字节、数 GB，注意力和 FFN 还会增加。Adam 状态约 $12$ 字节/参数，7B 就是 $\approx 84$ GB。ZeRO-1 切优化器，ZeRO-2 再切梯度，ZeRO-3 连参数一起切、用前 all-gather；它们主要随参数量增长，checkpoint 省的则随 $B,T,L$ 增长。
 
-代价是多一次被 checkpoint 段的前向。若每层都 checkpoint，粗算正向约占 fwd+bwd 的三分之一，实际耗时常见 $+30\%$ 量级，换来激活显存掉一个档。切得更稀（每 $\sqrt{L}$ 层存一次）是论文里的亚线性方案，实现更烦，面试说结论即可。
+选方法时先测两列：短上下文大模型，优先用 ZeRO、张量并行装下状态；上下文拉长，ZeRO-3 后仍爆且参数已少，就查激活。一起用时 gather 和重计算都增加时间、降低 MFU，可以尝试通信重叠、更粗的段来隐藏额外前向。纯加数据并行卡数不会减少每卡 microbatch 的激活，超长 $T$ 还要考虑序列并行。
 
-选择性 checkpoint 更实际：重算贵的注意力 / FFN，LayerNorm、残差短连接留下。FlashAttention 已经不把完整 `[B,H,T,T]` 分值留在 HBM，和 checkpoint 是同一方向的「别存那么多激活」，但只覆盖注意力。
-
-不要 checkpoint 到连需要的输入都丢了：段的入口张量必须留着，否则无法重算。和 `torch.no_grad` 不是一回事；这是训练图里的重计算边。
-
-粗算一份 7B、bf16：$B=2$、$T=8\mathrm{k}$、$L=32$、$d=4096$，激活按每层一份 hidden 就有 $B T L d \times 2$ 字节，已经是数 GB，中间注意力和 FFN 还要再乘几份。同模型 Adam 状态大约 $12$ 字节/参数 $\approx 84$ GB 量级，ZeRO-2 能把它摊到多卡，但激活这份仍然每卡一份 microbatch。这就是「为什么 ZeRO 之后还要 checkpoint」。
-
-## 和 ZeRO 正交，叠的顺序按瓶颈
-
-ZeRO-1 分片优化器状态，ZeRO-2 再分片梯度，ZeRO-3 连参数也分片，用前 all-gather。它砍的是模型状态，跟 $B,T$ 关系弱，跟参数量关系强。Checkpoint 砍的是激活，跟 $B,T,L$ 强相关。
-
-典型演变：
-
-- 模型大、上下文短：先 ZeRO / 张量并行把参数放下，激活还好。
-- 上下文一长，ZeRO-3 之后单卡参数已经很少，HBM 仍爆，那就是激活。这时加 checkpoint，而不是再加 ZeRO 级数。
-- 两者一起用时，ZeRO-3 的 gather 和重计算都会吃时间，MFU 掉是预期。要用通信重叠和更粗的 checkpoint 段把额外前向藏住。
-
-常见误区是：把 ZeRO 说成「也能少激活」；把 checkpoint 说成「能少 Adam 的 12 字节/参数」。面试画两列：左激活右状态，看现在哪一类显存超出了预算，再选工具。
-
-数据并行下每张卡仍要一份当前 microbatch 的激活，所以纯堆 GPU 而不切 $T$（序列并行）也救不了超长上下文。那是第三条轴，点到即可。
-
-和 `openai-prefill-decode` 对照：训练没有 逐 token 生成（decode） 循环，每步都是满 $T$ 的正向，所以激活峰值按最长文档走。packing 能降低 padding，但峰值仍由最长 packed 序列决定。checkpoint 解决的是峰值，不是平均浪费。
-
-ZeRO 管状态分片，checkpoint 管用算力换激活；长上下文先看激活列，大参数先看状态列，两类都超过预算时，就同时使用两种方法。
+训练每步是完整 $T$ 的前向，没有推理逐 token decode。packing 减少 padding，峰值仍受最长 packed 序列影响，checkpoint 处理的就是这个峰值。
 
 ## 追问
 
-- **推理要 checkpoint 吗？** 一般不要。decode 没有整段反向。训练才有。
-- **和梯度累积？** 累积降的是等价 batch，不降单步激活峰值。峰值仍由 microbatch 的 $B,T$ 决定。
-- **offload 能不能代替？** CPU/NVMe offload 救参数和优化器，激活带宽更怕来回拷。长 $T$ 优先重算。
-- **MoE？** 专家激活更碎，checkpoint 段要划在路由之后，避免重算时 all-to-all 两次，见 `openai-moe-aux-loss`。
+**推理要 checkpoint 吗？**
+通常不要，decode 没有整段反向。
+
+**梯度累积能降低峰值吗？**
+它控制等效 batch，单步激活峰值仍由 microbatch 的 $B,T$ 决定。
+
+**offload 能代替吗？**
+CPU/NVMe offload 适合参数和优化器，激活往返更吃带宽，长 $T$ 优先考虑重算。
+
+**MoE 的段怎么划？**
+可划在路由之后，避免重算又做一遍 all-to-all。
+
+相关：`nvidia-trillion-train`、`openai-adamw`、`openai-prefill-decode`、`openai-moe-aux-loss`

@@ -4,7 +4,7 @@ section: meta
 order: 20
 level: A
 title: Meta：GQA 实现——repeat KV、kernel 融合，别只背论文配置
-quick: "Cache 只存 $H_{\\mathrm{kv}}$ 组 KV，kernel 里按 `h_q // g` 取对应的 KV head；在 HBM 里先 repeat 成 $H_q$ 份，会把省下的带宽又花回去。"
+quick: "GQA 的 cache 只保存 $H_{\\mathrm{kv}}$ 组，query head 用 `h_q // g` 找到共享 KV。先用基准实现验证 mask、RoPE 和 cache，再检查实际 GPU 后端：若在 HBM 里物化成 $H_q$ 份，就会多花原本要节省的带宽。"
 tags:
   - 完整编程练习
   - Meta
@@ -29,6 +29,36 @@ sources:
     url: https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
     type: primary
 ---
+
+## 题目描述
+
+用 NumPy 实现支持 GQA、可选 RoPE 和增量 KV cache 的因果多头注意力，使整段计算与带 cache 的逐 token 计算结果一致。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `mha(x,wq,wk,wv,wo,heads,kv_heads=None,cache=None,key_valid=None,use_rope=False)` 返回 (output,`new_cache`)，output 为 [B,T,D]；x 为 [B,T,D]，wq/wo 为 [D,D]，wk/wv 为 [D,Hkv*d]，d=D/heads，Hkv 默认 heads。D % heads = 0，heads % Hkv = 0。
+- Q/K/V 的投影定义为 x@wq、x@wk、x@wv，无 bias。Q 有 heads 个头，K/V 有 Hkv 个头；query head h 使用 KV head floor(h/(heads/Hkv))。每个 query 输出为 softmax(QKᵀ/sqrt(d)) 对 V 的加权和，按 head 编号拼接后右乘 wo。
+- cache 为 (K,V)，各为 [B,Hkv,prefix,d]，None 表示 prefix=0；新 cache 长度 prefix+T，仍只存紧凑 KV heads，不修改旧 cache。
+- query t 的绝对位置为 prefix+t，只允许绝对 key 位置<=它自身；`key_valid` 为 [B,prefix+T] bool，True 可见，None 表示无额外屏蔽。没有可见 key 时该 query 的输出为0。
+- `rope(x,start)` 对 [B,H,T,d] 相邻二元组旋转，theta[t,j]=(start+t)*10000**(-2*j/d)，(a,b) 变为 (a*cos-b*sin,a*sin+b*cos)。`use_rope`=True 时 d 为偶数，仅旋转新 Q/K，旧缓存 K 已经旋转，V 不旋转。
+- 输入有限，1<=B<=8、1<=T<=256、D<=128，无 dropout。整段前向与按 token 调用并携带 cache 的输出应一致。
+
+### 输入输出示例
+
+```text
+单 head，wq = wk = 0（所以 Q = K = 0），wv = wo = I，x = [[2, 4], [6, 8]]
+query 0 只能看 key 0             -> [2, 4]
+query 1 对 key 0、1 均匀平均      -> [4, 6]
+
+任意固定权重下：
+mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
+```
+
+## 解题思路与参考答案
+
+GQA 的实现要让 cache 只保存紧凑的 KV head，并让 query head 在计算时找到所属的 KV 组。下面先用 NumPy 写一个能验证 cache、RoPE 和 mask 的正确性基准，再讨论 GPU kernel 怎样避免真正复制 KV。
 
 ## 完整编程练习（手册重构版）
 
@@ -57,13 +87,13 @@ mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
 
 ### 解题思路与正确性
 
-先把输入投影成 Q/K/V 并拆成多头，再按当前这段 token 的绝对位置对 Q 和新 K 做 RoPE，最后把新 K/V 接到 cache 后面。旧 K 在写进 cache 之前就转过了，这里不再碰它。
+我会先投影并拆出 Q/K/V 多头，再按当前 token 的绝对位置旋转 Q 和新 K。旧 K 已经在缓存前做过 RoPE，保持不动，只将新 K/V 追加到 cache。
 
-当前段的第 `i` 个 query 位于绝对位置 `prefix + i`，只能看下标 `j ≤ prefix + i` 的 key。prefill（`prefix = 0`）、单 token decode 和一次喂多个 token 的分块 decode 都用这同一条规则，所以三种调用方式拼出来的结果一致。
+因果 mask 用绝对位置比较：当前段第 `i` 个 query 在 `prefix + i`，只允许读取 `j ≤ prefix + i`。这样 prefill 的 `prefix = 0`、单 token decode、分块 decode 共用一套判断，结果才能与整段计算对齐。
 
-softmax 沿 key 维做，先减去每行的最大值，`exp` 就不会溢出。一行 key 全被屏蔽时，最大值是 `-inf`，先换成 0，此时分母为 0，按约定输出 0。
+Softmax 沿 key 维归一化，先减行最大值来避免 `exp` 溢出。若这一行全被 mask，最大值为 `-inf`，先换成 0，再按零分母的约定输出 0，避免 NaN。
 
-GQA 里 query head `h` 读第 `h // group` 个 KV head，`group = heads / Hkv`。参考实现用 `np.repeat` 把 KV 展开后算注意力，只是为了写出直观的基准；cache 本身始终只存 `Hkv` 份。
+GQA 用 `group = heads / Hkv` 将 query 分组，head `h` 对应 KV head `h // group`。NumPy 基准为了直观用 `np.repeat` 展开参与计算，但返回 cache 仍只有 `Hkv` 份，后面融合路径要保留这个紧凑布局。
 
 ### 完整参考实现（Python 3）
 
@@ -177,6 +207,16 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     return output, (k, v)
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(pieces, axis=1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -287,20 +327,20 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 - 追问「这些测试能抓住哪些 bug」：去掉 causal mask，未来扰动测试会失败；softmax 轴、缩放或合并 heads 写错，逐 head 循环对照会失败；RoPE offset 写成 0 或 mask 没加 prefix，有/无 cache 对照会失败；已知均值例子能直接看出归一化对不对。
 - 原始面试里的完整 Transformer 代码没有公开，不要把这段练习说成原帖的 300 行源码。
 
-## 题怎么来的
+## 从基准到融合 kernel
 
-`meta-llama-gqa` 问的是 Llama 2 70B 为什么用 $32$ 个 query head、$8$ 个 KV head。本题问的是实现：repeat 发生在哪一步，cache 里存几组，kernel 融合了什么。Llama 和推理岗的白板常要求画出 shape，只背一句「GQA 是 4:1」过不了。选型上的公式对比可以看 `google-gqa-mqa`。
+`meta-llama-gqa` 讨论 Llama 2 70B 的 $32$ query head、$8$ KV head 选择，这里将它落实为 shape、cache 与内存访问。选型公式也可对照 `google-gqa-mqa`，练习不是原帖完整 Transformer 源码。
 
-## Shape 和 repeat 发生在哪
+### 先对齐 shape
 
-Llama 2 70B 的配置是 $H_q=32$，$H_{\mathrm{kv}}=8$，每组 $g=H_q/H_{\mathrm{kv}}=4$ 个 query head，$d=256$。投影之后：
+按这张卡的 Llama 2 70B 配置，$H_q=32$、$H_{\mathrm{kv}}=8$、每组 $g=H_q/H_{\mathrm{kv}}=4$，$d=256$，投影后的形状为：
 
 - $Q$：$[B, H_q, S_q, d]$
 - $K,V$：$[B, H_{\mathrm{kv}}, S_{kv}, d]$
 
-参考写法（Meta 早期 `llama` 仓库里的 `repeat_kv`）沿 head 维把 KV 重复 $g$ 次，得到 $[B, H_q, S_{kv}, d]$，然后按普通 MHA 计算。数学上就是每组 $4$ 个 query 共用同一份 K/V。
+Meta 早期 `llama` 的 `repeat_kv` 沿 head 维将 KV 重复 $g$ 次，形成 $[B, H_q, S_{kv}, d]$，即可按 MHA 算。每组 $4$ 个 query 虽有各自 Q，读的 K/V 相同。
 
-**Cache 里必须仍然只存 $H_{\mathrm{kv}}$ 组。** decode 每一步写入 $8$ 组，不是 $32$ 组。如果把 repeat 之后的张量写进 cache，显存和读带宽都回到了 MHA 的水平，GQA 就白做了。正确的顺序是：从 cache 读出 $[B, 8, S, d]$，计算时在逻辑上 repeat（或在 kernel 里按下标去取），输出 $[B, 32, 1, d]$。
+Cache 始终保存 $H_{\mathrm{kv}}$ 组，decode 每步只写 $8$ 组。若缓存展开后的 $32$ 组，就回到 MHA 的空间和读取量。正确路径先读取 $[B, 8, S, d]$，计算时逻辑展开或按下标读取，最后输出 $[B, 32, 1, d]$。
 
 ```python
 def repeat_kv(x, n_rep):
@@ -312,30 +352,34 @@ def repeat_kv(x, n_rep):
     return x.reshape(batch, kv_heads * n_rep, seq_len, head_dim)
 ```
 
-`expand` 本身不分配新内存，但如果后面的 kernel 要求 contiguous，`reshape` 仍可能把它物化成 $4$ 倍大小。这就是「naive GQA」在逐 token 生成（decode）时省不了带宽的原因。
+`expand` 只是视图，不过下游 kernel 若要求 contiguous，随后的 `reshape` 可能真的生成 $4$ 倍张量。这样即使 cache 紧凑，decode 计算仍额外花了展开与读取的带宽。
 
-## Kernel 融合：别把 KV 在 HBM 里摊开
+### 检查实际后端是否复制
 
-FlashAttention 和 PyTorch SDPA 的 GQA 路径**不会物化 repeat**。线程块按 query head 调度，用整数除法 `h_kv = h_q // g` 找到对应的 KV head。同一组的 $4$ 个 query head 共用 SRAM 里同一份 K/V tile，I/O 从「读 $32$ 份 KV」降到「读 $8$ 份，在 SRAM 里复用」。decode 实际变快，靠的就是这一点。
+融合 GQA 路径可以直接按 query head 调度，用 `h_kv = h_q // g` 索引 KV，无需在 HBM 展开。组内 $4$ 个 query 共用 SRAM 中的 K/V tile，将读取从 $32$ 份降到 $8$ 份并在片上复用，这是 decode 节省 I/O 的来源。
 
-PyTorch 里是 `scaled_dot_product_attention(..., enable_gqa=True)`，要求 $H_q$ 能被 $H_{\mathrm{kv}}$ 整除。math 后端仍可能调用 `repeat_interleave`，flash / mem-efficient 后端才走下标索引。面试时要讲清楚：**API 打开了 GQA，不代表底层没有 repeat**，要看实际选中的 backend。如果用 `TORCH_LOGS=kernel` 或 profiler 看到先有一个很大的 `repeat_interleave`、后面才是 attention，就说明走了慢路径。
+PyTorch 的 `scaled_dot_product_attention(..., enable_gqa=True)` 要求 $H_q$ 能被 $H_{\mathrm{kv}}$ 整除，还需确认选中的 backend：math 后端可能调用 `repeat_interleave`，flash / mem-efficient 路径才用索引。可用 `TORCH_LOGS=kernel` 或 profiler 检查，若 attention 前还有大型 `repeat_interleave`，就没有避开展开成本。
 
-prefill 和 decode 的成本结构不一样。prefill 是大 GEMM / FlashAttention，受算力限制，GQA 主要省的是写入 KV 的体积。decode 时 $S_q=1$，几乎没有大 GEMM，时间都花在读历史 KV 上，naive repeat 在这里最吃亏。长上下文（如 Llama 3.1 的 128k）把 $S_{kv}$ 拉大，融合路径的相对收益也更大。再往下是 KV 量化和 paging，见 `sys-kv-quant`、`sys-paged-attn`。
+Prefill 的大 GEMM / FlashAttention 更受算力限制，GQA 主要减少 KV 写入；decode 的 $S_q=1$，读取历史 KV 更关键，展开会尤其浪费。Llama 3.1 的 128k 等长上下文使 $S_{kv}$ 增大，更值得核对融合路径，再考虑 KV 量化与 paging，见 `sys-kv-quant`、`sys-paged-attn`。
 
-RoPE 只作用在 $Q,K$ 上，而且要在 repeat **之前**、按 $H_{\mathrm{kv}}$ 份去转 K。先 repeat 再转，会把同样的旋转重复做 $4$ 遍。位置下标仍然从 cache 长度开始，见 `meta-llama-rope`。
+RoPE 只转 $Q,K$，K 在 repeat 前按 $H_{\mathrm{kv}}$ 组转即可，展开后再转会重复 $4$ 遍。新位置从 cache 长度开始编号，见 `meta-llama-rope`。
 
-## 训练侧别踩的坑
+### 训练与推理保持同一布局
 
-Llama 2/3 **训练时就是 GQA**，K/V 投影直接输出 $H_{\mathrm{kv}}$ 组。不要先训成 MHA，再在推理时 repeat；从 MHA checkpoint 转成 GQA 是 GQA 论文里的 upcycle 做法，会带来转换误差。训练时的输入预填充（prefill，即处理整段输入并建立缓存）直接用融合 kernel 即可，没必要为了「和 decode 一致」去物化 repeat。
+Llama 2/3 训练时就让 K/V 投影输出 $H_{\mathrm{kv}}$ 组。MHA checkpoint 转 GQA 则是论文里的 upcycle 路径，有转换误差需要评估。训练处理整段输入时可直接用融合 kernel，不必为了对齐 decode 而显式展开。
 
-`torch.compile` 可能把 `expand + reshape` 融合掉，也可能在 graph break 之后留下一次拷贝。和 FSDP 的情况一样，要看 break 日志下结论，见 `meta-pytorch-compile`，不要断言 compile 之后 naive repeat 就没有成本。
+`torch.compile` 有时能融合 `expand + reshape`，graph break 后也可能留下一次复制。要结合 break 日志和 profiler 验证，见 `meta-pytorch-compile`，不能仅凭打开 compile 就认定没有成本。
 
 ## 追问
 
-- **$g$ 必须是 $4$ 吗？** 只要求能整除。$32/8=4$ 是 Llama 2 70B 的选择，不是规律。Llama 3 8B 也是 GQA，head 数要看具体配置，不要背成所有尺寸都是 $32/8$。
-- **MQA 就是 $H_{\mathrm{kv}}=1$，kernel 会更简单吗？** 索引更简单，但质量更脆弱。70B 对话模型对质量敏感，所以 Meta 停在了 GQA。在 kernel 里，MQA 只是 $g=H_q$ 的 GQA 特例。
-- **能不能在 batch 维 repeat？** 不能。要重复的是 head，不是 batch。在 batch 维扩 KV 会把不同请求的 cache 混在一起。
-- **和张量并行（TP）一起时怎么切？** query head 按 TP 切分，每张卡上的 $H_q$ 仍要能被本卡的 $H_{\mathrm{kv}}$ 整除。如果切得让一个 GQA 组跨了卡，还得额外为 KV 通信，见 `sys-3d-parallel`。
+**$g$ 必须是 $4$ 吗？**
+只要求能整除。$32/8=4$ 是 Llama 2 70B 的选择，不是规律。Llama 3 8B 也是 GQA，head 数要看具体配置，不要背成所有尺寸都是 $32/8$。
+**MQA 就是 $H_{\mathrm{kv}}=1$，kernel 会更简单吗？**
+索引更简单，但质量更脆弱。70B 对话模型对质量敏感，所以 Meta 停在了 GQA。在 kernel 里，MQA 只是 $g=H_q$ 的 GQA 特例。
+**能不能在 batch 维 repeat？**
+不能。要重复的是 head，不是 batch。在 batch 维扩 KV 会把不同请求的 cache 混在一起。
+**和张量并行（TP）一起时怎么切？**
+query head 按 TP 切分，每张卡上的 $H_q$ 仍要能被本卡的 $H_{\mathrm{kv}}$ 整除。如果切得让一个 GQA 组跨了卡，还得额外为 KV 通信，见 `sys-3d-parallel`。
 
 ## 相关题
 

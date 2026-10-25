@@ -21,6 +21,8 @@ sources:
     type: secondary
 ---
 
+准备时先进入下面两张已整理题卡，再用来源表确认其余条目的证据范围。10 条记录包含重复变体和仅标题线索，不能当作 10 道已核实的独立真题。
+
 ## 已整理的题卡
 
 - [[p3a-cursor-speculative-decoding-acceptance]]

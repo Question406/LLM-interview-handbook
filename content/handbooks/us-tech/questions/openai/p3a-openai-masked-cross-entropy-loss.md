@@ -4,7 +4,7 @@ section: openai
 order: 621
 level: S
 title: "OpenAI：NumPy 交叉熵：mask、label smoothing 与 KL"
-quick: "用 logsumexp 算 log-softmax，目标分布为平滑后的 one-hot，只在有效行上求平均，梯度是 softmax 减目标；全部被 mask 时返回 0。"
+quick: "先用 logsumexp 得到 log-softmax，与平滑后的 one-hot 目标计算交叉熵，再按有效行数平均。梯度是 softmax 减目标，乘 mask 后用同一分母归约；全部被 mask 时返回 0 和零梯度。"
 companies:
   - openai
 tags:
@@ -23,15 +23,36 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+用 NumPy 实现带有效行 mask 和 label smoothing 的多分类交叉熵，同时返回 loss 对 logits 的解析梯度。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `cross_entropy(logits, labels, mask=None, smoothing=0) -> (loss, dlogits)`：`logits` 形状 `[N, C]`，`labels` 是形状 `[N]` 的整数，`mask` 是形状 `[N]` 的 bool，`None` 表示全部有效。
+- 目标分布是 $(1 - \varepsilon) \cdot \text{onehot}(y) + \varepsilon / C$，loss 是有效行上每行交叉熵的平均；`dlogits` 与 `logits` 同形状，无效行的梯度为 0。
+- 没有有效行时返回 `loss = 0.0` 和全零梯度。
+- 要求 $C \ge 2$、$0 \le \varepsilon < 1$、标签在 $[0, C)$ 内。logits 都是有限值，$N \le 1000$，$C \le 10000$。
+
+### 输入输出示例
+
+```text
+cross_entropy([[0, 0]], [1])  -> loss = log(2) ≈ 0.6931, dlogits = [[0.5, -0.5]]
+```
+
+两个类别 logits 相同，softmax 是 `[0.5, 0.5]`，目标是 `[0, 1]`，梯度就是两者之差。
+
+## 解题思路与参考答案
+
+交叉熵和梯度一起从 log-softmax 算，最后都按有效行数平均。先用 logsumexp 算 log-softmax，每行减最大值再取 exp，避免溢出。然后取目标类别的负 log 概率作为每行的 loss，最后按有效行数（有效 token 数）求平均，而不是按总行数。
+
 ## 题目
 
 用 NumPy 实现分类交叉熵损失，并返回对 logits 的梯度。之后扩展两项：只在有效位置上计算的 mask，以及标签平滑。
 
 > 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
-
-## 思路
-
-先用 logsumexp 算 log-softmax：每行减去最大值再取 exp，不会溢出。然后取目标类别的负 log 概率作为每行的 loss，最后按有效行数（有效 token 数）求平均，而不是按总行数。
 
 标签平滑改变的是目标分布：正确类别拿 $1 - \varepsilon$，再把 $\varepsilon$ 均匀分给所有类别。这里要和面试官确认，均匀那份是分给全部 C 个类别（正确类别也分到一份），还是只分给其余 C - 1 个类别。两种写法的 loss 数值不同。
 
@@ -117,6 +138,16 @@ def cross_entropy(logits, labels, mask=None, smoothing=0):
     grad = (np.exp(log_probs) - target) * valid[:, None] / num_valid
     return loss, grad
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.isclose(loss, np.log(2))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

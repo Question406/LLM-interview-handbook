@@ -4,7 +4,7 @@ section: openai
 order: 607
 level: S
 title: "OpenAI：矩阵前缀积：手写反传与并行扫描"
-quick: "前向不能原地覆盖反向要用的前缀积；backward 从后往前累积每个前缀的梯度，再左乘前一个前缀积的转置；Hillis–Steele 扫描只用结合律，左块必须留在左边。"
+quick: "我会保存前向前缀积，backward 从后往前累积每个输出传回的梯度，再按矩阵乘法的左右顺序求导。Hillis–Steele 每层读上一层副本，用结合律并行合并；比如左块与右块交换会算错，浮点结果则用容差比较。"
 companies:
   - openai
 tags:
@@ -22,6 +22,31 @@ sources:
     url: https://www.1point3acres.com/interview/problems/company/openai/autograd-hillis-steele-scan
     type: secondary
 ---
+
+## 题目描述
+
+实现矩阵序列的有序前缀乘积及其反向传播；矩阵乘法不交换，结果必须保留原始输入顺序。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `prefix(A)`：输入 n 个 D×D 矩阵，形状 `[n, D, D]`，返回有序前缀积 $P_i = A_0 A_1 \cdots A_i$，形状相同。
+- `scan(A)`：用 Hillis–Steele 的分层方式算出同样的前缀积。各层具有并行读旧层、写新层的执行语义。
+- `backward(A, G)`：`G` 与 `A` 同形状，返回标量 $L = \sum_i \langle G_i, P_i \rangle$ 对每个 $A_i$ 的梯度。
+- 输入为形状合法的浮点数组。$n \le 100$，$D \le 20$；`n = 0` 时返回形状为 `[0, D, D]` 的空数组。
+
+### 输入输出示例
+
+```text
+A = [[[2]], [[3]]]
+prefix(A)                    -> [[[2]], [[6]]]
+backward(A, ones_like(A))    -> [[[4]], [[2]]]
+```
+
+## 解题思路与参考答案
+
+我会先保存每步前缀积，避免前向原地覆盖反向需要的数据，再从后往前累积梯度。比如两个 1×1 矩阵 2 和 3，前缀是 2、6，梯度是 4、2；这个小例子能先检查链式法则，随后再处理不可交换的矩阵和并行扫描。
 
 ## 题目
 
@@ -127,6 +152,16 @@ def backward(matrices, upstream):
         from_later = grad_prefix @ stack[i].T
     return grads
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(prefix(small), [[[2]], [[6]]])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

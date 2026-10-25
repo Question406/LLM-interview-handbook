@@ -4,9 +4,7 @@ section: overview
 order: 10
 level: S
 title: 美国 Tech：Agent / RL 面准备轨迹、工具与评测，不要只背 ReAct
-quick: >-
-  ReAct 四个字母不够撑一轮。评委要听轨迹怎么记、奖励落在终局还是工具事件、评测环境如何固定、预算耗尽时由谁停止执行。
-  编码是带超时的工具循环；对齐要讲稀疏奖励的贡献分配，以及模型如何钻 grader 的评分规则。总表见 `us-llm-re-prep`。
+quick: "Agent / RL 面先准备宿主工具循环、轨迹记录、奖励定义和可重放评测。要能解释超时与预算耗尽时谁停止执行、终局奖励怎样分配信用，以及如何防止模型钻 grader 的规则；总表见 `us-llm-re-prep`。"
 tags:
   - US Tech
   - Agent
@@ -28,7 +26,7 @@ sources:
     type: primary
 ---
 
-投 OpenAI / Anthropic / Microsoft Copilot / Amazon Bedrock Agents，agent 轮经常混在系统设计或对齐里，很少是「请默写 Thought-Action-Observation」。ReAct 只是日志格式。评委要看你能不能把循环放在宿主代码中：调用 schema、权限、预算、确认、trace。岗位分界见 `us-research-vs-applied`；轮次形态见 `us-loop-types`。
+这张卡按工具循环、RL 奖励和可重放评测三块准备 Agent 面试。投 OpenAI / Anthropic / Microsoft Copilot / Amazon Bedrock Agents 时，这类题经常放在系统设计或对齐轮，重点是宿主怎样校验 schema、权限、预算、确认并记录 trace。比如模型重复调用失败工具，谁停止循环、轨迹里留下什么证据，需要能讲清楚。ReAct 可以用来描述日志格式，后面还要补执行和验收机制。岗位分界见 `us-research-vs-applied`；轮次形态见 `us-loop-types`。
 
 ## 轨迹怎么记
 
@@ -38,9 +36,9 @@ sources:
 
 编码练习：解析 tool JSON、写 budget.charge、对 tool 结果做截断和角色标记。OpenAI 电面仍可能是 Transformer debug，agent 岗只是 onsite 多一道设计；不要用 agent 名词替代 `us-debug-vs-leetcode`。
 
-## RL：奖什么比叫什么算法重要
+## RL 奖励怎样定义和验证
 
-稀疏终局 0/1、组相对 baseline、过程奖会刷调用次数，这三句要比「我们用 PPO」先说，见 `align-grpo`、`align-tool-rl`、`align-process-reward`。OpenAI RFT / 基于可验证奖励的强化学习（RLVR）：grader 可验证、eval 先于训练、验收 grader 分开，见 `align-rft`。奖励模型（RM） 当工具好坏的打分器，会走 Gao 的过优化曲线，见 `align-overopt-rm`。隐藏思考不要当标签，见 `align-cot-leak`。
+先说明终局 0/1 奖励是否稀疏、组相对 baseline 怎样计算，以及过程奖是否会诱导模型刷调用次数，再介绍所用算法，见 `align-grpo`、`align-tool-rl`、`align-process-reward`。OpenAI RFT / 基于可验证奖励的强化学习（RLVR）：grader 可验证、eval 先于训练、验收 grader 分开，见 `align-rft`。奖励模型（RM） 当工具好坏的打分器，会走 Gao 的过优化曲线，见 `align-overopt-rm`。隐藏思考不要当标签，见 `align-cot-leak`。
 
 可扩展监督如果被问到：weak-to-strong 是弱老师强学生；debate 是弱裁判看质询；CAI 是原则替代逐条 harmless 标注。能用三句话分开，见 `align-weak-strong`、`align-debate`、`align-cai`。别宣称生产已靠辩论对齐。
 
@@ -52,18 +50,25 @@ WebArena 的教训是：真实网页、功能谓词、单次 rollout 的结果�
 
 两周压缩：一周实现带预算的工具环 + 一条可重放 fixture；一周推稀疏奖励和一张 WebArena 式评测表。论文加 Anthropic「Building effective agents」和 WebArena，不必堆二十个 agent 框架名。模拟面计时画约束，禁止空画「再加一个 planner agent」。
 
-工作日清单：今天写了 charge / 确认 / 截断里的哪一段；今天把哪条轨迹字段补进 trace；今天用冻结夹具重放了一次失败。常见误区是：把 ReAct 当算法；把多 agent 当架构；把温度 0 当可复现；把训练 RM 当工具是否成功的金标。材料包四样：一段工具循环、一张预算状态机、一页稀疏奖励、一份任务图评测。每天只推进一样。
+每天可以检查：charge / 确认 / 截断实现了哪一段，trace 补了哪个字段，是否用冻结夹具重放过一次失败。常见误区是：把 ReAct 当算法；把多 agent 当架构；把温度 0 当可复现；把训练 RM 当工具是否成功的金标。材料包四样：一段工具循环、一张预算状态机、一页稀疏奖励、一份任务图评测。每天只推进一样。
 
-Onsite 45 分钟设计：先钉不可逆动作和预算数字，再画循环，最后才谈「要不要多 agent」。评测问「环境 sha 钉在哪」；对齐问「$r$ 来自终局还是调用次数」。这几项都能回答，设计才有具体内容。简历项目准备 8 分钟：哪次工具环死循环、你怎么加熔断、哪张表证明没把模拟器过拟合进分数。
+Onsite 45 分钟设计：先钉不可逆动作和预算数字，再画循环，最后才谈「要不要多 agent」。评测问「环境 sha 钉在哪」；对齐问「$r$ 来自终局还是调用次数」。这几项都能回答，设计才有具体内容。简历项目准备 8 分钟，选自己经历过的工具循环问题，说明如何定位、是否加过熔断，以及用什么评测排除对模拟器的过拟合。
 
 和六周计划的关系：第 4 周对齐加上 RFT / 稀疏信用，第 5 周设计改成工具环而不是只做 检索增强生成（RAG）。NVIDIA 岗可以少花时间在 agent，把预算留给并行；Anthropic / OpenAI applied 岗反过来。不要用 agent 周替代 Transformer debug，见 `us-debug-vs-leetcode`。
 
 ## 追问
 
-- **ReAct 到底还要不要提？** 当日志格式提一句即可。追问应落到权限、预算、评测。
-- **没有训过 RL 能面 agent 岗吗？** 能。把 harness 和评测讲透，RL 用稀疏奖励和 grader 纪律补概念。
-- **多 agent 简历怎么讲？** 讲你如何拆子目标与 trace，不要讲角色名清单。
-- **和多模态准备重叠吗？** 看屏 agent 两边都要：token 预算看 `us-mm-prep`，沙箱走本题。
-- **Computer use 和 function calling 准备同一套吗？** 契约同一套（权限、预算、确认、trace）。定位方式不同：schema vs 截屏坐标，见 `design-browser-agent`、`anthropic-computer-use`。
-- **要不要实现一个开源 agent 框架？** 不要为面试重写框架。把循环、夹具、grader 写对比熟记 LangGraph 名词有用。
-- **SWE-bench 分数能当故事讲吗？** 可以当任务定义，不能当你的能力证明。要讲冻结环境、成本、失败分类，见 `design-eval-agent`。
+**ReAct 到底还要不要提？**
+当日志格式提一句即可。追问应落到权限、预算、评测。
+**没有训过 RL 能面 agent 岗吗？**
+能。把 harness 和评测讲透，RL 用稀疏奖励和 grader 纪律补概念。
+**多 agent 简历怎么讲？**
+讲你如何拆子目标与 trace，不要讲角色名清单。
+**和多模态准备重叠吗？**
+看屏 agent 两边都要：token 预算看 `us-mm-prep`，沙箱走本题。
+**Computer use 和 function calling 准备同一套吗？**
+契约同一套（权限、预算、确认、trace）。定位方式不同：schema vs 截屏坐标，见 `design-browser-agent`、`anthropic-computer-use`。
+**要不要实现一个开源 agent 框架？**
+不要为面试重写框架。把循环、夹具、grader 写对比熟记 LangGraph 名词有用。
+**SWE-bench 分数能当故事讲吗？**
+可以当任务定义，不能当你的能力证明。要讲冻结环境、成本、失败分类，见 `design-eval-agent`。

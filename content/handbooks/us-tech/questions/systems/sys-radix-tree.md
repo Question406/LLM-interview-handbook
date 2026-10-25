@@ -4,7 +4,7 @@ section: systems
 order: 25
 level: A
 title: 系统：radix / prefix tree 共享 KV（SGLang）
-quick: "树在 CPU，KV 页在 GPU。边存的是一段 token，不是单字符。新请求沿树找最长前缀，命中的物理页直接挂上 block table。分叉之后才写新页。淘汰从叶子 LRU，根上的系统提示尽量留下。"
+quick: "RadixAttention 用 CPU 上的压缩前缀树查最长公共 token 前缀，把命中的 GPU KV 页挂到请求的 block table，只重算后缀。共享页写入前做 CoW，淘汰优先处理无引用的叶子，同时保留安全边界与在途请求的显存预算。"
 tags:
   - SGLang
   - vLLM
@@ -29,52 +29,46 @@ sources:
     type: primary
 ---
 
-## 完整实现专题
+RadixAttention 用一棵压缩前缀树找请求能复用的最长 KV 前缀，只对后缀做 prefill。例如多轮对话前两轮相同、第三轮才分叉，树就把公共路径留下，各自接新的分支。它是 SGLang 公开的索引设计，LMSYS 2024 博客和 SGLang 论文都有说明。
 
-[[kv-prefix-implementation-index]] 汇总8道题：每层Transformer KV、树分裂、lease与淘汰、分页COW、块哈希、分段attention、命中规划和端到端复用。
+树维护在 CPU，KV 页仍在 GPU。树边标记一段 token，比逐 token trie 更浅，节点记录引用计数与 GPU 物理页下标；博客指出，相对 GEMM，这部分 CPU 开销可忽略。$page_size \gt 1$ 时还要把命中长度对齐页边界，不足一页的尾部当 miss 重算。
 
-## 题怎么来的
+请求带完整 prompt 到运行时，由运行时从根找最长驻留前缀，再把命中页写进该请求的 block table。多条请求引用同一页，不用 memcpy。开始生成后若要写已共享的页，必须 copy-on-write，避免改变其他请求的前缀。查询要逐边比较最长公共段，即使在压缩边中途分歧，也返回已经命中的部分，并累积沿途所有 KV 句柄，不能只取末节点 payload。
 
-多轮对话、few-shot、同一条系统提示、agent 工具模板，请求之间有长公共前缀。vLLM automatic prefix caching 用块哈希；SGLang 公开的 RadixAttention 用 radix tree（压缩前缀树）做最长前缀匹配。LMSYS 2024 博客和 SGLang 论文都把树画出来了，这不是内部黑话。NVIDIA 岗追页怎么共享；应用岗追错命中。块表原语见 `sys-paged-attn`，命中条件见 `sys-prefix-cache`。本题讲树比扁平哈希多了什么、淘汰怎么走。
+相比 vLLM 块哈希，树更直接表达部分共享和分叉，如相同工具 schema 后接不同参数、agent 多轮、并行采样和 beam；块哈希适合逐块完全一致的匹配。两者都能复用前缀，性能还取决于命中粒度、索引成本与生命周期策略，不能只凭名字判断。SGLang 的 `extra_key` 还把 LoRA、adapter 和不应共享的命名空间分开，token 一样也不一定能共用路径。通用命中条件见 `sys-prefix-cache`。
 
-## 树在 CPU，页在 GPU
+## 淘汰与调度
 
-我会先把两层拆开。Radix 树的边可以标一段 token，比逐 token 的 trie 浅。节点存引用计数和指向 GPU 物理页的下标。博客写明：树维护在 CPU，开销相对 GEMM 可忽略；GPU 上仍是 paged KV。$page_size \gt 1$ 时匹配对齐到页边界，余下不足一页的 token 只能当 miss 重算。
+HBM 有限，公开策略用 LRU 并优先淘汰叶子，尽量不拆共享主干。根附近的系统提示命中频繁，一小时前某条对话的私有尾巴可先淘汰；随意移除中间节点会让子树失去有效路径。页级引用与实际使用状态必须一起维护。
 
-新请求带着完整 输入提示（prompt） 进来（前端不负责切前缀）。运行时从根走下去，找到最长已经驻留的前缀，把那些物理页填进这条请求的 block table，只对后缀做 输入预填充（prefill，即处理输入并建立缓存）。多条请求共享同一段系统提示时，那一段 KV 只有一份，靠引用计数，不是 memcpy。某条开始生成、要写已经共享的页，必须 copy-on-write 拆页，否则会改到别人的前缀。
+Cache-aware 调度可把共享前缀请求排在一起，增加命中，也有利于 FlashInfer cascade 的公共 KV 加私有 KV 计算，见 `sys-flashinfer`。只追瞬时 tokens/s、任意打乱请求，可能使主干引用计数频繁变动。请求结束后也别立刻丢掉生成段，把它插回树，下一轮才能复用“系统提示 + 上轮问答”，见 `sys-agent-sched`。
 
-和 vLLM 块哈希的差别：扁平哈希擅长「整块 token 完全一致」；树天然表达部分共享和分叉（同一模板头、第三轮才分叉、工具 字段和类型规范（schema） 相同后面参数不同）。Agent 多轮、并行采样、beam 都是树更顺的形状。树和块哈希都能做前缀复用；命中粒度、索引成本和生命周期策略要按具体实现比较，不宜仅凭数据结构名称断言谁更快。
+Radix 是索引，PagedAttention 是物理页管理，kernel 仍按 block table 读页，不会逐步在 GPU 遍历 CPU 树，也没改注意力公式，数值应与按页 gather 的精确注意力一致。分页方便分配和分叉，但共享在数学上不依赖分页；连续只读 prefix 与私有 suffix 也能做分段 attention，见 [[kv-prefix-segmented-attention]]。分页的原语见 `sys-paged-attn`，两层配合可以零拷贝挂接共享页。
 
-完整可运行的树实现见 [[kv-prefix-radix]]，带引用和淘汰的版本见 [[kv-prefix-radix-leases]]。查询必须逐边比较最长公共段：在边中途分歧时返回已匹配片段；返回值要累积沿途全部KV句柄，不能只取末节点payload。
-
-Cache key 不能只有 token。SGLang 源码里 `extra_key` 把 LoRA、adapter、故意不共享的命名空间拆开：token 相同但 `extra_key` 不同，不得走同一条边。这和 `sys-prefix-cache` 的错命中纪律一致。
-
-## 淘汰、调度、和分页的关系
-
-HBM 有限，树不能无限长。公开策略是 LRU，并且先踢叶子：踢叶子不拆掉还被很多人引用的主干。系统提示在根附近，命中频繁，会留下；一小时前某条对话的尾巴先走。这和「按页 LRU、不管树结构」不同：乱踢中间节点会把整棵子树变孤儿，命中率假高、实际全 miss。
-
-Cache-aware 调度：尽量把共享同一前缀的请求排在一起，提高本步树命中，也让 FlashInfer cascade 那种「公共 KV + 私有 KV」更值钱，见 `sys-flashinfer`。只追瞬时 tokens/s、乱序插请求，会把主干的引用计数抖动打乱。
-
-分页便于统一分配和分叉写入，但不是共享的数学必要条件：连续只读prefix也可单独保留，再与私有suffix做分段attention，见 [[kv-prefix-segmented-attention]]。Radix 是索引；PagedAttention 是物理页。两层一起才有零拷贝共享。结束的请求不要立刻把 KV 丢掉：生成结果也可以插回树，下一轮用户消息才能命中「系统提示 + 上一轮问答」。这正是 agent 流量的形状，见 `sys-agent-sched`。
-
-风险：热点主干占满 KV 池，挤掉在飞 逐 token 生成（decode），hit rate 很好、P99 TPOT 很差。要限制单前缀占比，并和在飞页分池或设水位。跨机 replica 没有同一棵树，要亲和，或接受 miss。多租户：用户文档默认不要跨租户命中；公共系统提示可以共享。
-
-错误说法：RadixAttention 改了注意力公式（数值应与按页 gather 的精确注意力一致）；树存在 GPU 上每步被核遍历；和 PagedAttention 二选一。树是 CPU 索引，核仍然按 block table 读页。
+热门主干也可能占满 KV 池，让命中率上升、P99 TPOT 变差，需要限制单前缀比例，和在途 decode 分池或设水位。跨机副本没有同一棵树，要做亲和路由或接受 miss。公共系统提示可共享，用户文档默认不跨租户复用。
 
 ## 追问
 
-- **和 vLLM prefix cache 怎么选？** 大量部分共享、多轮、分叉，树更合适。几乎总是整段系统提示完全相同、分叉少，块哈希够用。
-- **改一个空格？** 从第一个不同 token 断开。若整段仍命中，key 没含 token ID 或 template 版本。
-- **为什么淘汰叶子？** 叶子是私有后缀；中间节点是共享主干。先踢叶子保留系统提示。
-- **page_size 和匹配粒度？** 匹配按页对齐。页太大，短分叉也要重算一截；页太小，树更深、核间接访问更多。
-- **生成结果为什么也要插入？** 下一轮 prompt 是旧上下文加新用户句。不插生成段，多轮第一次就会从分叉处全量 prefill。
-- **LoRA 能共享主干吗？** 一般不能。`extra_key` 必须分开，否则 不易发现的错误命中。
+**树和块哈希怎么选？**
+大量部分共享、多轮分叉时考虑树；几乎只有完全相同的系统提示、分叉少时，块哈希就够。
+
+**一个空格变化会怎样？**
+从第一个不同 token 断开。仍整段命中，要查 token ID 与 template 版本是否进 key。
+
+**页大小影响什么？**
+页大时短分叉也要重算一截，页小时索引更细、树更深，kernel 间接访问更多。
+
+**为什么保留生成结果？**
+下一轮 prompt 会包含旧回答。不插入生成段，下一轮就得从原分叉处重新 prefill。
+
+**LoRA 能共享主干吗？**
+通常不能，`extra_key` 必须区分，否则会出现不易发现的错命中。
 
 ## 相关题
 
-- [[kv-prefix-implementation-index]]：要写代码时的专题入口。
-- [[kv-prefix-radix]]：手写这棵树：边分裂，停在压缩边中间也算命中。
-- [[kv-prefix-radix-leases]]：手写 pin/unpin 和叶子 LRU，对应这里的淘汰追问。
-- [[p3a-xai-radix-cache]]：xAI 面经的 radix tree 编程题，只做数据结构，查询只认终结节点。
-- [[sys-prefix-cache]]：不限定数据结构的前缀缓存题，讲命中条件和多用户共享的风险。
-- [[kv-prefix-block-hash]]：vLLM 式链式块哈希的实现，对应追问「树和块哈希怎么选」。
+- [[kv-prefix-implementation-index]]：8 道题覆盖每层 Transformer KV、树分裂、lease 与淘汰、分页 COW、块哈希、分段 attention、命中规划和端到端复用。
+- [[kv-prefix-radix]]：完整树实现，包含边中途命中与分裂。
+- [[kv-prefix-radix-leases]]：pin/unpin 与叶子 LRU。
+- [[p3a-xai-radix-cache]]：xAI 面经数据结构题，查询只认终结节点。
+- [[sys-prefix-cache]]：通用命中条件与多用户风险。
+- [[kv-prefix-block-hash]]：vLLM 式链式块哈希。

@@ -4,7 +4,7 @@ section: alignment
 order: 13
 level: A
 title: 对齐：Best-of-N 推理时对齐，成本与 RM over-optimize
-quick: "BoN 从同一策略抽 $N$ 条，用奖励模型（RM）选得分最高的回答。它把对齐从训练挪到推理：不更新权重，但 生成成本近线性增长，且 $N$ 大时 proxy 分涨、gold 掉。前缀 KV 可共享，不能把 $N$ 当成免费质量旋钮。"
+quick: "Best-of-N 对同一输入采样 $N$ 条回答，再用奖励模型选最高分，不更新策略权重。它能把更多推理预算换成更好的候选，但生成成本近线性增长，$N$ 过大还会放大奖励模型偏差，要用独立评测确定合适预算。"
 tags:
   - OpenAI
   - Inference
@@ -26,13 +26,9 @@ sources:
     type: primary
 ---
 
-OpenAI 对齐和推理岗都爱问 Best-of-N：InstructGPT 用它当 基于人类反馈的强化学习（RLHF） 基线；Gao 等人把「加大 $N$」画成和加大 强化学习（RL） 步数同类的 overoptimization。不是某次现场逐字题。我会按「质量从哪来、钱花在哪、何时分叉」答，并接到 `align-reward-model`。
+Best-of-N 是在推理时多生成几条回答，再用奖励模型选一条，策略权重不变。它适合快速验证一种奖励是否有用，但预算增加后，质量与成本要分别检查，不能假定候选越多就越好。
 
-## 它在对什么齐
-
-策略 $\pi$ 先按正常温度采样 $N$ 条 $y_1,\ldots,y_N$，奖励模型给分，返回 $\arg\max_i r_\phi(x,y_i)$。权重不变，变的是推理分布：更集中到 RM 喜欢的区域。这是推理时对齐，和 监督微调（SFT） / 直接偏好优化（DPO） / PPO 改 $\pi$ 互补。$N=1$ 就是原策略。
-
-和 beam 不同：beam 优化的是模型自己的 logp，不是 $r_\phi$。和拒绝采样不同：拒绝采样有阈值，BoN 是固定预算取最大。DPO 的 implicit 奖励分数（reward） 也能打分，同一 $x$ 下 $Z(x)$ 公共，见 `align-dpo`；换一张和训练无关的 RM 更适合当验收，避免自己给自己挑。
+策略 $\pi$ 按正常温度采样 $N$ 条 $y_1,\ldots,y_N$，RM 打分后返回 $\arg\max_i r_\phi(x,y_i)$。因此改变的是输出分布，使它集中到 RM 喜欢的区域；$N=1$ 就是原策略。SFT、DPO、PPO 会改变 $\pi$，与它可以互补。Beam 优化模型自己的 logp，目标不同于 $r_\phi$，拒绝采样则按阈值接收候选，BoN 的规则是固定预算取最大。
 
 ```python
 def best_of_n(logps_rm, n):
@@ -41,38 +37,31 @@ def best_of_n(logps_rm, n):
     return idx
 ```
 
-可验证任务用对错 / 单测当 $r$，BoN 接近搜索。开放对话只有 proxy RM，选出的回答可能只是迎合 RM 的偏差，未必更符合真实目标。
+可验证任务能用对错或单测作 $r$，接近搜索；开放对话依赖 proxy RM，可能只挑中了它的偏好。DPO 的隐式奖励在同一 $x$ 下也可排序，因为 $Z(x)$ 公共，见 `align-dpo`，但不能跨 prompt 比绝对 $\log(\pi/\pi_{\mathrm{ref}})$。验收最好换独立 RM 或人工，避免选择与评估使用同一偏差。RM 训练见 `align-reward-model`。
 
-## 成本：不是「再调一个温度」
+## 多采样的成本与边界
 
-朴素实现是 $N$ 次独立 逐 token 生成（decode），实际耗时和生成 token 数都近线性增长。对话场景 输入提示（prompt） 很长：系统提示和历史应走前缀 KV 复用，只对分叉后的 response 付费，见 `sys-prefix-cache`。即便如此，decode 仍是 $N$ 路。连续批处理能把 $N$ 路塞进同一 iteration，但显存按活着的序列数涨，见 `openai-continuous-batching`。
+朴素做法跑 $N$ 路 decode，生成 token 与耗时近线性增长。长系统提示和历史可以共享前缀 KV，只为分叉后的 response 付重复成本，见 `sys-prefix-cache`；连续批处理能把各路放进同一 iteration，但活跃序列越多，显存越大，见 `openai-continuous-batching`。
 
-预算写法：先定 token 上限，再反推 $N$ 和最大长度。$N=64$ 配长回答，会把 p95 和 KV 打爆。产品上常见折中：免费档 $N=1$，难查询或付费档小 $N$，且对短答案提前停。别在面试里甩单价；说吞吐、p95、KV 页数。
+我会先定总 token 预算，再定 $N$ 与单条最大长度。$N=64$ 配长回答可能打满 KV、推高 p95。可以让免费档用 $N=1$，难查询或付费档用较小的 $N$，短答案提前停，报告吞吐、p95 与 KV 页数。温度太低时，64 条可能几乎相同，先看 unique n-gram，确认多样性再加候选。
 
-多样性不够时加大 $N$ 是浪费：温度太低，64 条近重复，RM 挑的还是同一句话。先看 unique n-gram，再加 $N$。
+Gao 等人的研究把 BoN 与增加 RL 步数放到同类过优化问题中：proxy RM 分继续上升，held-out RM 或人工 gold 分却先升后降，见 `align-reward-hack`。更长回答更容易出现 RM 喜欢的 n-gram，长度偏差也会被搜索放大，见 `align-length-bias`。因此扫 $N$ 时用 gold 曲线决定停止位置，可以加长度惩罚、按长度归一化 $r$，也可以保留 SFT 候选，减少偏离参考文风。
 
-## Over-optimize：Gao 的分叉
-
-proxy RM 不是 gold。$N$ 增大时，训练 RM 分单调往上，held-out RM 或人工分会先升后降。这和 RL 步数加大是同一条 Goodhart 曲线，只是发生在推理期，见 `align-reward-hack`。长度几乎一定被选中：更长更容易撞上 RM 喜欢的 n-gram，见 `align-length-bias`。
-
-护栏：
-
-- 用另一张 RM 或人抽查看分叉，训练 RM 不能同时当选模器和验收器。
-- 长度惩罚、对 $r$ 做长度归一，再 argmax。
-- 把 SFT 样本强制留在候选里，防止完全离开参考文风。
-- $N$ 当超参扫，根据 gold 曲线选择停止增加 N 的位置，不要对着 proxy 新高停。
-
-BoN 还能当离线造偏好的办法：对同一个输入生成多个回答，RM 排序产生 pair，再拿去 DPO。那是在用 proxy 写训练集，污染和 overoptimize 会进权重，比纯推理 BoN 更危险，要和 `align-eval-contam` 同一纪律。
+InstructGPT 用 BoN 作 RLHF 基线，这道题据此及 Gao 的工作整理，并非逐字现场题。若再用 RM 排序生成 pair 来训 DPO，proxy 偏差会进入权重，风险比只做推理选择更持久，数据隔离与污染检查参照 `align-eval-contam`。
 
 ## 追问
 
-- **$N$ 越大越好吗？** 只对 proxy。gold 有拐点，过了就是刷 RM。
-- **和 RL 比谁更划算？** 流量小、要快速试奖励：BoN。流量大、同一奖励要摊到每次请求：把能力训进 $\pi$。
-- **过程奖励能 BoN 吗？** 可以按步骤分搜，见 `align-process-reward`。步骤 RM 同样会过优化。
-- **隐式 DPO 奖励做 BoN？** 同一 $x$ 可以。切勿跨 prompt 比绝对 $\log(\pi/\pi_{\mathrm{ref}})$。
+**$N$ 越大越好吗？**
+对 proxy 更容易高分，gold 可能过拐点后下降，要看独立评测。
+
+**BoN 和 RL 哪个划算？**
+低流量、快速试奖励时 BoN 直接；大流量、奖励稳定时，可以把能力训进 $\pi$，摊薄每次请求成本。
+
+**过程奖励也能做吗？**
+能按步骤搜索，见 `align-process-reward`，但步骤 RM 一样会过优化。
 
 ## 相关题
 
-- [[align-overopt-rm]]：专讲 proxy 涨、gold 先升后降的 Goodhart 曲线，把 BoN 和 RL 放在同一个横轴上比，这张只算 BoN 的成本。
-- [[align-reward-model]]：BoN 挑哪条全看 RM 打分，那张讲 RM 怎么训、为什么只有分差可信。
-- [[align-grpo]]：GRPO 也是一组样本按奖励比较，但用组统计更新权重；BoN 只在推理时挑一条，不训练。
+- [[align-overopt-rm]]：proxy 与 gold 分叉的 Goodhart 曲线。
+- [[align-reward-model]]：RM 训练与可信的分差。
+- [[align-grpo]]：也比较组内奖励，但会据此更新权重。

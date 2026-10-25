@@ -4,7 +4,7 @@ section: coding
 order: 4
 level: S
 title: 白板：LayerNorm vs 在 feature 维上的标准化，eps 和仿射
-quick: "对 $[B,T,D]$ 沿 $D$ 减均值、除以 $\\sqrt{\\sigma^2+\\varepsilon}$，再乘 $\\gamma$ 加 $\\beta$；每个 token 只用自己的特征，不看 batch。"
+quick: "对 $[B,T,D]$ 的每个 token，沿 $D$ 减均值、除以 $\\sqrt{\\sigma^2+\\varepsilon}$，再乘 $\\gamma$ 加 $\\beta$。统计量只来自这个 token 的特征，方差除以 $D$，训练和推理都不依赖 batch 统计。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,31 @@ sources:
     url: https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
     type: primary
 ---
+
+## 题目描述
+
+实现一个可训练的 LayerNorm 模块。给定最后一维大小 dim，对任意前置 batch / 序列维度的浮点张量逐行归一化，再执行可学习的缩放与平移；输入输出形状相同。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `LayerNorm(dim, eps=1e-5)`：`nn.Module`，可训练参数 `gamma`（初始化为 1）和 `beta`（初始化为 0），形状都是 `[dim]`。
+- `forward(x)`：只在最后一维上做标准化，方差用总体方差（`unbiased=False`，除以 $D$）。内部先升到 float32 计算，输出再转回输入的 dtype。
+- 要求 `dim >= 1`、`eps > 0`。
+
+- 对最后一维 D 个元素，输出定义为 `(x-mean(x))/sqrt(mean((x-mean(x))^2)+eps)*gamma+beta`，`gamma` 和 `beta` 对前置维度广播。
+### 示例
+
+```text
+LayerNorm(dim=2, eps=1e-5)，gamma=[1,1]，beta=[0,0]
+输入 [[1,3]] -> 输出约 [[-0.999995,0.999995]]
+LayerNorm(dim=1)，beta=[2]，输入 [[7]] -> 输出 [[2]]
+```
+
+## 解题思路与参考答案
+
+LayerNorm 对每个 token 的最后一维做标准化，再应用可学习的仿射变换。归约只看它自己的 $D$ 个特征，batch 和时间维的数据不会混进来。
 
 ## 完整编程练习（手册重构版）
 
@@ -44,8 +69,6 @@ D = 1 时，任意输入  ->  beta
 ```
 
 ### 解题思路与正确性
-
-归约只沿最后一维进行，batch 和时间维的数据不会混进来，每个 token 的输出只依赖它自己的 $D$ 个特征。
 
 方差必须用总体方差。用无偏方差（除以 $D-1$）时，$D=1$ 会除以 0 得到 NaN；用总体方差时方差是 0，加上 $\varepsilon$ 后有限，输出就是 $\beta$。
 
@@ -80,6 +103,16 @@ class LayerNorm(nn.Module):
         normalized = (x32 - mean) * torch.rsqrt(var + self.eps)
         return (self.gamma * normalized + self.beta).to(x.dtype)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(output, reference, atol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -167,9 +200,12 @@ $\gamma,\beta$ 让模型能把「单位方差」再调回它需要的尺度和�
 
 ## 追问
 
-- **和 BatchNorm 差在哪？** BN 沿 batch 为每个通道估计统计量，推理依赖 running mean；LN 沿 feature 维计算，逐步 decode 时不需要改代码。
-- **$\gamma$ 怎么初始化？** $\gamma$ 为 1，$\beta$ 为 0，训练开始时 $y\approx\hat x$。有人把 $\gamma$ 初始化得很小，给 Pre-LN 做热身，那是训练技巧，不是 LN 的定义。
-- **padding 要不要 mask？** 标准 LN 对 pad 位置也照常做标准化，但这些位置的隐藏状态后面不会计入损失（loss），所以没关系。不要在 LN 里偷偷沿 $T$ 求均值。
+**和 BatchNorm 差在哪？**
+BN 沿 batch 为每个通道估计统计量，推理依赖 running mean；LN 沿 feature 维计算，逐步 decode 时不需要改代码。
+**$\gamma$ 怎么初始化？**
+$\gamma$ 为 1，$\beta$ 为 0，训练开始时 $y\approx\hat x$。有人把 $\gamma$ 初始化得很小，给 Pre-LN 做热身，那是训练技巧，不是 LN 的定义。
+**padding 要不要 mask？**
+标准 LN 对 pad 位置也照常做标准化，但这些位置的隐藏状态后面不会计入损失（loss），所以没关系。不要在 LN 里偷偷沿 $T$ 求均值。
 
 ## 相关题
 

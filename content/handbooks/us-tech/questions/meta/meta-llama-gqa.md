@@ -4,7 +4,7 @@ section: meta
 order: 1
 level: A
 title: Meta / Llama：为什么 70B 用 GQA？和 MHA 比 decode 省在哪？
-quick: "Llama 2 70B 公开配置是 $32$ 个 query head、 $8$ 个 KV head。KV cache 大约降到 MHA 的 $1/4$，逐 token 生成（decode） 带宽跟着降。质量用 grouped 的 KV 保住，不走到 MQA 的极端共享。这是 Meta 推理岗的默认开口。"
+quick: "按这张卡采用的 Llama 2 70B 公开配置，$32$ 个 query head 共享 $8$ 个 KV head，KV 存储与读取量约为 MHA 的 $1/4$。GQA 在质量与带宽间折中，cache 只存紧凑 KV，计算时逻辑展开或用融合 kernel；总加速还取决于其他开销。"
 tags:
   - Meta
   - Llama
@@ -23,37 +23,34 @@ sources:
     type: primary
 ---
 
-Meta GenAI / Llama 岗很少问「GQA 的全称」，会问你 70B 为什么不继续用满头 KV。公式和选型见 `arch-gqa` 和 `google-gqa-mqa`。本题按 Llama 2 论文的公开配置收。
+GQA 让多个 query head 共享一组 K/V，主要减少 decode 时保存和读取历史 KV 的开销，同时比 MQA 保留更多 KV 组来折中质量。这张卡按 Llama 2 论文配置讨论，通用公式与选型见 `arch-gqa`、`google-gqa-mqa`。
 
-## 70B 的账
-
-Llama 2 70B：隐藏维 $8192$，$32$ query heads，所以 $d_{\mathrm{head}}=256$。GQA 把 KV head 收到 $8$ 组，每组 $4$ 个 query head 共享。KV cache：
+按这里的 70B 配置，隐藏维 $8192$、$32$ query heads，$d_{\mathrm{head}}=256$，K/V 收到 $8$ 组，每组 $4$ 个 query head 共用。KV cache 字节为：
 
 $$
 2 \cdot L \cdot T \cdot H_{\mathrm{kv}} \cdot d_{\mathrm{head}} \cdot \mathrm{bytes}
 $$
 
-$H_{\mathrm{kv}}$ 从 $32$ 变 $8$，cache 和 逐 token 生成（decode） 读带宽大约 $\times 1/4$。Decode 每步几乎不算大 GEMM，时间砸在读历史 KV 上，所以这个 $1/4$ 是实际耗时，不只是显存表上的数。
+$H_{\mathrm{kv}}$ 从 $32$ 到 $8$，KV cache 与相关读取带宽约为 $\times 1/4$。Decode 每步的大 GEMM 较少，读取历史 KV 很重要，所以这是影响耗时的资源减少；$1/4$ 指这部分开销，还要连同其他开销判断实际延迟。MQA 用 $H_{\mathrm{kv}}=1$ 还能少 $8$ 倍，质量敏感的对话模型则可停在 GQA；论文强调不显著损失质量地加快推理，并不表示它必然比 MHA 更准。
 
-MQA（$H_{\mathrm{kv}}=1$）还能再省 $8$ 倍，但 70B 这种质量敏感的对话模型，Meta 选了 GQA。论文明确写 GQA 是为了在不显著掉质量的前提下加快推理。不要答成「GQA 一定比 MHA 准」。
+Llama 2 训练时就采用 GQA，K/V 投影直接产出紧凑头。实现形状可画成 $K,V$ 为 `[B, 8, S, 256]`，$Q$ 为 `[B, 32, S, 256]`，计算时 repeat 4 次或直接用 GQA kernel，cache 始终只存 $8$ 组。若把 $32$ 组展开结果写入 cache，就重复花掉了本想节省的空间与带宽。
 
-## 训练和推理要对齐
-
-Llama 2 是 **训练时就是 GQA**，不是 MHA 训完再 merge。现场若问「能不能 MHA 训、GQA 推」，可以，GQA 论文给了 mean-pool 初始化，但有转换误差，要在同一套 eval 上量，不能口头保证无损。
-
-实现：attention 里 $K,V$ 是 `[B, 8, S, 256]`，$Q$ 是 `[B, 32, S, 256]`。要么把 KV repeat 4 次，要么走 GQA kernel。repeat 发生在计算时，cache 里仍存 $8$ 组。把 cache 存成 $32$ 组，等于把省下来的带宽又花回去。
-
-长上下文（Llama 3 的 128k）把 $T$ 拉大之后，GQA 的相对收益更大。再往后是量化 KV 和 paging，那是系统题，见 `sys-quant`。
+MHA 检查点也可以转换，GQA 论文给 mean-pool 初始化，但转换有误差，要在相同评测上验证，不能保证无损。Llama 3 的 128k 把 $T$ 拉长后，这项 KV 节约更显著，再叠 KV 量化与 paging 需要另算，见 `sys-quant`。
 
 ## 追问
 
-- **8 这个数怎么来的？** 公开论文没把搜索过程写死。面试答：在 $1$ 和 $H_q$ 之间扫，$8$ 是质量和带宽的工作点。不要编造「必须是 $4$ 的幂」除非你做过消融。
-- **和 MoE 专家并行冲突吗？** 不直接冲突。GQA 改的是注意力 KV；MoE 改的是 FFN 路由。显存上两者叠加，需要一起算。
-- **Llama 4 / 后续还用 GQA 吗？** 以当时公开技术报告为准。原理不变：decode 带宽跟 $H_{\mathrm{kv}}$ 走。
+**为什么选 8？**
+公开论文没有固定描述搜索过程，可在 $1$ 与 $H_q$ 间扫质量与带宽工作点，不能编成必须是 $4$ 的幂。
+
+**与 MoE 冲突吗？**
+机制不直接冲突，GQA 改注意力 KV，MoE 改 FFN 路由，显存要把两者一起算。
+
+**后续 Llama 还用吗？**
+按相应公开报告核对具体配置，原理仍是 decode KV 带宽随 $H_{\mathrm{kv}}$ 变化。
 
 ## 相关题
 
-- [[google-gqa-mqa]]：Google 问法，把 MHA、MQA、GQA 三档放在一起比，不绑定某个具体模型配置。
-- [[meta-gqa-kernel]]：同为 Meta 问法，接着要你写 GQA：cache 只存 $H_{\mathrm{kv}}$ 组，kernel 里按 `h_q // g` 取 KV。
-- [[apple-ondevice-kv]]：同一个 KV 字节公式搬到手机端，墙变成 DRAM 和 ANE，还叠了 8-bit cache。
-- [[us-llm-paper-stack]]：GQA 和 Llama 都在面试前的精读论文栈里，那张说明要读到能默写关键式。
+- [[google-gqa-mqa]]：MHA、MQA、GQA 三档对比。
+- [[meta-gqa-kernel]]：cache 紧凑存储，kernel 按 `h_q // g` 映射。
+- [[apple-ondevice-kv]]：手机端 DRAM / ANE 与 8-bit cache。
+- [[us-llm-paper-stack]]：GQA、Llama 精读公式。

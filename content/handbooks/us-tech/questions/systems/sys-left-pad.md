@@ -4,7 +4,7 @@ section: systems
 order: 61
 level: A
 title: 系统：生成用左填充，打分为什么会打到 prompt 上？
-quick: "一批变长 输入提示（prompt） 左填充，是为了让已生成的 token 在右侧对齐，方便一次 逐 token 生成（decode）。 奖励模型若用「最后一个非 pad」当句尾，左填充时这个位置可能还在 输入提示里。打分位置要和回答的最后一个真实 token 对齐。"
+quick: "生成的左填充和奖励模型的打分索引必须一起检查，分数要取在回答最后一个真实 token 上。变长 prompt 左填充后，不能沿用右填充的长度减一规则；要结合 attention mask、prompt 长度和回答边界定位。取到 prompt 上，奖励就可能与回答内容无关。"
 tags:
   - Post-train
   - Padding
@@ -19,23 +19,15 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
-
-一个公开的 基于人类反馈的强化学习（RLHF） 实现记录过这个 bug：PPO 和 GRPO 的生成几乎总是左填充，奖励模型却按右填充的习惯去取「最后一个位置」，取到的是 输入提示（prompt）。这道把这个坑写成题。损失（loss） 的 mask 见 `sys-eos-mask`。
-
-## 为什么生成要左填充
+左填充时，奖励模型要按回答的实际边界取分，不能直接沿用右填充的索引习惯。比如前面补了 pad，却只按真实长度减一定位，位置就可能落回 prompt。一个公开 RLHF 实现记录过生成用左填充、奖励打到 prompt 上的 bug，这道题据此整理；loss mask 见 `sys-eos-mask`。
 
 同一批里 prompt 长短不同。逐 token 生成（decode） 一步要一个矩形张量。把 pad 放在左边，各条已经写出的 token 在右边对齐，位置和 KV 的增长方向一致。右填充则每条的「下一个 token」不在同一列，不能一次采样。
 
-训练前向可以右填充。两条路径的 pad 方向不同是正常的。不正常的是用同一套「最后一个下标」去打分。
-
-## 打分位置
+训练前向可以右填充。两条路径的 pad 方向不同是正常的。打分索引则要按对应路径的 padding 和回答边界重新计算。
 
 句尾是这条回答的最后一个非 pad、并且属于回答而不是 prompt 的位置。左填充时，序列开头的 pad 不算，prompt 的最后一个 token 也不算，除非奖励故意打在问题上。实现上用 attention mask 和 prompt 长度一起算，不要用 `logits[:, -1]`。
 
 取错位置时，奖励和回答内容无关，优势变成噪声，loss 仍会下降，因为模型在拟合一个稳定的错误标签。
-
-## 代码
 
 ```python
 def last_response_index(attention_mask, prompt_lens):
@@ -51,7 +43,8 @@ def last_response_index(attention_mask, prompt_lens):
 
 ## 追问
 
-**tokenizer 的 pad id 和 eos id 相同呢？** 不能靠「等于 eos」判断结尾。用长度。生成停在 eos 之后，回答长度是停之前的 token 数，含不含 eos 与 `sys-eos-mask` 的约定一致。
+**tokenizer 的 pad id 和 eos id 相同呢？**
+不能靠「等于 eos」判断结尾。用长度。生成停在 eos 之后，回答长度是停之前的 token 数，含不含 eos 与 `sys-eos-mask` 的约定一致。
 
 ## 相关题
 

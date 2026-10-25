@@ -4,7 +4,7 @@ section: openai
 order: 605
 level: S
 title: "OpenAI：标注员噪声：找出低质量标注并验证改进"
-quick: "训练数据来自多个标注员时，用一份独立的可信校准集评估每个标注员，排除准确率不达标的人，再在固定验证集上比较过滤前后的分类器指标。"
+quick: "我会用独立可信校准集评估标注员，再在不参与筛选和训练的固定验证集上比较分类器。比如某人全标反可以排除，但错误多也可能只是样本更难，所以要分层看误差，并在相同训练预算下确认提升是否超出随机波动。"
 companies:
   - openai
 tags:
@@ -22,6 +22,29 @@ sources:
     url: https://www.1point3acres.com/interview/problems/company/openai/classifier-noisy-annotators
     type: secondary
 ---
+
+## 题目描述
+
+实现一个小型二分类基线，并利用独立可信标注筛选噪声标注者。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`fit(x,y,steps=1000,lr=0.1,l2=0.01)` 返回训练特征的 `(mean,std,weights)`，训练带 L2 正则的二分类 logistic 回归；x 为 `[N,D]` 有限特征，y 为 `[N]` 的 0/1 标签。预测使用训练时的均值、标准差，标准差使用总体标准差，常量列标准差替换为 1；权重包括末尾偏置，初始化为 0，全批量梯度下降运行 steps 步，lr 为步长，L2 项为非偏置权重平方和乘 l2/2；`predict(model,x)`（model 是 fit 返回的三元组） 概率不低于 0.5 时预测为 1。`metrics(y,pred)` 返回含 `accuracy`、`precision`、`recall`、`f1` 的字典，对正类 1 统计，分母为 0 的指标记 0。
+
+`select_annotators(votes,trusted,min_accuracy=0.7)` 输入 `[N,A]` 的 0/1 标注和 `[N]` 可信标签，返回独立校准集上准确率不低于阈值的标注者索引。`vote(votes,selected)` 仅对选中者多数投票，平票为 0；selected 至少含一人。训练目标为平均二元交叉熵 `-(1/N)*sum(y*log(sigmoid(z))+(1-y)*log(1-sigmoid(z)))` 加上述 L2 项，其中 `z=[(x-mean)/std,1]@weights`，sigmoid(z)=1/(1+exp(-z))。不得用测试集可信标签选择标注者。输入特征已编码，N<=5000、D<=100。
+
+### 示例
+
+```text
+训练 x=[[-2],[-1],[1],[2]], y=[0,0,1,1]，训练后对这些 x 预测为 [0,0,1,1]。
+votes=[[0,1],[0,1],[1,0],[1,0]], trusted=[0,0,1,1]
+select_annotators(...,min_accuracy=0.7)=[0]
+vote([[1,0]],[0,1])=[0]。
+```
+
+## 解题思路与参考答案
+
+我会把筛选标注员和验证模型效果分开：用独立可信校准集筛选，固定另一份验证集比较过滤前后的分类器。比如标注员在可信集里每条都标反，可以直接发现；但一般数据还要按类别和难度分层，避免把困难样本误当成坏标签。
 
 ## 题目
 
@@ -168,6 +191,16 @@ def vote(votes, selected):
         raise ValueError("no reliable annotators")
     return (votes[:, selected].mean(axis=1) > 0.5).astype(int)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.array_equal(predict(model, x), y)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

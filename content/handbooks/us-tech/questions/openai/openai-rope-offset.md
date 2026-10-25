@@ -4,7 +4,7 @@ section: openai
 order: 7
 level: S
 title: OpenAI：RoPE 在 decode 时位置偏移写错会 silently 错，怎么查
-quick: "decode 时新 token 的 RoPE 位置必须从 `cache_len` 开始而不是 0；写错不报错，只能靠有/无 cache 的 greedy 输出对齐发现。"
+quick: "decode 的新 token 要从 `cache_len` 开始做 RoPE，旧 K 已旋转过就不能再转。比如每步误用位置 0，shape 和 softmax 仍正常，输出却会偏；先固定 greedy，对比有/无 cache 的逐 token 结果，再查 position_ids。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -26,6 +26,36 @@ sources:
     url: https://arxiv.org/abs/1706.03762
     type: primary
 ---
+
+## 题目描述
+
+用 NumPy 实现带 RoPE 绝对位置偏移、GQA 与紧凑 KV cache 的因果多头注意力，正确衔接 prefill 和 decode。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `mha(x,wq,wk,wv,wo,heads,kv_heads=None,cache=None,key_valid=None,use_rope=False)` 返回 (output,`new_cache`)，output 为 [B,T,D]；x 为 [B,T,D]，wq/wo 为 [D,D]，wk/wv 为 [D,Hkv*d]，d=D/heads，Hkv 默认 heads。D % heads = 0，heads % Hkv = 0。
+- Q/K/V 的投影定义为 x@wq、x@wk、x@wv，无 bias。Q 有 heads 个头，K/V 有 Hkv 个头；query head h 使用 KV head floor(h/(heads/Hkv))。每个 query 输出为 softmax(QKᵀ/sqrt(d)) 对 V 的加权和，按 head 编号拼接后右乘 wo。
+- cache 为 (K,V)，各为 [B,Hkv,prefix,d]，None 表示 prefix=0；新 cache 长度 prefix+T，仍只存紧凑 KV heads，不修改旧 cache。
+- query t 的绝对位置为 prefix+t，只允许绝对 key 位置<=它自身；`key_valid` 为 [B,prefix+T] bool，True 可见，None 表示无额外屏蔽。没有可见 key 时该 query 的输出为0。
+- `rope(x,start)` 对 [B,H,T,d] 相邻二元组旋转，theta[t,j]=(start+t)*10000**(-2*j/d)，(a,b) 变为 (a*cos-b*sin,a*sin+b*cos)。`use_rope`=True 时 d 为偶数，仅旋转新 Q/K，旧缓存 K 已经旋转，V 不旋转。
+- 输入有限，1<=B<=8、1<=T<=256、D<=128，无 dropout。整段前向与按 token 调用并携带 cache 的输出应一致。
+
+### 输入输出示例
+
+```text
+单 head，wq = wk = 0（所以 Q = K = 0），wv = wo = I，x = [[2, 4], [6, 8]]
+query 0 只能看 key 0             -> [2, 4]
+query 1 对 key 0、1 均匀平均      -> [4, 6]
+
+任意固定权重下：
+mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
+```
+
+## 解题思路与参考答案
+
+我会先比较有 cache 和无 cache 的 greedy 输出，再打印每层的新 token 绝对位置。RoPE 在 decode 时要从 `cache_len` 开始；比如 cache 已有一段历史却仍按位置 0 旋转，shape 可以完全合法，位置关系却已经错了。
 
 ## 完整编程练习（手册重构版）
 
@@ -173,6 +203,16 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     output = context.transpose(0, 2, 1, 3).reshape(B, T, D) @ wo
     return output, (k, v)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(full, np.concatenate(pieces, axis=1))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -323,10 +363,14 @@ GQA 不改变位置逻辑：旋转的是每个 KV head 的 $D$ 维，head 数见
 
 ## 追问
 
-- **为什么说它是 silent 的？** shape 合法，softmax 仍然归一，输出范数也正常。只有和不带 cache 的 teacher 路径对比才会暴露。
-- **ALiBi 会不会同样出错？** 会。ALiBi 的偏置取决于距离；decode 时如果只按「当前块内的距离」算，就等于忽略了 cache 里已有的 $S$ 个 token。
-- **投机解码拒绝草稿后，位置怎么回滚？** 把 cache 截到被接受的前缀，下一步的 offset 就是新的 `cache_len`，见 `openai-speculative-decoding`。
-- **长上下文插值算不算 offset 问题？** 不算，那是 cos/sin 表怎么延拓的问题。先保证 $m=\mathrm{cache\_len}$，再谈 NTK / YaRN。
+**为什么说它是 silent 的？**
+shape 合法，softmax 仍然归一，输出范数也正常。只有和不带 cache 的 teacher 路径对比才会暴露。
+**ALiBi 会不会同样出错？**
+会。ALiBi 的偏置取决于距离；decode 时如果只按「当前块内的距离」算，就等于忽略了 cache 里已有的 $S$ 个 token。
+**投机解码拒绝草稿后，位置怎么回滚？**
+把 cache 截到被接受的前缀，下一步的 offset 就是新的 `cache_len`，见 `openai-speculative-decoding`。
+**长上下文插值算不算 offset 问题？**
+不算，那是 cos/sin 表怎么延拓的问题。先保证 $m=\mathrm{cache\_len}$，再谈 NTK / YaRN。
 
 ## 相关题
 

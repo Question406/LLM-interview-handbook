@@ -4,7 +4,7 @@ section: microsoft
 order: 18
 level: A
 title: Microsoft：Copilot agent 模式，仓库权限和循环预算？
-quick: "Agent 会自己选文件、改代码、跑命令。权限必须是当前用户 ACL，不能先搜全仓库再过滤。循环要限制轮数、token 用量和总耗时和写操作确认。Ask / Edit / Agent 不是同一个风险面。"
+quick: "Agent 模式会跨文件修改并运行命令，读写都要继承当前用户权限，再由宿主限制终端、网络和副作用。循环设置轮数、token、总耗时与重复失败上限，以 git 和 CI 核实完成。Ask、Edit、Agent 按任务范围选择，并分别管理风险。"
 tags:
   - Microsoft
   - Copilot
@@ -29,21 +29,21 @@ sources:
     type: secondary
 ---
 
-GitHub / VS Code / M365 岗把 Copilot 从「补全」问到「自己改仓库」。公开文档：IDE agent 模式会选文件、出 diff、建议终端命令，直到任务完成或你停；云端 coding agent 在沙箱里开分支、提 PR。企业默认常关，要管理员打开。有实际证据支持和 ACL 仍是 `msft-copilot-ground` 那条：检索集合不能大于当前用户可见集。不是逐字真题。
+Copilot agent 要先有工具权限和循环预算，再让模型规划跨文件任务。比如模型说「测试已通过」，真正的完成依据仍应是 CI 或命令结果；如果它反复改同一个失败测试，宿主也应到预算就停。
 
-## 权限先于聪明
+公开文档中，IDE agent 会选择文件、生成 diff、建议命令，直到完成或被停止；云端 coding agent 在沙箱中建分支、提 PR，企业常由管理员显式开启。本卡讨论公开能力，不是逐字真题。证据与 ACL 延续 `msft-copilot-ground`：检索范围限定在当前身份可见集合。
 
-我会把身份画在工具前面：
+## 读、写和执行分别授权
 
-1. **读。** 代码检索、打开文件、搜符号，必须带用户 / PAT / GitHub App 的仓库权限。私有依赖、另一个 org 的 secret、`.env` 不在授权里就不能进上下文。先全库 embedding 再事后过滤，是泄漏窗口。
-2. **写。** 改文件、`git push`、删分支、发评论。IDE 里用权限档位（默认确认 / 跳过确认 / Autopilot）。云端 agent 通常只写它创建的分支，而不是默认分支。
-3. **终端 / 网络。** 跑测试可以；`curl | sh`、读云元数据、出网打生产，默认否。沙箱不是「模型保证安全」。
+读代码、文件与符号时传用户 / PAT / GitHub App 权限，未授权的私有依赖、其他 org 的 secret 和 `.env` 不进入上下文。全仓库 embedding 可以有自己的索引策略，但检索必须先按身份裁剪，不能等生成后过滤。
 
-工具边界和 `msft-semantic-kernel` 同一句：原生函数有副作用，确认在运行时，不在 system 输入提示（prompt）。多 agent 编排见 `msft-autogen`，不要把 GroupChat 直接接仓库写 API。
+改文件、`git push`、删分支和发评论需要单独控制。IDE 使用默认确认、跳过确认、Autopilot 等权限档位；云端 agent 通常只写它创建的分支。终端和网络也有限制：测试可以在授权环境运行，`curl | sh`、云元数据和生产网络默认不开放。
 
-## 循环预算是宿主代码
+确认发生在工具运行时，原生函数的副作用边界见 `msft-semantic-kernel`。多 agent 协作仍遵守同一规则，不能直接将 GroupChat 接到仓库写 API，见 `msft-autogen`。
 
-Agent 失败典型是停不下来：修测试 → 再修 → 再修，TPM 和实际耗时炸，见 `msft-azure-tpm`。预算：
+## 到预算停下，并核实最终结果
+
+反复修测试会同时消耗 TPM 与实际时间，见 `msft-azure-tpm`。宿主限制轮数、token 和耗时：
 
 ```python
 def run_copilot_agent(step, *, max_rounds=12, max_tokens=80000, max_wall_s=600):
@@ -58,15 +58,20 @@ def run_copilot_agent(step, *, max_rounds=12, max_tokens=80000, max_wall_s=600):
     return {"status": "max_round"}
 ```
 
-再加：单轮最大改文件数、禁止的路径、测试失败重复次数。上下文不要每轮粘全仓库，$T$ 线性涨会 lost-in-the-middle，见 `msft-long-context`。Ledger / working set 只留当前任务文件。
+还可加单轮最多改文件数、禁止路径和重复测试失败次数。Ledger / working set 保留当前任务文件，避免每轮复制全仓库，让 $T$ 增长并触发 lost-in-the-middle，见 `msft-long-context`。
 
-评测：任务是否真的绿（CI，不是模型说绿）、越权读、重复 push、预算终止率、幻觉 API。不要报「diff 看起来像人写的」。云端 agent 还要看 PR 描述是否引用了真实文件。
-
-常见误区是：Autopilot 当默认给企业；用应用身份扫租户代码；把 Ask 模式的引用契约丢了：agent 更会编「我已经改了」。状态以 git 和 CI 为准。
+评测分别看真实任务通过（CI）、越权读、重复 push、预算终止和幻觉 API。云端 PR 描述也要引用真实文件。Autopilot 权限应由企业设定，应用身份扫全租户代码或把模型自述当完成都会扩大风险；状态以 git 和 CI 为准。
 
 ## 追问
 
-- **Ask / Edit / Agent 怎么选？** 问答用 Ask；指定文件内改用 Edit；跨文件任务才 Agent。能力越大，确认越硬。
-- **为什么企业默认关 coding agent？** 写仓库是副作用。管理员按仓库 opt-in，不是模型自己判断「这是开源所以可以」。
-- **和 Semantic Kernel 插件？** SK 管企业工具中间件；Copilot agent 管代码工作区。权限模型都是身份向下传。
-- **循环里工具失败？** 结构化错误回模型，计失败次数，超限交还人。不要把超时总结成「测试已经过了」。
+**Ask / Edit / Agent 怎么选？**
+问答用 Ask，指定文件内修改用 Edit，跨文件任务再用 Agent，并按副作用范围配置确认。
+
+**为什么企业要显式开启 coding agent？**
+写仓库会产生副作用，管理员需要按仓库 opt-in，公开代码也不等于模型自动获得写权限。
+
+**与 Semantic Kernel 有何关系？**
+SK 管企业工具中间件，Copilot agent 管代码工作区，两者都要求身份向下传递。
+
+**工具超时怎么处理？**
+返回结构化错误并累计失败，超限交还人处理。不能把超时总结成测试通过。

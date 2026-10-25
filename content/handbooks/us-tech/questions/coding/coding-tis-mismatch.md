@@ -4,7 +4,7 @@ section: coding
 order: 40
 level: A
 title: 白板：推理引擎的 logprob 和训练端对不上，截断重要性权重怎么加
-quick: "PPO 的 $\\pi_{\\mathrm{old}}$ 用训练端重算的 logprob；推理引擎 $\\mu$ 和它的差用 detach 的截断权重 $\\min(\\pi_{\\mathrm{old}}/\\mu, C)$ 单独修正。"
+quick: "PPO 的 $\\pi_{\\mathrm{old}}$ 用训练端在旧权重上重算的 logprob，再用固定的截断权重 $\\min(\\pi_{\\mathrm{old}}/\\mu, C)$ 修正推理引擎分布 $\\mu$ 的差异。权重必须 detach，单独乘在 PPO 目标上，避免把实现差异也混进 PPO clip。"
 tags:
   - 完整编程练习
   - Coding
@@ -22,6 +22,36 @@ sources:
     url: https://arxiv.org/abs/1707.06347
     type: primary
 ---
+
+## 题目描述
+
+实现带 truncated importance sampling 的 PPO token loss，区分当前策略、重计算旧策略和 rollout 时记录的策略概率。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `ppo_loss_tis(policy_logprobs, old_logprobs, rollout_logprobs, advantages, mask, eps=0.2, C=2.0) -> 标量`：所有输入形状 `[B, T]`。
+  - `policy_logprobs`：当前策略 $\pi_\theta$ 的 token logprob，带梯度。
+  - `old_logprobs`：训练端在 $\theta_{\mathrm{old}}$ 上重算的 logprob，固定。
+  - `rollout_logprobs`：推理引擎采样时记录的 logprob（分布 $\mu$），固定。
+- PPO ratio 是 $\exp(\text{policy} - \text{old})$，照常 clip 到 $[1-\epsilon, 1+\epsilon]$。截断重要性权重是 $\min(\exp(\text{old} - \text{rollout}), C)$，并且 detach。
+- 每个 token 的目标为 `min(ratio * advantage, clip(ratio) * advantage)`；loss 是此目标乘截断权重后的负值。`mask` 仅含 0/1，`eps >= 0`、`C > 0`。loss 在有效 token（`mask` 为 1）上取平均；mask 全为 0 时返回可反传的 0。
+
+### 输入输出示例
+
+```text
+policy_logprobs = old_logprobs = rollout_logprobs = [[0]]
+advantages = [[1]], mask = [[1]], eps=0.2, C=2
+ppo_loss_tis(...) -> -1
+仅将 rollout_logprobs 改为 [[-5]] -> -2
+仅将 mask 改为 [[0]] -> 0，反向传播的策略梯度为 0
+```
+
+## 解题思路与参考答案
+
+我会把策略更新的 ratio 和训推实现差异分开计算：前者按 PPO clip，后者截断后 detach，再乘到逐 token 目标上。比如还没开始更新时，当前策略和旧策略应当相同，但推理引擎的 logprob 仍可能有误差；直接拿它作分母会提前触发 clip。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -66,6 +96,16 @@ def ppo_loss_tis(policy_logprobs, old_logprobs, rollout_logprobs, advantages, ma
     weight = torch.exp(old_logprobs - rollout_logprobs).clamp(max=C).detach()
     return -(weight * objective * mask).sum() / mask.sum().clamp(min=1)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(loss, reference)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

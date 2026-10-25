@@ -4,9 +4,7 @@ section: anthropic
 order: 12
 level: S
 title: Anthropic：Bradley-Terry 偏好模型，平局和噪声标签怎么处理？
-quick: >-
-  PM 把对比变成分数差的 logistic：$P(y_w \succ y_l)=\sigma(r_w-r_l)$。平局不要硬掰成胜负：丢掉、标
-  0.5，或用带平局参数的 Davidson。噪声按标注一致率建模，别把红队分歧当成黄金标签。
+quick: "偏好模型用分数差预测谁会赢：$P(y_w \\succ y_l)=\\sigma(r_w-r_l)$。平局可以丢弃、用 0.5 软标签，或显式建 Davidson 平局模型；噪声则用重复标注的一致率估计，避免把红队分歧硬当成确定标签。"
 tags:
   - Anthropic
   - Preference model
@@ -25,11 +23,11 @@ sources:
     type: primary
 ---
 
-Anthropic 的 HH-RLHF 和 CAI 都把人类或 AI 的对比蒸馏进 preference model，再拿 $r_\phi$ 当 强化学习（RL） 奖励。面试会把 PM 从「一个打分器」问到损失、平局、噪声。我会从 Bradley-Terry 写起。
+我会用 Bradley-Terry 把成对偏好变成分数差，平局单独处理，再用重复标注检查噪声。例如两条回复都拒得很好，强迫标注员选一个，只会给本来难分的区域加入噪声。HH-RLHF 和 CAI 都把人类或 AI 对比蒸馏进 preference model，再拿 $r_\phi$ 当强化学习奖励。
 
 ## 从对比到分数
 
-一条样本是 输入提示（prompt） $x$ 和两条回答 $y_i,y_j$，标注 $y_i \succ y_j$。BT 假设每条回答有标量强度，人看到的是强度差上的 Bernoulli：
+一条样本包含 prompt $x$、回答 $y_i,y_j$ 和偏好标注 $y_i \succ y_j$。BT 给每条回答一个标量分数，用分数差决定它被选中的概率：
 
 $$
 P(y_i \succ y_j \mid x)=\sigma\bigl(r_\phi(x,y_i)-r_\phi(x,y_j)\bigr),
@@ -45,7 +43,7 @@ $r_\phi$ 通常是从 监督微调（SFT） 初始化的 LM，在最后一个 to
 
 这和分类「这条好/坏」不同：没有绝对阈值，只有配对。单条 Elo 能排模型，不能当二元分类准确率报。
 
-## 平局
+## 平局和噪声怎样进入训练
 
 标注员经常说「差不多」。三种处理，我会按数据量选：
 
@@ -59,13 +57,11 @@ $$
 
 $\nu$ 大则更容易判平。HH 数据里 harmless 对更常平（两条都在拒），helpful 对更少。我会把 $\nu$ 当超参，或按任务分开。
 
-不要把平局随机派成胜负。那是往梯度里加对称噪声，PM 在难分区域会抖。更糟的是产品经理说「必须选出一条」然后按展示顺序点左边，那是位置偏差，不是偏好。
+随机把平局分配为胜负，会往梯度里加入对称噪声，让 PM 在难分区域抖动。如果界面强迫二选一，标注员总点左边，还会进一步引入位置偏差。
 
 CAI 的 AI 评委也要允许「无法决定」。逼评委二选一，条款没覆盖的样本会变成高置信噪声。
 
-## 噪声标签
-
-人标 harmless 的一致率明显低于摘要偏好。设真实偏好以 $\varepsilon$ 翻转：
+再看噪声。人标 harmless 的一致率明显低于摘要偏好，可以假设真实偏好以 $\varepsilon$ 的概率翻转，写成：
 
 $$
 P_{\mathrm{obs}}(i\succ j)=(1-\varepsilon)P_{\mathrm{true}}(i\succ j)+\varepsilon P_{\mathrm{true}}(j\succ i).
@@ -83,10 +79,17 @@ AI 反馈的噪声是另一种：评委对位置敏感、对长度敏感。扫 $
 
 ## 追问
 
-- **和 Elo / TrueSkill 什么关系？** BT 是 Elo 的静态版。Elo 有时间序和更新步；训练 PM 是批量 MLE。面试说「PM 分数当 Elo」可以，但别把在线 Elo 更新和梯度下降混成一个公式。
-- **直接偏好优化（DPO） 还要不要 PM？** DPO 把 BT + 最优策略代进损失，跳过显式 $r_\phi$。平局和噪声问题还在，只是落到政策损失上。
-- **长度偏差？** 人偏爱长回答，$r$ 会涨在长度上。控制：在 $r$ 里减长度惩罚，或配对时长度分层。RL 阶段长度膨胀往往是 PM 在刷这个捷径。
-- **一对多对比怎么进 BT？** 选一个 winner 对其余所有 loser 建边，或 Plackett-Luce 对完整排序建模。数据少时 pairwise BT 更稳。
+**和 Elo / TrueSkill 什么关系？**
+BT 是 Elo 的静态版。Elo 有时间序和更新步；训练 PM 是批量 MLE。面试说「PM 分数当 Elo」可以，但别把在线 Elo 更新和梯度下降混成一个公式。
+
+**直接偏好优化（DPO） 还要不要 PM？**
+DPO 把 BT + 最优策略代进损失，跳过显式 $r_\phi$。平局和噪声问题还在，只是落到政策损失上。
+
+**长度偏差？**
+人偏爱长回答，$r$ 会涨在长度上。控制：在 $r$ 里减长度惩罚，或配对时长度分层。RL 阶段长度膨胀往往是 PM 在刷这个捷径。
+
+**一对多对比怎么进 BT？**
+选一个 winner 对其余所有 loser 建边，或 Plackett-Luce 对完整排序建模。数据少时 pairwise BT 更稳。
 
 ## 相关题
 

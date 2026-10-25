@@ -4,7 +4,7 @@ section: anthropic
 order: 618
 level: S
 title: "Anthropic：ML Programming：QKV Attention 与 einsum"
-quick: "先标清 batch、head、序列和特征各是哪一维，再按 QK 转置、缩放、mask、沿 key 轴 softmax、乘 V 的顺序实现，并单独处理全屏蔽的行。"
+quick: "我会先写清 batch、head、序列和特征维度，再依次算 QK 转置、缩放、mask、沿 key 轴 softmax，最后乘 V。全屏蔽行要单独处理，避免负无穷相减产生 NaN，再用小例子核对向量化结果。"
 companies:
   - anthropic
 tags:
@@ -23,6 +23,27 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现一个 NumPy 版本的多头缩放点积注意力，正确处理广播 mask 和因果可见性。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`attention(q, k, v, mask=None, causal=False)` 接收 float64 数组：q 为 `[B,H,T,D]`，k 为 `[B,H,S,D]`，v 为 `[B,H,S,Dv]`；返回 `[B,H,T,Dv]`。每个 query 对 key 的分数为内积除以 `sqrt(D)`，在可见 key 上按 `exp(score)/sum(exp(score))` 归一化为 softmax 概率，再对 v 加权求和。
+
+mask 是可广播到 `[B,H,T,S]` 的布尔数组，True 表示可见。causal=True 时 T=S，位置 i 只能看到 j<=i；该约束与 mask 同时生效。某一 query 没有可见 key 时，其输出为全零且不含 NaN。B、H 不超过 4，T、S 不超过 128，各特征维均为正。
+
+### 示例
+
+```text
+q = k = 全 1 数组，形状 [1,1,2,1]
+v = [[[[2],[4]]]], causal = True
+返回 [[[[2],[3]]]]。
+相同输入但 mask 全为 False 时，返回同形全零数组。
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 面试官给出数学公式，要求照着实现一个序列模型组件，典型就是缩放点积注意力。考察点是能不能把公式里的下标准确翻译成张量维度和 `einsum`，以及 mask、数值稳定这些细节有没有想到。
@@ -31,7 +52,7 @@ sources:
 
 ## 思路
 
-动手前先把每个张量的维度写下来：`q` 是 `[B, H, T, D]`，`k` 是 `[B, H, S, D]`，`v` 是 `[B, H, S, Dv]`。这样 `einsum("bhtd,bhsd->bhts")` 里被求和消掉的就是 `d`，读代码的人能直接对上公式 $\mathrm{softmax}(QK^\top / \sqrt{D})V$ 里的求和下标。
+我会先标清张量维度，再按公式的顺序实现。这里`q` 是 `[B, H, T, D]`，`k` 是 `[B, H, S, D]`，`v` 是 `[B, H, S, Dv]`。这样 `einsum("bhtd,bhsd->bhts")` 里被求和消掉的就是 `d`，读代码的人能直接对上公式 $\mathrm{softmax}(QK^\top / \sqrt{D})V$ 里的求和下标。
 
 写完后重点自查两处：
 
@@ -120,6 +141,16 @@ def attention(q, k, v, mask=None, causal=False):
 
     return np.einsum("bhts,bhsv->bhtv", weights, v)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(attention(q, q, v, causal=True), [[[[2.0], [3.0]]]])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

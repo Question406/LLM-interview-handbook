@@ -4,7 +4,7 @@ section: systems
 order: 33
 level: S
 title: "KV Prefix ③：Radix Cache 的 pin/unpin、活跃分裂与叶子 LRU"
-quick: "运行中请求保护整条祖先路径；边分裂时新父节点继承引用数，旧 lease 释放时沿当前 parent 链回退，避免提前淘汰或引用泄漏。"
+quick: "每个活跃请求用 lease 锁住命中点及整条祖先路径，释放时从稳定的终点 Node 沿当前 parent 链回退。边分裂时让新父节点继承锁计数，淘汰只挑未锁定的叶子，就能保护仍在使用的前缀。"
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -20,6 +20,38 @@ sources:
     url: https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/mem_cache/radix_cache.py
     type: primary
 ---
+
+## 题目描述
+
+实现带租约保护的压缩 token 前缀缓存。活跃请求命中的 KV 句柄不得被回收，而未被任何请求使用的路径可按最近使用顺序淘汰。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `PinnedRadix()` 在不同 namespace 下维护互相隔离的 token 前缀，token 为整数，每个 token 对应一个不可变、不透明 KV 句柄。
+- `insert(tokens,values,namespace="default") -> int`：tokens 与 values 等长，保存尚未缓存的后缀，返回原已缓存的最长前缀长度。共有前缀保留原句柄，重复插入不重复占空间。
+- `match(tokens,namespace="default") -> (length,values)` 返回最大命中 token 前缀长度及其句柄 tuple；命中可以在压缩边中间结束，空命中为 (0,())。
+- `acquire(tokens,namespace="default") -> (lease,length,values)` 与 match 命中相同，并保护恰好命中的路径，未命中的后缀不受保护。lease 是唯一标识，允许多个活跃 lease 重叠；后续插入造成的结构变化不能解除已有保护。
+- `release(lease)` 解除该 lease 的保护，调用方保证 lease 有效且只释放一次。
+- `evict(target_tokens) -> tuple`：`target_tokens`>=0，每次只删除无任何 lease 保护的叶边，优先最近访问时间最早者；整边释放，可能超过目标。删除后父边成为叶边时可继续回收。资源均受保护时返回已释放的句柄，允许少于目标，0 目标返回 ()。
+- 最近使用时间是递增逻辑时钟：insert 遍历或新建的边、acquire 命中的边都会更新，match 不更新。`validate() -> int` 返回结构中所有 namespace 的 token 总数并检查边/父子关系不变量。
+- 边为非空 token tuple，句柄 tuple 与边等长；调用串行。句柄仅返回给调用方回收，不由缓存销毁。
+
+### 输入输出示例
+
+```text
+insert([1,2,3,4],["a","b","c","d"]) -> 0
+acquire([1,2,3,4]) -> (lease,4,("a","b","c","d"))
+insert([1,2,9],["a","b","x"]) -> 2
+evict(100) -> ("x",)
+release(lease)
+evict(100) -> 返回恰好含 "a","b","c","d" 的 tuple（顺序取决于整边回收顺序）
+```
+
+## 解题思路与参考答案
+
+我会让 lease 保存命中终点的 Node，并锁住从终点到根的整条前缀路径。之后即使插入操作拆了边，只要新父节点继承原锁计数，释放时沿当前 parent 链回退，活跃前缀就不会被提前淘汰。
 
 ## 完整编程练习（手册原创实现版）
 
@@ -50,7 +82,7 @@ evict(100)  -> {a, b, c, d}
 
 ### 解题思路与正确性
 
-lease 记住的是路径终点的 `Node` 对象，释放时沿**当前**的 parent 链往上走。之后的插入可能拆分这条路径上的边，但拆分不会改变终点对象本身，只会在它和祖先之间插入新的中间节点。
+例如已经锁住 [1,2,3,4]，又插入 [1,2,9]，公共边会拆出 [1,2] 父节点。原 lease 保存的终点 `Node` 对象没有变，只是它到祖先之间多了一个节点，释放时应沿当前 parent 链走。
 
 关键是让新的中间节点继承被拆节点的锁计数。被拆节点的锁计数等于经过它的活跃 lease 数，而这些 lease 释放时也都会经过新插入的中间节点，所以两者的计数一开始就该相同；否则释放时中间节点会被减成负数，或者在 lease 还活着时就被当成可淘汰。
 
@@ -226,6 +258,16 @@ class PinnedRadix(RadixCache):
             freed.extend(victim.values)  # 一次移走整条边
         return tuple(freed)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert child.parent is node and child.edge and first == child.edge[0]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

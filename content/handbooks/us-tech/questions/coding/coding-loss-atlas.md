@@ -4,7 +4,7 @@ section: coding
 order: 44
 level: S
 title: 白板总览：LLM 训练里常见的 loss，都写成「权重 × logprob」来对照
-quick: "落在采样 token 上的 loss，梯度都能写成 $-\\sum_t w_t\\nabla\\log\\pi(y_t)$，各算法只差权重 $w_t$；z-loss、全词表 KL、熵、RM 等要看 logits 或别的头。"
+quick: "用这张表先判断 loss 的梯度落在哪：采样 token 上的项可以写成 $-\\sum_t w_t\\nabla\\log\\pi(y_t)$，再比较权重和分母。z-loss、全词表 KL、熵和 RM 等依赖 logits 或其他输出头，需要另看对应公式。"
 tags:
   - 完整编程练习
   - Coding
@@ -43,6 +43,31 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+把不同训练目标表示为带固定 token 权重的负对数似然。实现梯度等价的替身损失，以及 k3 KL、DPO/SimPO 的权重接口；替身损失的数值无需等于原目标。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `surrogate(logp, w, mask, denom)` 返回标量 `-sum(stop_gradient(w) * logp * mask) / denom`。`logp`、`mask` 是 `[B,T]`，`w` 是 `[B,T]` 或可广播的 `[B,1]`，`denom > 0`。
+- `w_k3(logp, ref_logp, beta) -> [B,T]`：产生用于该 surrogate 的逐 token 权重，使其梯度等于原目标 `beta * (r - log(r) - 1)` 的梯度，其中 `r = exp(ref_logp - logp)`；原目标也用相同 mask 与 denom 归约。
+- `w_pairwise(lw, ll, beta, ref_margin=0, len_w=1, len_l=1, gamma=0)` 返回两个 `[B]` 权重。`lw`、`ll` 是 chosen/rejected 序列 log-prob，目标为 `-log(sigmoid(z))`，`z = beta * (lw/len_w - ll/len_l - ref_margin) - gamma`。两个权重用于 `-(w_chosen*lw + w_rejected*ll)`，必须与原目标具有相同梯度。
+- DPO 使用长度 1、gamma 0，`ref_margin` 为参考模型的 chosen/rejected log-prob 差；SimPO 使用实际正长度、`ref_margin` 0 和给定 gamma。长度、参考值、beta、gamma、mask 和奖励均为常量，所有输出权重必须停止梯度。
+
+### 输入输出示例
+
+```text
+DPO，margin z = 0, beta = 0.2  -> chosen 权重 +0.1 (= beta/2)，rejected 权重 -0.1
+k3 KL，logp == ref_logp         -> 权重 0，梯度 0
+SimPO，len_w = 2, len_l = 3     -> 权重分别再除以 2 和 3
+```
+
+## 解题思路与参考答案
+
+这张总览可以按两步读：先查 loss 能否写成采样 token 的加权 logprob，再对照每个 token 的权重 $w_t$ 和归约分母。推导时用链式法则求原 loss 对每个 token 的 $\log\pi$ 的偏导，取负得到 $w$；将 $w$ detach 成常数后乘回 $\log\pi$，替身就保留了原 loss 的梯度。
+
 ## 完整编程练习（手册重构版）
 
 > 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
@@ -63,8 +88,6 @@ SimPO，len_w = 2, len_l = 3     -> 权重分别再除以 2 和 3
 ```
 
 ### 解题思路与正确性
-
-对原 loss 用链式法则求出它对每个 token 的 $\log\pi$ 的偏导，取负号就是这个 token 的权重 $w$；把 $w$ detach 成常数，再乘回 $\log\pi$，替身的梯度就和原 loss 一样。
 
 比如 DPO 的 $L=-\log\sigma(z)$，$\partial L/\partial z=-\sigma(-z)$，而 $z$ 对 chosen 序列 logprob 的导数是 $\beta$，所以 chosen 的权重是 $\beta\sigma(-z)$，rejected 是它的相反数。SimPO 的 $z$ 用长度平均的 logprob，权重再除以各自的长度。
 
@@ -105,6 +128,16 @@ def w_pairwise(lw, ll, beta, ref_margin=0.0, len_w=1.0, len_l=1.0, gamma=0.0):
     coefficient = (beta * torch.sigmoid(-z)).detach()
     return coefficient / len_w, -coefficient / len_l
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(expected, actual, atol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -417,20 +450,29 @@ CE 对 logits 的梯度是 $\mathrm{softmax}(z)-\mathrm{onehot}(y)$，整个词�
 
 ## 常见错法
 
-- **权重没 detach。** 梯度会再从 $w$ 走一遍，替身就不等价了。PPO、CISPO、DPO 都是这样。
-- **按权重之和归一化。** SFT 的权重非负，这么做没问题；RL 和偏好优化的权重有正有负，除以权重和可能翻转符号，和接近 0 时梯度会爆掉。
-- **序列 logprob 用错了归约。** DPO 要求和，SimPO 要取平均。写错了不会报错，只是悄悄换了一个目标。
-- **k1 直接进 loss。** 期望梯度为 0，见上面的 k3 那一段。
-- **参考模型带了梯度。** ref 的 logprob 要在 `no_grad` 下算，否则显存翻倍，梯度也错。
-- **logprob 本身错了。** 没做 shift、temperature 和采样端不一致、pad 没 mask，都会让表一里所有行一起出错，见 `coding-token-logprob`、`sys-eos-mask`。
+**权重没 detach。**
+梯度会再从 $w$ 走一遍，替身就不等价了。PPO、CISPO、DPO 都是这样。
+**按权重之和归一化。**
+SFT 的权重非负，这么做没问题；RL 和偏好优化的权重有正有负，除以权重和可能翻转符号，和接近 0 时梯度会爆掉。
+**序列 logprob 用错了归约。**
+DPO 要求和，SimPO 要取平均。写错了不会报错，只是悄悄换了一个目标。
+**k1 直接进 loss。**
+期望梯度为 0，见上面的 k3 那一段。
+**参考模型带了梯度。**
+ref 的 logprob 要在 `no_grad` 下算，否则显存翻倍，梯度也错。
+**logprob 本身错了。**
+没做 shift、temperature 和采样端不一致、pad 没 mask，都会让表一里所有行一起出错，见 `coding-token-logprob`、`sys-eos-mask`。
 
 ## 追问
 
-**训练框架只支持加权 NLL，哪些能跑？** 表一全部能跑：每一步先用一次无梯度前向算出 $w$，再做一次带权重的 NLL 反传。表二不行，z-loss、全词表 KL、熵都要改 loss 代码。
+**训练框架只支持加权 NLL，哪些能跑？**
+表一全部能跑：每一步先用一次无梯度前向算出 $w$，再做一次带权重的 NLL 反传。表二不行，z-loss、全词表 KL、熵都要改 loss 代码。
 
-**为什么 DPO 能算 offline，PPO 必须重新采样？** 在这个形式里区别看得很清楚：DPO 的 $w$ 只依赖固定的偏好对和当前模型，数据可以复用；PPO 的 $w$ 里有 $r=\pi_\theta/\pi_{\mathrm{old}}$，数据离当前策略越远，$r$ 越偏，clip 越多，所以要不断重新采样。
+**为什么 DPO 能算 offline，PPO 必须重新采样？**
+在这个形式里区别看得很清楚：DPO 的 $w$ 只依赖固定的偏好对和当前模型，数据可以复用；PPO 的 $w$ 里有 $r=\pi_\theta/\pi_{\mathrm{old}}$，数据离当前策略越远，$r$ 越偏，clip 越多，所以要不断重新采样。
 
-**SFT 和 RL 的区别在权重上是什么？** SFT 的 $w$ 恒为 1，只把「应该出现的 token」往上推。RL 的 $w$ 可以为负，能主动压低采样出来的坏 token。先做拒绝采样再做 SFT（RFT），相当于只保留 $w>0$ 的那部分。
+**SFT 和 RL 的区别在权重上是什么？**
+SFT 的 $w$ 恒为 1，只把「应该出现的 token」往上推。RL 的 $w$ 可以为负，能主动压低采样出来的坏 token。先做拒绝采样再做 SFT（RFT），相当于只保留 $w>0$ 的那部分。
 
 ## 相关题
 

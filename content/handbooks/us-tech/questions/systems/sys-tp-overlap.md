@@ -4,8 +4,7 @@ section: systems
 order: 20
 level: A
 title: 系统：TP 通信和 GEMM overlap，怎么暴露通信墙
-quick: >-
-  层内 all-reduce 默认在关键路径上：下一层 LN 要完整激活。隐藏通信开销的办法是把 GEMM 切块，一块在算、一块在传。无法重叠时，实际耗时主要受 NVLink/IB 带宽限制，而不是 Tensor Core 算力限制。Nsight 上看 NCCL 和 MMA 是是否重叠执行，还是留下等待间隙。
+quick: "TP 层内通信往往在关键路径上，需要把 GEMM 分块，让已完成块的通信与下一块计算重叠。先估计算和通信的时间比，再在 Nsight 中看 NCCL 与 MMA 是否同时有效工作；TP 太大或跨慢链路时，单开 overlap 未必有益。"
 tags:
   - NVIDIA
   - Megatron
@@ -30,43 +29,38 @@ sources:
     type: primary
 ---
 
-## 题怎么来的
+TP 通信要与 GEMM 重叠，必须先找到不互相依赖的计算块：一块算完就开始传，另一块继续计算。默认的层内 all-reduce 会挡住后续残差和 LN，因此不能只开一个 overlap 开关就认为成本消失。
 
-NVIDIA 训练岗在 `nvidia-tensor-parallel` 和 `nvidia-nccl-allreduce` 之后会追：这两次层内 all-reduce 到底叠进 GEMM 没有。Megatron / Transformer Engine 的 userbuffer overlap、序列并行下的 AG/RS 切块，问的都是通信瓶颈有没有露出来。先写体积和时间比，再讲 overlap 的依赖，不先报一个开关名。
-
-## 先算会不会成为墙
-
-一层正向两次行并行 all-reduce，payload 都是 $[B,T,h]$ 量级。BF16 字节 $2BTh$。MLP 计算大约 $16BTh^{2}/\mathrm{TP}$ FLOPs（上下两个 GEMM，按 TP 切开）。计算/通信时间比近似
+先估它是否会成为瓶颈。一层正向有两次行并行 all-reduce，payload 都是 $[B,T,h]$ 量级，BF16 约 $2BTh$ 字节。MLP 两个 GEMM 的计算约为 $16BTh^{2}/\mathrm{TP}$ FLOPs，计算与通信时间比近似为：
 
 $$
 \frac{T_{\mathrm{gemm}}}{T_{\mathrm{ar}}}\propto \frac{h}{\mathrm{TP}}\cdot\frac{\mathrm{NVLink}}{\mathrm{peak}}.
 $$
 
-和 $B$、$T$ 同阶相消：**长序列不会让 TP 更划算**，两边一起涨。$h/\mathrm{TP}$ 变小（TP 过大）、或带宽掉到 IB，比值小于 1，就是通信瓶颈。节点内 TP$=8$、$h=8192$ 往往还是计算主导；跨节点 TP，带宽低一个数量级，MFU 会先下降。这就是「TP 锁 NVLink 域」的数量级版，见 `sys-3d-parallel`。
+$B$、$T$ 在两边同阶相消，拉长序列并不会单独改善这个比。TP 过大使 $h/\mathrm{TP}$ 变小，或链路从 NVLink 降为 IB，比值小于 1 就更受通信限制。节点内 TP$=8$、$h=8192$ 往往仍以计算为主，跨节点带宽低一个数量级，MFU 会先下降，见 `sys-3d-parallel`。
 
-SP 把 all-reduce 换成 all-gather + reduce-scatter，字节同阶，只是布局变了，见 `sys-seq-parallel`、`sys-allreduce-reducescatter`。墙还在，只是变成 AG 能否和下一截 GEMM 叠。
+SP 把 all-reduce 换成 all-gather + reduce-scatter，字节仍同阶，只是提供了不同的重叠机会，见 `sys-seq-parallel`、`sys-allreduce-reducescatter`。TP 切法和 NCCL 基础分别见 `nvidia-tensor-parallel`、`nvidia-nccl-allreduce`，Megatron / Transformer Engine 的 userbuffer 讨论建立在这些依赖上。
 
-## Overlap 怎么做、为什么经常叠不上
+## 怎样重叠，怎样确认有效
 
-默认实现：行并行 GEMM 结束 $\to$ all-reduce $\to$ 残差和 LN。LN 依赖完整向量，通信在关键路径上。Overlap 要把 **没有数据依赖的那一块** 和通信并起来：
+默认路径是行并行 GEMM $\to$ all-reduce $\to$ 残差和 LN，后者需要完整向量。可以沿序列或 batch 分波计算，第一波开始 AR 时继续算第二波。SP 下也可让列并行需要的 AG 与相邻无依赖计算重叠，让 RS 与已经本地可算的 dgrad 重叠。Transformer Engine userbuffer / P2P 预留通信缓冲和 SM，减少与 MMA 争用资源。
 
-- 沿序列或 batch 把 GEMM 切成几波：第一波算完先发 AR，第二波 GEMM 和第一波 AR 重叠。
-- SP 下：列并行需要的 all-gather 可以和下一段无关计算叠；reduce-scatter 可以和已经本地的 dgrad 叠。
-- Transformer Engine 的 userbuffer / P2P 把 NCCL 缓冲钉在通信专用 SM 上，减少和 MMA 抢寄存器。
+块切得太碎会增加启动开销，太大则仍是先算后传；`cudaDeviceSynchronize` 或默认 stream 也可能把路径串行化。即使时间线重叠，NCCL 与 GEMM 抢 SM 仍可能让两者一起变慢。反向的激活梯度与权重梯度依赖不同，也不能照搬正向切法。DP 梯度 AR 较容易藏在前几层 backward 后，TP 层内 AR 则需要更细的调度；PP P2P 重叠不足会表现为气泡，见 `nvidia-pipeline-bubble`。
 
-叠不上的常见原因：切得太碎，启动次数吃掉带宽；切得太整，仍是先算完再传；`cudaDeviceSynchronize` 或默认 stream 把 NCCL 和 GEMM 串起来；NCCL 和 GEMM 抢 SM，两个都慢。反向更烦：激活梯度和权重梯度的依赖不同，不能照抄正向切块。
+Nsight Systems 中，看 `ncclDevKernel` 与 MMA 是否并行且 GPU 持续有效工作。如果两者之间有空档、GPU 在等，就是通信暴露在关键路径；若重叠时 SOL 都低，可能是资源竞争。单报“NCCL 占 30%”不够，要判断这段时间能否藏到计算下面。
 
-DP 梯度 AR 容易藏在前几层 backward 后面；TP 层内 AR 默认藏不住。面试把两者说成「都 overlap 就好」会穿帮。PP 的 P2P 体积小，叠不上表现为气泡，见 `nvidia-pipeline-bubble`。
-
-## 怎么在 Nsight 上暴暴露出通信瓶颈
-
-Systems 时间线：`ncclDevKernel` 和 MMA 并排且 GPU 忙，overlap 在工作。一条缝、GPU 空，就是在等通信，通信等待已经成为瓶颈。两者重叠但 SOL 都很低，是抢 SM，再加 overlap 会更差，该减 TP 或把通信移回 NVLink。不要只报「NCCL 占 30%」：要说这 30% 能不能挪到计算底下。
-
-错误处方：遇到通信瓶颈就加 TP（反而增加通信负担）；墙了就关 SP（字节没少）；墙了就开 ZeRO-3（又加每层 AG）。对症是减小 TP、加大 $h$ 方向的算术强度、或把 TP 缩回节点内。
+通信已经受限时继续加 TP 会增加负担，关 SP 也没减少字节，ZeRO-3 还会加每层 AG。更直接的选择是减 TP、提高 $h$ 方向的算术强度，或把 TP 收回节点内。
 
 ## 追问
 
-- **为什么长 $T$ 救不了 TP 通信比？** GEMM 和 AR 都线性于 $T$，比值跟 $h/\mathrm{TP}$ 和链路带宽走。
-- **SP 的 AG+RS 比 AR 更好叠吗？** 有机会，因为两端可以分别和相邻 GEMM 配对。不是免费，字节同阶。
-- **Userbuffer 是什么？** 预留一块给 NCCL 的显存和 SM，避免和计算 kernel 抢。实现细节随 TE 版本变，面试讲意图即可。
-- **推理 TP 也要 overlap 吗？** Decode 一步 GEMM 很瘦，层内 AR 更容易暴露出通信瓶颈。所以 serving 的 TP 往往比训练更保守，或改 EP/复制。
+**长 $T$ 为什么救不了 TP？**
+GEMM 和 AR 都随 $T$ 线性增长，主要比的是 $h/\mathrm{TP}$ 与链路带宽。
+
+**SP 的 AG + RS 更好重叠吗？**
+有机会，能分别配对相邻 GEMM，但字节同阶，收益仍要测。
+
+**Userbuffer 是什么？**
+预留给通信使用的显存和 SM，减少与计算 kernel 的竞争。细节随 TE 版本变化，先说清这个目的。
+
+**推理 TP 呢？**
+Decode 的 GEMM 更瘦，层内 AR 更容易成为瓶颈，serving 的 TP 往往更保守，也可能改用 EP 或复制。

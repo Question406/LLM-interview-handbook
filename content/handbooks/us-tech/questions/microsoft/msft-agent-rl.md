@@ -4,7 +4,7 @@ section: microsoft
 order: 20
 level: A
 title: Microsoft：多 agent 失败，循环、互相吹捧幻觉、预算？
-quick: "多 agent 常见翻车：停不下来，以及以为自己停对了。循环要硬顶轮数 / token 数 / 实际耗时。Complimentary 幻觉是角色互相捧场，把失败说成成功。不要用「对方说完成了」当 强化学习（RL） 奖励。"
+quick: "多 agent 要同时验证是否真正完成、是否应当停止：宿主限制轮数、token 和实际耗时，结果用退出码、CI、文件或 API 状态核验。另一个 agent 说「成功」不能当 RL 奖励。连续无进展时重计划，写操作默认不自动重试。"
 tags:
   - Microsoft
   - Multi-Agent
@@ -29,21 +29,17 @@ sources:
     type: secondary
 ---
 
-微软 Agent 岗在 `msft-autogen` 之后会追问失败。公开材料：AutoGen 把对话当编排；Magentic-One 用 Task Ledger / Progress Ledger；MAST 论文把多智能体失败收成规格、协调、验证几类。产品侧 Semantic Kernel 管插件边界。本题收 **循环、互相吹捧、预算**，不当成真题记录。通用 harness 见 `design-agent-harness`。
+多 agent 失败要先检查两件事：是否陷入循环，以及是否把失败当作成功。比如执行器超时，评论员却根据摘要写「测试已绿」，后续角色再把这句话当事实，团队就会在错误状态上继续推进。
 
-## 三种停不下来
+AutoGen 用对话编排，背景见 `msft-autogen`；Magentic-One 增加 Task Ledger / Progress Ledger，MAST 将失败归到规格、协调、验证几类；Semantic Kernel 管插件边界。这里讨论公开设计和失败模式，不作为真题记录，通用运行环境见 `design-agent-harness`。
 
-1. **对话循环。** Coder「请再审」，Reviewer「很好再改一版」，`max_round` 没设就烧 TPM，见 `msft-azure-tpm`。选下一个说话者的模型喜欢最健谈的那个，该动手的那个反而排不上。
-2. **互相吹捧幻觉。** 不是对用户拍马，是 agent 之间互证成功：执行器超时，评论员根据自然语言摘要写「测试已绿」。下一轮当事实。状态必须以系统记录为准：退出码、CI、工单字段，见 `msft-semantic-kernel`。MAST 里大量失败是验证缺失；规划再长也救不了。
-3. **预算幻觉。** 模型说「再试一次就能好」。没有硬顶就会在工具抖动里空转。写操作默认不自动重试。
+## 状态和停止条件交给宿主
 
-Magentic-One 值得搬上白板：外环改计划，内环问「这一步有没有进展」。连续若干步无进展就重计划，别再催同一个 Web Surfer。GAIA 完成率论文写得很一般，用它当失败框架，不要当「已经能自主办公」。
+Coder 反复「请再审」，Reviewer 回「很好再改一版」，没有 `max_round` 就会不断耗 TPM，见 `msft-azure-tpm`。选说话者的模型还可能总选健谈角色，让该执行任务的人迟迟没机会。Magentic-One 的外环调整计划，内环检查进展；连续若干步没进展就重计划，避免一再催同一个 Web Surfer。其 GAIA 完成率也说明该设计适合用来分析失败，不能据此声称已经能自主办公。
 
-## 奖励不能是「看起来完成」
+执行结果以退出码、CI、工单字段等系统记录为准，见 `msft-semantic-kernel`。Complimentary 幻觉指角色互证成功，无新证据仍给通过。做 RL 或在线采样时，奖励应来自测试、文件 diff、API 幂等结果；另一个 LLM 的成功评价可能直接强化这类互捧。任务成功与越权分别计数，见 `amazon-agent-eval`，还要查角色是否使用了别人的工具。
 
-若做强化学习或线上采样，奖励必须绑环境：测试通过、文件 diff、API 幂等成功。用另一个 LLM 的「成功」当奖励，就是在训练 complimentary 幻觉。`amazon-agent-eval` 同一句：任务成功和越权要分开计。多 agent 还要加：角色是否越权用了别人的工具箱。
-
-预算写在宿主：
+轮数、token、实际耗时用宿主硬限制，写操作默认不自动重试：
 
 ```python
 def run_team(step, *, max_rounds=8, max_tokens=12000, max_wall_s=120):
@@ -58,15 +54,22 @@ def run_team(step, *, max_rounds=8, max_tokens=12000, max_wall_s=120):
     return {"status": "max_round"}
 ```
 
-上下文不要每轮粘全部聊天。Ledger 只留计划和证据指针，见 `msft-long-context`。Copilot 仓库循环同一套顶，见 `msft-copilot-agent`。
+Ledger 只保存计划与证据指针，每轮复制所有聊天会让上下文不断增大，见 `msft-long-context`。Copilot 的仓库循环也需要同类限制，见 `msft-copilot-agent`。
 
-评测拆：真完成、预算终止、工具失败后的幻觉率、重复副作用、角色互捧次数（评论员在无新证据时仍给通过）。不要只报任务完成率。
+## 分开记录完成与失败
 
-常见误区是：加人就当更强；把 GroupChat 接到生产邮箱；RL 优化「对话看起来像成功」。权限绑工具运行时，不绑 输入提示（prompt）。
+评测分别统计真完成、预算终止、工具失败后的幻觉率、重复副作用，以及评论员无新证据仍通过的次数。GroupChat 若直接连生产邮箱，循环可能不断发信；权限应绑定工具运行时，prompt 不能代替 ACL。
 
 ## 追问
 
-- **两个 agent 不够为什么加到五个？** 每增加一个 Agent，就会增加通信开销和误调用风险。角色要覆盖一种工具界面，人多本身不加分。
-- **和单 agent 带工具比？** 单 agent + 好 字段和类型规范（schema） 能做的，不要上 GroupChat。多 agent 只在隔离的工具界面或显式复核时划算。
-- **人放哪？** 计划确认、不可逆动作、预算打满后的降级。不要让人去当下一轮 speaker 来「感觉还可以」。
-- **AutoGen 改名了还能这么答吗？** 能。抽象没变：对话编排 vs 插件中间件。失败模式不随包名消失。
+**两个 agent 不够，要加到五个吗？**
+先判断新增角色是否覆盖独立工具界面或必要复核。每个角色都会增加通信与误调用成本。
+
+**什么时候单 agent 更合适？**
+单 agent 加明确 schema 已能完成时就用它。多 agent 的收益应来自界面隔离或显式复核。
+
+**人在什么位置介入？**
+计划确认、不可逆动作和预算耗尽后的降级，介入点应预先定义。
+
+**框架改名后这些分析还适用吗？**
+适用。对话编排、插件边界、状态核验和预算都是独立于包名的设计问题。

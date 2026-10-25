@@ -4,7 +4,7 @@ section: anthropic
 order: 26
 level: A
 title: Anthropic：Claude vision 图怎么编码、多图怎么喂，截图 agent 卡在哪？
-quick: "图按 28 像素一块切成视觉 token，数量跟分辨率走，不跟「一张图」走。超长边会先缩小；computer use 的 tool_result 截图例外，超限直接拒，要你自己缩。多图当有序块，先标 Image 1。截图 agent 的坐标必须对上缩小后的图。"
+quick: "视觉 token 随图片分辨率增长，估算时按 28 像素一块计算。多图要按顺序编号；截图 agent 则要自己处理缩放，把模型看到的坐标映射回屏幕，并控制历史截图数量，否则每一步都会增加大量上下文。"
 tags:
   - Anthropic
   - Vision
@@ -23,9 +23,9 @@ sources:
     type: primary
 ---
 
-研究 / serving 岗会问 Claude 到底怎么「看图」。公开文档把图当成 content block：base64、URL 或 Files API 的 `file_id`。我会把编码、多图、截图 agent 三件事拆开讲。
+Claude 接收图片时使用 content block，可以传 base64、URL 或 Files API 的 `file_id`。图片的主要开销取决于分辨率；多图需要明确顺序，截图 agent 还要保证模型看到的尺寸和执行点击时的坐标能对应起来。
 
-## 视觉 token：按块计，不按张计
+## 分辨率怎么影响 token 和多图输入
 
 Claude 看的是 patch，不是原图像素。一块 $28\times 28$，视觉 token 数大约
 
@@ -35,17 +35,17 @@ $$T_{\mathrm{vis}}=\lceil W/28\rceil \times \lceil H/28\rceil$$
 
 例外：交给 computer use / browser use 的 `tool_result` 截图，API 拒绝缩小，超限直接校验错误。宿主必须自己缩，并且把点击坐标从「模型看见的图」映射回真屏。坐标工作流必须禁止静默缩小，否则模型和你各看一张尺寸。
 
-Shape 口头报：文本 $[B, T_{\mathrm{txt}}, D]$，视觉 $[B, T_{\mathrm{vis}}, D]$，在序列维拼成 $[B, T_{\mathrm{txt}}+T_{\mathrm{vis}}, D]$。一张高清 UI 截图可以吃掉一篇短文的窗口。多图线性加。不要说「一张图等于 1 个视觉 token」。
+从张量形状看，文本 $[B, T_{\mathrm{txt}}, D]$，视觉 $[B, T_{\mathrm{vis}}, D]$，在序列维拼成 $[B, T_{\mathrm{txt}}+T_{\mathrm{vis}}, D]$。一张高清 UI 截图可以吃掉一篇短文的窗口。多图线性加。不要说「一张图等于 1 个视觉 token」。
 
-## 多图：有序列、有标签、有条数墙
+多图输入还受顺序和数量限制。
 
 单条 user 消息里可以放多块 `image`。模型按块顺序联合看，适合对比、翻页、前后截图。官方建议每张前面加短文本 `Image 1:`、`Image 2:`，后轮才能用名字指回去。不要把十张图糊成一块 base64。
 
-条数墙（会变，面试报数量级并说查文档）：claude.ai 一条约 20 张；API 在 200k 窗口上大约 100 张/请求，更长窗口可以到几百。整请求还有字节上限。超过约 20 张 `image`（含历史回放、嵌在 `tool_result` 里的截图；Bedrock / GCP 上 PDF 页图也计入）时，每张还有更严的边长限制，文档建议任一边不超过约 2000 px，否则 many-image 校验失败。多页 PDF 不要靠自己拆成一百张图硬塞，走 `anthropic-pdf` 的 document 块。
+数量限制会变化，面试中可以说明数量级，具体值要查文档：claude.ai 一条约 20 张；API 在 200k 窗口上大约 100 张/请求，更长窗口可以到几百。整请求还有字节上限。超过约 20 张 `image`（含历史回放、嵌在 `tool_result` 里的截图；Bedrock / GCP 上 PDF 页图也计入）时，每张还有更严的边长限制，文档建议任一边不超过约 2000 px，否则 many-image 校验失败。多页 PDF 不要靠自己拆成一百张图硬塞，走 `anthropic-pdf` 的 document 块。
 
 多轮别反复打 base64：历史越长，payload 和 首个 token 的等待时间（TTFT） 一起涨。Files API 上传一次，后面只传 `file_id`。静态系统提示仍可打 `anthropic-prompt-cache`；图字节本身每次变就 miss，不要指望「同一张截图换了 JPEG 质量还能命中」。文档还写：Claude 不读 EXIF / 元数据，朝向、拍摄时间要你自己转正后再送。URL 源适合 CDN；内网图不要把带签名的 URL 写进会进日志的请求体。
 
-## 截图 agent：分辨率、坐标、历史
+## 截图 agent 怎么处理坐标和历史
 
 Computer use 的观察是翻拍式截图，不是视频。Anthropic 研究文写过：模型要会数像素才能点准。产品循环是：截屏 → 模型出 `click` / `type` → 宿主执行 → 再截。要点：
 
@@ -54,9 +54,9 @@ Computer use 的观察是翻拍式截图，不是视频。Anthropic 研究文写
 3. 历史截图要丢。每步一张约 1568 token 的图，二十步就三万视觉 token。只留最近 1–2 张，旧的改成「已执行 click at …」的文本。这会改消息前缀，缓存点只能钉在 tools / system，见 `anthropic-tool-roundtrip`。
 4. 屏幕是不可信输入。像素里的字能当注入，见 `anthropic-mm-harm` 和 `anthropic-prompt-injection`。敏感动作仍要产品层确认，见 `anthropic-computer-use`。
 
-口算例子：1920×1080 在标准档会先缩到大约 1456×819，再按 28 切，大约 52×30 块，接近 1560 视觉 token。同一张图在高分辨率档可以到两千多。agent 循环里这是每一步的固定开销，比「再加一句 system」贵得多。
+比如 1920×1080 在标准档会先缩到大约 1456×819，再按 28 切，大约 52×30 块，接近 1560 视觉 token。同一张图在高分辨率档可以到两千多。agent 循环里这是每一步的固定开销，比「再加一句 system」贵得多。
 
-坐标映射：$x_{\mathrm{os}}=x_{\mathrm{model}}\cdot W_{\mathrm{os}}/W_{\mathrm{model}}$，宽高分别乘，不要假设正方形缩放。缩完再送、点完再截图回读，比信一次 目标框 稳。Files API 的 `file_id` 只省传输，不省 $T_{\mathrm{vis}}$。
+把模型坐标映射回屏幕时，用 $x_{\mathrm{os}}=x_{\mathrm{model}}\cdot W_{\mathrm{os}}/W_{\mathrm{model}}$，宽高分别乘对应比例，不要假设正方形缩放。缩完再送、点完再截图回读，比信一次 目标框 稳。Files API 的 `file_id` 只省传输，不省 $T_{\mathrm{vis}}$。
 
 常见误区是：把 4K 桌面原样塞进每一步；用缩略图点图标；多图不编号导致「左边那张」指错；用 URL 拉内网截图却把签名 URL 泄漏进日志。和 `anthropic-tool-use` 同一句：模型提议点击，宿主按缩小后的坐标系执行，执行权不在像素里。
 

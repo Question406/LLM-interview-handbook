@@ -4,9 +4,7 @@ section: amazon
 order: 2
 level: S
 title: Amazon：双塔召回，训练对齐和 serving 近似，ANN 掉点怎么补？
-quick: >-
-  训练用精确内积和难负例把 query / item 塔对齐；线上用预计算 item 向量加 ANN。掉点几乎都来自「训练时见过的邻居」和「HNSW /
-  PQ 真正返回的邻居」不是同一集合。先测 ANN recall，再用 ANN 难负例、词法并集和重排把漏召回补回来。
+quick: "双塔训练用正例和难负例对齐 query / item 向量，线上预计算 item 后用 ANN 召回。掉点先测 ANN 对精确近邻的覆盖，再查编码版本、量化和搜索预算；覆盖足够后，用 ANN 难负例、词法并集和精排改进相关性。"
 tags:
   - Amazon
   - Two-Tower
@@ -25,38 +23,21 @@ sources:
     type: primary
 ---
 
-Search / Recs / Bedrock 检索岗爱问这题。Amazon Science 的 Semantic Product Search 把商品召回做成双塔：query 塔实时、item 塔离线。后面 BERT 双塔要蒸馏才能扛住电商实时延迟。公开论文和「十亿级目录、毫秒召回」是同一张图。按 Leadership Principles 收：先指标和失败模式，不要只画两个 MLP。
+ANN 掉点先拆成两件事：索引有没有找回精确向量搜索的邻居，以及这些邻居是否真能满足用户意图。前者查编码、量化和搜索预算，后者查训练负例与排序目标。比如精确 Recall@100 很好，HNSW / PQ 实际返回的却是另一组商品，继续优化原来的训练 loss 未必能补上。
 
-## 训练对齐的是什么
+Amazon Science 的 Semantic Product Search 用 query 塔实时编码、item 塔离线编码来做商品召回；后续 BERT 双塔通过蒸馏适应实时延迟。十亿级目录、毫秒召回需要这种预计算，Search、Recs 和 Bedrock 检索都可以按同样的失败路径分析。
 
-两座塔不共享计算图。query $q$ 出 `[B, D]`，item $i$ 出 `[B, D]`，分打 $s(q,i)=f(q)^\top g(i)$ 或余弦。购买 / 点击是正例。InfoNCE：
+## 训练先把空间和难负例对齐
+
+query $q$ 和 item $i$ 分别输出 `[B, D]`，用 $s(q,i)=f(q)^\top g(i)$ 或余弦打分。两塔各自计算，购买 / 点击可作正例，InfoNCE 用正例与负例比较：
 
 $$
 L=-\log\frac{\exp(s(q,i^+)/\tau)}{\sum_{i\in\mathcal{N}}\exp(s(q,i)/\tau)}
 $$
 
-$\mathcal{N}$ 是正例加负例。现场常见误区是把 in-batch 负例当成线上分布。Batch 里的随机商品太容易，模型学的是「和随机货分开」，不是「在近邻里排对」。Amazon 那篇还会把 impressed-not-purchased 和随机负例分开，不要一套 triplet 糊过去。
+$\mathcal{N}$ 包含正例和负例。随机 in-batch 商品太容易区分，线上却要在相似商品里找对目标。Amazon 论文还区分 impressed-not-purchased 与随机负例，训练时应保留这种差异。
 
-item 塔输入是标题、品牌、类目路径，不是用户历史。用户历史进 query 塔或后面的精排。把点击序列塞进 item 塔，新商品立刻冷启动失败，见 `amazon-cold-start`。
-
-训练必须和 serving 用同一套预处理：同样截断、同样 lower / 分词、serving 关掉 dropout。两塔可以不对称（query 浅、item 深），但 $D$ 和度量必须一致。余弦训练、欧氏检索，掉点你会怪 ANN。
-
-## serving 近似掉在哪
-
-线上不能对亿级 ASIN 做精确 MIPS。item 向量预先算好，丢进 HNSW / IVF-PQ。query 只跑一次塔，再 ANN。训练看到的是精确内积下的 $\mathcal{N}$；线上看到的是量化加图搜索后的 $\hat{\mathcal{N}}$。两个集合差异增大时，离线 Recall@100 很好、线上少召回。
-
-掉点拆开量，不要口头「ANN 有损失」：
-
-1. **编码漂移。** 模型周更、目录日更，索引里仍是旧向量。
-2. **量化。** PQ / OPQ 把 $D$ 维压成码本，近邻被挤出 top-$k$。
-3. **图搜索预算。** HNSW 的 `efSearch`、IVF 的 `nprobe` 太小，recall 会先下降，延迟看起来很漂亮。
-4. **负例不匹配。** 没在 ANN 邻居上训过，模型不会在「看起来都像」的 200 个里把正例顶上去。
-
-补法按成本排。先在固定 query 集上算「精确 top-$k$ 被 ANN 覆盖的比例」，目标先放到 $0.95$ 以上再谈模型。覆盖不够就加 `efSearch` / `nprobe`，或先别上太狠的 PQ。覆盖够了还掉，从 ANN 索引里挖难负例再训，让训练邻居逼近 serving 邻居。再不够：词法召回并集，见 `amazon-kendra-hybrid`；top 200 用交叉编码器或精排重排。电商里 ASIN、型号、错误码不能靠近邻碰运气，必须有倒排保底。
-
-蒸馏也是对齐。大 cross-encoder 或大双塔当教师，小双塔当学生，论文里约 75M 学生相对 20 倍教师只掉约 3% 相关性，才能进实时预算。不要把教师直接挂到 p99 链路上。
-
-索引新鲜度要有 SLO：新 ASIN 多久可召回、改标题多久重嵌。向量不会自己过期，和 `amazon-bedrock-rag` 里政策条款一个道理。特征版本和索引别名绑在一起发，见 `amazon-feature-store`。
+item 塔输入标题、品牌和类目路径，用户历史进入 query 塔或后面的精排。若 item 必须依赖点击序列，新商品就缺输入，见 `amazon-cold-start`。query 塔可以浅、item 塔可以深，但维数 $D$ 与距离度量要一致。截断、lower / 分词也要与 serving 相同，线上关闭 dropout；余弦训练却用欧氏检索会引入额外偏移。
 
 ```python
 import torch
@@ -70,10 +51,27 @@ def infonce(q, p, t=0.05):
     return F.cross_entropy(logits, torch.arange(q.size(0), device=q.device))
 ```
 
-这只是 in-batch。生产要把 ANN 挖到的 ASIN 拼进负例，否则你在优化一个线上不存在的 softmax。
+这只是 in-batch 基线。生产训练还要加入 ANN 挖出的 ASIN 难负例，让模型学会区分线上真正相近的商品。
+
+## 在线近似逐项测，再按成本修
+
+亿级 ASIN 无法逐个算精确 MIPS。线上把预计算 item 向量放进 HNSW / IVF-PQ，query 塔运行一次再搜索。精确内积的 $\mathcal{N}$ 与量化、图搜索后的 $\hat{\mathcal{N}}$ 会有差异。
+
+先查编码漂移：模型周更、目录日更，索引可能还是旧向量。再查 PQ / OPQ 将 $D$ 维压成码本后损失多少近邻，以及 HNSW 的 `efSearch`、IVF 的 `nprobe` 是否太小。预算小会让延迟好看，同时降低 recall。最后看训练是否缺少 ANN 邻居，让模型在 200 个相似候选中也能区分正例。
+
+固定 query 集，先测精确 top-$k$ 被 ANN 覆盖的比例，可先把目标放到 $0.95$ 以上。覆盖不足时调大 `efSearch` / `nprobe` 或减轻 PQ；覆盖够了再挖 ANN 难负例重训。仍有缺口时合并词法候选，见 `amazon-kendra-hybrid`，再对 top 200 交叉编码或精排。ASIN、型号和错误码要保留倒排精确路径。
+
+蒸馏可用大 cross-encoder 或大双塔指导小双塔。公开论文约 75M 学生相对 20 倍教师只损失约 3% 相关性，使它能进入实时预算；教师本身不适合直接塞进 p99 链路。
+
+索引也要有新鲜度 SLO：新 ASIN 多久可召回，标题变更后多久重嵌。向量不会自动过期，与 `amazon-bedrock-rag` 的政策版本同理；特征版本和索引别名一起发布，见 `amazon-feature-store`。
 
 ## 追问
 
-- **为什么不把 query、item 塞进同一个 Transformer？** 交叉注意力更准，但 item 不能预计算，延迟从毫秒变成对全库做 Transformer。召回用双塔，精排再用交叉。别把召回和精排合成一段。
-- **ANN recall 已经 0.99 为什么还掉转化？** 召回集对了，排序目标可能仍是点击不是购买；或词法精确匹配被语义近邻挤掉。看失败 query：漏 ASIN 是召回，排错是 ranker。
-- **item 塔要不要每天全量重嵌？** 改标题、类目、合规状态的走增量；embedding 模型一换必须全量。增量更新和模型版本打在同一索引别名上，否则训练/服务再偏一次。
+**为什么不让 query 和 item 进同一个 Transformer？**
+交叉注意力可以更准，但 item 不能独立预计算，无法对全库逐对运行。召回双塔，候选精排再交叉。
+
+**ANN recall 到 0.99，转化还下降呢？**
+继续看任务相关性。可能点击目标与购买不一致，或精确商品被语义近邻挤走。失败 query 中先区分漏 ASIN 与 ranker 排错。
+
+**item 每天都要全量重嵌吗？**
+标题、类目和合规状态变化可增量更新；embedding 模型变化必须全量重嵌。更新与模型版本绑定同一索引别名。

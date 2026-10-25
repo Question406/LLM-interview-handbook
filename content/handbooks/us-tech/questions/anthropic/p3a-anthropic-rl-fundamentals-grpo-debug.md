@@ -4,7 +4,7 @@ section: anthropic
 order: 617
 level: S
 title: "Anthropic：GRPO 调试与重要性采样比追问"
-quick: "调 GRPO 时按数据流逐层检查：采样前要 softmax，组内优势在得分全相同时设为 0 以免除零，重要性采样比是 logprob 差取 exp 且 old 值固定，损失只对 response token 求平均。"
+quick: "我会按采样、组内优势、重要性采样比和 response mask 的顺序排查 GRPO。得分全同的组优势设为 0，ratio 用固定 old logprob 与 new 的差取 exp，损失只平均有效回答 token；这些都可以用小输入单独核对。"
 companies:
   - anthropic
 tags:
@@ -23,22 +23,39 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现组内奖励归一化和带裁剪的策略损失，用于检查一个小型 GRPO 训练步骤。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`advantages(rewards)` 接收 NumPy 浮点数组 `[P,G]`，每行是一道 prompt 的 G 个奖励，返回同形数组：每组减去本组均值，再除以该行组内总体标准差（ddof=0）；标准差小于 `1e-8` 的组全部返回 0。
+
+`loss_grad(new, old, adv, mask, eps=0.2)` 返回 `(loss, grad)`。`new`、`old` 是 `[P*G,T]` 的采样 token 对数概率，`adv` 是 `[P*G]`，`mask` 是同形布尔数组，True 表示计入损失；`0 < eps < 1`。令 `r=exp(new-old)`，每个有效 token 的损失定义为 `-min(r*A, clip(r,1-eps,1+eps)*A)`，其中 A 是该序列的优势。`loss` 是有效 token 的均值，`grad` 是对 new 的导数，形状与 new 一致。old、adv 是常量；不加入额外参考模型 KL 项。全部 token 被屏蔽时返回 0 和全零梯度。
+
+### 示例
+
+```text
+advantages([[1,1],[0,2]]) = [[0,0],[-1,1]]
+new = old = [[0],[0]], adv = [1,-1], mask = [[True],[True]]
+loss = 0, grad = [[-0.5],[0.5]]
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
 给一份植入了若干 bug 的 GRPO 训练脚本，找出并修复这些错误；之后面试官会追问 clip 的作用、组内优势归一化，以及 on-policy 和 off-policy 的区别（重要性采样比为什么会偏离 1）。
 
 > 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。具体植入了哪几行 bug 以现场脚本为准，摘要不足以确认第三个 bug。下面的接口、约束和测试是手册补的练习约定，不是原题。
 
-## 思路
+我会沿数据流排查，每层用一个小输入验证，再看总损失。比如同一 prompt 的 G 个回答得分全一样，减均值后全是 0，标准差也是 0；直接相除就变成 NaN，这组没有相对学习信号，应把优势设为 0。
 
-调试时按数据流逐层检查，每层都能用小例子单独验证：
+采样前先把 logits 经 softmax 变成非负、和为 1 的概率。组内优势按同一个 prompt 分组，减均值、除组内标准差，并处理上面这个零方差边界。
 
-- 采样：从 logits 采样前要先做 softmax，得到非负且和为 1 的概率，不能把 logits 直接当权重；
-- 组内优势：同一个 prompt 的 G 个回答，减去组均值再除以组内标准差。如果一组得分全相同，标准差是 0，直接除会得到 NaN；这组本来就没有学习信号，优势应该全设成 0；
-- 重要性采样比：$r = \exp(\log \pi_\text{new} - \log \pi_\text{old})$，是 logprob 之差再取 exp，漏掉 exp 是常见 bug。`old` 的 logprob 要在采样时固定下来，不能参与求导；
-- response mask：只让回答部分的 token 进入损失，prompt 和 padding 都要 mask 掉，平均时分母是有效 token 数。
+再看重要性采样比：$r = \exp(\log \pi_\text{new} - \log \pi_\text{old})$。logprob 之差还要取 exp，`old` 则在采样时固定，不参与求导。损失的 response mask 只放回答 token，排除 prompt 和 padding，分母也用有效 token 数。
 
-这份练习设定的三个错误是「logits 直接采样」「零方差除零」「漏 exp」。其中只有前两类在已有的面经转述里有具体线索，不能把三处都当成已核实的原题内容。
+下面练习设置了 logits 直接采样、零方差除零和漏 exp 三类错误；已有面经转述只有前两类的具体线索，第三类是练习约定，现场仍以给出的脚本为准。
 
 ## 完整编程练习（手册重构版）
 
@@ -123,6 +140,16 @@ def loss_grad(new_logp, old_logp, adv, mask, eps=0.2):
     grad = -adv * ratio * ~flat * mask / num_tokens  # d ratio / d new_logp = ratio
     return loss, grad
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(advantages([[1, 1], [0, 2]]), [[0, 0], [-1, 1]])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

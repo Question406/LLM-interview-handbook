@@ -4,7 +4,7 @@ section: coding
 order: 808
 level: A
 title: "Cursor：投机解码的接受率与残差采样"
-quick: "投机解码对每个 draft token 以 min(1, p/q) 的概率接受，第一次拒绝时从 max(p − q, 0) 归一化后的残差分布重采样并丢弃后面的候选，这样输出分布和直接从 target 模型采样完全相同。"
+quick: "让 draft 提出候选，target 一次给出这些位置的分布，再按 min(1, p/q) 逐个接受。首次拒绝时从 max(p − q, 0) 归一化后的残差重采样并丢弃后缀，全部接受时再补采一个 token。这样每个输出位置仍服从 target 分布，测试还要分别检查分布正确性和模型调用次数。"
 companies:
   - ai-labs
 tags:
@@ -22,13 +22,33 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+实现推测解码的本地模拟器，在减少目标模型调用的同时保持目标模型的生成分布。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`speculative(target_batch,draft_next,limit,block,rng,eos=-1)` 返回 `(tokens,target_calls)`。`draft_next`(prefix) 返回下一 token 的概率向量 q；`target_batch`(prefix,candidates) 一次返回 K+1 个目标概率向量，其中第 i 个以 prefix 加 candidates[:i] 为条件。所有向量为同一不超过 50 的词表上的归一化分布。
+
+每轮最多提出 block 个草稿 token，验证得到与目标模型逐 token 采样相同的分布：候选 token x 以 `min(1,p(x)/q(x))` 的概率接受；首次拒绝后丢弃剩余草稿，从 `max(p-q,0)` 归一化后的分布采样替代 token；全部接受时允许从目标模型的额外分布再取一个 token。输出不超过 limit 个 token，遇 eos 停止且不包含 eos；limit=0 时不调用目标模型。limit<=100，block 为正整数，`target_calls` 是 `target_batch` 实际调用次数。
+
+### 示例
+
+```text
+草稿和目标模型在任何 prefix 下都以概率 1 输出 token 0。
+limit=10, block=3, eos=-1。
+返回 tokens=[0,0,0,0,0,0,0,0,0,0], target_calls=3。
+```
+
+## 解题思路与参考答案
+
 ## 题目
 
-先实现普通的自回归解码，再实现 draft/target 两个模型配合的投机解码（speculative decoding），并且要保证输出的采样分布和只用 target 模型采样时一模一样。模型训练不在题目范围内。
+我会先实现普通自回归解码作为基线，再让 draft 提议、target 批量验证，用接受规则和残差采样保证分布一致。题目要求两种解码的输出采样分布相同，模型训练不在范围内。
 
 > 来源：一亩三分地 Cursor 题目详情页（2026-10-18 读取）。题面是网站从面经整理的，没有逐条核对原帖；网站收录不等于公司官方确认，也不要把它推到 Cursor 其他岗位的面试上。下面的接口、约束和测试是手册补的练习约定，不是原题。
 
-## 思路
+## 接受与拒绝后分别怎么处理
 
 投机解码的做法是：小的 draft 模型先连续猜几个 token，大的 target 模型一次前向就把这几个位置的分布都算出来，再逐个决定接不接受。
 
@@ -167,6 +187,16 @@ def speculative(target_batch, draft_next, limit, block, rng, eos=-1):
             output.append(extra)
     return output, target_calls
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert abs(firsts.count(0) / len(firsts) - 0.8) < 0.025` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

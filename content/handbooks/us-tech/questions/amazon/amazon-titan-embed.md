@@ -4,7 +4,7 @@ section: amazon
 order: 13
 level: A
 title: Amazon：Titan embedding 怎么评（MTEB 坑、领域），和 RAG 是什么关系？
-quick: "MTEB 是八类任务的公开榜，没有一个模型全赢；检索增强生成（RAG） 只关心检索切片和你的语料，不关心 STS 平均分。Titan V2 公开可出 1024 / 512 / 256 维，短维在检索上能保住大部分分数。索引和查询必须同一模型、同一维。领域要自己做金标，不要把英文维基榜当 Seller 政策。"
+quick: "Titan embedding 要用领域检索集评，重点看 Recall 和 nDCG，MTEB 总均分只作背景。V2 提供 1024 / 512 / 256 维，需要用存储、延迟和本域检索损失做选择。编库与查询固定同一模型、维数和归一化规则，再检查切块与 RAG 的最终效果。"
 tags:
   - Amazon
   - Titan
@@ -29,32 +29,27 @@ sources:
     type: primary
 ---
 
-检索增强生成（RAG） / Knowledge Bases 岗会把 embedding 问成「是不是 MTEB 第一」。Muennighoff 等人的 MTEB 论文核心结论正好相反：**没有一种嵌入方法在所有任务上称王**。STS 强不代表检索强。Titan V2 的公开卖点是 RAG：默认 1024 维，可选 512 / 256，AWS 写 512 维大约留住 99% 检索分、256 维大约 97%，用来换存储和延迟。生成侧怎么评见 `amazon-titan-eval`；本题只评向量。
+Titan embedding 要先看它能否把应用所需的条款或商品找回来，再参考 MTEB。比如 STS 相似度得分很高，却把过期条款排在有效条款前面，RAG 仍然会失败。Muennighoff 等人的 MTEB 论文也说明，没有一种嵌入方法在所有任务上都赢。
 
-## MTEB 能看什么，不能当门禁
+Titan V2 默认 1024 维，可选 512 / 256。AWS 报告 512 维保留约 99% 检索分、256 维约 97%，可以节省存储和 ANN 时间；这些通用检索比例仍需在自己的语料复测。生成侧评测另见 `amazon-titan-eval`。
 
-MTEB 把分类、聚类、对分类、重排、检索、STS、摘要等任务放在一张表里。有用之处：防止你只在自己的 50 条相似度集上自嗨；看模型有没有明显短板（比如聚类崩）。不能当门禁的原因：
+## 先把公开成绩转成应用测试
 
-1. **任务不是你的任务。** RAG 要的是检索：nDCG@$k$、Recall@$k$、MRR。把八类分数平均，会让 STS 把检索的洞填平。论文里就举过 STS 强、检索弱的例子。
-2. **测试集公开。** 榜上的题会进预训练爬取，分会虚高。2025 以后更要用领域私有集或更新的 retrieval 评测，不能靠 0.3 分榜差选模型。
-3. **语言和领域。** 早期 MTEB 偏英文、偏通用网页。Seller 政策、ASIN 属性、工单缩写、多 marketplace 语言，分布都不一样。标识符 query 本来就该走词法，见 `amazon-kendra-hybrid`。
-4. **实现细节。** 是否归一化、query 要不要指令前缀、截断长度、是否对文档和 query 用同一编码器。Titan V2 默认 `normalize=true`，文档写这对 RAG 合适。换模型时这些旋钮要锁死，否则你在比预处理。
+MTEB 覆盖分类、聚类、对分类、重排、检索、STS、摘要等八类任务，能帮助发现短板，也比自己仅有的 50 条相似度测试更广。但 RAG 更关心 nDCG@$k$、Recall@$k$ 和 MRR，把八类平均可能掩盖检索不足。AWS responsible AI 卡也单独给检索 nDCG@10，仍属于通用检索。
 
-AWS 自己的 responsible AI 卡也用 MTEB 讲稳健性，并单独报检索 nDCG@10。面试可以引用这张卡，但要马上补一句：这是通用检索，不是你的条款库。
+公开测试可能进入预训练爬取，2025 以后更应补领域私有集或更新的 retrieval 评测，0.3 分榜差未必有意义。早期 MTEB 偏英文通用网页，Seller 政策、ASIN 属性、工单缩写和多 marketplace 语言都可能换分布；标识符 query 仍需要词法路径，见 `amazon-kendra-hybrid`。
 
-## 和 RAG 的关系：embedding 只负责召回
+比较模型时固定归一化、query 指令前缀、截断长度和编码器使用方式。Titan V2 默认 `normalize=true`，文档推荐用于 RAG。query 用别的指令模型、文档用 Titan，会破坏两端空间一致性。
 
-向量模型 **不生成答案**。它把 query 和块打到同一空间，ANN 取邻居，生成模型再读这些块。所以：
+领域集的正例是该返回的条款、商品或 FAQ，难负例可以是过期条款和相近类目。报告 Recall@5、nDCG@10，并切标识符、语义和多语言。冷启动目录没有行为信号时，embedding 更重要，见 `amazon-cold-start`、`amazon-two-tower`；商品双塔与 Titan 句向量仍是不同检索系统。
 
-- 索引侧用吞吐：Bedrock 对 embedding 常按 RPM 限流，语料用 batch，见 `amazon-batch-infer`。
-- 查询侧用延迟：在线 `InvokeModel`，维数越短，ANN 越轻。512 维几乎够用就不要撑满 1024。
-- **同一模型、同一维、同一归一化** 编库和查库。中途换 Titan V1 → V2 或 1024 → 256，必须全量重嵌。混用余弦空间是静默事故。
-- 切块质量 > 再刷 1 个 MTEB 点。表格和条款边界切丢了，最好的 embedding 也救不回来，见 `amazon-bedrock-rag`。
-- 生成幻觉不是 embedding 的锅，除非召回根本没拿到金标块。先看 Recall@$k$，再看忠实度。
+## 在 RAG 中检查召回这一段
 
-领域评测我会做一份「应用 MTEB」：正例是该返回的条款 / 商品 / FAQ，负例是易混的过期条款和邻类目。报 Recall@5、nDCG@10，再切标识符 vs 语义 vs 多语言。冷启动目录没有行为信号时，embedding 更重要，见 `amazon-cold-start`、`amazon-two-tower`（双塔是另一套检索，别和 Titan 句向量混为一个塔）。
+Embedding 把 query 和文本块编码到同一空间，ANN 找邻居，生成模型才读取这些块作答。先看 Recall@$k$ 是否命中金标块，再看忠实度，可以分开检索失败与生成幻觉。
 
-常见误区是：只报 MTEB average；query 用指令型模型、文档用 Titan；用生成模型的 BLEU 证明 embedding 好；把 256 维当免费午餐却不在自己的集上复测那 97%。
+编库偏吞吐，Bedrock embedding 常按 RPM 限流，可走 batch，见 `amazon-batch-infer`。在线 query 用 `InvokeModel`，维数短则 ANN 负担小，512 维足够时就不必坚持 1024。编库和查询要用同一模型、维数与归一化；Titan V1 → V2 或 1024 → 256 都需要全量重嵌。
+
+切块也影响上限。表格或条款边界丢了，再提高 1 个 MTEB 点也找不回缺失信息，见 `amazon-bedrock-rag`。MTEB 第一但 RAG 变差时，先查切块、过滤、过期元数据和混合检索，再考虑生成模型。
 
 ```python
 body = json.dumps({
@@ -65,9 +60,15 @@ body = json.dumps({
 # 编库和查询同一 dimensions；换维即重索引
 ```
 
+这段请求固定了 512 维并归一化，编库端也要采用同一配置。生成模型的 BLEU 无法用来证明 embedding 质量。
+
 ## 追问
 
-- **为什么 V2 还提供 256 维？** 存储和 ANN 延迟。公开数字是通用检索上的保留比例；你的领域可能掉得更多，要自己画曲线。
-- **二值化 embedding？** 卡上写二值加全精度 query 重排可留很高检索分。那是再一刀压缩，先把 float 维数选对。
-- **MTEB 第一但 RAG 变差？** 很常见。切块、过滤、过期元数据、混合检索没了。先查召回切片，别先换更大生成模型。
-- **要不要微调 Titan？** 文档写 V2 不支持微调。领域适配靠切块、混合检索、重排模型，或换可微调的嵌入方案。不要承诺「我们 LoRA 一下 Titan Embed」。
+**256 维值得用吗？**
+可以节约存储和 ANN 延迟，但要画本域的质量与维数曲线，复核公开的 97% 保留比例。
+
+**还能二值化吗？**
+模型卡提到二值表示加全精度 query 重排能保留较高检索分。这是另一层压缩，先验证 float 维数的选择。
+
+**能微调 Titan V2 吗？**
+所引文档写明 V2 不支持微调。领域适配可先用切块、混合检索、重排，或更换可微调嵌入方案，不能直接承诺对 Titan Embed 做 LoRA。

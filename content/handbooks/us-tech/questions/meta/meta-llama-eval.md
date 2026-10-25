@@ -4,7 +4,7 @@ section: meta
 order: 23
 level: A
 title: Meta：Llama 评测套件——别只报 MMLU，污染和套餐
-quick: "MMLU 只是知识选择题的一个点。Herd 把能力拆成知识、推理、代码、指令、多语言、长窗、工具，再加人评。污染用 8-gram 重叠估增益；后训练对 输入提示（prompt） 做 exact match。数据团队和组织隔离写进论文，不是口头「我们去重了」。"
+quick: "Llama 评测要按知识、推理、数学、代码、指令、多语言、工具与长窗分开看，再配隔离的人评和安全指标。Herd 预训练用 8-gram 分榜估污染增益，后训练对 prompt 做 exact match；同时对齐 shot、CoT、解析方式与模板，避免把格式变化当能力。"
 tags:
   - Meta
   - Llama
@@ -29,41 +29,34 @@ sources:
     type: secondary
 ---
 
-Llama 岗听「我们 MMLU $80$」会追问：几 shot、要不要 思维链（CoT，即分步推理过程）、污染怎么测、人评谁有权看。Herd 第 5 节和后训练章节把套餐摊开了。通用污染手法见 `align-eval-contam`；本题收 Meta 公开怎么做。
+Llama 的评测要用能力套餐，并把评测协议和污染检查一起报告。只说“MMLU $80$”还不够，至少要知道几 shot、是否 CoT、怎么选答案，以及测试题有没有被训练团队看见。
 
-## 不要只报 MMLU
+Herd 第 5 节与后训练章节把这些分开。MMLU 是 $57$ 科、5-shot 选择题，报宏平均且不用 CoT，主要观察知识与选择题行为；MMLU-Pro 更多选项、偏推理，用 5-shot CoT。论文还包括 GPQA、BBH、ARC，数学 GSM8k、MATH，代码 HumanEval、MBPP 及加严变体、MultiPL-E，指令 IFEval，多语言 MGSM 与内部翻译 MMLU，工具 Nexus、BFCL，以及长窗 ZeroSCROLLS、haystack、InfiniteBench。
 
-MMLU 是 $57$ 科 5-shot 选择题，Herd 报宏平均、**不用 CoT**。它测的是知识检索 + 选项格式，不是推理链。同一篇论文自己就加了：
+人评按能力 taxonomy 收约 $7000$ 个偏难 prompt，建模人员不能接触题面。Llama 2 也已同时报告知识、代码和人评胜率。选择题还要换选项顺序、标签字母、prompt 模板，Herd 展示过这类敏感性，模板能带来波动时，$0.5$ 个点不应直接解释为能力变化。
 
-- **更难知识 / 推理：** MMLU-Pro（更多选项、偏推理，5-shot CoT）、GPQA、BBH、ARC；
-- **数学：** GSM8k、MATH，明确区分有没有把训练集塞进退火（`meta-llama3-pretrain`）；
-- **代码：** HumanEval、MBPP 及加严变体、MultiPL-E；
-- **指令：** IFEval；
-- **多语言：** MGSM、内部翻译版 MMLU（指令留英语）；
-- **工具 / 长窗：** Nexus、BFCL；ZeroSCROLLS、haystack、InfiniteBench；
-- **人评：** 按能力 taxonomy 收约 $7000$ 输入提示（prompt），难度偏硬，**建模同学不能碰题面**。
+实现需要固定 shot、CoT、logprob 选项打分或生成后 parse。Herd 将配置放在 GitHub / Hugging Face，最好使用同一 harness 再比较，相关公开榜选模原则见 `openai-eval-harness`。
 
-Llama 2 时代就同时报 MMLU、代码、人评 win rate。只刷 MMLU 过不了「有没有读论文」这关。选择题还要做格式鲁棒：换选项顺序、换标签字母、换 prompt 模板。Herd 专门画了 MMLU 对这些扰动的敏感性。数字随模板抖，就不要把 $0.5$ 个点的涨当能力。
+## 污染怎样分榜检查
 
-实现要对齐：shot 数、是否 CoT、是 logprob 选选项还是生成后再 parse。Herd 说评测配置放在 GitHub / Hugging Face。现场说「跟他们仓库同一套 harness」，比自己口头 5-shot 更像做过。OpenAI 侧「公开榜不当唯一选模信号」见 `openai-eval-harness`。
+预训练阶段，Herd 参照 Singh et al. 2024 用 8-gram 重叠。若评测样本中比例 $\mathcal{T}_D$ 的 token 属于训练出现过的 8-gram，就作为污染判定；每个数据集选阈值，使干净子集与全集的估计分差最大。PiQA、HellaSwag 有较高污染率与估计增益，Natural Questions 则可能重叠率高、增益近零，因此要分别报污染率、估计增益、干净子集分数。通用方法见 `align-eval-contam`。
 
-## 污染：8-gram 和 exact match
+短题、公式、代码样板可能误命中，让干净子集更难、分数偏低，阈值不能全局统一。后训练则对每个 benchmark prompt 做 exact match，合成 SFT 特别容易混入题面，见 `meta-synth-sft`。Herd 退火实验加入 GSM8k / MATH 训练集后，8B 提升大、405B 几乎不涨，见 `meta-llama3-pretrain`，提醒要拆分数据暴露与泛化贡献。
 
-预训练：Herd 跟 Singh et al. 2024，用 **8-gram 重叠**。一条评测样本，若其中比例 $\mathcal{T}_D$ 的 token 属于训练集里出现过的 8-gram，就算污染。$\mathcal{T}_D$ 按数据集选，让「干净子集 vs 全集」的分数差（估计增益）最大。结果因榜而异：有的榜污染率高且增益高（论文举 PiQA、HellaSwag）；有的污染率看起来高但增益几乎为零（Natural Questions）。所以**不要报一个全局污染百分比**，要分榜：污染率、估计增益、干净子集分数。
+组织隔离也写进论文：独立预训练数据团队采集清洗，职责包括挡外部 benchmark；人评只有不参与训练的少数人可接触，避免拿测试题调 mix。
 
-后训练：对每个 benchmark 的 **prompt 做 exact match** 去污染。合成 监督微调（SFT） 特别容易把题面洗进来，见 `meta-synth-sft`。退火实验把 GSM8k / MATH 训练集加进去，8B 大涨、405B 几乎不涨。这是「背题」和「真会」的对照，面试要主动讲。
-
-组织措施论文写得很硬：预训练数据由**单独团队**采和洗，激励就是挡住外部 benchmark；人评只有不参与训练的一小撮人能碰。这不是 HR 废话，是防建模同学用测试集调 mix。
-
-## 套餐怎么呈
-
-我会三列：公开榜、去污染后、内部 / 人评。长窗单独一列：短任务有没有回归 + haystack，不要用 haystack 代替推理。安全单独一列：Guard 的 FPR / 拒答，见 `meta-llama-guard`，不要和 MMLU 加总成一个「综合分」。
-
-常见误区是：用训练中的验证 PPL 代替下游。PPL 跌、MMLU 不动，可能是格式或污染。错法二：在同一套合成数据上既训又测。错法三：只报 instruct 模型的 MMLU，不报 base：后训练会改选择题行为，两套都要。
+结果可以并排展示公开榜、去污染结果、内部 / 人评。长窗同时看短任务回归与 haystack，不能用检索 haystack 替代推理；安全单列 Guard FPR 与拒答，见 `meta-llama-guard`，不和 MMLU 加成一个综合分。Base 与 instruct 两套都报，因为后训练会改变选择题行为。训练验证 PPL 下降不能替代下游评测，同一合成集也不能既训又测。
 
 ## 追问
 
-- **8-gram 会不会误杀？** 会。短题、公式、代码样板假阳性高。所以他们用「估计增益」校准阈值，而不是全局一个 cutoff。误杀会让干净子集变难，分数偏低。
-- **人评能代替榜吗？** 不能。人评覆盖指令和对话，覆盖不了数学代码的回归密度。两套都要，且人评题要对建模隔离。
-- **MMLU-Pro 替代 MMLU 吗？** 补集。Pro 更偏推理、选项更多，格式仍是题。套餐里两者都留。
-- **内部翻译 MMLU 算不算新榜？** 论文标明是内部、Google Translate、指令留英。拿去对外打「多语言 SOTA」要非常小心，现场当成诊断工具。
+**人评能替代公开榜吗？**
+不能，它覆盖指令对话，却难以提供数学代码的回归密度，两套都要且人评对建模隔离。
+
+**MMLU-Pro 可以替代 MMLU 吗？**
+它是补充，偏重推理但仍是选择题，保留两者更方便判断变化。
+
+**内部翻译 MMLU 能当多语言新榜吗？**
+论文注明是内部 Google Translate 翻译、指令仍为英文，更适合诊断，不宜直接据此宣布对外多语言 SOTA。
+
+**污染率高一定虚高吗？**
+不一定，要看分榜估计增益和干净子集，Natural Questions 就说明重叠与收益不必一致。

@@ -4,7 +4,7 @@ section: coding
 order: 6
 level: A
 title: 白板：RoPE 对 q/k 旋转，偶数维成对，decode 的 position
-quick: "把 q、k 的偶奇相邻两维当成复数，按位置 $t$ 旋转 $t\\theta_i$；v 不转；decode 时 $t$ 是 cache 长度，不是 0。"
+quick: "把 q、k 的偶奇相邻两维成对，按位置 $t$ 旋转 $t\\theta_i$，让点积带上相对位置信息；v 保持不变。Decode 的 $t$ 是已有 cache 长度，历史 K 不再旋转；加载 checkpoint 时还要确认偶奇配对还是 half-rotate 布局。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,32 @@ sources:
     url: https://arxiv.org/abs/2307.09288
     type: primary
 ---
+
+## 题目描述
+
+实现使用相邻维度配对的 RoPE，支持完整序列与带缓存的单 token 解码。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`rope_angles(dim,seqlen,base=10000.0,device=None)` 返回 `[seqlen,dim/2]` 的 cos、sin 表。dim 为正偶数；第 i 对维度的频率为 `base^(-2*i/dim)`，位置 t 的旋转角为 t 乘该频率。
+
+`apply_rope(x,cos,sin)` 输入 x `[B,H,T,D]`，每对相邻分量 `(a,b)` 按 `(a*cos-b*sin,a*sin+b*cos)` 旋转，返回同形张量。
+
+`decode_rope(q,k,cos,sin,pos)` 输入 q、k `[B,H,1,D]`，pos 是合法的绝对位置，也是此前缓存长度；使用表中该位置旋转，返回 `(rotated_q,rotated_k)`。
+
+### 示例
+
+```text
+x=[[[[1,2,3,4]]]]。
+cos=[[1,1]], sin=[[0,0]] 时 apply_rope 返回原 x。
+cos=[[0,0]], sin=[[1,1]] 时返回 [[[[-2,1,-4,3]]]]。
+rope_angles(dim=4,seqlen=1) 的第 0 行 cos=[1,1], sin=[0,0]。
+```
+
+## 解题思路与参考答案
+
+我会先按位置生成 cos/sin，把 q、k 的相邻偶奇维拆成两半，分别做二维旋转，再交错拼回原形状。位置 0 应保持原向量，旋转后范数也应不变；decode 用 cache 长度查角度表，这样才能和完整前向对齐。
+
 
 ## 完整编程练习（手册重构版）
 
@@ -83,6 +109,16 @@ def decode_rope(q, k, cos, sin, pos):
     sin_t = sin[pos:pos + 1]
     return apply_rope(q, cos_t, sin_t), apply_rope(k, cos_t, sin_t)
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(y[..., 0, :], x[..., 0, :])` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -160,9 +196,12 @@ prefill 阶段位置是 $0..T-1$，整段 $K$ 旋转后写入 cache。decode 时
 
 ## 追问
 
-- **为什么不旋转 $v$？** 相对位置信息要进入注意力权重，而不是被加权的值。旋转 $v$ 会把位置混进内容向量里，破坏两者的解耦。
-- **长上下文怎么外推？** 改 $\theta$ 的 base（NTK）、YaRN，或者位置插值。面试时要说清：这些方法改的是旋转频率，不是重新训练一套绝对位置 embedding。
-- **头维是奇数会怎样？** 奇数维没法两两配对旋转。实现里要检查 `dim % 2 == 0`。
+**为什么不旋转 $v$？**
+相对位置信息要进入注意力权重，而不是被加权的值。旋转 $v$ 会把位置混进内容向量里，破坏两者的解耦。
+**长上下文怎么外推？**
+改 $\theta$ 的 base（NTK）、YaRN，或者位置插值。面试时要说清：这些方法改的是旋转频率，不是重新训练一套绝对位置 embedding。
+**头维是奇数会怎样？**
+奇数维没法两两配对旋转。实现里要检查 `dim % 2 == 0`。
 
 ## 相关题
 

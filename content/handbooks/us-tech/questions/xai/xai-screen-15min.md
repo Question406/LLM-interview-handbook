@@ -4,11 +4,7 @@ section: xai
 order: 0
 level: S
 title: "xAI: 15-minute video screen, clock and cut reasons"
-quick: >-
-  Most reported rejections happen here. Budget: 2–3 min recent-first intro, 5–8 min one
-  technical decision, 1–2 min a named team (Build / post-training / search / inference /
-  Bot). Optional CS verbal or BankAccount race. If the interviewer is 10 min late, use the
-  90-second project pitch. Confirm with the coordinator whether coding is in this slot.
+quick: "我会按 15 分钟准备：2–3 分钟从近期工作讲起，5–8 分钟展开一个技术决策，1–2 分钟说明想去的具体团队。公开材料称多数被报告的拒绝发生在这里；若面试官迟到 10 分钟就改用 90 秒项目介绍，并提前和 coordinator 确认本轮是否包含 coding，准备可选 CS 问答或 BankAccount race。"
 tags:
   - xAI
   - 15-minute screen
@@ -32,48 +28,43 @@ sources:
     type: secondary
 ---
 
-Interviewer-dependent, blunt, often Google Meet. Product background for "why xAI" is `xai-spacexai-now`. Memory KV / race mechanics are `xai-kv-txn`.
+这轮要把时间留给一个你真正负责过的技术决策：近期经历简短开场，项目讲到接口、kernel 或训练约定的粒度，再说一个具体团队方向。公开准备材料称，多数被报告的拒绝发生在这里，面试风格直接、取决于面试官，常用 Google Meet。回答「为什么 xAI」的产品背景见 `xai-spacexai-now`，内存 KV 和 race 细节见 `xai-kv-txn`。
 
-## Standard 15 minutes
+## 15 分钟怎么分配
 
-| Slice | What they want | Cut if |
+| 时间段 | 对方想听什么 | 公开准备材料提醒的失误 |
 | --- | --- | --- |
-| Self-intro, 2–3 min | Current role first. They interrupt with "focus on recent." | Chronological resume from undergrad |
-| One project, 5–8 min | Bottleneck, why this method, which alternative died, at API / kernel / training-contract grain | Project-management plot ("we aligned stakeholders") |
-| Why xAI / what you want, 1–2 min | A real direction: Grok inference, training infra, agentic RL, video gen, supercompute, **or** (for LLM PhDs) Grok Build / post-training / search / compaction / Grok Bot | "I like Grok" |
-| Optional | Process vs thread, shared memory, GIL, async vs threading; or live BankAccount race | Freeze, then recover slowly. Clock has no recovery |
-| Reverse Q | You have heard their team | Asking if onsite is LRU / how many LC mediums |
+| 自我介绍，2–3 分钟 | 先讲当前角色；可能被打断要求「focus on recent」 | 从本科按年份复述简历 |
+| 一个项目，5–8 分钟 | 瓶颈、为什么选这个方法、放弃了哪个方案，能落到 API、kernel、训练约定 | 只讲「我们协调了各方」等项目管理经过 |
+| 为什么 xAI、想做什么，1–2 分钟 | 明确方向：Grok inference、training infra、agentic RL、video gen、supercompute；LLM PhD 也可选 Grok Build、post-training、search、compaction、Grok Bot | 只说「我喜欢 Grok」 |
+| 可选基础问答或编码 | 进程和线程、共享内存、GIL、async 和 threading；也可能现场修 BankAccount race | 卡住后恢复太慢，剩余时间不够展开 |
+| 反问 | 能接住对方团队正在做的问题 | 只问 onsite 是否考 LRU、要刷多少 LC medium |
 
-Posted MTS loops after a pass: CV + exceptional-work statement, this screen, then often coding + two post-training sessions + a short talk. Researcher / PhD screens may stay on papers. Do not assume.
+公开 MTS 招聘流程中，通过后常见的是 CV 和 exceptional-work statement、这轮 screen，再接 coding、两轮 post-training 和一个短报告。Researcher、PhD 的 screen 也可能围绕论文，不能据此认定每个岗位流程相同。
 
-## Tactics they actually use
+面试官如果迟到 10 分钟，只剩 5 分钟，也可能还希望听完核心内容。这时直接用 90 秒讲项目，再用 45 秒点明团队方向，然后停下来等追问。项目介绍涵盖问题、约束、你负责的决策、一个失败方案，以及能证伪方案的指标。
 
-**Late interviewer.** Arrives with 5 effective minutes and still wants the full content. Open with the 90-second project pitch (problem, constraint, the decision you own, one failed alternative, one metric that would falsify it), then 45 seconds on a named team. Stop.
+coordinator 的说明写着「...as well as a coding question」，就准备 `xai-kv-txn` 和下面的 live-debug 变体；如果明确是 papers-only，就把深挖时间留给论文。我会为同一个项目准备两种讲法：一种沿训练、奖励约定展开，一种沿 serving、KV 和进程约定展开，由对方第一个追问决定用哪种。对方明显偏 search-eval 或 coding-verifier 时，再准备第二篇论文。
 
-**Coordinator note.** "...as well as a coding question" means prepare `xai-kv-txn` and the live-debug variant below. If the note is papers-only, do not burn the deep-dive on mutexes.
+澄清题意时先提问，等回答后复述约定，再开始解。直接说「我假设 deposit 是共享 `balance` 的 lost update」然后马上改代码，即使修法正确，也可能没回应对方要求。口头 CS 题的停顿在这轮尤其明显；如果不熟 GIL，可以一句话说明，再给出自己能解释清楚的 OS 层回答。
 
-**Two altitudes, pick live.** Same project told as (1) training/reward contract and (2) serving/KV/process contract. Let their first follow-up choose. Prepare a second paper if they are clearly search-eval or coding-verifier.
+## 90 秒项目介绍怎么讲
 
-**Problem language.** State assumptions as questions, wait, restate the contract, then solve. "I'll assume deposit is lost-update on a shared `balance`" without waiting is how a correct fix still fails the round.
+先用一句话说明卡在哪里，例如 wall-clock 主要花在 tool I/O、搜索集合不完整，或者 verifier 无法执行；再说明什么约束让直接方案失效。接着讲自己做出的算法、loss、隔离或 API 决策，为什么放弃另一个方案，以及上线后什么结果会证明自己错了。例如 Hit@1 上升但 wall-clock 没变，或压缩率提高、任务成功率却下降，都要能解释。
 
-**Hesitation on verbal CS.** A pause plus a correct answer still reads as fail because there is no time to rebuild confidence. If you do not know GIL, say so in one clause and give the OS answer you do know.
+实际回答只用自己真实参与过的项目。roadmap、团队规模和「我们发布了 v2」这类信息，除非能解释关键决策，否则不占这 90 秒。
 
-## 90-second project pitch (template)
+可选的 BankAccount 题通常给一段 `deposit`：读余额、`sleep`、写回。共享状态是 `balance`，临界区覆盖整个读改写，sleep 只是放大竞态窗口。两个线程都读到 100、都写回 110，就丢了一次存款。可以用 mutex 包住整个 RMW，或用 CAS 循环；不允许改原类时就在外层 wrap，并明确说出锁覆盖哪几行。细节见 `xai-kv-txn`。
 
-Problem in one sentence (wall-clock sits on tool I/O / search set is incomplete / verifier cannot execute). Constraint that made the obvious method fail. The decision you made (algorithm, loss, isolation, or API). Alternative you killed, with the failure condition. How you would know you were wrong in production (Hit@1 up, wall-clock flat; compression up, task down).
+还有一种 live-debug 变体，预约 15 分钟，实际可能跑 30–45 分钟：在 CoderPad 上修失败单测，常用 Python，有时还是 BankAccount，难度通常不高。时间到时仍漏了异常路径也会失败。我会先复述约定、跑最小失败用例、修复，再检查剩余的 `except`、`None` 和空列表边界，然后才说完成。
 
-No roadmap, no team size, no "we shipped v2."
+## 追问
 
-## Optional BankAccount
+**PhD 和 SWE 的 screen 有什么差别？**
+时间相同，技术深挖的粒度不同：前者可能围绕 GRPO、reward、eval protocol，后者围绕锁粒度。Coding Agents 的公开岗位仍可能安排后续 coding assessment。
 
-They paste `deposit` that reads balance, `sleep`s, writes back. Shared state is `balance`. Critical section is the whole read-modify-write; sleep only widens the window. Two threads read 100, both write 110, one deposit vanishes. Fix: mutex around the RMW, or CAS loop. If they forbid editing the original class, wrap it. Say which lines the lock covers. Details: `xai-kv-txn`.
+**这一章的 Tesla 卡片可以当 xAI 背景讲吗？**
+只用作对照。不要把 occupancy nets 当成自己的 xAI 研究方向。
 
-## Live-debug variant (booked 15, runs 30–45)
-
-CoderPad, failing unit tests, Python (sometimes the same BankAccount). Difficulty is usually easy. People still fail by leaving an exception path unhandled when time ends. Order: restated contract, smallest failing test, fix, then scan remaining `except` / `None` / empty list cases before you declare done.
-
-## Follow-ups
-
-- **PhD vs SWE?** Same clock. Grain of the deep-dive changes: GRPO / reward / eval protocol vs lock granularity. Job posts for Coding Agents still include a later coding assessment.
-- **Tesla cards in this chapter?** Contrast only. Do not use occupancy nets as your xAI story.
-- **Ethics / mission slogans?** Ground in empty-search and citation contracts (`xai-search-agent`). Do not say you applied because there is no ethics round.
+**怎么回答伦理或使命相关的问题？**
+用空搜索时是否诚实、引用是否有证据这样的具体约定来讲，见 `xai-search-agent`。不要说因为没有 ethics round 才申请。

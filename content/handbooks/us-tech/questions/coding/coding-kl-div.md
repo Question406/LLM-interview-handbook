@@ -4,7 +4,7 @@ section: coding
 order: 19
 level: S
 title: 白板：token 级 KL（策略 vs 参考策略），reduction 和 ignore pad
-quick: "每个位置沿词表算 $\\mathrm{KL}(\\pi\\|\\pi_{\\mathrm{ref}})$，再对非 pad token 取均值；`F.kl_div(log_ref, pi)` 才是这个方向，且要用 `batchmean`。"
+quick: "每个位置先沿词表算 $\\mathrm{KL}(\\pi\\|\\pi_{\\mathrm{ref}})$，再对有效 token 平均。`F.kl_div(log_ref, pi)` 的方向才对应这个式子；二维 token 列表用 `batchmean`，有 pad 时要显式按 mask 归约。"
 tags:
   - 完整编程练习
   - Coding
@@ -23,6 +23,30 @@ sources:
     url: https://arxiv.org/abs/2203.02155
     type: primary
 ---
+
+## 题目描述
+
+实现完整词表 KL、采样 token KL 估计，以及两种 reduction 的结果比较。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`token_kl_full(logits,logits_ref,mask)` 接收 `[B,T,V]` 的两组 logits 和 `[B,T]` 布尔 mask，返回有效位置 `KL(policy || reference)` 的均值，每个位置的 KL 覆盖完整词表。
+
+`token_kl_sampled(logp,logp_ref,mask)` 接收 `[B,T]` 的已采样 token 对数概率，返回有效位置 `(logp-logp_ref)` 的均值；该采样估计值允许为负。全部 mask 为 False 时，两函数返回连接策略计算图的 0。reference 为固定参考分布，不求梯度。
+
+`kl_div_footgun(log_pi,log_ref)` 接收 `[N,V]` 的归一化对数概率，返回 `(correct_batchmean,wrong_mean)`：前者将逐元素 KL 总和除以 N，后者除以 N*V，用于展示 reduction 差异。
+
+### 示例
+
+```text
+单位置 policy 概率=[0.75,0.25]，reference=[0.5,0.5]：
+token_kl_full≈0.13081204；kl_div_footgun 的两个值约为 (0.13081204,0.06540602)。
+采样 logp=[[-2]], logp_ref=[[-1]], mask=[[True]]：token_kl_sampled=-1。
+```
+
+## 解题思路与参考答案
+
+我会先算每个位置的全词表 KL，再按 mask 对有效 token 平均。全词表 KL 是 $\pi$ 加权的期望，因此用 $\pi$ 乘 $\log\pi-\log\pi_{\mathrm{ref}}$，沿词表求和。全程用 `log_softmax`，避免先 softmax 再取 log 时下溢。
 
 ## 完整编程练习（手册重构版）
 
@@ -44,8 +68,6 @@ logp = -2, logp_ref = -1      -> token_kl_sampled = -1   # 单样本估计可以
 ```
 
 ### 解题思路与正确性
-
-全词表 KL 是 $\pi$ 加权下的期望，所以要用 $\pi$ 的概率去乘 $\log\pi-\log\pi_{\mathrm{ref}}$，再沿词表求和。全程用 `log_softmax`，避免先 softmax 再取 log 时下溢。
 
 采样版只看实际采到的 token，$\log\pi(y_t)-\log\pi_{\mathrm{ref}}(y_t)$ 在 $y_t\sim\pi$ 时期望等于 KL。单个样本出现负值并不说明 KL 可以为负，只说明这是有方差的估计。
 
@@ -82,6 +104,16 @@ def kl_div_footgun(log_pi, log_ref):
     wrong_mean = F.kl_div(log_ref, pi, reduction="mean")  # 多除了一个 V
     return correct, wrong_mean
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(kl, expected)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -153,7 +185,11 @@ Causal LM 仍然是 `logits[:, :-1]` 对齐 `labels[:, 1:]`。pad 和 ignore 的
 
 ## 追问
 
-- **为什么 `reduction='mean'` 是错的？** 文档写得很清楚：`mean` 除以的是全体元素个数。分布之间的 KL 应该按 batch（或 token）平均，所以要用 `batchmean`。
-- **正向 KL 能直接换 input 吗？** 能。$\mathrm{KL}(\pi_{\mathrm{ref}}\|\pi)$ 就是 `input=log_pi`、`target=pi_ref`。但 RLHF 默认不用这个方向，见 `align-rlhf-kl`。
-- **只对采样 token 做差，还要沿词表求和吗？** 不要。蒙特卡洛估计已经在 $y_t$ 上取了值，再对 $V$ 求和等于叠加了另一种估计。
-- **mask 全为 False 怎么办？** 把分母 clamp 到 $1$，或者直接返回 $0$。在空张量上 `mean` 会得到 NaN。
+**为什么 `reduction='mean'` 是错的？**
+文档写得很清楚：`mean` 除以的是全体元素个数。分布之间的 KL 应该按 batch（或 token）平均，所以要用 `batchmean`。
+**正向 KL 能直接换 input 吗？**
+能。$\mathrm{KL}(\pi_{\mathrm{ref}}\|\pi)$ 就是 `input=log_pi`、`target=pi_ref`。但 RLHF 默认不用这个方向，见 `align-rlhf-kl`。
+**只对采样 token 做差，还要沿词表求和吗？**
+不要。蒙特卡洛估计已经在 $y_t$ 上取了值，再对 $V$ 求和等于叠加了另一种估计。
+**mask 全为 False 怎么办？**
+把分母 clamp 到 $1$，或者直接返回 $0$。在空张量上 `mean` 会得到 NaN。

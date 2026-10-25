@@ -4,7 +4,7 @@ section: anthropic
 order: 619
 level: S
 title: "Anthropic：Prompting：任务提示词与评测脚手架"
-quick: "先固定一组代表性案例跑出基线和失败类别，再逐次改 prompt 并重跑同一组案例比较效果，最终测试集只在最后用一次。"
+quick: "我会先用代表性案例跑出基线，再根据失败类型改 prompt，每次重跑同一开发集。评测脚本把非法输出也记成失败；保留的最终测试集只在最后用一次，避免反复挑 prompt 把分数调高。"
 companies:
   - anthropic
 tags:
@@ -23,23 +23,45 @@ sources:
     type: secondary
 ---
 
+## 题目描述
+
+给定一个只输出结构化动作的模型、可调用工具表和用户目标，实现工具调用循环，并提供固定案例的正确率评估。模型可能重复发送同一工具动作，循环必须避免重复执行有副作用的调用。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `run_agent(model,tools,goal,budget=8) -> (answer,messages)`，budget>=1；tools 是名称到可用函数的映射，工具由关键字参数调用。model 是接收消息列表、返回动作字典的注入函数。
+- 工具动作字段为 type="tool"、name（工具名字符串）、args（可 JSON 序列化字典）、id（非空字符串）；最终动作字段为 type="final"、answer（字符串）。本题使用脚本模型，不调用外部服务，也不执行模型输出代码。
+- 历史初始为 [{"role":"user","content":goal}]；每次模型动作追加 {"role":"assistant","content":action}。工具调用后追加 {"role":"tool","content":result}；成功 result 为 {"ok":True,"value":返回值}，失败为 {"ok":False,"error":错误字符串}。final 直接返回答案及包含该 final 动作的历史。
+- 同一 id 的相同 name/args 只调用一次工具，之后复用完整 result（参数字典顺序不影响相等）；同一 id 换参数、未知工具或不合协议的动作返回失败 observation。工具异常也变为失败 result，error 含异常类名与消息。预算内未产生 final 时以 RuntimeError 报告预算耗尽。
+- `evaluate(cases,predict) -> dict`：cases 是 (question,expected) 列表，严格比较 predict(question) 与 expected，返回 {"accuracy":正确数/总数,"failures":[(index,expected,actual)]}。空案例 accuracy=0.0；predict 异常的 actual 为 {"error":异常类名}。
+
+### 输入输出示例
+
+```text
+模型第 1 步：{"type": "tool", "name": "add", "args": {"a": 2, "b": 3}, "id": "x"}  -> 执行 add，回填 {"ok": True, "value": 5}
+模型第 2 步：同一个动作，id 还是 "x"                                       -> 不再执行，回填同一结果
+模型第 3 步：{"type": "final", "answer": "5"}                              -> 返回 ("5", messages)
+```
+
+整个过程中 `add` 实际只被调用一次。
+
+## 解题思路与参考答案
+
 ## 题目
 
 在 Colab 里针对一个指定任务写 prompt，同时写配套的评测代码，用数据说明 prompt 的效果。
 
 > 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
 
-## 思路
+我会先把评测跑通，再改 prompt，这样才知道改动有没有解决问题。先选常见和长尾输入，固定案例跑基线，把失败分成格式错、理解错、漏信息等类别；每改一次就比较同一组案例的分数和具体错误。
 
-先搭评测，再改 prompt。挑一小组有代表性的案例，包括常见输入和长尾输入，跑出基线分数，再把失败按类别归纳（格式错、理解错、漏信息等）。之后每改一次 prompt 都重跑同一组案例，记录分数和失败类别的变化，这样才能判断改动是否真的有效。
+prompt 里把任务规则、few-shot 示例和输出格式分开，格式尽量用程序可解析的 schema。模型返回非法输出时，评测要记一次失败并继续，不能让整轮脚本崩掉。
 
-写 prompt 时，把任务规则、few-shot 示例和输出格式分开写，输出格式最好是程序能直接解析的 schema。评测代码要能处理模型返回非法输出的情况，把它记为失败而不是让脚本崩溃。
+调试只用开发集，最终测试集留到最后评一次。反复拿测试集选 prompt，相当于在测试集调参，分数会高估真实效果。
 
-还要注意数据划分：调 prompt 只用开发集。最终保留的测试集只在最后评一次，反复用它挑 prompt 等于在测试集上调参，分数会虚高。
-
-下面的练习对应 `evaluate`：固定案例、严格比较、返回准确率和失败明细。同一份代码里的 `run_agent` 是带工具调用的版本，可以顺带练。
-
-相关题：[[p3a-anthropic-agents-coding-llm-tool-use]]（同一份代码，重点是工具调用循环）。
+下面的 `evaluate` 固定案例、严格比较，返回准确率和失败明细。同一份代码还有 `run_agent`，用脚本模型练工具调用循环，相关题 [[p3a-anthropic-agents-coding-llm-tool-use]] 专门展开这一部分。
 
 ## 完整编程练习（手册重构版）
 
@@ -153,6 +175,16 @@ def evaluate(cases, predict):
     accuracy = 1 - len(failures) / len(cases) if cases else 0.0
     return {"accuracy": accuracy, "failures": failures}
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert answer == "5"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

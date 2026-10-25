@@ -4,8 +4,7 @@ section: google
 order: 20
 level: S
 title: Google：用 JAX 写一层 Transformer，shard、scan、remat 怎么摆
-quick: >-
-  PartitionSpec 指定权重和激活在 mesh 上怎么切，`lax.scan` 让层循环只编译一次，`remat` 丢掉中间激活、反向时重算；三者叠起来才是 TPU 上放得下的训练步。
+quick: "我会先把 decoder block 写成可复用的循环体，再用 `lax.scan` 跨层执行、用 `remat` 在反向时重算激活；PartitionSpec 负责声明权重和激活在 mesh 上怎么切。这样分别控制编译图大小、激活内存和设备分片，下面的 CPU 练习只验证 scan / remat 的语义。"
 tags:
   - 完整编程练习
   - Google
@@ -30,6 +29,28 @@ sources:
     url: https://arxiv.org/abs/2204.02311
     type: primary
 ---
+
+## 题目描述
+
+实现一个可由 JAX scan 执行和重计算的简化 Transformer 堆栈。
+
+以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+
+`block(h,w)` 返回 `(updated_h,None)`。h 为 `[B,T,D]`，w 含 q/k/v/o `[D,D]`、up `[D,F]`、down `[F,D]` 权重。每层包含单头因果缩放点积注意力和 SiLU MLP，两分支均为预 RMSNorm 加残差；RMSNorm 使用 eps=1e-6，即 `x/sqrt(mean(x²)+eps)`，无可学习缩放；无 dropout。注意力仅看当前位置及之前位置，分数除以 sqrt(D)，沿 key 轴用 `exp(score)/sum(exp(score))` 归一化。MLP 先投影到 F，应用 `SiLU(z)=z*sigmoid(z)`，再投影回 D。
+
+`stack(h,weights,remat=False)` 中权重各叶子的首维为层数 L，用 lax.scan 执行，返回 `[B,T,D]`。remat=True 对层体启用重计算，不改变前向值或梯度。`loop_stack(h,weights)` 用普通循环提供等价接口。stack 要能被 jit 编译。
+
+### 示例
+
+```text
+h=[[[1,2],[3,4]]]，L=2，D=F=2，所有层权重全为 0。
+block 的 updated_h、stack、loop_stack 均返回原 h。
+remat=False 与 True 得到相同输出。
+```
+
+## 解题思路与参考答案
+
+我会把隐藏状态作为 `lax.scan` 的 carry，把逐层参数堆成前导层维，再按内存需求给循环体加 `jax.checkpoint`。这样同一个 decoder block 可以逐层执行，反向时按需重算；跨设备切分还需要单独声明 sharding。
 
 ## 完整编程练习（手册重构版）
 
@@ -100,6 +121,16 @@ def loop_stack(h, weights):
     return h
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert scanned.shape == (1, 3, 4)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -153,7 +184,7 @@ assert jnp.allclose(stack(h, wide), loop_stack(h, wide), atol=1e-5)
 
 ## 题怎么来的
 
-Google 的训练代码默认用 JAX。白板题经常是：不讲论文故事，写（或口述）一层 decoder block 怎么在 TPU mesh 上跑起来。`pjit` 的 SPMD 语义见 `google-jax-pjit`，芯片的轴见 `google-tpu-mesh`，MXU 为什么需要大 GEMM 见 `google-tpu-llm`。这里只讲三件套：shard、scan、remat。
+把 decoder block 放到 TPU mesh 上时，要继续说明参数怎样切、层怎样循环，以及哪些激活要保存。`pjit` 的 SPMD 语义见 `google-jax-pjit`，芯片的轴见 `google-tpu-mesh`，MXU 为什么需要大 GEMM 见 `google-tpu-llm`。这里只讲三件套：shard、scan、remat。
 
 ## shard：Python 写完整矩阵，编译器去切
 
@@ -167,7 +198,7 @@ Google 的训练代码默认用 JAX。白板题经常是：不讲论文故事，
 
 96 层在 Python 里用 `for` 展开，XLA 图会非常大，编译要几分钟，HBM 还要给整张图留 workspace。`lax.scan` 把层权重堆成前导轴 $[L, \ldots]$，循环体只编译一次，就是参考实现里的 `stack`：carry 是激活，xs 是按层堆好的参数。
 
-反向时 scan 会再走一遍，和下面的 remat 叠加。不要把 `scan` 说成「为了写着好看」：它控制的是编译时间和峰值内存。PaLM / MaxText 这类代码栈都用 scan 堆层，而不是写 118 个 Python 函数。
+反向时 scan 会再走一遍，和下面的 remat 叠加。`scan` 控制的是编译时间和峰值内存。PaLM / MaxText 这类代码栈都用 scan 堆层，而不是写 118 个 Python 函数。
 
 `scan` 的限制是循环体的 shape 和 sharding 都必须静态，各层结构必须一样。流水线并行（PP）里每个 stage 层数不同，不要硬塞进一个 scan；那是另一条 mesh 轴，见 `google-tpu-llm`。
 
@@ -175,7 +206,7 @@ Google 的训练代码默认用 JAX。白板题经常是：不讲论文故事，
 
 不 remat 时，每层都把反向要用的激活留在 HBM。长 $T$ 时这部分按 $B\cdot T\cdot L\cdot D$ 增长，常常比参数还大。`jax.checkpoint`（别名 `jax.remat`）只在层边界留一份输入，反向时把这一层的前向再算一遍。参考实现里 `stack(..., remat=True)` 就是 scan 加 remat 的组合。
 
-实际中选择性策略比「每层全部重算」更常见：保存大 GEMM 的输出（MXU 上算得贵，重算不划算），重算 LayerNorm、dropout、softmax 统计量这类便宜的部分。JAX 里 `dots_with_no_batch_dims` 一类 policy 大致就是这个意思。注意和 Flash 式 kernel 的关系：注意力内部本来就不物化 $[T,T]$，再去 remat「注意力分数」是空靶，见 `google-flash-attention`。
+实际中选择性策略比「每层全部重算」更常见：保存大 GEMM 的输出（MXU 上算得贵，重算不划算），重算 LayerNorm、dropout、softmax 统计量这类便宜的部分。JAX 里 `dots_with_no_batch_dims` 一类 policy 大致就是这个意思。注意和 Flash 式 kernel 的关系：注意力内部本来就不物化 $[T,T]$，这时再以不保存的注意力分数为 remat 目标就没有收益，见 `google-flash-attention`。
 
 代价是反向多一段前向。如果已经 compute-bound、batch 也喂饱了，多出的 20–30% FLOPs 就是纯开销。如果被 HBM 卡住、microbatch 开不大，用省下的激活把 $B$ 或 $T$ 翻倍，实际耗时往往更好。面试要讲清这个拐点。
 

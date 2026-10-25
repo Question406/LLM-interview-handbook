@@ -4,7 +4,7 @@ section: openai
 order: 3
 level: A
 title: OpenAI ML Coding：用 linear + softmax 算 entropy；换成 L1 怎么做？
-quick: "用减 max 的稳定 softmax 得到概率再算熵；换成 L1 损失时 softmax 照样能用，L1 的次梯度乘 softmax 的 Jacobian 就是对 logits 的梯度。"
+quick: "我会先用逐行减 max 的稳定 softmax 得到概率，再算熵；L1 仍然可以搭配同一个 softmax。对 logits 求梯度时，把 L1 的次梯度乘 softmax Jacobian，并处理相等位置与 batch 平均。"
 tags:
   - 完整编程练习
   - OpenAI
@@ -20,6 +20,32 @@ sources:
     url: https://www.1point3acres.com/bbs/thread-1177444-1-1.html
     type: candidate-first-hand
 ---
+
+## 题目描述
+
+实现一个线性分类头的类别概率和熵，以及概率 L1 损失对分类 logits 的梯度。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `linear_entropy(x, w, b) -> (p, H)`：`x` 是 `[B, D]`，`w` 是 `[D, C]`，`b` 是 `[C]`，`C >= 1`。计算 $z = xw + b$、$p=\mathrm{softmax}(z)$，返回概率 `p [B, C]` 和每个样本的熵 `H [B]`（自然对数，单位 nat）。
+- `l1_loss_grad_logits(p, q) -> (loss, grad)`：`q` 和 `p` 同形，每一行都是合法的概率分布。损失是 batch 上平均的 $\sum_i \lvert p_i-q_i\rvert$，返回损失和它对 logits $z$ 的梯度 `[B, C]`。在 $p_i=q_i$ 处 $\lvert\cdot\rvert$ 不可导，取次梯度 0。
+- 所有输入形状匹配，线性输出有限，`p`、`q` 各行均为合法概率分布。熵中 `0 * log(0)` 按 0 计。
+
+
+### 输入输出示例
+
+```text
+x=[[0]], w=[[0,0]], b=[0,0]
+linear_entropy(x,w,b) -> (p=[[0.5,0.5]], H=[ln(2)])
+l1_loss_grad_logits([[0.5,0.5]], [[1,0]])
+-> (loss=1, grad=[[-0.5,0.5]])
+```
+
+## 解题思路与参考答案
+
+我会保留 linear + softmax 作为概率输出，熵和 L1 分别按各自定义算。比如二分类 logits 都是 0，概率就是各 0.5，熵为 ln 2；目标换成 [1, 0]，只需要改损失为 L1，不必换输出层。
 
 ## 完整编程练习（手册重构版）
 
@@ -42,9 +68,9 @@ sources:
 
 ### 解题思路与正确性
 
-熵：先减去每行的最大值，再用 log-sum-exp 得到 $\log p$，然后 $H=-\sum_i p_i\log p_i$。直接从 $\log p$ 算，不会出现 $\log 0$：即使某个 $p_i$ 下溢成 0，$\log p_i$ 仍是有限的大负数，乘积是 0。
+计算熵时先逐行减最大值，用 log-sum-exp 得到 $\log p$，再求 $H=-\sum_i p_i\log p_i$。这样不必对已下溢为 0 的概率取 $\log 0$；即使 $p_i$ 变成 0，保存的 $\log p_i$ 仍为有限负值，这项乘积就是 0。
 
-L1 的梯度分两步链式求导。先对 $p$ 求：$g=\mathrm{sign}(p-q)$。再乘 softmax 的 Jacobian $\partial p/\partial z=\mathrm{diag}(p)-pp^\top$，得到
+L1 求导先从概率开始，得到 $g=\mathrm{sign}(p-q)$，相等处选 0 次梯度。再乘 softmax Jacobian $\partial p/\partial z=\mathrm{diag}(p)-pp^\top$，把梯度传回 logits：
 
 $$
 \frac{\partial L}{\partial z} = p\odot\bigl(g-\textstyle\sum_j p_j g_j\bigr),
@@ -91,6 +117,16 @@ def l1_loss_grad_logits(p, q):
     loss = np.abs(p - q).sum(axis=-1).mean()
     return loss, grad
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert np.allclose(entropy, np.log(2))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -184,13 +220,16 @@ $$
 
 ## L1：输出参数化与训练损失分别选择
 
-概率输出仍然可以用 softmax(z)，然后用 L1 距离或 total variation 作为损失。L1 不要求概率是稀疏的，也不要求把 softmax 换掉，softmax 加 L1 是合法的组合；上面的参考实现给出了它的梯度，并用有限差分做了检查。ReLU 后再归一化、sparsemax 都是可选的输出参数化，它们能输出精确的 0，边界行为不同，但都不是用 L1 损失的必要条件。
+概率输出与训练损失可以分别选择。softmax(z) 后接 L1 距离或 total variation 是合法组合，上面的实现用有限差分检查了梯度。若业务还要求精确为 0 的概率，再考虑 ReLU 后归一化或 sparsemax，它们的边界行为与 softmax 不同；L1 本身没有要求稀疏输出。
 
 ## 追问
 
-- **softmax 能直接配 L1 吗？** 可以。用 softmax 的 Jacobian 把 L1 的次梯度传回 logits 即可；如果业务要求输出精确为 0 的概率，再讨论稀疏的参数化。
-- **和 MAE 回归有什么区别？** MAE 是对点估计算 $\ell_1$ 误差，不是概率单纯形上两个分布之间的距离。题目给的是类别概率，就不要答成回归。
-- **numpy 怎么写 softmax？** `z -= z.max(axis=-1, keepdims=True)`，再 `exp`、按行求和归一化。不要对整个 batch 减同一个标量，否则某些行仍可能溢出或全部下溢成 0。
+**softmax 能直接配 L1 吗？**
+可以。用 softmax 的 Jacobian 把 L1 的次梯度传回 logits 即可；如果业务要求输出精确为 0 的概率，再讨论稀疏的参数化。
+**和 MAE 回归有什么区别？**
+MAE 是对点估计算 $\ell_1$ 误差，不是概率单纯形上两个分布之间的距离。题目给的是类别概率，就不要答成回归。
+**numpy 怎么写 softmax？**
+`z -= z.max(axis=-1, keepdims=True)`，再 `exp`、按行求和归一化。不要对整个 batch 减同一个标量，否则某些行仍可能溢出或全部下溢成 0。
 
 ## 相关题
 

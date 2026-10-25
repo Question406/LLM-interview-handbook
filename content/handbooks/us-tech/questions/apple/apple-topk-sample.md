@@ -4,8 +4,7 @@ section: apple
 order: 3
 level: A
 title: Apple 电面：温度、top-k、nucleus 顺序，端侧为什么常 top-k？
-quick: >-
-  顺序是先除温度，再 top-k，再 nucleus，最后采样；端侧常用 top-k，因为候选数固定、延迟可预期，也好编成 ANE 的静态图。
+quick: "采样先屏蔽非法 token，再除温度、做 top-k、在重归一化后的分布上做 nucleus，最后抽样。比如温度为 0 直接选合法 token 中的最大值，全 mask 则报错；端侧 top-k 候选数固定，便于控制延迟和 ANE 静态 shape。"
 tags:
   - 完整编程练习
   - Apple
@@ -27,6 +26,30 @@ sources:
     url: https://www.tryexponent.com/guides/apple-machine-learning-engineer-interview
     type: secondary
 ---
+
+## 题目描述
+
+给定一个词表的一维 logits、合法 token mask、温度、top-k 与 top-p 参数，实现下一 token 采样。采样语义需要同时支持概率采样与确定性的贪心边界，且结果必须位于允许生成的候选中。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `sample_temp_k_p(logits,T,k,p,rng,mask=None) -> int`；logits 为 [V]，mask 同形状，True 允许生成，None 表示全部允许；rng 是注入的 NumPy Generator。至少一个合法 token 具有有限 logit，不含 NaN/+inf，-inf 表示概率0。
+- T>=0，p 在 [0,1]，k 为 None 或正整数。T=0 或 p=0 时返回合法 token 中 logit 最大的 id，平票取最小 id。
+- 其他情况：合法 token 的分数为 logits/T，概率与 exp(该分数) 成正比。只保留概率最大的 min(k,合法数) 项（k=None 全保留），重新归一化后再定义 top-p 集合。
+- top-p 是概率降序排列中累计概率首次达到或超过 p 的最短前缀，必须包含跨越 p 的项；p=1 保留全部。任何概率平票按 id 升序。最终对该集合重新归一化并用 rng 抽样，返回原词表 id。
+
+### 输入输出示例
+
+```text
+sample_temp_k_p([0, 0, 0], T=1, k=1, p=1, rng)                          -> 0   # 并列时 top-1 留最小 id
+sample_temp_k_p([2, 1, 0], T=0, k=None, p=1, rng, [False, False, True]) -> 2   # 只有 token 2 合法
+```
+
+## 解题思路与参考答案
+
+我会先屏蔽不允许生成的 token，再依次做温度、top-k、top-p 和抽样。top-p 用的是 top-k 后重新归一化的分布；比如只剩一个合法候选时直接得到它，全被屏蔽则要显式报错，不能让 argmax 静默返回 token 0。
 
 ## 完整编程练习（手册重构版）
 
@@ -111,6 +134,16 @@ def sample_temp_k_p(logits, T, k, p, rng, mask=None):
     return int(rng.choice(kept, p=kept_probs))
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert all(sample_temp_k_p([0, 0, 0], 1, 1, 1, rng) == 0 for _ in range(20))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -173,27 +206,35 @@ Apple Siri / Intelligence 相关 MLE 电面常把 sampling 和 attention、k-mea
 3. Nucleus / top-p：在温度化并过了 top-k 的分布上按概率降序累加，取质量 $\ge p$ 的最短前缀，其余清掉，再归一化。
 4. 从剩余分布采样。禁止生成的控制符在第 1 步之前就 mask 掉。
 
-常见错误是先 softmax 再除 $T$，或者先 top-p 再除 $T$。这样截出来的集合不随温度变化，和常见开源实现也对不上。Top-k 与 top-p 同时开时必须规定先后，业界默认温度 → top-k → top-p。两种顺序留下的 token 不同，面试里把约定说死，比争论哪个更正确重要。
+常见错误是先 softmax 再除 $T$，或者先 top-p 再除 $T$。这样截出来的集合不随温度变化，和常见开源实现也对不上。Top-k 与 top-p 同时开时必须规定先后，业界默认温度 → top-k → top-p。两种顺序留下的 token 不同，所以接口和测试要明确采用哪一种。
 
 $p=1$ 等于关掉 nucleus；$p=0$ 应退化成贪心，$k=1$ 本身就等于贪心。不能把候选裁空后再除以零，也不要对全被 mask、softmax 结果全是 `NaN` 的分布继续抽样。
 
 ## 端侧为什么常用 top-k
 
-云端可以每步对十万词表做完整排序再采样，手机上不行。
+手机上需要把每步的词表扫描、排序和候选数算进延迟与功耗预算。
 
-- **延迟可预期。** Top-k 只要找最大的 $k$ 个，用堆或 `np.partition`，最坏 $O(|V|+k\log k)$，候选数固定。Nucleus 要先算出全词表概率再扫前缀，保留个数随 $p$ 和当前分布变化，p99 延迟会抖。Siri 语音链路的预算见 `apple-siri-latency`：解码一步的采样必须在微秒到亚毫秒级，不能偶尔卡十几毫秒。
-- **静态 shape。** ANE 几乎要求固定形状，见 `apple-ane`。Top-k 的候选张量永远是 $[B,k]$；nucleus 的有效长度取决于数据，图要么按最坏的 $|V|$ 分配，要么退回 CPU。
-- **小模型的长尾质量差。** On-device 模型大约 3B。温度一升高，长尾里会冒出乱码和语言混杂。Top-k 把尾巴直接砍掉，比只调 $p$ 更稳。产品里的摘要、改写经常用 $k=1$ 或很小的 $k$，要的是可复现，不是多样性。
-- **功耗。** Apple 公开的数字是：iPhone 15 Pro 上首 token 延迟大约每个输入提示（prompt）token 0.6 ms，生成约 30 token/s（投机解码之前）。如果采样每步都做全排序，会吃掉这 30 token/s 的一部分，而且这部分计算用不上 Neural Engine。
+**延迟可预期。**
+Top-k 只要找最大的 $k$ 个，用堆或 `np.partition`，最坏 $O(|V|+k\log k)$，候选数固定。Nucleus 要先算出全词表概率再扫前缀，保留个数随 $p$ 和当前分布变化，p99 延迟会抖。Siri 语音链路的预算见 `apple-siri-latency`：解码一步的采样必须在微秒到亚毫秒级，不能偶尔卡十几毫秒。
+**静态 shape。**
+ANE 几乎要求固定形状，见 `apple-ane`。Top-k 的候选张量永远是 $[B,k]$；nucleus 的有效长度取决于数据，图要么按最坏的 $|V|$ 分配，要么退回 CPU。
+**小模型的长尾质量差。**
+On-device 模型大约 3B。温度一升高，长尾里会冒出乱码和语言混杂。Top-k 把尾巴直接砍掉，比只调 $p$ 更稳。产品里的摘要、改写经常用 $k=1$ 或很小的 $k$，要的是可复现，不是多样性。
+**功耗。**
+Apple 公开的数字是：iPhone 15 Pro 上首 token 延迟大约每个输入提示（prompt）token 0.6 ms，生成约 30 token/s（投机解码之前）。如果采样每步都做全排序，会吃掉这 30 token/s 的一部分，而且这部分计算用不上 Neural Engine。
 
 可以主动补一句：创造性写作可以再叠一个较大的 $p$；工具调用、槽位填充、日期这类输出用贪心或很小的 $k$。不要一套超参用在所有 adapter 上。
 
 ## 追问
 
-- **为什么不永远用 nucleus？** 从质量看 nucleus 往往更自然，但端上要为最坏的 $|V|$ 和可变的候选数付出代价。先 top-k 再用较小的 $p$，是延迟和质量之间的折中。
-- **和 KV cache 有什么关系？** 采样只看当前 logits，不改 cache。但采错的 token 会让后续 token 在错误的前缀上继续生成，语音里已经读出的词很难撤回，所以产品超参偏保守。
-- **投机解码时要注意什么？** Apple 公开文章里 30 token/s 是投机解码之前的数字。草稿模型也要用同一套截断策略，否则验证时两边的分布对不上。
-- **mask 用 $-\infty$ 在 ANE 上行不行？** 如果采样仍在 CPU 上对小 $k$ 做 fp32 softmax，$-\infty$ 没问题。如果 logits 已经量化，见 `apple-ondevice-quant`。
+**为什么不永远用 nucleus？**
+从质量看 nucleus 往往更自然，但端上要为最坏的 $|V|$ 和可变的候选数付出代价。先 top-k 再用较小的 $p$，是延迟和质量之间的折中。
+**和 KV cache 有什么关系？**
+采样只看当前 logits，不改 cache。但采错的 token 会让后续 token 在错误的前缀上继续生成，语音里已经读出的词很难撤回，所以产品超参偏保守。
+**投机解码时要注意什么？**
+Apple 公开文章里 30 token/s 是投机解码之前的数字。草稿模型也要用同一套截断策略，否则验证时两边的分布对不上。
+**mask 用 $-\infty$ 在 ANE 上行不行？**
+如果采样仍在 CPU 上对小 $k$ 做 fp32 softmax，$-\infty$ 没问题。如果 logits 已经量化，见 `apple-ondevice-quant`。
 
 ## 相关题
 

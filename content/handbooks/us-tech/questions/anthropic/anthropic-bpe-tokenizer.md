@@ -4,7 +4,7 @@ section: anthropic
 order: 2
 level: A
 title: Anthropic：手写 BPE Tokenizer，encode / decode 要对齐什么不变量？
-quick: "训练时反复合并最高频相邻 pair，得到有序 merge 表；encode 按 merge 优先级合并到不能再合；字节级 BPE 要保证 decode(encode(s)) == s。"
+quick: "训练时反复合并最高频相邻 pair，保存有序 merge 表；encode 按这张表的优先级合并，不能重新按当前频次选 pair。字节级 BPE 从 UTF-8 字节出发，decode 拼回字节，保持 decode(encode(s)) == s。"
 tags:
   - 完整编程练习
   - Anthropic
@@ -26,6 +26,32 @@ sources:
     url: https://github.com/openai/tiktoken
     type: primary
 ---
+
+## 题目描述
+
+实现一个 UTF-8 字节级 BPE tokenizer，使文本可以编码成 bytes token 并无损解码；另外完成有采样预算的 token 数估计接口。
+
+以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+
+### 接口与规则
+
+- `encode(text, merges) -> list[bytes]`：byte-level BPE。先把 `text` 按 UTF-8 编码，每个字节是一个初始 token。`merges` 是按优先级排好的 `(左 bytes, 右 bytes)` 列表，下标越小优先级越高，不能有重复或空 bytes。每一轮在所有相邻 pair 里找优先级最高的那个（同优先级取最左边），只合并这一对，然后重新找，直到没有可合并的 pair。
+- `decode(tokens) -> str`：把 bytes token 拼起来，按严格 UTF-8 解码。
+- `estimate(text, merges, budget, rng) -> (估计 token 数, 实际采样字符数)`：附加题，不属于已确认的 Anthropic 原题。随机取若干个固定长度的字符窗口，用同一个 `encode` 算平均每字符 token 数，再乘总字符数。总采样字符数不超过 `budget`；文本不比预算长时直接全量编码。
+- 输入不超过 $10^4$ 个 UTF-8 字节。
+
+### 输入输出示例
+
+```text
+merges = [(b"a", b"b"), (b"ab", b"ab")]
+encode("abab", merges)          -> [b"abab"]
+decode(encode("你好🙂", merges))  -> "你好🙂"
+estimate("abab", merges, 4, rng) -> (1.0, 4)   # 文本不超过预算，全量编码
+```
+
+## 解题思路与参考答案
+
+Encode 使用训练时冻结的 merge 优先级，每轮合并当前 rank 最小的相邻 pair；字节级表示则保证文本可以原样解码回来。比如 `abab` 先合成两个 ab，再合成 abab，选择顺序由 merge 表决定。实现时先写清楚的慢参考，再用链表和堆优化。
 
 ## 完整编程练习（手册重构版）
 
@@ -108,6 +134,16 @@ def estimate(text, merges, budget, rng):
     return token_count / sampled_chars * len(text), sampled_chars
 ```
 
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert encode("abab", merges) == [b"abab"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+
 ### 可执行测试
 
 ```python
@@ -168,7 +204,7 @@ Anthropic 想看的是：merge 表怎么用，空格和字节怎么处理，enco
 
 ## 训练：统计 pair，记下有序 merge 表
 
-先把语料切成符号序列。字符级 BPE 从单个字符出发；GPT-2 式的字节级 BPE 从 0–255 这 256 个字节出发，因此不会出现 unk。然后反复执行：
+先把语料切成符号序列。字符级 BPE 从单个字符出发；GPT-2 式的字节级 BPE 从 0 到 255 这 256 个字节出发，因此不会出现 unk。然后反复执行：
 
 1. 统计所有相邻 pair 的频次；
 2. 把频次最高的 pair 合并成一个新符号；

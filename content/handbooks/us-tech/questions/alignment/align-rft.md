@@ -4,7 +4,7 @@ section: alignment
 order: 22
 level: S
 title: 对齐：Reinforcement Fine-Tuning / RLVR，可验证奖励接到策略
-quick: "RFT 不是再做一遍偏好 基于人类反馈的强化学习（RLHF）。你写 grader（代码或模型），对同题多样本打分，用策略梯度把高分轨迹抬起来。基于可验证奖励的强化学习（RLVR） 把奖励钉在可检查的对错上：单测、数学核对、schema。grader 会被刷，验收不能用同一套打分器。"
+quick: "RFT 对同一道题采样多个回答，用 grader 打分，再提高高分回答出现的概率。RLVR 的奖励来自单测、数学核对等可自动验证的性质；我会先确认基座有对有错，再用独立测试验收，避免把 grader 的漏洞学进去。"
 tags:
   - OpenAI
   - DeepSeek
@@ -26,9 +26,9 @@ sources:
     type: primary
 ---
 
-OpenAI 把 Reinforcement Fine-Tuning 做成推理模型上的产品面：你不训 奖励模型（RM），你提供 grader。DeepSeek-R1 / 开源后训练把同一思路叫可验证奖励上的 强化学习（RL）（常写作 基于可验证奖励的强化学习（RLVR））。对齐岗常问：和 监督微调（SFT）、基于人类反馈的强化学习（RLHF） 差在哪，grader 坏了会怎样。组相对实现见 `align-grpo`；过程密化见 `align-process-reward`。
+RFT 先让当前策略生成回答，再由 grader 打分，用策略梯度提高高分轨迹的概率。例如代码题可以跑单测，不必为每题写唯一的标准代码。OpenAI 的 Reinforcement Fine-Tuning 由用户提供 grader；DeepSeek-R1 和开源后训练中的 RLVR，则强调奖励来自可自动核对的性质。
 
-## 循环：采样、打分、更新
+## 先确认任务有可学习的信号
 
 对每个 输入提示（prompt） $x$，从当前策略抽 $G$ 条 $y_i$，grader 给标量 $r_i$，再做 policy gradient（常见就是组标准化优势 + clip，KL 到参考策略仍在）。和 SFT 的差别：没有唯一「正确文本」，只有「更高分的完成更该出现」。和经典 RLHF 的差别：奖励尽量来自**程序或规则**，不是人偏好蒸馏出的 $r_\phi$。
 
@@ -43,26 +43,30 @@ def rft_batch(prompts, sample_fn, grade_fn, G):
     return ys, adv
 ```
 
-RLVR 的公开定义就是：$r$ 由可自动核对的性质给出，数学最终答案、代码单测、结构化抽取字段。它不承诺开放对话变好。Tulu 3 一类开源栈把可验证 RL 和偏好 RL 分开写，面试不要说「RLVR 取代了 DPO」。
+RLVR 的奖励 $r$ 来自可自动核对的性质，如数学最终答案、代码单测和结构化抽取字段。它的提升不自动扩展到开放对话。Tulu 3 等开源栈也把可验证 RL 和偏好 RL 分开，两类方法适用的信号不同。
 
-## grader 也是奖励函数，也会被 hack
+## 怎么防止模型利用 grader 的漏洞
 
-可验证不等于不可刷。空实现、硬编码样例、把答案 `print` 出来骗检查器、格式分刷满内容错，都是旧问题，见 `align-reward-hack`。模型 grader 会偏长、偏客气、偏本家族文风，见 `align-llm-judge`。纪律：
+可验证不等于不可刷。空实现、硬编码样例、把答案 `print` 出来骗检查器、格式分刷满内容错，都是旧问题，见 `align-reward-hack`。模型 grader 会偏长、偏客气、偏本家族文风，见 `align-llm-judge`。我会按下面的方式隔离训练与验收：
 
 - **训练 grader 和验收 grader 分开。** 验收用另一套单测、另一张 held-out 题、或人抽查。同一 grader 既优化又发版，就是 Gao 曲线的推理版。
 - **eval 先于 RFT。** 分数已经 0 或 1 的集不要拿去训。
 - **隐藏推理。** 若模型有内部思考预算，grader 应打最终可见答案，不要把隐藏链当监督标签，见 `align-cot-leak`。
 - **KL / 参考。** 仍要限制跑出可用语言；RFT 不是「可以不要参考策略」。
 
-成本按训练机时和采样条数走，比 SFT 贵一截。面试别报单价；说 $G$、平均完成长度、grader 本身是不是还要调一个大模型。
+成本取决于训练机时和采样条数，通常比 SFT 高。估算时要报 $G$、平均完成长度，以及 grader 是否还要调用大模型。
 
-## 面试怎么选
+任务能自动判对错、基座也已经会一点时，可以考虑 RFT / RLVR，收集奖励信号可能比写满示范更便宜。只有偏好、无法核对对错时，则考虑 RM / 直接偏好优化（DPO）/ CAI。工具任务要验证业务终态，单次 API 200 不代表成功。可以把区别写成：SFT 拟合 $y^\star$，RFT 拟合 $r(x,y)$ 的高分区域。grader 分上升而 held-out 单测下降，就是需要停下来检查的分叉。
 
-有自动对错、基座已经会一点：RFT / RLVR 是正道，数据比写满示范便宜。只有偏好、没有核对：回到 RM / 直接偏好优化（DPO） / CAI，见 `align-dpo`、`align-cai`。工具环上「可验证」常常是任务成功而不是单次 API 200，见 `align-tool-rl`。我会写：SFT 拟合 $y^\star$，RFT 拟合 $r(x,y)$ 的高分区域；然后画一条 grader 分涨、held-out 单测掉的分叉，说明你知道 Goodhart。
+相关：`align-grpo`、`align-process-reward`、`align-dpo`、`align-cai`、`align-tool-rl`。
 
 ## 追问
 
-- **和 PPO + RM 是一回事吗？** 算法可以同一族。差在 $r$ 的来源：可验证核对 vs 学到的偏好。
-- **模型 grader 算不算 RLVR？** 算弱验证。它把噪声和偏见写进 $r$，要当 proxy，并另备 gold。
-- **为什么官方说 eval 先做？** 没坡就没有策略梯度。顶格是过拟合风险，全错是零学习。
-- **能替代红队吗？** 不能。grader 覆盖的是你写得出检查的性质；未知有害见 `align-red-team`。
+**和 PPO + RM 是一回事吗？**
+算法可以同一族。差在 $r$ 的来源：可验证核对 vs 学到的偏好。
+**模型 grader 算不算 RLVR？**
+算弱验证。它把噪声和偏见写进 $r$，要当 proxy，并另备 gold。
+**为什么官方说 eval 先做？**
+没坡就没有策略梯度。顶格是过拟合风险，全错是零学习。
+**能替代红队吗？**
+不能。grader 覆盖的是你写得出检查的性质；未知有害见 `align-red-team`。

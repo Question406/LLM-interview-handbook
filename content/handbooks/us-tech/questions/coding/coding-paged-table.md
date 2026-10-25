@@ -4,7 +4,7 @@ section: coding
 order: 26
 level: A
 title: 白板：PagedAttention 的 block table，逻辑页怎么映到物理块，append 一页
-quick: "KV 切成每块 $B_{\\mathrm{s}}$ 个 token 的物理块，池形状 `[P, H, B_s, D]`；每条序列一张表把逻辑页号映到物理块号，append 时 `pos % B_s == 0` 才申请新块。"
+quick: "KV 池按每块 $B_{\\mathrm{s}}$ 个 token 分页，每条序列的表把逻辑页映到物理块。append 时先完成容量和缺页检查，只有 `pos % B_s == 0` 才申请新块，再写 KV 并增加长度，失败时保持原状态。"
 tags:
   - 完整编程练习
   - Coding
@@ -26,6 +26,34 @@ sources:
     url: https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
     type: secondary
 ---
+
+## 题目描述
+
+实现分页 KV 缓存的简化页池与逻辑页表。每条序列独占物理页，追加 token 后应能按原序列顺序读回有效 K/V。
+
+以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `PagedKV(n_blocks,n_heads,block_size,dim)` 初始化 K/V 池，形状 [`n_blocks`,H,`block_size`,D]，所有参数>=1，页初始空闲。
+- `append_token(table,seq_lens,k_t,v_t)` 给 B 条序列各追加一个 token：table 为 [B,`max_pages`] 的页编号整数表，初始全 -1；`seq_lens` 为 [B] 初始全0；`k_t`/`v_t` 为 [B,H,1,D]。池、页表、长度原地更新，每条序列独占页，调用串行。
+- `gather_seq(table_row,seq_len)` 返回按逻辑顺序排列的 (K,V)，各为 [H,`seq_len`,D]。`seq_len`=0 合法，返回空张量。
+- 调用方保证表结构合法且每条序列有足够逻辑页槽。若物理空闲页不足，本次追加应抛 MemoryError，池、页表、长度和空闲页列表均保持原样；不要求形状非法校验。无需共享、释放或抢占。
+
+### 输入输出示例
+
+```text
+block_size = 2, 一条序列依次追加 k = 1, 2, 3
+-> 用了 2 个物理块：第一块存 [1, 2]，第二块存 [3, 空]
+-> gather_seq(table[0], 3) 返回 k = [1, 2, 3]
+
+池里只剩 1 个空闲块，两条空序列同时追加
+-> 需要 2 块，MemoryError；table、seq_lens、空闲列表都保持原样
+```
+
+## 解题思路与参考答案
+
+物理池按 `[P, H, B_s, D]` 存放块。append 先算逻辑页和页内偏移，再通过页表找到物理块；为了保证失败时状态不变，`append_token` 分成两阶段。第一阶段只读：对每条序列算出写入位置 `pos`、逻辑页 `page = pos // block_size` 和页内偏移 `offset = pos % block_size`，检查容量和现有页是否有效，并数出有多少条序列的 `offset == 0`、需要新块。第二阶段才提交：分配新块、写 K/V、长度加一。所有可能失败的检查都在第一阶段完成，所以出错时状态一点都没动。
 
 ## 完整编程练习（手册重构版）
 
@@ -51,8 +79,6 @@ block_size = 2, 一条序列依次追加 k = 1, 2, 3
 ```
 
 ### 解题思路与正确性
-
-`append_token` 分两阶段。第一阶段只读：对每条序列算出写入位置 `pos`、逻辑页 `page = pos // block_size` 和页内偏移 `offset = pos % block_size`，检查容量和现有页是否有效，并数出有多少条序列的 `offset == 0`、需要新块。第二阶段才提交：分配新块、写 K/V、长度加一。所有可能失败的检查都在第一阶段完成，所以出错时状态一点都没动。
 
 只有 `offset == 0` 时才分配新块，其余情况下当前页还没写满，新 token 写进已有的块。
 
@@ -134,6 +160,16 @@ class PagedKV:
         v = self.v[blocks].transpose(0, 1).reshape(n_heads, -1, dim)[:, :seq_len]
         return k, v
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert k.flatten().tolist() == [1, 2, 3]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -248,10 +284,14 @@ Flash-Decoding 的 split 边界最好落在页边界上，否则一段 split 要
 
 ## 追问
 
-- **逻辑页和物理块谁是连续的？** 逻辑页号对一条序列是 $0,1,2,\ldots$；物理块号来自空闲列表，可以不连续，就像虚拟地址和物理页的关系。
-- **为什么 `off == 0` 才申请新块？** 页还没写满时，下一个 token 仍然落在当前物理块里。提前申请会浪费池子，还容易在 table 里留下空洞。
-- **`gather` 要不要把 pad 页算进去？** 只取 $\lceil S/B_{\mathrm{s}}\rceil$ 页，再按 $S$ 切掉最后一页多出来的 slot。
-- **block size 太大或太小会怎样？** 太大时，最后一页的浪费和 copy-on-write 的复制成本都会变大；太小时，table 变长，kernel 的间接寻址次数变多。16 是论文的默认值，是权衡的结果，不是定理。
+**逻辑页和物理块谁是连续的？**
+逻辑页号对一条序列是 $0,1,2,\ldots$；物理块号来自空闲列表，可以不连续，就像虚拟地址和物理页的关系。
+**为什么 `off == 0` 才申请新块？**
+页还没写满时，下一个 token 仍然落在当前物理块里。提前申请会浪费池子，还容易在 table 里留下空洞。
+**`gather` 要不要把 pad 页算进去？**
+只取 $\lceil S/B_{\mathrm{s}}\rceil$ 页，再按 $S$ 切掉最后一页多出来的 slot。
+**block size 太大或太小会怎样？**
+太大时，最后一页的浪费和 copy-on-write 的复制成本都会变大；太小时，table 变长，kernel 的间接寻址次数变多。16 是论文的默认值，是权衡的结果，不是定理。
 
 ## 相关题
 

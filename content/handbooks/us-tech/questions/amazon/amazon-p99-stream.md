@@ -4,7 +4,7 @@ section: amazon
 order: 4
 level: A
 title: Amazon：流式生成的 p99，首 token 和整段完成为什么要拆开报？
-quick: "聊天看首 token，工具调用和落库看整段完成。TTFT 卡在排队、prefill 和输入 Guardrail，E2E 卡在输出长度和 decode 吞吐；混成一个数，p99 涨了不知道该改哪段。"
+quick: "TTFT 衡量用户等到第一个字多久，E2E 衡量整段何时完成，两项都要报 p99。前者主要查排队、输入护栏和 prefill，后者还要查输出长度、decode 吞吐和输出护栏。聊天与工具任务分别定 SLO，再用客户端与服务端埋点定位。"
 tags:
   - Amazon
   - Bedrock
@@ -26,43 +26,48 @@ sources:
     type: primary
 ---
 
-Bedrock 应用和内部 GenAI 平台岗会把延迟问成 SLO 设计。CloudWatch 现在把 `TimeToFirstToken` 和 `InvocationLatency` 分开：前者是流式 API 从收到请求到第一个输出 token，后者是到最后一个 token。和 `amazon-bedrock-rag` 的 p95 2 秒是同一类题：预算要切开，平均值没用。Amazon 口味是所有权：每个分段有负责人，p99 超了能指出是排队、输入预填充（prefill，即处理输入并建立缓存） 还是生成太长。
+首 token 和整段完成要分开报，因为它们对应不同的可用时刻。聊天用户看到第一个字就能开始读，工具调用却要等 JSON 参数闭合才能执行。比如整段 4 秒、3.5 秒才出现第一个字，聊天体验仍会像卡住；首字很快，也不表示工单已经能落库。
 
-## 用户感知的不是同一个时钟
+CloudWatch 把 `TimeToFirstToken` 定义为流式 API 收到请求到第一个输出 token，`InvocationLatency` 则到最后一个 token。聊天或 Seller 助手可以定 TTFT p99，例如 800ms；Agent、JSON 工具、摘要落库和 Automated Reasoning 更关心 E2E，并结合输出 token 数看。输出翻倍时 E2E 可能翻倍，TTFT 基本不变。`amazon-bedrock-rag` 中 p95 2 秒也必须说明指哪一段。
 
-聊天窗、Seller 助手：用户盯着空白气泡。第一个 token 出来就开始读，后面的 逐 token 生成（decode） 被阅读盖住。这时 SLO 该钉 首个 token 的等待时间（TTFT） 的 p99，比如 800ms，而不是整段 4 秒。整段 4 秒但 3.5 秒才冒第一个字，产品体感是挂了。
+## 沿请求路径拆延迟
 
-Agent、JSON 工具、工单摘要落库、Automated Reasoning 要看完整答案：第一个 token 再快，函数参数没闭合也不能调工具。这时 SLO 钉 E2E / `InvocationLatency`，并按输出 token 数归一。官方也提醒：`InvocationLatency` 变差，要先分清是服务吞吐掉了，还是输出变长了。输出 token 翻倍，E2E 翻倍，TTFT 可以几乎不动。
-
-所以面试开口：流式体验报 TTFT；完成契约报 E2E；两者都看 p99，不看平均。分布右偏，排队和限流全在尾巴上。p50 好看、p99 爆炸，是典型的批次里塞进一条超长 输入提示（prompt）。
-
-## p99 尾巴拆给谁
-
-TTFT 大致是：
+TTFT 可以近似拆成排队、输入护栏、prefill 和网络：
 
 $$
 T_{\mathrm{TTFT}} \approx T_{\mathrm{queue}}+T_{\mathrm{input\_guard}}+T_{\mathrm{prefill}}+T_{\mathrm{net}}
 $$
 
-Prefill 跟输入长度走，大约 $O(T_{\mathrm{in}})$ 的注意力。检索增强生成（RAG） 把 20 块政策塞进提示，首 token 延迟会先超标，见 `amazon-bedrock-rag`。输入 Guardrail 在生成前同步跑，拦得住省一次推理，过了的请求把评估时间叠进 TTFT，见 `amazon-guardrails`。服务端 `TimeToFirstToken` 不含你家里的网关缓冲：反向代理若攒满 chunk 再刷，客户端 TTFT 会比 CloudWatch 差一截。对账时要有一份客户端埋点。
+Prefill 随输入长度变化，这里用大约 $O(T_{\mathrm{in}})$ 的注意力开销描述这部分。RAG 放入 20 块政策，首字预算就会被拉长，见 `amazon-bedrock-rag`。输入 Guardrail 同步运行，违规时省一次推理，通过时则增加 TTFT，见 `amazon-guardrails`。
 
-E2E 再加：
+服务端指标还不包含自家网关缓冲。反向代理攒满 chunk 才刷、CDN / SSO / 会话建立或前端等待，都可能让客户端比 CloudWatch 更慢。需要同时对上网关、服务端 TTFT 和第一个像素的埋点。
+
+整段完成还要加 decode 和输出检查：
 
 $$
 T_{\mathrm{E2E}} \approx T_{\mathrm{TTFT}}+N_{\mathrm{out}}/R_{\mathrm{decode}}+T_{\mathrm{output\_guard}}
 $$
 
-$R_{\mathrm{decode}}$ 是 token / s。输出有实际证据支持检查往往要等整段或大段，会直接打在 E2E，不一定打 TTFT。流式中间拦 PII 可以边生成边打码，但 grounding「是否胡编」很难在第一个词上做完。现场要说清你选了哪种：尾部校验换尾延迟，还是边流边做弱过滤。
+$R_{\mathrm{decode}}$ 表示 token / s。输出 grounding 常等整段或大段才检查，会增加 E2E，未必影响 TTFT。PII 可以边流边打码，但第一个词还无法说明整句是否胡编，因此需要明确采用尾部校验还是边流弱过滤。
 
-p99 常见凶手不是「模型慢」：限流重试、跨区推理冷启动、同批次一条 32k 提示、输出 `max_tokens` 开太大、客户端把流攒成一次 JSON。配额指标和延迟要一起看：尾巴可能是排队等配额，不是 kernel。
+## 用真实长度分布找尾延迟
 
-评测别用单条 curl。用线上 prompt 长度分布回放，分别画 TTFT 和 E2E 的 p50 / p95 / p99。A/B 换模型只报平均耗时，Bar Raiser 会追 p99 和超长输入分位。这是 Insist on the Highest Standards，不是仪表盘审美。
+p99 常来自限流重试、跨区推理冷启动、同批一条 32k prompt、过大的 `max_tokens`，或客户端把流攒成一次 JSON。配额和延迟应一起看，先区分等待配额与计算慢。分布右偏时 p50 正常，p99 仍可能被排队和长输入拉高。
 
-非流式 `InvokeModel` 没有 TTFT 这个概念，只有整段。产品一旦改成打字机效果，监控必须加流式指标，不能沿用旧的 E2E SLO 假装首屏也达标。Seller Support 那种 p95 2 秒，要写明是 TTFT 还是整段；混报会让检索和生成两段预算对不上，见 `amazon-bedrock-rag`。
+用线上 prompt 长度分布回放，分别画 TTFT 与 E2E 的 p50 / p95 / p99，按输入和输出长度切片。截提示、减检索块、输入拦截和扩 prefill 并发主要影响 TTFT；限制输出、投机解码和小模型 decode 则影响 E2E。每段有负责人，超标时才知道该改哪里，这也对应 Insist on the Highest Standards 和 Dive Deep，见 `amazon-lp-ml`。
+
+非流式 `InvokeModel` 只提供整段结果。产品切到打字机效果后，需要增加流式指标；原来的 E2E SLO 不能代表首屏体验。
 
 ## 追问
 
-- **为什么不报一个「流式 p99」就完事？** 因为优化方向反着来。截提示、减检索块、输入拦、扩 prefill 并发，是 TTFT。截最大输出、投机解码、换小模型 decode，是 E2E。同一个总指标对应两种不同优化方向。
-- **首 token 已经 200ms，用户还是嫌慢？** 看客户端。CDN、SSO、网关 buffer、前端等会话建立，都不在 Bedrock 的 `TimeToFirstToken` 里。先对上三张图：网关、服务端 TTFT、第一个像素。
-- **Guardrails 放哪才不影响 p99？** 输入必须在首 token 前，认这笔预算。输出有实际证据支持不要挡第一个字；高风险域就接受 E2E 变长，或异步标红、先流后改。别为了 p99 把有实际证据支持关掉，幻觉比慢更贵。
-- **p99 和 p95 报哪个？** 用户可见路径两边都报，门禁用 p99。p95 好看、p99 被限流和超长 prompt 拉开，正是 Amazon 要你 Dive Deep 的地方，见 `amazon-lp-ml`。
+**能只报一个「流式 p99」吗？**
+这样难以确定优化方向。同一个总值可能由输入太长造成，也可能由输出太长造成，两个阶段要分别看。
+
+**服务端首 token 200ms，用户仍嫌慢怎么办？**
+先核对客户端和网关时间。服务端 `TimeToFirstToken` 没包含完整的用户路径。
+
+**Guardrails 怎样接入预算？**
+输入检查算进 TTFT。输出证据支持可在流后校验、异步标红或先流后改；高风险域则接受更长 E2E，保留所需检查。
+
+**门禁用 p95 还是 p99？**
+用户可见路径两者都报，门禁看 p99，并追查 p95 到 p99 之间的限流和超长输入。

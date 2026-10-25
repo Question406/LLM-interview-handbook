@@ -4,7 +4,7 @@ section: coding
 order: 39
 level: A
 title: 白板：CISPO 和 PPO clip 的区别，clip 的是权重还是梯度
-quick: "PPO 把 ratio 出界的 token 权重置 0；CISPO 只把 IS 权重截到边界再 detach，出界 token 仍有梯度。"
+quick: "PPO 在触发 clip 的方向让 token 不再提供梯度，CISPO 则把 IS 权重截到边界并 detach，再乘 logprob，token 仍可学习。比如正优势、ratio 为 2 时，示例 PPO 权重为 0，CISPO 截成 1.28；空 mask 还要返回可反传的 0。"
 tags:
   - 完整编程练习
   - Coding
@@ -22,6 +22,34 @@ sources:
     url: https://arxiv.org/abs/1707.06347
     type: primary
 ---
+
+## 题目描述
+
+实现 CISPO 的逐 token 加权 log-prob 损失，并提供 CISPO 与 PPO 对应的梯度权重接口。题目关心前向数值和对当前策略 log-prob 的梯度：重要性权重只作为常量使用，不能反向传播进旧策略或优势。
+
+以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
+
+### 接口、输入与输出
+
+- `cispo_loss(policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28) -> 标量`：按 CISPO 计算损失，对 mask 里的有效 token 取平均。
+- `ppo_weight(ratio, adv, eps=0.2)`：把 PPO clip 目标写成加权 logprob 时，每个 token 的权重。
+- `cispo_weight(ratio, adv, eps_low=1.0, eps_high=0.28)`：CISPO 对应的权重。
+- 约束：`policy_logprobs`、`old_logprobs`、`mask` 都是 `[B, T]`，`advantages` 能广播到 `[B, T]`。`old_logprobs` 和 `advantages` 视为常量；ratio 截断后要 detach。mask 全为 0 时返回可反传的 0。
+- 令 `r = exp(policy_logprobs - old_logprobs)`，`c = clamp(r, 1-eps_low, 1+eps_high)`。`cispo_loss = -sum(mask * stop_gradient(c) * advantages * policy_logprobs) / sum(mask)`。mask 为 0/1，非空时分母为有效 token 数，空时按上述零损失约定。
+- `cispo_weight = stop_gradient(clamp(ratio,1-eps_low,1+eps_high)*adv)`。`ppo_weight` 在 `(adv>=0 且 ratio<=1+eps)` 或 `(adv<0 且 ratio>=1-eps)` 时为 `stop_gradient(ratio*adv)`，其他位置为 0。两个权重函数接受可广播张量，返回广播后的形状。
+
+### 示例
+
+```text
+ratio = 2, A = 1
+cispo_weight(eps_high=0.28)  -> 1.28   # 截到上界，仍有梯度
+ppo_weight(eps=0.2)          -> 0      # 出界，PPO 不再更新这个 token
+ratio = 1.1, A = 2           -> 两者都是 2.2
+```
+
+## 解题思路与参考答案
+
+我会把两者都写成常数权重乘 logprob，再看权重和梯度。PPO 在满足 clip 条件时让对应 token 停止更新，CISPO 只截断 IS 权重并 detach，仍保留 token 的梯度。比如正优势、ratio 为 2 的示例，PPO 权重变成 0，CISPO 保留 1.28。
 
 ## 完整编程练习（手册重构版）
 
@@ -83,6 +111,16 @@ def cispo_weight(ratio, adv, eps_low=1.0, eps_high=0.28):
     """CISPO 的权重 sg(clip(r)) * A；出界 token 仍有权重，只是被截到边界。"""
     return (ratio.clamp(1 - eps_low, 1 + eps_high) * adv).detach()
 ```
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert torch.allclose(grad, torch.tensor([[-1.28]]))` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 
@@ -186,11 +224,14 @@ PPO 的 clip 相当于信任域：往有利方向走得太远就停下。CISPO �
 
 ## 追问
 
-**CISPO 还算 policy gradient 吗？** $r$ 不被截断时，$\mathrm{sg}(r)A\nabla\log\pi$ 就是 off-policy 的重要性采样梯度。截断引入了偏差，换来更小的方差，和 V-trace 截断 IS 权重是同一个思路。
+**CISPO 还算 policy gradient 吗？**
+$r$ 不被截断时，$\mathrm{sg}(r)A\nabla\log\pi$ 就是 off-policy 的重要性采样梯度。截断引入了偏差，换来更小的方差，和 V-trace 截断 IS 权重是同一个思路。
 
-**想要 PPO 的行为怎么办？** 论文给了一个带 token mask 的一般形式，mask 按 PPO 的规则取，就退回 PPO 的梯度。
+**想要 PPO 的行为怎么办？**
+论文给了一个带 token mask 的一般形式，mask 按 PPO 的规则取，就退回 PPO 的梯度。
 
-**为什么用 token 级平均而不是序列平均？** 论文沿用 DAPO 的 token-level loss，长回答里的 token 不会被稀释。见 `coding-grpo-loss-agg`。
+**为什么用 token 级平均而不是序列平均？**
+论文沿用 DAPO 的 token-level loss，长回答里的 token 不会被稀释。见 `coding-grpo-loss-agg`。
 
 ## 相关题
 
