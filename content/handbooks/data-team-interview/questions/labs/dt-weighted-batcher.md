@@ -25,6 +25,35 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+实现一个可以按权重从多个数据源取样、按 token 数凑批次并支持断点恢复的 `DataBatcher`。需要在恢复后继续产生与未中断运行相同的样本序列，且不能重新读取已经消费过的样本。
+
+### 输入与接口
+
+- 构造函数为 `DataBatcher(registry, names, weights, batch_tokens, rng=None)`。`names` 是数据源名列表，`weights` 是同长度的非负权重，至少一个权重大于 0；`batch_tokens` 是正整数。
+- `registry.iterate(name, offset)` 提供从第 `offset` 条开始的迭代器，每条样本是包含正整数 `n_tokens` 的字典。可传入 `random.Random`；省略时使用种子 0。
+- 实现 `next_batch()`、`state_dict()` 和 `load_state_dict(state)`。
+
+### 输出与约束
+
+`next_batch()` 返回样本字典列表；累计 token 数首次达到预算即结束，因此最后一条样本可以让总数略超预算。没有剩余可取的数据时返回 `[]`。`state_dict()` 返回可供本类恢复的状态，包含各源 offset、当前权重、耗尽记录及随机数状态。
+
+权重决定每次选数据源的相对概率，不代表严格的 token 占比。源耗尽时将其概率设为 0，按发现顺序加入 `exhausted`；其余源按剩余正权重继续被选取。源内顺序不变。保存状态后，从同一 registry 恢复的新对象必须与原对象的后续结果一致。
+
+### 示例
+
+```text
+源 a 依次含 {id:"a0",n_tokens:3}、{id:"a1",n_tokens:4}
+names=["a"], weights=[1], batch_tokens=5
+第一次 next_batch() -> [a0,a1]，token 总数 7
+第二次 next_batch() -> []，exhausted=["a"]
+```
+
+## 解题思路与参考答案
+
 核心是两件事：batch 按 token 预算凑，断点续跑时保存每个源的 offset 和随机数状态，恢复后从原位置继续读。另外，某个源读完时要把它的概率打零并报出来，让配比的变化看得见，不悄悄把它的配额让给别的源。
 
 最直接的写法是用 `random.choices` 按条采样，checkpoint 里只存 RNG seed，这样会出两个问题。按条采样时，长文档会把 token 配额吃爆，实际 mix 和设定的权重对不上。只存 seed 的话，恢复后每个源的 iterator 会从头再读一遍，已经训过的样本又被用了一次。这是 CoderPad 风格的 mix 题，和 `dt-temp-mix-code` 同一族，考点是可复现的 token 预算。
@@ -103,6 +132,16 @@ class DataBatcher:
 ```
 
 每抽一条样本要按 $k$ 个源的概率选一次，所以出一个 batch 的开销大约是「batch 里的样本数乘以 $k$」；checkpoint 只存 $k$ 个 offset 加一份 RNG 状态，和数据量无关。恢复时靠 registry 的 `offset` 直接跳到原位置，前提是底层存储支持按位置读取。
+
+### 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert sum(sample["n_tokens"] for sample in first) == 50` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ### 可执行测试
 

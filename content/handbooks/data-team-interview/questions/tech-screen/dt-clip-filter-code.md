@@ -28,6 +28,35 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+为图文配对实现向量匹配打分、单对过滤及按桶确定保留阈值的接口。图像与文本向量已经给出，不需要加载 CLIP 模型。
+
+### 输入与接口
+
+- `clip_score(image_vec, text_vec)` 接受两个同维实数向量，返回余弦分数；零向量按本题约定返回 0 分。
+- `keep_pair(score, threshold, caption_tokens, min_tokens=2, max_tokens=80)` 接受分数、门槛和 caption 的 token 数。
+- `thresholds_by_quantile(rows, keep_frac=0.3)` 接受 `(bucket, score)` 列表和 `(0,1]` 的保留比例。
+
+### 输出与约束
+
+`keep_pair` 返回 `(是否保留, 原因)`，原因依次可能为 `caption_len`、`clip`、`ok`。`thresholds_by_quantile` 返回 `bucket -> 分数阈值` 的字典。
+
+caption token 数必须位于闭区间 `[min_tokens,max_tokens]`；长度合法后，分数达到阈值即保留。每个桶分别确定门槛：包含 m 个分数时取分数由高到低的第 `max(1,int(m*keep_frac))` 名；与门槛同分的样本均可通过，实际保留数可能略多。
+
+### 示例
+
+```text
+clip_score([1,0],[3,0]) -> 1.0
+keep_pair(0.35,0.3,10) -> (True,"ok")
+keep_pair(0.9,0.3,1) -> (False,"caption_len")
+thresholds_by_quantile([("web",0.1),("web",0.8),("web",0.9)],0.5) -> {"web":0.9}
+```
+
+## 解题思路与参考答案
+
 我会算图像向量和文本向量的余弦相似度当匹配分，按语言和来源分桶，每桶取保留分位数当阈值。合成 caption 单独一个桶，因为它的分数天然偏高。
 
 举个例子，一张猫的照片配网页 alt-text「DSC0001.jpg」，分数会很低，该扔；同一张图配强模型写的「一只橘猫趴在窗台上晒太阳」，分数很高。如果网页桶和合成桶用同一个阈值，合成数据几乎全部保留。公开的参照是 DataComp 和 LAION 的 CLIP score 过滤，合成 caption 在实际数据里占比也不小：AFM 2025 报告写了去重后超过 100 亿图文对，其中合成 caption 超过 50 亿对。
@@ -116,6 +145,16 @@ assert thresholds_by_quantile([("tiny", 0.4)], keep_frac=0.3) == {"tiny": 0.4}
 用强模型给图写 caption，再拿 CLIP 打分，分数会靠近教师自己的分布，把网页 alt-text 的 0.3 分位数阈值直接套过去，合成数据几乎全留下来。所以合成桶要另外检查：人工抽查、和独立 captioner 的一致性，还有 caption 里有没有评测题面（图文泄漏）。多模态合成管线在 `dt-synth-tool-mm`、`dt-multimodal-data` 里讲。
 
 非英语也要单独处理。CLIP 偏向英语，低资源语言用该语言自己的分位数，或者先过 `dt-lid-code` 再筛，机翻的 caption 要记录来源。还有一些东西 CLIP 分完全管不到：过小的图片、纯单色图片、只有文件名的 caption，以及色情和 CSAM，这些都要独立检查，安全检查不能拿 CLIP 分代替。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert math.isclose(clip_score([1.0, 0.0], [3.0, 0.0]), 1.0)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

@@ -28,6 +28,36 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+给定一份冻结评测题目集合和待进入训练的文档，检测训练文档是否包含评测的连续词片段，输出应隔离的文档及命中题目。这是精确文本重合检测，不做语义相似度推断。
+
+### 输入与接口
+
+- `grams(text,n=13)` 将文本转小写后按空白切词，返回所有连续 n 词片段列表；非空且短于 n 词时整句作为一个片段。
+- `build_eval_index(eval_items,n=13)` 接受 `(eval_id,text)` 列表。
+- `scan_doc(doc_id,text,index,n=13,min_hits=1)` 扫描一篇训练文档，n 与建索引时一致。
+
+### 输出与约束
+
+索引为 `gram -> eval_id集合`。扫描结果为 `{"doc_id":ID,"quarantine":bool,"hits":[(eval_id,count),...]}`；只列出 count 达到 `min_hits` 的题，按 count 降序、同分按 `eval_id` 升序排序。
+
+同一 gram 可以属于多道评测题。训练文档中重复出现同一 gram 时按出现次数累计命中；一旦存在达到门槛的题，quarantine 为 True。空文本没有片段。
+
+### 示例
+
+```text
+index=build_eval_index([("q1","A B C D")],n=2)
+scan_doc("d1","x a b c y",index,n=2)
+-> {"doc_id":"d1","quarantine":True,"hits":[("q1",2)]}
+scan_doc("d2","x y",index,n=2)
+-> {"doc_id":"d2","quarantine":False,"hits":[]}
+```
+
+## 解题思路与参考答案
+
 我会把评测题面切成连续 13 个词的片段建倒排索引，训练文档逐个片段查表，命中次数超过阈值就把这篇训练文档隔离检查。整题做 `if text in train` 太容易漏，当场从评测里删题也不对。`dt-contamination` 是 Panel 版，问的是查到之后怎么办；这里要把「查」写成函数。
 
 比如有篇博客原样抄了一道题「a train leaves the station at noon traveling at sixty miles per hour toward the city」，后面跟着答案。它的每个 13-gram 都会命中这道题，这篇博客就该进 quarantine。
@@ -103,6 +133,16 @@ assert grams("short question", n=13) == ["short question"]
 写完我会接着讲阈值、规模和命中后怎么处理。短题总共不到 13 个词，`grams` 会退化成整句，这类题改用 $n=8$ 或字符 50-gram；`min_hits=1` 在长网页上会误杀题面里的习语，高价值评测可以用 1，bulk crawl 可以要求连续命中。规模上，评测 1 万题、每题 200 个 gram，倒排大约百万个键，放内存没问题；训练侧做成 map，每个 shard 只读这份倒排，命中写进 quarantine 表，别先把训练侧的 gram 收集齐再 join。命中之后进 quarantine 的是**训练文档**，评测题留在门禁里，把题删了，你只是看不见泄漏。
 
 它和精确去重是两件事。训练集内部用 `dt-exact-dedup-code` 去复制，这个函数只针对冻结评测，两套指纹表别混成一张 `seen`。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert result["quarantine"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

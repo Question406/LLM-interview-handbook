@@ -28,6 +28,35 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+给定已经从网页中提取出的块列表，剔除本题定义的导航、页脚和短按钮等样板内容，将剩余块拼成正文。不需要解析 HTML、启动浏览器或调用语言模型。
+
+### 输入与接口
+
+- 块类型 `Block(tag, text, n_links, n_nodes)` 分别保存标签名、文本、链接节点数、总节点数。
+- `density(block)` 返回词数、链接密度、逗号数。词数按空白分词且至少为 1；链接密度分母至少为 1；中英文逗号均计数。
+- 实现 `extract(blocks, min_tokens=40, max_link_density=0.5)`。
+
+### 输出与约束
+
+成功返回 `(正文字符串, "ok")`；保留下来的正文词数少于 `min_tokens` 时返回 `(None, "too_short_or_nav")`。正文块按原顺序保留，块内只去除首尾空白，块间用两个换行连接。
+
+排除标签 `nav/footer/header/aside`；排除词数小于 8 且链接密度大于阈值的块；排除词数小于 5 且没有逗号的块。比较边界均按这里给出的严格小于或大于执行。输入字段保证合法。
+
+### 示例
+
+```text
+blocks=[Block("div","Home About",2,2), Block("p","A useful paragraph, with enough words.",0,1)]
+extract(blocks,min_tokens=5)
+-> ("A useful paragraph, with enough words.","ok")
+extract([Block("span","Read more",0,1)],min_tokens=5) -> (None,"too_short_or_nav")
+```
+
+## 解题思路与参考答案
+
 我会先写一个只看浅层特征的抽取器：链接多、标点少、文本又短的块，大概率是导航条、按钮或页脚，直接扔掉。规则抽不出正文的域，再升级到 headless 渲染，还不行才考虑 LLM 抽取。
 
 抽取在预训练管线的最前面，也是脏数据的第一来源。比如一篇新闻页，顶上是「Home About Contact」，底下是「Copyright 2026, all rights reserved」，抽取器要是把这两段也当正文，cookie 墙和评论框就一起混进了训练文本。Kohlschütter 那篇已经说明浅层特征就能识别样板，Trafilatura 把这类规则做成了能直接跑的抽取器。CoderPad 上给一个打平的块列表就够了，不会让你解析完整浏览器。
@@ -111,6 +140,16 @@ assert density(Block("p", "", n_links=2, n_nodes=0)) == (1, 2.0, 0)
 默认用静态 HTML 加密度规则，成本最低。同时按域记录失败率，某个域有 40% 的页面抽空，就对这个域开 headless 渲染；AFM 2025 公开写了先 headless 渲染、再用 LLM 抽主内容，因为现代网站大量内容由 JS 生成。headless 之后仍然抽空，或者主内容藏在 JSON 里，才上 LLM 抽取。抽取模型的版本要写进 lineage，抽出来的正文还要过质量门和评测指纹，这部分在 `dt-pipeline-talk` 里讲。
 
 一开始就对每页调 GPT-4o 抽取，会同时带来高成本、教师偏差和评测污染风险，版本追踪的负担也重。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert reason == "ok"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

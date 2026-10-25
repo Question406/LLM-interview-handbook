@@ -28,6 +28,35 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+实现训练文档质量过滤接口，先执行确定性规则，再依据语言对应的模型阈值作保留决定。每次决定都需要返回原因，便于统计失败来源。
+
+### 输入与接口
+
+- `hard_gate(text,lang,allowed_langs=("en","zh","es","ja"),min_chars=200)` 返回 `FilterDecision(keep,reason,quality)`。
+- `filter_doc(text,lang,score_fn,thresholds,rng_u=0.0,band=0.1)` 接受模型打分回调 `score_fn(text,lang)`、语言阈值字典、给定的 `[0,1)` 随机数和正宽度 band。
+
+### 输出与约束
+
+硬规则按顺序拒绝：字符数不足为 `too_short`；语言不在白名单为 lang；含卡号形状正则 `\b\d(?:[ -]?\d){12,18}\b` 的匹配为 pii（仅形状检测，不做 Luhn）；同一字符连续出现至少 21 次为 boilerplate；通过为 `hard_ok`，quality 均为 0。
+
+硬规则拒绝时不调用模型。模型分 q 至少为语言阈值 t 时必留，原因 `model_keep`；q 小于 t-band 时必丢，原因 `model_drop`；中间以 `(q-(t-band))/band` 为保留概率，判断 `rng_u` 是否严格小于该值，原因 `model_band`。缺少语言阈值时 t=0.5，模型路径返回的 quality 为 q。
+
+### 示例
+
+```text
+hard_gate("short","en") -> FilterDecision(False,"too_short",0.0)
+text="A clear explanation of photosynthesis in plants and algae. " 重复5次
+score_fn 恒返回0.55，thresholds={"en":0.6}，band=0.1
+filter_doc(text,"en",score_fn,thresholds,rng_u=0.2).keep -> True
+同一输入 rng_u=0.8 时 keep -> False
+```
+
+## 解题思路与参考答案
+
 我会把过滤写成三步，每一步都能单独关掉：先做成本低的确定性检查，再用按语言校准的质量模型打分，最后结合阈值和配额来选。
 
 这样分是因为堆 20 条正则再 `if any(bad): drop`，很可能误删有用数据，比如一段代码的停用词比很低，就会被「像自然语言」的规则扔掉。只靠模型分也不保险，要查校准和误杀。AFM 2025 写到过猛的启发式会扔掉高价值的 token，所以他们减弱了规则，加入按语言调过的模型过滤。FineWeb-Edu 和 Phi 的思路相同，分类器给出「教育价值」或「教科书味」的分数再按分抽样，看的是文本内容本身，Common Crawl 的头部域名之外也能选出好数据。
@@ -125,6 +154,16 @@ assert not filter_doc(good_text, "en", fixed_score(0.45), thresholds).keep
 启发式会误杀：代码、公式、对话记录的停用词比很低，会被「像自然语言」的规则扔掉，这就是上面说的 over-aggressive heuristics，所以代码和数学走单独的桶，不用通用网页门。模型分有偏置：在英语教科书上训的分类器，会把非英语、非正式但有用的论坛答疑打低分，所以要按语言标数据，按语言报通过率和下游 $\Delta$。PII 方面，公开网页上也有社保号和卡号，正则只是第一刀，命中后还要校验。
 
 阈值要扫一下，保留 5% / 15% / 40% 三档，用小模型看知识和推理切片的变化。只报「我们滤得很狠」，等于没有对照。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert hard_gate("short", "en").reason == "too_short"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

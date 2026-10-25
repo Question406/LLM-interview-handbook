@@ -28,6 +28,33 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+为文本生成固定宽度的 SimHash 指纹，并提供两个指纹的汉明距离。
+
+### 输入与接口
+
+实现 features(text)、simhash(text,f=64)、hamming(a,b)。features 将文本转小写，用正则 `\w+` 提取词并返回词频 Counter。f 是1到64的整数。a、b 为非负整数指纹。
+
+### 输出与约束
+
+每个词的 f 位哈希定义为 UTF-8 词文本的 BLAKE2b（`digest_size`=8）摘要按 little-endian 解释，再取低 f 位。simhash 返回 `[0,2^f)` 内的整数；hamming 返回 a XOR b 的1位个数。
+
+每个位按词频累计：词哈希该位为1计正权重，为0计负权重；总值大于等于0则输出位为1，否则为0。这一平票规则也适用于空文本，因此空文本指纹为 `2^f-1`。标点不算词，重复词必须影响权重。
+
+### 示例
+
+```text
+features("Cat cat DOG!") -> {"cat":2,"dog":1}
+simhash("",f=4) -> 15
+hamming(10,6) -> 2
+解释：10的二进制为1010，6为0110，恰有两位不同
+```
+
+## 解题思路与参考答案
+
 短文本近重复我会用 SimHash：把特征哈希到 $f$ 维，每个特征按权重给各 bit 累加 +1 或 -1，最后取每一维的正负号当指纹，汉明距离小就是近重复。长网页还是用 `dt-minhash-code` 的 Jaccard。
 
 短文本要换方法，是因为词太少。比如「Apple announces new foundation models for on device intelligence」和加了个连字符、末尾多一个 today 的版本，词只有十来个，shingle 集合太小，改一两个词 $J$ 就大幅变化。SimHash 指纹对这种小改动的汉明距离很小，和一条完全无关的菜谱标题拉得开。
@@ -112,6 +139,16 @@ except ValueError:
 | 释义 / 翻译 | embedding | 词面指纹不够 |
 
 短文档的 SimHash 对空白和词序也更敏感，所以标题去重之前先做 `dt-unicode-canon-code`。图文对里，caption 的近重复可以用 SimHash；图片本身的近重复走 pHash 或 embedding，见 `dt-clip-filter-code`。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert simhash(title) == simhash(title.upper())` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

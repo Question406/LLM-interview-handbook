@@ -28,6 +28,34 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+对已经形成的偏好对执行过滤，保留具有有效偏好信号的 chosen/rejected 对。拒绝某对是正常输出，不属于非法函数参数。
+
+### 输入与接口
+
+- 输入 `Pair(prompt,win,lose,margin,tie,n_edit=0)`：win 是偏好回答，lose 是非偏好回答，margin 是评分差，tie 表示平局，`n_edit` 为人工修改 win 的次数。
+- 实现 `ntok(s)` 和 `keep_pair(pair,min_margin=0.25,max_len_ratio=2.5,min_lose=8)`。ntok 按空白分词计数且至少为 1。
+
+### 输出与约束
+
+`keep_pair` 返回 `(是否保留,原因)`。必须依次检查：平局返回 tie；去首尾空白后回答相同返回 identical；lose 词数小于 `min_lose` 返回 `trivial_lose`；win/lose 词数比大于 `max_len_ratio` 返回 `length_hack`；分差不足且没有人工修改返回 `weak_margin`；其余返回 ok。
+
+等于长度比上限或分差下限时不拒绝。`n_edit` 大于 0 只放宽 margin 检查，不绕过前四项。输入对象和文本不被修改。
+
+### 示例
+
+```text
+p=Pair("q","one two three four","a b c d",margin=0.6,tie=False)
+keep_pair(p,min_lose=2) -> (True,"ok")
+p.tie=True
+keep_pair(p,min_lose=2) -> (False,"tie")
+```
+
+## 解题思路与参考答案
+
 每一对 `(prompt, y1, y2, vote)` 我先查三项：是不是平局、两个回答的长度比、margin 够不够。$y_w\approx y_l$ 的对、长度差过大的对、标注员自己标了「难分」的对，都丢掉。能执行的任务用 verifier 的结果当 margin，不用模型给自己打分。
 
 比如 chosen 是把同一段正确答案重复了三遍，rejected 是一句不太确定的错答案，margin 0.9 看着很强，可这对教给模型的主要是「写长一点」。RM 和人都会偏爱长回答（见 `dt-length-hack-data`），这个偏差要在过滤时明确查，损失函数不会自动消掉它。Llama 3 的公开做法是让人把 chosen 再编辑成更好的答案，弱档不进 DPO。Panel 版 `dt-reward-pref` 问的是选 RM 还是 DPO，这里是把数据门写出来。
@@ -101,6 +129,16 @@ assert keep_pair(Pair("q", answer, worse, margin=0.1, tie=False, n_edit=1)) == (
 ## 可验证任务
 
 数学、代码和工具状态这类任务，`margin` 来自独立的 oracle。一对里 win 过了测试、lose 没过，margin 记 1；两个都过或都不过，这对不进偏好数据，转去 `dt-rejection-sample-code` 或者扔掉。过程是假的（答案对、推理胡编）可以当 lose，但 win 必须过程也过门，见 `dt-math-verifier-code`。工具轨迹要按 message 标注，别整段一个 vote，见 `dt-tool-turn-pref`。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert keep_pair(Pair("q", answer, worse, margin=0.6, tie=False)) == (True, "ok")` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

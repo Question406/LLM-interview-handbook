@@ -25,6 +25,35 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+计算多个对话样本打包后的 SFT 平均交叉熵，只监督同一文档内的 assistant 目标 token。用户、系统、工具与 padding token 均不参与监督。
+
+### 输入与接口
+
+- 实现 `sft_ce(logits,targets,roles,same_doc)`。logits 形状为 `[T,V]`；其余三个张量形状为 `[T]`。
+- 位置 t 的 logits 预测 `targets[t+1]`，因此最后一行 logits 不参与计算。targets 是合法词表 ID，`same_doc` 是每个 token 的文档 ID。
+- roles 整数编码：bos=0、system=1、user=2、assistant=3、tool=4、pad=5。
+
+### 输出与约束
+
+返回标量张量，值为有效预测位置的平均负对数似然。一个预测有效，当且仅当其目标 token 的角色为 assistant，且当前 token 与目标 token 的 `same_doc` 相同。没有有效位置时返回 0。
+
+按有效 token 数量取平均，不是按打包后的总长度取平均。输入长度一致，词表大小为正；计算不得跨越文档边界。输入张量不应被修改。
+
+### 示例
+
+```text
+logits 为全0的 [3,4] 张量
+targets=[0,1,2], roles=[2,3,3], same_doc=[0,0,0]
+sft_ce(...) -> log(4)，约 1.386294
+若 roles=[2,2,2]，则返回 0
+```
+
+## 解题思路与参考答案
+
 我只对助手回复算交叉熵，prompt、padding 和工具返回都不进 loss，样本边界上的预测也不算。SFT 的目标是 $p(\text{assistant}\mid\text{context})$，用户的话、系统提示和工具返回都只是条件。
 
 常见写错有两种：整段算 CE，或者只屏蔽了 prompt、漏掉工具 observation。比如一条工具轨迹里，数据库返回了一大段 JSON，observation 进了 loss，就等于让模型背数据库；邮件摘要任务里用户原文进了 loss，模型就在学重建用户邮件。预训练文档的 CE 可以几乎全开，对话和工具轨迹必须按角色 mask。
@@ -110,6 +139,16 @@ assert sft_ce(logits, targets, no_assistant, same_doc).item() == 0.0
 讲代码时我会点四处。归一化除以有效 token 数，别除以 $T$，不然短回复会被长 pad 稀释。packed 序列在样本交界处必须切断注意力，至少要切断 loss；只切 loss、不切注意力，下一条样本还是能看见上一条的答案。`tool` 角色永远不进 `superv`，只有最终对用户说的那句 assistant 才进。隐私上，用户文本只出现在条件里，梯度只落在助手输出上，比如邮件摘要只监督摘要那一侧，模型就不会学着重建用户原文，见 `dt-privacy-feedback`。复杂度就是一次 `log_softmax` 加 gather，和普通 CE 一样是 $O(TV)$。
 
 mask 错了，再好的 verifier 也没用，因为模型在背 prompt。检查方法很简单：抽一条 packed 样本，打印 `superv` 的位置，看是不是只落在答案上。这是 data team 自己就该会做的检查。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert math.isclose(sft_ce(uniform, targets, roles, same_doc).item(), math.log(V), rel_tol=1e-6)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

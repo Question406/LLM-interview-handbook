@@ -28,6 +28,34 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+将同一文档组稳定分配到训练、开发或门禁集合。同组文档必须始终落在同一分区，不能因为样本顺序或程序重启而改变。
+
+### 输入与接口
+
+- `bucket(key,n_buckets=1000,seed="split-v3")` 接受组键字符串、正整数桶数和 seed 字符串，返回稳定桶号。
+- `split_of(group_id,holdout_frac=0.02,dev_frac=0.03,n_buckets=1000,seed="split-v3")` 返回该组的分区。比例非负且和不超过 1。
+
+### 输出与约束
+
+`bucket` 的结果位于 `[0,n_buckets)`；`split_of` 返回 `holdout`、`dev` 或 `train`。桶映射采用 `BLAKE2b(seed+":"+key,digest_size=8)` 的小端无符号整数模桶数，确保不同实现得到同一结果。
+
+前 `round(holdout_frac*n_buckets)` 个桶属于 holdout，接下来的 `round(dev_frac*n_buckets)` 个桶属于 dev，其余属于 train；区间左闭右开。要求按组键划分而不是按文档出现位置划分。
+
+### 示例
+
+```text
+split_of("any-group",holdout_frac=1.0,dev_frac=0.0) -> "holdout"
+split_of("any-group",holdout_frac=0.0,dev_frac=1.0) -> "dev"
+split_of("any-group",holdout_frac=0.0,dev_frac=0.0) -> "train"
+相同 key、seed、桶数重复调用 bucket，返回相同桶号
+```
+
+## 解题思路与参考答案
+
 我会对稳定的组键做哈希再取模，决定一条数据进 train、dev 还是 holdout。用组键是为了让同一仓库、同一本书、同一个对话线程或同一个近重复簇整组落在同一侧。
 
 比如一篇博客被转载了三次，随机 `shuffle` 切 90/10，很可能两份进训练、一份进评测，模型背下来的东西在评测上看起来就像泛化。固定组键和种子之后，新增文档或者重跑流程，已有文档的划分都不变；单次 `random.random() < 0.1` 做不到这一点。
@@ -96,6 +124,16 @@ except ValueError:
 哈希只认 id，两篇近重复文档 id 不同就可能分到两边，所以要先聚类（`dt-lsh-cluster-code`），用簇的代表 id 当 `group_id`。时间泄漏它也管不了，训练之后才出现的题，代码题要用截止日之后的新题做门禁，也就是 LiveCodeBench 那套。还有合成自污染：教师模型把门禁题当 few-shot 来生成训练集，生成 prompt 里贴进去的评测题哈希划分发现不了，要另外查，见 `dt-self-improve`。
 
 开发集可以跟着模型一起长，门禁集要冻结，`dev` 和 `holdout` 别共用哈希区间。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert split_of("repo:torvalds/linux") == split_of("repo:torvalds/linux")` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 

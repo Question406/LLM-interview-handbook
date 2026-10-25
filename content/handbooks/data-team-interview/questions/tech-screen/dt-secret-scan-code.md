@@ -28,6 +28,33 @@ sources:
     type: primary
 ---
 
+## 题目描述
+
+本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+
+扫描文本中的疑似密钥，返回可定位的命中记录；这是静态检测练习，不调用外部服务验证密钥。
+
+### 输入与接口
+
+实现 entropy(s) 和 `find_secrets`(text, `min_entropy`=3.5)。text 为字符串；entropy 是字符频率的 Shannon 熵，单位 bit/字符，空串为0。`find_secrets` 返回 (kind,start,value) 三元组列表，start 为原始文本的零基字符下标。
+
+### 输出与约束
+
+固定前缀规则：AWS 为 AKIA 后接16个大写字母或数字；GitHub 为 ghp/gho/ghu/ghs/ghr 加下划线再接至少16个字母、数字或下划线；Slack 为 xox[baprs]- 后接至少10个字母、数字或连字符；`generic_sk` 为 sk- 后接至少20个字母数字。kind 分别为 `aws_akid`/github/slack/`generic_sk`。四条完整正则（区分大小写）依次为 `\bAKIA[0-9A-Z]{16}\b`、`\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{16,}\b`、`\bxox[baprs]-[A-Za-z0-9-]{10,}\b`、`\bsk-[A-Za-z0-9]{20,}\b`，两侧须满足词边界。
+
+另外识别忽略大小写的赋值键 `api_key`/api-key/apikey、secret、token、password，允许键和 = 或 : 之间有空格、值前有引号；值至少16字符，字符集为字母数字及 _ / - + =。仅当值的熵至少为 `min_entropy` 时报告 kind="assign"，其 start 是整个赋值匹配的起点。先按上述前缀种类顺序输出各自从左到右的命中，再输出赋值命中；同一值被多条规则匹配时不去重。
+
+### 示例
+
+```text
+entropy("abab") -> 1.0
+find_secrets('api_key = "Zx9Qw7Er5Ty3Ui1Op8As"')
+-> [("assign",0,"Zx9Qw7Er5Ty3Ui1Op8As")]
+find_secrets("password=aaaaaaaaaaaaaaaaaaaa") -> []
+```
+
+## 解题思路与参考答案
+
 我会用两条信号找凭证：提供商前缀（比如 `sk-`、`AKIA`、`ghp_`）和高熵字符串，命中后整个文件进 quarantine，测试夹具和明显的假密钥核对后放白名单。真实密钥进了预训练，就有被模型记住、再补全出来的风险。
 
 比如一份配置文件里写着 `api_key = "Zx9Qw7Er5Ty3Ui1Op8As"`，它没有任何提供商前缀，但熵很高，要报；`password = "aaaaaaaaaaaaaaaaaaaa"` 是占位符，熵为 0，不报。开源仓库和抓取页里都有这类凭证，GitHub 公开了一张提供商前缀表，现场按前缀加熵写检测就行，别声称能覆盖所有云。卡号和邮箱的检查在 `dt-pii-luhn-code` 里。
@@ -99,6 +126,16 @@ assert entropy("") == 0.0
 ## 和 PII 分开报
 
 卡号可以按协议脱敏，密钥文件靠脱敏不能默认安全，因为模型仍会学到 `AKIA` 后面跟 16 位这类上下文和格式。「拒绝回显密钥」的能力要另外造安全数据来教，见 `dt-safety-refuse`，那是后训练的事，真密钥仍要从预训练里清掉。密钥扫描和 PII 过滤属于同一类治理，许可合格的网页里也可能有凭证。
+
+## 简单测试怎么写
+
+把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
+
+例如，测试中的 `assert [kind for kind, _, _ in find_secrets(text)] == ["aws_akid", "github"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
 
 ## 追问
 
