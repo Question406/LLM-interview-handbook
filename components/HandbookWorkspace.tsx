@@ -66,7 +66,7 @@ export function HandbookWorkspace({
   const entry = resolveCatalogEntry(catalog, route.book) ?? catalog[0];
   const handbook = (entry && indexes[entry.id]) ?? initialHandbook;
   const handbookPending = Boolean(entry && !indexes[entry.id]);
-  const activeSection = route.section;
+  const activeSection = route.section ?? (route.question ? findQuestionInHandbook(handbook, route.question)?.section.id : null) ?? null;
   const activeCompany = route.company;
   const browseAxis = route.axis;
   const guideOpen = route.view === "guide";

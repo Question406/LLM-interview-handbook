@@ -58,6 +58,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 export default function CodingPlayground() {
   const [exercise, setExercise] = useState<Exercise>(EXAMPLES.torch);
   const [title, setTitle] = useState(EXAMPLES.torch.title);
+  const [returnHref, setReturnHref] = useState("/");
   const [code, setCode] = useState(EXAMPLES.torch.starter);
   const [tests, setTests] = useState(EXAMPLES.torch.tests);
   const [stdin, setStdin] = useState("");
@@ -97,6 +98,10 @@ export default function CodingPlayground() {
     const query = new URLSearchParams(location.search);
     const book = query.get("book"), question = query.get("question");
     if (book && question) {
+      const destination = new URLSearchParams({ book, question });
+      const section = query.get("section");
+      if (section) destination.set("section", section);
+      setReturnHref(`/?${destination}`);
       api<Exercise>(`exercise?book=${encodeURIComponent(book)}&question=${encodeURIComponent(question)}`)
         .then((next) => { if (alive.current) installExercise(next, query.get("title") ?? (next as Exercise & { title?: string }).title ?? question); })
         .catch((error) => { if (alive.current) { setNotice(`题目载入失败：${error.message}。你仍可在下方自由练习。`); installExercise(EXAMPLES.torch, EXAMPLES.torch.title); } })
@@ -147,7 +152,7 @@ export default function CodingPlayground() {
   return (
     <main className="coding-lab">
       <header className="lab-header">
-        <a className="lab-back" href={exercise.book === "examples" ? "/" : `/?book=${exercise.book}&question=${exercise.id}`}>← 返回手册</a>
+        <a className="lab-back" href={returnHref}>← 返回手册</a>
         <div className="lab-runtime">{health ? <><span className="lab-online" />{exercise.language === "javascript" ? "Node.js" : `Python ${health.python} · CPU`} · 本地运行</> : "运行器未连接"}</div>
       </header>
       <div className="lab-heading"><div><p className="lab-eyebrow">CODING PRACTICE</p><h1>{title}</h1><p>{exercise.note}</p></div>

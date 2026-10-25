@@ -161,7 +161,7 @@ function QuestionCardView({
           </span>
         </button>
         <div className="question-head-actions">
-          {canPractice && <a className="copy-question-btn" href={`/practice?book=${encodeURIComponent(question.answerPath.split("/")[2] ?? "")}&question=${encodeURIComponent(question.id)}&title=${encodeURIComponent(question.title)}`}>编程练习 ↗</a>}
+          {canPractice && <a className="copy-question-btn" href={`/practice?book=${encodeURIComponent(question.answerPath.split("/")[2] ?? "")}&section=${encodeURIComponent(question.sectionId)}&question=${encodeURIComponent(question.id)}&title=${encodeURIComponent(question.title)}`}>编程练习 ↗</a>}
           <button
             type="button"
             className={`copy-question-btn${copiedKind === "prompt" ? " copied" : ""}`}
