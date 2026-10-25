@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-算法岗听到「多机反传」容易开始讲 NCCL 算法。先画 **谁在反传**：采样卡跑 generate，训练卡（或同一组卡 reshard 之后）跑 $\log\pi_\theta$，损失只计算 response mask 覆盖的部分，见 `sys-rl-response-mask`、`sys-rl-grpo-loop-roles`。集合通信细节见 `sys-collectives`、`sys-parallel`。
+多机 RL 的反向传播仍由 Actor 训练图完成，梯度通信沿用 FSDP / Megatron 的并行方式。采样卡先 generate，训练卡或同一组卡 reshard 后重算 $\log\pi_\theta$，只对 response mask 覆盖的部分计算损失。比如各 rank 有效 token 数不同，平均 loss 时就要同步 token 计数，否则梯度权重会不一致。角色和 mask 见 `sys-rl-response-mask`、`sys-rl-grpo-loop-roles`；集合通信细节见 `sys-collectives`、`sys-parallel`。
 
 ## 一步里的梯度从哪来
 
@@ -43,10 +43,13 @@ Ref 只前向。奖励模型（RM） / 验证器（verifier） 在奖励进程�
 - **归约粒度。** 先各卡对序列平均再 AVG，长回复被摊薄；先对有效 token 求和再除总 token，才是 token-mean。DAPO / 百度那问见 `baidu-grpo-loss-agg`。
 - **动态 batch。** 各 rank 有效 token 数不同，必须按 token 计数同步，不能假定每卡 $B$ 相同，见 `sys-verl-dynamic-bsz`。
 
-HybridEngine / slime colocate 改变的是同一组卡在 generate 和 train 之间 reshard，不是发明一种新的 backward。权重推回引擎是参数广播或 delta，见 `infra-rl-weight-sync`，也不走 backward 图。反传落在 Actor 训练图上；通信仍是 DP/TP/PP/EP；多出来的是 loss 怎么平均、哪些 tensor 不许进图。
+HybridEngine / slime colocate 让同一组卡在 generate 和 train 之间 reshard，backward 仍由原来的训练后端执行。权重推回引擎是参数广播或 delta，见 `infra-rl-weight-sync`，也不走 backward 图。反传落在 Actor 训练图上；通信仍是 DP/TP/PP/EP；多出来的是 loss 怎么平均、哪些 tensor 不许进图。
 
 ## 追问
 
-- **PP 的 backward 和 rollout 能重叠吗？** 异步系统里可以：一池 generate，一池 train。那是流水线，不是 DualPipe。样本会 stale，见 `sys-areal-vs-slime`。
-- **LoRA 只反传 adapter？** 是。基座冻住则梯度通信量按 adapter 的参数量计算，但 rollout 仍要完整 KV。
-- **为什么有人说 RL 反传比 SFT 轻？** 去掉 Critic 少一份大网络的 backward；但 $G$ 条长回复的激活可能更重。比较要锁序列长和 $G$，不要只锁「有没有 Critic」。
+**PP 的 backward 和 rollout 能重叠吗？**
+异步系统里可以：一池 generate，一池 train。那是流水线，不是 DualPipe。样本会 stale，见 `sys-areal-vs-slime`。
+**LoRA 只反传 adapter？**
+是。基座冻住则梯度通信量按 adapter 的参数量计算，但 rollout 仍要完整 KV。
+**为什么有人说 RL 反传比 SFT 轻？**
+去掉 Critic 少一份大网络的 backward；但 $G$ 条长回复的激活可能更重。比较要锁序列长和 $G$，不要只锁「有没有 Critic」。

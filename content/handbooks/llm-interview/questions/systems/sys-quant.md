@@ -4,9 +4,7 @@ section: systems
 order: 12
 level: A
 title: GPTQ、AWQ、SmoothQuant、QAT 大概怎么区分？
-quick: >-
-  GPTQ 是典型 post-training、只量化权的二阶近似。AWQ 用 activation 统计保护或缩放重要权重通道。SmoothQuant
-  把 activation outlier 的难度平滑迁到 weights，常用于 W8A8。QAT 在训练里显式模拟量化误差。bit 降了不一定更快。
+quick: "GPTQ 用二阶近似降低训练后权重量化的误差，AWQ 用 activation 统计保护或缩放重要权重通道；SmoothQuant 把 activation outlier 的难度迁到 weights，常用于 W8A8。QAT 则在训练中模拟量化误差，让权重适应。是否加速还取决于 kernel 和反量化开销。"
 tags:
   - Quantization
   - Inference
@@ -27,9 +25,9 @@ sources:
     type: primary
 ---
 
-量化我先问：PTQ 还是 QAT、W-only 还是 W8A8、误差补在权上还是迁到激活上。吞吐还取决于 kernel、dequant 开销和模型是否 memory-bound。硬件无法高效处理这个形状，INT4 也可能更慢。
+GPTQ、AWQ、SmoothQuant 都是在训练后做量化，也就是 PTQ；QAT 则在训练中模拟量化误差，让权重提前适应。前三种的区别主要在于量化权重还是连激活一起量化，以及怎么处理误差。比如 GPTQ / AWQ 常把权重降到 INT4、激活仍用 16 位，先节省读取权重的带宽；实际是否加速，还要看 kernel、反量化（dequant）开销和模型是否受显存带宽限制。硬件处理不好相应形状时，INT4 也可能更慢。
 
-## 四条方法
+## 各种方法怎样控制误差
 
 | 方法 | 典型类别 | 核心 |
 | --- | --- | --- |
@@ -52,8 +50,13 @@ KV 量化是另一条线（存 cache 不是存权），不要和 GPTQ 混，见 
 
 ## 追问
 
-- **AWQ 和 GPTQ 谁更准？** 取决于模型和校准数据。AWQ 强调保护激活敏感通道；GPTQ 强调逐层二阶重构。不要背「谁绝对更好」。
-- **SmoothQuant 为什么能做 W8A8？** 激活 outlier 被 scale 挪到权上，两边动态范围都收敛到 INT8 可表示区间。
-- **QAT 一定优于 PTQ？** 不一定。数据少、训练不稳时 QAT 更差；先 PTQ，精度不够再 QAT。
-- **量化后 perplexity 差不多就一定能上线吗？** 不够。还要看长尾任务、安全拒绝和 decode 吞吐。PPL 对部署误差不敏感。
-- **W4A16 和 W8A8 怎么选？** 只缺权带宽、激活还好：W4A16（GPTQ/AWQ）。激活也有 outlier、硬件吃 INT8 GEMM：W8A8 + SmoothQuant。先看瓶颈再选配方。
+**AWQ 和 GPTQ 谁更准？**
+取决于模型和校准数据。AWQ 强调保护激活敏感通道；GPTQ 强调逐层二阶重构。不要背「谁绝对更好」。
+**SmoothQuant 为什么能做 W8A8？**
+激活 outlier 被 scale 挪到权上，两边动态范围都收敛到 INT8 可表示区间。
+**QAT 一定优于 PTQ？**
+不一定。数据少、训练不稳时 QAT 更差；先 PTQ，精度不够再 QAT。
+**量化后 perplexity 差不多就一定能上线吗？**
+不够。还要看长尾任务、安全拒绝和 decode 吞吐。PPL 对部署误差不敏感。
+**W4A16 和 W8A8 怎么选？**
+只缺权带宽、激活还好：W4A16（GPTQ/AWQ）。激活也有 outlier、硬件吃 INT8 GEMM：W8A8 + SmoothQuant。先看瓶颈再选配方。

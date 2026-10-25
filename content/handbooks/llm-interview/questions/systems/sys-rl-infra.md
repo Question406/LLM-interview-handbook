@@ -19,9 +19,9 @@ sources:
     type: primary
 ---
 
-这块容易把 强化学习（RL） 训练画成「换一个 loss 的 SFT」。监督微调（SFT） 的数据在磁盘上已经写死，一步就是取 batch、前向、反向。On-policy RL 的数据是**当前策略刚生成的轨迹**，还要打分、对齐版本、再写回推理引擎。系统多出来的是一条带状态的环，而不只是一行公式。
+RL 比 SFT 多了一条持续生成和消费数据的循环，还要保证数据与策略版本对得上。SFT 从磁盘读取固定 batch 后做前向、反向；on-policy RL 则先用当前策略生成轨迹、打分和训练，再把新权重同步回推理引擎。比如 trainer 已更新了策略，队列里却还积压旧轨迹，就需要按版本决定继续用、降权还是丢弃。
 
-## 1. 典型 loop 比 SFT 多四类组件
+## 一步里有哪些组件
 
 $$
 \pi_{\mathrm{now}} \to \text{rollout} \to \text{reward / env} \to \text{buffer} \to \text{trainer} \to \pi_{\mathrm{new}} \to \text{sync}.
@@ -38,7 +38,7 @@ HybridFlow（veRL）把这套拆成可组合的 dataflow：generation、奖励�
 
 Agent RL 再叠加 sandbox / browser / 搜索 API：一步动作的延迟从毫秒变成秒，失败要重试，episode 远长于单轮 chat。此时 rollout 往往才是吞吐瓶颈。
 
-## 2. 实际耗时往往卡在 generation，不是 backward
+## 按瓶颈选择部署方式
 
 长 思维链（CoT，即分步推理过程） 是自回归、逐 token 生成（decode） 偏 memory-bound；工具调用还要等外部世界。Trainer 可能闲等一批 $G$ 条完成。同步 on-policy 最干净：采完立刻训，freshness 好，GPU 利用差。异步能把 rollout 与训练重叠，但轨迹相对 $\pi_{\mathrm{now}}$ 变旧，重要性比 $\rho$ 偏离 $1$，方差和偏差一起来。
 
@@ -47,14 +47,15 @@ Agent RL 再叠加 sandbox / browser / 搜索 API：一步动作的延迟从毫�
 - **Colocated：** 同卡或同节点在推理图与训练图之间切换，权重共享或短拷贝，实现简单，显存毛刺和调度复杂。
 - **Disaggregated：** rollout 池与 trainer 池独立扩容，有效吞吐更高，但要设计参数传输（NCCL / 共享存储 / 分片广播）和版本号。
 
-100B 级全量同步一次很贵，所以「同步频率 $\times$ staleness」是一等一的产品决策，不是调参边角。
-
-## 3. 还要管 freshness 与正确性
+100B 级权重做一次全量同步很贵，因此要一起权衡「同步频率 $\times$ staleness」，它直接影响系统吞吐和数据质量。
 
 Buffer 里每条轨迹应带 `policy_version`。Gap 过大就降权、丢弃，或换更能容忍 off-policy 的算法。监控 KL、`logratio`、组内 奖励方差、超时与工具失败率。SFT 没有「这批数据已经不是当前策略」这个问题；RL 有。
 
 ## 追问
 
-- **vLLM rollout 权重怎么同步？** 周期性 `load` checkpoint、GPU/CPU tensor 直拷、参数广播或共享内存映射。全量百亿参数走 PCIe / 跨机都贵，因此要权衡步频与 staleness；只同步 LoRA 或增量切片能降流量，但版本语义必须仍一致。
-- **异步 RL 怎么控制 trajectory age？** 记录 version，设最大 gap；按 age 降权或丢弃；盯 KL / $\rho$ 的分位数；或换带 IS / 更稳 advantage 的目标。不能只看吞吐上涨。
-- **为什么很多栈坚持 vLLM / SGLang 做 rollout？** 训练框架的 generate 缺 paging、continuous batch 和投机解码；RL 的时间多花在 decode，值得用专用引擎，再单独解决 weight sync。
+**vLLM rollout 权重怎么同步？**
+周期性 `load` checkpoint、GPU/CPU tensor 直拷、参数广播或共享内存映射。全量百亿参数走 PCIe / 跨机都贵，因此要权衡步频与 staleness；只同步 LoRA 或增量切片能降流量，但版本语义必须仍一致。
+**异步 RL 怎么控制 trajectory age？**
+记录 version，设最大 gap；按 age 降权或丢弃；盯 KL / $\rho$ 的分位数；或换带 IS / 更稳 advantage 的目标。不能只看吞吐上涨。
+**为什么很多栈坚持 vLLM / SGLang 做 rollout？**
+训练框架的 generate 缺 paging、continuous batch 和投机解码；RL 的时间多花在 decode，值得用专用引擎，再单独解决 weight sync。

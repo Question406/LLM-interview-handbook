@@ -4,9 +4,7 @@ section: systems
 order: 241
 level: A
 title: veRL 训练后端选 FSDP 还是 Megatron？
-quick: >-
-  7B 到 30B、要快落地：FSDP/FSDP2，能方便地对接 HF 权重。70B+、要 TP/PP/EP、MoE 专家并行：Megatron。HybridEngine
-  两种都能接 vLLM，但 reshard 路径不同。没有显存不足或专家并行需求时，可以先用 FSDP。
+quick: "7B 到 30B、已有 HF 权重且想尽快跑通时，先用 FSDP/FSDP2；70B+、需要 TP/PP/EP 或 MoE 专家并行时，再考虑 Megatron。两者都能经 HybridEngine 接 vLLM / SGLang，主要区别是训练分片与重新分片的成本。"
 tags:
   - VeRL
   - FSDP
@@ -24,36 +22,27 @@ sources:
     type: primary
 ---
 
-这块容易答「大项目都该 Megatron」，或「FSDP 不是正经训练」。veRL 把训练后端当成可换件：FSDP/FSDP2 和 Megatron 都能进 HybridEngine，再接到 vLLM / SGLang。差别在分片形状、MoE、落地速度，不在「会不会 GRPO」。还没 OOM、没有专家并行需求时上 Megatron，会增加 checkpoint 格式转换和并行参数配置的负担。选型第一句我先报：模型多大、有没有 MoE、手里是 HF 还是 Megatron ckpt、集群同不同构。校招实习项目绝大多停在 FSDP 就能把 DAPO 跑通；真正逼你换的是 all-gather 之后仍放不下，或专家数已经需要 EP，或预训练栈就是 Megatron、转换本身更贵。没有这些信号，提前上 TP/PP 会把调试面扩大到算法和并行分不清。
+我会先看模型大小、有没有 MoE、现有 checkpoint 格式和集群是否同构。7B 到 30B、手里是 HF 权重、还不需要层内 TP 时，通常先用 FSDP/FSDP2；70B+、all-gather 后仍放不下，或需要 MoE 专家并行时，再考虑 Megatron。已有预训练栈就是 Megatron，继续沿用也能省掉转换成本。
 
-## FSDP 适合什么
+FSDP 按 unit wrap，分片参数、梯度和优化器状态，配置相对少，容易对接 HuggingFace 权重、LoRA、PEFT 和社区 checkpoint，单机或多机都能尽快跑通 `actor_rollout_ref` 和 DAPO。LoRA 或冻结底层只训练部分参数时，wrap 与 `use_orig_params` 的问题也比 Megatron 少，后者还要自行对接并行切分。新路径里的 FSDP2 使用更清晰的 DTensor 布局，重新分片到推理 TP 时更容易描述张量布局。
 
-FSDP 按 unit wrap，分片参数 / 梯度 / 优化器，需要配置的项目较少，能方便地对接 HuggingFace 权重，接入 LoRA、PEFT 和社区 checkpoint 较方便。7B 到 30B、单机或多机但层内还不需要 TP，先 FSDP 能最快跑通 `actor_rollout_ref`。弱项是超大模型跨节点 all-gather 气泡：每层要把分片收齐才能算，通信体积随参数走，长序列时还和激活抢带宽。MoE 专家并行不完整，稠密模型还行，上百专家时会力不从心。
+FSDP 的瓶颈常出在超大模型跨节点 all-gather：每层要收齐参数才能算，通信量随参数增加，长序列还会让激活争带宽。70B 时这种等待可能明显，但层少、带宽足、prefetch 做得好时也未必慢，要看 profile。它的 MoE 专家并行不够完整，小专家数还能尝试，上百专家时，token 路由、容量丢弃和 EP 更适合 Megatron 或专用专家并行实现。
 
-FSDP2 在 veRL 里更常见于新路径：更清晰的 DTensor 布局，重新分片到推理 TP 时，张量布局更容易说明。提到即可，说清你有没有真跑过，不要把文档路线图当生产经验。LoRA / 冻结底层只训一部分时，FSDP 的 wrap 和 `use_orig_params` 坑比 Megatron 少，校招实习项目绝大多数应停在这里。
+Megatron 提供层内 TP、层间 PP，以及 CP / EP，列切和行切的通信模式固定，吞吐上限高。接入时要处理 Megatron-Bridge、分片 `torch_dist` ckpt，配置 tp/pp/ep/cp，并与 rollout TP 对齐。训练 shard 和推理布局若对不上，reshard 可能退回近乎全量 gather，HybridEngine 少存一份整模的收益就会消失。Megatron 带 PP 时，还要额外对齐流水线阶段和推理 TP。
 
-## Megatron 适合什么
+veRL 也支持 Megatron-FSDP 混合，例如主干走 Megatron，其余模块由 FSDP wrap。介绍时应说明模块边界，以及自己是否真正跑过，避免把文档路线当成生产经历。没有 OOM 或 EP 需求就提前引入 TP/PP，会同时扩大算法和并行配置的调试范围。
 
-Megatron 是层内 TP、层间 PP，再加 CP / EP。通信模式固定（列切 / 行切），吞吐上限高，70B+ 和 MoE 是它的主场。代价：Megatron-Bridge、分片 `torch_dist` ckpt、并行参数（tp/pp/ep/cp）自己填，还要和 采样轨迹（rollout） TP 对齐。reshard 对不齐会退回几乎全量 gather，HybridEngine 节省一份完整模型的收益就会消失，见 `sys-verl-hybridengine`。
-
-veRL 已支持 Megatron-FSDP 混合：不是「两个后端各跑各的」就结束了，有人用 Megatron 做稠密主干、FSDP 包其余模块。说清边界，比宣称「我们全 Megatron」诚实。
-
-和 OpenRLHF 对比：那边训练默认 DeepSpeed ZeRO，不是 Megatron。选型先问「单卡是否放得下 + 有没有 MoE」，再问集群是否同构。slime 默认只走 Megatron，从 veRL FSDP 迁过去还有 ckpt 转换，见 `sys-verl-vs-slime`。
-
-## HybridEngine 都能接，路径不同
-
-两种后端推理仍是 vLLM/SGLang 的 TP。换后端改的是训练 shard 形状，不是「要不要 HybridEngine」这个动机。Megatron 带 PP 时，reshard 还要考虑流水线阶段和推理 TP 怎么对齐，比纯 FSDP 更绕。70B 模型使用同构 GPU 且显存紧张时：Megatron + HybridEngine 少一份整模。7B 模型要尽快跑出 DAPO 结果时：FSDP + vLLM 就够。不要用模型参数量当唯一开关。有无 MoE、有无现成 HF ckpt、团队会不会填并行表，同样决定成本。若目标就是 SGLang 生产栈，可能值得迁 slime；若只是想复现社区 GRPO，留在 FSDP 更短。OpenRLHF 的 DeepSpeed ZeRO 是第三条训练后端，分片方式和 Megatron 不同，不要三套并行术语混着用。
-
-还没 OOM 时 FSDP 先把算法跑对，真正 all-gather 之后仍放不下或要 EP 再上 Megatron。信号不是「项目看起来大」。没跑过 Megatron 不要把文档当经验；跑过就讲一次实际遇到的分片 checkpoint 或重新分片不匹配问题。
+选训练后端与选 rollout 引擎是两件事。FSDP 和 Megatron 都能进 HybridEngine，再接 vLLM / SGLang；同构 GPU 上训显存紧张的 70B，可以考虑 Megatron + HybridEngine，7B 快速复现 DAPO 则 FSDP + vLLM 就够。若目标是 SGLang 生产栈，可以评估 slime，但它默认 Megatron，从 veRL FSDP 迁过去要转换 checkpoint。OpenRLHF 默认 DeepSpeed ZeRO，是另一条训练后端，不能把它的分片术语和 Megatron 混用。
 
 ## 追问
 
-- **还没 OOM 为什么不 Megatron？** 并行参数、分片 `torch_dist` ckpt、和推理 TP 对齐是额外失败面。FSDP 先把算法跑对，真正 all-gather 之后仍放不下或要 EP 再换。提前上 TP/PP 会让「并行 bug」和「算法 bug」缠在一起。
-- **FSDP 跨机一定慢吗？** 不一定。层少、带宽够、prefetch 做好可以。70B 每层 all-gather 叠加长激活时才明显变成气泡。用 profile 说话，不要用模型参数量当定理。
-- **MoE 能不能 FSDP 硬上？** 小专家数可以凑；专家并行、文本处理单位（token） 路由、容量丢弃是 Megatron / 专用 EP 的主场，见 `sys-expert-parallel`。veRL 选 Megatron 的强信号往往是 MoE 而不是「看起来像大项目」。
-- **换后端要不要换 rollout 引擎？** 不必。rollout 选 vLLM 还是 SGLang 是另一题，见 `sys-verl-vllm-vs-sglang`。HybridEngine 两种训练后端都能接，改的是 shard 形状。
-- **和 slime / OpenRLHF 怎么对？** slime 默认 Megatron；OpenRLHF 默认 ZeRO。从 veRL FSDP 迁 slime 等于先做 checkpoint 格式转换。选型跟已有训练图走，不跟框架热度走。
-- **Megatron-FSDP 混合是什么？** veRL 支持部分模块走 Megatron、其余 FSDP wrap。提到即可，说清你有没有真跑过边界，不要把路线图当生产。
-- **LoRA 该选哪边？** FSDP + HF 权重点齐，wrap 和 `use_orig_params` 坑更少，实习项目优先。Megatron 上 LoRA 要自己对接并行切分，除非主干已经是 Megatron。
-- **reshard 对不齐会怎样？** HybridEngine 退回几乎全量 gather，节省一份完整模型的收益消失，峰值显存和通信都回到朴素路径。并行配置应在运行前检查，不能等算法调完后再补。
-- **怎么收束？** 7B 到 30B、HF ckpt、要快落地用 FSDP；70B+ 或 MoE 要 EP 用 Megatron。还没 OOM 不要上 Megatron。HybridEngine 两种都能接 vLLM，改的是 shard 形状。slime 默认 Megatron，从 FSDP 迁过去要先做 checkpoint 格式转换；OpenRLHF 默认 ZeRO。先报规模、有无 MoE、ckpt 格式。
+**单看模型参数量，能决定用哪个吗？**
+不能。MoE、现成 HF ckpt、团队配置并行的经验和集群拓扑都会改变成本。先用 FSDP 把算法跑对，出现明确的显存或 EP 需求再换，通常更容易定位问题。
+
+**换后端会影响 HybridEngine 吗？**
+会改变 reshard 路径，不会改变复用同一批卡的目的。运行前就应核对 shard、TP 和 PP，避免算法调完才发现重新分片退回全量 gather。
+
+**没跑过 Megatron，面试怎么讲？**
+直接说明主栈和验证范围。跑过的可以讲一次分片 checkpoint 或 reshard 对不上的实际问题，没跑过的就把选型边界讲清楚。
+
+相关：`sys-verl-hybridengine`、`sys-verl-vs-slime`、`sys-expert-parallel`、`sys-verl-vllm-vs-sglang`

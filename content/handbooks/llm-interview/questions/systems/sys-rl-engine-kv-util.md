@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-产品口径的 首个 token 的等待时间（TTFT） / TPOT / goodput 见 `sys-serving-metrics`。本题是 **引擎内部**，以及接到 GRPO 之后多看的几条。利用率三个字在面试里常被说成一个数，至少要拆成：算力忙不忙、KV 满不满、请求在跑还是在等。
+我会分别看算力、KV 容量和请求队列，再把它们对起来判断瓶颈。比如 GPU 很忙但 waiting 一直增长，可能是长 CoT 占满 KV 页，新请求进不来；这时继续提高计算利用率也解决不了问题。接到 GRPO 后，还要检查同题 $G$ 条的前缀共享、是否等组齐，以及 abort 后有没有释放页。产品侧的 TTFT、TPOT 和 goodput 见 `sys-serving-metrics`。
 
 ## Serving 默认看这几条
 
@@ -45,10 +45,13 @@ Rollout 不是聊天流量。同一输入提示 采 $G$ 条，前缀理应命中
 
 训练侧 MFU 是 GEMM 有效算力，分母是峰值 FLOP。和引擎 KV 占用没有换算公式。Actor 更新时 SM 打满、采样轨迹（rollout） 卡在等，两池的利用率必须分开报。
 
-先问 KV 满不满，再问请求在跑还是在等，最后才问 tokens/s。RL 还要确认：同版本前缀该命中，$G$ 条不该各占一份完整 输入提示（prompt） KV。
+所以排查时先对照 KV 水位和 waiting，再看 tokens/s。RL 里同版本、同一输入提示（prompt）的 $G$ 条回答应该共享前缀，若各占一份完整 prompt KV，要检查调度和缓存键。
 
 ## 追问
 
-- **`gpu_cache_usage_perc` 到 90% 是好是坏？** 要看 waiting。没有排队说明池子用满了还吃得下；waiting 飙升就是容量不够或长尾占页。
-- **和 PD 分离怎么一起看？** Prefill 池看计算利用率，decode 池看 KV 占用。两个池都报同一个 tokens/s 没有意义，见 `sys-kv-cache-transfer`。
-- **量化 KV 之后占用降了、正确率掉了？** 省的是页，采样分布变了。训练图仍要重算 logp，见 `meituan-verl-recompute-logprob`。
+**`gpu_cache_usage_perc` 到 90% 是好是坏？**
+要看 waiting。没有排队说明池子用满了还吃得下；waiting 飙升就是容量不够或长尾占页。
+**和 PD 分离怎么一起看？**
+Prefill 池看计算利用率，decode 池看 KV 占用。两个池都报同一个 tokens/s 没有意义，见 `sys-kv-cache-transfer`。
+**量化 KV 之后占用降了、正确率掉了？**
+省的是页，采样分布变了。训练图仍要重算 logp，见 `meituan-verl-recompute-logprob`。

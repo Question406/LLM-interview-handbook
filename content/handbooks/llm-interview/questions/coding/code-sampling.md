@@ -4,7 +4,7 @@ section: coding
 order: 12
 level: S
 title: 手写 Temperature + Top-p Sampling：顺序、数值稳定性和边界怎么处理？
-quick: "先按 temperature 缩放 logits，再做稳定 softmax；Top-p 应按概率从高到低累积，保留最小的累计质量不少于 $p$ 的 token 集合后重新归一化并采样。要处理 $T\\to 0$、$p$ 边界、NaN/Inf 和至少保留一个 token。"
+quick: "先按 temperature 缩放 logits，再做减 max 的稳定 softmax；Top-p 在这个温度化的分布上按概率从高到低累积，保留累计质量不少于 $p$ 的最小集合，重新归一化后采样。边界要处理 $T\\to 0$、$p$ 的两端、NaN/Inf，并且至少保留一个 token。"
 tags:
   - Coding
   - Sampling
@@ -19,9 +19,33 @@ sources:
     type: primary
 ---
 
-常见误区是：先 top-p 再除 $T$，或直接 `exp(logits)` 再归一化。顺序必须是先 temperature，再 top-p：温度改 softmax 尖锐程度，nucleus 在已经温度化的分布上切。数值用减最大值的 log-softmax，并显式处理 $p=0$、全 mask。白板上比公式更容易翻的是顺序、logsumexp 减 max、以及裁空 / `NaN`；边界要能测。
+## 题目描述
 
-## 顺序：温度整形分布，nucleus 再截尾
+给定一维词表 logits，返回一次采样得到的 token 下标。采样需要同时支持温度、top-p 概率截断和合法 token mask，并能够由调用者提供随机数生成器以复现结果。
+
+### 接口与约定
+
+`sample_temp_top_p(logits,T,p,rng,mask=None)`：logits 长度为 V；mask 若给出，长度同为 V，True 表示允许采样。保证至少有一个合法且分数有限的 token。返回 0 到 V-1 的一个整数下标。
+
+T<=0 或 p<=0 时，从合法 token 中返回最高 logits 的下标，最高值平票时采用 NumPy argmax 的第一个下标。否则在合法 token 上按温度 T 形成概率，按概率降序保留累计质量第一次达到 p 的最短前缀，再在保留集合上重新归一化采样；p>=1 表示不因累计质量排除任何正常概率项。默认测试避开截断处的概率平票。
+
+### 示例
+
+```text
+logits=[0,5], T=0, p=1 -> 必定返回1
+logits=[9,0], T=1, p=1, mask=[False,True] -> 必定返回1
+logits=[0,5], T=1, p=0.01 -> 必定返回1
+```
+
+随机分支不要求每次都得到同一个 token，但同一生成器状态与同一输入应产生可复现的采样序列。以上细节为手册统一练习约定。
+
+## 解题思路与参考答案
+
+顺序是先 temperature、再 top-p：先把 logits 除以 $T$，用减最大值的 log-softmax 得到概率，再在这个分布上按概率从高到低累积，切出 nucleus，重新归一化后采样。温度决定分布有多尖，nucleus 是在已经温度化的分布上切的。比如把温度调低，原来要好几个 token 才凑够 $p$，现在可能头一个就够了。白板上比公式更容易翻车的是三件事：顺序，logsumexp 里减 max，还有被裁空或者出现 `NaN` 的边界，这些都要能测出来。
+
+常见的错是先做 top-p 再除 $T$，或者直接 `exp(logits)` 再归一化。前一种截尾集合不随温度变，和常见推理实现不一致；后一种在大 logits 上会溢出。
+
+## 先温度，再 top-p
 
 记原始 logits 为 $z$。Temperature 定义为 $z' = z / T$（$T\gt 0$），然后
 
@@ -29,21 +53,25 @@ $$
 \pi_T(i)=\mathrm{softmax}(z')_i.
 $$
 
-Top-p 在 $\pi_T$ 上按概率降序排列，取最小前缀使累计质量 $\ge p$，其余置零后重新归一化，再从该 nucleus 采样。$T$ 越小分布越尖，进入 nucleus 的 token 越少；同一 $p$ 在不同温度下集合不同。所以必须先说顺序，再写代码。Top-k 若同时存在，实现必须规定与 top-p 的先后并测试；不同顺序会得到不同分布。
+Top-p 在 $\pi_T$ 上按概率降序排列，取累计质量 $\ge p$ 的最小前缀，其余置零，重新归一化，再从这个 nucleus 里采样。$T$ 越小分布越尖，进入 nucleus 的 token 越少，所以同一个 $p$ 在不同温度下切出来的集合不一样。这就是为什么写代码之前要先把顺序说清楚。
 
-$T\to 0$ 时 $\pi_T$ 趋向 argmax，不要真的除以 0。$p=1$ 不截尾；$p=0$ 工程上退化成只留最大概率 token（贪心），否则累计条件会把集合裁空。若先按 $z$ 的 softmax 做 top-p 再除 $T$，截尾集合不随温度变，和常见推理实现不一致。Top-k 与 top-p 同时开时，通常先温度，再在该分布上取 k 与 p 的交集（或规定先后），写进注释和测试。重复惩罚若存在，规定是改 logits 还是改概率，以及发生在 softmax 前还是后。
+几个端点要单独处理。$T\to 0$ 时 $\pi_T$ 趋向 argmax，别真的除以 0。$p=1$ 就是不截尾；$p=0$ 在工程上退化成只留概率最大的 token，也就是贪心，否则累计条件会把集合裁空。
 
-## 稳定 softmax：在 log 域减最大值
+如果同时开了 top-k，实现里要规定它和 top-p 谁先谁后，并写测试，顺序不同得到的分布也不同。通常是先温度，再在这个分布上取 k 和 p 的交集，或者明确规定先后，写进注释和测试。有重复惩罚的话，也要规定它改的是 logits 还是概率，发生在 softmax 之前还是之后。
 
-`exp` 溢出的标准写法是 log-softmax：
+## 数值稳定：在 log 域减最大值
+
+防 `exp` 溢出的标准写法是 log-softmax：
 
 $$
 \log\pi_i = z'_i-\max_j z'_j-\mathrm{logsumexp}_k(z'_k-\max_j z'_j).
 $$
 
-全词表 mask（不允许的 token 置为 $-\infty$）时，先判断是否还存在有限 logit：一个都没有就报错或回退，不能对全 `NaN` 的 softmax 继续采样。减最大值不改变 $\mathrm{softmax}$，但让 $e^{z'-\mathrm{max}}$ 落在 $(0,1]$。手写优先 `logsumexp`：先减 max，再 `log(sum(exp(.)))`，最后 `exp(logp)`。直接 `exp(z/T)` 在大 logits 上会溢出成 `inf`，归一化变 `NaN`。Mask 与温度的次序：先把禁止位置写成 $-\infty$，再除 $T$，再减有限位置的 max。若先减 max 再 mask，可能把 max 算在即将被禁掉的 token 上，语义错了。
+减最大值不改变 $\mathrm{softmax}$，但能让 $e^{z'-\mathrm{max}}$ 落在 $(0,1]$。手写时优先用 `logsumexp`：先减 max，再 `log(sum(exp(.)))`，最后 `exp(logp)`。直接算 `exp(z/T)` 的话，大 logits 会溢出成 `inf`，归一化之后就是 `NaN`。
 
-按「温度 → 稳定归一化 → top-p → 采样」的短实现：
+mask 也要放进这个顺序里。全词表 mask 是指把不允许的 token 置为 $-\infty$，之后先检查还有没有有限的 logit，一个都没有就报错或回退，不能对全是 `NaN` 的 softmax 继续采样。顺序是先把禁止位置写成 $-\infty$，再除 $T$，再在有限位置上减 max。如果先减 max 再 mask，max 可能恰好算在一个马上要被禁掉的 token 上，语义就错了。
+
+按「温度 → 稳定归一化 → top-p → 采样」写出来是这样：
 
 ```python
 import numpy as np
@@ -77,21 +105,48 @@ def sample_temp_top_p(logits, T, p, rng, mask=None):
     return int(rng.choice(q.size, p=q))
 ```
 
-`p<=0` 与 `T<=0` 走 argmax；`searchsorted(..., side="left")+1` 保证 nucleus 至少一个 token（即使 $p$ 极小）。全 mask 在入口和归一化后各挡一次，避免 `NaN` 进入 `choice`。累计用的是温度化后的概率序，不是 logit 序：温度会改变相对大小，但单调变换下 argmax 不变，所以 $T\to 0$ 与 $p=0$ 都应落到同一个贪心 token（在有限集合上）。`p` 略大于 0 时保留累计刚超过 $p$ 的那个边界 token，这是 nucleus 的标准定义，不要在累计严格大于 $p$ 时把最大 token 也删掉。
+`p<=0` 和 `T<=0` 都走 argmax。`searchsorted(..., side="left")+1` 保证 nucleus 里至少有一个 token，$p$ 再小也是。全 mask 在入口和归一化之后各挡一次，免得 `NaN` 进到 `choice` 里。
+
+累计用的是温度化之后的概率顺序，不是 logit 顺序。温度会改变相对大小，但它是单调变换，argmax 不变，所以 $T\to 0$ 和 $p=0$ 都应该落到同一个贪心 token 上（在有限集合里）。$p$ 略大于 0 时，要保留累计刚好超过 $p$ 的那个边界 token，这是 nucleus 的标准定义；在累计严格大于 $p$ 时把最大的 token 也删掉，就写错了。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+先测 T=0 的贪心分支和仅允许一个 token 的 mask，预期都是确定的。正温度分支用很小的 p 只保留概率最大的 token，并固定生成器种子。
+
+```python
+rng = np.random.default_rng(7)
+assert sample_temp_top_p([0., 5.], 0, 1., rng) == 1
+assert sample_temp_top_p([9., 0.], 1., 1., rng, mask=[False, True]) == 1
+assert sample_temp_top_p([0., 5.], 1., 0.01, rng) == 1
+try:
+    sample_temp_top_p([0., 1.], 1., 1., rng, mask=[False, False])
+except ValueError:
+    pass
+else:
+    raise AssertionError("all-masked input must fail")
+print("simple tests passed")
+```
 
 ## 边界与单测
 
-要能测到：非法 token 全被 mask；nucleus 只剩 1 个 token 时 $q$ 是 one-hot；`p>=1` 等价于温度化的 categorical；重复惩罚 / min-p / top-k 与温度的先后固定。不同框架对「累计超过 $p$ 的边界 token 是否保留」略有出入，但至少保留一个。不要在概率上再做一次 temperature，也不要先 top-p 再除 $T$。
+白板上的完整顺序是：mask 非法位置 → 温度缩放（$T\le 0$ 则贪心）→ 在有限位置上减 max 做 log-softmax → 按概率降序累计 top-p（$p\le 0$ 则贪心，且至少留一个）→ 在核内重新归一化 → `choice`。all-masked 在 mask 之后和归一化之后各有一道闸。
 
-概率和因浮点略大于 1 时要再归一化；nucleus 权重和为 0（全 mask 或全零 bug）必须 raise；batch 维上每条样本的 nucleus 大小不同，不能假设同一个 `k`。写成断言，不要口头一句「注意数值稳定」。
+单测至少覆盖这几种：正常的核；nucleus 只剩 1 个 token 时 $q$ 是 one-hot；非法 token 全被 mask 时抛错；$T=0$ 和 $p=0$ 都等于贪心；`p>=1` 等价于温度化的 categorical。重复惩罚、min-p、top-k 和温度的先后要固定下来。不同框架对「累计超过 $p$ 的那个边界 token 留不留」略有出入，但至少都会保留一个。也别在概率上再做一次 temperature。
 
-白板顺序：mask 非法位置 → 温度缩放（$T\le 0$ 则贪心）→ 减有限 max 做 log-softmax → 按概率降序累计 top-p（$p\le 0$ 则贪心，且至少留一个）→ 核内重新归一化 → `choice`。All-masked 在 mask 后与归一化后两道闸。
-
-常见错实现：在 logits 上做累计、截尾后不重新归一化就 `choice`、把被 mask 的 $-\infty$ 拿去减 max、以及 $p=0$ 时删光所有 token。单测至少覆盖：正常核、只剩一个 token、全 mask 抛错、$T=0$ 与 $p=0$ 都等于贪心、$p=1$ 等于温度化 categorical。
+常见的错实现还有几种：在 logits 上做累计；截尾之后没重新归一化就 `choice`；把被 mask 的 $-\infty$ 拿去减 max；$p=0$ 时把 token 删光。概率和因为浮点误差略大于 1 时要再归一化；nucleus 的权重和为 0（全 mask 或者全零 bug）必须 raise；batch 里每条样本的 nucleus 大小不同，不能假设大家共用一个 `k`。这些都写成断言，别只在口头上说一句「注意数值稳定」。
 
 ## 追问
 
-- **为什么不能先 top-p 再 temperature？** Nucleus 依赖当前概率序。先截尾再改 $T$，等于在另一个分布上采样，和 Transformers 默认 generation 策略不一致。顺序必须写进代码注释和单测。
-- **$p=0$ 怎么办？** 裁空会让归一化失败。实现上当作贪心，只留 $\arg\max$。不要对空集合做 `choice`。这和 $T\to 0$ 应落到同一 token。
-- **all-masked 怎么办？** 不允许的集合里没有有限 logit，softmax 全是 `NaN`。应 `raise` 或回退到调用方，不要静默采样。入口检查与归一化后检查要做两次。
-- **log-softmax 和 `exp` 再归一化差在哪？** 大 logits 下 `exp` 溢出成 `inf`；减 max 的 logsumexp 保持有限。这是数值题，不是风格题。Mask 后必须在有限位置上取 max，不能把 $-\infty$ 当 max。
+**为什么不能先 top-p 再 temperature？**
+Nucleus 依赖当前的概率顺序。先截尾再改 $T$，等于在另一个分布上采样，和 Transformers 默认的 generation 策略不一致。所以顺序要写进代码注释和单测。
+
+**$p=0$ 怎么办？**
+当作贪心，只留 $\arg\max$。按累计条件走会把集合裁空，归一化就失败了，也别对空集合做 `choice`。它应该和 $T\to 0$ 落到同一个 token。
+
+**all-masked 怎么办？**
+`raise` 或者交回调用方处理，别静默采样。允许的集合里没有有限 logit 时，softmax 全是 `NaN`。入口和归一化之后要各检查一次。
+
+**log-softmax 和直接 `exp` 再归一化差在哪？**
+差在数值上。大 logits 下 `exp` 会溢出成 `inf`，减 max 的 logsumexp 能保持有限，这和代码风格无关。mask 之后必须在有限位置上取 max，不能把 $-\infty$ 当成 max。

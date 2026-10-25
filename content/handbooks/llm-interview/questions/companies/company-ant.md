@@ -4,7 +4,7 @@ section: companies
 order: 9
 level: A
 title: 蚂蚁集团：大模型 / 智能体优化应重点准备什么？
-quick: "我会把 直接偏好优化（DPO）、PPO、GRPO 怎么选，VeRL 的 采样轨迹（rollout） 账本，监督微调（SFT） 再切 强化学习（RL），以及金融数据跟安全，串成一条链来讲。手撕可能是 Beam Search 或者基础网络，光会 AI 补全不够。公开面经里还会追信贷意见、额度这类开放系统设计。"
+quick: "蚂蚁会把算法和平台工程绑着问，我会把直接偏好优化（DPO）、PPO、GRPO 怎么选，VeRL 的采样轨迹（rollout）账本，监督微调（SFT）再切强化学习（RL），以及金融数据跟安全，串成一条链来讲。手撕可能是 Beam Search 或者基础网络，光会 AI 补全不够；公开面经里还会追信贷意见、额度这类开放系统设计。"
 tags:
   - Ant Group
   - 真题导航
@@ -25,18 +25,20 @@ sources:
     type: candidate-first-hand
 ---
 
-蚂蚁这边算法和平台工程会绑着问。我会训练，也得说清编排、账本、数据怎么服务信贷、风控这类任务。
+蚂蚁这边会把算法和平台工程绑在一起问。光会训练不够，还得说清编排、账本，以及数据怎么服务信贷、风控这类任务。
+
+比如同一场面试里，面试官可能先让你比较 DPO、PPO、GRPO，接着问 VeRL 里 `rollout.n` 和 batch 怎么决定每卡样本数，最后再来一道信贷系统的开放设计。下面四条就是按这个顺序准备的。
 
 ## 准备主线
 
-1. **算法选型**：同一岗位会连着问 直接偏好优化（DPO）、PPO、GRPO。我会按有没有成对偏好、有没有 验证器（verifier）、卡时预算来选，不会去背三份公式。
-2. **强化学习（RL） 基建**：VeRL 的 `rollout.n`、global / micro batch 怎么决定每卡样本和 token 数。FlashAttention、ms-swift、Dify 我各准备一句话原理。
-3. **数据与业务**：监督微调（SFT） 和 RL 两阶段各自解决什么。公开面经出现过「输入个人信息，输出信贷意见和额度」这类开放题，必须讲清数据、拆分、安全和可解释 奖励分数（reward）。
-4. **手撕**：Beam Search 树、基础 PyTorch 网络、Hot100 中等题都出现过。
+1. 同一岗位会连着问直接偏好优化（DPO）、PPO、GRPO。我会按有没有成对偏好、有没有验证器（verifier）、卡时预算来选，不去背三份公式。
+2. 强化学习（RL）基建要讲清 VeRL 的 `rollout.n`、global / micro batch 怎么决定每卡样本和 token 数。FlashAttention、ms-swift、Dify 我各准备一句话原理。
+3. 数据和业务这块，要说清监督微调（SFT）和 RL 两阶段各自解决什么。公开面经出现过「输入个人信息，输出信贷意见和额度」这类开放题，要讲清数据、拆分、安全和可解释的奖励分数（reward）。
+4. 手撕出现过 Beam Search 树、基础 PyTorch 网络和 Hot100 中等题。
 
 ## 本手册真题卡
 
-点击下面每条即可跳到对应题。
+下面每条点进去就能跳到对应题。
 
 - 蚂蚁 26 秋招：VeRL 的 采样轨迹（rollout） 与 update batch 参数如何共同决定每卡样本数
 - 现在做 LLM RL，面试会问哪些训练框架题？

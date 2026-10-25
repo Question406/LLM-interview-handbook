@@ -4,7 +4,7 @@ section: systems
 order: 9
 level: A
 title: Continuous Batching 为什么提升吞吐？
-quick: "不同请求生成长度差很多。Static batch 里短的已经 EOS，槽位还在空等最长那条。Continuous batching 在每轮 token 生成结束时检查请求，完成的请求立刻让位给新请求，GPU 空等少了，吞吐才上去。调大静态 batch 也无法消除这段等待。"
+quick: "Continuous batching 每生成一轮 token 就更新请求集合，短请求结束后马上补入新请求，GPU 少等长请求，所以吞吐更高。静态 batch 即使调大，短请求的槽位也要等最长那条结束。实际还要用分页 KV 管内存，并约束 TPOT，避免吞吐提高后单个请求反而变慢。"
 tags:
   - Serving
   - Scheduling
@@ -22,40 +22,37 @@ sources:
     type: primary
 ---
 
-常见误区是：「把 batch size 调大」。Static 大 batch 仍然按 **整条请求** 对齐：短的已经 EOS，槽位空等最长那条，GPU 仍在处理补齐的位置。Continuous batching（Orca 的 iteration-level scheduling）把调度粒度改成 **每个 逐 token 生成（decode） step**：完成的序列立刻移出，waiting 队列里的新请求补入。吞吐来自 **减少空等**，不是来自更大的静态矩阵。把 `max_num_seqs` 开大只是给连续调度更多候选，本身不会消除静态对齐的税；没有逐轮调度，大 batch 仍会浪费计算来等待长请求。LLM 生成长度方差远大于分类模型，强化学习（RL） 组内 $n$ 条更甚，所以这题和「为什么 rollout 要用 vLLM」是同一套调度故事。
+Continuous batching 每轮生成一个 token 后就更新请求集合，短请求结束便能补入新请求，因此减少 GPU 空等。比如聊天已经 EOS，另一条长思维链还在生成，静态 batch 的聊天槽位仍被占住；Orca 的 iteration-level scheduling 则会让这个槽位马上接下一条。单纯调大 `max_num_seqs` 只是提供更多候选，收益要靠逐轮补位才能实现。
 
-## Static batch 空在哪
+静态生成时，$B$ 条请求的长度 $T_1,\ldots,T_B$ 可能差一个数量级。实现通常 pad 到 $\max T_i$，先结束的行还占着 KV 和计算槽。虽然矩阵乘法的形状仍是 $[B,d]\times[d,d]$，部分行却只是在做被 mask 的无效计算，有效 token/s 被最长尾部拖住。聊天可能几十字，思维链（CoT）可能几千字，这种差异比分类负载明显；RL 同一 prompt 的 $n$ 条 rollout 也一样。
 
-$B$ 条请求一起 generate，长度 $T_1,\ldots,T_B$ 可差一个数量级。静态实现 pad 到 $\max T_i$，先结束的行仍占着整行 KV 和计算槽，直到最慢那条写完。有效 token/s 被最长尾部决定，算术上看着在做 $[B,d]\times[d,d]$，实际有的行已经是 mask 掉的废计算。LLM 生成长度方差大（聊天几十字、思维链（CoT，即分步推理过程） 几千字），这部分浪费比分类模型严重得多。RL 的组内 $n$ 条同样长短不齐，所以 采样轨迹（rollout） 也吃这套调度，见 `sys-rl-why-vllm-rollout`。
+## 每轮怎样补位
 
-## 每步重选 active 集合
+调度器先移走本轮 EOS 的序列，释放 KV 页；容量和槽位允许时，从 waiting 队列补入请求，先做输入预填充（prefill），再给仍在生成的序列做一步 decode。这样有效 $B$ 能维持在较高水平，小矩阵乘法里有更多真正工作的行，已结束请求也不再占用 HBM。短回复释放的页可以交给下一题，这是静态训练图 `generate` 难以做到的。
 
-Serving scheduler 每个 decode iteration：
+PagedAttention 让 KV 页释放后可以立即复用。若按最大长度连续预留，请求虽然在调度上能补进来，显存却可能很快 OOM；分页把逻辑序列与物理块分开，也减少了碎片。块大小仍会影响利用率，释放页与后来请求的需求不匹配时，仍可能有空间却不能及时利用。实际要一起选择 block 大小、抢占和公平性策略。
 
-1. 把本步已 EOS 的序列移出，释放 KV 页（PagedAttention 让释放立刻可复用，而不是按 max length 预留）。
-2. 若还有槽位和 KV 容量，从 waiting 队列插入新请求，先做它们的 输入预填充（prefill，即处理输入并建立缓存）（或 chunked prefill）。
-3. 对仍在生成的集合做一步 decode。
+新请求的 prefill 是 compute-bound，可能打断 decode 的带宽流水。比如一条 8k prompt 一次算完，会让其他对话的 TPOT 升高。Chunked prefill 把 prompt 分块，在块间插入 decode；PD 分离则让 prefill 和 decode 去不同池，用跨池空间隔离减少干扰。连续 batching 管单池的时间复用，两者可以组合。
 
-于是 GPU 上的有效 $B$ 维持在高位，decode 中批量较小的矩阵乘法能处理更多有效请求，HBM 中已结束请求占用的 KV 也会减少。Orca 强调 iteration-level；vLLM 用分页 KV 把「插入新请求」从内存形状上做可行。没有 paging，按最大长度预留，连续补位很快 OOM，调度器有策略也没地方放。插入新请求时通常要先 prefill：这一步是 compute-bound，会短暂打断 decode 的带宽流水。所以工程上还有 chunked prefill：把大 输入提示（prompt） 切块，每块之间仍插入 decode step，避免一条 8k prompt 让所有正在生成的请求突然变慢、TPOT 升高。PD 分离则把这件事做到池级别。连续 batching 是单池内的时间复用；PD 分离是跨池的空间复用。面试不要把两层说成一个开关。
+## 吞吐还受什么约束
 
-## 代价不是免费
+有效 batch 变大能提高 decode 算术强度，但 KV 容量和延迟 SLO 都有上限。`max_num_seqs` 开到显存边缘，P99 TPOT 可能先恶化，瞬时 tokens/s 上升，goodput 却下降。调度器应关注在 SLO 内完成的有效吞吐，指标见 `sys-serving-metrics`。
 
-调度更复杂：KV block 分配、碎片、公平性、抢占、与 latency SLO 的权衡。追求吞吐而过度 batching，单请求 TPOT 会恶化，goodput 可能下降，见 `sys-serving-metrics`。一条超长 prefill 插入 decode 批次，会打断带宽流水，所以有 chunked prefill 和 PD 分离。公平性：一直插入短请求可能饿死长请求，要有 max waiting / aging。
-
-不要把 continuous batching 说成异步 RL。前者是引擎一步之内的请求交错；后者是 trainer 与 rollout 之间的流水线，带 policy staleness，见 `slime-async-train`。KV 碎片会把「理论上能插入」变成「页不够、只好等」：结束序列释放的页如果和后来者的块大小对不齐，利用率仍上不去。所以 paging 的块大小、preemption（把长请求踢回 CPU）和公平性策略会一起出现。过度追求吞吐把 `max_num_seqs` 开到 KV 爆边，P99 TPOT 先坏，goodput 下降。调度器目标往往是 goodput，不是瞬时 tokens/s。RL rollout 里组内 $n$ 条同时进引擎，连续 batching 让短回复立刻把页让给下一题，这是训练图静态 generate 做不到的。换引擎的收益，很大一部分就是这套调度。
-
-## 和 paging、PD、异步的边界
-
-Continuous batching 管时间粒度：每个 decode step 换人。PagedAttention 管内存形状：结束的 KV 按页还给后来者。没有 paging，连续调度很快在预留上 OOM；没有连续调度，paging 只是少碎片，短请求仍空等。Chunked prefill 和 PD 分离管 prefill 打断 decode：前者单池切块，后者拆成两个池。异步 RL 是 trainer 与引擎之间的流水线，会产生策略版本滞后，发生在另一层。RL 组采样长度方差大，最能从连续调度中受益；短而齐的 监督微调（SFT） 式生成看不太出差距。过调度会伤 goodput：有效 $B$ 太大，TPOT 超出服务目标 SLO。
+公平性也需要额外规则。一直补短请求会让长请求饥饿，可以用 aging、max waiting，或把长请求的 KV 暂时放到 CPU。抢占会增加调度复杂度并牺牲部分吞吐，换来更可控的尾延迟；页分配、碎片和 KV 容量要一起看。
 
 ## 追问
 
-- **和动态 padding 是一回事吗？** 不是。动态 padding 仍等整 batch 结束才换人；continuous batching 在每个 decode 文本处理单位（token） 边界就移出 EOS、插入 waiting。粒度从请求级变成 iteration 级，这才是 Orca 的点。
-- **为什么要 PagedAttention？** 结束序列的 KV 必须能按页还给后来者。按最大长度连续预留做不到细粒度回收，调度器有策略也没地方放新请求，很快 OOM。
-- **batch 是不是越大越好？** 有效 $B$ 提高 decode 算术强度，但 KV 容量和 TPOT SLO 封顶。应以满足延迟要求的有效吞吐 goodput 为目标，不能只看峰值 tokens/s。`max_num_seqs` 开到爆边，P99 先坏。
-- **RL 组采样为什么更吃这套？** 同一输入提示 的 $n$ 条长度方差极大，静态 batch 几乎总在等最长 CoT。这正是训练图 `generate` 最不擅长的负载，见 `sys-rl-why-vllm-rollout`。
-- **算异步 RL 吗？** 不算。这是引擎内部交错请求，没有 policy version 差。异步 RL 是 trainer 与引擎之间的流水线，见 `slime-async-train`。
-- **和 PD 分离什么关系？** 连续 batching 是单池时间复用；PD 分离是跨池空间复用，避免大 prefill 打断 decode。chunked prefill 是单池折中。
-- **没有 paging 只做连续调度行不行？** 很快 OOM：结束序列的 KV 按最大长度占着，新请求没有页可分。Orca 的调度和 vLLM 的分页是配套。
-- **抢占长请求是为了什么？** 短请求一直插入会饿死长请求，长会话的 P99 延迟会明显升高。aging / max waiting / 把长请求 KV 踢到 CPU 是公平性，会伤吞吐，换的是尾延迟。
-- **和「把 batch 调大」差在哪？** 静态大 batch 仍等最长请求；连续 batching 在每个 decode step 换人。吞吐来自减少空等。没有 paging，连续补位会 OOM。这和异步 RL 不是一层。
+**和动态 padding 有什么区别？**
+动态 padding 仍等整批结束才换请求；连续 batching 在每个 decode token 边界移走 EOS、补入 waiting，请求级等待变成逐轮调度。
+
+**PagedAttention 和连续 batching 必须一起用吗？**
+它们解决不同问题。分页负责按页分配、共享和回收 KV，连续调度负责每轮换请求；只有分页，短请求仍可能空等，只有连续调度而依旧按最大长度预留，并发又容易受显存限制。
+
+**RL rollout 为什么收益明显？**
+同一 prompt 的 $n$ 条回复长短差异很大，静态 batch 常等最长 CoT。短而齐的监督微调（SFT）式生成则看不出那么大差距，相关见 `sys-rl-why-vllm-rollout`。
+
+**这算异步 RL 吗？**
+不算。这里是引擎内部交错请求，没有引入 policy version 差；异步 RL 是 trainer 与 rollout 引擎之间的流水线，会产生 policy staleness，见 `slime-async-train`。
+
+**PD 分离能替代 chunked prefill 吗？**
+它们都是在减轻 prefill 对 decode 的打断，但资源组织不同：chunked prefill 在同池切块，PD 用两个池。是否拆池还要结合负载与资源配置决定。

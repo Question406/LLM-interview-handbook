@@ -4,7 +4,7 @@ section: coding
 order: 27
 level: S
 title: 手写 Llama 风格 decoder block 和 tiny GPT：Pre-Norm、残差流与 loss shift
-quick: "每个 block 是 Pre-Norm 残差：先 $x\\leftarrow x+\\mathrm{Attn}(\\mathrm{RMSNorm}(x))$，再用同样方式接 SwiGLU。loss 要错一位：`logits[:, :-1]` 对 `idx[:, 1:]`。"
+quick: "每个 block 是两段 Pre-Norm 残差：先 $x\\leftarrow x+\\mathrm{Attn}(\\mathrm{RMSNorm}(x))$，再用同样的方式接 SwiGLU，所有 block 之后补一个 final norm 再进 lm_head。loss 要错开一位，`logits[:, :-1]` 对 `idx[:, 1:]`。"
 tags:
   - Transformer
   - Decoder-only
@@ -23,7 +23,34 @@ sources:
     type: primary
 ---
 
-这题是把几个小组件串起来：`code-rmsnorm`、`code-rope`、`code-attention`、`code-swiglu`。常见失分点：norm 放到残差之后写成了 Post-Norm；RoPE 对 v 也转了；causal mask 忘了或方向反了；最后少了 final norm；计算损失时没错开输入和标签，让位置 $t$ 去预测自己。面试官一般让你先写 block，再写整个 forward 和 loss，顺手问 Pre-Norm 为什么好训。架构层面的讨论见 `arch-decoder-only` 和 `arch-norm`。
+## 题目描述
+
+构建一个能进行前向与反向传播的小型自回归 Transformer。以下架构与接口属于手册重构练习约定，不是要求复刻某个公司完整模型。
+
+### 模块与输入输出
+
+- `Block(d,n_head,d_ff)` 接受 `[B,T,d]` 的浮点输入和 RoPE 的 cos/sin。模块采用两次预归一化：RMSNorm 后进行多头因果自注意力并加残差，再经 RMSNorm、SwiGLU 前馈层并加残差。线性层均不带 bias，注意力不含 dropout。
+- `rope_cache(T,dh)` 返回 rotate-half 布局的 cos/sin，各为 `[T,dh]`；每头维度 dh 为偶数。
+- `TinyGPT(vocab,d,n_head,n_layer,d_ff,max_T,tie)` 接受整数 token ID `[B,T]`，满足 `T <= max_T`，返回 `[B,T,vocab]` 的未归一化 logits。包含 embedding、指定层数的 Block、末尾 RMSNorm 和词表投影。tie=True 时 embedding 与词表投影引用同一份权重。
+- `next_token_loss(logits,idx)` 用前 T-1 个位置预测输入中后 T-1 个 token，返回所有预测位置的平均交叉熵；T 至少为 2。
+
+模型必须满足因果性：只改变未来 token，不能改变更早位置的 logits；损失能反传到模型参数。
+
+### 示例
+
+```text
+vocab=2，B=1，idx=[[0,1]]，模型所有权重置为0
+logits -> [[[0,0],[0,0]]]
+next_token_loss(logits,idx) -> log(2)，约0.693147
+```
+
+输入 token 在词表内，d 可被 `n_head` 整除，不要求校验非法配置。
+
+## 解题思路与参考答案
+
+Llama 风格的 decoder block 就是两段 Pre-Norm 残差：先 $x\leftarrow x+\mathrm{Attn}(\mathrm{RMSNorm}(x))$，再 $x\leftarrow x+\mathrm{SwiGLU}(\mathrm{RMSNorm}(x))$；所有 block 跑完，过一个 final norm 再进 lm_head，loss 把 logits 和标签错开一位。这题是把几个小组件串起来：`code-rmsnorm`、`code-rope`、`code-attention`、`code-swiglu`。面试官一般让你先写 block，再写整个 forward 和 loss，然后顺手问 Pre-Norm 为什么好训。
+
+常见的失分点有这么几个：norm 放到残差之后，写成了 Post-Norm；RoPE 把 v 也转了；causal mask 忘了加或者方向反了；最后少了 final norm；算 loss 时没把输入和标签错开，让位置 $t$ 去预测它自己。架构层面的讨论见 `arch-decoder-only` 和 `arch-norm`。
 
 ## 代码
 
@@ -100,19 +127,50 @@ def next_token_loss(logits, idx):
     return F.cross_entropy(logits[:, :-1].reshape(-1, V), idx[:, 1:].reshape(-1))
 ```
 
-RoPE 这里用 rotate_half 排布（前一半和后一半配对），和 `code-rope` 里 even/odd 配对只是维度顺序不同，权重转换时要对上。SwiGLU 比普通 FFN 多一个矩阵，因此常将 $d_{ff}$ 设为 $\frac{2}{3}\cdot 4d$ 左右，以保持相近的参数量。
+RoPE 这里用的是 rotate_half 排布，前一半和后一半配对；`code-rope` 里是 even/odd 配对，两者只是维度顺序不同，转换权重时要对上。SwiGLU 比普通 FFN 多一个矩阵，所以 $d_{ff}$ 常取 $\frac{2}{3}\cdot 4d$ 左右，让参数量差不多。
 
 ## Pre-Norm 和残差流
 
-Post-Norm（原始 Transformer）是 $x\leftarrow\mathrm{Norm}(x+F(x))$，每层输出都要过 norm，梯度回传到浅层时每层都乘一次 norm 的雅可比。Xiong et al. 的分析是 Post-Norm 在初始化时靠近输出层的梯度很大，所以离不开 learning rate warmup；Pre-Norm $x\leftarrow x+F(\mathrm{Norm}(x))$ 的梯度更平稳，可以少用甚至不用 warmup。
+先说为什么 Pre-Norm 好训。Post-Norm（原始 Transformer）是 $x\leftarrow\mathrm{Norm}(x+F(x))$，每层输出都要过一次 norm，梯度传回浅层时每层都要乘一次 norm 的雅可比。Xiong et al. 分析过，Post-Norm 在初始化时靠近输出层的梯度很大，所以离不开 learning rate warmup；Pre-Norm $x\leftarrow x+F(\mathrm{Norm}(x))$ 的梯度更平稳，可以少用甚至不用 warmup。
 
-换个角度看，Pre-Norm 下从 embedding 到 final norm 有一条不经过任何 norm 的恒等通路，叫残差流：每个子层读 $\mathrm{Norm}(x)$，把自己的输出加回 $x$。因为残差流本身从不被归一化，最后必须补一个 final norm 再进 lm_head，漏掉它 logits 尺度会随层数变。Pre-Norm 的代价是残差流的范数随层数增长，越靠后的子层加上去的那一份相对占比越小。
+换个角度看，Pre-Norm 下从 embedding 到 final norm 有一条不经过任何 norm 的恒等通路，这就是残差流：每个子层读 $\mathrm{Norm}(x)$，把自己的输出加回 $x$。残差流本身从来没被归一化过，所以最后必须补一个 final norm 再进 lm_head，漏掉的话 logits 的尺度会随层数变。Pre-Norm 的代价是残差流的范数随层数增长，越靠后的子层加上去的那一份占比越小。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+建立只有一层的小模型并固定种子。除了形状，改变最后一个 token 后，前两个位置的 logits 必须不变；最后反向传播检查损失有限且梯度能到达 embedding。
+
+```python
+torch.manual_seed(7)
+model = TinyGPT(vocab=7, d=8, n_head=2, n_layer=1, d_ff=16, max_T=4)
+a, b = torch.tensor([[1, 2, 3]]), torch.tensor([[1, 2, 4]])
+logits = model(a)
+assert logits.shape == (1, 3, 7)
+torch.testing.assert_close(logits[:, :2], model(b)[:, :2])
+loss = next_token_loss(logits, a)
+assert torch.isfinite(loss)
+loss.backward()
+assert model.emb.weight.grad is not None
+print("simple tests passed")
+```
 
 ## 追问
 
-- **loss 为什么要 shift？** 因果语言模型在位置 $t$ 只能看到 $\le t$ 的 token，它的输出用来预测 $t+1$。不 shift 等于让模型抄输入，loss 很快到 0。最后一个位置没有标签，被 `[:, :-1]` 丢掉。
-- **怎么验证 causal 写对了？** 改掉第 $j$ 个 token，位置 $\lt j$ 的 logits 必须完全不变。这比读代码可靠。
-- **weight tying 有什么影响？** lm_head 和 embedding 共用 $[V,d]$ 矩阵，小模型能省一大块参数（$V$ 大时尤其明显）。大模型里常不共享，Llama 就是分开的。
-- **RoPE 为什么只转 q/k？** 位置信息只需要进入 $q^\top k$ 的内积，使它只依赖相对位置 $m-n$；v 转了会把绝对位置混进输出。
-- **加 KV cache 要改哪？** attn 里把新 k（已做 RoPE）和 v 拼到 cache，cos/sin 用真实位置 `pos:pos+T` 索引而不是从 0 开始，单步逐 token 生成（decode）的写法见 `code-kv-cache-step`。
-- **推理时用 `F.scaled_dot_product_attention` 可以吗？** 可以，`is_causal=True` 等价于上面的 mask，并且会走 FlashAttention 类 kernel。
+**loss 为什么要 shift？**
+因为位置 $t$ 只能看到 $\le t$ 的 token，它的输出是用来预测 $t+1$ 的。不 shift 就等于让模型抄输入，loss 很快掉到 0。最后一个位置没有标签，被 `[:, :-1]` 丢掉。
+
+**怎么验证 causal 写对了？**
+改掉第 $j$ 个 token，位置 $\lt j$ 的 logits 必须完全不变。这比读代码可靠。
+
+**weight tying 有什么影响？**
+lm_head 和 embedding 共用一个 $[V,d]$ 矩阵，小模型能省一大块参数，$V$ 大时尤其明显。大模型里常常不共享，Llama 就是分开的。
+
+**RoPE 为什么只转 q/k？**
+位置信息只需要进入 $q^\top k$ 的内积，让它只依赖相对位置 $m-n$。v 也转的话，会把绝对位置混进输出。
+
+**加 KV cache 要改哪里？**
+在 attn 里把新的 k（已经做过 RoPE）和 v 拼到 cache 上，cos/sin 按真实位置 `pos:pos+T` 取，别从 0 开始。单步逐 token 生成（decode）的写法见 `code-kv-cache-step`。
+
+**推理时能用 `F.scaled_dot_product_attention` 吗？**
+可以。`is_causal=True` 和上面的 mask 等价，还会走 FlashAttention 类的 kernel。

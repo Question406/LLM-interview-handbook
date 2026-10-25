@@ -5,9 +5,7 @@ order: 41
 level: A
 title: 手写 LayerNorm：减均值、除以 D 的方差，以及和 RMSNorm 差哪一项
 quick: >-
-  最后一维上 $\mu=\mathrm{mean}(x)$，$\sigma^2=\mathrm{mean}((x-\mu)^2)$（除以 $D$，不是
-  $D-1$），再 $w\odot(x-\mu)/\sqrt{\sigma^2+\varepsilon}+b$。RMSNorm 不减 $\mu$、也没有
-  $b$。Llama / Qwen 用 RMSNorm；BERT / GPT-2 用 LayerNorm。eps 常见 $10^{-5}$，统计转到 fp32。
+  在最后一维上算 $\mu=\mathrm{mean}(x)$ 和 $\sigma^2=\mathrm{mean}((x-\mu)^2)$，方差除以 $D$，对应 `unbiased=False`，再算 $w\odot(x-\mu)/\sqrt{\sigma^2+\varepsilon}+b$。RMSNorm 少了减 $\mu$ 这一步，也没有 $b$；Llama / Qwen 用 RMSNorm，BERT / GPT-2 用 LayerNorm。eps 常见 $10^{-5}$，统计量转到 fp32 再算。
 tags:
   - LayerNorm
   - Normalization
@@ -22,11 +20,33 @@ sources:
     type: primary
 ---
 
-和 `code-rmsnorm` 成对出现。面试官要的是：归一化轴、有没有减均值、方差除以 $D$ 还是 $D-1$，以及仿射参数的形状是 `[D]` 而不是 `[B,T,D]`。
+## 题目描述
 
-## 公式
+实现只沿最后一维归一化的可训练 LayerNorm，不使用运行均值或运行方差。
 
-$x\in\mathbb{R}^{D}$（最后一维）：
+下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+
+### 接口与输入
+
+实现 `LayerNorm(dim,eps=1e-5)` 及 `forward(x)`。x 为 [...,dim] 浮点张量；weight 和 bias 为长度 dim 的可训练参数，分别初始化为1和0。
+
+### 输出与约束
+
+对每个最后维向量使用总体方差（除 dim）归一化，再做逐元素 affine；返回同形张量。统计用 float32，归一化结果转回输入 dtype 后应用参数。eps 加在方差内；保留梯度。
+
+### 示例
+
+```text
+dim=2，默认参数：
+x=[[1,3],[2,2]] -> 约 [[-0.999995,0.999995],[0,0]]
+把weight设为2、bias设为3时，常数行[2,2]输出[3,3]。
+```
+
+## 解题思路与参考答案
+
+LayerNorm 在最后一维上先减均值、再除以标准差，方差按 $D$ 来除，最后乘 $w$ 加 $b$。它和 `code-rmsnorm` 一般成对出现，面试官主要看四件事：沿哪个轴归一化，有没有减均值，方差除以 $D$ 还是 $D-1$，仿射参数是不是 `[D]` 的形状。仿射参数每个特征一个，和 batch、序列长度都没关系，写成 `[B,T,D]` 就错了。
+
+对最后一维 $x\in\mathbb{R}^{D}$：
 
 $$
 \mu=\frac1D\sum_i x_i,\quad
@@ -34,7 +54,7 @@ $$
 y=w\odot\frac{x-\mu}{\sqrt{\sigma^2+\varepsilon}}+b.
 $$
 
-`unbiased=False`。PyTorch `F.layer_norm` 默认就是除以 $D$。写成 `x.var(unbiased=True)` 会和框架差一项 $D/(D-1)$，单测对不上。
+方差这里对应 `unbiased=False`，PyTorch 的 `F.layer_norm` 默认就是除以 $D$。顺手写成 `x.var(unbiased=True)` 的话，结果会和框架差一个 $D/(D-1)$ 的因子，单测就对不上。eps 常见取 $10^{-5}$，统计量先转到 fp32 再算：
 
 ```python
 import torch
@@ -55,10 +75,35 @@ class LayerNorm(nn.Module):
         return y.to(x.dtype) * self.weight + self.bias
 ```
 
-RMSNorm 是 $x/\mathrm{RMS}(x)\odot w$，没有 $b$。Pre-Norm 把 LN / RMSNorm 放在子层前面，残差走未归一化的流，见 `code-decoder-block`。不要在序列维上做 LN：那会让不同 token 参与同一组归一化统计；训练和推理的序列长度变化时，统计分布也会改变。
+和 RMSNorm 比，差的就是减均值这一项。RMSNorm 是 $x/\mathrm{RMS}(x)\odot w$，也没有 $b$。Llama、Qwen 用 RMSNorm，BERT、GPT-2 用 LayerNorm。Pre-Norm 结构里，LN 或 RMSNorm 放在子层前面，残差走的是没归一化的那条流，见 `code-decoder-block`。
+
+归一化别放到序列维上。那样不同 token 会进同一组统计；训练和推理的序列长度一变，统计分布也跟着变。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+用 [1,3] 得到近似 [-1,1]，再用常数行检查 eps。最后改变可学习的 weight、bias，确保实现没有漏掉仿射变换。
+
+```python
+layer = LayerNorm(2)
+x = torch.tensor([[1., 3.], [2., 2.]])
+expected = torch.nn.functional.layer_norm(x, (2,), layer.weight, layer.bias, layer.eps)
+torch.testing.assert_close(layer(x), expected)
+with torch.no_grad():
+    layer.weight.fill_(2)
+    layer.bias.fill_(3)
+torch.testing.assert_close(layer(torch.zeros(1, 2)), torch.full((1, 2), 3.))
+print("simple tests passed")
+```
 
 ## 追问
 
-- **为什么最后一维？** hidden 维是特征。batch / 时间维的统计在推理时对不上。
-- **fp16 为什么先转 fp32？** 平方和在低精度下容易丢小数，也容易溢出。
-- **没有 bias 还叫 LayerNorm 吗？** 有的实现去掉 $b$，只留 $w$。和 RMSNorm 仍差一个减均值。
+**为什么沿最后一维归一化？**
+hidden 维是特征维。按 batch 或时间维统计的话，推理时的统计量和训练时对不上。
+
+**fp16 输入为什么先转 fp32？**
+平方和在低精度下容易丢小数，也容易溢出。
+
+**去掉 bias 还叫 LayerNorm 吗？**
+叫，有的实现就只留 $w$、不要 $b$。它和 RMSNorm 之间仍然差一个减均值。

@@ -4,7 +4,7 @@ section: data
 order: 12
 level: A
 title: Strong-to-Weak Distillation 什么时候有效？什么时候会失败？
-quick: "当教师提供的高质量轨迹是学生自己难以找到、但仍能模仿的，蒸馏才有效。如果教师推理超出学生能力、过程过长、依赖学生没有的工具或知识，或与部署任务分布不一致，直接模仿可能失败。"
+quick: "教师给的轨迹得是学生自己搜不到、但还能模仿得了的，蒸馏才有效。教师推理超出学生能力、过程太长、依赖学生没有的工具或知识，或者和部署任务分布不一致，直接模仿就会失败。办法是先量可学性，再压缩、过滤或改成 on-policy 蒸馏。"
 tags:
   - Distillation
   - Data
@@ -19,25 +19,32 @@ sources:
     type: primary
 ---
 
-Teacher 最终答案好，不代表每个 token 都适合作为学生模型的监督。强模型轨迹有效，当它提供 student 自己搜不到、但仍落在可模仿 frontier 上的路径；一旦推理长度、隐含知识或不可见工具超出容量，直接 监督微调（SFT） 会失败。学生可能只学到措辞，却无法复现决策。常见误区是：把「教师越强、数据越好」当公理。这和 教师模型（teacher） bias（`data-teacher-bias`）相连：即使可学，也可能把风格 shortcut 一并蒸进去。
+Strong-to-weak 蒸馏有效的前提是教师的轨迹落在学生能模仿的边界上：学生自己搜不到这条路，但看了能学会。推理太长、依赖学生没有的隐含知识或工具，直接做监督微调（SFT）就会失败，学生可能只学到了措辞，复现不了决策。「教师越强、数据越好」这个说法不成立。
 
-## 有效条件：信号可学，别只看正确
+举个例子，教师在做题时调了代码解释器，最终答案很漂亮，可学生线上没有这个工具。把这条轨迹拿来 SFT，学生学到的是「这里应该冒出一个精确数字」，这是不可见工具泄漏，并没有学到能力。所以教师最终答案好，也不代表每个 token 都适合当学生的监督。这和教师模型（teacher）偏差（`data-teacher-bias`）是连着的：就算可学，也可能把风格上的 shortcut 一起蒸进去。
 
-蒸馏有效需要 teacher signal 可学。可用 student 在该轨迹上的 likelihood、teacher-forced 成功率、或「student 自己采样能否在 $k$ 次内碰到等价答案」衡量可学性。完全不可能复现的很长的推理过程，先压缩 rationale、拆子任务、或做 curriculum，而不是整段塞进 SFT。
+## 先量可学性，再决定怎么喂
 
-可尝试的方法包括：simplification / 长度截断、difficulty filtering、student-aware rejection sampling（只留 student 能部分复现的轨迹）、on-policy 蒸馏（用 student 自己的分布当提议，teacher 只打分或改写）。分布要匹配部署：teacher 用了检索/代码解释器而 student 线上没有，这条轨迹是不可见工具泄漏，不是能力。
+可学性可以这样量：学生在这条轨迹上的 likelihood、teacher-forced 成功率，或者学生自己采样 $k$ 次能不能碰到等价答案。学生完全复现不了的超长推理，先压缩 rationale、拆子任务或者做 curriculum，别整段塞进 SFT。具体手段有 simplification 或长度截断、difficulty filtering、student-aware rejection sampling（只留学生能部分复现的轨迹），还有 on-policy 蒸馏，用学生自己的分布做提议，教师只负责打分或改写。分布也要和部署对齐。
+
+可学性过滤本身也要做成实验：按学生 likelihood 的分位切成易、中、难三档，各训一小步，看哪一档的边际收益最高。全难档掉点，说明超了容量；全易档不涨，说明没有新信息。过滤后条数变少不等于质量下降，目标是 token 效率。
 
 ## 失败怎么用实验拆开
 
-对照至少四组：原始 teacher 轨迹、压缩后轨迹、student 自采样 + 过滤、人类/弱教师混合。看 student holdout、长度、格式服从，以及 分布外数据（OOD，即与训练数据明显不同的数据） 是否回归。若只有「原样 imitation」涨、压缩版不涨，说明你在蒸风格而不是决策；若压缩版涨、原样掉，说明超容量。token budget 对齐再比，否则长 teacher 会赢在长度而不是正确。
+对照至少四组：原始教师轨迹、压缩后的轨迹、学生自采样加过滤、人类或弱教师混合。看学生的 holdout、长度、格式服从，以及分布外数据（OOD，即与训练数据明显不同的数据）有没有回退。如果只有原样 imitation 在涨、压缩版不涨，说明蒸的是风格，决策没学到；如果压缩版涨、原样版掉，说明超了容量。比的时候 token budget 要对齐，否则长的教师轨迹会靠长度赢。
 
-失败常见四因：超出容量；风格过长占满梯度；依赖不可见工具/私有知识；teacher 与线上 query 分布不匹配。弱模型教弱模型或无验证回流，会滑向自污染（`data-synthetic-self-contamination`）。SFT pipeline（`data-sft-pipeline`）里 teacher 只是候选生成器，过门靠 验证器（verifier） 和 student 边际增益。
-
-可学性过滤本身要做成实验：按 student likelihood 分位切成易/中/难三档，分别训一小步，看哪一档边际最高。全难档掉点说明超容量；全易档不涨说明没有新信息。不要把「过滤后条数变少」当成质量下降，token 效率才是目标。有效蒸馏是把 teacher 轨迹推回 student 的可学边界，别把最强模型的思维链原样粘贴。
+失败原因常见的就四种：超出容量；风格太长，占满了梯度；依赖不可见的工具或私有知识；教师和线上 query 的分布不匹配。弱模型教弱模型，或者没有验证就回流，会滑向自污染（`data-synthetic-self-contamination`）。在 SFT pipeline（`data-sft-pipeline`）里，教师只是候选生成器，能不能进训练靠验证器（verifier）和学生的边际增益来决定。说到底，有效的蒸馏是把教师轨迹推回到学生的可学边界上，最强模型的思维链原样粘过去是不行的。
 
 ## 追问
 
-- **答案对、过程不可学怎么办？** 只监督 final answer、重写短 rationale，或拆成可验证子题；整段 CoT 进 损失（loss） 会蒸假推理。
-- **一定要最强 teacher 吗？** 不必。中等、可复现、带 verifier 的轨迹，往往比超长闭源思维链更适合小模型。
-- **和 Weak-to-Strong 什么关系？** 那是弱监督训强模型；本题是强轨迹教弱模型。两者都怕不可学信号，但容量瓶颈方向相反。
-- **怎么证明蒸馏有效？** 同等 token 下对比「可学子集 vs 全量 imitation」，看 holdout 与 OOD，而不是只看 teacher 自己的分。
+**答案对、过程学不会，怎么办？**
+只监督 final answer、重写一段短 rationale，或者拆成可验证的子题。整段 CoT 进损失（loss），会蒸进去假推理。
+
+**一定要用最强的教师吗？**
+不必。中等强度、能复现、带 verifier 的轨迹，往往比超长的闭源思维链更适合小模型。
+
+**和 Weak-to-Strong 是什么关系？**
+那是用弱监督训强模型，这题是用强轨迹教弱模型。两者都怕学不会的信号，只是容量瓶颈的方向相反。
+
+**怎么证明蒸馏有效？**
+同等 token 下对比「可学子集」和「全量 imitation」，看 holdout 和 OOD。教师自己的分说明不了问题。

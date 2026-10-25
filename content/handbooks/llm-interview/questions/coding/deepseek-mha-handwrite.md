@@ -5,8 +5,7 @@ order: 200
 level: S
 title: DeepSeek 向算法笔试/面试：手写完整 Multi-Head Attention（含形状与 Mask）
 quick: >-
-  讲清 $Q,K,V$ 投影、拆头、缩放点积、因果/ padding mask、softmax 数值稳定、拼头与输出投影。代码要写
-  contiguous/view 边界，并说明 GQA 只是改变 K/V 头数组织。
+  按投影 $Q,K,V$、拆头、缩放点积、加因果 / padding mask、数值稳定的 softmax、拼头、输出投影的顺序写。代码里交代清 contiguous/view 的边界，再说明 GQA 只是改了 K/V 的头数组织。
 tags:
   - DeepSeek
   - Attention
@@ -25,19 +24,40 @@ sources:
     type: primary
 ---
 
-## 题目说明
+## 题目描述
 
-来源为公开练习向整理帖（非严格候选人逐字实录），按 DeepSeek 系算法岗高频手撕准备；`realInterview: false`。
+使用传入的投影矩阵实现多头自注意力，支持调用者指定的注意力mask，不调用现成的多头注意力模块。
 
-常见误区是：公式能背、形状写错，或把 GQA/MLA 说成改了 softmax。数学骨架不变：缩放点积 + mask + 加权 $V$。MLA 是另一压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
+下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
 
-## 公式与白板检查清单
+### 接口与输入
+
+实现 `mha(x,wq,wk,wv,wo,n_heads,mask=None)`。x为[B,T,C]；四个权重均[C,C]，采用x@W的右乘约定；C能被`n_heads`整除。mask若提供，须可广播到[B,`n_heads`,T,T]，True表示屏蔽。
+
+### 输出与约束
+
+返回[B,T,C]。每头按sqrt(C/`n_heads`)缩放点积分数，对可见key做softmax，组合value后拼接并右乘wo。默认无因果mask、无bias、无dropout；需要因果限制时由调用者提供上三角True的mask。保证每query至少一个可见key。
+
+### 示例
+
+```text
+B=T=n_heads=1,C=2，x=[[[1,2]]]，wq=wk=wv=wo=2×2单位矩阵
+唯一key权重为1，输出 [[[1,2]]]。
+```
+
+## 解题思路与参考答案
+
+手写 MHA 按这个顺序来：投影 $Q,K,V$，拆成多头，算缩放点积，加 mask，softmax，乘 $V$，拼头，最后输出投影。数学骨架就是缩放点积加 mask 再加权 $V$，GQA、MLA 都不动这一块。
+
+这题来自公开的练习向整理帖，不是候选人逐字实录，按 DeepSeek 系算法岗的高频手撕来准备，所以标的是 `realInterview: false`。常见翻车是公式背得出、形状写错，或者把 GQA/MLA 说成改了 softmax。MLA 是另一条压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照的真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
+
+## 公式与白板检查
 
 $$
 \mathrm{Attention}(Q,K,V)=\mathrm{softmax}\Big(\frac{QK^\top}{\sqrt{d_h}}+M\Big)V
 $$
 
-检查：$d_{\mathrm{model}}$ 整除 $H$；$M$ 能 broadcast 到 $[B,H,T_q,T_k]$；因果是下三角可见，padding 的 bool 语义不要反；fp16 softmax 先 float；cross-attn 时 $T_q\neq T_k$。`view` 前 `contiguous`，避免错误处理 stride 导致输出不正确。
+动笔前过一遍这几件事：$d_{\mathrm{model}}$ 能被 $H$ 整除；$M$ 能 broadcast 到 $[B,H,T_q,T_k]$；因果是下三角可见，padding 的 bool 语义别弄反；fp16 的 softmax 先转 float；cross-attn 时 $T_q\neq T_k$。`view` 之前先 `contiguous`，免得 stride 处理错了、输出悄悄不对。
 
 ```python
 import torch
@@ -56,18 +76,48 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
     return out @ wo
 ```
 
-形状口播：$x[B,T,C]$ → 投影仍 $[B,T,C]$ → `view` $[B,T,H,d_h]$ → `transpose` $[B,H,T,d_h]$ → scores $[B,H,T,T]$ → 加权 $V$ 后拼回 $[B,T,C]$。
+形状边写边说：$x[B,T,C]$ → 投影后仍是 $[B,T,C]$ → `view` 成 $[B,T,H,d_h]$ → `transpose` 成 $[B,H,T,d_h]$ → scores $[B,H,T,T]$ → 加权 $V$ 后拼回 $[B,T,C]$。
 
 ## GQA / MLA：压缩轴不同，softmax 不变
 
-GQA：$H_{\mathrm{kv}}\lt H$，K/V 少头，Q 做 `repeat_interleave`。KV cache 从 $O(H d_h)$ 降到 $O(H_{\mathrm{kv}} d_h)$。MLA：沿表示维压 latent，RoPE 拆开，推理吸收矩阵，见 `arch-mla`。面试一句话：二者都为 逐 token 生成（decode） 带宽，压缩轴不同。不要在 MHA 代码里假装写了 MLA。
+GQA 让 $H_{\mathrm{kv}}\lt H$，K/V 的头少，Q 那边做 `repeat_interleave`，KV cache 从 $O(H d_h)$ 降到 $O(H_{\mathrm{kv}} d_h)$。MLA 是沿表示维压成 latent，RoPE 拆开处理，推理时吸收矩阵，见 `arch-mla`。面试里一句话就够：两者都是为了逐 token 生成（decode）时的带宽，压缩的轴不一样。别在 MHA 代码里假装写了 MLA。
 
-数值：mask 后若一整行全 `-inf`，softmax 变 NaN，应对该行单独保护（padding 全 mask 的 query）。Dropout 若写，打在 attn 权重上且训练态才开。
+数值上还有一处：mask 之后如果一整行全是 `-inf`，softmax 会变 NaN，比如 padding 全被 mask 的 query，要对这一行单独保护。Dropout 如果要写，打在 attn 权重上，只在训练态开。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+先把四个投影矩阵设为单位阵、输入设为零，输出必须全零。再用两 token 的因果 mask，改变未来 token 后，第一个位置的输出应保持不变。
+
+```python
+x = torch.zeros(1, 2, 4)
+w = torch.eye(4)
+torch.testing.assert_close(mha(x, w, w, w, w, 2), x)
+x = torch.tensor([[[1., 0., 1., 0.], [0., 1., 0., 1.]]])
+mask = torch.ones(2, 2, dtype=torch.bool).triu(1)
+a = mha(x, w, w, w, w, 2, mask)
+changed = x.clone()
+changed[:, 1] = 100
+b = mha(changed, w, w, w, w, 2, mask)
+torch.testing.assert_close(a[:, 0], b[:, 0])
+assert torch.isfinite(a).all()
+print("simple tests passed")
+```
 
 ## 追问
 
-- **为何除 $\sqrt{d_h}$？** 点积方差 $\propto d_h$，不缩放则 softmax 饱和。
-- **mask 加在 softmax 前还是后？** 前。后加无法改变 softmax 已经分配的注意力权重。
-- **GQA 要改 $d_h$ 吗？** 不要。头维仍是 $d_{\mathrm{model}}/H_{\mathrm{q}}$，只是 K/V 头更少。
-- **`reshape` 代替 `transpose`？** 不能。`view` 不交换 $H$ 与 $T$ 的内存含义，必须 transpose 再 contiguous。
-- **和 FlashAttention？** 同一数学，分块在线 softmax。白板仍写显式 scores，并声明生产用融合核。
+**为什么要除以 $\sqrt{d_h}$？**
+点积的方差和 $d_h$ 成正比，不缩放 softmax 就饱和了。
+
+**mask 加在 softmax 前还是后？**
+前。softmax 之后再加，已经分配好的注意力权重就改不了了。
+
+**GQA 要改 $d_h$ 吗？**
+不用。头维仍是 $d_{\mathrm{model}}/H_{\mathrm{q}}$，只是 K/V 的头少了。
+
+**能用 `reshape` 代替 `transpose` 吗？**
+不能。`view` 不会交换 $H$ 和 $T$ 的内存含义，必须先 transpose 再 contiguous。
+
+**和 FlashAttention 什么关系？**
+数学一样，只是分块做在线 softmax。白板上还是写显式的 scores，并说明生产用融合核。

@@ -4,7 +4,7 @@ section: companies
 order: 16
 level: A
 title: 阶跃星辰：大模型 / Agent 算法应重点准备什么？
-quick: "算法岗会追 基于可验证奖励的强化学习（RLVR） 策略、混合加训 vs continue 监督微调（SFT）、Benchmark 分组统计迭代、GRPO 组内优势；Agent 岗会追工具奖励、 ReAct 各块 I/O、trl / VeRL 调参。手撕出现过 top-p 和 GRPO。"
+quick: "阶跃算法岗会追基于可验证奖励的强化学习（RLVR）策略、混合加训 vs continue 监督微调（SFT）、Benchmark 分组统计迭代、GRPO 组内优势；Agent 岗会追工具奖励、ReAct 各块 I/O、trl / VeRL 调参。手撕出现过 top-p 和 GRPO。"
 tags:
   - StepFun
   - 真题导航
@@ -25,19 +25,21 @@ sources:
     type: candidate-first-hand
 ---
 
-阶跃面经偏「真的训过」：会问 监督微调（SFT） 损失（loss） 起点、1T 和小模型差异、VeRL 类名和参数。我会准备一个能复现训练过程和结果的 Agent 工具训练案例，比罗列框架名有用。
+阶跃面经偏「真的训过」，会问监督微调（SFT）损失（loss）的起点、1T 和小模型有什么不同、VeRL 的类名和参数。我会准备一个能复现训练过程和结果的 Agent 工具训练案例，这比罗列框架名有用。
+
+比如面试官问「你这个 SFT 的 loss 起点是多少、后来怎么收敛的」，真训过的人能直接讲出曲线，只读过文档的人这里就会卡住。
 
 ## 准备主线
 
-1. **后训练策略**：基于可验证奖励的强化学习（RLVR） 的 验证器（verifier） 和 用当前策略新采样的轨迹；混合加训和 continue SFT 的适用条件。
-2. **评测迭代**：Benchmark 按能力、难度、失败类型分组统计，不把公开题直接当 奖励分数（reward）。
-3. **Agent 工具 强化学习（RL）**：奖励拆安全门、结果、过程和成本；数据配比保留难例和失败轨迹。
-4. **ReAct 接口**：Plan / Action / Observation 各自输入输出长什么样，能不能对齐日志 字段和类型规范（schema）。
-5. **公式**：GRPO 组内优势和 baseline；RL 训 MoE 的路由漂移，可对照 GSPO。
+1. 后训练策略要讲清基于可验证奖励的强化学习（RLVR）的验证器（verifier）和用当前策略新采样的轨迹，以及混合加训和 continue SFT 各自适合什么条件。
+2. 评测迭代时，Benchmark 按能力、难度、失败类型分组统计，公开题不直接拿来当奖励分数（reward）。
+3. Agent 工具强化学习（RL）的奖励拆成安全门、结果、过程和成本，数据配比里保留难例和失败轨迹。
+4. ReAct 接口要说清 Plan / Action / Observation 各自的输入输出长什么样，能不能对齐日志的字段和类型规范（schema）。
+5. 公式会问 GRPO 的组内优势和 baseline，以及 RL 训 MoE 时的路由漂移，可以对照 GSPO。
 
 ## 本手册真题卡
 
-点击下面每条即可跳到对应题。
+下面每条点进去就能跳到对应题。
 
 - 阶跃：RLVR 用什么策略，如何根据 benchmark 定位问题并迭代
 - 阶跃：针对业务场景，怎样训练 Agent 调工具

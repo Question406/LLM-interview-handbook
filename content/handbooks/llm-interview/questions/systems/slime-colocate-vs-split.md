@@ -4,11 +4,7 @@ section: systems
 order: 251
 level: S
 title: slime 训推一体和训推分离怎么配？和 veRL HybridEngine 是一回事吗？
-quick: >-
-  默认分离：Ray 按 `--actor-num-nodes × --actor-num-gpus-per-node` 给 Megatron，按
-  `--rollout-num-gpus` 给 SGLang。`--colocate` 让两边共享卡，可用 `--offload-train` /
-  `--offload-rollout` 互斥占显存。这不是 HybridEngine：slime 仍是两套进程（Megatron trainer +
-  SGLang server），一体只是放置和 offload，不是同进程换并行组。
+quick: "slime 默认分离部署，用 `--actor-num-nodes × --actor-num-gpus-per-node` 分配训练卡、`--rollout-num-gpus` 分配采样卡。`--colocate` 让两套进程共享 GPU，并靠 `--offload-train` / `--offload-rollout` 轮换显存；veRL HybridEngine 则在同进程里换布局，机制不同。"
 tags:
   - slime
   - VeRL
@@ -23,7 +19,9 @@ sources:
     type: primary
 ---
 
-常见误区是：说「slime 也有 HybridEngine」。HybridEngine 追求 同卡、同进程、换布局、少一份整模。slime `--colocate` 追求 同卡、两进程、offload 轮流上班。分离时 slime 更像 OpenRLHF 的分池，再用 NCCL / 磁盘 / delta 同步。说成一回事会被拆穿，见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。面试官若追问「那为什么还叫训推一体」，我会答：一体指的是 放置（同一批 GPU 时分复用），不是 运行时融合。进程边界、CUDA context、通信组都还是两套。资源账本先写启动参数：分离是加法，一体是时分复用加 offload 的搬运开销。profile 拷贝气泡，若已经接近 generate，省下的卡可能不足以抵消额外时间成本。
+slime 的 `--colocate` 是让 Megatron trainer 和 SGLang server 两套进程共享 GPU，通过 offload 分时使用显存。veRL HybridEngine 则追求同进程换布局、少一份完整模型；进程边界和权重切换机制不同，相关区别见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。
+
+比如卡数紧时，colocate 可以省下一套采样卡，但训练、采样切换要搬状态，CUDA context 和通信组也仍是两套。我会把省下的 GPU 和 offload 拷贝时间一起算；如果拷贝气泡接近 generate 的耗时，分卡可能反而更便宜。分离时则是独立训练池与生成池，再用 NCCL / 磁盘 / delta 同步权重。
 
 ## 分离怎么配
 
@@ -46,7 +44,7 @@ sources:
 
 一体时训推仍 串行：同一张卡不能边 backward 边 decode。别把 `--colocate` 说成异步强化学习（RL），见 `slime-async-train`。Offload 没配对是最常见的 OOM：只开 `--offload-rollout` 却在训练阶段忘了把 SGLang 的 KV / CUDA graph 卸掉，两套权叠在同一张卡上。反过来，采样阶段 Megatron 优化器状态还在 HBM，SGLang 的 `mem-fraction-static` 再按 0.9 预留，切换瞬间爆。官方 `--colocate` 默认打开双边 offload，就是为了避免这种「以为一体、其实双驻留」。手动拆开关时必须按阶段互斥。拷贝气泡要单独 profile：H100 上 NVLink 搬 70B 分片和 PCIe 搬优化器状态完全不是一个数量级，跨 NUMA 再降一档。选 colocate 之前用一次空跑看 offload 占比，若已经接近 generate 时间，分卡可能更便宜。
 
-## 和 HybridEngine 差在哪
+
 
 | | veRL HybridEngine | slime `--colocate` |
 | --- | --- | --- |
@@ -59,12 +57,21 @@ sources:
 
 ## 追问
 
-- **一体能不能重叠 generate 和 train？** 默认不能。`--offload-train` / `--offload-rollout` 把对方赶出显存，物理上串行。要重叠先分卡，再谈挪 `ray.get` 或 `train_async.py`。把 `--colocate` 说成异步会被拆穿。
-- **rollout 卡多于 actor 时多的卡干什么？** rollout-only，不参与 Megatron。适合 decode 比 backward 更吃卡的长分步推理（CoT）。少报「多出来的卡也在训练」，账本会错。
-- **为什么要降 `mem-fraction-static`？** 静态预留太大，offload 回来的训练状态没地方放，OOM 发生在切换瞬间而不是稳态。常降到 0.8，给两边各留一点。
-- **外部 engine 还算 colocate 吗？** 不算。`--rollout-num-gpus 0` 只起 router，接外部 SGLang，是分池的极端。同步协议和 KV flush 要单独设计，一体开关管不到那套卡。
-- **`--rollout-num-gpus-per-engine` 填错会怎样？** 它是一个 engine 的世界卡数，多机 serving 填总卡不是单机 tp。填错则 router 和 engine 世界大小对不上，部分空转、部分 OOM。
-- **和 HybridEngine 一句话差在哪？** HybridEngine：同进程、换布局、少一份整模。slime colocate：两进程、offload 轮转、两份权互斥显存。说「slime 也有 HybridEngine」当场穿帮。
-- **offload 没配对的典型 OOM 在哪？** 切换瞬间：训练阶段 SGLang 的 KV / CUDA graph 还在，或采样阶段 Megatron 优化器还在。稳态显存看起来够，峰值不够。双边 offload 必须互斥。
-- **一体时 `--sglang-mem-fraction-static` 为什么常 0.8？** 给 offload 回来的训练状态留空。按 0.9 预留给 serving 独占没问题，一体切换会叠爆。这是放置参数，不是「SGLang 更省显存」。
-- **怎么向面试官画这张图？** 先画卡是加法还是时分，再画显存是两份常驻还是 offload 互斥，最后画时间是否串行。HybridEngine 少一份整模；colocate 少一套卡、进程仍是两套。拷贝气泡接近 generate 就改分卡。`--rollout-num-gpus-per-engine` 填世界卡数，不要填成单机 tp。
+**一体能不能重叠 generate 和 train？**
+默认不能。`--offload-train` / `--offload-rollout` 把对方赶出显存，物理上串行。要重叠先分卡，再谈挪 `ray.get` 或 `train_async.py`。要看训练和生成实际有没有重叠。
+**rollout 卡多于 actor 时多的卡干什么？**
+rollout-only，不参与 Megatron。适合 decode 比 backward 更吃卡的长分步推理（CoT）。少报「多出来的卡也在训练」，账本会错。
+**为什么要降 `mem-fraction-static`？**
+静态预留太大，offload 回来的训练状态没地方放，OOM 发生在切换瞬间而不是稳态。常降到 0.8，给两边各留一点。
+**外部 engine 还算 colocate 吗？**
+不算。`--rollout-num-gpus 0` 只起 router，接外部 SGLang，是分池的极端。同步协议和 KV flush 要单独设计，一体开关管不到那套卡。
+**`--rollout-num-gpus-per-engine` 填错会怎样？**
+它是一个 engine 的世界卡数，多机 serving 填总卡不是单机 tp。填错则 router 和 engine 世界大小对不上，部分空转、部分 OOM。
+**和 HybridEngine 一句话差在哪？**
+HybridEngine：同进程、换布局、少一份整模。slime colocate：两进程、offload 轮转、两份权互斥显存。两者要按进程、布局和显存切换机制分别解释。
+**offload 没配对的典型 OOM 在哪？**
+切换瞬间：训练阶段 SGLang 的 KV / CUDA graph 还在，或采样阶段 Megatron 优化器还在。稳态显存看起来够，峰值不够。双边 offload 必须互斥。
+**一体时 `--sglang-mem-fraction-static` 为什么常 0.8？**
+给 offload 回来的训练状态留空。按 0.9 预留给 serving 独占没问题，一体切换会叠爆。这是放置参数，不是「SGLang 更省显存」。
+**怎么向面试官画这张图？**
+先画卡是加法还是时分，再画显存是两份常驻还是 offload 互斥，最后画时间是否串行。HybridEngine 少一份整模；colocate 少一套卡、进程仍是两套。拷贝气泡接近 generate 就改分卡。`--rollout-num-gpus-per-engine` 填世界卡数，不要填成单机 tp。

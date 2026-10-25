@@ -4,7 +4,7 @@ section: arch
 order: 203
 level: A
 title: Shared expert 和 routed expert 怎么分工？什么时候必须留 shared？
-quick: "Shared 对每个 文本处理单位（token） 常开，承接公共变换；routed 走 top-$k$，承接长尾专长。细粒度 MoE（专家又多又小、$k/N$ 很小）必须留 shared，否则公共知识被复制进所有专家或挤进少数热点。总参数按全部专家计，激活 FLOPs 只计 shared $+k$ 路。"
+quick: "Shared expert 对每个 token 都常开，承接大家都要的公共变换；routed expert 走 top-$k$，承接长尾专长。专家又多又小、$k/N$ 很小的细粒度 MoE 必须留 shared，否则公共知识要么被复制进所有专家，要么挤进少数热点。算账时总参数按全部专家计，激活 FLOPs 只算 shared $+k$ 路。"
 tags:
   - MoE
   - DeepSeek
@@ -22,40 +22,49 @@ sources:
     type: primary
 ---
 
-常见误区是：把「671B 总参数」当成每 文本处理单位（token） FLOPs，或把 shared 说成又一个 routed expert。DeepSeekMoE / V3 把 FFN 拆成常开的共享专家和稀疏的路由专家。负载怎么均见 `arch-moe-balance`、`arch-moe-noaux`；专家怎么切卡见 `sys-expert-parallel`。本题只问分工和「什么时候不能省掉 shared」。
+Shared expert 对每个 token 都常开，负责公共变换；routed expert 由 router 选 top-$k$，负责领域、语种、格式这些长尾。专家切得越细、越稀疏，越离不开 shared。DeepSeekMoE / V3 就是这样把 FFN 拆成常开的共享专家和稀疏的路由专家。这里只讲分工，以及什么时候不能省掉 shared；负载怎么均衡见 `arch-moe-balance`、`arch-moe-noaux`，专家怎么切卡见 `sys-expert-parallel`。
 
-## 分工：公共通道 vs 长尾专家
+举个例子，一个再普通不过的 token，也要经过句法、通用语义这类稠密变换。如果没有共享通道，每个 routed expert 都得先把这套公共映射各学一遍，容量就浪费了；router 也很容易把这些「普通 token」全打给同一个万金油专家，均衡更难做。
 
-记 token 隐状态 $x$。输出是共享支路加稀疏支路，而不是「所有专家平等竞选」：
+## 分工：公共通道加长尾专家
+
+记 token 隐状态为 $x$。输出是共享支路加稀疏支路：
 
 $$
 y=\sum_{s=1}^{n_{\mathrm{s}}}E_{s}^{\mathrm{shared}}(x)+\sum_{i\in\mathrm{top}k}g_{i}\,E_{i}^{\mathrm{routed}}(x).
 $$
 
-$E^{\mathrm{shared}}$ 每个 token 都算，没有门控、不进 top-$k$。$E^{\mathrm{routed}}$ 才由 router 打分，V3 用 sigmoid 亲和再选 $k$ 个，门控权重用未加 bias 的分数归一，见 `arch-moe-noaux`。直觉：共享支路学「大家都要的」变换（句法、通用语义、残差式的稠密 FFN）；路由专家学领域、语种、格式里的长尾。没有共享通道时，每个 routed expert 都得先学会同一套公共映射，容量浪费，router 也更容易把「普通 token」全打到同一个万金油专家上，均衡更难。
+$E^{\mathrm{shared}}$ 每个 token 都算，没有门控，也不参加 top-$k$ 竞选。只有 $E^{\mathrm{routed}}$ 由 router 打分，V3 用 sigmoid 亲和度选出 $k$ 个，门控权重用未加 bias 的分数归一化，见 `arch-moe-noaux`。直觉上，共享支路学「大家都要的」变换（句法、通用语义、残差式的稠密 FFN），路由专家学领域、语种、格式里的长尾。
 
-DeepSeekMoE 还有细粒度切分：把原来一个大 FFN 切成很多小专家，提高专家组合数。切得越碎，越需要一条常开通道把公共计算拿走，否则 $k$ 路小专家拼不出稳定的稠密变换。V3 量级是 1 个共享 + 256 个路由，每 token 再激活 8 个路由：激活 FFN 是 $9$ 路，不是 $257$ 路。
+DeepSeekMoE 还做了细粒度切分：把原来一个大 FFN 切成很多小专家，增加专家的组合数。切得越碎，越需要一条常开通道把公共计算拿走，不然 $k$ 路小专家拼不出稳定的稠密变换。V3 的量级是 1 个共享加 256 个路由，每个 token 再激活 8 个路由专家，所以激活的 FFN 是 $9$ 路，$257$ 个专家里只有这 9 个参与计算。
 
 ## 什么时候必须留 shared
 
-细粒度 + 高稀疏时必须留。专家个数 $N$ 很大、$k/N$ 很小、单个专家容量也小：公共知识要么被复制 $N$ 份（参数浪费），要么被 router 塞进少数热点（负载崩）。共享专家把这部分从路由里隔离出去，routed 才有余地专精。DeepSeekMoE 把「细粒度切分」和「共享隔离」写成一套，不是两个可随便拆掉的开关。
+细粒度加高稀疏时必须留。专家数 $N$ 很大、$k/N$ 很小、单个专家容量也小，公共知识要么被复制 $N$ 份，浪费参数，要么被 router 塞进少数热点，负载崩掉。共享专家把这部分从路由里隔离出去，routed 才有余地专精。DeepSeekMoE 把「细粒度切分」和「共享隔离」当成一套设计，两者是配合着用的，不能随便拆掉一个。
 
-路由还不稳定、或训推路由会漂时，shared 是缓冲。推理 top-$k$ 和训练不完全一致时，纯 routed 的公共能力会抖；常开支路不依赖这次选了谁。它替代不了训推对齐，但能避免「换一次路由公共语言建模就塌」。
+路由还不稳定，或者训练和推理的路由会漂的时候，shared 也是一层缓冲。推理的 top-$k$ 和训练不完全一致时，纯 routed 模型的公共能力会跟着抖；常开支路不依赖这一次选了谁。它替代不了训推对齐，但能避免「换一次路由，公共语言建模就塌了」。
 
-可以不留的情况。Mixtral 一类粗粒度、专家大、$k$ 相对不那么极端时，常见做法是纯 routed、没有 shared。稠密 FFN 等价于「全部都是 shared、没有 routed」。面试不要说「MoE 必须有共享专家」：细粒度稀疏才几乎必须。省掉 shared 的代价是 router 同时承担公共与专长，aux / bias 要更用力，热点更常见。
+也有可以不留的情况。Mixtral 一类粗粒度模型，专家大、$k$ 相对没那么极端，常见做法就是纯 routed、没有 shared。稠密 FFN 也可以看成「全都是 shared、没有 routed」。所以面试别说「MoE 必须有共享专家」，只有细粒度稀疏才几乎必须。省掉 shared 的代价是 router 要同时承担公共计算和专长，aux / bias 要用得更狠，热点也更常见。
 
-## 参数账和 FLOP 账必须拆开
+## 参数账和 FLOP 账要分开算
 
-总参数：所有 shared + 所有 routed 的 FFN 都占显存和 checkpoint。激活 FLOPs：只计 $n_{\mathrm{s}}+k$ 路，再加注意力与路由开销。把 256 个 routed 全乘进 $6ND$ 的 $N$，是把稀疏模型当成稠密算。反过来，只报激活参数却用总参数报「世界最大」，是同一类错，方向相反。
+常见的错是把「671B 总参数」当成每个 token 的 FLOPs。总参数里，所有 shared 和所有 routed 的 FFN 都占显存和 checkpoint；激活 FLOPs 只算 $n_{\mathrm{s}}+k$ 路，再加上注意力和路由的开销。把 256 个 routed 全乘进 $6ND$ 的 $N$，就是把稀疏模型当成稠密模型算了。反过来，只报激活参数、却拿总参数说「世界最大」，是方向相反的同一类错。
 
-EP 布局也不同：routed 按专家切卡，token 要 all-to-all；shared 每 token 都要，通常复制在每张卡上（或只做 TP 切矩阵），不走 dispatch。面试若把 shared 也画进 EP all-to-all，通信模式就错了。通信与计算怎么叠见 `sys-expert-parallel`。
-
-shared 提供不依赖路由选择的公共计算，routed 扩展专长容量。细粒度模型缺少共享通道时，公共计算可能重复占用专家容量，或形成路由热点。
+EP 的布局也不一样。routed 按专家切卡，token 要做 all-to-all；shared 每个 token 都要用，通常复制在每张卡上（或者只做 TP 切矩阵），不走 dispatch。面试时如果把 shared 也画进 EP 的 all-to-all，通信模式就画错了。通信和计算怎么重叠见 `sys-expert-parallel`。
 
 ## 追问
 
-- **shared 要不要进 top-$k$ 计数？** 不要。它在 $k$ 之外，激活路数是 $n_{\mathrm{s}}+k$。把「激活 8 专家」说成含 shared，和 V3 对不上。
-- **多条 shared 干什么？** 容量更大的公共底；一般仍远小于 routed 总数。不是再做一次稀疏路由。
-- **shared 会不会变成新的稠密瓶颈？** 会。它每 token 都算，逐 token 生成（decode） 时带宽和 FLOPs 都在。过大就退回稠密 FFN，稀疏的好处被吃掉。
-- **和 aux loss 的关系？** 隔离公共流量后，routed 的均衡目标更干净。没有 shared 时 aux 往往既要均负载又要保住语言建模，和主损失抢参数，见 `arch-moe-balance`。
-- **手算激活 FFN 参数？** $(n_{\mathrm{s}}+k)\times$（单个专家参数），不要乘 $N$。总参数才乘 $N$。
+**shared 要不要算进 top-$k$？**
+不要。它在 $k$ 之外，激活路数是 $n_{\mathrm{s}}+k$。把「激活 8 个专家」说成含 shared，和 V3 对不上。
+
+**放多个 shared 是干什么？**
+给公共部分更大的容量，一般仍远少于 routed 的总数。它们之间不再做稀疏路由。
+
+**shared 会不会变成新的稠密瓶颈？**
+会。它每个 token 都要算，逐 token 生成（decode）时带宽和 FLOPs 一直在。做得太大，就退回成稠密 FFN，稀疏的好处被吃掉了。
+
+**和 aux loss 有什么关系？**
+公共流量隔离出去之后，routed 的均衡目标更干净。没有 shared 时，aux 往往既要均衡负载、又要保住语言建模，和主损失抢参数，见 `arch-moe-balance`。
+
+**激活 FFN 的参数怎么手算？**
+$(n_{\mathrm{s}}+k)\times$（单个专家参数），这里不乘 $N$。总参数才乘 $N$。

@@ -4,7 +4,7 @@ section: posttrain
 order: 244
 level: A
 title: 2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？
-quick: "35 题分算法 19 道和 Infra 16 道。算法先吃透 PG、KL / IS、advantage 和 clip，再看 DAPO / GSPO 等改进；Infra 先会显存角色、KV 传输和异步 staleness。"
+quick: "35 题分算法 19 道和 Infra 16 道，这张卡按编号对到手册里的单题。算法先吃透 PG、KL / IS、advantage 和 clip，再看 DAPO / GSPO 等改进；Infra 先会显存角色、KV 传输和异步 staleness。"
 tags:
   - GRPO
   - RL Infra
@@ -25,9 +25,9 @@ sources:
     type: primary
 ---
 
-2026 春招前后流传一套 35 题 强化学习（RL） benchmark。原帖强调可延伸、算法岗也会问系统，**不给标准答案**。手册按题拆卡，本页只做编号对照。点下面每条跳到对应题。
+这张卡是 2026 春招前后流传的那套 35 题强化学习（RL）benchmark 的编号对照，手册已经按题拆成单卡，点每条后面的 id 就能跳过去。准备顺序我建议这样：先能在白板上从 PG 推到 PPO 再推到 GRPO；再对照 DAPO / GSPO / CISPO / SAPO / DPPO，说清各自改的是 clip 的哪一层；最后能画出 rollout 和 trainer 解耦的图，讲清 staleness 和 KV 版本。原帖强调「做算法也会问 Infra」，后两圈不是 Infra 岗专属。
 
-Data 相关题目原帖故意没收：几乎没法背，全靠你自己的数据经历。
+原帖**不给标准答案**，强调每题都能延伸，算法岗也会被问系统。Data 相关的题原帖故意没收，因为几乎没法背，全靠你自己的数据经历。
 
 ## 算法 1–19
 
@@ -74,15 +74,13 @@ Data 相关题目原帖故意没收：几乎没法背，全靠你自己的数据
 
 ## 原帖没收、但会被追的延伸
 
-原帖强调三件事：Agent 场景答案会变、几乎每题都能追、Data 没法背。下面这些不改 1–35 的编号，是按这三条补的独立卡。
+原帖还强调了三件事：Agent 场景下答案会变、几乎每题都能追问、Data 没法背。下面是按这三条补的独立卡，不改 1–35 的编号。
 
-- 长度膨胀用组内过滤，而不是改标量奖励：`pt-gfpo`
+- 长度膨胀用组内过滤来压，不去改标量奖励：`pt-gfpo`
 - MoE 路由重放 R2 / R3，不要和 GSPO 说成同一种对齐：`pt-r3-routing-replay`
 - 异步 / partial 的 TIS，不要和 CISPO 说成同一个 clip：`pt-tis-async`
 - 多轮 Agent 的组内组优势 GiGPO：`arl-gigpo`
 - Agent GRPO 的思维 / 调用 / 工具返回 mask：`pt-agent-grpo-token-mask`
 - 单机 Unsloth 什么时候能进选型、什么时候不能：`sys-unsloth-when`
-- Data：怎么筛 基于可验证奖励的强化学习（RLVR）、熵塌怎么读、塌了先动哪几个旋钮：`data-rlvr-select`、`data-entropy-collapse`、`data-entropy-fix-order`
+- Data 方向的三张，讲怎么筛基于可验证奖励的强化学习（RLVR）数据、熵塌怎么读、塌了先动哪几个旋钮：`data-rlvr-select`、`data-entropy-collapse`、`data-entropy-fix-order`
 - Agent 过程奖励和 GiGPO 锚点哈希怎么选：`arl-process-vs-gigpo`
-
-准备顺序：先能白板推 PG → PPO → GRPO；再对照 DAPO / GSPO / CISPO / SAPO / DPPO 各自改 clip 的哪一层；最后能画 rollout 与 trainer 解耦、说出 staleness 和 KV 版本。原帖强调「做算法也会问 Infra」，后两圈不是 Infra 岗专属。

@@ -4,7 +4,7 @@ section: systems
 order: 22
 level: S
 title: 长 prompt 把聊天请求 TTFT 打爆时，continuous batching 与 chunked prefill 怎么设计 / 调参？
-quick: "Prefill 和 decode 抢同一份 token 预算。用 chunked prefill 把长输入切块和 decode 交错，限制每步 token 数并加抢占规则，再按流量类型分别看 TTFT 和 TPOT 尾部。"
+quick: "我会把长 prompt 切成 prefill chunk，与 decode 交错执行，并限制每一步的 token 预算和并行长 prefill 数。长输入一次占满 GPU，会让短聊天排队、正在生成的对话停顿；切块后还要加优先级和防饥饿规则。调参分别看短聊和长文档的 TTFT、TPOT 尾部，吞吐提高后仍要守住交互 SLO。"
 tags:
   - Scheduling
   - Continuous Batching
@@ -22,51 +22,35 @@ sources:
     type: primary
 ---
 
-别把 continuous batching 理解成「批次越大越好」。Prefill 和 逐 token 生成（decode） 抢的是同一块 GPU token 预算：长 prompt 的 prefill 是大 GEMM、算得动但占得久；短聊天的 decode 每步只吃一个 token，却对调度间隙和 KV 驻留极度敏感。任由一条长 prefill 跑完，后面所有短请求的 首个 token 的等待时间（TTFT） 一起爆炸。算力特性见 `sys-prefill-decode`。这题考的是 **队头阻塞**：平均吞吐可以很好看，交互 SLO 已经死了。调参报告如果只有 token/s，没有按长度桶切的 TTFT/TPOT，等于没做混跑验收。
+我会用 continuous batching 及时补请求，再用 chunked prefill 把长输入拆开，给 decode 持续留预算。比如一条数万 token 的文档摘要进来，如果先把它整段算完，短聊天会排队，已经开始输出的对话也会停顿。两类任务在争同一块 GPU：prefill 是占用较久的大 GEMM，decode 每轮每请求只需要一个 token，却对调度间隙和 KV 驻留敏感，算力特性见 `sys-prefill-decode`。
 
-## 为什么长短混跑会伤 TTFT
+TTFT = 排队 + 本次 prefill。短请求自己的 prefill 很短，也可能被前面的长文档挡住；正在 decode 的 TPOT 同时会有尖刺。此时 decode kernel 未必更慢，可能只是调度器把本轮预算都给了 prefill。日志要记录每步 prefill token 占比，验证时按输入长度桶看 TTFT / TPOT，平均 token/s 无法显示这些问题。
 
-TTFT = 排队 + 本次 prefill。短请求本身的 prefill 很短，排队却可能卡在一条数万 token 的文档摘要后面。Decode 侧的 TPOT 同时被拖累：若调度器把整段长 prefill 当成一个不可打断的 step，正在生成的对话会停住等这块算完。用户感知是「打字突然卡一下」，根因常常是 scheduler 把预算一次性给了邻居的长 prefill，decode kernel 未必变慢。日志里要能把这一步的 prefill token 占比打出来，否则线上只能猜。
+Continuous batching 决定请求结束后谁补位，无法自动限制补进来的长 prefill。没有切块，一条请求仍可能独占几毫秒到数秒。这与 `sys-rl-why-vllm-rollout` 的调度收益相通，但 RL rollout 可容忍更高平均延迟，在线聊天要守交互 SLO，两边的默认参数不能直接互抄。
 
-Continuous batching 解决的是「有请求结束立刻补进新序列」，避免短序列空等。它不自动解决「补进来的是一条超长 prefill」。没有切块时，新来的长请求仍会独占接下来若干毫秒到数秒的计算。这和 `sys-rl-why-vllm-rollout` 里引擎快的原因是同一套调度，只是在线服务还要面对交互 SLO。强化学习（RL） 采样轨迹（rollout） 可以容忍更高的平均延迟，在线聊天不行：同一套引擎、两套 SLO，调度参数不能直接抄训练集群。把 serving 的 chunked prefill 默认值搬进 RL 或反过来，都会在错误的尾巴上优化。
+## 在一步里分配 token 预算
 
-## chunked prefill 怎么交错
+Chunked prefill 把长输入分块，与 decode 交错，Sarathi-Serve 就采用这类思路。一步可以执行若干 decode token 加一块 prefill，不必先算完 32k prompt。预算若长期全给 decode，长请求的 TTFT 又会饿死，所以要一起控制每轮 `max batched tokens`、chunk 大小、同时进行的 partial prefill 数，以及优先级、抢占和最大等待时间。
 
-Chunked prefill（Sarathi-Serve 一类）把长输入切成固定 token 块，每块和正在进行的 decode step 拼进同一个 `max batched tokens` 预算。一步里可以是「若干 decode token + 一块 prefill」，而不是「先把 32k prompt 算完再理别人」。
+总预算太大，一步太长，TTFT 尾部会变差；太小则吞吐下降。Chunk 缩小能更频繁插入 decode，却增加 kernel 启动和调度次数。Partial prefill 太多会占 KV 和队列，太少又会让长请求难以开工。高优短请求允许打断低优长请求时，还要有 aging 等防饥饿措施和最大抢占次数；被抢占者通常回队列，超过 deadline 才失败。
 
-现场要能报的旋钮：
+这些参数互相影响。比如 chunk 缩小却把 `max batched tokens` 开得很大，一步仍能塞进大量 prefill。调参应固定回放流量、一次动一个变量，区分收益来自 chunk 还是优先级。交互为主时缩小 chunk、保留 decode 预算并限制 in-flight 长 prefill；吞吐型离线流量可以增大 chunk，减少切块开销。聊天和文档入口可以按路由或租户设不同参数，避免一次文档流量高峰改变聊天延迟。
 
-- **每轮 `max batched tokens`。** 总预算。太大则一步过长、TTFT 尾部变差；太小则 GPU 吃不饱、吞吐掉下去。
-- **Chunk 大小。** 调小可以更频繁地把 decode 插进来，改善交互延迟，但 kernel 启动和调度次数变多。
-- **同时等待的 partial prefill 数量。** 太多半成品占 KV 与队列；太少则长请求迟迟开不了工。
-- **优先级、抢占、等待上限。** 高优短请求能否打断低优长 prefill；被抢占的长请求要有防饥饿，否则文档流量永远排不到。
+## 用两类流量分别验收
 
-这些旋钮互相耦合：缩小 chunk 却同时把 `max batched tokens` 开很大，一步里仍可能塞进超长 prefill，TTFT 尾巴减不下来。调参要一次只动一个，并用同一套合成流量回放，否则说不清是 chunk 还是优先级在起作用。默认值来自通用 serving，不一定适合「短聊为主、偶发长文档」的产品形态。
+回放采用线上长度直方图与流量比例，至少按小时覆盖高峰，再按输入长度、输出长度、租户和优先级分别看 TTFT P50 / P95 / P99、TPOT、排队时延、preemption 次数、partial prefill 队列与 goodput，也就是 SLO 内完成的请求比例。常见失败是总 token/s 提高，短聊 P99 TTFT 却变差；另一个是 chunk 太小，让 decode 因调度开销而一字一顿。
 
-调参方向：交互流量占比高时，缩小 chunk、给 decode 留预算、限制同时 inflight 的长 prefill。吞吐型离线流量可以加大 chunk，减少切块开销。这些是调度层；挡不住的过载应在 `sys-admission-control` 拒绝或降级，而不是靠无限排队。两个流量类的默认参数不要共用一份：聊天入口和文档入口应有不同的 chunk 与优先级，否则一次活动把文档流量打进来，聊天默认就被改写。配置要按路由或租户分，而不是全局一个 `max batched tokens`。
+报警同样按流量类拆，给短请求 P95 TTFT 和长请求排队时间各设 SLO。调度负责让已经进入的长短请求共存，注定超时的过载要由 admission 拒绝或降级，见 `sys-admission-control`。持续排队和仅看全局 token/s 都会掩盖交互失败。
 
-## 按流量切片验收
-
-不能只追平均 throughput。至少按输入长度桶、输出长度、租户、优先级分别报：
-
-- TTFT 的 P50 / P95 / P99
-- TPOT（decode 间隔）
-- 排队时延、preemption 次数、partial prefill 队列
-- goodput：在 SLO 内完成的请求比例，而不是 token/s
-
-一个典型失败是：总 token/s 上升，但短聊天 P99 TTFT 崩了，长 prefill 吃满了预算。另一个失败是 chunk 过小、调度过碎，decode TPOT 变差，对话「一个字一个字顿」。调参必须同时看这两条尾巴。报警也要按流量类拆：只有全局 token/s 告警时，聊天已经被打挂也不会响。把短请求 P95 TTFT 和长请求排队时延做成独立 SLO。合成流量要用线上比例：真实世界往往是大量短请求被少量长请求卡住，实验比例设错会调出一套上线即失效的参数。回放用生产 trace 的长度直方图，至少按小时切分高峰。
-
-Prefill/decode 分离（PD disaggregation）是更重的解：长 prefill 到专用池，decode 到另一池，用 KV 传输换隔离。chunked prefill 是同池交错，PD 是分池，不要混成一个开关。slime 的 PD 路径见 `slime-pd-disagg`，那是推理集群内部的拆分，和训练 RL 的 HybridEngine 不是一层。
-
-## 一步里预算怎么切
-
-把每个 scheduler step 想成一块固定 token 配额。Decode 每条只要 1 个新 token，但对延迟敏感；prefill chunk 一次能吃掉配额的一大部分。若一步把配额全给某条长 prefill，正在生成的对话会停一拍，TPOT 出现尖刺。若配额全给 decode、长期不切 prefill，长请求的 TTFT 饿死。调参是在这一步的切分比例、chunk 宽和抢占规则上找点，而不是调一个「全局 batch size」。
-
-Admission（`sys-admission-control`）负责把注定超时的长请求挡在门外，调度负责让已经进来的长短共存。验收时把流量合成「短聊 + 长文档」再看双尾巴。
+更重的做法是 PD disaggregation：prefill 和 decode 各用专用池，以 KV 传输换隔离。它与同池 chunking 可以分别评估；slime 的池内拆分见 `slime-pd-disagg`，和 RL 的 HybridEngine 也处在不同层。
 
 ## 追问
 
-- **Chunk 是不是越小越好？** 不是。过小会让算力强度掉下去，decode 也要为更频繁的调度付税。选在「短请求 P95 TTFT 可接受」且 GPU 利用率不明显掉的拐点。拐点随硬件和模型宽度变，要在目标流量上扫，不要抄别家的默认值。
-- **和 continuous batching 的关系？** Chunking 决定一步里 prefill 占多少预算；continuous batching 决定一步结束谁补位。两者一起才能混跑。只有后者时，新来的长 prefill 仍可能独占接下来好几步。
-- **KV 不够时抢谁？** 通常抢还在 prefill、或优先级低、或已生成很长的请求。要有最大抢占次数，避免一条请求被反复踢出。被抢占的请求应回到队列而不是直接失败，除非已经过了 deadline。
-- **只加卡能代替调调度吗？** 能缓解均值，改不了「一条长 prefill 挡住一排短请求」的队头阻塞。规模上来之前先把交错和 admission 做对。加卡之后队头阻塞还在，只是发生得更晚、更贵。
+**Chunk 越小越好吗？**
+不是。太小会降低计算效率，并增加启动和调度开销。在目标模型、硬件和流量上找短请求 P95 TTFT 可接受、GPU 利用率又未明显下降的点。
+
+**KV 不够时抢谁？**
+通常考虑还在 prefill、低优先级或已生成很长的请求，但要限制反复抢占。回到队列后还应能靠等待时间得到机会。
+
+**加卡能替代调度吗？**
+能缓解平均排队，仍解决不了一条长 prefill 阻挡短请求的方式。先做好交错和 admission，再按实际吞吐扩容量。

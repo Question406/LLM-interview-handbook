@@ -4,7 +4,7 @@ section: coding
 order: 181
 level: A
 title: 拼多多应用开发：如何手写交叉熵，数值上要防什么？
-quick: "对 logits 做 log-softmax 再按目标 token gather 取负。禁止先 softmax 再 $\\log$，会下溢。实现上用 `logsumexp` 或 `log_softmax`，padding 位置 mask 掉再按有效 token 平均。"
+quick: "对 logits 做 log-softmax，再按目标 token gather 取负。先 softmax 再 $\\log$ 会下溢，所以用 `logsumexp` 或 `log_softmax`；padding 位置 mask 掉，再按有效 token 平均。"
 tags:
   - PDD
   - Cross Entropy
@@ -19,16 +19,29 @@ sources:
     type: candidate-first-hand
 ---
 
-## 真题记录
+## 题目描述
 
-- 公司：拼多多
-- 团队 / 岗位：大模型应用开发
-- 届别 / 流程：一面
-- 面试时间：原帖未披露
-- 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：**“手写交叉熵”**
+实现 `cross_entropy(logits,target,ignore_index=-100)`，计算多分类任务的平均交叉熵，不直接调用封装好的交叉熵损失。面经只披露“手写交叉熵”，以下接口为手册重构练习约定。
 
-常见误区是：先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。必须 log 域：减行最大值再 `logsumexp`。同面 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
+`logits` 是有限浮点 PyTorch 张量 `[N,V]`，`target` 是同设备的整数张量 `[N]`。N、V 为正；非忽略标签在 `[0,V)`，本练习的 `ignore_index` 是负整数，默认 -100。至少存在一条非忽略样本。
+
+对每条非忽略样本 i，损失定义为 `-log(softmax(logits[i])[target[i]])`；返回这些损失的算术平均值，结果为可反向传播的标量张量。忽略样本不计入分子或分母。本接口的标签已经对齐，不做语言模型的时间移位。要求较大绝对值的有限 logits 下仍得到数值稳定的结果。
+
+### 示例
+
+```text
+输入：logits=[[0,0],[100,-100]]，target=[0,-100]
+输出：约0.693147（log(2)）
+
+输入：logits=[[1000,1000]]，target=[1]
+输出：约0.693147
+```
+
+## 解题思路与参考答案
+
+交叉熵要在 log 域里算：每行 logits 先减最大值，再算 `logsumexp`，loss 就是 $-z_y+\mathrm{logsumexp}(z)$，pad 位置 mask 掉之后按有效 token 平均。
+
+这是拼多多大模型应用开发一面的题，来自牛客候选人原帖，可信度 A，面试时间原帖没写，原话是**“手写交叉熵”**。最常见的错是先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。所以一定要在 log 域里做，减行最大值再 `logsumexp`。同一面的 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
 
 ## 公式：NLL = $-z_y + \mathrm{logsumexp}(z)$
 
@@ -39,7 +52,7 @@ $$
 \mathrm{logsumexp}(z)=\max_j z_j+\log\sum_j e^{z_j-\max z}.
 $$
 
-减 max 不改变 softmax，但让指数落在 $(0,1]$。label smoothing 时目标不再 one-hot，变成对平滑分布的交叉熵。均匀初始化时 $\ell\approx\log V$：十万词表约 $11.5$，用来判断初始 loss 是否离谱。
+减 max 不改变 softmax，但能让指数落在 $(0,1]$。label smoothing 时目标不再是 one-hot，变成对平滑分布的交叉熵。均匀初始化时 $\ell\approx\log V$，十万词表约 $11.5$，可以拿来判断初始 loss 离不离谱。
 
 ```python
 import torch
@@ -54,18 +67,42 @@ def cross_entropy(logits, target, ignore_index=-100):
     return nll[mask].mean()
 ```
 
-`gather` 前把 ignore 位置 clamp 是为了不越界，真正平均只在 `mask` 上。不要对 pad 位置算完再乘 0 却仍除以 $N$（分母应是有效 token 数）。
+`gather` 前把 ignore 位置 clamp 一下是为了不越界，平均只在 `mask` 上做。pad 位置算完乘 0、却还除以 $N$ 是错的，分母应该是有效 token 数。
 
 ## 序列 LM：shift 与平均方式
 
-Causal LM 用 `logits[:, :-1]` 对 `labels[:, 1:]`。HF 的 `labels=` 已内部 shift；手写时只做一次。平均可以按 token 或按序列：长句会主导 token 平均；GRPO/SFT 论文对「按序列还是按 token」很敏感，见 `baidu-grpo-loss-agg`。面试先写 token 平均 + ignore pad，再口头说另一种。
+Causal LM 用 `logits[:, :-1]` 对 `labels[:, 1:]`。HF 的 `labels=` 已经在内部 shift 了，手写时只做一次。平均可以按 token 也可以按序列，按 token 时长句会占主导；GRPO/SFT 论文对「按序列还是按 token」很敏感，见 `baidu-grpo-loss-agg`。面试先写 token 平均加 ignore pad，再口头说另一种。
 
-fp16 下 `exp` 仍可能溢，max 之后通常安全；极端值可升 fp32。禁止 `F.softmax` 再 `log`。
+fp16 下 `exp` 仍可能溢出，减过 max 之后通常安全，极端值可以升 fp32。`F.softmax` 之后再 `log` 的写法不要用。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+两类 logits 全零时，单样本交叉熵应是 log(2)。把被忽略样本设成强烈偏向错误类别，仍不应影响 loss；全被忽略的输入需要另行约定返回值，当前 mean 会得到 NaN。
+
+```python
+import math
+logits = torch.tensor([[0., 0.], [100., -100.]])
+target = torch.tensor([0, -100])
+torch.testing.assert_close(cross_entropy(logits, target), torch.tensor(math.log(2)))
+torch.testing.assert_close(cross_entropy(logits[:1] + 1000, target[:1]), torch.tensor(math.log(2)))
+print("simple tests passed")
+```
 
 ## 追问
 
-- **起步 loss 多少算正常？** 均匀约 $\log V$。7 万词表 $\approx 11.2$。若一开始是 0.1，多半 label 全是 ignore 或 logits 泄漏了答案。
-- **为什么 clamp target？** ignore 下标不能进 `gather`；clamp 后靠 mask 丢掉这些 NLL。
-- **label smoothing？** $q=(1-\varepsilon)e_y+\varepsilon/V$，loss 是 $-q\cdot\log\pi$，不是只取 $y$ 一列。
-- **和 KL？** 对 one-hot 的交叉熵损失（CE） 等于相对均匀基线的 KL 差一个常数。平滑后是对 $q$ 的 CE。
-- **分母用 batch 还是有效 token？** 必须有效 token。pad 多的 batch 否则 loss 被人为缩小。
+**起步 loss 多少算正常？**
+均匀分布约 $\log V$，7 万词表 $\approx 11.2$。如果一开始就是 0.1，多半是 label 全是 ignore，或者 logits 泄漏了答案。
+
+**为什么要 clamp target？**
+ignore 的下标不能进 `gather`；clamp 之后再靠 mask 把这些 NLL 丢掉。
+
+**label smoothing 怎么算？**
+$q=(1-\varepsilon)e_y+\varepsilon/V$，loss 是 $-q\cdot\log\pi$，要对整个分布求和，只取 $y$ 那一列就错了。
+
+**和 KL 什么关系？**
+对 one-hot 的交叉熵损失（CE）等于相对均匀基线的 KL 差一个常数。平滑之后就是对 $q$ 的 CE。
+
+**分母用 batch 还是有效 token？**
+有效 token。用 batch 的话，pad 多的 batch，loss 会被人为缩小。

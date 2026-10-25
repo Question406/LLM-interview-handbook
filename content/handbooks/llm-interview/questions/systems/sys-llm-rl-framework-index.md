@@ -4,10 +4,7 @@ section: systems
 order: 229
 level: A
 title: 现在做 LLM RL，面试会问哪些训练框架题？
-quick: >-
-  公开面经会点名 veRL / TRL / OpenRLHF / Ray。你若用过 veRL 和 slime，还要对打：HybridEngine vs
-  `--colocate`+offload、Hydra YAML vs Megatron/SGLang 透传、Reward Manager vs Data
-  Buffer。同步等长尾再对比 AReaL；单机省显存才轮到 Unsloth。报「都用过」不够。
+quick: "这张卡可以按框架结构、训练与 rollout 的边界、性能瓶颈三个方向准备。公开面经会问 veRL / TRL / OpenRLHF / Ray；用过 veRL 和 slime 时，还要讲清 HybridEngine 与 `--colocate`+offload、Hydra YAML 与 Megatron/SGLang 透传、Reward Manager 与 Data Buffer 的差别。同步长尾再看 AReaL，单机省显存再看 Unsloth。"
 tags:
   - VeRL
   - slime
@@ -36,7 +33,7 @@ sources:
     type: primary
 ---
 
-网上对得上的框架题如下，点击标题即可跳转。
+这张卡把公开面经里的框架问题和机制对照放在一起，可以先按自己用过的框架找题，再补相邻框架的差别。比如用过 veRL 和 slime，除了介绍组件，还要解释权重同步、rollout 和 update 怎样衔接，以及什么情况下值得换框架。下面标题可点击跳转。
 
 ## 一手面经
 

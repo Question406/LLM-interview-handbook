@@ -19,9 +19,9 @@ sources:
     type: primary
 ---
 
-这块容易背一句「prefill 算力、decode 带宽」却画不出矩阵形状。Roofline 看的是**算术强度**（FLOPs / 字节），不是「有没有 attention」。同一套权重，输入提示（prompt） 阶段和生成阶段落在曲线两边。
+Prefill 能把同一份权重用于整段输入，计算量相对读取量更大，所以通常受算力限制。Decode 每条序列每步只生成一个 token，却仍要读取权重和历史 KV，所以通常受带宽限制。用 Roofline 分析时，比较的是算术强度，也就是 FLOPs / 字节。下面把两种阶段的矩阵形状写出来，就能看到差别。
 
-## 1. 把 GEMM 形状写出来
+## 从矩阵形状看读取成本
 
 线性层权重大约 $[d,d]$，读一次权重的字节量与 $d^2$ 成正比。
 
@@ -30,15 +30,13 @@ sources:
 
 Attention 同理。Prefill 的 $QK^\top$ 是 $[T,d]\times[d,T]$，有 $T^2$ 项可算；逐 token 生成（decode） 只有新 query 对历史 $T$ 行 K/V，计算薄、读 KV 厚。上下文越长，decode 的 KV 流量线性涨，权重流量不变，更偏 memory-bound。
 
-## 2. 一个数量级对照
-
 设 $d=4096$，权重一份约 $2d^2$ FLOPs（乘加），读 BF16 权重约 $2d^2$ 字节。Prefill $T=2048$ 时，线性层强度大约再乘 $T$，远高于 GPU 的「算力/带宽」拐点；decode $B=8$ 时强度只有个位数到几十，典型 GPU 拐点在几百，于是停在 HBM。
 
-这不是绝对定理：极大 `batch`、极短 context、权重量化到极低 bit，decode 也可能被算力或调度卡住。我会说**默认长上下文、中小 batch 的 serving** 才是这条判断。
+这条判断主要适用于长上下文、中小 batch 的 serving。极大 `batch`、极短 context 或极低 bit 的权重量化，都可能让 decode 转而被算力或调度卡住。
 
-同一 GPU 上混跑时，一条 $T=8\mathrm{k}$ 的 输入预填充（prefill，即处理输入并建立缓存） 会占满 SM 几十毫秒到数百毫秒，正在进行的 decode batch 被打断，TPOT 出现尖刺。这就是「算力型作业饿死带宽型作业」：不是 decode 突然变 compute-bound，而是调度把带宽流水拆碎了。
+同一 GPU 上混跑时，一条 $T=8\mathrm{k}$ 的 输入预填充（prefill，即处理输入并建立缓存） 会占满 SM 几十毫秒到数百毫秒，正在进行的 decode batch 被打断，TPOT 出现尖刺。这里的原因是 prefill 占用了计算资源，打断了 decode 原本连续的带宽流水。
 
-## 3. 为什么引出一堆 serving 技术
+## 调度时怎样利用这个差别
 
 - **Continuous batching：** decode 步之间插入已结束序列的空位，提高 $B$，抬 GEMM 效率。
 - **Chunked prefill：** 把超长 prompt 切块，避免一条 prefill 独占、饿死 decode。
@@ -47,6 +45,9 @@ Attention 同理。Prefill 的 $QK^\top$ 是 $[T,d]\times[d,T]$，有 $T^2$ 项�
 
 ## 追问
 
-- **Batch 增大会让 decode 不再 memory-bound 吗？** 算术强度随 $B$ 提高，可能滑向 compute-friendly；但权重每步仍要读一遍，长 KV 流量也在。最终取决于模型、$T$、$B$ 和芯片的算力/带宽比，不是「batch 大了就一定算力瓶颈」。
-- **TTFT 和 TPOT 分别受什么影响？** TTFT（首 token）主要是排队加 prefill；TPOT（后续 token）主要是 decode 调度、有效 batch、权重与 KV 带宽。分离部署后两套指标才比较好独立调。
-- **Chunked prefill 为什么能改善尾延迟？** 大 prefill 不再一次占满 SM，decode 可以按步插入，P99 TPOT 不会被单条长 prompt 打穿。
+**Batch 增大会让 decode 不再 memory-bound 吗？**
+算术强度随 $B$ 提高，可能滑向 compute-friendly；但权重每步仍要读一遍，长 KV 流量也在。最终取决于模型、$T$、$B$ 和芯片的算力/带宽比，不是「batch 大了就一定算力瓶颈」。
+**TTFT 和 TPOT 分别受什么影响？**
+TTFT（首 token）主要是排队加 prefill；TPOT（后续 token）主要是 decode 调度、有效 batch、权重与 KV 带宽。分离部署后两套指标才比较好独立调。
+**Chunked prefill 为什么能改善尾延迟？**
+大 prefill 不再一次占满 SM，decode 可以按步插入，P99 TPOT 不会被单条长 prompt 打穿。

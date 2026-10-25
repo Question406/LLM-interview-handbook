@@ -4,7 +4,7 @@ section: arch
 order: 10
 level: S
 title: MLA 主要解决什么？和 GQA 有什么本质差别？
-quick: "MLA 把 K/V 相关信息压缩到低维潜在表示中，减少 KV Cache；GQA 则让多个查询头共享较少的 KV 头。两者都降低逐 token 生成（decode）时的存储和带宽开销，但压缩的是不同维度。"
+quick: "MLA 解决的是 decode 时 KV Cache 的存储和带宽：它把每个 token 的 K/V 压进低维 latent，再把 RoPE 拆成一小段单独存，推理时靠矩阵吸收直接在 latent 上算。GQA 是让多个查询头共享较少的 KV 头。两者都省 KV，一个压表示维，一个压头数。"
 tags:
   - MLA
   - DeepSeek
@@ -20,37 +20,39 @@ sources:
     type: legacy-reference
 ---
 
-常见误区是：把 MLA 说成「另一种 GQA」，或「把 K/V 随便压成一个小向量」。两者都为 逐 token 生成（decode） 的 KV 带宽服务，压缩轴不同：GQA 减少独立 KV 头的个数；MLA 把每个 token 的 K/V 内容压进低维 latent，再用 RoPE 拆分和矩阵吸收，让推理不必还原完整头向量。
+MLA 和 GQA 都是为逐 token 生成（decode）时的 KV 带宽服务的，差别在压缩的轴不同：GQA 减少独立 KV 头的个数；MLA 把每个 token 的 K/V 内容压进一个低维 latent，再配合 RoPE 拆分和矩阵吸收，让推理时不必还原出完整的头向量。
 
-## 1. GQA：沿 head 数共享
+所以 MLA 不能说成「另一种 GQA」，也不能说成「把 K/V 随便压成一个小向量」。拿 $n_h=32,d_h=128$ 来算，MHA 每个 token 要存约 $8\mathrm{k}$ 维，MLA 的 $512+64$ 是另一个量级。
 
-MHA 对每个 query head 存一对 $k,v$，每 token cache 约为 $2 n_h d_h$。GQA 令 $n_{\mathrm{kv}}\lt n_h$，若干 query 头共用同一 KV 头。MQA 是 $n_{\mathrm{kv}}=1$ 的极端。
+## GQA：沿头数共享
 
-Cache 从 $O(n_h d_h)$ 降到 $O(n_{\mathrm{kv}} d_h)$。实现简单，和标准 RoPE 兼容：旋转仍作用在完整头维上。代价是头之间的独立性变弱；压过头（直接 MQA）质量往往掉一截。GQA 没有在头内部做低秩分解，只是少存几份头。
+MHA 给每个 query head 存一对 $k,v$，每个 token 的 cache 约为 $2 n_h d_h$。GQA 令 $n_{\mathrm{kv}}\lt n_h$，几个 query 头共用同一个 KV 头；MQA 是 $n_{\mathrm{kv}}=1$ 的极端情况。
 
-## 2. MLA：沿表示维压缩，再拆 RoPE
+Cache 因此从 $O(n_h d_h)$ 降到 $O(n_{\mathrm{kv}} d_h)$。实现简单，和标准 RoPE 兼容，旋转照样作用在完整的头维上。代价是头之间的独立性变弱，压过头（直接用 MQA）质量往往掉一截。GQA 没有在头内部做低秩分解，只是少存了几份头。
 
-DeepSeek 的 Multi-head Latent Attention 把隐状态投到低维
+## MLA：沿表示维压缩，再把 RoPE 拆出来
+
+DeepSeek 的 Multi-head Latent Attention 先把隐状态投到低维：
 
 $$
 c_t^{KV}=W^{DKV}h_t\in\mathbb{R}^{d_c},\qquad d_c\ll n_h d_h.
 $$
 
-训练时再上投影得到内容部分 $k^C,v^C$。若对整段 $k$ 做低秩又直接套 RoPE，旋转与低秩基不对齐，位置旋转会妨碍直接进行矩阵吸收。MLA 因此把 RoPE 拆出去：另存一小段解耦的 $k_t^R=\mathrm{RoPE}(W^{KR}h_t)$（维 $d_h^R$ 往往只有几十），query 侧同样有 $q^R$。Cache 里每 token 主要是 $c_t^{KV}$ 加这段短 $k^R$，而不是 $n_h$ 份全长 K/V。
+训练时再上投影得到内容部分 $k^C,v^C$。如果对整段 $k$ 做低秩、又直接套 RoPE，旋转和低秩基对不齐，位置旋转会挡住后面的矩阵吸收。所以 MLA 把 RoPE 拆了出去：另存一小段解耦的 $k_t^R=\mathrm{RoPE}(W^{KR}h_t)$，维度 $d_h^R$ 往往只有几十，query 侧也有对应的 $q^R$。Cache 里每个 token 主要就是 $c_t^{KV}$ 加这一小段 $k^R$，用不着存 $n_h$ 份全长 K/V。
 
-不能「随便压成一个小向量」：attention score 与 value 聚合仍要保留足够的 query-dependent 结构。$d_c$ 太小就是信息瓶颈；论文里的 $d_c$（如 $512$）是质量和流量的折中，不是越小越好。
+压缩也有限度，attention score 和 value 聚合仍要保留足够的 query-dependent 结构。$d_c$ 太小就成了信息瓶颈，论文里的 $d_c$（如 $512$）是质量和流量的折中，越小越好并不成立。
 
-量级对照：MHA 每 token 存 $2 n_h d_h$；GQA-8 大约除以 $n_h/8$；MLA 则是 $d_c+d_h^R$（再乘 K 或 K+V 的实现细节）。$n_h=32,d_h=128$ 时 MHA 约 $8\mathrm{k}$ 维，MLA 的 $512+64$ 是另一量级。面试报数量级即可，不必背某一版超参。
+量级上，MHA 每个 token 存 $2 n_h d_h$；GQA-8 大约是它除以 $n_h/8$；MLA 是 $d_c+d_h^R$（是否再乘 K 或 K+V 看实现细节）。面试报数量级就行，不必背某一版的超参。
 
-## 3. Absorption：推理时不要先 decode 回全长 K/V
+## Absorption：推理时不用先解压回全长 K/V
 
-内容路径上 $q^C=W^{UQ}c^Q$，$k^C=W^{UK}c^{KV}$，点积
+内容路径上 $q^C=W^{UQ}c^Q$，$k^C=W^{UK}c^{KV}$，点积是
 
 $$
 (q^C)^\top k^C=(c^Q)^\top(W^{UQ})^\top W^{UK}c^{KV}.
 $$
 
-把 $(W^{UQ})^\top W^{UK}$ 吸进 query 侧，推理只需拿 $c^{KV}$ 做等价点积。Value 侧把 $W^{UV}$ 吸进输出投影。于是 decode 不必每步显式恢复大 $k,v$，计算和读取可以围绕低维潜在表示进行。这是 MLA 相对「先低秩压缩、再解压再 attention」的关键工程差。
+把 $(W^{UQ})^\top W^{UK}$ 吸进 query 侧，推理时直接拿 $c^{KV}$ 做等价的点积；value 侧则把 $W^{UV}$ 吸进输出投影。这样 decode 每步不用显式恢复大的 $k,v$，计算和读取都围绕低维潜在表示进行。和「先低秩压缩、用的时候解压再 attention」相比，这是 MLA 最关键的工程差别。
 
 | | GQA | MLA |
 | --- | --- | --- |
@@ -61,6 +63,11 @@ $$
 
 ## 追问
 
-- **MLA 与 low-rank KV compression 是一回事吗？** 都利用 K/V 可能落在低维结构上。MLA 把 latent 写进注意力参数化，并用吸收保证推理计算与训练目标一致，而不是训练后再套一层与梯度脱节的量化 / SVD。
-- **GQA 和 MLA 可以同时有吗？** 概念上一个切头数、一个切表示，能组合，但 head、latent、RoPE 维必须重新定义，不是两个 flag。
-- **吸收后训练和推理是否同一函数？** 线性吸收在数学上等价；实现要对齐精度与融合 kernel。面试强调「等价重排，不是另一套近似」。
+**MLA 和 low-rank KV compression 是一回事吗？**
+思路相通，都假设 K/V 落在低维结构上。区别是 MLA 把 latent 写进了注意力的参数化，并用吸收保证推理计算和训练目标一致；训练后再套一层量化或 SVD，就和梯度脱节了。
+
+**GQA 和 MLA 能同时用吗？**
+概念上能组合，一个切头数，一个切表示。但 head、latent、RoPE 的维度都要重新定义，没法当成两个 flag 随手打开。
+
+**吸收之后，训练和推理还是同一个函数吗？**
+是。线性吸收在数学上等价，实现上要对齐精度和融合 kernel。面试时强调这是等价重排，没有引入另一套近似。

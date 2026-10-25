@@ -4,7 +4,7 @@ section: fundamentals
 order: 159
 level: A
 title: Score-function 和 reparameterization 差在哪？LLM 的 token 为什么只能走高方差那条？
-quick: "Score-function 用 $f\\cdot\\nabla\\log\\pi$，不要求可微但方差大；reparam 让梯度穿过 $f$，方差低但要求采样可微。Token 是离散采样，verifier 也不可微，只能走 score-function。"
+quick: "Score-function 用 $f\\cdot\\nabla\\log\\pi$，不要求可微，但方差大；reparam 让梯度穿过 $f$，方差低，但要求采样可微。Token 是离散采样，verifier 也不可微，所以 LLM 只能走 score-function。"
 tags:
   - Policy Gradient
   - Reparameterization
@@ -25,39 +25,46 @@ sources:
     type: secondary
 ---
 
-常见误区是：「策略梯度方差大，换成 VAE 那种 reparam 就好了」。两条是不同的随机计算图，不是同一估计器的两个超参。LLM 的动作是离散 token，验证器、用户和工具等环境对 token 序列不可微，只能走 score-function。
+LLM 只能走 score-function，因为 reparameterization 要的两个前提都不满足：动作是离散 token，采样对 logits 不可微；奖励来自验证器、用户或工具，对 token 序列也不可微。所以「策略梯度方差大，换成 VAE 那种 reparam 就好了」行不通，这两条对应的是不同的随机计算图，没法当成同一个估计器的两个超参来调。
 
 ## 两条梯度
 
-目标 $\mathbb{E}_{a\sim\pi_\theta}[f(a)]$。$f$ 可以是回报、优势、或任意下游标量。
+目标是 $\mathbb{E}_{a\sim\pi_\theta}[f(a)]$，$f$ 可以是回报、优势，或任意下游标量。
 
-Score-function（likelihood ratio / REINFORCE）：
+Score-function（也叫 likelihood ratio / REINFORCE）是
 
 $$
 \nabla_\theta\mathbb{E}_{a\sim\pi_\theta}[f(a)]=\mathbb{E}_{a\sim\pi_\theta}\big[f(a)\,\nabla_\theta\log\pi_\theta(a)\big].
 $$
 
-不要求 $f$ 可微，不要求 $a$ 连续。代价是 $f$ 的噪声完整乘进梯度，必须靠 baseline / GAE / 组相对降方差，见 `fund-pg-unbiased-ops`。
+它不要求 $f$ 可微，也不要求 $a$ 连续。代价是 $f$ 的噪声完整地乘进梯度，只能靠 baseline、GAE、组相对优势去降方差，见 `fund-pg-unbiased-ops`。
 
-Reparameterization：若 $a=g(\theta,\varepsilon)$，$\varepsilon$ 与 $\theta$ 无关（如 $\varepsilon\sim\mathcal{N}(0,1)$，$a=\mu+\sigma\varepsilon$），
+Reparameterization 要求能把采样写成 $a=g(\theta,\varepsilon)$，$\varepsilon$ 与 $\theta$ 无关，比如 $\varepsilon\sim\mathcal{N}(0,1)$、$a=\mu+\sigma\varepsilon$。这时
 
 $$
 \nabla_\theta\mathbb{E}_\varepsilon[f(g(\theta,\varepsilon))]=\mathbb{E}_\varepsilon\big[\nabla_a f\cdot\nabla_\theta g\big].
 $$
 
-梯度穿过 $f$。$f$ 平滑时，这通常比 score-function 方差小一个数量级，VAE 的编码器走这条。要求：$g$ 对 $\theta$ 可微，且你能把采样写成这种噪声注入。
+梯度穿过了 $f$。$f$ 平滑时，这通常比 score-function 的方差小一个数量级，VAE 的编码器走的就是这条。条件是 $g$ 对 $\theta$ 可微，并且你能把采样写成这种噪声注入的形式。
 
-## 为什么 token 走不了低方差那条
+## Token 为什么走不了低方差那条
 
-$\mathrm{Categorical}(\mathrm{softmax}(z_\theta))$ 的 `sample` 是 argmax 一条 Gumbel 或从多项式抽取，对 logits 几乎处处不可微。工具返回、代码是否通过、数学填空对错，更没有 $\partial f/\partial y_t$。所以 PPO / GRPO 全部是 score-function：损失长得像 $-\log\pi\cdot\hat A$，看起来像加权交叉熵损失（CE），数学上是 REINFORCE 而不是监督学习。
+$\mathrm{Categorical}(\mathrm{softmax}(z_\theta))$ 的 `sample` 要么是对 Gumbel 取 argmax，要么从多项式里抽，对 logits 几乎处处不可微。工具返回了什么、代码过没过、数学填空对不对，更没有 $\partial f/\partial y_t$ 可言。比如一道数学题答对给 1、答错给 0，你没法问「把某个 token 的 logit 挪一点，奖励会变多少」。所以 PPO / GRPO 全部是 score-function。损失长得像 $-\log\pi\cdot\hat A$，看起来像加权交叉熵损失（CE），数学上是 REINFORCE，和监督学习是两回事。
 
-Gumbel-softmax / straight-through 用连续松弛近似离散采样，梯度能穿过，但松弛分布不是原来的 $\pi$，有偏。温度越低越接近离散、方差越大；温度高更稳、离真正的 token 采样更远。生成式 LLM 强化学习（RL） 几乎不用它当主路径，因为 $f$ 仍不可微（你松弛了采样，没松弛 verifier）。
+Gumbel-softmax / straight-through 用连续松弛来近似离散采样，梯度能穿过去，但松弛后的分布已经不是原来的 $\pi$，所以有偏。温度越低越接近离散，方差越大；温度高更稳，离真正的 token 采样也更远。生成式 LLM 强化学习（RL）几乎不拿它当主路径，因为松弛的只是采样，verifier 那个 $f$ 还是不可微。
 
-连续动作控制（机器人扭矩）才是 reparam 的主场。不要把 SAC / DDPG 的「低方差策略梯度」直接许诺给 token RL。
+连续动作控制，比如机器人扭矩，才是 reparam 的主场。SAC / DDPG 那种「低方差策略梯度」别直接许诺给 token RL。
 
 ## 追问
 
-- **对 logits 的 CE 不也是可微吗？** 监督微调（SFT） 的 CE 是对已给定 token 的 $\log\pi$，没有对「采样哪个 token」求导。RL 要改的是采样分布下 $f$ 的期望，多了 $\nabla\log\pi\cdot f$ 这一层。
-- **直通估计器（STE）无偏吗？** 一般有偏。前向离散、反向当恒等，是启发式。
-- **那蒸馏 / OPD 为什么方差小？** 监督在 token 分布上，每步都有稠密 $f$，但仍是对已采样前缀的 $\log\pi$，不是把离散采样 reparam 掉。见 `pt-on-policy-distillation`。
-- **score-function 能对连续动作用吗？** 能，只是通常更吵。有 reparam 时没理由不用。
+**对 logits 的 CE 不也是可微的吗？**
+可微，但求导的对象不一样。监督微调（SFT）的 CE 是对已经给定的 token 求 $\log\pi$，没有对「采样哪个 token」求导。RL 要改的是采样分布下 $f$ 的期望，多了 $\nabla\log\pi\cdot f$ 这一层。
+
+**直通估计器（STE）无偏吗？**
+一般有偏。前向离散、反向当恒等，属于启发式。
+
+**那蒸馏 / OPD 为什么方差小？**
+因为监督在 token 分布上，每一步都有稠密的 $f$。它仍然是对已采样前缀的 $\log\pi$，并没有把离散采样 reparam 掉，见 `pt-on-policy-distillation`。
+
+**score-function 能用在连续动作上吗？**
+能，只是通常更吵。有 reparam 可用时，没理由不用。

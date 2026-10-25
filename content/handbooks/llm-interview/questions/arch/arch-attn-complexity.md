@@ -4,7 +4,7 @@ section: arch
 order: 2
 level: A
 title: Self-Attention 的时间和显存复杂度是什么？
-quick: "$QK^\\top$ 与 $\\mathrm{attention}\\times V$ 计算量为 $O(T^2 d)$，显式保存注意力矩阵需要 $O(T^2)$ 显存。Q/K/V/O 投影还需要 $O(Td^2)$。因此短序列可能主要花在投影，长序列则由 $T^2$ 项主导。"
+quick: "时间上分两块：Q/K/V/O 投影是 $O(Td^2)$，$QK^\\top$ 和 $\\mathrm{attention}\\times V$ 是 $O(T^2 d)$；显式保存注意力矩阵还要 $O(T^2)$ 显存。所以短序列主要花在投影上，长序列由 $T^2$ 项主导，长上下文通常先爆显存。"
 tags:
   - Transformer
   - Complexity
@@ -19,28 +19,35 @@ sources:
     type: primary
 ---
 
-常见误区是：只背「注意力是 $O(n^2)$」就停。对 $X\in\mathbb{R}^{T\times d}$，要把投影和 $T^2$ 项拆开，并分清 FLOPs 与 HBM 显存。短序列可能是大矩阵乘法主导，长序列才是二次项主导。
+对 $X\in\mathbb{R}^{T\times d}$，Self-Attention 的 FLOPs 约为 $O(Td^2+T^2 d)$：前一项是线性投影，后一项是打分和聚合；显存的痛点是物化 $T\times T$ 注意力矩阵带来的 $O(T^2)$。只背一句「注意力是 $O(n^2)$」不够，要把投影和二次项拆开，再把 FLOPs 和 HBM 显存分开讲。
 
-## 时间：两段不要混
+比如 $T$ 远小于 $d$ 的短序列，大矩阵乘法占大头；$T$ 到 8k、32k 以后，$T^2 d$ 才压过投影。
 
-线性投影 $Q=XW_Q$、$K=XW_K$、$V=XW_V$ 以及输出投影，约 $O(Td^2)$（常数随头数、是否 GQA 变）。分数与聚合
+## 时间：两段别混在一起
+
+线性投影 $Q=XW_Q$、$K=XW_K$、$V=XW_V$ 加上输出投影，约 $O(Td^2)$，常数随头数、是否 GQA 而变。分数与聚合
 
 $$
 S=QK^\top\in\mathbb{R}^{T\times T},\qquad \mathrm{Attn}=\mathrm{softmax}\!\left(\frac{S}{\sqrt{d_h}}\right)V
 $$
 
-各是 $O(T^2 d)$（按头维乘完再拼）。因此总 FLOPs 约 $O(Td^2+T^2 d)$。当 $T\ll d$ 时第一项更大；当 $T$ 到 8k、32k，$T^2 d$ 压过投影。多头不改变渐近，只把 $d$ 拆成 $n_h\cdot d_h$。
+各是 $O(T^2 d)$（按头维乘完再拼）。两项加起来就是 $O(Td^2+T^2 d)$。多头不改变渐近复杂度，只是把 $d$ 拆成 $n_h\cdot d_h$。
 
-FFN / SwiGLU 是另一笔 $O(Td\cdot d_{\mathrm{ff}})$，和注意力二次项独立。MoE 只稀疏化 FFN，不改变 dense attention 的 $T^2$。RoPE 是 $O(Td)$ 的旋转，可忽略。
+FFN / SwiGLU 另有一笔 $O(Td\cdot d_{\mathrm{ff}})$，和注意力的二次项无关。MoE 只稀疏化 FFN，dense attention 的 $T^2$ 照旧。RoPE 是 $O(Td)$ 的旋转，可以忽略。
 
 ## 显存：物化 $T\times T$ 才是痛点
 
-朴素实现把 $S$ 写进 HBM，激活显存 $O(T^2)$（再乘层数、head）。这就是长上下文先爆显存的原因。FlashAttention 不改变 exact attention 的渐近 FLOPs，而是分块在 SRAM 做 softmax，避免物化大 $T\times T$。训练还要存反传中间；checkpoint / 重算换的是时间换空间，不是改复杂度阶。
+朴素实现把 $S$ 写进 HBM，激活显存是 $O(T^2)$，还要再乘层数和 head 数，长上下文先爆显存就是这个原因。FlashAttention 的 exact attention 渐近 FLOPs 没变，它的做法是分块在 SRAM 里做 softmax，从而不用物化大的 $T\times T$。训练还要存反传用的中间结果；checkpoint / 重算是拿时间换空间，复杂度的阶不变。
 
-Decode 阶段若已有 KV cache，每步对新 $q$ 做 $O(T_{\mathrm{cache}}d)$，不再每步重算全量 $T^2$，但 cache 本身占 $O(T d_{\mathrm{kv}})$ 带宽。面试把「训练一步的复杂度」和「自回归一步的复杂度」分开说。
+面试时我会把「训练一步的复杂度」和「自回归一步的复杂度」分开说。Decode 阶段有了 KV cache，每步只对新的 $q$ 做 $O(T_{\mathrm{cache}}d)$，不用每步重算全量 $T^2$，但 cache 本身占 $O(T d_{\mathrm{kv}})$，读它要吃带宽。
 
 ## 追问
 
-- **GQA / MLA 改的是哪一项？** 主要改 $d_{\mathrm{kv}}$ 从而改 cache 字节，不是把 $T^2$ 变成线性。
-- **线性注意力为什么是 $O(Td^2)$？** 核技巧把 $QK^\top V$ 换成 $Q(K^\top V)$，先缩 $T$ 维；表达力和外推要另验。
-- **为什么 FlashAttention 还是二次？** 它优化访存，渐近 FLOPs 仍是 $O(T^2 d)$。
+**GQA / MLA 改的是哪一项？**
+主要改 $d_{\mathrm{kv}}$，从而减少 cache 字节数，$T^2$ 并没有变成线性。
+
+**线性注意力为什么是 $O(Td^2)$？**
+核技巧把 $QK^\top V$ 换成 $Q(K^\top V)$，先把 $T$ 维缩掉。表达力和外推要另外验证。
+
+**FlashAttention 为什么还是二次？**
+它优化的是访存，渐近 FLOPs 仍是 $O(T^2 d)$。

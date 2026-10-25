@@ -4,7 +4,7 @@ section: coding
 order: 15
 level: A
 title: 手写一步 decode：用 KV cache 算当前 token 的 attention
-quick: "Prefill 把整段 $K,V$ 写入 cache。Decode 只算当前 token 的 $q_t,k_t,v_t$，把 $k_t,v_t$ concat 到 cache，再 $q_t$ 对全部过去 key 做点积。复杂度从 $O(t^2 d)$ 的完整自注意力变成 $O(t d)$ 的一步。"
+quick: "一步 decode 只为当前 token 算 $q_t,k_t,v_t$，把 $k_t,v_t$ concat 到 cache 末尾，再拿 $q_t$ 对全部过去的 key 做点积。整段 $K,V$ 在 prefill 时已经写进 cache，所以这一步的复杂度从完整自注意力的 $O(t^2 d)$ 变成 $O(t d)$。"
 tags:
   - KV Cache
   - Decode
@@ -19,25 +19,41 @@ sources:
     type: primary
 ---
 
-`arch-kv-cache` 讲显存公式；本题要能写出一步的张量变化。面试官常画：「已经有 $t-1$ 个 token 的 cache，来了第 $t$ 个」。
+## 题目描述
 
-## 形状
+实现逐 token 生成时的一步 attention。调用者提供当前 token 的 Q/K/V，以及此前已经缓存的 K/V；函数需要把当前 K/V 计入历史，再计算当前 query 的输出。
 
-设 $B$ batch、$H$ head、$S$ 已缓存长度、$D$ head dim：
+### 接口与形状
 
-- cache_k / cache_v：`[B, H, S, D]`
-- 当前 hidden：`[B, 1, d_model]` → $q,k,v$ 各 `[B, H, 1, D]`
+`decode_step(q,k,v,cache_k,cache_v)` 中 q、k、v 为 `[B,H,1,D]`，两个旧缓存均为 `[B,H,S,D]`，S 可以为 0。返回 `(out,new_cache_k,new_cache_v)`，其中 out 为 `[B,H,1,D]`，两个新缓存长度均为 S+1，历史条目必须按原顺序保留。
 
-一步：
+输出按 `QK^T/sqrt(D)` 在全部历史与当前 key 上归一化，对 V 加权。这里只传入已到达的 token，不另加未来 token mask；本练习不涉及 RoPE、padding 或多请求分页管理。
+
+### 示例
+
+```text
+B=H=D=1，Q与K均为0，起始cache长度0
+第1步V=2 -> out=2，cache长度1
+第2步V=4 -> out=3，cache长度2，缓存V顺序为[2,4]
+```
+
+以上是手册重构的独立函数接口，输入的 batch、头数和每头维度保证匹配。
+
+## 解题思路与参考答案
+
+一步 decode 只算当前这个 token：投影出 $q_t,k_t,v_t$，把 $k_t,v_t$ 接到 cache 末尾，再用 $q_t$ 去打 cache 里全部的 key。过去 token 的 $Q$ 不用再算，它们的 $K,V$ 早就在 cache 里了。显存公式在 `arch-kv-cache` 里讲过，这题要的是能把一步里的张量变化写出来。
+
+面试官常画的场景是：已经有 $t-1$ 个 token 的 cache，现在来了第 $t$ 个。设 $B$ 是 batch、$H$ 是 head 数、$S$ 是已缓存长度、$D$ 是 head dim，那么 cache_k 和 cache_v 都是 `[B, H, S, D]`；当前 hidden 是 `[B, 1, d_model]`，投影之后 $q,k,v$ 各是 `[B, H, 1, D]`。这一步做的事情是
 
 $$
 K\leftarrow [K;k_t],\quad V\leftarrow [V;v_t],\quad
 \mathrm{Attn}(q_t,K,V)=\mathrm{softmax}\Big(\frac{q_t K^\top}{\sqrt{D}}\Big)V.
 $$
 
-$q_t K^\top$ 的形状是 `[B, H, 1, S+1]`。不要再对过去的 token 计算 $Q$。Causal mask 在 逐 token 生成（decode） 一步里通常不需要：当前 query 只看 $\le t$ 的 key，而 cache 里本来就是过去。
+$q_t K^\top$ 的形状是 `[B, H, 1, S+1]`。Causal mask 在这一步通常不用加，当前 query 只看 $\le t$ 的 key，而 cache 里存的本来就全是过去。
 
-Prefill：一次算完整 $Q,K,V$，写满 cache，复杂度 $O(S^2)$。之后每步 $O(S)$。
+整个生成过程分两段。Prefill 一次算出完整的 $Q,K,V$，把 cache 写满，复杂度 $O(S^2)$；之后每步 decode 都是 $O(S)$。代码就是一次 concat 加一次 attention：
+
 ```python
 import torch
 import torch.nn.functional as F
@@ -51,8 +67,30 @@ def decode_step(q, k, v, cache_k, cache_v):
     return out, cache_k, cache_v
 ```
 
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+从长度 0 的 cache 开始追加，第一步只看自己，应输出 2；第二步 Q/K 仍为零，会平均两个 value 得到 3，同时检查长度增长。
+
+```python
+empty = torch.empty(1, 1, 0, 1)
+q = k = torch.zeros(1, 1, 1, 1)
+out, ck, cv = decode_step(q, k, torch.tensor([[[[2.]]]]), empty, empty)
+torch.testing.assert_close(out, torch.tensor([[[[2.]]]]))
+out, ck, cv = decode_step(q, k, torch.tensor([[[[4.]]]]), ck, cv)
+torch.testing.assert_close(out, torch.tensor([[[[3.]]]]))
+assert ck.shape == cv.shape == (1, 1, 2, 1)
+print("simple tests passed")
+```
+
 ## 追问
 
-- **显存？** 每层每 token 存 $K,V$：$2\cdot L\cdot H\cdot D\cdot \mathrm{bytes}$（再乘 batch）。GQA 把 $H$ 换成 $H_{\mathrm{kv}}$。
-- **PagedAttention？** 物理上 cache 不连续 concat，逻辑仍是「当前 $q$ 打全部过去 $k$」。手写用 `cat` 即可。
-- **多 query 的 输入预填充（prefill，即处理输入并建立缓存） chunk？** 那是 chunked prefill，要对新 chunk 内部做因果，并对 cache 做 cross-attn；不要和纯 decode 一步混讲。
+**KV cache 占多少显存？**
+每个 token 在每层都要存一份 $K$ 和 $V$，$L$ 层合起来是 $2\cdot L\cdot H\cdot D\cdot \mathrm{bytes}$，再乘 batch。用 GQA 的话把 $H$ 换成 $H_{\mathrm{kv}}$。
+
+**PagedAttention 下还是这样 concat 吗？**
+逻辑上一样，还是当前 $q$ 打全部过去的 $k$，只是物理上 cache 不再连续拼接。手写的时候用 `cat` 就够了。
+
+**prefill 一次进来一整个 chunk 的多个 query，也这么写吗？**
+那是 chunked prefill，新 chunk 内部要做因果 mask，同时对 cache 做 cross-attn，和纯 decode 一步分开讲，别混在一起。

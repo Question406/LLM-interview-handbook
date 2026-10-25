@@ -4,7 +4,7 @@ section: fundamentals
 order: 140
 level: A
 title: Forward / Reverse KL 后训练八股要准备哪些题？
-quick: "按顺序准备：KL 定义和采样方向，SFT 正向与 RLHF 反向，Trust-Region 与 Drift KL，OPD / OPSD 蒸馏，最后是 $k_1/k_2/k_3$ 和 $\\beta$ 的工程问题。"
+quick: "按一条线准备：先弄清 KL 定义和采样方向，再看 SFT 正向与 RLHF 反向、Trust-Region 与 Drift KL、OPD / OPSD 蒸馏，最后是 $k_1/k_2/k_3$ 和 $\\beta$ 的工程问题。每道题都先看谁在采样，方向就定了。"
 tags:
   - KL
   - Post-Training
@@ -25,7 +25,7 @@ sources:
     type: primary
 ---
 
-网上对得上的高频问法已经拆成独立卡。点下面每条就能跳到对应题。
+这组题按一条线准备最省力：先把 KL 的定义和采样方向弄清，再看 SFT 正向、RLHF 反向，然后是 Trust-Region 和 Drift 两种 KL、OPD / OPSD 蒸馏，最后是 $k_1/k_2/k_3$ 和 $\beta$ 这些工程问题。网上对得上的高频问法都已经拆成了独立卡，点下面每条就能跳到对应题。
 
 ## 先把定义写会
 
@@ -67,4 +67,4 @@ sources:
 - 蚂蚁：GRPO 的 KL 和 PPO 有何不同？K1/K2/K3 是什么？
 - GRPO 的 KL 和 PPO 的 KL 是一模一样的吗？
 
-串起来理解时，先看采样分布确定方向；Trust-Region 比较 $\pi_{\mathrm{old}}$，Drift 比较 $\pi_{\mathrm{ref}}$。外部 OPD 的学生采样常对应反向 KL；OPSD 还需要检查下一 token 的公式究竟是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。
+串起来的时候，每道题都先看是谁在采样，方向就定了。Trust-Region 比的是 $\pi_{\mathrm{old}}$，Drift 比的是 $\pi_{\mathrm{ref}}$。外部 OPD 是学生自己采样，常对应反向 KL；OPSD 还得再看一眼下一 token 的公式到底写的是 $D(p_T\|p_S)$ 还是 $D(p_S\|p_T)$。

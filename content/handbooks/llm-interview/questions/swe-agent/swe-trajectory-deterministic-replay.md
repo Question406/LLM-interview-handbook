@@ -4,7 +4,7 @@ section: swe-agent
 order: 194
 level: A
 title: 如何设计 Trajectory 的确定性 Replay（种子、工具 mock、环境快照）？
-quick: 记录模型采样种子、工具响应夹具与仓库快照哈希；replay 时禁用真网，断言逐步 I/O。与在线 trace 调试互补。
+quick: "确定性 replay 要固定三样东西：模型采样的 seed、工具响应的录制夹具、仓库快照的 hash。replay 时禁用真网，逐步断言 I/O 对得上。它负责让环境能还原，和在线 trace 调试互相补位。"
 tags:
   - Replay
   - Determinism
@@ -22,23 +22,30 @@ sources:
     type: primary
 ---
 
-`swe-trace-replay` 回答「失败时要记哪些字段才能归因」；本题回答「环境怎样才能让逐步 I/O 对得上」。只把 chat 日志重放一遍，工具一打真网、时钟一跳、沙箱里多一个文件，轨迹立刻分叉。常见误区是：把 trace 当成 replay：即使日志字段齐全，环境仍可能无法复现。确定性 replay 需要种子、工具夹具与仓库快照，并默认断网。SWE-bench 能比较 patch，是因为容器与测试命令被冻住；Playwright 一类 trace viewer 能逐步对齐，是因为副作用被录成夹具。Harness 变更的回归，靠的是这条环境合同，而不是再看一遍模型文案。
+要让 trajectory 能确定性地重放，我会固定三样东西：模型采样的 seed、工具响应的录制夹具、仓库和工作区快照的 hash，replay 时默认断网，然后对每一步的 I/O 做断言。`swe-trace-replay` 回答的是失败时要记哪些字段才能归因；这题回答的是环境要怎样才能让逐步 I/O 对得上。
 
-## 冻什么：seed、mock、snapshot
+光把 chat 日志重放一遍是不够的。工具一打真网，时钟一跳，沙箱里多一个文件，轨迹马上分叉。比如某个工具的返回里带了当前时间，录制时是下午，重放时是晚上，模型看到的内容变了，下一步就走上了另一条路。所以日志字段再齐，环境也未必能复现。SWE-bench 能比较 patch，是因为容器和测试命令都冻住了；Playwright 这类 trace viewer 能逐步对齐，是因为副作用被录成了夹具。harness 改动之后能做回归，靠的就是这份环境合同，再看一遍模型文案没用。
 
-一次 attempt 明确固定下来：模型 sampling seed（若允许随机）、工具 字段和类型规范（schema） hash、仓库 SHA 与工作区快照 hash、镜像 digest、依赖锁、时钟源、环境变量引用。工具响应走录制夹具：同一请求字节对应同一响应字节；禁止 replay 时访问真网，这与 `swe-sandbox-threat-model` 的默认断网一致，既为确定性，也为安全。文件系统从快照恢复，而不是「大概在这个 commit」。非确定性源（`uuid`、`Date.now()`、DNS）全部注入或冻结。缺任一夹具，只能做条件 replay（重采样模型），不能声称逐步一致。
+先说冻什么。一次 attempt 要明确固定：模型 sampling seed（如果允许随机）、工具字段和类型规范（schema）的 hash、仓库 SHA 和工作区快照 hash、镜像 digest、依赖锁、时钟源、环境变量引用。工具响应走录制夹具，同样的请求字节对应同样的响应字节。replay 时禁止访问真网，这和 `swe-sandbox-threat-model` 的默认断网是一回事，既为了确定性，也为了安全。文件系统从快照恢复，别靠「大概在这个 commit」。`uuid`、`Date.now()`、DNS 这类非确定性来源全部注入或冻结。缺任何一个夹具，就只能做条件 replay（重采样模型），不能说逐步一致。
 
-## 逐步断言与首个分歧
+然后是逐步断言。replay 对每一步检查工具请求、响应、工作区 hash 和测试命令的输出。写成式子就是 $h_t^{\mathrm{replay}}=h_t^{\mathrm{record}}$，第一个让等式不成立的 $t$ 就是分歧点 $t^*$。$t^*\lt T$ 时停下来归因，之后的失败不全算根因。确定性 replay 在 $t^*$ 就失败了，问题在 harness、环境或夹具，不该先怪模型；确定性 replay 能走完、换 seed 的条件 replay 才发散，那才是模型方差。所以现场我会先问「同一套夹具能不能走到同一个 $t^*$」，再决定改模型还是改 harness。
 
-Replay 对每一步断言：工具请求、响应、工作区 hash、测试命令输出。逐步合同可写成 $h_t^{\mathrm{replay}}=h_t^{\mathrm{record}}$；第一个破坏等式的 $t$ 即分歧点 $t^*$，要求 $t^*\lt T$ 时停止并归因，其后不要全部算根因。若确定性 replay 在 $t^*$ 已失败，问题在 harness / 环境 / 夹具，不该先怪模型。若确定性 replay 能走完而条件 replay（改 seed）发散，才是模型方差。用同一夹具回归 harness：改解析器或权限策略后，旧轨迹应仍逐步对齐，或显式标记合同变更。评测上能刷的是：replay 时仍出网；只比对最终 patch 不对逐步 I/O；快照含 secret 进通用存储；把时间敏感测试的漂移算模型退步。
+同一套夹具还能拿来做 harness 的回归测试：改了解析器或权限策略之后，旧轨迹应该仍然逐步对齐，否则就显式标记合同变更。我会把 replay 跑进 harness 的 CI，改工具解析或权限后，旧夹具必须全绿或者显式 bump 版本，不允许悄悄漂移。只是「看起来像」的 chat 重放进不了 CI。逐步对齐率 $\alpha \lt 1$ 时，先修时钟和网络夹具，再谈策略对比。
 
-trace 规定要记录的日志，replay 规定如何恢复环境。两者配合，才能可靠地复现和排查失败。落地最小集：seed、mock 版本、snapshot hash、逐步 I/O 断言、断网。现场先问「同夹具能否走到同一 $t^*$」，再决定改模型还是改 harness。SWE-bench 的容器消化了部分环境方差；你的内部 Agent 若允许安装脚本现场拉包，replay 就可能因依赖变化而产生差异。预构建镜像不是评测优化，是确定性前提。
+评测上容易刷的地方是：replay 时还在出网；只比最终 patch，不比逐步 I/O；快照里带着 secret 进了通用存储；时间敏感的测试漂了，被算成模型退步。还有一点：SWE-bench 的容器吸收了一部分环境方差，内部 Agent 如果允许安装脚本现场拉包，replay 就可能因为依赖变化出现差异。预构建镜像是确定性的前提，算不上评测优化。
 
-夹具要版本化并与 trace 的 request ID 对齐，否则 mock 对不上那一次调用。销毁策略与沙箱 TTL 一起写：replay 包不含凭证明文。能确定性重放的轨迹，才能当 harness 的回归测试；只能「看起来像」的 chat 重放，不够进 CI。若逐步对齐率 $\alpha \lt 1$，先修时钟与网络夹具，再谈策略对比。把 replay 跑进 harness 的 CI：改工具解析或权限后，旧夹具必须全绿或显式 bump 版本，禁止 silently drift。
+最后，夹具要版本化，并且和 trace 的 request ID 对齐，不然 mock 对不上是哪一次调用。销毁策略和沙箱 TTL 一起写，replay 包里不放凭证明文。trace 规定要记哪些日志，replay 规定怎么恢复环境，两者配合才能稳定地复现和排查。落地最小集是 seed、mock 版本、snapshot hash、逐步 I/O 断言、断网。
 
 ## 追问
 
-- **和 `swe-trace-replay` 怎么分？** 那题是记哪些字段；本题是让环境（seed / mock / snapshot）逐步可对齐。
-- **和 `swe-sandbox-threat-model`？** 断网与隔离既是威胁模型，也是 replay 能成立的条件；真网一开，两条都破。
-- **为什么要比对逐步 I/O 而不是最终 patch？** 最终 patch 相同可能中途走了不同工具；harness bug 会出现在中间步。
-- **模型必须 greedy 吗？** 不必须，但随机策略要把 seed 写入夹具；否则只能做分布对比，不能逐步对齐。
+**和 `swe-trace-replay` 怎么分？**
+那题讲记哪些字段；这题讲怎么让环境（seed、mock、snapshot）逐步对齐。
+
+**和 `swe-sandbox-threat-model` 有什么关系？**
+断网和隔离既是威胁模型的要求，也是 replay 成立的条件。真网一开，两条都破。
+
+**为什么要比逐步 I/O，比最终 patch 不行吗？**
+最终 patch 一样，中间可能走了不同的工具；harness 的 bug 往往出在中间步骤。
+
+**模型必须用 greedy 吗？**
+不必须。随机策略要把 seed 写进夹具；没写的话只能做分布对比，没法逐步对齐。

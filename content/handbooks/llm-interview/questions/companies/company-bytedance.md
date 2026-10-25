@@ -4,7 +4,7 @@ section: companies
 order: 2
 level: A
 title: 字节 Seed：Post-Training / Agent 岗重点是什么？
-quick: "算法岗重点是 Reasoning / Agent RL，会追问 MoE 路由、rollout 长尾和过程奖励；Agent 岗重点是 Harness、Memory 和 Context Engineering，会追问压缩校验、记忆污染和 patch 回滚。"
+quick: "字节 Seed 算法岗重点在 Reasoning / Agent RL，会追问 MoE 路由、rollout 长尾和过程奖励。Agent 岗重点在 Harness、Memory 和 Context Engineering，会追问压缩校验、记忆污染和 patch 回滚。"
 tags:
   - ByteDance
   - Seed
@@ -31,18 +31,20 @@ sources:
     type: candidate-first-hand
 ---
 
-别把 Agent 理解成「会 LangGraph」。公开面经已经问到 Harness、Spec、压缩有没有破坏任务、错误记忆怎么纠错。算法岗会把 GRPO 问到 MoE 路由和 采样轨迹（rollout） 工程。
+字节 Seed 的 Agent 题早就过了「会 LangGraph」这一层，公开面经已经问到 Harness、Spec、压缩有没有破坏任务、错误记忆怎么纠错。算法岗则会把 GRPO 一路问到 MoE 路由和采样轨迹（rollout）工程。
+
+比如长期记忆里写进了一条过期的摘要，后面几轮 Agent 都基于它做决定，面试官会问你怎么发现、怎么纠正。这类题要能讲到具体的检查和回滚，光说概念不够。
 
 ## 准备主线
 
-1. **失败归因**：model / tool / context / memory / harness / 奖励分数（reward） / data / eval，给对照实验。
-2. **Harness vs 调 API**：权限、调度、校验、回放。
-3. **记忆卫生**：过期摘要、错误结论入库、重复工具调用。
-4. **强化学习（RL） 系统**：组内零优势、rollout 长尾、过程分如何分配到 token。
+1. 失败归因要按 model / tool / context / memory / harness / 奖励分数（reward） / data / eval 分层，并给出对照实验。
+2. Harness 和调 API 的区别在权限、调度、校验和回放。
+3. 记忆卫生关注过期摘要、错误结论入库和重复工具调用。
+4. 强化学习（RL）系统要讲组内零优势、rollout 长尾，以及过程分怎么分配到 token 上。
 
 ## 本手册真题卡
 
-点击下面每条即可跳到对应题。
+下面每条点进去就能跳到对应题。
 
 - 字节大模型算法：SFT 和 GRPO 在优化目标上有何区别？
 - 字节大模型算法：GRPO 一组全对或全错时为什么这一步不起作用？

@@ -4,7 +4,7 @@ section: swe-agent
 order: 1
 level: S
 title: 怎样定义一个可复现的 issue-to-patch run contract？
-quick: 固定 repo base commit、依赖/镜像 digest、issue、模型与 sampling、工具版本、时间/费用预算、评测命令；产出 patch、完整 trace 和机器可读 verdict。缺任一项，结果都难以复现或比较。
+quick: "我会先把一次 attempt 的输入输出写成一份合同：输入固定 repo base commit、依赖和镜像 digest、issue、模型与 sampling、工具版本、时间和费用预算、评测命令；输出交 patch、完整 trace 和机器可读的 verdict。缺任何一项，结果都难复现，也没法和别人比。"
 tags:
   - SWE Agent
   - Reproducibility
@@ -19,25 +19,31 @@ sources:
     type: primary
 ---
 
-没有 run contract，resolve rate 不可比。两个人「都跑了同一 issue」，可能用了不同 base commit、不同依赖、不同超时、不同是否允许联网。面试官要听的是输入输出约定：固定什么、产出什么、缺少哪些信息时无法可靠比较成绩。先定义这份约定，再选择模型：数字对不上时，先查环境漂移，再查模型。
+我会先把输入输出写成一份 run contract，再去比模型。输入要固定 repo base commit、依赖和镜像 digest、issue、模型和 sampling、工具版本、预算和评测命令；输出要有 patch、完整 trace 和由冻结 evaluator 给出的 verdict。没有这份合同，resolve rate 之间没法比。
 
-## 输入必须明确固定下来
+举个例子，两个人都说「跑了同一个 issue」，一个用的 base commit 比另一个新，依赖也没锁，超时一个设得紧一个不设，一个允许联网一个不允许，最后分数差了一截，谁也说不清是模型的差别还是环境的差别。所以分数对不上的时候，我会先查环境有没有漂，再去查模型。
 
-一份 attempt 的输入至少包括：issue 文本与附件 hash、repo base SHA、评测 test commit、容器 / 依赖 lock digest、网络与权限策略、模型 snapshot、系统提示的 hash、工具字段和类型规范（schema）的版本、sampling 参数与 seed、时间 / 调用次数 / token / 费用预算。持续 benchmark 还要声明 freshness cutoff 与任务版本号。仓库更新、依赖漂移或模型已见过该 issue，都会让数字失去对照。缺 seed 或镜像 digest，就不要声称可复现。把这些字段写成一份 YAML，和 artifact 一起存；口头「我们用的官方镜像」不够。评测命令本身也要版本化，避免 evaluator 静默升级。
+输入这边，一份 attempt 至少要固定：issue 文本和附件的 hash、repo base SHA、评测用的 test commit、容器和依赖 lock 的 digest、网络与权限策略、模型 snapshot、系统提示的 hash、工具字段和类型规范（schema）的版本、sampling 参数和 seed，以及时间、调用次数、token、费用的预算。持续更新的 benchmark 还要写明 freshness cutoff 和任务版本号。仓库更新、依赖漂移、模型已经见过这个 issue，都会让数字失去对照。缺 seed 或镜像 digest，就别说可复现。这些字段我会写成一份 YAML，和 artifact 存在一起，光说一句「我们用的官方镜像」不算数。评测命令本身也要版本化，免得 evaluator 哪天静默升级。
 
-## 输出不能只有 patch
+输出这边，目标是让第二个人在同样的环境里能 replay，并且判断得出失败是模型、工具、依赖还是评测器造成的。最低要交：统一 diff、逐步 trace（每次 tool 的请求和响应）、测试日志、机器可读的 verdict（`resolved` / `failed` / `timeout` / `policy_denied` / `env_error`）、退出原因和资源消耗。verdict 必须由冻结的 evaluator 产生，模型自己说「已修复」不算。artifact 和 trace 版本化存放，和任务 ID、attempt ID 绑在一起。没有 trace 的成功没法审计，你证明不了它没改测试、没检索 gold PR。预算耗尽也要单独计数，别并进「模型不会修」。
 
-输出应能让第二个人在相同环境 replay，并判断失败来自模型、工具、依赖还是评测器。最低集合：统一 diff、逐步 trace（每次 tool 的请求 / 响应）、测试日志、机器可读 verdict（`resolved` / `failed` / `timeout` / `policy_denied` / `env_error`）、退出原因、资源消耗。verdict 必须由冻结的 evaluator 产生，而不是模型自称「已修复」。artifact 与 trace 要版本化存放，并和任务 ID、attempt ID 绑定。没有 trace 的成功不可审计：无法证明没改测试、没检索 gold PR。预算耗尽要单独计，不要并进「模型不会修」。
+评测上能刷分的缺口也就出在这些地方：不冻依赖，环境碰巧能编过；评测时允许上网，把 gold PR 检索回来；预算不封顶，靠无限 retry 堆成功率；只交最终 patch 不交 trace；环境崩了算成模型失败，或者反过来全推给环境。所以报告里我会同时给成功定义、预算耗尽率、不可复现率和多次重跑的方差。最小可发表的一组东西是任务版本、镜像 digest、模型 snapshot、patch、evaluator verdict 和完整 trace。
 
-## 评测上能刷的缺口
-
-常见缺口：不冻依赖导致「环境碰巧能编过」；允许评测时上网把 gold PR 检索回来；预算不封顶，用无限 retry 堆成功率；只交最终 patch、不交 trace；把环境崩溃算模型失败或反过来全甩给环境。报告应同时给出成功定义、预算耗尽率、不可复现率和多次重跑方差。合同的价值是：别人按同一 YAML 能重跑出同一 verdict，误差来自模型随机性而不是环境漂移。最小可发表物是任务版本 + 镜像 digest + 模型 snapshot + patch + evaluator verdict + 完整 trace。把这份清单当成实验的 schema：缺字段的运行结果不得进入对比表。现场被问「为什么你们分数和官方不一致」时，先核对运行约定中的字段，再谈模型。
-
-把 run contract 存成与 patch 同目录的机器可读文件，CI 拒绝缺 digest / 缺 verdict / 缺 trace 的提交。对比实验只能在合同字段完全一致时进行。口头对齐环境和可复现不是一回事。
+落地的时候，把 run contract 存成和 patch 同目录的机器可读文件，当成实验的 schema 用：CI 拒绝缺 digest、缺 verdict、缺 trace 的提交，缺字段的运行结果进不了对比表，只有合同字段完全一致的两次运行才拿来对比。这样别人按同一份 YAML 能重跑出同一个 verdict，剩下的误差只来自模型的随机性。口头上对齐了环境，和真的可复现是两回事。
 
 ## 追问
 
-- **seed 能保证 LLM 可复现吗？** 不能完全。必须冻模型版本与 decoding，并多次重跑报方差；seed 只是必要项。
-- **live 仓库能进同一数字吗？** 不能。frozen 与 live 分列，见 `swe-contamination-resistance`。
-- **timeout 算失败还是无效？** 算预算内失败，单独列；不要和 oracle fail 混成一个 error rate。
-- **prompt 改了要不要换任务版本？** 要。prompt / tool schema 是输入合同的一部分，静默修改会使历史分数不可比。
+**为什么你们的分数和官方不一致？**
+先拿运行约定里的字段一条条核对，base commit、镜像 digest、预算、是否联网，都对上了再谈模型。
+
+**有了 seed，LLM 就能复现吗？**
+不能完全复现。seed 只是必要项，还要冻住模型版本和 decoding，并且多次重跑报方差。
+
+**live 仓库的结果能和 frozen 的放进同一个数字吗？**
+不能。frozen 和 live 要分开列，见 `swe-contamination-resistance`。
+
+**timeout 算失败还是算无效？**
+算预算内的失败，但单独列一栏，别和 oracle fail 混成一个 error rate。
+
+**prompt 改了，任务版本要不要跟着换？**
+要。prompt 和 tool schema 都是输入合同的一部分，静默改掉会让历史分数没法比。

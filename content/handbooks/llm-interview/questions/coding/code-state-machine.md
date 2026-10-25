@@ -4,7 +4,7 @@ section: coding
 order: 9
 level: A
 title: 设计 Tool-Call State Machine：哪些状态不能交给 LLM 自己“记”？
-quick: "运行时应显式保存 PARSE→VALIDATE→AUTHORIZE→EXECUTE→OBSERVE→RETRY/FAIL→RETURN 等状态，并持久化 attempt、tool-call ID、权限和 side-effect status。重试、授权及是否已经产生副作用，不能只靠模型从对话上下文中记住。"
+quick: "运行时要显式保存 PARSE→VALIDATE→AUTHORIZE→EXECUTE→OBSERVE→RETRY/FAIL→RETURN 这些状态，并把 attempt、tool-call ID、权限和 side-effect status 持久化。重试次数、授权结果、副作用有没有发生，都由 harness 记，模型从对话上下文里“记得”的不算数。"
 tags:
   - Agent
   - State Machine
@@ -22,10 +22,38 @@ sources:
     type: reference
 ---
 
-常见误区是：把 tool 调用的进度写进对话里让模型「自己记得」。LLM 可以决定是否调用工具、如何填写参数，但事务状态、权限、重试次数和已有副作用必须由运行框架 harness 结构化保存。压缩 context、幻觉、进程重启都会丢掉自然语言里的安全信息。权限模型见 `agent-tool-permissions`；字段和类型规范（schema） 见 `agent-schema-contract`。
-## 显式状态：PARSE 到 RETURN，失败有单独边
+## 题目描述
 
-建议主路径：
+实现工具调用运行时的一个确定性状态转移函数，由程序保存重试预算。本题是独立状态表练习，不要求实现真实工具、持久化系统或图中所有扩展状态。
+
+下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+
+### 接口与输入
+
+实现 `step(state,event,ctx)`。state/event为下列合法状态事件对；ctx包含非负整数attempts、`max_retry`，attempts表示已经批准的重试次数。
+
+### 输出与约束
+
+转移为 PARSE+ok→VALIDATE，VALIDATE+ok→AUTHORIZE，VALIDATE+`bad_args`→REPAIR，AUTHORIZE+ok→EXECUTE，AUTHORIZE+deny→DENY，EXECUTE+ok→OBSERVE，RETRY+ok→EXECUTE，OBSERVE+ok→RETURN。EXECUTE+fail在attempts小于`max_retry`时把attempts加1并返回RETRY，否则返回FAIL且不加计数。其他转移不改ctx；基础输入保证事件合法。
+
+### 示例
+
+```text
+ctx={attempts:0,max_retry:1}
+step("PARSE","ok",ctx) -> "VALIDATE"，attempts仍为0
+step("EXECUTE","fail",ctx) -> "RETRY"，attempts变为1
+再次step("EXECUTE","fail",ctx) -> "FAIL"，attempts仍为1
+```
+
+## 解题思路与参考答案
+
+模型可以决定调不调工具、参数怎么填，但事务状态、权限、重试次数和已经产生的副作用，要由运行框架 harness 结构化保存。把 tool 调用进度写进对话、让模型「自己记得」，一压缩 context、一出幻觉、一重启进程，这些安全信息就丢了。
+
+比如一次转账工具调用超时了，模型看对话觉得「好像没成功」，就再发一次，结果钱转了两笔。状态机要做的，就是让这种情况只能走查状态那条路，没法盲目重发。
+
+## 显式状态：PARSE 到 RETURN，失败有单独的边
+
+主路径大概是这样：
 
 ```text
 PARSE -> VALIDATE -> AUTHORIZE -> EXECUTE -> OBSERVE -> RETURN
@@ -35,7 +63,7 @@ PARSE -> VALIDATE -> AUTHORIZE -> EXECUTE -> OBSERVE -> RETURN
                                     STATUS_CHECK
 ```
 
-PARSE 将模型输出解析成结构化 call，包含名字、参数和 id；VALIDATE 根据 JSON schema 检查参数；AUTHORIZE 检查只读、写入和人工审核等权限策略；EXECUTE 调用工具；OBSERVE 将返回值整理成机器可读的观测结果（observation）；RETURN 将结果交给模型或用户。REPAIR 只修参数，不跳过授权。DENY 不执行。RETRY 受 `attempt` 上限约束。UNKNOWN / STATUS_CHECK 用于超时后查幂等键，而不是再发一次付款。
+PARSE 把模型输出解析成结构化 call，带名字、参数和 id；VALIDATE 按 JSON schema 检查参数；AUTHORIZE 查权限策略，看是只读、写入还是要人工审核；EXECUTE 真正调工具；OBSERVE 把返回值整理成机器可读的观测结果（observation）；RETURN 把结果交给模型或用户。失败的几条边各管各的：REPAIR 只修参数，不跳过授权；DENY 就是不执行；RETRY 受 `attempt` 上限约束；UNKNOWN / STATUS_CHECK 用在超时之后，拿幂等键去查状态，别再发一次付款。
 
 ```python
 TRANSITIONS = {
@@ -62,17 +90,47 @@ def step(state, event, ctx):
     return nxt
 ```
 
-每次状态转移都记录一条事件，包含 call_id、tool、参数哈希、授权决定和 side_effect，用于回放、审计、评估和恢复。见 `swe-trace-replay`、`agent-skill-eval`。
+每次状态转移都记一条事件，带 call_id、tool、参数哈希、授权决定和 side_effect，回放、审计、评估和恢复都靠它，见 `swe-trace-replay`、`agent-skill-eval`。
 
-## 什么不能只存在 context 里
+## 哪些东西必须落到外部存储
 
-必须持久化：tool-call ID（幂等）、attempt、是否已执行成功、权限快照、预算 / 超时、用户确认凭证。这些若只出现在 assistant 文本里，下轮模型可能重放一次转账，或忘掉已经 DENY。副作用工具（写库、支付、发邮件）在 EXECUTE 前生成 idempotency key，失败走 STATUS_CHECK 而不是盲目重试。LLM 可以提议「再试一次」，harness 有权拒绝。Prompt injection 只能影响 PARSE 之后的语义，不能绕过 AUTHORIZE，见 `agent-prompt-injection`。
+要持久化的是 tool-call ID（幂等用）、attempt、是否已执行成功、权限快照、预算 / 超时、用户确认凭证。这些要是只出现在 assistant 文本里，下一轮模型可能把转账重放一次，或者忘了刚才已经 DENY。写库、支付、发邮件这类有副作用的工具，在 EXECUTE 之前先生成 idempotency key，失败了走 STATUS_CHECK，别盲目重试。模型可以提议「再试一次」，harness 有权拒绝。Prompt injection 最多影响 PARSE 之后的语义，绕不过 AUTHORIZE，见 `agent-prompt-injection`。权限模型见 `agent-tool-permissions`；字段和类型规范（schema）见 `agent-schema-contract`。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+除了正常转移，还要检查重试计数的副作用。max_retry=1 时第一次失败进入 RETRY，第二次失败必须进入 FAIL。
+
+```python
+ctx = {"attempts": 0, "max_retry": 1}
+assert step("PARSE", "ok", ctx) == "VALIDATE"
+assert step("AUTHORIZE", "deny", ctx) == "DENY"
+assert step("EXECUTE", "fail", ctx) == "RETRY"
+assert ctx["attempts"] == 1
+assert step("EXECUTE", "fail", ctx) == "FAIL"
+try:
+    step("PARSE", "deny", ctx)
+except ValueError:
+    pass
+else:
+    raise AssertionError("illegal transition must fail")
+print("simple tests passed")
+```
 
 ## 追问
 
-- **为什么不让模型输出 next_state？** 模型可谎报已授权。状态转移由进程中的函数执行，不能根据模型生成的文字直接决定。
-- **REPAIR 和 RETRY 差在哪？** REPAIR 改参数、未执行；RETRY 已失败过，可能已有部分副作用，必须幂等。
-- **多工具并行？** 每个 call 独立状态机，共享预算与权限快照。不要一个 JSON 数组混一个 attempt 计数。
-- **压缩对话后怎么办？** 状态保存在外部存储中，需要时再将 observation 提供给模型。不能靠「摘要里提过已经执行」。
-- **和 ReAct 文本轨迹？** ReAct 是给模型看的；本机状态是给运行时看的。两者 id 对齐，但不互相替代。
+**为什么不让模型直接输出 next_state？**
+因为模型可能谎报已经授权。状态转移由进程里的函数执行，模型生成的文字决定不了。
 
+**REPAIR 和 RETRY 差在哪？**
+REPAIR 是改参数，工具还没执行；RETRY 是已经失败过，可能有部分副作用，所以必须幂等。
+
+**多个工具并行调用怎么办？**
+每个 call 一个独立的状态机，共享预算和权限快照。别用一个 JSON 数组配一个 attempt 计数。
+
+**对话压缩之后怎么办？**
+状态本来就存在外部存储里，需要时再把 observation 提供给模型。靠「摘要里提过已经执行」是靠不住的。
+
+**和 ReAct 的文本轨迹是什么关系？**
+ReAct 轨迹是给模型看的，这里的状态是给运行时看的。两边 id 对齐，但谁也替代不了谁。

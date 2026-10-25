@@ -4,9 +4,7 @@ section: systems
 order: 164
 level: A
 title: 百川智能：DeepSpeed 了解吗，怎么做？
-quick: >-
-  DeepSpeed 用 ZeRO 分片优化器、梯度和参数来放大可训规模，再叠加 offload 与激活检查点。怎么做看模型单卡放不放得下：我一般先
-  ZeRO-2，不够再 3，不会一上来全 offload。
+quick: "DeepSpeed 主要靠 ZeRO 分片优化器状态、梯度和参数来放大能训的模型规模，再叠加 offload 和激活检查点。怎么配取决于哪块显存先不够：我一般先上 ZeRO-2，不够再上 3，不会一开始就全 offload。"
 tags:
   - Baichuan
   - DeepSpeed
@@ -33,19 +31,26 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“deepspeed了解么如何做的”**
 
-常见误区是：背 ZeRO-1/2/3 名词却说不清「你这次为什么选这个 stage」，或者把 DeepSpeed 和 vLLM 混成一个框架。ZeRO 用分片换单卡显存，通信变多；怎么做取决于哪部分先超出显存：优化器状态、激活还是参数本身。先 2 再 3，不要一上来 CPU offload。相关卡：`sys-zero`、`tencent-zero-123`。答法：显存账 → 选 stage → 再决定要不要 offload，别把 DeepSpeed 说成另一种并行算法。
+DeepSpeed 的核心是 ZeRO：用分片换单卡显存，代价是通信变多。具体选哪个 stage，取决于先超出显存的是优化器状态、激活还是参数本身。我的顺序是先 ZeRO-2，不够再 3，CPU offload 放到最后。答这题我会按「显存账 → 选 stage → 再决定要不要 offload」来讲，背得出 ZeRO-1/2/3 却说不清这次为什么选这个 stage，面试官会觉得没用过。
 
-## ZeRO 三档分别切什么
+ZeRO 三档切的东西不一样。它还是数据并行，每卡算自己的 batch，只是把状态分片存。ZeRO-1 分优化器状态，Adam 的一阶二阶约占参数的 8 字节量级，往往最先爆；ZeRO-2 再把梯度分片；ZeRO-3 连参数也分片，前向和反向时按需 all-gather，用完就丢。stage 越高通信量越大，换来的是能训更大的模型。CPU / NVMe offload 是继续拿时间换显存，适合撑过峰值，不适合当默认的吞吐方案。
 
-数据并行每卡仍算自己的 batch，但状态分片：ZeRO-1 分优化器状态（Adam 的一阶二阶约占参数的 8 字节量级，往往最先爆）；ZeRO-2 再分梯度；ZeRO-3 连参数也分片，前向/反向按需 all-gather 再丢。通信体积随 stage 上升，换的是可训模型规模。CPU / NVMe offload 继续拿时间换显存，适合撑过峰值，不当默认吞吐方案。激活检查点是另一条轴，和 ZeRO 正交：长序列激活爆了要 checkpoint，不是盲目升到 3。先报哪一块显存不够，再选 stage。DeepSpeed 还包了通信重叠和一些 fused kernel，但这题关键在 ZeRO 分片，别跑去讲 pipeline 引擎。
+激活检查点是和 ZeRO 正交的另一条轴。长序列下激活爆了，应该开 checkpoint，盲目升到 3 解决不了。显存账要分开报：参数、Adam 状态、梯度、激活。升 stage 只动前三项，激活还得靠 checkpoint 或者缩短序列。DeepSpeed 还包了通信重叠和一些 fused kernel，但这题重点是 ZeRO 分片，别跑去讲 pipeline 引擎。
 
-## 「怎么做」要对上模型规模
-
-配 `zero_stage`、bf16、梯度累积；stage 3 还要处理分片保存 / 加载，以及和生成引擎之间的权重同步。监督微调（SFT） + LoRA 常见 ZeRO-2 就够；全参 70B 才认真上 3。和 vLLM 不要混：DeepSpeed 主训练分片，vLLM 主推理 KV 与调度。显存账要分开报：参数、Adam 状态、梯度、激活；升 stage 只动前三项，激活仍靠 checkpoint 或更短序列。蚂蚁二面也问 DeepSpeed，答案同构；百川还常接「用了多少卡、训多久」，要能把 stage、卡数、batch 和是否 offload 对上账，而不是报一个「用了 DeepSpeed」。
+「怎么做」要对上模型规模。配置上主要是 `zero_stage`、bf16、梯度累积；stage 3 还要处理分片的保存和加载，以及和生成引擎之间的权重同步。监督微调（SFT）加 LoRA 一般 ZeRO-2 就够，全参 70B 才认真上 3。别把它和 vLLM 混成一个框架：DeepSpeed 主要做训练分片，vLLM 主要做推理的 KV 和调度。蚂蚁二面也问过 DeepSpeed，答法一样；百川还常接着问「用了多少卡、训了多久」，你得能把 stage、卡数、batch 和有没有 offload 对上账，光说一句「用了 DeepSpeed」不够。
 
 ## 追问
 
-- **为何不默认 ZeRO-3？** 通信和 kernel 启动更重，小模型可能更慢；先看是否真的放不下参数。
-- **和 Megatron TP 怎么选？** 单卡放不下的是宽矩阵 / 激活，常用 TP；放不下的是优化器副本，先 ZeRO。大规模两者叠。见 `sys-parallel`。
-- **Offload 一定更省吗？** 显存省、迭代变慢；若 GPU 因等待 PCIe 传输而空闲，MFU 会很难看。先用 stage 2 打满 GPU，再考虑 offload。
-- **LoRA 还要不要 ZeRO？** 要看基座是否驻留。基座全参在 GPU 上仍可能要 2；只训很小 adapter 时 1/2 即可。保存 checkpoint 时确认能从分片恢复成推理引擎可读的整模。
+**为什么不默认上 ZeRO-3？**
+通信和 kernel 启动开销更重，小模型可能更慢。先确认参数是不是真的放不下。
+
+**和 Megatron TP 怎么选？**
+单卡放不下的是宽矩阵或激活，常用 TP；放不下的是优化器副本，先上 ZeRO。大规模训练两者叠着用，见 `sys-parallel`。
+
+**Offload 一定更省吗？**
+显存省了，迭代变慢；GPU 要是一直在等 PCIe 传输，MFU 会很难看。先用 stage 2 把 GPU 打满，再考虑 offload。
+
+**LoRA 还要不要 ZeRO？**
+看基座是否驻留在 GPU 上。基座全参在 GPU 上，可能还要 2；只训很小的 adapter，1 或 2 就够。存 checkpoint 时确认能从分片恢复成推理引擎能读的完整模型。
+
+相关：`sys-zero`、`tencent-zero-123`

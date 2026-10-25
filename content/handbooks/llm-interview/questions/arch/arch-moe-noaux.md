@@ -4,7 +4,7 @@ section: arch
 order: 21
 level: S
 title: DeepSeek-V3 无辅助负载均衡：expert bias 怎么更新，和 aux loss 差在哪？
-quick: "路由分数加上每个 expert 的 bias $b_i$ 再做 top-$k$；过载就减小 $b_i$，欠载就增大。Bias 不进主梯度，所以不会像 aux 损失（loss） 那样和语言建模目标抢参数。门控权重仍用未加 bias 的 affinity。"
+quick: "每个 expert 有一个 bias $b_i$，路由时用分数加 $b_i$ 选 top-$k$；过载就减小 $b_i$，欠载就增大。Bias 不进主梯度，所以不会像 aux 损失（loss）那样和语言建模目标抢路由参数。加权时门控仍用未加 bias 的 affinity，V3 另外保留了一个极小的 sequence-wise aux。"
 tags:
   - MoE
   - DeepSeek
@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-Aux loss 把「专家要平均」写进可反传的惩罚项，与 next-token loss 一起更新同一套路由参数。DeepSeek-V3 把均衡控制挪到路由决策的外部偏置上，主损失尽量只做语言建模。
+DeepSeek-V3 给每个专家配一个 bias $b_i$，只在选 top-$k$ 时加到路由分数上：某个专家过载就把 $b_i$ 调小，欠载就调大。Aux loss 是把「专家要平均」写进可反传的惩罚项，和 next-token loss 一起更新同一套路由参数；V3 把均衡控制挪到了路由决策外面的偏置上，主损失尽量只做语言建模。
 
 ## 机制
 
@@ -29,22 +29,25 @@ $$
 s_{i,t}=\sigma(u_t^\top e_i).
 $$
 
-选择 top-$k$ 时看的是加偏置后的分数 $s_{i,t}+b_i$；真正加权 expert 输出时，仍用未加 $b_i$ 的 $s_{i,t}$ 在被选中的 $k$ 个专家上归一化。这样 $b_i$ 只改「谁进 top-$k$」，不直接改「选中之后贡献多大」。
+选 top-$k$ 时看的是加了偏置的 $s_{i,t}+b_i$；给 expert 输出加权时，仍用未加 $b_i$ 的 $s_{i,t}$ 在选中的 $k$ 个专家上归一化。这样 $b_i$ 只改「谁进 top-$k$」，不直接改「选中之后贡献多大」。
 
-$b_i$ 按 batch 负载做符号更新：expert $i$ 的 token 份额高于均值则 $b_i\leftarrow b_i-\gamma$，低于均值则 $+\gamma$。它是控制器状态，不是网络权重，不走反向传播。
+$b_i$ 按 batch 负载做符号更新：expert $i$ 的 token 份额高于均值，$b_i\leftarrow b_i-\gamma$；低于均值就 $+\gamma$。它是控制器的状态，不算网络权重，也不走反向传播。
+
+举个例子，一个 batch 里 expert 3 吃了 40% 的 token，expert 7 几乎没人选。Aux loss 会立刻给 router 一个「别再选 3」的梯度，可能把本来适合 3 的 token 硬推走。Bias 方案只是把 $b_3$ 调低、$b_7$ 调高，下一小步的 top-$k$ 门槛变了，但当前被选中 token 的门控权重仍按 $s_{i,t}$ 算。
 
 ## 和 aux loss 的差别
 
-Switch Transformer 一类 aux loss 近似 $N\sum_i f_i P_i$（实际频率 $\times$ 平均门控概率）。$\lambda$ 太小热点仍在，$\lambda$ 太大 router 为了平均而牺牲语义匹配。无辅助方案把这个折中从 loss 里拿掉：负载均衡不再直接改变主损失的梯度。
+Switch Transformer 一类的 aux loss 近似 $N\sum_i f_i P_i$，也就是实际频率乘平均门控概率。$\lambda$ 太小热点还在，$\lambda$ 太大 router 会为了平均牺牲语义匹配。无辅助方案把这个折中从 loss 里拿掉，负载均衡不再直接改变主损失的梯度。
 
-V3 仍保留一个极小的 sequence-wise complementary aux loss（论文量级 $\alpha=10^{-4}$），用来压极端不平衡，均衡没有完全交给主损失。面试别说成「完全没有任何均衡项」。
-
-## 例子
-
-一个 batch 里 expert 3 吃了 40% token、expert 7 几乎没人。Aux loss 会立刻给 router 一个「别再选 3」的梯度，可能把本来适合 3 的 token 硬推走。Bias 方案只是把 $b_3$ 下调、$b_7$ 上调，下一小步 top-$k$ 门槛变了，但当前被选中 token 的门控权重仍按 $s_{i,t}$ 算。
+V3 仍保留了一个极小的 sequence-wise complementary aux loss（论文量级 $\alpha=10^{-4}$），用来压住极端不平衡。所以面试别说成「完全没有任何均衡项」。
 
 ## 追问
 
-- **推理时 $b_i$ 怎么办？** 训练末期的 bias 可以冻结进 checkpoint，或推理关掉动态更新、只保留训练学到的 router。训推路由不一致是另一道系统题。
-- **和 capacity / token drop？** Bias 降低热点概率，capacity 是硬上限。两者正交，见 capacity 卡。
-- **手写时写什么？** 先 `scores = sigmoid(x @ E.T)`，`choice = topk(scores + bias)`，`gates = normalize(scores[choice])`。别把 bias 加进 gates。
+**推理时 $b_i$ 怎么处理？**
+训练末期的 bias 可以冻结进 checkpoint，或者推理时关掉动态更新、只保留训练学到的 router。训推路由不一致是另一道系统题。
+
+**和 capacity / token drop 是什么关系？**
+互不替代。Bias 降低热点出现的概率，capacity 是硬上限，见 capacity 卡。
+
+**手写的话怎么写？**
+先 `scores = sigmoid(x @ E.T)`，再 `choice = topk(scores + bias)`，最后 `gates = normalize(scores[choice])`。别把 bias 加进 gates。

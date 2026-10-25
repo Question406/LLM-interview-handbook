@@ -5,9 +5,7 @@ order: 217
 level: A
 title: 手写分片 Checkpoint 的保存与恢复（清单、原子 rename、校验和）
 quick: >-
-  每 rank 写 shard 与 sha256，全部齐套后写
-  `MANIFEST.json.tmp` 再原子 rename 成 `MANIFEST.json`。没有清单等于不存在。恢复先读清单、核
-  digest 再 load。半成功目录不得当成功。概念见 `sys-async-checkpoint`。
+  每个 rank 写自己的 shard 和 sha256，全部到齐后写 `MANIFEST.json.tmp`，再原子 rename 成 `MANIFEST.json`，没有清单就等于这个 checkpoint 不存在。恢复时先读清单、核对 digest 再 load，半成功的目录不能当成功。概念见 `sys-async-checkpoint`。
 tags:
   - Checkpoint
   - Coding
@@ -22,11 +20,39 @@ sources:
     type: primary
 ---
 
-常见误区是：「每个 rank `torch.save` 完就算成功」。进程在写第 $N-1$ 片时崩溃，目录里会留下半旧半新文件，下次恢复时如果直接加载，可能破坏训练状态。生产语义是：清单是提交点。PyTorch DCP 用 planner 写分片、读时可 reshard；本题用手写 IO 把原子性讲清楚。异步上传、步边界一致性见 `sys-async-checkpoint`；换 world size 重切见 `sys-elastic-resume-reshard`。
+## 题目描述
+
+实现一个小型分片 checkpoint 的保存与加载接口，只有全部分片和清单写完后才发布最终目录，并在读取时核验内容完整性。本题不要求分布式进程或框架 checkpoint 集成。
+
+下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+
+### 接口与输入
+
+实现 `save_shards(state:dict[int,bytes],ckpt_dir:str)` 和 `load_shards(ckpt_dir:str)`。state将rank编号映射到原始字节；保存目标是尚不存在的新目录，其父目录可用，且无并发写同一路径。
+
+### 输出与约束
+
+每个rank有独立分片文件；清单记录version、world及每片的rank/file/sha256。先写临时 .writing 目录，再通过重命名发布。加载返回与state相同的字典，并核对每片摘要；缺片或内容损坏时不能静默当作有效checkpoint。摘要校验是本题业务要求，无需额外扩展参数合法性检查。
+
+### 示例
+
+```text
+state={0:b"A",1:b"BC"}
+save_shards(state,新目录)后load_shards(该目录) -> {0:b"A",1:b"BC"}
+若把任意已发布分片字节改掉，load不能成功返回原始有效state。
+```
+
+## 解题思路与参考答案
+
+分片 checkpoint 的提交点是清单：每个 rank 写完自己的 shard 和 sha256，rank 0 收齐以后先写 `MANIFEST.json.tmp`，再原子 rename 成 `MANIFEST.json`。读的一方只认带完整清单的目录，读时逐片核对 digest。「每个 rank `torch.save` 完就算成功」是最常见的错误想法：进程在写第 $N-1$ 片时崩了，目录里会留下半旧半新的文件，下次恢复直接加载，就可能把训练状态搞坏。
+
+PyTorch DCP 用 planner 写分片，读的时候还能 reshard；这题用手写 IO，把原子性讲清楚就行。异步上传和步边界一致性见 `sys-async-checkpoint`，换 world size 重切见 `sys-elastic-resume-reshard`。
 
 ## 协议
 
-写：各 rank 把 bytes 写到 `ckpt/tmp/shard_{rank}.bin` 并算 sha256 → rank 0 收齐元数据 → 写 `MANIFEST.json.tmp`（version、world、shard 列表、digest）→ `os.replace` 成 `MANIFEST.json`。读：清单不存在则失败；缺文件或 digest 不符则整版作废，回退上一成功目录。不要先 rename 数据目录再写清单，崩溃窗口会把「有目录无清单」和「有清单缺数据」两种半态都制造出来。清单后出现才是 commit。
+写的流程是：各 rank 把 bytes 写到 `ckpt/tmp/shard_{rank}.bin` 并算 sha256 → rank 0 收齐元数据 → 写 `MANIFEST.json.tmp`，里面有 version、world、shard 列表和 digest → `os.replace` 成 `MANIFEST.json`。读的时候，清单不存在就失败；缺文件或 digest 对不上，整版作废，回退到上一个成功的目录。
+
+先 rename 数据目录再写清单是不行的，崩溃窗口里会同时制造出「有目录没清单」和「有清单缺数据」两种半态。清单出现，才算 commit。
 
 ```python
 import hashlib, json, os
@@ -66,19 +92,52 @@ def load_shards(ckpt_dir: str) -> dict[int, bytes]:
     return out
 ```
 
-`os.replace` 在同一文件系统上对文件是原子的；对目录在 POSIX 上通常也是。跨盘要先完整写到目标盘再 commit 清单。`fsync` 清单再 rename，避免掉电后清单里有名、盘上无数据。现场不必写分布式 gather，说「rank 0 等齐 metadata」即可。
+`os.replace` 在同一个文件系统上对文件是原子的，对目录在 POSIX 上通常也是。跨盘的话，要先把数据完整写到目标盘，再 commit 清单。清单先 `fsync` 再 rename，免得掉电后清单里有名字、盘上没数据。现场不用写分布式 gather，说一句「rank 0 等齐 metadata」就够了。
 
 ## 崩溃窗口与读者约定
 
-读者（resume 进程）只承认带完整 `MANIFEST.json` 的目录。`ckpt.writing/` 或只有部分 `shard_*.bin` 的路径一律当不存在，绝不「能 load 多少算多少」。多版本并存时用目录名带 step，例如 `ckpt/step-1000/`，成功后再把 `latest` 指针原子改过去；正在上传的 step 不得成为 `latest`。这和异步落盘的提交点一致，见 `sys-async-checkpoint`。
+读者，也就是 resume 进程，只承认带完整 `MANIFEST.json` 的目录。`ckpt.writing/` 或者只有部分 `shard_*.bin` 的路径，一律当它不存在，绝不「能 load 多少算多少」。多个版本并存时，目录名带上 step，比如 `ckpt/step-1000/`，成功以后再把 `latest` 指针原子地改过去；正在上传的 step 不能成为 `latest`。这和异步落盘的提交点是一致的。
 
-校验失败要整版拒绝：只修某一个 shard 而不改清单，会造成 digest 与文件不一致的第三种半态。数据文件也建议 `fsync` 再写清单，否则掉电后会出现「清单齐全、打开是短文件」。`world` 与实际文件数必须相等，多出来的旧 shard 不得混入。Rank 间用屏障对齐「我写完了」，rank 0 才 commit。手写 rank 文件够讲清原子性；真正换 TP/EP 需要按逻辑张量存的 DCP，这份 `shard_{rank}.bin` 不能任意 reshard。
+校验失败要整版拒绝。只修某一个 shard、不改清单，会造成 digest 和文件对不上的第三种半态。数据文件也最好先 `fsync` 再写清单，否则掉电后可能出现「清单齐全，打开却是短文件」。`world` 必须等于实际的文件数，多出来的旧 shard 不能混进来。rank 之间用屏障对齐「我写完了」，之后 rank 0 才 commit。手写按 rank 存文件，足够讲清原子性；真要换 TP/EP，需要按逻辑张量存的 DCP，这份 `shard_{rank}.bin` 没法任意 reshard。
+
+## 简单测试怎么写
+
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+
+在临时目录里保存两份字节串，再读回比较。随后篡改一个 shard，应触发校验和错误；临时目录自动清理。
+
+```python
+import tempfile
+from pathlib import Path
+
+with tempfile.TemporaryDirectory() as directory:
+    destination = str(Path(directory) / "checkpoint")
+    expected = {0: b"rank-zero", 1: b"rank-one"}
+    save_shards(expected, destination)
+    assert load_shards(destination) == expected
+    (Path(destination) / "shard_0.bin").write_bytes(b"corrupt")
+    try:
+        load_shards(destination)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("corrupted shard must fail")
+print("simple tests passed")
+```
 
 ## 追问
 
-- **为什么清单不能先写？** 读者会按清单去打开还不存在的 shard。必须数据齐 → 清单 tmp → rename 清单。
-- **校验和算哪一层？** 每 shard 一份 sha256，清单里再列出来。只对清单哈希不够，缺片无法定位。
-- **和 DCP 的关系？** DCP 把「逻辑张量 → 分片文件」做成 planner；原子提交和校验的语义相同。本题手写实现用于明确提交点。
-- **async 上传怎么接？** 后台拷到对象存储后，仍然只有齐套清单可见。失败不得覆盖上一 `MANIFEST`。见 `sys-async-checkpoint`。
-- **恢复时 world size 变了？** 这份按 rank 存的 blob 不能直接用，需要按逻辑 ID 的 DCP 再切。本题 load 按原 world 校验齐套。
----
+**清单为什么不能先写？**
+读者会按清单去打开还不存在的 shard。顺序必须是数据齐 → 写清单 tmp → rename 清单。
+
+**校验和算在哪一层？**
+每个 shard 一份 sha256，清单里再列出来。只对清单算哈希不够，缺了哪一片定位不到。
+
+**和 DCP 是什么关系？**
+DCP 把「逻辑张量 → 分片文件」做成了 planner，原子提交和校验的语义是一样的。手写这一版是为了把提交点说清楚。
+
+**async 上传怎么接？**
+后台拷到对象存储以后，也只有齐套的清单才可见。上传失败不能覆盖上一个 `MANIFEST`。
+
+**恢复时 world size 变了怎么办？**
+这份按 rank 存的 blob 不能直接用，要换成按逻辑 ID 存的 DCP 再切。这里的 load 是按原来的 world 校验齐套的。

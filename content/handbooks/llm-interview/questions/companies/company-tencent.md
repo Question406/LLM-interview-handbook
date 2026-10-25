@@ -4,7 +4,7 @@ section: companies
 order: 3
 level: A
 title: 腾讯混元：公开面经反映的考察风格是什么？
-quick: "覆盖面很宽：Qwen vs DeepSeek、MoE vs Dense、LoRA / 全参对照实验、ZeRO 1/2/3、监督微调（SFT） 数据构造、基于人类反馈的强化学习（RLHF），再穿插括号生成、最长子串、零钱兑换。对齐算法和训练系统都不能有明显短板。"
+quick: "腾讯混元覆盖面很宽：Qwen vs DeepSeek、MoE vs Dense、LoRA / 全参对照实验、ZeRO 1/2/3、监督微调（SFT）数据构造、基于人类反馈的强化学习（RLHF），再穿插括号生成、最长子串、零钱兑换。对齐算法和训练系统都不能有明显短板。"
 tags:
   - Tencent
   - Hunyuan
@@ -28,19 +28,21 @@ sources:
     type: candidate-first-hand
 ---
 
-混元、TEG、WXG 都容易从你项目细节追机制：数据怎么配、奖励分数（reward） 为何有效、ZeRO-3 省的是什么、通信是什么。不要只背定义。
+混元、TEG、WXG 都喜欢顺着你的项目细节追机制：数据怎么配，奖励分数（reward）为什么有效，ZeRO-3 省的是什么，通信是什么。光背定义撑不过几轮追问。
+
+比如你说「我用 LoRA 微调了 Qwen」，下一句多半就是「和全参比，你怎么设计对照实验」，只答「LoRA 省显存」是不够的。
 
 ## 准备主线
 
-1. **架构选型**：MoE 收益和通信代价；Qwen 和 DeepSeek 差在路由、MLA、后训练。
-2. **微调实验**：LoRA vs 全参要能设计对照，不只说「LoRA 省显存」。
-3. **系统**：ZeRO 三级、除 DeepSpeed 外的优化、72B 单卡估算。
-4. **对齐**：监督微调（SFT） 之后为什么还要 强化学习（RL）；GSPO / SPO 在 WXG 会被追。
-5. **手撕**：括号生成、最长无重复子串、零钱兑换、MHA。
+1. 架构选型要讲 MoE 的收益和通信代价，以及 Qwen 和 DeepSeek 在路由、MLA、后训练上的差别。
+2. 微调实验要能设计 LoRA 和全参的对照。
+3. 系统会问 ZeRO 三级、DeepSpeed 之外的优化和 72B 单卡估算。
+4. 对齐要讲监督微调（SFT）之后为什么还要强化学习（RL），WXG 还会追问 GSPO / SPO。
+5. 手撕出现过括号生成、最长无重复子串、零钱兑换和 MHA。
 
 ## 本手册真题卡
 
-点击下面每条即可跳到对应题。
+下面每条点进去就能跳到对应题。
 
 - 腾讯混元：ZeRO-3 微调 Qwen2-72B 时如何估算单卡显存？
 - 腾讯混元：LoRA 的 A/B 矩阵如何初始化？还有哪些初始化？

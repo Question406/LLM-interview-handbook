@@ -4,9 +4,7 @@ section: posttrain
 order: 234
 level: A
 title: PPO / DPO 的 reference model 何时该刷新，何时必须冻结？
-quick: >-
-  $\pi_{\mathrm{ref}}$ 定义 KL 锚点：长期冻结可审计但限制能力跃迁；周期性刷新到近期强 checkpoint
-  能放开优化空间，但必须同时改 $\beta$ 与评估口径，否则只是约束变松后的假涨分。
+quick: "单阶段、需要复现和审计时冻结 $\\pi_{\\mathrm{ref}}$；做了几轮迭代偏好或 RL、能力已明显超过初始 SFT，再周期性刷新到近期强 checkpoint，放开优化空间。刷新等于换尺子，$\\beta$、KL 目标和评估口径要一起改，否则涨分只是约束变松。"
 tags:
   - KL Penalty
   - DPO
@@ -25,31 +23,34 @@ sources:
     type: secondary
 ---
 
-这块容易把「刷新 $\pi_{\mathrm{ref}}$」当成免费涨分。PPO 罚 $\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$，直接偏好优化（DPO） 的隐式奖励是
+$\pi_{\mathrm{ref}}$ 是 KL 的锚点。单阶段训练、需要复现或审计相对 SFT 的偏离时，就冻结它；做了几轮迭代偏好或 RL、能力已经系统性高过初始 SFT 时，可以刷新到近期的强 checkpoint。但刷新等于换了尺子，$\beta$、KL 目标和报告口径都得跟着改，否则涨的分只是约束变松了。
+
+为什么说是换尺子。PPO 罚的是 $\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$，直接偏好优化（DPO）的隐式奖励是
 
 $$
 r_\theta(x,y)=\beta\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}.
 $$
 
-$\pi_{\mathrm{ref}}$ 是 KL 锚点：越旧越保守，越新（甚至等于当前策略）约束越弱。刷新会同时改变可优化空间和隐式奖励的零点，必须和 $\beta$、数据 freshness、评估基线一起改。InstructGPT 把 监督微调（SFT） 政策当 强化学习（RL） 起点并保持相对该锚的偏离可叙述；DPO 的推导也假设一次优化里 ref 固定。改锚点等于换尺子。
+锚点越旧越保守，越新约束越弱，等于当前策略时就没有约束了。刷新会同时改变可优化的空间和隐式奖励的零点。InstructGPT 把监督微调（SFT）策略当强化学习（RL）的起点，让相对这个锚的偏离可以讲清楚；DPO 的推导也假设一次优化里 ref 是固定的。
 
-## 何时必须冻结
+冻结的场景很明确：单阶段、数据一次性给齐、要复现实验，或者监管要求能审计相对 SFT 基线的偏离。offline DPO 里 $\pi_{\mathrm{ref}}$ 是隐式奖励的分母，中途换掉等于换了奖励坐标系，chosen / rejected 的间隔就不可比了。要对照 $\mathrm{KL}(\pi\|\pi_{\mathrm{SFT}})$ 曲线，ref 版本也得固定。这时候「KL 太大」往往是能力离开过时基线的真实代价，偷换 ref 只是假装约束还在。极端情况是 $\pi_{\mathrm{ref}}=\pi_\theta$：DPO 的 log 比为 0、梯度消失，PPO 的 KL 项也没了锚，所以「把 ref 设成当前策略」等于拆掉正则。冻结还有一个好处，能回答监管式的追问：相对哪一条 SFT、KL 多少、安全回退多少，口径不会每周换一次。
 
-单阶段、数据一次性、需要可复现的对齐边界、或监管要求「相对 SFT 基线的偏离可审计」：冻结。Offline DPO 把 $\pi_{\mathrm{ref}}$ 当作定义隐式奖励的分母；训练中途改 ref，等于换了奖励坐标系，chosen / rejected 间隔不可比。要复现实验或对照 $\mathrm{KL}(\pi\|\pi_{\mathrm{SFT}})$ 曲线，必须固定 ref 版本。此时「KL 太大」往往是能力已经离开过时基线的真实代价，不该靠偷换 ref 假装约束还在。极限情况 $\pi_{\mathrm{ref}}=\pi_\theta$ 时 DPO 的 log 比为 0，梯度消失，PPO 的 KL 项也失去锚。「把 ref 设成当前策略」不是刷新，是拆掉正则。冻结还让你能回答监管式追问：相对哪一条 SFT、KL 多少、安全回退多少，口径不会每周换一次。
+刷新适合迭代的场景。比如先 SFT，再做两轮 iterative DPO：第二轮还拿 SFT 当 ref，偏好梯度要对抗很大的 KL；换成上一轮胜出的策略，同样的 $\beta$ 更能吸收新 pair，但要盯着 safety 和格式有没有回归。常见做法是 $\pi_{\mathrm{ref}}\leftarrow\pi_{\theta_t}$ 或 EMA，同时重置 KL 控制器的目标、重标 $\beta$。一直锚在旧 ref 上，KL 预算都花在「离开过时基线」上，没花在新能力上的精调。
 
-## 何时刷新、刷新后改什么
+刷新之后有几件事要跟上。评估如果还对比最初的 SFT，训练 KL 却已经相对新 ref，你看的就是两套尺子，对外报告要同时给 $\mathrm{KL}(\pi\|\pi_{\mathrm{SFT}})$ 和 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}}^{\mathrm{new}})$。约束变松后 proxy 会涨，过优化也来得更快，见 `pt-reward-ood-failure`。刷新节奏别快过数据 freshness：ref 已经追上当前策略、pair 还是旧的，等于锚松开了却没有新监督。EMA 比硬切换平滑，但有滞后，容易让 KL 控制器误判，切换当时就要重置目标值，别沿用旧 setpoint。每次刷新后都要把安全回归集跑一遍，KL 突然变小的那几步最容易丢掉拒答边界。
 
-迭代偏好、多轮 RL 后能力已系统性高于初始 SFT：继续锚在旧 $\pi_{\mathrm{ref}}$ 会把 KL 预算耗在「离开过时基线」而非「在新能力面上精调」。常见 $\pi_{\mathrm{ref}}\leftarrow\pi_{\theta_t}$ 或 EMA，并重置 KL 控制器目标、重标 $\beta$。先 SFT 再两轮 iterative DPO：第二轮仍用 SFT 作 ref，偏好梯度要对抗巨大 KL；改用上一轮胜出策略后，同样 $\beta$ 更能吸收新 pair，但要盯 safety / 格式回归。
-
-刷新后若评估仍对比最初 SFT，而训练 KL 已改成相对新 ref，你在看两套尺子。对外报告应同时给 $\mathrm{KL}(\pi\|\pi_{\mathrm{SFT}})$ 和 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}}^{\mathrm{new}})$。约束变松后 proxy 会涨，过优化也会更快，见 `pt-reward-ood-failure`。刷新节奏不要比数据 freshness 更快：ref 已经追上当前策略、pair 还是旧的，等于既松开锚又没有新监督。EMA 刷新比硬切换平滑，但滞后会让 KL 控制器误判，切换当时应重置目标值而不是沿用旧 setpoint。
-
-和 trust-region 的关系：冻结 ref 是全程相对同一邻域；刷新是把邻域搬到新中心。搬完必须重新声明半径（$\beta$ 或 KL 目标），否则半径在旧尺度上、中心已变，约束名存实亡。安全回归集在每次刷新后都要跑一遍，因为最容易在「KL 突然变小」的那几步丢掉拒答边界。
-
-冻结是为了可审计的坐标系；刷新是为了别把预算浪费在过时基线上。改 ref 必改 $\beta$ 与报告口径。现场先问「现在的 KL 相对哪一条政策」，口径对不上就不要谈涨分。
+用 trust region 的话说：冻结 ref 是全程待在同一个邻域里，刷新是把邻域搬到新中心。搬完要重新声明半径，也就是 $\beta$ 或 KL 目标，否则中心变了、半径还在旧尺度上，约束名存实亡。面试时我会先问一句「现在的 KL 相对哪一条策略」，口径对不上，就先别谈涨分。
 
 ## 追问
 
-- **刷新是免费涨分吗？** 不是。约束变松，proxy 会涨，过优化和安全回退也会更快，见 `pt-reward-ood-failure`。
-- **Offline DPO 能中途改 ref 吗？** 不建议。隐式奖励坐标系会漂，旧 pair 的间隔失效。应新开阶段并声明 ref 版本。
-- **EMA 和硬切换？** EMA 更平滑，滞后更大；硬切换要立刻重调 KL 目标，否则控制器会以为突然违约。
-- **和 $\beta$？** 新 ref 更近，同样 $\beta$ 的有效约束更弱。刷新后通常要重新扫 $\beta$，不能沿用旧表。
+**刷新是免费涨分吗？**
+不是。约束变松，proxy 会涨，过优化和安全回退也会更快。
+
+**offline DPO 能中途换 ref 吗？**
+不建议。隐式奖励的坐标系会漂，旧 pair 的间隔就失效了。要换就新开一个阶段，并写明 ref 版本。
+
+**EMA 和硬切换怎么选？**
+EMA 更平滑但滞后更大；硬切换要立刻重调 KL 目标，否则控制器会以为突然违约了。
+
+**刷新后 $\beta$ 还能沿用吗？**
+通常不能沿用旧表。新 ref 离当前策略更近，同样的 $\beta$ 有效约束更弱，刷新后一般要重新扫一遍 $\beta$。

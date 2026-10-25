@@ -4,9 +4,7 @@ section: fundamentals
 order: 3
 level: A
 title: Policy Gradient → PPO → GRPO 该按什么顺序学？
-quick: >-
-  先会 REINFORCE 的 $\nabla\log\pi\cdot G$，再减 baseline 得到 $A$，然后 GAE / Critic、importance
-  sampling、TRPO 约束，最后才是 PPO clip 和 GRPO 的组相对优势。下面按这条链排，点击标题即可跳转。
+quick: "按「无偏梯度 → 降方差 → 复用旧数据 → 要不要 Critic」的顺序学：先会 REINFORCE 的 $\\nabla\\log\\pi\\cdot G$，再减 baseline 得到 $A$，然后 GAE / Critic、importance sampling、TRPO 约束，最后才是 PPO clip 和 GRPO 的组相对优势。下面按这条链排，点标题就能跳转。"
 tags:
   - Policy Gradient
   - PPO
@@ -25,7 +23,7 @@ sources:
     type: primary
 ---
 
-网上对得上的高频问法已经拆成独立卡。主推导在「从 Policy Gradient 怎么一步步推到 PPO，再推到 GRPO？」，本页只给顺序。点下面每条就能跳到对应题。
+按「无偏梯度 → 降方差 → 复用旧数据 → 要不要 Critic」的顺序学，每一步都建立在前一步上。网上能对上的高频问法已经拆成了独立卡，主推导在「从 Policy Gradient 怎么一步步推到 PPO，再推到 GRPO？」，这一页只排顺序，点下面每一条就能跳到对应的题。
 
 ## 梯度从哪来
 
@@ -37,7 +35,7 @@ sources:
 
 ## 无偏还是有偏、方差从哪来
 
-导航总表见「RL 方差、无偏 / 有偏估计面试要准备哪些题？」。先会下面几张再谈 PPO clip。
+这部分的总表在「RL 方差、无偏 / 有偏估计面试要准备哪些题？」。先把下面几张弄懂，再去谈 PPO clip。
 
 - 策略梯度里哪些操作仍无偏？哪些会引入偏差？
 - Reward-to-go 为什么仍无偏？为什么比整段回报方差更小？
@@ -91,4 +89,4 @@ sources:
 - TRPO、DPPO、AReaL 各自怎么给 RL 目标加 trust region？
 - 2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？
 
-准备顺序：先会无偏梯度，再谈降方差，再谈复用旧数据，最后才是「要不要 Critic」。方差 / 无偏专项见「RL 方差、无偏 / 有偏估计面试要准备哪些题？」。2026 社区 35 题对照见「2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？」。
+按社区题单查漏的话，2026 年社区整理的 35 题对照见「2026 RL 算法 / Infra 面试 35 题该按什么顺序准备？」。

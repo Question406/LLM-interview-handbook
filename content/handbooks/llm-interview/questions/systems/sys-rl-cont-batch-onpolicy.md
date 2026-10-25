@@ -4,7 +4,7 @@ section: systems
 order: 272
 level: S
 title: RL 训练开 continuous batching，会破坏 on-policy 边界吗？
-quick: "引擎可以开，但会把不同权重版本的轨迹混进同一 batch，组内 $G$ 条也不同时完成。数据面要给每条轨迹记 policy 版本和 old logprob，组齐了再算优势。"
+quick: "Continuous batching 可以开，但轨迹必须记录 policy 版本和 old logprob，同一题的 $G$ 条要组齐后再算优势。权重更新和异步调度可能让同一 batch 混入不同版本，因此要按版本控制新鲜度，超出允许差距的样本丢弃或交给相应的离策略校正。"
 tags:
   - Continuous Batching
   - On-policy
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-Continuous batching 为什么涨吞吐，见 `sys-cont-batch`。那张卡讲的是引擎内部交错请求。本题问的是 **把它接到 GRPO 数据面之后会怎样**。Serving 只关心 tokens/s；强化学习（RL） 还关心这条轨迹是不是当前 $\pi_{\mathrm{old}}$ 采的、同一输入提示 的 $G$ 条是否还在一组。
+可以开 continuous batching，但要另外守住策略版本和组边界。比如同一题需要 $G$ 条回答，短回复先完成了，也得等组齐后再算优势；中途更新过权重的样本还要记录各自的版本。引擎负责交错调度请求，GRPO 数据面则负责确认轨迹是否由对应的 $\pi_{\mathrm{old}}$ 采出。引擎内部怎样提高吞吐，见 `sys-cont-batch`。
 
 ## 需要分别记录的三类信息
 
@@ -46,10 +46,13 @@ Continuous batching 为什么涨吞吐，见 `sys-cont-batch`。那张卡讲的�
 
 vLLM 强在 PagedAttention 和通用吞吐；SGLang 强在 RadixAttention、共享前缀和结构化 / 多轮 workflow。选型见 `sys-verl-vllm-vs-sglang`。无论哪个引擎，采样 logp 都要在训练图重算。
 
-Continuous batching 和异步 RL 不是一层：前者是 逐 token 生成（decode） step 内换人；后者是 trainer 与 rollout 两池流水线。可以同时开，stale 来源变成两条，账要分开记。
+Continuous batching 在逐 token 生成（decode）的 step 之间替换已结束的请求；异步 RL 则让 trainer 与 rollout 两个池子流水执行。两者可以一起开，但各自引入的 stale 要分开统计。
 
 ## 追问
 
-- **组没齐能不能先训已经完成的题？** 可以，但那题的 $G$ 条必须都在，且版本相同。不能拿「先完成的 4 条」当 $G=8$ 的组。
-- **prefix cache 在 RL 里安全吗？** 同版本、同权重下复用 prompt 前缀 KV 是对的。权重一更新就必须 flush，否则 prefix 是旧 $\theta$ 算的。
-- **这能解释 clip fraction 乱跳吗？** 能。混版本 batch 会让 $\rho$ 分布双峰。先画 version histogram，再调 $\varepsilon$。
+**组没齐能不能先训已经完成的题？**
+可以，但那题的 $G$ 条必须都在，且版本相同。不能拿「先完成的 4 条」当 $G=8$ 的组。
+**prefix cache 在 RL 里安全吗？**
+同版本、同权重下复用 prompt 前缀 KV 是对的。权重一更新就必须 flush，否则 prefix 是旧 $\theta$ 算的。
+**这能解释 clip fraction 乱跳吗？**
+能。混版本 batch 会让 $\rho$ 分布双峰。先画 version histogram，再调 $\varepsilon$。

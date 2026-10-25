@@ -4,7 +4,7 @@ section: companies
 order: 10
 level: A
 title: 美团 / 北斗：大模型应用与算法应重点准备什么？
-quick: "重点准备业务中的训练与评估：什么时候从 SFT 转到 RL、字段抽取如何设计多维奖励、Workflow 与 Agent 的选择、Memory 与 RAG 的区别、LoRA/QLoRA 稳定性，以及 Thinking 开关对 SFT 的影响。公开面经同时涉及推理数据和应用基础题。"
+quick: "美团重点准备业务里的训练和评估：什么时候从 SFT 转到 RL、字段抽取怎么设计多维奖励、Workflow 和 Agent 怎么选、Memory 和 RAG 的区别、LoRA/QLoRA 稳定性，以及 Thinking 开关对 SFT 的影响。公开面经里推理数据和应用基础题都有。"
 tags:
   - Meituan
   - Beidou
@@ -29,18 +29,20 @@ sources:
     type: candidate-first-hand
 ---
 
-美团题更关注业务中的训练和评估：标注质量怎么量化、简单和困难样本怎么配比、Thinking 开关对监督微调（SFT）的影响，以及强化学习（RL）初期奖励分数（reward）先降后升的原因。准备时我会选一个字段抽取或到店助手项目，从数据到 SFT、RL、线上延迟完整讲通，比背更多论文名有用。
+美团的题更关注业务里怎么训、怎么评：标注质量怎么量化，简单和困难样本怎么配比，Thinking 开关对监督微调（SFT）有什么影响，强化学习（RL）初期奖励分数（reward）为什么先降后升。
+
+准备时我会挑一个字段抽取或到店助手项目，从数据到 SFT、RL、线上延迟完整讲一遍，这比多背几个论文名有用。拿字段抽取来说，面试官讲完训练流程，多半会接着问奖励怎么设、模型会不会钻空子，下面第二条就是为这个准备的。
 
 ## 准备主线
 
-1. **SFT / RL 门禁**：已有 Reasoning SFT 为什么还要 RL。切换前应检查格式合法率和验证器（verifier）的稳定性，并确认同组回答中既有正确也有错误样本。
-2. **业务 Reward**：字段抽取的奖励要分别检查精确匹配、类型是否合法、必填字段是否完整、字段之间是否冲突，以及是否符合 schema，并惩罚编造。会追 Reward Hacking。
-3. **Agent 边界**：Workflow vs Agent、Memory vs 检索增强生成（RAG）。下单、退款这类强约束链路不要空喊 Agent。
-4. **训练稳定性**：LoRA 为什么挂 Linear 而不是 LayerNorm 之后。组内采样全错、reward/loss 震荡、过程监督信号。
+1. 从 SFT 切到 RL 要有门禁。已有 Reasoning SFT 为什么还要 RL，要能讲清；切换前检查格式合法率和验证器（verifier）的稳定性，并确认同组回答里既有正确也有错误的样本。
+2. 业务 Reward 以字段抽取为例，要分别检查精确匹配、类型是否合法、必填字段是否完整、字段之间是否冲突、是否符合 schema，并惩罚编造。面试官会追问 Reward Hacking。
+3. Agent 边界要讲 Workflow 和 Agent、Memory 和检索增强生成（RAG）各适合什么。下单、退款这类强约束链路，别空喊 Agent。
+4. 训练稳定性会问 LoRA 为什么挂在 Linear 上、不挂在 LayerNorm 之后，组内采样全错怎么办，reward/loss 震荡，以及过程监督信号。
 
 ## 本手册真题卡
 
-点击下面每条即可跳到对应题。
+下面每条点进去就能跳到对应题。
 
 - 美团：已有 Reasoning SFT 数据，为何还要 RL？何时才切 RL
 - 美团：组内采样 RL 的 on-policy 采样轨迹（rollout） 没有正确答案怎么办

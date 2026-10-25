@@ -4,10 +4,7 @@ section: systems
 order: 3
 level: S
 title: Adam 训练一个 7B 模型为什么远不止 14GB？
-quick: >-
-  BF16 参数 2 bytes/param 只是权重本身。训练还要存梯度、FP32 master、Adam m/v，以及 activation
-  与临时 buffer。经典 mixed-precision Adam 的参数状态大约 16 bytes/param，$7\mathrm{B}$ 量级大约
-  $112\,\mathrm{GB}$，还没算 activation。ZeRO/FSDP 分的是状态，不是激活。
+quick: "7B 的 BF16 权重约 14GB，但 Adam 训练还要梯度、FP32 master weights 和 m/v。经典 mixed-precision Adam 的参数状态合计约 16 bytes/param，$7\\mathrm{B}$ 约 $112\\,\\mathrm{GB}$，还没算 activation 和临时 buffer。ZeRO/FSDP 可以分片参数状态，长序列的 activation 还要靠重算或并行切分。"
 tags:
   - Memory
   - Optimizer
@@ -22,9 +19,9 @@ sources:
     type: primary
 ---
 
-白板这块容易把「$7\mathrm{B}\times 2\,\mathrm{B}=14\,\mathrm{GB}$」当成训练显存。那只是一份 BF16 权重，推理或冻结前向才够。Adam 训练要把**参数副本、梯度、优化器状态**和 **activation** 分开列，数字才能对上。
+14GB 只够表示一份 7B 的 BF16 权重，Adam 训练还得保存梯度、优化器状态和 activation。白板上先把参数侧的几份张量列出来，再算 activation 和临时缓冲，才能解释显存为什么远超 $7\mathrm{B}\times 2\,\mathrm{B}=14\,\mathrm{GB}$。推理或冻结前向没有同样的 Adam 状态账。
 
-## 1. 先按 bytes/param 拆参数状态
+## 先算参数和优化器状态
 
 经典 mixed-precision Adam（BF16 算、FP32 更新）常见五份：
 
@@ -46,7 +43,7 @@ $$
 
 这只是**未分片**时参数侧的量级：一张 80GB 卡装不下完整 Adam 状态。LoRA 只训低秩矩阵时，这份账按可训练参数算，底座仍可能占一份 BF16。
 
-## 2. Activation 是另一本账
+## 再算 activation 与通信峰值
 
 Activation 与 `batch`、序列长 $T$、`hidden`、层数、是否重算成正比，**不是** $16$ bytes/param 的一部分。Attention 中间量大致随 $B\cdot T\cdot d$ 或 $B\cdot H\cdot T^2$ 涨；长上下文时它会反超参数状态。
 
@@ -54,7 +51,7 @@ Activation checkpointing（gradient checkpointing）用重算换显存：只留�
 
 临时通信 buffer、softmax 工作区、MoE dispatch 缓冲也要另计，峰值往往高于「稳态占用」。
 
-## 3. ZeRO / FSDP 分的是哪几份
+ZeRO / FSDP 主要减少参数状态的单卡占用。
 
 ZeRO 针对的是上一节的参数 / 梯度 / optimizer，不是 activation：
 
@@ -64,10 +61,13 @@ ZeRO 针对的是上一节的参数 / 梯度 / optimizer，不是 activation：
 
 $7\mathrm{B}$ 在 8 卡 ZeRO-3 上，参数状态可落到十几 GB/卡量级，**activation 仍按本地 micro-batch 全量存在**。所以还要叠 TP（切隐层矩阵）、PP（切层）、CP（切序列）和 checkpoint。
 
-我会收口成：14GB 是权重；112GB 是未分片 Adam 状态；OOM 经常是 activation 或通信缓冲。
+排查 OOM 时，我会把 14GB 权重、112GB 未分片 Adam 状态和 activation / 通信缓冲分别核算，确认是哪一部分先到峰值。
 
 ## 追问
 
-- **没有 FP32 master 行不行？** 可以纯 BF16 Adam，状态少 $4$ bytes/param，但小 $\eta$ 下更新可能被舍入吃掉，大模型少见。
-- **ZeRO-3 为什么有时更慢？** 每层 gather 参数，算力没喂饱时通信占比上升；小模型 / 小 batch 更明显。
-- **推理 7B 为什么远小于 14GB 的「训练直觉」？** 推理无 grad / Adam，还可量化；但 逐 token 生成（decode） 另有一份随 $T$ 涨的 KV Cache。
+**没有 FP32 master 行不行？**
+可以纯 BF16 Adam，状态少 $4$ bytes/param，但小 $\eta$ 下更新可能被舍入吃掉，大模型少见。
+**ZeRO-3 为什么有时更慢？**
+每层 gather 参数，算力没喂饱时通信占比上升；小模型 / 小 batch 更明显。
+**推理 7B 为什么远小于 14GB 的「训练直觉」？**
+推理无 grad / Adam，还可量化；但 逐 token 生成（decode） 另有一份随 $T$ 涨的 KV Cache。

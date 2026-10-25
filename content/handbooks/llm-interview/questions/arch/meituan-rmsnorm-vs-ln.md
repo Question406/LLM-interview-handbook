@@ -4,8 +4,7 @@ section: arch
 order: 160
 level: A
 title: 美团：RMSNorm 相对 LayerNorm 有何优势，公式是什么？
-quick: >-
-  LayerNorm 减均值再除标准差并仿射；RMSNorm 只除均方根，不做中心化。少一次均值，算得更快，大模型里通常够稳。偏好来自效率与实践，不是数学上严格更优。
+quick: "LayerNorm 先减均值、再除标准差、再做仿射；RMSNorm 只除均方根，不做中心化。少算一次均值，所以更快，大模型里通常也够稳。大家偏爱它是因为效率和实践经验，数学上它并不严格更优。"
 tags:
   - Meituan
   - RMSNorm
@@ -29,33 +28,38 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“RMSNorm相较于LayerNorm有什么优势？公式是什么？”**
 
-常见误区是：把 RMSNorm 说成「数学上严格更优的 LayerNorm」。它少做中心化，算得更快、带宽更友好；大模型实践里通常够稳，不是定理保证处处更强。公式必须能手写。同场常接着问 SwiGLU，两套要一起写。
+RMSNorm 的优势在效率：它不做中心化，只除均方根，少一次均值和一次同步，算得更快，对带宽也更友好，大模型实践里通常够稳。但这不是定理，它并非处处都比 LayerNorm 强。公式要能手写，同一场面试常接着问 SwiGLU，两套最好一起写出来。
 
 ## 公式
 
-LayerNorm 减均值再除标准差，再仿射：
+LayerNorm 先减均值，再除标准差，最后做仿射：
 
 $$
 \mathrm{LN}(x)=\gamma\odot\frac{x-\mu}{\sqrt{\sigma^2+\varepsilon}}+\beta,\quad
 \mu=\mathrm{mean}(x),\;\sigma^2=\mathrm{mean}((x-\mu)^2).
 $$
 
-RMSNorm 只除均方根，常无 $\beta$：
+RMSNorm 只除均方根，通常也没有 $\beta$：
 
 $$
 \mathrm{RMSNorm}(x)=\gamma\odot\frac{x}{\sqrt{\mathrm{mean}(x^2)+\varepsilon}}.
 $$
 
-少一次均值和一次同步，kernel 更简单。LLaMA / Qwen 系普遍采用。Pre-Norm 结构里，它位于注意力和 SwiGLU 之前，把激活尺度稳住，再进 $QK^\top$ 或门控 $\mathrm{SiLU}(xW_1)\odot xW_2$。RoPE 加在 Norm 之后的 $q,k$ 上，Norm 不编码位置。
+少了一次均值和一次同步，kernel 更简单，LLaMA / Qwen 系普遍采用。在 Pre-Norm 结构里，它放在注意力和 SwiGLU 之前，先把激活尺度稳住，再进 $QK^\top$ 或者门控 $\mathrm{SiLU}(xW_1)\odot xW_2$。RoPE 加在 Norm 之后的 $q,k$ 上，Norm 本身不编码位置。
 
-## 优势是效率与实践
+## 少了中心化，代价在哪
 
-代价是没有显式中心化：若某层激活带很大偏置，LN 会先减去均值，RMSNorm 只按能量缩放。极少数任务可能不同，但后训练里几乎不因此换回 LN。面试别说「RMSNorm 一定收敛更好」；说「在 decoder-only + Pre-Norm 上被验证够用，且省一点算力和实现复杂度」。
+代价是没有显式的中心化。比如某一层的激活带着很大的偏置，LN 会先把均值减掉，RMSNorm 只按能量缩放。极少数任务上可能因此有差别，但后训练里几乎没人为这个换回 LN。面试别说「RMSNorm 一定收敛更好」，说「在 decoder-only + Pre-Norm 上验证过够用，还省一点算力和实现复杂度」。
 
-MoE 路由看的是 Norm 后的 $x$，负载不均不是 RMSNorm 造成的，不要把 aux 损失（loss） 和 Norm 选型绑死。后端岗甚至出现过 CUDA 手撕 RMSNorm，要能写 fused 的 rsqrt。
+MoE 路由看的是 Norm 之后的 $x$，负载不均和 RMSNorm 无关，别把 aux 损失（loss）和 Norm 的选型绑在一起。后端岗甚至出现过 CUDA 手撕 RMSNorm，要能写出 fused 的 rsqrt。
 
 ## 追问
 
-- **$\gamma$ 能省吗？** 多数实现保留，用来恢复层间尺度；省 $\beta$ 更常见。
-- **和 BatchNorm 比？** BN 依赖 batch 统计，NLP 变长序列不稳定；LN / RMS 沿特征维，与 batch 无关。
-- **手写时 $\varepsilon$ 放哪？** 放进均方根再 rsqrt，避免全零向量除零；不要先开方再加 $\varepsilon$ 到外面。
+**$\gamma$ 能省掉吗？**
+多数实现会保留，用来恢复层间的尺度；省掉 $\beta$ 更常见。
+
+**和 BatchNorm 比呢？**
+BN 依赖 batch 统计，NLP 里序列长度不一，很不稳定；LN 和 RMSNorm 都沿特征维算，和 batch 无关。
+
+**手写时 $\varepsilon$ 放在哪？**
+放进均方根里再做 rsqrt，避免全零向量除零。别先开方，再把 $\varepsilon$ 加在外面。

@@ -4,9 +4,7 @@ section: agent
 order: 104
 level: S
 title: 小红书大模型后训练：MCP、Skill 有何区别，Skill 为什么能省 Token？
-quick: >-
-  MCP 是 host / client / server 之间连接工具、资源与提示的协议；Skill 则把一类任务的操作步骤、边界和验收规则打包，供系统检索并管理版本。
-  Token 节省来自把大量操作说明 / 资源按需检索和渐进展开，MCP 协议本身不会天然压缩上下文。
+quick: "MCP 是 host / client / server 之间连接工具、资源与提示的协议，不管 planning、memory 和 retry；Skill 把一类任务的操作步骤、边界和验收规则打包，供系统检索并管理版本。省 token 来自渐进展开：全局只放短 metadata，路由到相关 Skill 后再按步骤加载说明和资源，MCP 协议本身不会压缩上下文。"
 tags:
   - Xiaohongshu
   - MCP
@@ -36,23 +34,26 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A（公司、时间、岗位、轮次与业务方向明确）
 - 原始措辞：**“MCP, SKILL的区别，SKILL为什么能省Token？”**
 
-常见误区是：「MCP 比较省 token」或「Skill 就是另一种 function calling」。MCP 解决应用如何标准地发现、读取与调用外部 tools / resources，不规定模型怎样完成一类任务。Skill 把 workflow、边界、示例、检验规则与少量资源封装成可检索、可版本化的操作知识。Token 节省来自渐进展开，不是协议本身压缩上下文。协议层对照 `agent-mcp`，展开层对照 `agent-skill-progressive`。
+MCP 和 Skill 管的是两层：MCP 解决应用怎样用标准方式发现、读取和调用外部 tools / resources，不规定模型怎样完成一类任务；Skill 把 workflow、边界、示例、检验规则和少量资源封装成可检索、可版本化的操作知识。Skill 省 token，靠的是渐进展开，平时只放一小段描述，用到时才加载正文，协议本身不压缩上下文。说「MCP 比较省 token」或者「Skill 就是另一种 function calling」，都把两层混在一起了。
 
-## MCP 是连接，Skill 是操作知识
+举个例子，若 1000 个 Skill 每个数千 token 全部放进 system prompt，上下文会被淹没；把所有 SOP 写成超长的 tool description 塞进 MCP，也一样不省 token，还更容易让模型选错工具。做成 Skill 以后，全局只保留每个 Skill 的 name、description 和触发条件；来了一条任务，先路由到少数几个相关的 Skill，再按步骤加载说明、模板或资源。
 
-MCP 是 host / client / server 之间的能力与上下文协议：工具、资源、提示可以标准发现和调用。它不负责 planning、memory、retry。Skill 是某类任务的 procedural package：何时触发、输入输出、不适用场景、验收规则。执行时可能通过 MCP 调具体能力，也可能走内部 API。社区治理里，审核标准更适合做成 Skill：规范更新改版本，而不是改死代码，见 `xiaohongshu-agent-business-eval`。把所有 SOP 写成超长 tool description 塞进 MCP，既不省 token，也更容易让模型选错工具。
+MCP 是 host / client / server 之间的能力与上下文协议，工具、资源、提示都可以按标准发现和调用，它不负责 planning、memory、retry。Skill 是某类任务的 procedural package，写清何时触发、输入输出、不适用场景和验收规则。执行时，Skill 可能通过 MCP 调具体能力，也可能走内部 API。社区治理里，审核标准更适合做成 Skill，规范更新时改版本，不用改死代码，见 `xiaohongshu-agent-business-eval`。协议层可以对照 `agent-mcp`。
 
-## 省 token 的条件是 progressive disclosure
+渐进展开（progressive disclosure）分三层：第一层 metadata 必须短，但要能区分能力；第二层正文给 procedure；第三层脚本和参考资料只在具体 step 需要时加载，见 `agent-skill-progressive`。如果每轮仍然全文展开，Skill 只是多了一层包装。路由失败就等于这个 Skill 不存在，所以 description 要写清边界和「不适用」。
 
-全局只保留短 metadata（name / description / 触发条件），先路由到少数相关 Skill，再按步骤加载说明、模板或资源。若 1000 个 Skill 每个数千 token 全部放进 system prompt，上下文会被淹没。第一层 metadata 必须短但能区分能力；第二层正文给 procedure；第三层脚本和参考只在具体 step 需要时加载，见 `agent-skill-progressive`。如果每轮仍全文展开，Skill 只增加包装层。路由失败等于 Skill 不存在，所以 description 要写清边界和「不适用」。
-
-## 要测什么，别只报省了多少字
-
-看 task success、路由 recall、展开 token、误路由与 latency。治理场景还要看政策版本是否加载对、有没有把无关类目 SOP 展开。Skill 版本必须进调用 manifest，才能和模板回滚对齐，见 `pdd-prompt-template-versioning-rollback`。安全上，Skill 正文和 MCP resource 都是外部信任边界，描述可能带注入，见 `agent-skill-security`。
+评测别只报省了多少字，要看 task success、路由 recall、展开的 token、误路由和 latency。治理场景还要看政策版本有没有加载对、有没有把无关类目的 SOP 展开。Skill 版本必须进调用 manifest，才能和模板回滚对齐，见 `pdd-prompt-template-versioning-rollback`。安全上，Skill 正文和 MCP resource 都是外部信任边界，描述里可能带注入，见 `agent-skill-security`。
 
 ## 追问
 
-- **MCP 本身省 token 吗？** 不省。省的是按需加载 Skill / 资源，协议只负责连接。
-- **Skill 和工具 schema 重复怎么办？** schema 描述调用面，Skill 描述何时用、怎么验收；不要两份互相矛盾的长文。
-- **metadata 太多怎么办？** 再做命名空间或小路由器，progressive disclosure 可以递归，见 `agent-skill-progressive`。
-- **每轮全文展开还能叫 Skill 吗？** 包装层而已。没有按需加载就没有 token 收益。
+**MCP 本身省 token 吗？**
+不省。省的是按需加载 Skill 和资源，协议只负责连接。
+
+**Skill 和工具 schema 重复了怎么办？**
+schema 描述调用面，Skill 描述何时用、怎么验收。别写两份互相矛盾的长文。
+
+**metadata 太多怎么办？**
+再做命名空间或一个小路由器，progressive disclosure 可以递归，见 `agent-skill-progressive`。
+
+**每轮全文展开还能叫 Skill 吗？**
+只是包装层。没有按需加载，就没有 token 收益。

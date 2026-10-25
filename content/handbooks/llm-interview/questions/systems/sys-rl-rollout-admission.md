@@ -4,7 +4,7 @@ section: systems
 order: 266
 level: S
 title: RL 训练如何准入、丢弃或重试 rollout，而不是把轨迹一股脑塞进 batch？
-quick: "这不是 API 过载的 429。训练环要决定轨迹进不进本步更新：超长截断或丢掉、全对/全错组丢掉重采、policy stale 降权或丢弃、验证器（verifier） 超时重试而不是当 0 分。优化的是吞吐、freshness 和有效梯度，不是 SLO。"
+quick: "训练准入按长度、组方差、policy 新鲜度和评分完整性决定 accept、drop 或 retry。超长轨迹标记截断，全对 / 全错组丢掉重采，stale 样本降权或丢弃，verifier 超时重试或标 unknown。这样能把算力用在有效梯度上，并控制数据年龄。"
 tags:
   - RL Infra
   - Admission Control
@@ -19,7 +19,9 @@ sources:
     type: primary
 ---
 
-这块容易讲成 LLM API 过载时的拒绝与排队。那是 `sys-admission-control`：保护 首个 token 的等待时间（TTFT） / error budget，容量按 token 与 KV 核算。本题在 强化学习（RL） 训练环：轨迹已经在生成或刚打完分，要不要放进这一步的训练 batch。判据是这批样本对 $\pi_\theta$ 有没有有效梯度、会不会把一步实际耗时和 off-policyness 搞砸。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow；准入是这条 dataflow 的闸门，不是网关限流。
+我会在 rollout 到 update 的路径上检查长度、组方差、策略版本和评分是否完整，再决定 accept、drop 或 retry。比如 verifier 超时只说明结果未知，直接记 0 分会让模型为环境故障受罚。训练准入要保证样本对 $\pi_\theta$ 有有效梯度，同时控制实际耗时和 off-policyness。HybridFlow 把 generation、reward、advantage、update 拆成可组合 dataflow，可以在各段设置检查。
+
+在线 API 的准入保护 TTFT 和 error budget，容量按 token 与 KV 算，另见 `sys-admission-control`；这里判断的是轨迹能否进入本步训练。
 
 ## 四类闸门：长度、零方差组、stale、验证器（verifier）
 
@@ -36,12 +38,17 @@ sources:
 
 准入会改「一步看见几条」，不要和动态 batch、动态采样当成同一个开关。动态 batch 管显存形状；动态采样管零方差组；本题管 **这条轨迹配不配进当前更新**。超长先砍尾部再拼 token 帽；有效组比例低先滤零方差再加 $n$；stale 高就降异步 gap 或丢掉旧轨迹，而不是先加学习率。Agent 场景还要算 sandbox 槽位：同时进行的长 episode 太多，GPU 等环境，整群空转，见 `sys-rl-infra`。
 
-指标不要报平均 reward：admission 率、按原因的 drop 直方图、零方差组占比、轨迹年龄、verifier 超时率、tokens/step、最长尾。平均分好看可能只是全对组没被丢掉。过载时优先 drop 无信息样本（零方差、未知超时、过期版本），而不是随机丢短轨迹。短轨迹往往是能填气泡的有效梯度。
+监控时，平均 reward 之外还要报：admission 率、按原因的 drop 直方图、零方差组占比、轨迹年龄、verifier 超时率、tokens/step、最长尾。平均分好看可能只是全对组没被丢掉。过载时优先 drop 无信息样本（零方差、未知超时、过期版本），而不是随机丢短轨迹。短轨迹往往是能填气泡的有效梯度。
 
 ## 追问
 
-- **和 `sys-admission-control` 差在哪？** 那题是在线 API：按 SLO 拒绝、排队、降级。本题是训练：按长度、组方差、policy 版本、verifier 完整性决定进 batch。不要用 429 回答 GRPO 零梯度。
-- **超时轨迹当 0 分行不行？** 不行。环境故障会被当成策略错误。Retry 或标 unknown；只有确认「模型自己写不完」才打截断惩罚。
-- **全对组为什么必须 drop？** $\hat A=0$，backward 白做还占 token 帽。丢掉重采是为了有效 $n$，不是为了让准确率数字更好看。
-- **stale 到多少必须丢？** 看 $\rho$ 分位数和 KL，而不是固定步数。Gap 允许范围是算法选择；超过就丢，比硬训更干净。
-- **重试会不会让 off-policy 更严重？** 会。Retry 期间 $\theta$ 可能又更新了。重试也要带 `policy_version`，超时预算算进 admission，避免重试风暴占满 sandbox。
+**和 `sys-admission-control` 差在哪？**
+那题是在线 API：按 SLO 拒绝、排队、降级。本题是训练：按长度、组方差、policy 版本、verifier 完整性决定进 batch。不要用 429 回答 GRPO 零梯度。
+**超时轨迹当 0 分行不行？**
+不行。环境故障会被当成策略错误。Retry 或标 unknown；只有确认「模型自己写不完」才打截断惩罚。
+**全对组为什么必须 drop？**
+$\hat A=0$，backward 白做还占 token 帽。丢掉重采是为了有效 $n$，不是为了让准确率数字更好看。
+**stale 到多少必须丢？**
+看 $\rho$ 分位数和 KL，而不是固定步数。Gap 允许范围是算法选择；超过就丢，比硬训更干净。
+**重试会不会让 off-policy 更严重？**
+会。Retry 期间 $\theta$ 可能又更新了。重试也要带 `policy_version`，超时预算算进 admission，避免重试风暴占满 sandbox。

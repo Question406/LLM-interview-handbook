@@ -4,7 +4,7 @@ section: fundamentals
 order: 145
 level: A
 title: RL 方差、无偏 / 有偏估计面试要准备哪些题？
-quick: "先明确「无偏」针对哪个目标：策略梯度、回报、还是 KL 标量。再按操作分类，减 state baseline / reward-to-go 仍无偏；bootstrap、clip、除组标准差、自归一化 IS 用偏差换方差。下面按这条链排。"
+quick: "先说清「无偏」针对哪个目标：策略梯度、回报，还是 KL 标量。再按操作分类，减 state baseline、reward-to-go 仍无偏；bootstrap、clip、除组标准差、自归一化 IS 是用偏差换方差。下面按这条链排。"
 tags:
   - RL
   - Bias-Variance
@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-网上对得上的高频问法已经拆成独立卡。总览在「Bias–Variance Tradeoff 在 RL 中有哪些具体例子？」，本页只给「无偏还是有偏」这条链。点下面每条就能跳到对应题。
+准备这块题，关键是每说一个估计「无偏」，都先讲清是相对哪个目标，策略梯度、回报，还是 KL 标量；然后按操作分两类，一类只改方差，一类拿偏差换方差。网上能对上的高频问法已经拆成了独立卡，总览在「Bias–Variance Tradeoff 在 RL 中有哪些具体例子？」，这一页只排「无偏还是有偏」这条链，点下面每一条就能跳到对应的题。
 
 ## 先分清无偏的对象
 
@@ -36,7 +36,7 @@ sources:
 - 为什么 $V^\pi(s)$ 是最优 baseline？$V$ 估错了梯度还无偏吗？
 - Schulman 的 $k_1/k_2/k_3$ 各估什么？数值无偏和梯度正确是一回事吗？
 
-无偏要先说 相对哪条期望。减只依赖 state 的 baseline，梯度期望不变；$V$ 估错了，只要不当 bootstrap 去替换未来回报，MC 优势仍然无偏。$k_3$ 标量无偏不等于对 $\theta$ 反传就是 KL 梯度，见 `fund-kl-k1-k2-k3`。
+这几张的共同点是先说清相对哪条期望。减只依赖 state 的 baseline，梯度期望不变；$V$ 估错了，只要不拿它当 bootstrap 去替换未来回报，MC 优势仍然无偏。KL 那边也一样，$k_3$ 作为标量无偏，不等于对 $\theta$ 反传出来的就是 KL 梯度，见 `fund-kl-k1-k2-k3`。
 
 ## Return / Advantage：MC 无偏，TD 有偏
 
@@ -50,7 +50,7 @@ sources:
 - 百度文心后训练：GAE 中 $\lambda$ 的作用，与偏差/方差如何权衡？
 - Bias–Variance Tradeoff 在 RL 中有哪些具体例子？
 
-MC / $\lambda=1$ 信轨迹，无偏、方差随长度涨；TD / 小 $\lambda$ 信 $V$，方差小、有 bootstrap 偏差。$\gamma$ 改任务时间尺度，$\lambda$ 只改估计器。减 $V$ 仍无偏，用 $V$ 替未来才偏。
+这一组讲回报和优势。MC，也就是 $\lambda=1$，信的是轨迹，无偏，方差随长度涨；TD 或小 $\lambda$ 信的是 $V$，方差小，有 bootstrap 偏差。$\gamma$ 改的是任务的时间尺度，$\lambda$ 只改估计器。减 $V$ 仍无偏，用 $V$ 替未来才偏。
 
 ## 有限样本 baseline 与归一化
 
@@ -61,14 +61,14 @@ MC / $\lambda=1$ 信轨迹，无偏、方差随长度涨；TD / 小 $\lambda$ �
 - REINFORCE++ 怎么降方差？和 GRPO / PPO 的无偏性差在哪？
 - 0-1 奖励的方差何时最大？这对 GRPO 有效组意味着什么？
 
-减均值（常数或 state baseline）通常还在无偏族里；除 $\sigma$、按长度平均是在 改目标权重。组太小、含自身、再除组标准差，偏差最明显。$p(1-p)$ 在两端为 0，组相对靠的是组内方差，不是「方差越小越好」。
+减均值，不管是常数还是 state baseline，通常还在无偏族里；除 $\sigma$、按长度平均是在改目标里的权重。组太小、均值含自身、再除组标准差，偏差最明显。$p(1-p)$ 在两端为 0，组相对优势靠的是组内有方差，这里的方差并不是越小越好。
 
 ## 采样图与三种 clip
 
 - Score-function 和 reparameterization 差在哪？LLM 的 token 为什么只能走高方差那条？
 - Gradient clip、Advantage clip、Ratio clip 分别偏了什么？
 
-Token 采样走不了低方差 reparam。三种 clip 截的不是同一个量：步长、$A$、还是 $\rho$。
+Token 采样没法走低方差的 reparam。三种 clip 截的也是三个不同的量，分别是步长、$A$ 和 $\rho$。
 
 ## 复用旧数据：IS 无偏，截断 / 自归一化有偏
 
@@ -80,6 +80,6 @@ Token 采样走不了低方差 reparam。三种 clip 截的不是同一个量：
 - CISPO 为什么 clip 的是 IS 权重，而不是 PPO 那样 clip surrogate？
 - On-policy vs Off-policy；PPO/GRPO 为什么强调 Fresh Rollout？
 
-普通 IS 无偏但尾部爆炸；PD-IS 同样无偏、少乘未来的 $\rho$；WIS / clip / V-trace 用偏差换可训练梯度。PPO 的逐步 $\rho_t A_t$ 是局部 surrogate，不是 PD-IS 定理。
+普通 IS 无偏，但尾部会爆；PD-IS 同样无偏，少乘了未来的 $\rho$；WIS、clip、V-trace 拿偏差换能训的梯度。PPO 的逐步 $\rho_t A_t$ 是局部 surrogate，和 PD-IS 定理是两回事。
 
-准备顺序：先会无偏梯度，再谈降方差，再谈复用旧数据；每用一个 trick 都要能说出牺牲了哪一块无偏性。
+准备顺序是先会无偏梯度，再谈降方差，再谈复用旧数据。每用一个 trick，都要能说出牺牲了哪一块无偏性。

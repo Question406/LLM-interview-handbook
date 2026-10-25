@@ -4,9 +4,7 @@ section: arch
 order: 15
 level: A
 title: BPE、WordPiece、SentencePiece、Byte-level BPE 大致区别？
-quick: >-
-  BPE 反复合并高频相邻符号；WordPiece 按似然增益选择子词；SentencePiece
-  是直接用原始文本训练分词器的工具框架；byte-level BPE 从字节开始，因此几乎没有词表外字符（OOV）。
+quick: "BPE 反复合并语料里最高频的相邻符号，WordPiece 按似然增益选合并，两者都是学词表的算法。SentencePiece 是直接拿原始文本训练分词器的工具框架，里面可以跑 BPE 或 Unigram；byte-level BPE 从字节起步，所以几乎没有词表外字符（OOV）。"
 tags:
   - Tokenizer
   - Basics
@@ -24,22 +22,29 @@ sources:
     type: primary
 ---
 
-常见误区是：把 SentencePiece 说成一种独立的 merge 目标，或把 byte-level BPE 说成「和 BPE 完全不是一类」。面试先分清：BPE / WordPiece / Unigram 是学词表的算法；SentencePiece 是可在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并把空格当普通符号。
+这四个名字不在一个层次上。BPE、WordPiece、Unigram 是学词表的算法；SentencePiece 是一个可以直接在 raw text 上训练的工具箱，里面能跑 BPE 或 Unigram，并且把空格当普通符号；byte-level BPE 还是 BPE，只是起点换成了字节。所以别把 SentencePiece 说成一种独立的 merge 目标，也别说 byte-level BPE 和 BPE 完全不是一类。
 
-## 四种东西各管什么
+比如一段中文本来没有空格，用 SentencePiece 就不需要先分词，直接吃原始文本训练，空格本身会变成 `▁` 一类的符号，中日韩文本都能这么处理。
 
-BPE：从字符（或字节）出发，反复合并语料里出现最频繁的相邻 pair，直到词表到目标大小。解码按学到的 merge 表贪心。WordPiece（BERT 系）：候选 merge 看的是语言模型似然增益，而不是裸频率，所以切分更偏「让整句概率变大」。Unigram LM：先给一个过大词表，再按损失剪枝。SentencePiece：直接吃未预分词文本，空格变成 `▁` 一类符号，中日韩不必先分词。
+## 各自怎么学词表
 
-Byte-level BPE（GPT-2 系）从 $256$ 个 byte 起步，任意 Unicode 都能落到 byte，几乎无 OOV。代价是某些语言、特殊符号、带调字符会拆得更碎，同样一句话 $T$ 更长。
+BPE 从字符（或字节）出发，反复合并语料里出现最频繁的相邻 pair，直到词表达到目标大小，解码时按学到的 merge 表贪心切分。WordPiece（BERT 系）挑候选 merge 时看的是语言模型的似然增益，裸频率高不一定被选，所以它的切分更偏向让整句概率变大。Unigram LM 反过来，先给一个过大的词表，再按损失剪枝。
+
+Byte-level BPE（GPT-2 系）从 $256$ 个 byte 起步，任何 Unicode 都能落到 byte 上，几乎没有 OOV。代价是某些语言、特殊符号、带声调的字符会被拆得更碎，同样一句话，$T$ 更长。
 
 ## 为什么还要管 tokenizer
 
-$T$ 直接乘进注意力 $O(T^2 d)$ 和 KV cache。中文词表过碎，同样 8k 上下文装下的「话」更少；过粗则稀有实体、代码、数字粘在一起，编辑距离式纠错和 MoE 路由都会变难。训推必须用同一套 tokenizer：多一个 BOS、空格规范化不同，RoPE 位置 $m$ 会整体错位，$\langle R_m q,R_n k\rangle$ 对的就不是同一相对距离。
+因为 $T$ 直接乘进注意力的 $O(T^2 d)$ 和 KV cache。中文词表切得过碎，同样 8k 的上下文装下的「话」就更少；切得过粗，稀有实体、代码、数字会粘在一起，编辑距离式的纠错和 MoE 路由都会变难。训练和推理必须用同一套 tokenizer：多一个 BOS，或者空格规范化不一样，RoPE 的位置 $m$ 就会整体错位，$\langle R_m q,R_n k\rangle$ 对应的就不是同一个相对距离了。
 
-和架构公式的关系：SwiGLU / RMSNorm 不关心词表；它们吃的是 embedding 后的 $x$。词表大小只影响 embedding / lm_head 的 $V\times d$ 矩阵显存。
+至于和架构公式的关系，SwiGLU、RMSNorm 都不关心词表，它们吃的是 embedding 之后的 $x$。词表大小只影响 embedding / lm_head 那个 $V\times d$ 矩阵的显存。
 
 ## 追问
 
-- **中文用字还是用 BPE？** 纯字表短、OOV 少，但英文和代码变差；现行大模型多用 byte-level 或 SentencePiece BPE 的多语词表，用 $T$ 和下游一起验收。
-- **为什么数字会被拆开？** byte / 字符级切分常见；要稳定算数需专门数字规则或后训练。
-- **换 tokenizer 能否直接继续预训练？** 一般要重做 embedding 对齐或重新训，不能只改配置文件。
+**中文用字表还是用 BPE？**
+现在的大模型多用 byte-level 或 SentencePiece BPE 的多语词表。纯字表序列短、OOV 少，但英文和代码会变差。选哪种，用 $T$ 和下游效果一起验收。
+
+**为什么数字会被拆开？**
+byte 级或字符级切分里很常见。想让算数稳定，要加专门的数字规则，或者靠后训练。
+
+**换了 tokenizer，能直接继续预训练吗？**
+一般不行。要重做 embedding 对齐，或者重新训，光改配置文件没用。
