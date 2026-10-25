@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-25",
+  "leetcodeEntries": 225,
+  "uniqueLeetcodeQuestions": 209,
+  "officialPublicExamples": 512,
+  "customEntries": 347,
+  "referenceRunsPassed": 572,
+  "referenceRunsFailed": 0,
+  "snapshotSha256": "bb753417befdeff06d31f5a659c72ad2fedf66d60636a26d76699c9fc4460a6b",
+  "scope": "Reference implementations against public/default examples; not LeetCode hidden judge tests."
+}

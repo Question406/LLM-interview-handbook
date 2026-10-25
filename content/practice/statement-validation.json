@@ -1,0 +1,3040 @@
+{
+  "checkedAt": "2026-10-25",
+  "statementEntries": 605,
+  "runnableEntries": 572,
+  "additionalDesignAndReportEntries": 33,
+  "preservedAnswerBodies": 605,
+  "referenceRunsPassed": 572,
+  "referenceRunsFailed": 0,
+  "scope": "Standalone Chinese restatements and explicitly labelled reconstructed exercises; original answer bodies preserved.",
+  "files": [
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-12-integer-to-roman.md",
+      "id": "lc-12-integer-to-roman",
+      "sha256": "e161b7cedf9c6d14b0a10188f34040303de171116f0a85fe179153c071f10c8d"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-134-gas-station.md",
+      "id": "lc-134-gas-station",
+      "sha256": "f06da63024a7af20a8ce14d95e3d3d35e4c1df3ce831ff05e9f3880af522ead8"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-169-majority-element.md",
+      "id": "lc-169-majority-element",
+      "sha256": "f808fbace2111645712ddc49944161d669f0dc5adde65b50c9f44524a2f603f2"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-27-remove-element.md",
+      "id": "lc-27-remove-element",
+      "sha256": "20668b783e1c2a94642d0a8f1d9aac15f51f5517d446a2cfa12c67e872c868bb"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-42-trapping-rain-water.md",
+      "id": "lc-42-trapping-rain-water",
+      "sha256": "32eaa1cc6de4a0541a9aa4917cf4e8dcb030f8538ce0962d091a324307443e1b"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-6-zigzag-conversion.md",
+      "id": "lc-6-zigzag-conversion",
+      "sha256": "ed98aedf9e672ca4f62318af51283991857a11228cda8f59733f75edd8778d91"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-17-letter-combinations-of-a-phone-number.md",
+      "id": "lc-17-letter-combinations-of-a-phone-number",
+      "sha256": "382a52fc947b375d0b7002741fd3f6f412a987eddd3e671513dafac66491b0a9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-52-n-queens-ii.md",
+      "id": "lc-52-n-queens-ii",
+      "sha256": "b18b90ae6cae2e562d4a0f07c539c3593fa0c921510b74c5e966739b5e40b546"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-162-find-peak-element.md",
+      "id": "lc-162-find-peak-element",
+      "sha256": "10171c384f33994f0d5bf64bfa65a085933dc2399988f99f24e26d69a5593dbb"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-4-median-of-two-sorted-arrays.md",
+      "id": "lc-4-median-of-two-sorted-arrays",
+      "sha256": "b2ac0fcc2639cb887e3cb8ec4ff945826b8be76b49009f425af1e55e534a04f9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-199-binary-tree-right-side-view.md",
+      "id": "lc-199-binary-tree-right-side-view",
+      "sha256": "4d929d03b11f1657787cab9d7b43d31bfccf9f799078724ce941099b6abe5fd9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-104-maximum-depth-of-binary-tree.md",
+      "id": "lc-104-maximum-depth-of-binary-tree",
+      "sha256": "c160fe289c9e4eca641e119cba8621c2f4890877d993b734100cbc9fef9982d6"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-114-flatten-binary-tree-to-linked-list.md",
+      "id": "lc-114-flatten-binary-tree-to-linked-list",
+      "sha256": "b65991ab60cf876b0983b889d5326364340a7a55458f02da32a0c28d548a45ae"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-173-binary-search-tree-iterator.md",
+      "id": "lc-173-binary-search-tree-iterator",
+      "sha256": "83229e46a0f6de0315186ac89288ddc518097ea1b6a8795ee46130d0f7da6132"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-136-single-number.md",
+      "id": "lc-136-single-number",
+      "sha256": "0101ce6b3628060b0877b7684da51473a8e7e5348fff52b412a24a5e02ad2a41"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-201-bitwise-and-of-numbers-range.md",
+      "id": "lc-201-bitwise-and-of-numbers-range",
+      "sha256": "32de4fed0ab990ef340bceb3dc2070e667d55cf37b041c4e0c272d1f43f6d092"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bst/lc-98-validate-binary-search-tree.md",
+      "id": "lc-98-validate-binary-search-tree",
+      "sha256": "28e08faff3dc72d8dd1b81691474e86f9d8a0bf4439fb3ec9a63ff38ab696390"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-427-construct-quad-tree.md",
+      "id": "lc-427-construct-quad-tree",
+      "sha256": "6730b8305ee781509b2d3de4583a171c4c67126ccc415f93adb819510a801daf"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-322-coin-change.md",
+      "id": "lc-322-coin-change",
+      "sha256": "c6faa330fec4209aca12ee15cecd47066278b809ecac1d6daccb83e08e88d183"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-188-best-time-to-buy-and-sell-stock-iv.md",
+      "id": "lc-188-best-time-to-buy-and-sell-stock-iv",
+      "sha256": "608793461c825b01f9c5d584793ede0b6d19e4de3f0de0e94bc395d4dd1191ba"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-64-minimum-path-sum.md",
+      "id": "lc-64-minimum-path-sum",
+      "sha256": "297feea5d278d128364fe89f5e2298beefc8abbed38782e79b82922d2fe42586"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph-bfs/lc-433-minimum-genetic-mutation.md",
+      "id": "lc-433-minimum-genetic-mutation",
+      "sha256": "8d4cbdcf072d280f1409a4433ab9c0384ce5c1eedf0c45ce71da52cceba21848"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-200-number-of-islands.md",
+      "id": "lc-200-number-of-islands",
+      "sha256": "cadb02543d2aba4897dbd55932a782035c87e9779538257e9fb36ffdc819638f"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-1-two-sum.md",
+      "id": "lc-1-two-sum",
+      "sha256": "9359c9fb7e49bd79d922c5566648ab041d1dd4400cd8225d81eb7bdf6fc28d3b"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-219-contains-duplicate-ii.md",
+      "id": "lc-219-contains-duplicate-ii",
+      "sha256": "523154306c323a20d091b0bb5c99e663c22d6638f46697d058dc19e61c637446"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-49-group-anagrams.md",
+      "id": "lc-49-group-anagrams",
+      "sha256": "13d6ce2b3e3e3be0d540811688464d8844e51d03ada2162e153f3f977de309a9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/heap/lc-502-ipo.md",
+      "id": "lc-502-ipo",
+      "sha256": "f9a747c115f8ea9e72b35b7468e6499db5255bc1bdb2b2e9b30379af9bafc8af"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/intervals/lc-57-insert-interval.md",
+      "id": "lc-57-insert-interval",
+      "sha256": "5e306ac838145965e92679f9abae05b94429751ae494348ccf7984e978230f69"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-141-linked-list-cycle.md",
+      "id": "lc-141-linked-list-cycle",
+      "sha256": "5abba923b1d4ed5581d08a5d50e64dd12088968fb017edcbb27fd3ffbf223603"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-21-merge-two-sorted-lists.md",
+      "id": "lc-21-merge-two-sorted-lists",
+      "sha256": "46c13100fe0deff1af98ab70bc58c343c404c688f6111a1762d967d0acd0c10b"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-86-partition-list.md",
+      "id": "lc-86-partition-list",
+      "sha256": "86d09ef6b46b07f5ed90e951e282f06dec6c52be8c856b7fc0f95d674cae8fb9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-50-powx-n.md",
+      "id": "lc-50-powx-n",
+      "sha256": "e9681b9a87ae4290608f8c2f85298531824519c00776079c3b5f35c01f0f2eed"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-289-game-of-life.md",
+      "id": "lc-289-game-of-life",
+      "sha256": "c1e2b987d8b58f6816aad9f1febf28613302cd4e931fdfe0840debb5251b6513"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-73-set-matrix-zeroes.md",
+      "id": "lc-73-set-matrix-zeroes",
+      "sha256": "87da49ddf2faef6234dd74fdd1a8214264cb1f0d72a822896eb8027b953b7cda"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-76-minimum-window-substring.md",
+      "id": "lc-76-minimum-window-substring",
+      "sha256": "696c2ae07cd72964c4381680320ccfcb31f672a458213ef438e4409e5a866494"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-224-basic-calculator.md",
+      "id": "lc-224-basic-calculator",
+      "sha256": "af96f7c4e11e8c64520d1cd192a207317815e4bb4fd568fee0e453f89dcaf6af"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/trie/lc-212-word-search-ii.md",
+      "id": "lc-212-word-search-ii",
+      "sha256": "b9b98b35f7dc3066bbfad3f737175a7683e561ac7e674b58cf92d75f624882d1"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/two-pointers/lc-167-two-sum-ii-input-array-is-sorted.md",
+      "id": "lc-167-two-sum-ii-input-array-is-sorted",
+      "sha256": "ab4806b3253c7becaad53632ac140949a31992a02ac83d8e924c42c2fa505fb9"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-151-reverse-words-in-a-string.md",
+      "id": "lc-151-reverse-words-in-a-string",
+      "sha256": "34e1d4621b6dbcf20e1e2ed13757c8400f162fb3bf5c0fce74f50d738b5c38c3"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-345-reverse-vowels-of-a-string.md",
+      "id": "lc-345-reverse-vowels-of-a-string",
+      "sha256": "9db23d24cb644d38ba76788cc8adc55bdd7f0cf947389be712a8e33ba9e704c7"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/backtracking/lc-216-combination-sum-iii.md",
+      "id": "lc-216-combination-sum-iii",
+      "sha256": "dc549774735ee9ba6092129ab8168eca8011bfd0d407b0edacecc0efccccc169"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-search/lc-875-koko-eating-bananas.md",
+      "id": "lc-875-koko-eating-bananas",
+      "sha256": "39df1acd53fb583e21da7c33e8ac83b9817ace82f5a8ad9a144f8211724ca5e8"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-1372-longest-zigzag-path-in-a-binary-tree.md",
+      "id": "lc-1372-longest-zigzag-path-in-a-binary-tree",
+      "sha256": "d4fd627123706fbdfe3776cd00af867b6212d23b9c4d0e0e40f39ed0daab946c"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-872-leaf-similar-trees.md",
+      "id": "lc-872-leaf-similar-trees",
+      "sha256": "0a153245df606110ef5213a5a56d89c2bf4b9c92ab5087a2a2f54703343f8dad"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/bst/lc-450-delete-node-in-a-bst.md",
+      "id": "lc-450-delete-node-in-a-bst",
+      "sha256": "91b25d23fde0bfa552f1774a02f2c605bee0a945b1c5483bbe7de793c89dd2ca"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-1d/lc-746-min-cost-climbing-stairs.md",
+      "id": "lc-746-min-cost-climbing-stairs",
+      "sha256": "e6d3b0556b34926af0319e453322c5168ad2d52270a70471c6d6a927188b4b34"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-multi/lc-714-best-time-to-buy-and-sell-stock-with-transaction-fee.md",
+      "id": "lc-714-best-time-to-buy-and-sell-stock-with-transaction-fee",
+      "sha256": "cd9fde223c8fd4a61b2204afa59e1b64d3afc212bb1103b23fa17c4b202d41a7"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-dfs/lc-1466-reorder-routes-to-make-all-paths-lead-to-the-city-zero.md",
+      "id": "lc-1466-reorder-routes-to-make-all-paths-lead-to-the-city-zero",
+      "sha256": "a185d974ca9c7d224273d26f57a92547adc91a176fc489bd8d1a1f52a565d6a9"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-1207-unique-number-of-occurrences.md",
+      "id": "lc-1207-unique-number-of-occurrences",
+      "sha256": "6847c60981386476ef3b05a5636250ca535c1f45da300c7cb120a0b143259fa4"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/heap/lc-215-kth-largest-element-in-an-array.md",
+      "id": "lc-215-kth-largest-element-in-an-array",
+      "sha256": "209d3daf9ede10f7ece9edb9e70edd98678e5e12659b34d1ab62811ee8b578ab"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/intervals/lc-435-non-overlapping-intervals.md",
+      "id": "lc-435-non-overlapping-intervals",
+      "sha256": "e44395a42b43e2a034ad59c58a6c8ef31bd5c4570c53d02c6190bab33b2a61ce"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/linked-list/lc-2130-maximum-twin-sum-of-a-linked-list.md",
+      "id": "lc-2130-maximum-twin-sum-of-a-linked-list",
+      "sha256": "14f82863937101c57d2376455bf57e10d91b22153a74d9a12743536b6329cbe4"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/prefix-sum/lc-1732-find-the-highest-altitude.md",
+      "id": "lc-1732-find-the-highest-altitude",
+      "sha256": "947e7c7945afb4e414e785e06603d2c0d688b18e9aca07bce8316094ad750048"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/sliding-window/lc-1004-max-consecutive-ones-iii.md",
+      "id": "lc-1004-max-consecutive-ones-iii",
+      "sha256": "042d997ea4b56a0464a4fe42132e2d989d48096fcf7c65164587b64dcd8ab02e"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/stack/lc-2390-removing-stars-from-a-string.md",
+      "id": "lc-2390-removing-stars-from-a-string",
+      "sha256": "910889b473253ef51be5d86f75c597d2aa91cb0e165f47a48b734ca72fe3702a"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/trie/lc-208-implement-trie-prefix-tree.md",
+      "id": "lc-208-implement-trie-prefix-tree",
+      "sha256": "707d816f3555b3bcf9916319a24a8ef19899f45d71d92eaa26dc3947aeb55e11"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/two-pointers/lc-392-is-subsequence.md",
+      "id": "lc-392-is-subsequence",
+      "sha256": "112846cbe94b120c6a309feb7d6743bbf1832c0e341025742f557ded0c0182a9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-121-best-time-to-buy-and-sell-stock.md",
+      "id": "lc-121-best-time-to-buy-and-sell-stock",
+      "sha256": "f2d0f753b3b04aeef64e6701c05e4e14045587143c39c4ca3c5949e961d6482d"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-135-candy.md",
+      "id": "lc-135-candy",
+      "sha256": "f66986782ed541b31ab4864734a8bdab2fc311233dc1659e40a9708a19beebe4"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-189-rotate-array.md",
+      "id": "lc-189-rotate-array",
+      "sha256": "7fdaf8609a260ba44771eb2be1b069d9c2c02d3beff1876bce54e017060d5a6c"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-274-h-index.md",
+      "id": "lc-274-h-index",
+      "sha256": "a8b153d5a59cfa3042ab4afdc6a41cb28c47c44c803c8cdd12af5861b3603899"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-45-jump-game-ii.md",
+      "id": "lc-45-jump-game-ii",
+      "sha256": "ee90edf8b77ce931919fcad18afe050166dba543b885ac62aa68fc45da41e335"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-68-text-justification.md",
+      "id": "lc-68-text-justification",
+      "sha256": "25293853e8144323820f2e7596d8f1397b82caee5773796a0defcdf6bb7bc310"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-22-generate-parentheses.md",
+      "id": "lc-22-generate-parentheses",
+      "sha256": "3e0ed3c4b906e494fa2e781723fd94d0889a873417ae09ab07b1159642c5542e"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-77-combinations.md",
+      "id": "lc-77-combinations",
+      "sha256": "323d1c9dbdf299a6a23ad5013c7202095a8f13c5fe6478a5db3242242d9a193e"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-33-search-in-rotated-sorted-array.md",
+      "id": "lc-33-search-in-rotated-sorted-array",
+      "sha256": "ae30c1419da40432071032ee6f8f53330f9b19a04ab99920e8472b649cec2190"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-74-search-a-2d-matrix.md",
+      "id": "lc-74-search-a-2d-matrix",
+      "sha256": "9d9ccba0564a056a141736a71bfc3c9d376eb37af5e150ed52acc481c1235231"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-637-average-of-levels-in-binary-tree.md",
+      "id": "lc-637-average-of-levels-in-binary-tree",
+      "sha256": "aa3dac65c60c477512b94f6ca38cbacd67d052d0070ed52d25b033746be3db16"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-105-construct-binary-tree-from-preorder-and-inorder-traversal.md",
+      "id": "lc-105-construct-binary-tree-from-preorder-and-inorder-traversal",
+      "sha256": "3a7409d0fe817ee3265d84c840b4934340385fc5299c10b2920d866048973854"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-117-populating-next-right-pointers-in-each-node-ii.md",
+      "id": "lc-117-populating-next-right-pointers-in-each-node-ii",
+      "sha256": "85d297377109b2ec115f0c80b037a4aac127762a32377295a0aedd831191ca9f"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-222-count-complete-tree-nodes.md",
+      "id": "lc-222-count-complete-tree-nodes",
+      "sha256": "5a3ef7010937453e1269c6ee2bc1bee48ce115ce8bbac41e58ca6f727b164dc8"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-137-single-number-ii.md",
+      "id": "lc-137-single-number-ii",
+      "sha256": "89e3b5336cb49695c55c23405c19f431dfc210f4ad05b565cd9745f3394c7063"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-67-add-binary.md",
+      "id": "lc-67-add-binary",
+      "sha256": "9fb31bdfe31b782043978b8b4497ab23adf9532d040b66b49572d57cf1c24bc9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-108-convert-sorted-array-to-binary-search-tree.md",
+      "id": "lc-108-convert-sorted-array-to-binary-search-tree",
+      "sha256": "88e4a6f6c97c04394247172adf8473a680cdefc3aae78bb21cad56a8ab895106"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-139-word-break.md",
+      "id": "lc-139-word-break",
+      "sha256": "304ad4ce860a2a75dfcd36302719676d6d9f29dc2997fb286fcad357bafe50fa"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-70-climbing-stairs.md",
+      "id": "lc-70-climbing-stairs",
+      "sha256": "e068a0c8802ef37c9659fb316a0808df9ea57be25c0c1575fe6b41058477e7a0"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-221-maximal-square.md",
+      "id": "lc-221-maximal-square",
+      "sha256": "a09b35a56c6641468b25fe7b70a9ea6e4c0bdccc785864fc4c9f70db0fb1f7ce"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-72-edit-distance.md",
+      "id": "lc-72-edit-distance",
+      "sha256": "8341a8fc4037897157e9d66ef273da2d4c892e524675d6cdea16b8793bb98825"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph-bfs/lc-909-snakes-and-ladders.md",
+      "id": "lc-909-snakes-and-ladders",
+      "sha256": "a5ea3e46f4606fcf189f98828f9b83bf198704eb6a8c43fdcd02b289920eb700"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-207-course-schedule.md",
+      "id": "lc-207-course-schedule",
+      "sha256": "43c670adcc77a49b40ffe8c29d5dee6d9bd4b4034efd0e596816af6f4a0d9b9f"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-128-longest-consecutive-sequence.md",
+      "id": "lc-128-longest-consecutive-sequence",
+      "sha256": "ad27a7133343339caeba51d0cd842b72bb94f95cf3865252338d697272835994"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-242-valid-anagram.md",
+      "id": "lc-242-valid-anagram",
+      "sha256": "b5cce7b5adbbcd947a9116d5f6fe3351b8d75f183826079b9d678765699fcdd5"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/heap/lc-215-kth-largest-element-in-an-array.md",
+      "id": "lc-215-kth-largest-element-in-an-array",
+      "sha256": "9c07325ae400296c4f80bbba0586bafce6212c61cdee6c73283bc8732bf3a059"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/intervals/lc-228-summary-ranges.md",
+      "id": "lc-228-summary-ranges",
+      "sha256": "54334705af62ec719a948a69e04d7ffabc233e71ec5d659090dc1a2012cbae65"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/kadane/lc-53-maximum-subarray.md",
+      "id": "lc-53-maximum-subarray",
+      "sha256": "273ff14c5e0089a459158dfd698ecf5e5ffad232cccf58cd488efc68e5fe3554"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-146-lru-cache.md",
+      "id": "lc-146-lru-cache",
+      "sha256": "ee7d8bd1b6ebcdfa5a35511290ab3252ceb368f2ec29ab431c8210c11cb00a8e"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-25-reverse-nodes-in-k-group.md",
+      "id": "lc-25-reverse-nodes-in-k-group",
+      "sha256": "426c47a1184968f08c060d408797c1b4895e622135e2845dfcd1c43a665556d5"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-92-reverse-linked-list-ii.md",
+      "id": "lc-92-reverse-linked-list-ii",
+      "sha256": "39c37aa4482a2809601be6c15581967a50a208f6ea2dbec623f2650b7cb547b9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-66-plus-one.md",
+      "id": "lc-66-plus-one",
+      "sha256": "edb8af30fa69a9834cc65eab7734de0819f907ac175c3c24800f5b4b4740e527"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-36-valid-sudoku.md",
+      "id": "lc-36-valid-sudoku",
+      "sha256": "f88e6b30e6efa4f8bff22e4cce797c0c3ca66d6f131ea353dd3dcf379d731e57"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-209-minimum-size-subarray-sum.md",
+      "id": "lc-209-minimum-size-subarray-sum",
+      "sha256": "4f0bbae988c8150a64bddb060498f008434675c733bb0fada8064c159330540f"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-150-evaluate-reverse-polish-notation.md",
+      "id": "lc-150-evaluate-reverse-polish-notation",
+      "sha256": "f2798a223fd3a6c6741eebacb68266b665b0798f9e16d9ddfbcd54b4415f671d"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-71-simplify-path.md",
+      "id": "lc-71-simplify-path",
+      "sha256": "0e860a825adcc0b50bf05e19db0687f4a5df2a116bec98d7cb004c52a328cf82"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/two-pointers/lc-11-container-with-most-water.md",
+      "id": "lc-11-container-with-most-water",
+      "sha256": "a504c3bbc182b9b016d51d5f73fd457b17cfc9b45ec5f306fc2e953e2b4f1200"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/two-pointers/lc-392-is-subsequence.md",
+      "id": "lc-392-is-subsequence",
+      "sha256": "8750f4a00e4350350df5e257590a280da1c7066c0ea260458224d495b7f6db10"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-1768-merge-strings-alternately.md",
+      "id": "lc-1768-merge-strings-alternately",
+      "sha256": "2d78f493b7d5de827ceec38a94b8282e81d7554b3bfd453946733e3024ae6e9f"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-443-string-compression.md",
+      "id": "lc-443-string-compression",
+      "sha256": "c9dfdf9ea6f57f17e460cca9d2f06b43739ea54e46297db695f2cebd0f14cd5d"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-search/lc-162-find-peak-element.md",
+      "id": "lc-162-find-peak-element",
+      "sha256": "ab27bc79454ed340670c03aa87cfc4e9be86dae8ca2a1d314fe9f80fb87b92b6"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-bfs/lc-1161-maximum-level-sum-of-a-binary-tree.md",
+      "id": "lc-1161-maximum-level-sum-of-a-binary-tree",
+      "sha256": "d4d5506f89edfcb881697638c3953d24f150c5af3f9bfc45da315bd7deadf366"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-1448-count-good-nodes-in-binary-tree.md",
+      "id": "lc-1448-count-good-nodes-in-binary-tree",
+      "sha256": "20602a52a9f33effd57a9571fa16bc6e345be20aa057a4e34003e1e3b65b2855"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/bit/lc-1318-minimum-flips-to-make-a-or-b-equal-to-c.md",
+      "id": "lc-1318-minimum-flips-to-make-a-or-b-equal-to-c",
+      "sha256": "e3123887e86ed34f742730a315178ed24693e042b077f8254aac9cee16c577be"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/bst/lc-700-search-in-a-binary-search-tree.md",
+      "id": "lc-700-search-in-a-binary-search-tree",
+      "sha256": "ed990b02a8c1adaadab9cd12e6f564427e0ab3c57a09b73cfb7d55cd68c911d1"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-1d/lc-790-domino-and-tromino-tiling.md",
+      "id": "lc-790-domino-and-tromino-tiling",
+      "sha256": "44f91969a92f14c0d9f698fc03bc9dc2dddaa1e99660265442a25fa2da34eb1a"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-multi/lc-72-edit-distance.md",
+      "id": "lc-72-edit-distance",
+      "sha256": "55b82e765daac20e34616f5ade7d90a2569052d583f8db24f30c84d2157dc6a0"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-dfs/lc-399-evaluate-division.md",
+      "id": "lc-399-evaluate-division",
+      "sha256": "b967d0af858e3b826d78453f51094ca722afafeadde31087c747369692266f75"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-1657-determine-if-two-strings-are-close.md",
+      "id": "lc-1657-determine-if-two-strings-are-close",
+      "sha256": "779785611c8a6f800cce1431f64e4e53a497a7c84e56a5c7e0097c7e46071677"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/heap/lc-2336-smallest-number-in-infinite-set.md",
+      "id": "lc-2336-smallest-number-in-infinite-set",
+      "sha256": "fd22756b9cb00867822057457998a7453be278e1c62b4efe9d44221f4bd9ff13"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/intervals/lc-452-minimum-number-of-arrows-to-burst-balloons.md",
+      "id": "lc-452-minimum-number-of-arrows-to-burst-balloons",
+      "sha256": "7f3e06c5417b75d64ec9a9439ee45662086d75f60f3a0d52673765e95ba9acce"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/linked-list/lc-328-odd-even-linked-list.md",
+      "id": "lc-328-odd-even-linked-list",
+      "sha256": "8b57d76b022a08f893d9e7cfb6858291621408078e9f62ab48f8b2db6c8338e4"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/prefix-sum/lc-724-find-pivot-index.md",
+      "id": "lc-724-find-pivot-index",
+      "sha256": "40f272e6850c0a94ae26e5ec455f76b434dbda6889a841bf9c7b2f7aafa5a90d"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/sliding-window/lc-1456-maximum-number-of-vowels-in-a-substring-of-given-length.md",
+      "id": "lc-1456-maximum-number-of-vowels-in-a-substring-of-given-length",
+      "sha256": "d8e11c9f6f1b060a3eb8726df6030c7b13c472bdcb1f3645484ee841c53c51af"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/stack/lc-394-decode-string.md",
+      "id": "lc-394-decode-string",
+      "sha256": "1be140af0d0c53a32bc72f7db2b1b8b4b0d1b25394322841d5e9318119641b29"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/two-pointers/lc-11-container-with-most-water.md",
+      "id": "lc-11-container-with-most-water",
+      "sha256": "3a21ef727bc3c987afbd1c5cc68275db75b3e02d01dd9c4e73921691ad6d707d"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-122-best-time-to-buy-and-sell-stock-ii.md",
+      "id": "lc-122-best-time-to-buy-and-sell-stock-ii",
+      "sha256": "e451c0a7a08619396e1be9fa6bcb539b7c40f7d3a321f24b13d8975e6ca94728"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-14-longest-common-prefix.md",
+      "id": "lc-14-longest-common-prefix",
+      "sha256": "fdf68e48e7ba9883b4168e820d77201742db929dd9ec2a58ca2877a0c3414fae"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-238-product-of-array-except-self.md",
+      "id": "lc-238-product-of-array-except-self",
+      "sha256": "b3edd063740ef85ebdfc27aef965375ae7664a3ab39b966f712720fbf65b142a"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-28-find-the-index-of-the-first-occurrence-in-a-string.md",
+      "id": "lc-28-find-the-index-of-the-first-occurrence-in-a-string",
+      "sha256": "4e4195684d6aef44f82a4d6acc7d930136b352c6bb74da661b038745624eb3aa"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-55-jump-game.md",
+      "id": "lc-55-jump-game",
+      "sha256": "aee1f694004ed4eaff4e21db6c324b86c504e276d32a7e5784ad564c1441ba84"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-80-remove-duplicates-from-sorted-array-ii.md",
+      "id": "lc-80-remove-duplicates-from-sorted-array-ii",
+      "sha256": "2d396c3cd89a494f77f860ecb9011ac90566ac294e0559ecaa5c6882afec398f"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-39-combination-sum.md",
+      "id": "lc-39-combination-sum",
+      "sha256": "1f923211c29317ccf6554c1c089c8094d09efad0d9502368052c2ace362ea7b6"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-79-word-search.md",
+      "id": "lc-79-word-search",
+      "sha256": "68e258606b4b504e04a7179c629a31397a2d1edfff9f57b188aa7a075a0ca9fe"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-34-find-first-and-last-position-of-element-in-sorted-array.md",
+      "id": "lc-34-find-first-and-last-position-of-element-in-sorted-array",
+      "sha256": "fb7a8f9eaad6a06630f5e66db8f5c6ed6512cb60d8387b8903acb58a58e4762c"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-102-binary-tree-level-order-traversal.md",
+      "id": "lc-102-binary-tree-level-order-traversal",
+      "sha256": "35b5f657feac3ba50158d5abd3ad10d0da683bcd3344fcca24735bb79a772be9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-100-same-tree.md",
+      "id": "lc-100-same-tree",
+      "sha256": "6ec1d02fcfe7eba2cb49371a80baed49523e9420a365b92759a7d9d6d7da3c58"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-106-construct-binary-tree-from-inorder-and-postorder-traversal.md",
+      "id": "lc-106-construct-binary-tree-from-inorder-and-postorder-traversal",
+      "sha256": "073ef49092207889996ba0778cc8e71946e166799b41edcd1b252f961e965aad"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-124-binary-tree-maximum-path-sum.md",
+      "id": "lc-124-binary-tree-maximum-path-sum",
+      "sha256": "f7f9376b8253d4c1ded73261c7232fd9a36881ef81823a3323ed2836a66ab31a"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-226-invert-binary-tree.md",
+      "id": "lc-226-invert-binary-tree",
+      "sha256": "45334dc41cabeda531b25514fe75e811cccd9a4e468bad48ccd068744fb2a06a"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-190-reverse-bits.md",
+      "id": "lc-190-reverse-bits",
+      "sha256": "a2277964e7d59802ef6176781ea73a5e13e6e7e8d913f9b6e64e6a4b31f5191b"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bst/lc-230-kth-smallest-element-in-a-bst.md",
+      "id": "lc-230-kth-smallest-element-in-a-bst",
+      "sha256": "1b5641515856404d7f1af3078290c28fd4ef6135de0941a227b4d058589f7828"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-148-sort-list.md",
+      "id": "lc-148-sort-list",
+      "sha256": "38bf24af3a307f0d9996193a191ca12d7b9fc390ca7c9c0e19c7fb4455a8abb8"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-198-house-robber.md",
+      "id": "lc-198-house-robber",
+      "sha256": "256b567e1d201e8f8a0b5568705ced2a5d68f438210693b06595e51e25f763ad"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-120-triangle.md",
+      "id": "lc-120-triangle",
+      "sha256": "e6e93a7c04790ad30fd832a324a8397bdcdf238de49f9e2e5b08f3c78a4cf251"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-5-longest-palindromic-substring.md",
+      "id": "lc-5-longest-palindromic-substring",
+      "sha256": "b59b5edf9c83638a5149301d2f61c15f031622fccd89e5f2b93c38c13f3321c9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-97-interleaving-string.md",
+      "id": "lc-97-interleaving-string",
+      "sha256": "e66e69fd76c908289bd608bb6bb155c0c5e646ed720d38ab2f4cd5463ab42e08"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-130-surrounded-regions.md",
+      "id": "lc-130-surrounded-regions",
+      "sha256": "1d41099616b3e5c3ac938e1f14a7b2a66bf2c8d51d65438a6e17ccb99315831f"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-210-course-schedule-ii.md",
+      "id": "lc-210-course-schedule-ii",
+      "sha256": "fe8316274b50c4059e9227c3def5fe649168b0cfd6fbda119f127c4b2d3b3b83"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-202-happy-number.md",
+      "id": "lc-202-happy-number",
+      "sha256": "e3624451be8f1eec408b3bdd39b3fe89ba028e56e352e160ff9972dc1ba9dab0"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-290-word-pattern.md",
+      "id": "lc-290-word-pattern",
+      "sha256": "38ef466dc214f39ddc64dc4ac856f1e1f9a05ceb63810778dbec4c1984c79ce7"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/heap/lc-295-find-median-from-data-stream.md",
+      "id": "lc-295-find-median-from-data-stream",
+      "sha256": "b984dbc0d694a74aa9ce80bcf32dee27d337deb77bd3b974042663e64681b651"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/intervals/lc-452-minimum-number-of-arrows-to-burst-balloons.md",
+      "id": "lc-452-minimum-number-of-arrows-to-burst-balloons",
+      "sha256": "98ba433734289ef7903d187cbf2cfa03000e2629e1a50203089d59955d7fd0e4"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/kadane/lc-918-maximum-sum-circular-subarray.md",
+      "id": "lc-918-maximum-sum-circular-subarray",
+      "sha256": "d42c5309696c20c1168d6f5c66cbaf40fc47e952a8edfdde3bb21e262724ff05"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-19-remove-nth-node-from-end-of-list.md",
+      "id": "lc-19-remove-nth-node-from-end-of-list",
+      "sha256": "1bf246ba49d75ee3c8d181a9dd26e8971a58d004159afff6233ba43494ebcd1e"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-61-rotate-list.md",
+      "id": "lc-61-rotate-list",
+      "sha256": "e83ea6cefccead0e03a6cda70bda9e7cf2df1aaa96d17c81a83b82d5f49da6bf"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-149-max-points-on-a-line.md",
+      "id": "lc-149-max-points-on-a-line",
+      "sha256": "8e8b1358a020e263c928eca8a8af0fcda317a4578bb69d17731e5f88405b09f4"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-69-sqrtx.md",
+      "id": "lc-69-sqrtx",
+      "sha256": "5a929c40831ded6a87cbbc1ae200aa80a6464a96aca4cea07f2d3c2bbbf4affa"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-48-rotate-image.md",
+      "id": "lc-48-rotate-image",
+      "sha256": "785621dd98df542f154bbbd4e8f3a85fbefdaabf439e3180afaae639fbb6a85b"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-3-longest-substring-without-repeating-characters.md",
+      "id": "lc-3-longest-substring-without-repeating-characters",
+      "sha256": "0783e4342dfd4259e87f446bc4c48ef8ed7e68951148861ea6b3019697574e3d"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-155-min-stack.md",
+      "id": "lc-155-min-stack",
+      "sha256": "f08f4682b8e578fdc1d40a0bd134396e738a2199d78d8d4942d1c5f18872f988"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/trie/lc-208-implement-trie-prefix-tree.md",
+      "id": "lc-208-implement-trie-prefix-tree",
+      "sha256": "5c4d3ceeeb2d57324e022e0794e793cbbbf8334b010a0d7b74a1a95c4effa703"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/two-pointers/lc-125-valid-palindrome.md",
+      "id": "lc-125-valid-palindrome",
+      "sha256": "3866571dd776989a832a85d238a02f0ff1ab67eb3e0515599806f795ec0d795d"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-1071-greatest-common-divisor-of-strings.md",
+      "id": "lc-1071-greatest-common-divisor-of-strings",
+      "sha256": "5da1ca8a4c6f1d8f3548703629c047a909fe8b79b1314c62a143ba146ca37788"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-238-product-of-array-except-self.md",
+      "id": "lc-238-product-of-array-except-self",
+      "sha256": "4a086d6e3e85cf911c6599a4138b13e526370116e0b7658feaf5ee530b7cf02c"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-605-can-place-flowers.md",
+      "id": "lc-605-can-place-flowers",
+      "sha256": "56256646fbd8c8010fc1025773e437849063bda5f6acb1791bff34f6b256fe1e"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-search/lc-2300-successful-pairs-of-spells-and-potions.md",
+      "id": "lc-2300-successful-pairs-of-spells-and-potions",
+      "sha256": "8cff4afaba3d3b3126e041327277cf55ca2ae65d51e7e37c9e44f6f1cd4f06b0"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-bfs/lc-199-binary-tree-right-side-view.md",
+      "id": "lc-199-binary-tree-right-side-view",
+      "sha256": "f624eb96a45435b37ab1a5115c246bc39f2b68f354dcbf12d44b1961a4e0d720"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-236-lowest-common-ancestor-of-a-binary-tree.md",
+      "id": "lc-236-lowest-common-ancestor-of-a-binary-tree",
+      "sha256": "eb9f4784f77c35883c639a1235eab7a51fdd7c87f7850d870a3b71a553514192"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/bit/lc-136-single-number.md",
+      "id": "lc-136-single-number",
+      "sha256": "30d16c9644b97513ea0bc324fbac3b679d5e7fd12c4c0183ba4a0dae1ee9f00a"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-1d/lc-1137-n-th-tribonacci-number.md",
+      "id": "lc-1137-n-th-tribonacci-number",
+      "sha256": "d18704a319a638ac40941d8afbd9c1899798130af7dfc8775ec32811e4988931"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-multi/lc-1143-longest-common-subsequence.md",
+      "id": "lc-1143-longest-common-subsequence",
+      "sha256": "8a23be05b19fadd91d350d73ff70b5a1bb67d592eb810b4c12297a83c44fd8e6"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-bfs/lc-1926-nearest-exit-from-entrance-in-maze.md",
+      "id": "lc-1926-nearest-exit-from-entrance-in-maze",
+      "sha256": "9d873af900a93de3fd2a0ec7f8018906f00ad573be525b15d017f853438fdd4e"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-dfs/lc-547-number-of-provinces.md",
+      "id": "lc-547-number-of-provinces",
+      "sha256": "23cede333b3dc7cbeb204627509134a5ccc7ae0c735f3cff57a359251a900238"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-2215-find-the-difference-of-two-arrays.md",
+      "id": "lc-2215-find-the-difference-of-two-arrays",
+      "sha256": "76ede403f27668fef6afe08b38bcddfddbd687de92e803e87f84bc6d61f47ffc"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/heap/lc-2462-total-cost-to-hire-k-workers.md",
+      "id": "lc-2462-total-cost-to-hire-k-workers",
+      "sha256": "8b5bf705678ae5670d6565e82014a04a9eb4c75dbd860567f943514d2627b608"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/linked-list/lc-206-reverse-linked-list.md",
+      "id": "lc-206-reverse-linked-list",
+      "sha256": "cc0c096445e5607e5f7953879b700c70cb1a5b8e2536fc39752c0d7ba3f93ceb"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/monotonic-stack/lc-739-daily-temperatures.md",
+      "id": "lc-739-daily-temperatures",
+      "sha256": "b0f9a8e88d35f39e91f96e7b2c0973d261a11c93da1d041bc127f059c527fdd8"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/queue/lc-649-dota2-senate.md",
+      "id": "lc-649-dota2-senate",
+      "sha256": "fe3158890cd037a3351709c05e14161d221ad7cc717c6e11a289b228e19dde94"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/sliding-window/lc-1493-longest-subarray-of-1s-after-deleting-one-element.md",
+      "id": "lc-1493-longest-subarray-of-1s-after-deleting-one-element",
+      "sha256": "7b381ef06f7556e82ec39cbf134285061e7aa2bd6a5b76bc50189e9e4f0f338d"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/stack/lc-735-asteroid-collision.md",
+      "id": "lc-735-asteroid-collision",
+      "sha256": "265d677f4dbb2073a2753208a041f501ad8c840777d9781d02048b1452d93cb8"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/two-pointers/lc-1679-max-number-of-k-sum-pairs.md",
+      "id": "lc-1679-max-number-of-k-sum-pairs",
+      "sha256": "a6a896cb0ab2de102d6f867e835f1dcf3a5c2615ae40e4a981204215eeda6f78"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-13-roman-to-integer.md",
+      "id": "lc-13-roman-to-integer",
+      "sha256": "7dabd3fd22e23b7a3a4de4ae8b8641e9baf38f1fa9bd9ffd0de772e33d53bc90"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-151-reverse-words-in-a-string.md",
+      "id": "lc-151-reverse-words-in-a-string",
+      "sha256": "70a18e6cc289003aba859ce44c816773d4e43b7154804147676578132dbfbce8"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-26-remove-duplicates-from-sorted-array.md",
+      "id": "lc-26-remove-duplicates-from-sorted-array",
+      "sha256": "12e4eb1a986a0ffd788c76d325ed690cd543e31f12a6368334c3ec8b75f420b5"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-380-insert-delete-getrandom-o1.md",
+      "id": "lc-380-insert-delete-getrandom-o1",
+      "sha256": "c325a0df692c1ec2bb4214fa58c04d06d530bb8a00a4f3e66b112fea179a4ac7"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-58-length-of-last-word.md",
+      "id": "lc-58-length-of-last-word",
+      "sha256": "e66720d5f13b44c64c327d6684d63e5dc33aabea94bb1f7cfa54768fdc172c69"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-88-merge-sorted-array.md",
+      "id": "lc-88-merge-sorted-array",
+      "sha256": "6559f1373a79125414f7778877fdad8888a12edf7d6225aa579cb1a7c701a7c9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-46-permutations.md",
+      "id": "lc-46-permutations",
+      "sha256": "c0c9f54541fdc6134364c66177ded291d430312e8a2615eb882c027388e0a80d"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-153-find-minimum-in-rotated-sorted-array.md",
+      "id": "lc-153-find-minimum-in-rotated-sorted-array",
+      "sha256": "3e7419cde79f57e0c41d9631e641a0d9376c618dd1384f68739a0693fff79279"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-35-search-insert-position.md",
+      "id": "lc-35-search-insert-position",
+      "sha256": "57dead98f9ed2633e095f475a5c39eafda52faa29e54b9a584d9b87935ced9cc"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-103-binary-tree-zigzag-level-order-traversal.md",
+      "id": "lc-103-binary-tree-zigzag-level-order-traversal",
+      "sha256": "fdea27e735eaf3edcec9807b75a07047e298cc15c7b392b05c380ef45304181e"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-101-symmetric-tree.md",
+      "id": "lc-101-symmetric-tree",
+      "sha256": "35cd2256ad0979442f32ba79e62c52acff8979e62b45e461d6cb54d8268e1e50"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-112-path-sum.md",
+      "id": "lc-112-path-sum",
+      "sha256": "d05133139e171a53c96c020e501d38ace73708f1d4d9df901a86adc063148ad3"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-129-sum-root-to-leaf-numbers.md",
+      "id": "lc-129-sum-root-to-leaf-numbers",
+      "sha256": "84e6b6ab6802d23b979870cb9b3e0706e97b085a6c033b60a163923931272869"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-236-lowest-common-ancestor-of-a-binary-tree.md",
+      "id": "lc-236-lowest-common-ancestor-of-a-binary-tree",
+      "sha256": "a2ebf355d0039fc5474a9aaf42f86e4ffb88b46a00e58ff7bac2d39bc8b5d001"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-191-number-of-1-bits.md",
+      "id": "lc-191-number-of-1-bits",
+      "sha256": "50d7168e72ab99f2d5470fdf67b3e079148b8f4d0afbb991af27965b4b4c1b52"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bst/lc-530-minimum-absolute-difference-in-bst.md",
+      "id": "lc-530-minimum-absolute-difference-in-bst",
+      "sha256": "f23822c35a23be83b8441d91f6980a7ebc0b8208f3a66f5c927ecdb9365b4b45"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-23-merge-k-sorted-lists.md",
+      "id": "lc-23-merge-k-sorted-lists",
+      "sha256": "65e967676c592b957de65b7fe175c631d2c341db5894dda8d580c85810418fa8"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-300-longest-increasing-subsequence.md",
+      "id": "lc-300-longest-increasing-subsequence",
+      "sha256": "d18db557c44a1403fa83d0ea75a897d38e51e1f325d3ab58e7052299b64b70d0"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-123-best-time-to-buy-and-sell-stock-iii.md",
+      "id": "lc-123-best-time-to-buy-and-sell-stock-iii",
+      "sha256": "70ea1047fa680e8c7f2f594ef0379ea91feaf6f6fdea83e0077bf28bcd4f57c8"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-63-unique-paths-ii.md",
+      "id": "lc-63-unique-paths-ii",
+      "sha256": "50231c2e57b5c67d98dca943f1a28df49ca18784c156fb3127787861888ea085"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph-bfs/lc-127-word-ladder.md",
+      "id": "lc-127-word-ladder",
+      "sha256": "1821bb4308c4b881ad7c5decc30b728676cef78e47d4b357015af9c39fd25408"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-133-clone-graph.md",
+      "id": "lc-133-clone-graph",
+      "sha256": "12208ac6ca00ee3d8ce22d6fe67736c0847bfa49c400f4c655a30e3cabd773dc"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-399-evaluate-division.md",
+      "id": "lc-399-evaluate-division",
+      "sha256": "c60bc952208f20a030efe3138c43e0098587accfc6aabee1b437e2e8396085ef"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-205-isomorphic-strings.md",
+      "id": "lc-205-isomorphic-strings",
+      "sha256": "2463c0b2c869bc64d8bddb446e7bf5d5bf61b9ac233cdfb4dbfa51df0b6ff1d2"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-383-ransom-note.md",
+      "id": "lc-383-ransom-note",
+      "sha256": "a2dbd26314eb0ec68e0cc2a5dde93fe495867e91c47f1bc65bdc91fdc668cafb"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/heap/lc-373-find-k-pairs-with-smallest-sums.md",
+      "id": "lc-373-find-k-pairs-with-smallest-sums",
+      "sha256": "2ba828bebde943ca2b116dd553c65cafb260c17de145118f31add1333b75b0d5"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/intervals/lc-56-merge-intervals.md",
+      "id": "lc-56-merge-intervals",
+      "sha256": "97e63c8beed75fa172d581ac939386d33cc4c29ebba6c377e25bc9f430eee336"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-138-copy-list-with-random-pointer.md",
+      "id": "lc-138-copy-list-with-random-pointer",
+      "sha256": "18eb9efef1dcac950e79df73de39b55bec38c9e101ddcd4c6b6844faf5b376fe"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-2-add-two-numbers.md",
+      "id": "lc-2-add-two-numbers",
+      "sha256": "c43c73317d3bf418739848faf912516e521a2ce9b32a4412476dd22de66a2ca0"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-82-remove-duplicates-from-sorted-list-ii.md",
+      "id": "lc-82-remove-duplicates-from-sorted-list-ii",
+      "sha256": "204e24cf979e3095faa9baf70cfac54481e3baf79b8cdc89ab3023763141f3b1"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-172-factorial-trailing-zeroes.md",
+      "id": "lc-172-factorial-trailing-zeroes",
+      "sha256": "2609b3eece18cf10ee6fe7e8905169d69ee59b2e8693d7460aba5e48313b444c"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-9-palindrome-number.md",
+      "id": "lc-9-palindrome-number",
+      "sha256": "1b157eb31745f72ec111115d3a091db4945aa73c2ddc6e5c9e4fec788be5e4da"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-54-spiral-matrix.md",
+      "id": "lc-54-spiral-matrix",
+      "sha256": "5436dd20df75faf60fdd70b588d4d8011338d43d8d0708ab9cf67fdb29d1e4e9"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-30-substring-with-concatenation-of-all-words.md",
+      "id": "lc-30-substring-with-concatenation-of-all-words",
+      "sha256": "c7a3001e8610412662c6e55a7e2705fa051309faf0bbc4b801425cbf215c2fd6"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-20-valid-parentheses.md",
+      "id": "lc-20-valid-parentheses",
+      "sha256": "a5c4996127d106a8999914d8217889b9922555d6d0840468bd4653f2261348b6"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/trie/lc-211-design-add-and-search-words-data-structure.md",
+      "id": "lc-211-design-add-and-search-words-data-structure",
+      "sha256": "4d25476881a8fdeeceb7472f3d1ee46ab70d44adc4efe12b1da105232d86ca68"
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/two-pointers/lc-15-3sum.md",
+      "id": "lc-15-3sum",
+      "sha256": "b12e146f7ddf3905567b89319a2a15a349ba3fe88facc39aabe8f392721953d5"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-1431-kids-with-the-greatest-number-of-candies.md",
+      "id": "lc-1431-kids-with-the-greatest-number-of-candies",
+      "sha256": "40080e5796dadec50e8ba63dd2b419e3aa13cde1217ebf855c81fbde592c1b8d"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-334-increasing-triplet-subsequence.md",
+      "id": "lc-334-increasing-triplet-subsequence",
+      "sha256": "03e91c62c04aacacb933f46dae0a77fbff7b889d1a1b1c37b76b26129e7acfa8"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/backtracking/lc-17-letter-combinations-of-a-phone-number.md",
+      "id": "lc-17-letter-combinations-of-a-phone-number",
+      "sha256": "9dd5df3e45a00e123a2a4e767e1361f23fc2f7a6ee59027b542724e10c619dfe"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-search/lc-374-guess-number-higher-or-lower.md",
+      "id": "lc-374-guess-number-higher-or-lower",
+      "sha256": "23c4843efd59a983629c3ae5bfa30819c41f664f8fe6ec89b3830500898e8360"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-104-maximum-depth-of-binary-tree.md",
+      "id": "lc-104-maximum-depth-of-binary-tree",
+      "sha256": "91256fc57aa711099d716d725a2f99b7ad87d7f50ae6f29dd1df8293c84b65e7"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-437-path-sum-iii.md",
+      "id": "lc-437-path-sum-iii",
+      "sha256": "ae72da3d759cd0099a9a91e89f38d4629aa72b7dfac225c6c7b2526826be1ad0"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/bit/lc-338-counting-bits.md",
+      "id": "lc-338-counting-bits",
+      "sha256": "123d1c6d38ca32eef1e6277da72e286b801ca053856923784847b478612619df"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-1d/lc-198-house-robber.md",
+      "id": "lc-198-house-robber",
+      "sha256": "a4c31ee360cac1ec5a10833db17e14e1dfeb41e22f14a891d51ca6711025770d"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/dp-multi/lc-62-unique-paths.md",
+      "id": "lc-62-unique-paths",
+      "sha256": "5e7eb99126763e37dc568623285a5c2bcf7e2bf38e748f77744c531f1cb0a07b"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-bfs/lc-994-rotting-oranges.md",
+      "id": "lc-994-rotting-oranges",
+      "sha256": "13d1c26cb112ef7472785f060d2eda10c781df9ed6d6fe01efea9a3ed2696f7a"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-dfs/lc-841-keys-and-rooms.md",
+      "id": "lc-841-keys-and-rooms",
+      "sha256": "d654312ae1818bb1f4a836cbd7b0092a96c7aacf53c0436aa25a0bc8faab98b7"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-2352-equal-row-and-column-pairs.md",
+      "id": "lc-2352-equal-row-and-column-pairs",
+      "sha256": "df484f2ee696731bfd785f4bf5f75c981d7e2efc976586091b5fa58893fe9d24"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/heap/lc-2542-maximum-subsequence-score.md",
+      "id": "lc-2542-maximum-subsequence-score",
+      "sha256": "33f7b771ddf996e84103fb8c9ec8919c9d1ab49f13e8fd04376bec7e83f96582"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/linked-list/lc-2095-delete-the-middle-node-of-a-linked-list.md",
+      "id": "lc-2095-delete-the-middle-node-of-a-linked-list",
+      "sha256": "aac3b1c619b49f75dd629cf5e16de9d154044e75ebcf302038d2743cff3df282"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/monotonic-stack/lc-901-online-stock-span.md",
+      "id": "lc-901-online-stock-span",
+      "sha256": "9c2e0806af1a3846c01b6f95a32e35aa321b4b22e18896a3549937171044d6b2"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/queue/lc-933-number-of-recent-calls.md",
+      "id": "lc-933-number-of-recent-calls",
+      "sha256": "668effd2853d7e5a24e24e1399a34f1217f1eb1beb8dbdaf5663765136ac6bb9"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/sliding-window/lc-643-maximum-average-subarray-i.md",
+      "id": "lc-643-maximum-average-subarray-i",
+      "sha256": "7b436f0e279d43c3ba95d74362624a42e5d69727d7e5a3840e84b9f91c74ebc7"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/trie/lc-1268-search-suggestions-system.md",
+      "id": "lc-1268-search-suggestions-system",
+      "sha256": "f70a159acaab2a3e546f8086d28bd86b4ea93a4a540ce4bca0b33b7480a017e2"
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/two-pointers/lc-283-move-zeroes.md",
+      "id": "lc-283-move-zeroes",
+      "sha256": "8285ea3191c2255e5bb457b788a0b2b8e2687e5753b893d5e8966340d90fe2d1"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bpe-tokenizer.md",
+      "id": "anthropic-bpe-tokenizer",
+      "sha256": "594ca3dc539637115d5b3b85e7f1b2a34fbe397e04e70a2fcd78c71716b10de3"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-perf-takehome.md",
+      "id": "anthropic-perf-takehome",
+      "sha256": "16afb13c34c8e37d9c190417399f6613088804bc0866ffbabd500a8a0bd1160b"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-design-data-batcher.md",
+      "id": "p3a-anthropic-coding-design-data-batcher",
+      "sha256": "0cda81ecd5ce9753f7b00f71398f8c8bd9916cd5af22f799c1316457dcd7e4c3"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q2-lru-cache-durability.md",
+      "id": "p3a-anthropic-coding-q2-lru-cache-durability",
+      "sha256": "9ec886b4091924e965e1099707257ad818b495b70797a0665ff00fc0978385e3"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-mech-interp-take-home.md",
+      "id": "p3a-anthropic-mech-interp-take-home",
+      "sha256": "de49624b0713249d15b9084efea2d18a6aac052f7b7e1b499036266301ccb251"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-bank-system.md",
+      "id": "p3a-anthropic-oa-bank-system",
+      "sha256": "b34aa85372d569b18cc118734d1ded61e41cf19a8a63983b9619cc7c0cce584a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-recipe-manager.md",
+      "id": "p3a-anthropic-oa-recipe-manager",
+      "sha256": "ea7348febc929b8281c9e0dad1903165e3460cf9aa21a7d87effd16879d9fc34"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-performance-engineer-take-home.md",
+      "id": "p3a-anthropic-performance-engineer-take-home",
+      "sha256": "846515289e8a1257156323c5f36b89700681b4238f6c28ac57a4eead77d61e23"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-mha-code.md",
+      "id": "apple-mha-code",
+      "sha256": "0300f073197d45339ba325edaf7831a2d7add2d7f3f7c8b48bd1a2bdfa93caa0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-attn-mask.md",
+      "id": "coding-attn-mask",
+      "sha256": "c185b44188eb8b92ea35eb7cb30f662d384fd38f0487a5923d81ae8536f8918b"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-cross-entropy.md",
+      "id": "coding-cross-entropy",
+      "sha256": "e87e8b4fc4c45ca3f88cc99d709ec4c2ba3db2d9f0a628f1ff85ed14ca4408ba"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-embedding-lookup.md",
+      "id": "coding-embedding-lookup",
+      "sha256": "06368b63d2cb6cb07bccb4f2500aef8cce03dd7858bf15853e4200577ee1e34c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gqa-repeat.md",
+      "id": "coding-gqa-repeat",
+      "sha256": "c4cc05c471f08ada6ac24e4c085f71c3b3313a5d757173f07bc75caf228c67f0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gumbel-max.md",
+      "id": "coding-gumbel-max",
+      "sha256": "d1f686c5eddfd936586a4d545701fb59867215818404e251f111df0d64afd2ec"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-logsumexp.md",
+      "id": "coding-logsumexp",
+      "sha256": "732595a44a0eacbaa48955eb695c0c102125e46f9b2f96cd04761491530f7398"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-packed-lm.md",
+      "id": "coding-packed-lm",
+      "sha256": "26010a6fc7d8f781eafea4d6f3ea3c7ae2f7362af874282d247bb0b2343e96de"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rmsnorm.md",
+      "id": "coding-rmsnorm",
+      "sha256": "3cf4248aa4264fa64920aa0beacb0238be8f8ee6222711d3c5a2c01246ad8a35"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-softmax-stable.md",
+      "id": "coding-softmax-stable",
+      "sha256": "92de1b77a019d30e584484188b972fd67f355149f8505f8554761d5d7c93157d"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-tis-mismatch.md",
+      "id": "coding-tis-mismatch",
+      "sha256": "5aaa4011ce1a421eb6c965f2a1fed10ced4a1818d0a7bf974657afc6c0d681ae"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-z-loss.md",
+      "id": "coding-z-loss",
+      "sha256": "e580396b002d6eb74a675b1dbcca4c901562764889d9a4e7bce24a3ecfe97789"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-beam-search-decoder.md",
+      "id": "p3a-perplexity-beam-search-decoder",
+      "sha256": "468fc9ae1bd19b23b94ffa2c465fbca49d38bc9bc6b9cffeade2ad3d7c54cc3e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-frontend-discover-infinite-scroll.md",
+      "id": "p3a-perplexity-frontend-discover-infinite-scroll",
+      "sha256": "1aa0dbea5a0c8b4d093802d4f0167edfea4cfefdfcd690efe8f5dec558530e64"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-premium-zone-escape-path.md",
+      "id": "p3a-perplexity-premium-zone-escape-path",
+      "sha256": "ea65cfbf9cbf3c016f8d8fb5d0c7e6497e06fe80342b61b7b435739b060ba69c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stream-sampling-and-distribution-verification.md",
+      "id": "p3a-perplexity-stream-sampling-and-distribution-verification",
+      "sha256": "98a13a8cf47c03d80e757378aea09939df1bda580f2d88f622d3c53e66372493"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-graph-dfs.md",
+      "id": "p3a-google-deepmind-graph-dfs",
+      "sha256": "aceba16bc2b9c80298c3b7ff45ce54ebd6d48b145f3dbfd1388af77d1d3348c6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-dna-shotgun-sequencing.md",
+      "id": "p3a-microsoft-dna-shotgun-sequencing",
+      "sha256": "f2c10bf1458017afd48c42010d0d0306a303f2ca1c1f056dae5fb2a5a69046c6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-max-number-occurrences-in-suffix.md",
+      "id": "p3a-microsoft-max-number-occurrences-in-suffix",
+      "sha256": "06efa52b9ba163ffe8ff58f9880afb1d52676c80b07d0531a45264cfeabe4ece"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-top-k-largest-retain.md",
+      "id": "p3a-microsoft-top-k-largest-retain",
+      "sha256": "26934dc35af2e7cd17ecbdb2670d4820b43d311ecb99e5f4995fa523236a6994"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-entropy-l1.md",
+      "id": "openai-entropy-l1",
+      "sha256": "af8c0e78a06fd33aaa762dcbff17a019f2854f95a9db201519966241b3cdcf7f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-resumable-iter.md",
+      "id": "openai-resumable-iter",
+      "sha256": "2fa5f51b89bab2a7c3d67a778c7f50c1589162a367991e5d55f4b18c0d32605c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-autograd-hillis-steele-scan.md",
+      "id": "p3a-openai-autograd-hillis-steele-scan",
+      "sha256": "fe7f1b0a7f2f2e10f2d2e2274d9c63fc0f6556e4e960f97abeb02bd5b41a3010"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-data-labeling-task-scheduler.md",
+      "id": "p3a-openai-data-labeling-task-scheduler",
+      "sha256": "c8f332b00e18caccf8dc83df3a455eb14d88b59e68077c89751753bbbffb8ea7"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-gpu-credits.md",
+      "id": "p3a-openai-gpu-credits",
+      "sha256": "58d68a5f8f721c973cafbcf84a421166ddfd58515fd1c9b1a5ee0c89542fb7e5"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-ip-address-cidr-iterator.md",
+      "id": "p3a-openai-ip-address-cidr-iterator",
+      "sha256": "7dd55f094f0029175377e1f0dc0770fb7c65ce57b0de5ffa93e719c65d1f597a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-memory-allocator.md",
+      "id": "p3a-openai-memory-allocator",
+      "sha256": "094367e1c1f5b89ecb4e0681da5b2b53ea94f93dd050a232f1e6b57a8617fafd"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-opensheet-spreadsheet.md",
+      "id": "p3a-openai-opensheet-spreadsheet",
+      "sha256": "c40eee3fdb2c45f92e21a1db6b09159d1b1d475b8e387dec1b799c8a0a2bf140"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-sharded-matmul-backprop-debugging.md",
+      "id": "p3a-openai-sharded-matmul-backprop-debugging",
+      "sha256": "c9962f539c12d2ffd4513f8c27d41b9bdf80b40642985cd39b3e0165b8f8c225"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-toy-language-type-inference.md",
+      "id": "p3a-openai-toy-language-type-inference",
+      "sha256": "eb3b6602b99b02abf2c0c60c8b7647aafac1ef0e9ce97babcf1b335073ee1bfb"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-numpy-top-k-sampling.md",
+      "id": "p3a-cohere-numpy-top-k-sampling",
+      "sha256": "ece35d4f630c7b4dd617c7ca530298ebc6c7455bcd776509e73d7c9deda82cc0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-gpu-unlimited-switches.md",
+      "id": "p3a-mistral-gpu-unlimited-switches",
+      "sha256": "a773e7dfe4e7f2cd98f441f1db19be640ce644ae62cbda7c239b8f18db3780cb"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-paged-cow.md",
+      "id": "kv-prefix-paged-cow",
+      "sha256": "6d9281f0927b30f7c4c030065d347af2a39629eb5cae43de346323ae4fcd93fe"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-segmented-attention.md",
+      "id": "kv-prefix-segmented-attention",
+      "sha256": "a24f6c3322507ab9bfd9c00f038b70ddba8e8d314b82a6d75057cee2dd1e4b1c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-common-ngrams.md",
+      "id": "p3a-xai-common-ngrams",
+      "sha256": "62021c01c0cf0d129278e08e9b193a99b02eb80e09b19e0ba086cbd9df02b43e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-durable-kv-cache.md",
+      "id": "p3a-xai-durable-kv-cache",
+      "sha256": "9334cf831868124ce1eb239f6148d1018f29c5efb5d592ad34c89f9daefe3a62"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-in-memory-database-ttl-backup.md",
+      "id": "p3a-xai-in-memory-database-ttl-backup",
+      "sha256": "a2eadd6777cded6087dc4f0acd5e1af63d0f78eb5b449f194c815e7772caf208"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-multithreaded-bank-account-bug-hunt.md",
+      "id": "p3a-xai-multithreaded-bank-account-bug-hunt",
+      "sha256": "7ebe501621336012ccd3c95124278a3a5d5eea61eeaaf9c205513db2709255d9"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-process-vs-thread-verbal.md",
+      "id": "p3a-xai-process-vs-thread-verbal",
+      "sha256": "eed38352ffaf8cf92169affda23db6e7acd88e2efb3b222298cb7ad28e0a73fa"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-transactional-key-value-store.md",
+      "id": "p3a-xai-transactional-key-value-store",
+      "sha256": "1d6a10a954e87ffdf11c12c70e458b3464bb7437443506c36cb51442e913d2b9"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-kv-txn.md",
+      "id": "xai-kv-txn",
+      "sha256": "a0aae155202de34779d76c5f6567168a8ac822083225cf9e2fdb79bc3588066f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-chat-tools.md",
+      "id": "design-chat-tools",
+      "sha256": "a3f25e4300067db01a58cf3d592807fdb15f62ee89c1ef9224b26cb43affa891"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-prompt-mgmt.md",
+      "id": "design-prompt-mgmt",
+      "sha256": "8332d5a68a6261495a1ac56caddfca243551a19e648d2c361f2f96de8ecc95fe"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-search.md",
+      "id": "design-search",
+      "sha256": "dc6cccae6a31c34a7c2752d6f42537a89ba1c05ef71c9e6848fdc2e82db9b148"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-recsys.md",
+      "id": "design-recsys",
+      "sha256": "1748ff9e473e1bfa6a5e43e25da1f6f33a002934f36f82aef055549396a6cb9c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-browser-agent.md",
+      "id": "design-browser-agent",
+      "sha256": "72cc73a2585bf7d4a74dbd31c9ce5b76a3741a7c84dc063eb9d0c8bfacaf39b4"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-feature-store.md",
+      "id": "design-feature-store",
+      "sha256": "7c42860730e64d8e8aad27d384fbc87f2f075a7a0378d4144fbb2503e9299399"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-ads-rank.md",
+      "id": "design-ads-rank",
+      "sha256": "1b86617344712eb5a0aabc31fd304a844797e15a55e1d7b6c442e25d95cc3c07"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-long-doc.md",
+      "id": "design-long-doc",
+      "sha256": "0e90226b5a63099132abbfb3cdc9ebcf0c29198586f623554db4ec7e7b271a8f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-chat-serving.md",
+      "id": "design-chat-serving",
+      "sha256": "03d82221497eb6f3fe2b3ec127cb14fa2cc2a125480444ce9c164978f317e40d"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-multimodal-prod.md",
+      "id": "design-multimodal-prod",
+      "sha256": "fb864bd6fe5f427528805211179c7d99282f89737dcf1427bc5f543e76cdf03e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-agent-budget.md",
+      "id": "design-agent-budget",
+      "sha256": "65f62e5717a93f0c29b88f018a8b42ebb8cd6050af800baa73d5edfa7c1c894e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-tool-prod.md",
+      "id": "design-tool-prod",
+      "sha256": "3650621c0ff474d39a7b5d129107a0e9bbce66ca79863b537ebfcbc928b32197"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-eval-platform.md",
+      "id": "design-eval-platform",
+      "sha256": "256c121c11ba596d02873b2dfe42a7c5fa0a2a5a948e74c92051b78acabb71ba"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-offline-eval.md",
+      "id": "design-offline-eval",
+      "sha256": "760dab247f49c00ce31aac6104437b73813c2013a22a5b7e149aaf8c2f879d0c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-code-assistant.md",
+      "id": "design-code-assistant",
+      "sha256": "8f1e012055a4e68fe3a3d7ceeea849373a3070fded2978fa700d96d625786e12"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-prod-rag.md",
+      "id": "design-prod-rag",
+      "sha256": "ef44ed4685b941115f04b057a44195aacf6cb9368f984e04258009b7ec7dc158"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-voice-agent.md",
+      "id": "design-voice-agent",
+      "sha256": "97c6a65a10b7a35098014fd5cbd4bc5cd1331e94056b54063aa8a920dc4d1fac"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-mm-rag.md",
+      "id": "design-mm-rag",
+      "sha256": "96469ac4d316c4a6543b05ca38319779d35f6930af9e55cb2b4e67d99a147e70"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-moderation.md",
+      "id": "design-moderation",
+      "sha256": "0c2c75f8e8af828909964c4acbb0254fa4a116696dbe2af5a0031068072b68b9"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-agent-harness.md",
+      "id": "design-agent-harness",
+      "sha256": "aa63e9ceefbef501686658c34b7b5ef0a641abee7ae1e1d9f2c82da60ba5a82a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-mm-assistant.md",
+      "id": "design-mm-assistant",
+      "sha256": "3d790855ee2c560f9593f58f9cda76d62752d987b9024308221c9b487cf3fb62"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-eval-agent.md",
+      "id": "design-eval-agent",
+      "sha256": "3e953c578941b785764869b99daca0c8027d839d26f8079980b031c4ea5ed2a3"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-payment-coffee-shop.md",
+      "id": "p3a-openai-payment-coffee-shop",
+      "sha256": "83015daf8d615c6f115242ab222ec86f166341b1e1c04692f1b82f5063a05a67"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-rag-search-ml-design.md",
+      "id": "p3a-openai-rag-search-ml-design",
+      "sha256": "f2ff5144e57c39958bfb17b722714332afb39af87a9e08423e27570b8f97bcc1"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/harvey/harvey-drive-acl.md",
+      "id": "harvey-drive-acl",
+      "sha256": "3040e288ffae692e3380729f958ead29b1b4cd53de9e19b7a868a738e7c0f7ac"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/stripe/stripe-onsite-debug.md",
+      "id": "stripe-onsite-debug",
+      "sha256": "69791981a61140e64e557b9a49ecc329b0722e04939e03d51c0af699f77cf788"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-be-shorturl-redpacket.md",
+      "id": "ali-be-shorturl-redpacket",
+      "sha256": "e8edc3292abee4ae4fcabbb0a9a1ea3b40a644ad777483f482009ac8389ebe21"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/google-youtube-rank.md",
+      "id": "google-youtube-rank",
+      "sha256": "ad67048bb351c4c5b8c1f6495ac8d6c50e8d0c322d2faac3ba1b57a9b30fa39e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/gdm-ml-design.md",
+      "id": "gdm-ml-design",
+      "sha256": "6c025a24a3b94dd8ae442ea3a5c4332b8f68526d11f47680ad4ca53817050505"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/harvey/harvey-coding.md",
+      "id": "harvey-coding",
+      "sha256": "ce657282e5c8e49539845d7d404e2f69369841ca9bbcd66e0fceaa3eb6d50dee"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/ai-labs/perplexity-hands-on.md",
+      "id": "perplexity-hands-on",
+      "sha256": "4b6355314b37ccfb7e9b18b237ee74e184a2fd354facf5ab173f843db3eb6cd1"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/anduril/anduril-reported.md",
+      "id": "anduril-reported",
+      "sha256": "974493af7ba3d7a119a66cfcf78dd3179136417e54be212345665b4812e714ff"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/posttrain/snorkel-iterative-dpo.md",
+      "id": "snorkel-iterative-dpo",
+      "sha256": "a244c56dc98422c59efe942facb00631a6838ce85dc13fe5bea0b860b2eb6a92"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bank-oa.md",
+      "id": "anthropic-bank-oa",
+      "sha256": "2aa3d2aa990bfabdf441e1871e36109a886c2d55459fc98cbb6aacf1c9ceb124"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-inmemory-db.md",
+      "id": "anthropic-inmemory-db",
+      "sha256": "62c84ff3eb13ae0e7703c223d13c34389eae12301a5055eaf73f64ce78ef4445"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-bootloader.md",
+      "id": "p3a-anthropic-coding-bootloader",
+      "sha256": "96a995dc578e376d615eb9b16f74b20d43162df6b81414b819c6249f1b13951f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q2-file-deduplication.md",
+      "id": "p3a-anthropic-coding-q2-file-deduplication",
+      "sha256": "347156591534fb0b8eb883acafa538dd1e6ab789bc7348e5c092631cde6fbd9f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q6-tokenizer.md",
+      "id": "p3a-anthropic-coding-q6-tokenizer",
+      "sha256": "494bb794b8861d976d012f53c93550ee56e81ca549d5da23f490219b48eb3b4f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-take-home-research.md",
+      "id": "p3a-anthropic-ml-take-home-research",
+      "sha256": "badf48602ce6a65c90bdf3dddfec27f1967ae037221e7c1a4ec2783a1e8628c4"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-in-memory-database.md",
+      "id": "p3a-anthropic-oa-in-memory-database",
+      "sha256": "64eabae440ae2318f0acee12d8e9b7b1e0d12bb8ab6484a5249b27f8d52681dd"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-performance-engineer-modeling.md",
+      "id": "p3a-anthropic-performance-engineer-modeling",
+      "sha256": "e17599973442b0128de1f383c661aa88cf9eced0f0bb64beb54c4ea892feb35f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-kmeans.md",
+      "id": "apple-kmeans",
+      "sha256": "7b506a3d79d4369b71b5fea35b81928ec4859574f3f1945878f314444f802a11"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-alibi.md",
+      "id": "coding-alibi",
+      "sha256": "307508e75807905857d9b8ae81c61ede7f4fd5c3ad8ddc7e7c6a54cb433de1ad"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-cispo.md",
+      "id": "coding-cispo",
+      "sha256": "a3b7fbb2cf4368d29df03c78e78f80b15d6de2fa71907fa904918102f5f84a04"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-dropout.md",
+      "id": "coding-dropout",
+      "sha256": "24f023e15da61c2b79618cbf113b280233e0faed53f037f53213e8f47eb3b77f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gae.md",
+      "id": "coding-gae",
+      "sha256": "194d336c77e1b956bd77ee862acdcee7ea1a3d4ebb13bb4c857950cba67c6267"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gspo-seq-ratio.md",
+      "id": "coding-gspo-seq-ratio",
+      "sha256": "f3e75529c390f04a47b169ea0919e969c9e872f183286656f4d78d7eef6d3639"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-layernorm.md",
+      "id": "coding-layernorm",
+      "sha256": "e85a8ade8019803d29fc2e57e9436457c87ebee5dfc8d6241642ad73ff403436"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-online-softmax.md",
+      "id": "coding-online-softmax",
+      "sha256": "5557fbe9508ba98cca176ff805a158ad3366585023e0eedb74b66f9b9f6bec0e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rloo-advantage.md",
+      "id": "coding-rloo-advantage",
+      "sha256": "56b6e281660755f4c9eea27ee59944c22bef6251e4f918d94b058ecd9fd3b6fb"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-silu.md",
+      "id": "coding-silu",
+      "sha256": "42a980b057282a6192c30a5bc3c5acf4a65c5980d4b85733ea38964aeaef3aca"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-swiglu.md",
+      "id": "coding-swiglu",
+      "sha256": "7a2756030a5930e323ebcbf36779d7f2fdda03a87b964e018da32e18c5f11f37"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-weight-tying.md",
+      "id": "coding-weight-tying",
+      "sha256": "31350e9a0bc17e735ec5d5ee1eb8f83d6e7e6b8557f5f64e5afc62a2322a4e84"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/p3a-cursor-streaming-markdown-code-parser.md",
+      "id": "p3a-cursor-streaming-markdown-code-parser",
+      "sha256": "aba6fcbc2d6bbae16d1a043801fb50a67b189ad2201ea841eb8112aa41368746"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-embedding-model-batching-service.md",
+      "id": "p3a-perplexity-embedding-model-batching-service",
+      "sha256": "ddaf20aecf434bc917a031acba204477e3f80266209d79bb46e200f3b11e174a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-map-reduce-and-blockwise-attention.md",
+      "id": "p3a-perplexity-map-reduce-and-blockwise-attention",
+      "sha256": "29af1123b63b568d60cec8fc67e1e442adf5d7f01381c00ae6b348d7bd94b1ca"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stream-deduplication-with-near-duplicate-detection.md",
+      "id": "p3a-perplexity-stream-deduplication-with-near-duplicate-detection",
+      "sha256": "e92e9a4d7003be7262a152823236528df173f3de0cd5542a5b0afea8041c56d5"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-array-threshold-filter.md",
+      "id": "p3a-google-deepmind-array-threshold-filter",
+      "sha256": "d593e2925ad8f662bce8657a089edf3daf705fb87744bb879fca2cbb052345e0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-beam-search-decoder.md",
+      "id": "p3a-microsoft-beam-search-decoder",
+      "sha256": "3c7e212d3c4f27c93b35c11226cf7117e5a22c62e714d74931a19c8e754f6b98"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-kv-store-with-snapshot.md",
+      "id": "p3a-microsoft-kv-store-with-snapshot",
+      "sha256": "9f586679847ed8acdab68c3d2187cc43d197573ad2e11c32fb50b8089cd1bd50"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-streaming-stop-token-detection.md",
+      "id": "p3a-microsoft-streaming-stop-token-detection",
+      "sha256": "8dd78528629157e784184fd56fe516cbcef10b3ded44270373c15ea89f9643c2"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-allgather-noise.md",
+      "id": "openai-allgather-noise",
+      "sha256": "406d704adf9bb13adcc12266d5d2554fba75ce042d88aaf4d4a778926e2d86c6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-kv-cache-impl.md",
+      "id": "openai-kv-cache-impl",
+      "sha256": "b85835571a1ff2515766324402ab664b9f383635d8d28aca4e5c53081d990296"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-transformer-debug.md",
+      "id": "openai-transformer-debug",
+      "sha256": "b2cc7d26a77fe1a966c59b7ed21c1027cf67cf6012d9a19fc7852de5be406612"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-code-reading-pytorch-refactor.md",
+      "id": "p3a-openai-code-reading-pytorch-refactor",
+      "sha256": "9808f42fdfb5837d049e1d0f8b91528eaa7abc5b4a56f94c5493284ed412f1bd"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-fault-tolerant-work-queue.md",
+      "id": "p3a-openai-fault-tolerant-work-queue",
+      "sha256": "02dbd3483649974fe54feb63fdf90fa02c1ae944970a0043807c1b3505c23de7"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-infection-spread-cellular-automata.md",
+      "id": "p3a-openai-infection-spread-cellular-automata",
+      "sha256": "ea1fb9ed774127b44ed65339de28fe0ca27ae2aadbbea4a68635a18e00beba58"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-maximum-score-grid-path-limited-jumps.md",
+      "id": "p3a-openai-maximum-score-grid-path-limited-jumps",
+      "sha256": "27a2396b32bc7a1db1abcebc5b02167214796760eecd921af84ec5c8b64e0529"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-numpy-1nn-wx-b.md",
+      "id": "p3a-openai-numpy-1nn-wx-b",
+      "sha256": "5170b7761ab27b112191970db9e7edceb8dbd67ba2f52b353e81110d5537164a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-shard-rebalance.md",
+      "id": "p3a-openai-shard-rebalance",
+      "sha256": "896b5654c7e6bf711df6975503adc7758c5ffb2ff0b37f16d7a6eb419bc42390"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-time-based-kv-store.md",
+      "id": "p3a-openai-time-based-kv-store",
+      "sha256": "aa04057a72fc587f8332ac3583e1e8168cac0b7de4e8a331d8461cdcd4d4ed75"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-delete-digit-five.md",
+      "id": "p3a-cohere-delete-digit-five",
+      "sha256": "a95f965560ff9555165f6988f765c060f1e476cc915d29165fca01e21b3efd6b"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-gpu-k-switches.md",
+      "id": "p3a-mistral-gpu-k-switches",
+      "sha256": "8b9b23198921d4bdb7a0e89777c0b5d7bce09da967ef3f010ebb1d30c63aa797"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-engine.md",
+      "id": "kv-prefix-engine",
+      "sha256": "9e7df1a5dc95adcb497a5308d89c6b1787e9901158d12445d437e447425d6f50"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-reuse-plan.md",
+      "id": "kv-prefix-reuse-plan",
+      "sha256": "8eb020a288b178304d0f1300903eb701950e6e91d19e0df9b676dc04d7424f1a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-checkers-backend-design.md",
+      "id": "p3a-xai-checkers-backend-design",
+      "sha256": "196662aaa4c366690948f46d97496c0bf8052ecada575e5d5f2e1a441f5fda06"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distributed-token-bucket-limiter.md",
+      "id": "p3a-xai-distributed-token-bucket-limiter",
+      "sha256": "e46a68fe044c709d3cc9135a875a60552aa321decc8ece9e7bc848a1e375ee20"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-gpu-node-group-test.md",
+      "id": "p3a-xai-gpu-node-group-test",
+      "sha256": "690c035c89e161aca9ad7436f17ae38086f1490252a48abbd94247bc2e7f19fd"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-mock-llm-dynamic-batching.md",
+      "id": "p3a-xai-mock-llm-dynamic-batching",
+      "sha256": "cc67847c0c8e9d702155c28760d03e3c2f8969a53730dd04c012d3b805b36aa0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-pipeline-critical-path.md",
+      "id": "p3a-xai-pipeline-critical-path",
+      "sha256": "8e6e2987002d5306508b9301dac6eebd85b410109174b4655b6727d5868fd841"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-speculative-edits.md",
+      "id": "p3a-xai-speculative-edits",
+      "sha256": "ff6e238589b2eb3720468545647d244cb013872506de7a6da7dc180e29f8f8f3"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-weighted-lru-cache.md",
+      "id": "p3a-xai-weighted-lru-cache",
+      "sha256": "00dec20266c37a2cf7a3cf1db07ff659efaea8022528c94e1ad292ef19f071c8"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-edit-distance.md",
+      "id": "ali-algo-edit-distance",
+      "sha256": "712e8b3e104fc2cda1ef2a78618f28fe755ba8470234ce6dcf6327ab982a158a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-kth-largest.md",
+      "id": "ali-algo-kth-largest",
+      "sha256": "800945c99f3c674b5f6b6b630a9dd1661f3a060914e5af3597f7427355329837"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-list-family.md",
+      "id": "ali-algo-list-family",
+      "sha256": "c289005a03322c76132dd5aa1a448dcacc7a4a03ad75b72e1486e5abb06ce707"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-path-rect.md",
+      "id": "ali-algo-path-rect",
+      "sha256": "d4f89d70843c51fa20578dbaf4935592453857eba0a0f8dfcbc9c0a015d9b5b4"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-rotate-window.md",
+      "id": "ali-algo-rotate-window",
+      "sha256": "295fd6bade154829e87538677312942407ffd483c208ffe52fba1b8de5cf0a28"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-bin-compress.md",
+      "id": "ali-oa-bin-compress",
+      "sha256": "f2809704db834875a6cdb518981fe1246fd532110f2991863afe97700429f4b9"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-color-ops.md",
+      "id": "ali-oa-color-ops",
+      "sha256": "c6e3c39aeb90d216a9c43dbd3b8f529af5b398404f78a9cf6bb750bd69cf57de"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-hex-popcount.md",
+      "id": "ali-oa-hex-popcount",
+      "sha256": "cf7fb29625c20377c540c8419df2f23ace676d4c0bf7beeff59feeda0cc40239"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-k-repeat-substr.md",
+      "id": "ali-oa-k-repeat-substr",
+      "sha256": "0b4bdf15cb3f923ac1a79f17e8ca96948c8ae2184dbe39f9cc6def4111e74fb3"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-match3.md",
+      "id": "ali-oa-match3",
+      "sha256": "fc353d1a9a692f89860a649d63ba2da50d997b4477b439b6bf961fbfaf3d5c3a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-mod-cycle.md",
+      "id": "ali-oa-mod-cycle",
+      "sha256": "be86a3d560dcba38976c2f88f412c67df8e67e5ae823255188b55622d5a6cf7a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-nearest-prime.md",
+      "id": "ali-oa-nearest-prime",
+      "sha256": "e7aafac4fc9a842ba13f3a16ecad5a8d802e424eb2f9bc58b669998dff7e147c"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-perm-subseq.md",
+      "id": "ali-oa-perm-subseq",
+      "sha256": "4d7e2a704c8fe9f5a7368ee93b058bcde639c936e3a34ad35c61fdc3990be756"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-rescue.md",
+      "id": "ali-oa-rescue",
+      "sha256": "359da2efb3aafad1da90abd50254e98e4d216fa2f3fe3c1585a729d85ab44f37"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-ring-lights.md",
+      "id": "ali-oa-ring-lights",
+      "sha256": "6d4222484fbd345fdb15d4e70381d624a1f6bc56b6d5f1add1da01f793938a88"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-variance.md",
+      "id": "ali-oa-variance",
+      "sha256": "9c8a049dbd4aab4f6d7de43701ce4546d2ff9a33e52a7b818fc052003536e328"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/ant-beam-search-pytorch-tree.md",
+      "id": "ant-beam-search-pytorch-tree",
+      "sha256": "73c0f867c4f07ad814aeacaa41a4f527974e0c654b59c7860917b850b0368be5"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/baichuan-sqrt-binary-search.md",
+      "id": "baichuan-sqrt-binary-search",
+      "sha256": "e833b5db2b9994675158668e29cea2598efa1d8c8263a89fad117f1c5f6205f9"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-adamw.md",
+      "id": "code-adamw",
+      "sha256": "f004204f45c702ee67983cd4aabe5d7eeab8bd32d4c5750962ad59fa51bfe77a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-attention.md",
+      "id": "code-attention",
+      "sha256": "44d26c33666c50f75018621f3f9db3389da5d0d0a85468db65a976d71e0e0dc0"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-beam-search.md",
+      "id": "code-beam-search",
+      "sha256": "2390f71d0048295795345f6e0efc4d2cf2c1c98d2b131ecc67e509bc8655ec68"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-cross-attn.md",
+      "id": "code-cross-attn",
+      "sha256": "9bf6fad2c2ea0b8f3711400f328cb779cd796e7d75ad0433092802528d6f18be"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-flash-attn-fwd.md",
+      "id": "code-flash-attn-fwd",
+      "sha256": "1a7838db06d8f8e26f08b7e76e48a6afa7e4ea9cdd520792bfc8b21257da7092"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-fused-ce.md",
+      "id": "code-fused-ce",
+      "sha256": "e164170527ccce217e7cacdecd3eb63945cc190bdf9490e096b7e146071c27ca"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-grad-accum-amp.md",
+      "id": "code-grad-accum-amp",
+      "sha256": "6c7d61ea658e038e5a92865125547a76c04fcec976791ae334858f49e097e1fb"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-int8-gemm.md",
+      "id": "code-int8-gemm",
+      "sha256": "fe6ba15fdac3eeb820aac022264676724161d4e70b2a55c10c3d4f51fc12176a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-layernorm.md",
+      "id": "code-layernorm",
+      "sha256": "20773c052612c159b12dabcdd5a618b5f5805355d6c2d91231dace37ec1b6846"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-lora.md",
+      "id": "code-lora",
+      "sha256": "4957172eb03c3cb654b8805538c6d5297cacff9f8a8fbd7db559c4cfbdf39da2"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-mla-cache.md",
+      "id": "code-mla-cache",
+      "sha256": "09096976def688b6fb43df14acc7b842852a6688d71312ae7b052106b81c0d29"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-moe-router-aux-loss.md",
+      "id": "code-moe-router-aux-loss",
+      "sha256": "1291481704f62c22daf15856669ecfe45cd77f08bba21ff98be5ab92acfcb515"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-mtp.md",
+      "id": "code-mtp",
+      "sha256": "18d121c4e6062a23723598557a197a1a83b18dcdc1b1392a6e676fa505cf4f75"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-paged-kv-cow.md",
+      "id": "code-paged-kv-cow",
+      "sha256": "91bf051d48199dc80b1aa64bf9ec4b0e79a68b710eb20ec20c7e4eb51d4aeb8b"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-retry.md",
+      "id": "code-retry",
+      "sha256": "edee3e0ce727cf16ddfb498fd98e8947831bd58070e8251c29de1493ad19c045"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-rope.md",
+      "id": "code-rope",
+      "sha256": "9297ae36b045fccc59563cc69977e87f19261ce4ad1f59300f0943b5c6845afa"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-sharded-checkpoint-io.md",
+      "id": "code-sharded-checkpoint-io",
+      "sha256": "38c13c05aa85141fe2ad8947e39df7f9dba11a059ad2c925dba26a71e0af3e52"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-softmax-stable.md",
+      "id": "code-softmax-stable",
+      "sha256": "fb6160e51a155b358bb7fc1e39c39cf0a3a3eaadcb22cc586fa4291ec60453fd"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-state-machine.md",
+      "id": "code-state-machine",
+      "sha256": "beb221dc175f579ab1cdf26949b5b52a9a980deb1ebded5c4b9e3faca65c1dca"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-swa-mask.md",
+      "id": "code-swa-mask",
+      "sha256": "e113f68fce0848026cf85a1385dd58fa9158a741447639559976a95131e6ef4a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-tool-schema-validator.md",
+      "id": "code-tool-schema-validator",
+      "sha256": "16be7b71dfd21c2b15c746ab24f5fd4f4fbe17ef25b32ec6e444e0f153104c03"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-weight-tying.md",
+      "id": "code-weight-tying",
+      "sha256": "e2d9ee8d01809dc152aa1ba9613ebfc84bf7fa46284aafcb436021858627fa94"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/deepseek-mha-handwrite.md",
+      "id": "deepseek-mha-handwrite",
+      "sha256": "845794075965b963f5c12404f271cd513415d63f7d1d5ac97a7218441fd80f21"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/jd-lcs-cycle-list.md",
+      "id": "jd-lcs-cycle-list",
+      "sha256": "755567c097ab81a74c005beea38c56c81ddca96dd39b56c5a97446d0c05f06ad"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/pdd-bpe-handwrite.md",
+      "id": "pdd-bpe-handwrite",
+      "sha256": "ddcb43e9b42169c1dbd22d3347ba5841ab00539d17ec3543fa1ce9f29b0b8a21"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/sensetime-linked-list-reverse.md",
+      "id": "sensetime-linked-list-reverse",
+      "sha256": "abb94d9fcef54e44ed86e8644557eb67a1195a0cbae81612524f12f006e45de2"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/tencent-coin-change.md",
+      "id": "tencent-coin-change",
+      "sha256": "95477c2963d52368d9ec78f999f0aaf92e90da49ec3a7098f40c91ec72cc4907"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/tencent-longest-substring.md",
+      "id": "tencent-longest-substring",
+      "sha256": "54ef8a34ea0ecdce011e3f215e05b73028d79adbea9b692c0972f1492ad41301"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/baidu-qwen2-sft-implementation.md",
+      "id": "baidu-qwen2-sft-implementation",
+      "sha256": "ba60a5c32463728ce893276abab90e480161fa873401d9e63eaa99be77724989"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-fw-miles.md",
+      "id": "code-fw-miles",
+      "sha256": "2602b046a286d39266502b8213dfc788f36b5401f6c00c58145dfe444732780c"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-gae.md",
+      "id": "code-gae",
+      "sha256": "b4555d7f09e3dc77e87e19b700831faa395a411425b3ff9492518689f296e42b"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-logprob-gather.md",
+      "id": "code-logprob-gather",
+      "sha256": "590b6738dd7d29945317dfe8f8bc4476496c01387eb07ebcb52789d2f762f30f"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-ppo-grpo-gspo.md",
+      "id": "code-ppo-grpo-gspo",
+      "sha256": "8d2382ebae7f83c1f43cf3aac8bb95778adb9545bd4cbbf16f090ea4cbb1e411"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-interval-lcs.md",
+      "id": "ali-algo-interval-lcs",
+      "sha256": "f53fa9c9ac9be0093b46c09ff6705ecc9c7e634c589ba27a2f5b4181cfd366e3"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-level-order.md",
+      "id": "ali-algo-level-order",
+      "sha256": "4962708b3be7e929d019d4d8e8b4149fc48a2d936ebb776b704dc2bc6062d92d"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-lru.md",
+      "id": "ali-algo-lru",
+      "sha256": "bb118a7b6acee277f339e4c818e7dc54912dc4621ccd6a483d5016a618509f71"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-perm-3sum.md",
+      "id": "ali-algo-perm-3sum",
+      "sha256": "9f606470ce1e56ebea2a333534fb2a8ba3325ac1cb31034c94a417edfdfd0a0e"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-algo-subarray-dp.md",
+      "id": "ali-algo-subarray-dp",
+      "sha256": "8b7293f5ca95dd40002043feec4d5c7b34da965670d6cb78b7a887de54aa4530"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-candy.md",
+      "id": "ali-oa-candy",
+      "sha256": "606ca0b7232a087d0580c34dac0ae2d9b648ac9ffe7c9852748798ee4678a757"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-gems.md",
+      "id": "ali-oa-gems",
+      "sha256": "8767ab29ed8fe6c6daec6fdbc657871e3fc03b91b95e7197f7d288b0862ced37"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-jam.md",
+      "id": "ali-oa-jam",
+      "sha256": "a792d91e6316c3f1df098bdf34b7495b0d79e9ec9d913543cbf3a3fdcc34483c"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-k-residue.md",
+      "id": "ali-oa-k-residue",
+      "sha256": "075522f5d8302d869c980f9532752de2a34aee6661e46d2a1c80635b4a3c72c9"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-max-common-subseq.md",
+      "id": "ali-oa-max-common-subseq",
+      "sha256": "180bc5add0f5d2badbfd0a51a253051165b71d1b3f9ae6d23af4086ebb88cbb2"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-mod3-concat.md",
+      "id": "ali-oa-mod3-concat",
+      "sha256": "e75e777a52674e52492b86ea924fb041b2ae8d13590ba1384b802fce68e132e0"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-nonadj-even.md",
+      "id": "ali-oa-nonadj-even",
+      "sha256": "d00c4f9f5a8e408b1559a49f353f7d53eb531916913f929cd240a2a7c35a00b5"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-picky-eater.md",
+      "id": "ali-oa-picky-eater",
+      "sha256": "b3268634f92d5ec0296ab2e26e9cd43718cd6f5d8bba0dc7d04483184ef816c0"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-reverse-seq.md",
+      "id": "ali-oa-reverse-seq",
+      "sha256": "9f64495e944e7dd838f8f7f57445066f8f71715fdb1fbccc0306aa9ea8ff7b3a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-spotlight.md",
+      "id": "ali-oa-spotlight",
+      "sha256": "909bc376f21898d6779c0420882bfe08c794530c60ee89a9812e44ea76cf8afc"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/ali-coding-islands.md",
+      "id": "ali-coding-islands",
+      "sha256": "54e3cd0e0e34a9682fe93cf8cf0235a8376ee837ef1eaff4efc3040a25f0c90a"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/baichuan-mha-handwrite.md",
+      "id": "baichuan-mha-handwrite",
+      "sha256": "8d6a4703560366e96c294ade8c1bb4b0c99df4a6ca0921d9bc695f9e5416bc32"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/byte-merge-sorted-arrays.md",
+      "id": "byte-merge-sorted-arrays",
+      "sha256": "a49d30b347730309a0f385c7e2eb7a27419f7b515e3d6cd04583055bc398a225"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-alibi.md",
+      "id": "code-alibi",
+      "sha256": "031764c5e4afe677a59b8589eeb0e4cffc2f659f500731d1900559afcdfe2ffd"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-attn-sink.md",
+      "id": "code-attn-sink",
+      "sha256": "51bde0b68a049d9ffb37e8a4fe920382725e66a692962b7e93fdd26138ab6d52"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-chunked-prefill.md",
+      "id": "code-chunked-prefill",
+      "sha256": "87c941b4b60d759709abcf7817f7f9e9721fc0f526d64d9fecd4375d538bf5af"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-decoder-block.md",
+      "id": "code-decoder-block",
+      "sha256": "7bddd09c6883d5a2cc5234480325ad7c3afa02097813b7b6c7591b8e635622dd"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-flash-decode.md",
+      "id": "code-flash-decode",
+      "sha256": "47a0861353272a2136e5dc7c6dcade617ee850f339a7b31bfadcb04f292e5014"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-gqa.md",
+      "id": "code-gqa",
+      "sha256": "219ca9c5d9691b023861a6447fea709aa0642c1ce4a3e2442db2ce630ac6f07e"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-grad-clip.md",
+      "id": "code-grad-clip",
+      "sha256": "6fa1dd74344cf9af10498fa8ba29fd9b17555a8fae91136a73ba53db7f7e8379"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-kv-cache-step.md",
+      "id": "code-kv-cache-step",
+      "sha256": "96ee74a6af3a321363427b6c5fb2b0dd120424d8da9e7b3f9e015cadeb7ef933"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-linear-attn.md",
+      "id": "code-linear-attn",
+      "sha256": "cf6ae7fc6d5cd4db17445b4fc28bd26e1a876440d1cf22733a06616c0808ebb3"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-lr-schedule.md",
+      "id": "code-lr-schedule",
+      "sha256": "25e9f0b6562bf349e2a10b9a9b6eb790520f39f2cc727f1930f1e51956ef256d"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-moe-permute-combine.md",
+      "id": "code-moe-permute-combine",
+      "sha256": "aea107788ae3c283af51210eebc8130eee9b18f0882144c063b26f2ad0ef42b9"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-moe-sparse-forward.md",
+      "id": "code-moe-sparse-forward",
+      "sha256": "8aab02dbb9e9b6536314f77dd8af64aacb5da95ac4b6685b61663c7e3c6dddf0"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-packed-mask.md",
+      "id": "code-packed-mask",
+      "sha256": "ba2b3b807b92d906f6dd0a4803d200a0a56ae54e1109c475a39eacd2090095ee"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-qk-norm.md",
+      "id": "code-qk-norm",
+      "sha256": "fe45108c39ace879c8c6bebdb8fc68f9dff31f06a84a781f6fd38d316d892acb"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-rmsnorm.md",
+      "id": "code-rmsnorm",
+      "sha256": "818f308a34b5e4b6618c018658bac2424fed99f9e414e3b5dd810359b3c60432"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-sampling.md",
+      "id": "code-sampling",
+      "sha256": "2afdce797a9b5f7112c30c46a36aa13d8b4bc8173f5e424ab26433e676768810"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-softcap.md",
+      "id": "code-softcap",
+      "sha256": "42b6017fa9dc3079d50c8dd1ba84a5627ba194834f9551191db58641574a3a5d"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-spec-decode.md",
+      "id": "code-spec-decode",
+      "sha256": "f95b4f74ea47c2e9bfe8f04e0d4d43980774e75c2bb383cba9c6aa4e069f9718"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-stream-parser.md",
+      "id": "code-stream-parser",
+      "sha256": "9b3b97617d360abb1fc326cd2eb2535d411c5d94a31da04071a28179e33cfa4b"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-swiglu.md",
+      "id": "code-swiglu",
+      "sha256": "31af598b0426c77f32da878af7152151d8a879328713dd9910d60ae0cd7a145e"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-tp-linear.md",
+      "id": "code-tp-linear",
+      "sha256": "0ce3c87bd20e4830de048263a31bbbcdbbc529ba5d51e62a52098dfb94311b6e"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-yarn.md",
+      "id": "code-yarn",
+      "sha256": "85e3d9cea3b8f938a4caaa1bdaf286ba7930771b130254d160274b35514b9639"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/jd-inorder-iterative.md",
+      "id": "jd-inorder-iterative",
+      "sha256": "4fe367347473cb89f5bca4fddab5091a08040c68801419415c7e81b0f2260def"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/pdd-attention-handwrite.md",
+      "id": "pdd-attention-handwrite",
+      "sha256": "816ef1491fa95c3d26cba72291a7e9318e0c09a1b161eddd29397af8f0ebfe51"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/pdd-ce-handwrite.md",
+      "id": "pdd-ce-handwrite",
+      "sha256": "9aff512ea153406030ba56eb235b532cfb7c5441eed4327fa173b1f4718b0b14"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/stepfun-top-p-sampling.md",
+      "id": "stepfun-top-p-sampling",
+      "sha256": "c6b2dfc5c31a2dc5e2a3b86b875834983c3c8444ffe908b15eb9b4dca16b3400"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/tencent-generate-parens.md",
+      "id": "tencent-generate-parens",
+      "sha256": "5e4ccc98a37de8de07eef48542e724295092d044d3c6d933eb67d6a40c66ff6b"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/tencent-mha-handwrite.md",
+      "id": "tencent-mha-handwrite",
+      "sha256": "e3fbf9986359f034294ce0ea9d3e50f4773cae98993a84fe727712d9fbcd1a23"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-dpo.md",
+      "id": "code-dpo",
+      "sha256": "2629ecfd2243db2dd99ab99d606ede288cc0169f4e5d6f9b3861c2db02a15c5d"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-fw-verl.md",
+      "id": "code-fw-verl",
+      "sha256": "3ff4b9fa79c51fd1f40e43fa974eeb81cfaa0e3927709deae5b5e18ad2726cc4"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-grpo.md",
+      "id": "code-grpo",
+      "sha256": "0feef5313b77493126a2705b923203c9c445273afc6ad91a45da1de6f25b2eb1"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-ppo-clip.md",
+      "id": "code-ppo-clip",
+      "sha256": "98b51e6cbf37208e40adc74a069131a2411a97e8f6c2539a6dbb332f29da31cb"
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/stepfun-grpo-loss-handwrite.md",
+      "id": "stepfun-grpo-loss-handwrite",
+      "sha256": "04a9afff3ffe8f90d89cbbdb0b17ba30ec74919a88ea2bbb088921c0b7a51a9c"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/labs/dt-weighted-batcher.md",
+      "id": "dt-weighted-batcher",
+      "sha256": "74890c3ad9469287dca4f5acc269b92880e8cce711d1583aaea34801d937fd7d"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-boilerplate-code.md",
+      "id": "dt-boilerplate-code",
+      "sha256": "ca0b8f48e13e29eae0e4e65134dda137a18b95215c6f02b88cda1108be368aec"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-clip-filter-code.md",
+      "id": "dt-clip-filter-code",
+      "sha256": "a125d06c1d19418ef066f00772f454a6eef43547e42200c1573a5bc67d4ab69c"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-countmin-code.md",
+      "id": "dt-countmin-code",
+      "sha256": "9e094f99a53911fb3b46aef3a4bd6503ce3fb44868411004a065336f0b1d5e00"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-exact-dedup-code.md",
+      "id": "dt-exact-dedup-code",
+      "sha256": "01a19e642cd5ba9402d663e6294a07e35caacd5e9fc69b38036a99628765a933"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-hash-split-code.md",
+      "id": "dt-hash-split-code",
+      "sha256": "ea4248092bc0cb9fcd6958fa0c7807ba0bc72bd340e5886359a1cfc97fd4a4c0"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-kappa-code.md",
+      "id": "dt-kappa-code",
+      "sha256": "7fcef840d5882bf55d7dc3582ee4c59fc44c06fa6376a001d0d4cbe84701f135"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-length-bucket-code.md",
+      "id": "dt-length-bucket-code",
+      "sha256": "317fbdd717f94104d2ca0d60b3a118e2ef0d91031a1d300c4f3a79ca1a4a8853"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-lid-code.md",
+      "id": "dt-lid-code",
+      "sha256": "071d95027bcb21ab4ed8dd55ae302502713bb84857cf8d3bef658c3f8a1d88e8"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-lsh-cluster-code.md",
+      "id": "dt-lsh-cluster-code",
+      "sha256": "321b51bb3116e3f0faf657517b76d61ae36f5c3d53abc04ec0f94db7193e54c7"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-math-verifier-code.md",
+      "id": "dt-math-verifier-code",
+      "sha256": "647a1e010a8a314665e133f9104817b4543b3d824b2fb932ffb3b183edfd6a07"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-minhash-code.md",
+      "id": "dt-minhash-code",
+      "sha256": "661930cbc4c9cfdbd1ef3ac7b9a9cede56c12bdf936640eda8765ab4f65b0a80"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-ngram-contam-code.md",
+      "id": "dt-ngram-contam-code",
+      "sha256": "f544e945b2426606ebe463379cb232e5fba8f760fb867de95418ba9325f24e8c"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-packed-sft-code.md",
+      "id": "dt-packed-sft-code",
+      "sha256": "3207348b5a1cc712700fad073dd8e0963a6fcc398acf1ed35460e36fc2a3fc7a"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pii-luhn-code.md",
+      "id": "dt-pii-luhn-code",
+      "sha256": "3fdd69cb309b6d1a2f2579142f48476be87160409b420ad591f2faa0d2b1f5d4"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pipeline-talk.md",
+      "id": "dt-pipeline-talk",
+      "sha256": "72df9da48f4d88f75829c1fa97084d8a95e03aeff4bea1cf91fac2d16b5b542a"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-ppl-filter-code.md",
+      "id": "dt-ppl-filter-code",
+      "sha256": "27292caf213b05de30569f0bbb95f42d586aae07a891ebe1696cb272ac9d9db5"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pref-pair-code.md",
+      "id": "dt-pref-pair-code",
+      "sha256": "f0aef7fe7dee6903226ccbc8e51a6d90d6894923fa5e146c184e4cbdb9a63491"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pretrain-pack-code.md",
+      "id": "dt-pretrain-pack-code",
+      "sha256": "2b0aed5dd9cf5dc2b0330e91f038d46e62aa22acbe81cc48d7cb5803b6fee4c1"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-quality-filter-code.md",
+      "id": "dt-quality-filter-code",
+      "sha256": "cb93983de81372b7a9fa0b2d4956bab29663e6d5d1f84025d5b8fd17ac7c1435"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-rejection-sample-code.md",
+      "id": "dt-rejection-sample-code",
+      "sha256": "b368258872e325d19a7be81d68ca302e3864d42b2be3740fb6d9a65735a69b5d"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-reservoir-code.md",
+      "id": "dt-reservoir-code",
+      "sha256": "f7a9a29b24f8db627a4d589ce8865530a77755c7ed3e2879c492ee970cdf64ab"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-secret-scan-code.md",
+      "id": "dt-secret-scan-code",
+      "sha256": "49f4c610200006166764388cee9874a19de883d07d79dd9e335c3563f64a99cf"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-semdedup-code.md",
+      "id": "dt-semdedup-code",
+      "sha256": "0a666cea1c881ad4503b6fd5440fca518bc2ba2693f4ea5e22b87f17ca0cdbd4"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-simhash-code.md",
+      "id": "dt-simhash-code",
+      "sha256": "515acde0ad8cfbbed27230d3ddc45a24d78f73d3d0ea992ee9a33b11535502fb"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-substr-dedup-code.md",
+      "id": "dt-substr-dedup-code",
+      "sha256": "f0dde564604ec658e24e51580ac5f05941b27f5811032168d605d4fd53983edb"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-temp-mix-code.md",
+      "id": "dt-temp-mix-code",
+      "sha256": "ff7efda889d22f8ba25082829ef0ad44480b5a91c62527b28d082db4a289feb1"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-unicode-canon-code.md",
+      "id": "dt-unicode-canon-code",
+      "sha256": "24868c13ac0f3a1ec4d202e4dd132584239c641fe1087f570bc9739a0c745949"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-url-canon-code.md",
+      "id": "dt-url-canon-code",
+      "sha256": "e0874195f8ef9f5ff1dbc6451a3642c3844e975c67551a6cb66675fb569a9a15"
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-winnow-code.md",
+      "id": "dt-winnow-code",
+      "sha256": "465bdbfc2e76302c87ed2921e42a0d80172523dde5742d8e79c46bc3e3f7a852"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/classical-models/ml101-knn-implementation.md",
+      "id": "ml101-knn-implementation",
+      "sha256": "96e74a21f4cee6697ec186b3120be24a20d8eb555c6255c402f36eb5d8ba97e4"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/data/ml101-wordpiece-implementation.md",
+      "id": "ml101-wordpiece-implementation",
+      "sha256": "9f8ab6d4af8869088f82e4ed7da3e927c1da0315cb7a4b00d9bbcf51ef34bbb3"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/ensemble/ml101-decision-stump-implementation.md",
+      "id": "ml101-decision-stump-implementation",
+      "sha256": "2c6830b8dbc56204486412bfe54aab69af48c67af8cefdc485532a629131d4a1"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-batchnorm-backward.md",
+      "id": "ml101-batchnorm-backward",
+      "sha256": "9ce959de3e50d6c25be3c19329aea1551531e17767a47e34c286ed2ceefb0f92"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-conv-backward.md",
+      "id": "ml101-conv-backward",
+      "sha256": "1566cf4b79ed2328a2b99ea41bed6deac5dbef28fc7678b8cefa03e4ba0ce3a4"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-mlp-backprop-implementation.md",
+      "id": "ml101-mlp-backprop-implementation",
+      "sha256": "8da59c0f658006dcf137189bad0050819c6118e82432ca54c1cf57e4eb4c6501"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-softmax-backward.md",
+      "id": "ml101-softmax-backward",
+      "sha256": "46ef1d0b78603034fcf0e2b8cb470d8cddf43c725061bc96f496db7c9b85106f"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/optimization/ml101-optimizer-implementation.md",
+      "id": "ml101-optimizer-implementation",
+      "sha256": "78e32e331df32d5091968f12b4333beeca861830a30749343b56ae7dd5f4f930"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/probability/ml101-bigram-prediction.md",
+      "id": "ml101-bigram-prediction",
+      "sha256": "2e8d02c3e782446fc92366548d452679478d0b8c5ca9281db24b977f26744e64"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/unsupervised/ml101-em-worked-step.md",
+      "id": "ml101-em-worked-step",
+      "sha256": "034638fb752e8cb76db4bc509202732aee3c049361ce063976b9dc0e016858a5"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/unsupervised/ml101-kmeans-implementation.md",
+      "id": "ml101-kmeans-implementation",
+      "sha256": "68e6e08bf0a9593792f8ee55cf5849d6880aa1282c4fb48630056cdc23c4f3ca"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/unsupervised/ml101-pca-implementation.md",
+      "id": "ml101-pca-implementation",
+      "sha256": "f3eb8112aa7da9bcc9bc24118ae7dd4c7fe3093c28378b8cae7eb400d314f77b"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/headway/headway-practical.md",
+      "id": "headway-practical",
+      "sha256": "007f1fbf03f96af660004a9cc5e92a539d096ece9de9d184c1dda32e4456c571"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/notion/notion-product-coding.md",
+      "id": "notion-product-coding",
+      "sha256": "c2d170240dc239242aeee0bfd187a7eb00bda7c66b82cc87ba3b8a9e45183d18"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/rippling/rippling-driver-pay.md",
+      "id": "rippling-driver-pay",
+      "sha256": "8439c710da2cd7ab927051c2827ce6f3b71d2d010b6dafdc7c72b507625c8dc9"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/rippling/rippling-logger.md",
+      "id": "rippling-logger",
+      "sha256": "30d3a1529be5b2e0b03f12beb248bd3a1c75c61fcbc8e1e0219731138b7b2e13"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/stripe/stripe-csv-validate.md",
+      "id": "stripe-csv-validate",
+      "sha256": "a6e2aa7d23732f48ea927a7e862f7620af77b0ad2c0c272718d2db9019242c6b"
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/stripe/stripe-shipping-cost.md",
+      "id": "stripe-shipping-cost",
+      "sha256": "ba2f761f74ae1f73f1c4dc4f4fd24d895e0cd872c4444a93743017f5bb44e22c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-crawler-oa.md",
+      "id": "anthropic-crawler-oa",
+      "sha256": "972e13a35a49516ba3668c8809dea2bac5b80493e11cbdec170d6f00eaab9afc"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-rate-limit.md",
+      "id": "anthropic-rate-limit",
+      "sha256": "75e804dcdba24944130bd6ce7ecf1b4934ddf47b5407d33223303993e3a34d95"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q1-image-processing.md",
+      "id": "p3a-anthropic-coding-q1-image-processing",
+      "sha256": "83276c3412501a62888ac9487cc35c3f001b260ffb964e21d814792ad62eb48d"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q3-stack-trace.md",
+      "id": "p3a-anthropic-coding-q3-stack-trace",
+      "sha256": "61d6c92aa923cd6dc88f8b77a0fd0c26d80930d1ab59c1b4481e62aa75627bef"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-configuration-system.md",
+      "id": "p3a-anthropic-ml-configuration-system",
+      "sha256": "b1268f6558e4f8046c428ed316e854b2815625cb1ade3714cd0b6187a7b257fc"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-fellows-dns-resolver.md",
+      "id": "p3a-anthropic-oa-fellows-dns-resolver",
+      "sha256": "d327421f4d02be443d171890a28429f3fa90e8db4e7573d2564a39a8059e8d1c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-task-management.md",
+      "id": "p3a-anthropic-oa-task-management",
+      "sha256": "b3e623d29567c1f0274f866b028b8ef17934e3ea19c44b7c57fab671da2e200e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-prompting-engineering-with-llms.md",
+      "id": "p3a-anthropic-prompting-engineering-with-llms",
+      "sha256": "34fc2600f4c70aef13dac71f79a36bf20dd0a07763b455712b16d70b0f9c621c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-topk-sample.md",
+      "id": "apple-topk-sample",
+      "sha256": "5384ad74afee73d320251f454599bf00f169cf2ed37fc398c7d44d4d6116aa59"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-beam-search.md",
+      "id": "coding-beam-search",
+      "sha256": "313b0c7d0e739335d1e32799fc09f8086cecacec129ef36c56e9343d70201c58"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-decode-step.md",
+      "id": "coding-decode-step",
+      "sha256": "c6d314757e628ca7a23e29f929edcad5d7363a46f4e79eb814f02564b79a08f1"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-flash-decode.md",
+      "id": "coding-flash-decode",
+      "sha256": "092a6e0beda964aa7b9eef64e8904a02e4fbefff120c0ca8d9074e07dd8355f1"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-grad-clip.md",
+      "id": "coding-grad-clip",
+      "sha256": "0bb9dc9bf3fc763dcb3568811b4076598e518b609f3ebc4bf27a540a23d769df"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-int8-symm.md",
+      "id": "coding-int8-symm",
+      "sha256": "f0412b258e2452495a860b31e87edfb59903ea3e21953955debbb73d97c94392"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-loss-atlas.md",
+      "id": "coding-loss-atlas",
+      "sha256": "5b90a6de90b69bb28af747f08d37dcd7e6da64b6e21385e1439d31c51f2bc715"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-paged-table.md",
+      "id": "coding-paged-table",
+      "sha256": "d0b7a895d807b2af490fd659b2703768a0e33514f6f3c19ed371b3f099fe6b51"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rope-cache.md",
+      "id": "coding-rope-cache",
+      "sha256": "aa8378ae3f6b312244af8164f25464baccd8d77710da86cc82bc0542004648d0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-spec-accept.md",
+      "id": "coding-spec-accept",
+      "sha256": "3908abff162b8c513e66bc43966df8827e18dc4d4d39fb3b264b09ae91ae6a7c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-token-logprob.md",
+      "id": "coding-token-logprob",
+      "sha256": "74e704b50fd09423ef058d095ebdc8b9c5f3f4b382a5decfcd2cce9c76c102d5"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/fireworks-grpo-sft-loss.md",
+      "id": "fireworks-grpo-sft-loss",
+      "sha256": "e6e7fdf1f92a4698bdfb241850ef3dfe9eade75de29e1e1bfee6c41d7e744c9a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-byte-tokenizer-and-token-count-estimator.md",
+      "id": "p3a-perplexity-byte-tokenizer-and-token-count-estimator",
+      "sha256": "e75aa9ef2d6b0a478ce5e386676ae2c4487c79ae5f7dbc182eb64582f36c439d"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-in-memory-file-system.md",
+      "id": "p3a-perplexity-in-memory-file-system",
+      "sha256": "e1788360e140a00ae2facfa0e6a55a23459a16883a7e5ea2e476f6972c7156a9"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-sklearn-binary-classifier.md",
+      "id": "p3a-perplexity-sklearn-binary-classifier",
+      "sha256": "27a50266298ae7d19b37358e10b87f6f57d1a623dabb74fb511004a09514e543"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-todo-list-for-ai.md",
+      "id": "p3a-perplexity-todo-list-for-ai",
+      "sha256": "216bbd07709147a092bfcf84fe286bf8fb1ef086b43eb36b3d05b1e0fcb5737a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-gqa-kernel.md",
+      "id": "meta-gqa-kernel",
+      "sha256": "029e1a104cc7e2628c761dae32ff4273bd5cf36255212bc042a40c29a9a6034a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-employee-attrition-prediction.md",
+      "id": "p3a-microsoft-employee-attrition-prediction",
+      "sha256": "43ce0f44927cb87996f292ed1f6ff1e922cdf73155bd95e2394df2ea3ff571be"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-memory-allocator.md",
+      "id": "p3a-microsoft-memory-allocator",
+      "sha256": "c7a1cc71aefc37caeed736b33e67902fbf2bb00cbee6457ede774f7f51e3b27e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-transformer-roofline-fp-precision.md",
+      "id": "p3a-microsoft-transformer-roofline-fp-precision",
+      "sha256": "14b313dfb0539687894d410a667d8e0bb90297e169e7eb6c246f6e78a3c13d99"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-flash-decode.md",
+      "id": "openai-flash-decode",
+      "sha256": "d73a9be562f8986ee006b324f9693f86166260defcd5f7fa11bf52d915f077ff"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-rope-offset.md",
+      "id": "openai-rope-offset",
+      "sha256": "d849473cc5e0a2f484fc863209618de0caa718a0df1c0557aefc3d4917dfc503"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-chat-bot-system-refactoring.md",
+      "id": "p3a-openai-chat-bot-system-refactoring",
+      "sha256": "513a8e0290ade0c5b6ae722144a54a00df49c0d96fc5b8b8ffc9926f7c6a3964"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-distributed-cluster-count-topology.md",
+      "id": "p3a-openai-distributed-cluster-count-topology",
+      "sha256": "3dc32f24bd07b66123eea48ba44ab6d3a34b32d170ac2e9a0601488f41500285"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-implement-cd-command.md",
+      "id": "p3a-openai-implement-cd-command",
+      "sha256": "135050f065a5f66d09fa8d2fbbee50096ef6a408818fcd61799714dc257549ca"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-masked-cross-entropy-loss.md",
+      "id": "p3a-openai-masked-cross-entropy-loss",
+      "sha256": "e202938d97b496d7cddc3984afbbecf1038500a592378e8027e1ea6131eb2adc"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-modal-lock-fair-modal-lock.md",
+      "id": "p3a-openai-modal-lock-fair-modal-lock",
+      "sha256": "39726457a5a5c96b2d26e0b2f2205def587b1c4e3454d019c5da784093125b1b"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-poker-simulation.md",
+      "id": "p3a-openai-poker-simulation",
+      "sha256": "f170fdf5fc745e7d6b6925fb0f8342f50ce78bcec64b6747e09a6b538de5168d"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-social-network-follow-graph.md",
+      "id": "p3a-openai-social-network-follow-graph",
+      "sha256": "8816fef081446b384ce40f9c3d99c7d90d4d362d68d2cb1654c889b9043eae3e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-transformer-bug-hunt.md",
+      "id": "p3a-openai-transformer-bug-hunt",
+      "sha256": "a9ad55a1a5dff0b4d240059b78eaa481bbdc97aa60938173864a5c4daf44504a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-terminal-game-llm-agent.md",
+      "id": "p3a-cohere-terminal-game-llm-agent",
+      "sha256": "3bd45f98e9b59b2326d92659de27069c5c2f06fdaf7d33a2b1826327a600b69e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/personal/xai-me-live-debug.md",
+      "id": "xai-me-live-debug",
+      "sha256": "92c917f33903566fa82762c9ab478306d14b842681c11ef92ee20e5b3796ec37"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-radix-leases.md",
+      "id": "kv-prefix-radix-leases",
+      "sha256": "d1df3bc105e3d7e7fd76264a524730623462fee48d74243eed310bfac6097348"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-transformer.md",
+      "id": "kv-prefix-transformer",
+      "sha256": "0427ff7f9bba9c8203cbf571f608ef6d93cd53a2f301c309b52189ca73295164"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distinct-integers-after-offset.md",
+      "id": "p3a-xai-distinct-integers-after-offset",
+      "sha256": "702967a29a75d2139e4c486717381c444639f5634992fa4cbeacd8da934ed542"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-fixed-window-tokens.md",
+      "id": "p3a-xai-fixed-window-tokens",
+      "sha256": "73f13158b340929cfc14dcfdd59c673846347f1ba8e1eec8392fa734fbacd903"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-input-field-review.md",
+      "id": "p3a-xai-input-field-review",
+      "sha256": "5b7437c91a4268e5760131a926a908803e03a0c7e0c4570c6f8429ef729a7e61"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-parallel-integer-sort.md",
+      "id": "p3a-xai-parallel-integer-sort",
+      "sha256": "a29892fbbc9c09892f0f19097074c96b2ba150f26373f1ba24b3b0fc519db030"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-radix-cache.md",
+      "id": "p3a-xai-radix-cache",
+      "sha256": "d2dea76cc40886c7fb88b352def8112c39a42393e1e86ec33d48160ab5e5ab82"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-twitter-insight-platform-take-home.md",
+      "id": "p3a-xai-twitter-insight-platform-take-home",
+      "sha256": "d1b7977a9865624cdb4b111c770865d0b9fe4c799066a228c20644aa78333f4b"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-lru-cache.md",
+      "id": "xai-lru-cache",
+      "sha256": "657b433fe53971a225117ed03ee34946fb035a6ff3d57fa0f8c55c62787320fe"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-grpo-debug.md",
+      "id": "anthropic-grpo-debug",
+      "sha256": "13b4b33e71ab33682fe37cee5aad7f5449ac02d553a08ec4a5e68885455e1baa"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-agents-coding-llm-tool-use.md",
+      "id": "p3a-anthropic-agents-coding-llm-tool-use",
+      "sha256": "1a6de6e2ef2cba379641eca91f3c4bc6b0f3400cfd1acc045e77635eac2c1a0e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q1-web-crawler.md",
+      "id": "p3a-anthropic-coding-q1-web-crawler",
+      "sha256": "89518e411723ca13b7f597c637d28f1fc32e7067f2ad08f0cb4e63464d042994"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q4-distributed-mode-median.md",
+      "id": "p3a-anthropic-coding-q4-distributed-mode-median",
+      "sha256": "380714fcf2bb33e0639b9d02c242976a47dc44b19971aef6793df0628ecdc9d7"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-programming-screen.md",
+      "id": "p3a-anthropic-ml-programming-screen",
+      "sha256": "ead1183dacf9aaa224e1dcdae817b864be156b0ccf782039b3b629eea47c6160"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-file-systems.md",
+      "id": "p3a-anthropic-oa-file-systems",
+      "sha256": "204a5f0dd3ee49a5677a3d7da3766b5bf81dc42f73fa58fde86e736b07620eb5"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-worker-management.md",
+      "id": "p3a-anthropic-oa-worker-management",
+      "sha256": "3545dd010cd637d71df434a19e6b3e2358ef79f677feb2414c15a33ca594b6ba"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-rl-fundamentals-grpo-debug.md",
+      "id": "p3a-anthropic-rl-fundamentals-grpo-debug",
+      "sha256": "4de24f1df458eb5f94ec05e12e72f9ffd37c3369986c0052878db6f094c33359"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-adamw.md",
+      "id": "coding-adamw",
+      "sha256": "7c3b5bc87514e1b259f1de4a89c592539d674919cb350de9e99dbdbbb10949f1"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-bpe-merge.md",
+      "id": "coding-bpe-merge",
+      "sha256": "2bc9421f60107049879b800d2be1ccf8275314f12ca5c887c39194f0ac484a36"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-dpo-weighted.md",
+      "id": "coding-dpo-weighted",
+      "sha256": "93e87e5d99cd4f3151659db766766fea3dfbf122cbcf99ffa58c7dc5889ad7f4"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-fused-ce.md",
+      "id": "coding-fused-ce",
+      "sha256": "56cd37a85ee41d3c16fb4af71da28eae66871144f211859ebf7b92c1bcafc6c6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-grpo-loss-agg.md",
+      "id": "coding-grpo-loss-agg",
+      "sha256": "dc76164cb438739b393559540a880ecd462818bda771e3f061feb4d05363ece0"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-kl-div.md",
+      "id": "coding-kl-div",
+      "sha256": "706cec00c6535fdc46b314ecf6193c146412842b69803de61d0915cc380e0bd7"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-mq-attn.md",
+      "id": "coding-mq-attn",
+      "sha256": "f61e1b14eb6ad94fcb199fc076f094fe9eb0c576365783f46eb149a953fea98d"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-qk-norm.md",
+      "id": "coding-qk-norm",
+      "sha256": "fdc664bcc7d89ff0a9857cb3b048f592a40c531c7cb246519aa41a922389b2e8"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rope.md",
+      "id": "coding-rope",
+      "sha256": "6a0d472e37e3fa427f3448689ecb624ca3baadd09d2dea354daad1da4664db68"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-swa-mask.md",
+      "id": "coding-swa-mask",
+      "sha256": "c43fc937969b84c066dfb83f685b48cac3bd4a969c5a7af5b783b66c5046f3d7"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-topk-nucleus.md",
+      "id": "coding-topk-nucleus",
+      "sha256": "788e2f2b629c4a1332b058ed6a3ce888eb462fe87fc5e902ecfc850941807c9e"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/p3a-cursor-speculative-decoding-acceptance.md",
+      "id": "p3a-cursor-speculative-decoding-acceptance",
+      "sha256": "e1613bc7480937f73d1fad67544f152180b8961dcaa0a50536a716a0b89e9311"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-credit-tracker-with-expiring-credits.md",
+      "id": "p3a-perplexity-credit-tracker-with-expiring-credits",
+      "sha256": "6bc6ae26861964ab06f06e075e8a3becacd253f7035478d521e351382e04c087"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-kv-store-with-timestamps-and-restore.md",
+      "id": "p3a-perplexity-kv-store-with-timestamps-and-restore",
+      "sha256": "35b73159fbba32693192d4d3c9325ed111ac39866a3fd5881c082c1ce1645457"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stop-sequences-before-first-match.md",
+      "id": "p3a-perplexity-stop-sequences-before-first-match",
+      "sha256": "ee9eeae0760c8bddd41f6b702083788a80e3c060d87c9c8f6bf603af9e5297f6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/google-jax-transformer.md",
+      "id": "google-jax-transformer",
+      "sha256": "a35bb53859873a7504da271ec2235cd3b5c3dd263fa8a1b9609ae6751cde516f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/p3a-meta-attention-implementation-and-follow-ups.md",
+      "id": "p3a-meta-attention-implementation-and-follow-ups",
+      "sha256": "46d382f9191d13b85c03b4bd6e308b93426a37c36f8e1338a3747818b6167d08"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-in-memory-sql-engine.md",
+      "id": "p3a-microsoft-in-memory-sql-engine",
+      "sha256": "79f9e29f5f606291f3e34a960c0e297ae5f2c3c999291087dcdc3ad1db5dae1c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-parse-emails-state-machine.md",
+      "id": "p3a-microsoft-parse-emails-state-machine",
+      "sha256": "689708a033e3622e0ef7fd8ecbcce0f6e81926aadced1c77b917093e33fdfa4a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flash-decode.md",
+      "id": "nvidia-flash-decode",
+      "sha256": "056710c6a02edc6be1a2b4125498f53184b8f4a4843e4fb6a8e2174d3641793a"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-gpu-credits.md",
+      "id": "openai-gpu-credits",
+      "sha256": "b6e30f64e932bd30dc4584a963ea1d19c4cf1f239016c85fe206f435a506829c"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-softmax-bug.md",
+      "id": "openai-softmax-bug",
+      "sha256": "61657f2daf6ace78abfd02de71e5062f4046c6608e7b01f696bd4e3b33aadf74"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-classifier-noisy-annotators.md",
+      "id": "p3a-openai-classifier-noisy-annotators",
+      "sha256": "511e0d2eccbc714b9e5397b75f7ac8ffea768916c715979fbd11c78d49809572"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-durable-kv-store-serialization.md",
+      "id": "p3a-openai-durable-kv-store-serialization",
+      "sha256": "01f5f7a6260108cea000d6bb1d1dbd0fe55d8ca0e847205c2fa3ffbef4be9609"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-in-memory-database-sql.md",
+      "id": "p3a-openai-in-memory-database-sql",
+      "sha256": "207e44fac31295f65eaa344d4670e86f58fc4dd65c14c59127becf723dca61ff"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-math-reasoning-stopping-time.md",
+      "id": "p3a-openai-math-reasoning-stopping-time",
+      "sha256": "ef27f7ebe26f1df47450b3100269e771cc833c7a5b32e929c091dadadf77c9ff"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-monster-battle-system.md",
+      "id": "p3a-openai-monster-battle-system",
+      "sha256": "05de9ba3187c6a5bf4bcf3d499fd76d72273f207006bfd33343bcf4cb5c02357"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-resumable-iterator.md",
+      "id": "p3a-openai-resumable-iterator",
+      "sha256": "36034be281adf9db6c80133ae7b52cc243976c90e126aed02361feec7b01b7fb"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-streaming-entropy.md",
+      "id": "p3a-openai-streaming-entropy",
+      "sha256": "84b6101557b57a636386fa15852e4b23d19acc011141c2f6f4a4a03b5f7cfd41"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-version-dependency.md",
+      "id": "p3a-openai-version-dependency",
+      "sha256": "26879a0d0b0027a990de2d47116b1a7f2657d38add29dfa35f41254c62974b52"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-daily-gpu-remaining.md",
+      "id": "p3a-mistral-daily-gpu-remaining",
+      "sha256": "f5dea092b8bf799d099a33cb0864db3f61eab3bcf1f79e3a4fc43f8fc36208d6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-block-hash.md",
+      "id": "kv-prefix-block-hash",
+      "sha256": "261ce19f97a3bf77bd80345fee0da510c051a56590bc2a194a1d984e0bcb2736"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-radix.md",
+      "id": "kv-prefix-radix",
+      "sha256": "93ca740b291ed70dfe6a6d7347fc9f179c14e050a7f23b42b399483891df7867"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-agentic-one-hour-movie-generation.md",
+      "id": "p3a-xai-agentic-one-hour-movie-generation",
+      "sha256": "2cac054bea2fd38fe890b43b88ccf4ed26b2e810a4c834b8f9c6430d85fabf3b"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distributed-matmul-dp-fsdp.md",
+      "id": "p3a-xai-distributed-matmul-dp-fsdp",
+      "sha256": "b0e6cdfdb57c027efb646aca058ac9d4b0a7e14dbf85fc9b483bc1529fff0006"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-flatten-unflatten-nested-structure.md",
+      "id": "p3a-xai-flatten-unflatten-nested-structure",
+      "sha256": "ed20ff1515bf2babb74cb968910dae5629c61db7759653bd421f87c290155df6"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-kth-element-streaming-window.md",
+      "id": "p3a-xai-kth-element-streaming-window",
+      "sha256": "6919a90b855dc4aef63f5243713a14dea4054b3268663e668d108689ea7e36ed"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-patchify-cnn.md",
+      "id": "p3a-xai-patchify-cnn",
+      "sha256": "f4292b75222c229eae7908c38f95400598f93b0effbb7c6f47d7eee6e032d67f"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-resumable-iterator-design.md",
+      "id": "p3a-xai-resumable-iterator-design",
+      "sha256": "c52019a33afe519f94cbe9ae220a84bc0f58d790d2dab35c13c051ca4afff896"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-twitter-spaces-active-hours.md",
+      "id": "p3a-xai-twitter-spaces-active-hours",
+      "sha256": "ae1a51f2a5655dd114bf34341f6f0f39b2f323eef3788357eb4d92838c262e17"
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-rate-limiter.md",
+      "id": "xai-rate-limiter",
+      "sha256": "e3ad25040dc8d36ce1de19aac45383d8086fa89ec20951b922f44c544b7627f1"
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/probability/ml101-ngram-generation.md",
+      "id": "ml101-ngram-generation",
+      "sha256": "677af4ba4b4e0bfd9c771669145b0157227645c4e9e03130daaa7bb49b1432b6"
+    }
+  ],
+  "nodeTestsPassed": 48,
+  "nativeRunnerTestsPassed": 21,
+  "allExerciseDescriptionsChecked": 572
+}
