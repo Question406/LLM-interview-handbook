@@ -4,9 +4,7 @@ section: graph-dfs
 order: 4
 level: A
 title: LC 399 · 除法求值
-quick: >-
-  把等式转成带权有向图：$a/b=v$ 对应 $a\to b$，权重为 $v$；反向边 $b\to a$ 的权重为 $1/v$。每次查询用 BFS/DFS
-  找到连接两个变量的路径，把沿途权重相乘。两点不连通或变量不存在时返回 $-1$。每个查询 $O(V+E)$。
+quick: "把等式建成带权有向图：$a/b=v$ 对应 $a\\to b$ 权重 $v$，反向 $b\\to a$ 权重 $1/v$。每个查询用 BFS/DFS 找一条连接两个变量的路径，把沿途权重相乘；不连通或变量不存在返回 $-1$。每个查询 $O(V+E)$。"
 tags:
   - Graph
   - BFS
@@ -25,15 +23,46 @@ sources:
     type: reference
 ---
 
+## 题目描述
+
+给定一些变量比值等式：equations[i]=[A,B] 和 values[i] 表示 A/B=values[i]。对每个查询 [C,D]，返回由已知等式能够确定的 C/D。若任意一个查询变量从未在已知等式中出现，或者现有等式不足以确定二者比值，则返回 -1.0。
+
+### 输入与输出
+
+实现 `calcEquation(equations, values, queries) -> list[float]`，输出顺序必须与 queries 一致。已知变量除以自身为 1；从未出现的变量即使除以自身也返回 -1.0。
+
+### 约束与约定
+
+- 已知等式与查询各有 1 到 20 条，每一条含两个变量名。
+- 变量名长 1 到 5，只含小写英文字母和数字。
+- values 与 equations 等长，且 `0 < values[i] <= 20`；输入保证不矛盾，不出现零作除数的情况。
+
+### 示例
+
+```text
+输入：equations = [["a","b"],["b","c"]], values = [2.0,3.0], queries = [["a","c"],["b","a"],["a","e"],["a","a"],["x","x"]]
+输出：[6.00000,0.50000,-1.00000,1.00000,-1.00000]
+```
+
+示例由 a/b=2 与 b/c=3 得到 a/c=6；变量 e、x 未知，对应查询返回 -1。
+
+[官方原题与完整题面](https://leetcode.com/problems/evaluate-division/description/)。
+
+## 解题思路与参考答案
+
 ## 题意
 
 给定若干等式 `equations[i] = [Ai, Bi]` 与值 `values[i]`，表示 $A_i/B_i=$ `values[i]`。对每个查询 `[Cj, Dj]` 求 $C_j/D_j$。变量从未出现、或两点不连通，返回 $-1$。等式之间不矛盾，值都是正数。
 
 ## 思路
 
-把变量当点、除法当带权边。$a/b=v$ 建 $a\to b$ 权 $v$，反向权 $1/v$。查询就是找一条从 $c$ 到 $d$ 的路径，答案是边上权的乘积：$a/c = (a/b)\cdot(b/c)$。等式不矛盾，所以任意一条路径的积都相同，BFS 或 DFS 找到就行，不需要最短路。
+我把它建成带权图，变量是点，除法是边，查询就是找路径再把权重乘起来。$a/b=v$ 建 $a\to b$ 权 $v$，反向权 $1/v$。查询从 $c$ 走到 $d$，答案是沿途边权的乘积，因为 $a/c = (a/b)\cdot(b/c)$。
 
-同一变量比自己是 $1$（前提是它在图里）。并查集也可：维护到根的乘积，路径压缩时更新权。白板我优先讲 BFS。
+拿样例看：$a/b=2$、$b/c=3$，查 $a/c$ 就是从 $a$ 走到 $b$ 再走到 $c$，$2\times 3=6$；查 $b/a$ 走反向边，得 $0.5$；查 $a/e$，图里没有 $e$，返回 $-1$。
+
+等式不矛盾，所以任意一条路径的乘积都一样，BFS 或 DFS 找到就行，用不着最短路。同一个变量比自己是 $1$，前提是它在图里出现过。
+
+并查集也能做，维护每个点到根的乘积，路径压缩时更新权重。白板上我先讲 BFS。
 
 ## 参考代码
 
@@ -102,20 +131,54 @@ if __name__ == "__main__":
     print("ok")
 ```
 
+## 简单测试怎么写
+
+把上面的参考代码保存为 `solution.py`，下面的代码放在同一个文件末尾。先准备输入，再调用本题函数，最后用 `assert` 比较实际值和预期值。
+
+把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
+
+```python
+ans = calcEquation(
+        [["a", "b"], ["b", "c"]],
+        [2.0, 3.0],
+        [["a", "c"], ["b", "a"], ["a", "e"], ["a", "a"], ["x", "x"]],
+    )
+assert close(ans, [6.0, 0.5, -1.0, 1.0, -1.0])
+ans = calcEquation(
+        [["a", "b"], ["b", "c"], ["bc", "cd"]],
+        [1.5, 2.5, 5.0],
+        [["a", "c"], ["c", "b"], ["bc", "cd"], ["cd", "bc"]],
+    )
+assert close(ans, [3.75, 0.4, 5.0, 0.2])
+ans = calcEquation(
+        [["a", "b"]],
+        [0.5],
+        [["a", "b"], ["b", "a"], ["a", "c"], ["x", "y"]],
+    )
+assert close(ans, [0.5, 2.0, -1.0, -1.0])
+print("simple tests passed")
+```
+
+运行 `python3 solution.py`，全部断言通过后会输出 `simple tests passed`；失败时按报错行检查该用例的输入和预期值。请用普通模式运行，`python3 -O` 会跳过 `assert`。
+
 ## 复杂度
 
-建图 $O(E)$。每个查询最坏 $O(V+E)$，总计 $O(Q\cdot(V+E))$。空间 $O(V+E)$。题目里变量和等式都不超过 $20$ 个，这个量级完全够。
+建图 $O(E)$。每个查询最坏 $O(V+E)$，总计 $O(Q\cdot(V+E))$，空间 $O(V+E)$。题目里变量和等式都不超过 $20$ 个，这个量级完全够用。
 
 ## 边界
 
-- 查询两端相同但变量从未出现：返回 $-1$，不是 $1$。只有变量在图里时 $x/x=1$。
-- 只有一条边的反向：$a/b=v$ 必建 $b/a=1/v$，漏建反向则反向查询失败。
-- `bc` 是独立变量名，不是 $b\cdot c$。建图按字符串当点，不要拆字符。
-- 两个变量都在图里但不在同一连通块：BFS 走完没碰到终点，返回 $-1$。
+查询两端相同但变量从没出现过，比如 `["x", "x"]`，要返回 $-1$。只有变量在图里时 $x/x=1$。
+
+$a/b=v$ 一定要同时建 $b/a=1/v$，漏建反向边，反向查询就会失败。
+
+`bc` 是一个独立的变量名，跟 $b\cdot c$ 没关系。建图时按整个字符串当点，别拆字符。
+
+两个变量都在图里、但不在同一个连通块，BFS 走完都碰不到终点，返回 $-1$。
 
 ## 追问
 
-- **多次查询怎么预处理？** 变量很少时跑 Floyd：`dist[i][j]` 表示 $i/j$ 的积。初始化对角线 $1$，每条等式写入 $v$ 与 $1/v$，然后当两段都已知时令 $\mathrm{dist}[i][j] \leftarrow \mathrm{dist}[i][k]\cdot \mathrm{dist}[k][j]$。之后每个查询 $O(1)$，总预处理 $O(V^3)$。
+**查询很多时怎么预处理？**
+变量很少时可以跑 Floyd：`dist[i][j]` 表示 $i/j$。对角线初始化为 $1$，每条等式写入 $v$ 和 $1/v$，然后两段都已知时令 $\mathrm{dist}[i][j] \leftarrow \mathrm{dist}[i][k]\cdot \mathrm{dist}[k][j]$。预处理 $O(V^3)$，之后每个查询 $O(1)$。
 
 ```python
 def calcEquationFloyd(equations, values, queries):
@@ -145,7 +208,8 @@ def calcEquationFloyd(equations, values, queries):
     return ans
 ```
 
-- **带权并查集？** 每个点维护 `parent` 与 `weight[x]`，约定 `weight[x] = x / parent(x)`。`find` 路径压缩时先递归到根，再 `weight[x] *= weight[old_parent]`，于是压缩后仍满足 $x/\mathrm{root}$。`union(a,b,v)` 表示 $a/b=v$：若根不同，把 $ra$ 挂到 $rb$，权为 $ra/rb = v\cdot w[b]/w[a]$。查询：根不同或点不存在返回 $-1$，否则 $a/b = w[a]/w[b]$。
+**带权并查集怎么写？**
+每个点维护 `parent` 和 `weight[x]`，约定 `weight[x] = x / parent(x)`。`find` 做路径压缩时先递归到根，再 `weight[x] *= weight[old_parent]`，这样压缩后仍满足 `weight[x]` 等于 $x/\mathrm{root}$。`union(a,b,v)` 表示 $a/b=v$：根不同就把 $ra$ 挂到 $rb$ 下，权重是 $ra/rb = v\cdot w[b]/w[a]$。查询时根不同或点不存在返回 $-1$，否则 $a/b = w[a]/w[b]$。
 
 ```python
 class WeightedUF:
