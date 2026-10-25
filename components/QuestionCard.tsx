@@ -133,9 +133,10 @@ function QuestionCardView({
   onFocus: () => void;
 }) {
   const hasCodingPractice = question.tags.includes("完整编程练习");
+  const canPractice = question.hasPractice === true;
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- heading button stays the keyboard control
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events -- heading button stays the keyboard control
     <article
       className={`question-card${isOpen ? " open" : ""}${isKeyboardActive ? " keyboard-active" : ""}${isMastered ? " mastered" : ""}`}
       id={question.id}
@@ -160,6 +161,7 @@ function QuestionCardView({
           </span>
         </button>
         <div className="question-head-actions">
+          {canPractice && <a className="copy-question-btn" href={`/practice?book=${encodeURIComponent(question.answerPath.split("/")[2] ?? "")}&question=${encodeURIComponent(question.id)}&title=${encodeURIComponent(question.title)}`}>编程练习 ↗</a>}
           <button
             type="button"
             className={`copy-question-btn${copiedKind === "prompt" ? " copied" : ""}`}
