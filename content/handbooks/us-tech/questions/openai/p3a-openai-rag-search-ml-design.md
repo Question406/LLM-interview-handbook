@@ -3,8 +3,10 @@ id: p3a-openai-rag-search-ml-design
 section: openai
 order: 644
 level: A
-title: "OpenAI：搜索 ML 设计：embedding、混合召回与排序"
-quick: "用 BM25 和向量检索并行召回，融合后交给 cross-encoder 重排，再裁剪证据生成带引用的答案。Embedding 的对比学习要有能区分易混文档的 hard negatives；评估分别看召回、排序和答案支持率，才能把训练变化和线上效果对应起来。"
+title: OpenAI：搜索 ML 设计：embedding、混合召回与排序
+quick: >-
+  用 BM25 和向量检索并行召回，融合后交给 cross-encoder 重排，再裁剪证据生成带引用的答案。Embedding 的 contrastive
+  learning 要有能区分易混文档的 hard negatives；评估分别看召回、排序和答案支持率，才能把训练变化和线上效果对应起来。
 companies:
   - openai
 tags:
@@ -16,16 +18,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · rag-search-ml-design"
-    url: https://www.1point3acres.com/interview/problems/company/openai/rag-search-ml-design
+  - title: 1Point3Acres · OpenAI · rag-search-ml-design
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/rag-search-ml-design
     type: secondary
 ---
 
 ## 题目描述
 
-这是公开题卡所述检索/embedding 设计方向的手册重构；每天更新与 500ms 是练习假设，不是面试官逐字要求。
+这是公开题卡所述检索/embedding 设计方向的手册重构；每天更新与 500ms 是练习假设。
 
 ### 场景与目标
 
@@ -41,7 +44,7 @@ sources:
 
 手册练习将检索阶段预算设为 500ms，规模与反馈可用性需要先澄清。不得泄漏无权限内容或用训练/评测重叠制造效果，证据不足时需有明确返回语义。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
@@ -53,13 +56,13 @@ sources:
 
 题目要求口述检索系统，并深挖 embedding 训练和每一阶段。练习假设语料每天更新，在 500ms 检索预算内提升事实问答效果。开始先确认语料规模，是否有点击或标注反馈。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；收录为面经题型不代表公司官方确认。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。规模数字、SLO 和故障情景是手册补的练习约定。
 
 一次查询先做 query 理解，BM25 稀疏召回与向量召回并行执行，候选去重并融合分数，再由 cross-encoder 逐对打分。留下的证据裁剪后交给生成模型，答案附引用。权限过滤要尽早执行，索引更新带版本。
 
 例如用户问“某药物的推荐剂量是多少”，BM25 用药名精确匹配召回几十篇，向量检索补上使用别名或描述性说法的段落。两路按排名融合后，取前若干条重排，再选分数最高的几段生成答案。各段延迟合计要在 500ms 内；某一路超时就用另一路降级，并标记质量。引用不能支撑结论时，收窄回答或拒答，避免模型补写没有证据的细节。
 
-训练 embedding 用对比学习，负例包含 hard negatives。每次线上查询记录 query、候选 id 和版本、各阶段分数、最终引用及用户反馈，后续才能回看哪一段出了问题。留出集要去污染并按时间切分。
+训练 embedding 用 contrastive learning，负例包含 hard negatives。每次线上查询记录 query、候选 id 和版本、各阶段分数、最终引用及用户反馈，后续才能回看哪一段出了问题。留出集要去污染并按时间切分。
 
 评估依次看 recall@k、MRR / nDCG、答案支持率、端到端成功率和时延，离线改进还要经过分层 A/B。这样召回下降、排序变差和生成问题都有独立证据。
 

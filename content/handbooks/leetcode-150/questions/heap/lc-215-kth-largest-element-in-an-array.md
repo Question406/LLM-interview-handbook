@@ -3,9 +3,10 @@ id: lc-215-kth-largest-element-in-an-array
 section: heap
 order: 1
 level: S
-title: LC 215 · 数组中的第K个最大元素
+title: LC 215 · 数组中的第 K 个最大元素
 quick: >-
-  我会开一个大小为 $k$ 的小根堆，存目前最大的 $k$ 个数，堆顶就是第 $k$ 大，时间 $O(n\log k)$。也可以用快选按枢纽划分，期望 $O(n)$。
+  我会开一个大小为 $k$ 的小根堆，存目前最大的 $k$ 个数，堆顶就是第 $k$ 大，时间 $O(n\log k)$。也可以用快选按枢纽划分，期望
+  $O(n)$。
 tags:
   - Heap
   - Quickselect
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 215. 数组中的第K个最大元素
-    url: https://leetcode.cn/problems/kth-largest-element-in-an-array/
+    url: 'https://leetcode.cn/problems/kth-largest-element-in-an-array/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,7 +105,7 @@ print("simple tests passed")
 
 堆的时间是 $O(n\log k)$，额外空间 $O(k)$。快选期望时间 $O(n)$，额外空间 $O(1)$（不计递归）。
 
-## 边界
+## Edge Cases
 
 $k=1$ 时堆里只留当前最大值，每个新数更大就替换，答案是全局最大。$k=n$ 时堆里装着全部元素，堆顶是最小值，也就是第 $n$ 大。有重复时第 $k$ 大按出现次数算，不按去重后的第 $k$ 个，堆和快选都会自然处理重复。
 

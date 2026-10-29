@@ -4,7 +4,9 @@ section: openai
 order: 7
 level: S
 title: OpenAI：RoPE 在 decode 时位置偏移写错会 silently 错，怎么查
-quick: "decode 的新 token 要从 `cache_len` 开始做 RoPE，旧 K 已旋转过就不能再转。比如每步误用位置 0，shape 和 softmax 仍正常，输出却会偏；先固定 greedy，对比有/无 cache 的逐 token 结果，再查 position_ids。"
+quick: >-
+  decode 的新 token 要从 `cache_len` 开始做 RoPE，旧 K 已旋转过就不能再转。比如每步误用位置 0，shape 和
+  softmax 仍正常，输出却会偏；先固定 greedy，对比有/无 cache 的逐 token 结果，再查 position_ids。
 tags:
   - 完整编程练习
   - OpenAI
@@ -14,24 +16,25 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: OpenAI Research Engineer Interview Guide
-    url: https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
+    url: >-
+      https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
     type: secondary
   - title: RoFormer — Enhanced Transformer with Rotary Position Embedding
-    url: https://arxiv.org/abs/2104.09864
+    url: 'https://arxiv.org/abs/2104.09864'
     type: primary
   - title: Attention Is All You Need
-    url: https://arxiv.org/abs/1706.03762
+    url: 'https://arxiv.org/abs/1706.03762'
     type: primary
 ---
 
 ## 题目描述
 
-用 NumPy 实现带 RoPE 绝对位置偏移、GQA 与紧凑 KV cache 的因果多头注意力，正确衔接 prefill 和 decode。
+用 NumPy 实现带 RoPE 绝对位置偏移、GQA 与紧凑 KV cache 的因果 multi-head attention，正确衔接 prefill 和 decode。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -59,11 +62,11 @@ mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是原帖题面或官方测试。只用 NumPy，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。只用 NumPy，CPU 上验证。
 
 ### 题面、接口与约束
 
-- `mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None, key_valid=None, use_rope=False)`：用 NumPy 写因果多头注意力，返回 `(output, new_cache)`。依次做 Q/K/V 投影、缩放点积、因果 mask、数值稳定的 softmax、合并 heads 和输出投影。
+- `mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None, key_valid=None, use_rope=False)`：用 NumPy 写因果 multi-head attention，返回 `(output, new_cache)`。依次做 Q/K/V 投影、缩放点积、因果 mask、数值稳定的 softmax、合并 heads 和输出投影。
 - `rope(x, start)`：对 `[B, H, T, d]` 的张量做旋转位置编码，第 `t` 个 token 的绝对位置是 `start + t`。
 - 形状：`x` 是 `[B, T, D]`，`wq`、`wo` 是 `[D, D]`，`wk`、`wv` 是 `[D, Hkv * d]`，其中 `d = D / heads`、`Hkv = kv_heads`（默认等于 `heads`）。`heads` 必须整除 `D`，也必须是 `Hkv` 的整数倍。
 - `cache` 是一对 `[B, Hkv, prefix, d]` 的 K/V，只存紧凑的 KV heads。返回的新 cache 长度是 `prefix + T`。
@@ -90,7 +93,7 @@ mha(完整序列) == 逐 token 带 cache 调用 mha，再沿时间维拼接
 
 softmax 沿 key 维做，先减去每行的最大值，`exp` 就不会溢出。一行 key 全被屏蔽时，最大值是 `-inf`，先换成 0，此时分母为 0，按约定输出 0。
 
-GQA 里 query head `h` 读第 `h // group` 个 KV head，`group = heads / Hkv`。参考实现用 `np.repeat` 把 KV 展开后算注意力，只是为了写出直观的基准；cache 本身始终只存 `Hkv` 份。
+GQA 里 query head `h` 读第 `h // group` 个 KV head，`group = heads / Hkv`。参考实现用 `np.repeat` 把 KV 展开后算 attention，只是为了写出直观的基准；cache 本身始终只存 `Hkv` 份。
 
 ### 完整参考实现（Python 3）
 
@@ -103,9 +106,9 @@ def rope(x, start):
     head_dim = x.shape[-1]
     if head_dim % 2:
         raise ValueError(f"RoPE requires an even head dimension, got {head_dim}")
-    positions = np.arange(start, start + x.shape[2])[:, None]      # [T, 1]
+    positions = np.arange(start, start + x.shape[2])[:, None]  # [T, 1]
     inv_freq = 10000.0 ** (-np.arange(0, head_dim, 2) / head_dim)  # [d/2]
-    angles = positions * inv_freq                                  # [T, d/2]
+    angles = positions * inv_freq  # [T, d/2]
     cos, sin = np.cos(angles), np.sin(angles)
     even, odd = x[..., 0::2], x[..., 1::2]
     out = np.empty_like(x)
@@ -120,9 +123,10 @@ def split_heads(x, num_heads):
     return x.reshape(B, T, num_heads, width // num_heads).transpose(0, 2, 1, 3)
 
 
-def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
-        key_valid=None, use_rope=False):
-    """因果多头注意力，支持 GQA、KV cache、key padding mask 和 RoPE。
+def mha(
+    x, wq, wk, wv, wo, heads, kv_heads=None, cache=None, key_valid=None, use_rope=False
+):
+    """因果 multi-head attention，支持 GQA、KV cache、key padding mask 和 RoPE。
 
     x: [B, T, D]；wq, wo: [D, D]；wk, wv: [D, kv_heads * d]，d = D // heads。
     cache: (k, v)，各为 [B, kv_heads, prefix, d]，其中 k 已按绝对位置旋转过。
@@ -136,7 +140,8 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
         raise ValueError(f"x must be [B, T, D], got shape {x.shape}")
     if heads <= 0 or kv_heads <= 0 or heads % kv_heads:
         raise ValueError(
-            f"heads={heads} must be a positive multiple of kv_heads={kv_heads}")
+            f"heads={heads} must be a positive multiple of kv_heads={kv_heads}"
+        )
     B, T, D = x.shape
     if B == 0 or T == 0:
         raise ValueError(f"empty input, got shape {x.shape}")
@@ -144,24 +149,29 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
         raise ValueError(f"model dim {D} is not divisible by heads={heads}")
     d = D // heads
     if wq.shape != (D, D) or wo.shape != (D, D):
-        raise ValueError(
-            f"wq and wo must be [{D}, {D}], got {wq.shape} and {wo.shape}")
+        raise ValueError(f"wq and wo must be [{D}, {D}], got {wq.shape} and {wo.shape}")
     if wk.shape != (D, kv_heads * d) or wv.shape != (D, kv_heads * d):
-        raise ValueError(f"wk and wv must be [{D}, {kv_heads * d}], "
-                         f"got {wk.shape} and {wv.shape}")
+        raise ValueError(
+            f"wk and wv must be [{D}, {kv_heads * d}], got {wk.shape} and {wv.shape}"
+        )
 
-    q = split_heads(x @ wq, heads)     # [B, heads, T, d]
+    q = split_heads(x @ wq, heads)  # [B, heads, T, d]
     k = split_heads(x @ wk, kv_heads)  # [B, kv_heads, T, d]
     v = split_heads(x @ wv, kv_heads)  # [B, kv_heads, T, d]
 
     prefix = 0
     if cache is not None:
         cached_k, cached_v = (np.asarray(a, dtype=float) for a in cache)
-        if (cached_k.ndim != 4 or cached_k.shape != cached_v.shape
-                or cached_k.shape[:2] != (B, kv_heads) or cached_k.shape[-1] != d):
+        if (
+            cached_k.ndim != 4
+            or cached_k.shape != cached_v.shape
+            or cached_k.shape[:2] != (B, kv_heads)
+            or cached_k.shape[-1] != d
+        ):
             raise ValueError(
                 f"cache must hold two [{B}, {kv_heads}, prefix, {d}] arrays, "
-                f"got {cached_k.shape} and {cached_v.shape}")
+                f"got {cached_k.shape} and {cached_v.shape}"
+            )
         prefix = cached_k.shape[2]
     if use_rope:
         # 新 token 的位置从 prefix 开始编号；cache 里的旧 K 已旋转过，不再转第二次
@@ -185,8 +195,7 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     if key_valid is not None:
         valid = np.asarray(key_valid, dtype=bool)
         if valid.shape != (B, S):
-            raise ValueError(
-                f"key_valid must be [{B}, {S}], got shape {valid.shape}")
+            raise ValueError(f"key_valid must be [{B}, {S}], got shape {valid.shape}")
         allowed = allowed & valid[:, None, None, :]
     scores = np.where(allowed, scores, -np.inf)
 
@@ -196,8 +205,7 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
     weights = np.exp(scores - row_max)
     denom = weights.sum(axis=-1, keepdims=True)
     # 全屏蔽行的分母是 0，约定输出 0，避免 0 / 0 = NaN
-    weights = np.divide(weights, denom, out=np.zeros_like(weights),
-                        where=denom > 0)
+    weights = np.divide(weights, denom, out=np.zeros_like(weights), where=denom > 0)
 
     context = weights @ v_rep  # [B, heads, T, d]
     output = context.transpose(0, 2, 1, 3).reshape(B, T, D) @ wo
@@ -212,7 +220,7 @@ def mha(x, wq, wk, wv, wo, heads, kv_heads=None, cache=None,
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -235,10 +243,10 @@ def loop_reference(x, wq, wk, wv, wo, heads):
         for h in range(heads):
             cols = slice(h * d, (h + 1) * d)
             for i in range(T):
-                logits = k[b, :i + 1, cols] @ q[b, i, cols] / np.sqrt(d)
+                logits = k[b, : i + 1, cols] @ q[b, i, cols] / np.sqrt(d)
                 probs = np.exp(logits - logits.max())
                 probs /= probs.sum()
-                context[b, i, cols] = probs @ v[b, :i + 1, cols]
+                context[b, i, cols] = probs @ v[b, : i + 1, cols]
     return context @ wo
 
 
@@ -246,16 +254,23 @@ rng = np.random.default_rng(7)
 x = rng.normal(size=(2, 5, 8))  # B=2, T=5, D=8；heads=4 时 d=2
 
 for kv_heads in (1, 2, 4):
-    weights = [rng.normal(size=(8, width))
-               for width in (8, kv_heads * 2, kv_heads * 2, 8)]
+    weights = [
+        rng.normal(size=(8, width)) for width in (8, kv_heads * 2, kv_heads * 2, 8)
+    ]
     for use_rope in (False, True):
-        # 一次算完整序列，和逐 token 带 cache 解码再拼接，结果一致
+        # 一次算完整序列，和逐 token 带 cache decoding 再拼接，结果一致
         full, _ = mha(x, *weights, heads=4, kv_heads=kv_heads, use_rope=use_rope)
         pieces = []
         cache = None
         for step in range(5):
-            out, cache = mha(x[:, step:step + 1], *weights, heads=4,
-                             kv_heads=kv_heads, cache=cache, use_rope=use_rope)
+            out, cache = mha(
+                x[:, step : step + 1],
+                *weights,
+                heads=4,
+                kv_heads=kv_heads,
+                cache=cache,
+                use_rope=use_rope,
+            )
             pieces.append(out)
         assert np.allclose(full, np.concatenate(pieces, axis=1))
 
@@ -265,13 +280,13 @@ for kv_heads in (1, 2, 4):
         # 大幅改动最后一个 token，前 4 个位置的输出不变：没有未来信息泄漏
         changed = x.copy()
         changed[:, 4] += 100
-        other, _ = mha(changed, *weights, heads=4, kv_heads=kv_heads,
-                       use_rope=use_rope)
+        other, _ = mha(changed, *weights, heads=4, kv_heads=kv_heads, use_rope=use_rope)
         assert np.allclose(full[:, :4], other[:, :4])
 
     # 所有 key 都被屏蔽：输出全 0，没有 NaN
-    zero, _ = mha(x, *weights, heads=4, kv_heads=kv_heads,
-                  key_valid=np.zeros((2, 5), bool))
+    zero, _ = mha(
+        x, *weights, heads=4, kv_heads=kv_heads, key_valid=np.zeros((2, 5), bool)
+    )
     assert np.isfinite(zero).all()
     assert np.allclose(zero, 0)
 
@@ -280,7 +295,7 @@ weights = [rng.normal(size=(8, 8)) for _ in range(4)]
 full, _ = mha(x, *weights, heads=4)
 assert np.allclose(full, loop_reference(x, *weights, heads=4))
 
-# 已知数值：Q = K = 0 时注意力是对可见 key 的均匀平均
+# 已知数值：Q = K = 0 时 attention 是对可见 key 的均匀平均
 known_x = np.array([[[2.0, 4.0], [6.0, 8.0]]])
 identity = np.eye(2)
 zeros = np.zeros((2, 2))
@@ -308,8 +323,7 @@ expect_value_error(mha, x, *identity_weights, heads=4, kv_heads=3)
 expect_value_error(mha, x[0], *identity_weights, heads=4)
 
 # key_valid 长度和 prefix + T 对不上；cache 的 K、V 形状不一致
-expect_value_error(mha, x, *identity_weights, heads=4,
-                   key_valid=np.ones((2, 4), bool))
+expect_value_error(mha, x, *identity_weights, heads=4, key_valid=np.ones((2, 4), bool))
 bad_cache = (np.zeros((2, 4, 3, 2)), np.zeros((2, 4, 2, 2)))
 expect_value_error(mha, x, *identity_weights, heads=4, cache=bad_cache)
 
@@ -319,9 +333,9 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 
 ### 复杂度与追问
 
-设总 KV 长度 S = prefix + T。投影是 O(B·T·D²)，注意力是 O(B·heads·T·S·d)。参考实现把整块 scores 放在内存里，额外空间 O(B·heads·T·S)；cache 占 O(B·Hkv·S·d)。这是 NumPy 写的正确性基准，不是融合 GPU kernel。
+设总 KV 长度 S = prefix + T。投影是 O(B·T·D²)，attention 是 O(B·heads·T·S·d)。参考实现把整块 scores 放在内存里，额外空间 O(B·heads·T·S)；cache 占 O(B·Hkv·S·d)。这是 NumPy 写的正确性基准，不是融合 GPU kernel。
 
-- 追问「这些测试能抓住哪些 bug」：去掉 causal mask，未来扰动测试会失败；softmax 轴、缩放或合并 heads 写错，逐 head 循环对照会失败；RoPE offset 写成 0 或 mask 没加 prefix，有/无 cache 对照会失败；已知均值例子能直接看出归一化对不对。
+- 追问「这些测试能抓住哪些 bug」：去掉 causal mask，未来扰动测试会失败；softmax 轴、缩放或合并 heads 写错，逐 head 循环对照会失败；RoPE offset 写成 0 或 mask 没加 prefix，有/无 cache 对照会失败；已知均值例子能直接看出 normalization 对不对。
 - 原始面试里的完整 Transformer 代码没有公开，不要把这段练习说成原帖的 300 行源码。
 
 ## 题怎么来的
@@ -330,9 +344,9 @@ expect_value_error(mha, x, *identity_weights, heads=8, use_rope=True)
 
 面试官喜欢这题，是因为它错得很安静：没有异常，shape 断言也能过，短 prompt 有时还看不出问题。
 
-## 相对位置写错后，注意力会读取错误的位置关系
+## 相对位置写错后，attention 会读取错误的位置关系
 
-RoPE 把每一对维度旋转一个角度 $\theta_i m$，其中 $m$ 是 token 的位置。query 在位置 $m$、key 在位置 $n$ 时，两者的点积只依赖相对差 $m-n$。这是优点，也是 debug 的陷阱：如果给每个 decode token 都按位置 0 旋转，模型做的仍然是「合法的注意力」，只是每一步都以为自己站在句首。
+RoPE 把每一对维度旋转一个角度 $\theta_i m$，其中 $m$ 是 token 的位置。query 在位置 $m$、key 在位置 $n$ 时，两者的点积只依赖相对差 $m-n$。这是优点，也是 debug 的陷阱：如果给每个 decode token 都按位置 0 旋转，模型做的仍然是「合法的 attention」，只是每一步都以为自己站在句首。
 
 典型错误写法和正确写法：
 
@@ -357,9 +371,9 @@ prefill 一次旋转 `[0, S)` 没问题，问题从第二步开始。cache 里�
 3. **小矩阵探针。** 把 $q,k$ 固定成同一个向量，只改位置。RoPE 下 $m=n$（相对差为 0）时点积最大；如果每一步 decode 都表现得像相对差为 0，说明 offset 没加上。
 4. **别只看 loss。** 训练时每步都是完整序列，RoPE 是对的；bug 只出现在推理的 cache 路径上。所以「训练 loss 正常，serving 一开 cache 就胡言乱语」正是这类 bug 的特征。
 
-GQA 不改变位置逻辑：旋转的是每个 KV head 的 $D$ 维，head 数见 `meta-llama-gqa`。分块输入预填充（chunked prefill）时，一块新 token 内部仍用连续递增的绝对下标，并接在 `cache_len` 后面。
+GQA 不改变位置逻辑：旋转的是每个 KV head 的 $D$ 维，head 数见 `meta-llama-gqa`。分块输入 prefill（chunked prefill）时，一块新 token 内部仍用连续递增的绝对下标，并接在 `cache_len` 后面。
 
-它和 softmax / mask 类 bug 的区别在于：那些 bug 会破坏归一化或泄漏未来位置，常常一个单测就能抓到，见 `openai-softmax-bug`。RoPE offset 写错时，注意力仍然是合法的概率分布，`attn.sum(-1) == 1` 照样成立，只能靠有 cache 和无 cache 两条路径的结果对齐来发现。
+它和 softmax / mask 类 bug 的区别在于：那些 bug 会破坏 normalization 或泄漏未来位置，常常一个单测就能抓到，见 `openai-softmax-bug`。RoPE offset 写错时，attention 仍然是合法的概率分布，`attn.sum(-1) == 1` 照样成立，只能靠有 cache 和无 cache 两条路径的结果对齐来发现。
 
 ## 追问
 
@@ -367,7 +381,7 @@ GQA 不改变位置逻辑：旋转的是每个 KV head 的 $D$ 维，head 数见
 shape 合法，softmax 仍然归一，输出范数也正常。只有和不带 cache 的 teacher 路径对比才会暴露。
 **ALiBi 会不会同样出错？**
 会。ALiBi 的偏置取决于距离；decode 时如果只按「当前块内的距离」算，就等于忽略了 cache 里已有的 $S$ 个 token。
-**投机解码拒绝草稿后，位置怎么回滚？**
+**speculative decoding 拒绝草稿后，位置怎么回滚？**
 把 cache 截到被接受的前缀，下一步的 offset 就是新的 `cache_len`，见 `openai-speculative-decoding`。
 **长上下文插值算不算 offset 问题？**
 不算，那是 cos/sin 表怎么延拓的问题。先保证 $m=\mathrm{cache\_len}$，再谈 NTK / YaRN。
@@ -376,7 +390,7 @@ shape 合法，softmax 仍然归一，输出范数也正常。只有和不带 ca
 
 - [[openai-kv-cache-impl]]：编程练习和本题一字不差，问法是从零实现 KV cache 并对齐 greedy。
 - [[openai-transformer-debug]]：编程练习也一字不差，问法是给一份带 bug 的 Transformer 先排查再加 cache。
-- [[coding-rope-cache]]：只写 cos/sin 表和 `position_ids`，不碰注意力本身。
+- [[coding-rope-cache]]：只写 cos/sin 表和 `position_ids`，不碰 attention 本身。
 - [[openai-speculative-decoding]]：拒绝草稿后 cache 被截断，下一步的 offset 也要跟着回退。
 - [[coding-decode-step]]：白板写一步 decode，第一行就是用 `cache_len` 做 RoPE，是这个 bug 的正确写法。
 - [[coding-rope]]：白板写 RoPE 旋转，decode 的 position 取 cache 长度，是本题要查的那条不变量的正面写法。

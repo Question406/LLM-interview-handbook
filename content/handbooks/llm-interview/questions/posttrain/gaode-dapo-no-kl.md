@@ -4,7 +4,10 @@ section: posttrain
 order: 212
 level: A
 title: 高德大模型：DAPO 为什么可以不额外加 KL 惩罚？GRPO 后期收益衰减怎么优化？
-quick: "DAPO 用动态采样、clip-higher 和 token 级损失管住了更新幅度和样本质量，所以显式的 $\\beta\\mathrm{KL}$ 可以不加，可这不等于锚点永远多余。GRPO 后期收益衰减先诊断是奖励饱和、熵塌、KL 太紧还是刷分，再对症换难度、重采样、退火约束或换目标。"
+quick: >-
+  DAPO 用动态 sampling、clip-higher 和 token 级损失管住了更新幅度和样本质量，所以显式的 $\beta\mathrm{KL}$
+  可以不加，可这不等于 reference policy 永远多余。GRPO 后期收益衰减先诊断是奖励饱和、熵塌、KL
+  太紧还是刷分，再对症换难度、resampling、退火约束或换目标。
 tags:
   - Amap
   - Alibaba
@@ -14,13 +17,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 高德大模型算法岗二面面经（相关推荐收录于百度面经页）
-    url: https://www.nowcoder.com/discuss/863890669662674944
+    url: 'https://www.nowcoder.com/discuss/863890669662674944'
     type: secondary
   - title: DAPO
-    url: https://arxiv.org/abs/2503.14476
+    url: 'https://arxiv.org/abs/2503.14476'
     type: primary
 ---
 
@@ -29,19 +32,19 @@ sources:
 - 公司：高德（阿里系）
 - 原始措辞（相关面经）：**“DAPO 算法为什么不需要额外引入 KL 惩罚项”**；**“GRPO 训练自带 KL 约束，训练后期收益衰减明显，有哪些优化手段？”**
 
-DAPO 可以不额外加 KL，是因为动态采样、clip 的形状和样本过滤已经在管「一步更新多大、哪些样本能进 batch」，显式的 $\beta D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 就成了可选项。这句话别说过头：它不表示永远不需要锚点，也不表示 KL 在数学上多余。开放对齐、安全、格式这些地方，可能还要 replay 或者一个小 KL，最后以你自己的实现和消融为准，论文的机制也不等于你的训练脚本默认把 KL 关了。
+DAPO 可以不额外加 KL，是因为动态 sampling、clip 的形状和样本过滤已经在管「一步更新多大、哪些样本能进 batch」，显式的 $\beta D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 就成了可选项。这句话别说过头：它不表示永远不需要 reference policy，也不表示 KL 在数学上多余。开放对齐、安全、格式这些地方，可能还要 replay 或者一个小 KL，最后以你自己的实现和 ablation 为准，论文的机制也不等于你的训练脚本默认把 KL 关了。
 
 要讲清楚，先把两套约束分开。Clip 限制的是相对上一轮行为策略 $\pi_{\mathrm{old}}$ 的一步偏离，属于 trust-region；经典 GRPO / PPO 再叠的 $\beta\mathrm{KL}$ 限制的是相对冻结 SFT 模型 $\pi_{\mathrm{ref}}$ 的漂移，属于 drift。DAPO 盯的失控主要来自样本质量和 clip 不对称，它没有先去论证「可以不要锚」。
 
-它具体改了三处。动态采样把组内全对或全错、优势为零的组丢掉，保证每批都有相对信号，少一些「看着在训、梯度是 0」的无效大步。Clip-higher 把 clip 上界抬高，让正优势样本有上升空间，下界照样限制 $\rho$，免得坏样本的概率被压到数值崩溃。Token 级损失解耦和过长惩罚，减轻长回复在序列平均里主导梯度，也压住长度 hacking。
+它具体改了三处。动态 sampling 把组内全对或全错、优势为零的组丢掉，保证每批都有相对信号，少一些「看着在训、梯度是 0」的无效大步。Clip-higher 把 clip 上界抬高，让正优势样本有上升空间，下界照样限制 $\rho$，免得坏样本的概率被压到数值崩溃。Token 级损失解耦和过长惩罚，减轻长回复在序列平均里主导梯度，也压住长度 hacking。
 
-这几样已经在控更新了，再叠一个大 $\beta\mathrm{KL}$，可能把探索掐死。尤其到后期 $\pi_\theta$ 离 SFT 已经比较远，同样的 $\beta$ 会把任务梯度抵消掉。所以面试里我会说「用采样和裁剪策略替代或减弱显式 KL」，同时承认分布外安全、指令遵循和通用能力可能还要 replay。把「无 KL」当成 DAPO 的定义是错的，它主要改的是采样和裁剪。
+这几样已经在控更新了，再叠一个大 $\beta\mathrm{KL}$，可能把探索掐死。尤其到后期 $\pi_\theta$ 离 SFT 已经比较远，同样的 $\beta$ 会把任务梯度抵消掉。所以面试里我会说「用 sampling 和裁剪策略替代或减弱显式 KL」，同时承认 out-of-distribution 安全、指令遵循和通用能力可能还要 replay。把「无 KL」当成 DAPO 的定义是错的，它主要改的是 sampling 和裁剪。
 
-DAPO 自己也有坏的时候：动态采样后有效 batch 太小，更新频率明显下降；clip-higher 开得太大，近似没 clip，高 $\hat{A}$ 样本把格式冲掉；关了 KL 又没有分布外测试集（OOD），训练范围外的能力退化就可能漏掉。
+DAPO 自己也有坏的时候：动态 sampling 后有效 batch 太小，更新频率明显下降；clip-higher 开得太大，近似没 clip，高 $\hat{A}$ 样本把格式冲掉；关了 KL 又没有 out-of-distribution 测试集（OOD），训练范围外的能力退化就可能漏掉。
 
-第二问，GRPO 后期收益衰减。这不是一种病，要先诊断再换算法。我会并排看训练奖励、holdout 成功率、entropy、到 ref 的 KL、clip fraction、组内 $\sigma$、唯一解比例和回复长度。常见几种原因：题变简单了，全对组越来越多，$\hat{A}\to 0$，有效信号枯竭；熵塌了，采样不再多样，组内对照变弱，唯一解比例升高；$\beta$ 太大，策略被锁在旧参考模型附近，任务分涨不动；验证器信息泄漏，或者模型靠变长利用奖励漏洞，训练 reward 在涨、holdout 不动。
+第二问，GRPO 后期收益衰减。这不是一种病，要先诊断再换算法。我会并排看训练奖励、holdout 成功率、entropy、到 ref 的 KL、clip fraction、组内 $\sigma$、唯一解比例和回复长度。常见几种原因：题变简单了，全对组越来越多，$\hat{A}\to 0$，有效信号枯竭；熵塌了，sampling 不再多样，组内对照变弱，唯一解比例升高；$\beta$ 太大，策略被锁在旧 reference model 附近，任务分涨不动；验证器信息泄漏，或者模型靠变长利用奖励漏洞，训练 reward 在涨、holdout 不动。
 
-只盯平滑后的训练 reward，会把过拟合和刷分当成「还在涨」。KL 约束本身也会造成「后期不动」，任务梯度被约束抵消了。所以要分清两种情况：holdout 已经饱和，还是训练分还在抖、holdout 已经在掉。
+只盯平滑后的训练 reward，会把 overfitting 和刷分当成「还在涨」。KL 约束本身也会造成「后期不动」，任务梯度被约束抵消了。所以要分清两种情况：holdout 已经饱和，还是训练分还在抖、holdout 已经在掉。
 
 诊断完再下药。题太容易就提高难题占比、加大 $G$、动态过滤零方差组；KL 太紧就退火 $\beta$，或者换 DAPO / GSPO；有刷分迹象就查 parser 泄漏、查测试用例是不是被模型背下来了，用过长惩罚管住长度，别放任它变长。只换目标不换题池，衰减照旧。课程要一直维持组内方差，太易的过滤、太难的先降档。真塌了就回滚 checkpoint，别在已经塌掉的熵上继续加大更新。
 
@@ -53,10 +56,10 @@ DAPO 自己也有坏的时候：动态采样后有效 batch 太小，更新频�
 不是。Clip 相对 $\pi_{\mathrm{old}}$，$\beta\mathrm{KL}$ 相对冻结的 $\pi_{\mathrm{ref}}$。DAPO 减弱的通常是后者。
 
 **关掉 KL 会不会必崩？**
-不一定，要看任务能不能验证、有没有 clip 和动态采样、有没有 OOD 门禁。开放对齐上关 KL 更危险。
+不一定，要看任务能不能验证、有没有 clip 和动态 sampling、有没有 OOD acceptance checks。开放对齐上关 KL 更危险。
 
 **后期唯一解比例升高说明什么？**
-探索枯竭了。先改难度和采样，再动学习率；继续加大学习率，输出可能更集中。
+探索枯竭了。先改难度和 sampling，再动学习率；继续加大学习率，输出可能更集中。
 
-**DAPO 动态采样会不会偏题？**
+**DAPO 动态 sampling 会不会偏题？**
 会。永远做不对的难题被丢掉，课程越来越容易。超难题要单独放一个池子，别在全局直接过滤掉。

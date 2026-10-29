@@ -5,7 +5,8 @@ order: 1
 level: A
 title: LC 933 · 最近的请求次数
 quick: >-
-  时间戳严格递增，过期的请求总在最早那一端，所以用队列存请求时间。每次 `ping(t)` 先入队，再把队头小于 $t-3000$ 的全部弹出，剩下的长度就是答案。均摊 $O(1)$，空间最多 $3001$ 个元素。
+  时间戳严格递增，过期的请求总在最早那一端，所以用队列存请求时间。每次 `ping(t)` 先入队，再把队头小于 $t-3000$
+  的全部弹出，剩下的长度就是答案。均摊 $O(1)$，空间最多 $3001$ 个元素。
 tags:
   - Queue
   - Design
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 933. Number of Recent Calls
-    url: https://leetcode.com/problems/number-of-recent-calls/
+    url: 'https://leetcode.com/problems/number-of-recent-calls/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -112,7 +113,7 @@ print("simple tests passed")
 
 `ping` 均摊时间 $O(1)$。空间 $O(W)$，$W$ 是窗口内请求数；时间戳严格递增，最多 $3001$ 个。
 
-## 边界
+## Edge Cases
 
 区间两端都包含，$t-3000$ 那个请求仍然算，所以弹出条件是严格小于。
 
@@ -127,6 +128,7 @@ print("simple tests passed")
 
 ```python
 import bisect
+
 
 class RecentCounterUnordered:
     def __init__(self):

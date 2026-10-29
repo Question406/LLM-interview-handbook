@@ -5,7 +5,8 @@ order: 2
 level: A
 title: 淘天/阿里国际实习笔试：不相邻偶数对怎么数？
 quick: >-
-  和为偶数只能是奇+奇或偶+偶，所以先算 $C(\mathrm{odd},2)+C(\mathrm{even},2)$，再扫一遍减掉相邻的同奇偶对。整体 $O(n)$，不用枚举 $O(n^2)$ 对。
+  和为偶数只能是奇+奇或偶+偶，所以先算 $C(\mathrm{odd},2)+C(\mathrm{even},2)$，再扫一遍减掉相邻的同奇偶对。整体
+  $O(n)$，不用枚举 $O(n^2)$ 对。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 淘天/阿里国际 2025 实习笔试解析
-    url: http://www.jsqmd.com/news/1167387/
+    url: 'http://www.jsqmd.com/news/1167387/'
     type: secondary
 ---
 
@@ -99,7 +100,7 @@ def main():
     if not data:
         return
     n = data[0]
-    a = data[1:1 + n]
+    a = data[1 : 1 + n]
     print(count_nonadj_even_pairs(a))
 
 
@@ -124,7 +125,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$（不计输入数组）。
 
-## 边界
+## Edge Cases
 
 `n=0/1` 时组合数为 $0$，也没有相邻对，答案 $0$；`n=2` 时如果两数同奇偶，组合数是 $1$，相邻再减掉，答案仍为 $0$；全奇或全偶也走同一个公式。
 

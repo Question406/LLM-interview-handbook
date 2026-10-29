@@ -3,8 +3,10 @@ id: dt-minhash-code
 section: tech-screen
 order: 2
 level: A
-title: CoderPad：手写 MinHash + LSH，近重复去重怎么讲规模？
-quick: "先把文档拆成 shingle 集合并生成 MinHash 签名，再用 LSH 分段找候选：签名某一维相等的概率等于 Jaccard，任一 band 完全相等就进候选。候选最后仍要用精确 Jaccard 复核。规模分析要估候选对数，因为总成本取决于候选数量。"
+title: CoderPad：手写 MinHash + LSH，near-duplicate deduplication 怎么讲规模？
+quick: >-
+  先把文档拆成 shingle 集合并生成 MinHash 签名，再用 LSH 分段找候选：签名某一维相等的概率等于 Jaccard，任一 band
+  完全相等就进候选。候选最后仍要用精确 Jaccard 复核。规模分析要估候选对数，因为总成本取决于候选数量。
 companies:
   - apple
 tags:
@@ -15,21 +17,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
-  - title: "Mining of Massive Datasets, Ch.3 (Finding Similar Items)"
-    url: http://infolab.stanford.edu/~ullman/mmds/ch3n.pdf
+  - title: 'Mining of Massive Datasets, Ch.3 (Finding Similar Items)'
+    url: 'http://infolab.stanford.edu/~ullman/mmds/ch3n.pdf'
     type: primary
   - title: Deduplicating Training Data Makes Language Models Better
-    url: https://arxiv.org/abs/2107.06499
+    url: 'https://arxiv.org/abs/2107.06499'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
-为文本近重复检测实现 shingle、MinHash 签名、LSH 候选对与精确 Jaccard 接口。候选对只表示可能相似，不能直接当成重复删除结论。
+为文本 near-duplicates 检测实现 shingle、MinHash 签名、LSH 候选对与精确 Jaccard 接口。候选对只表示可能相似，不能直接当成重复删除结论。
 
 ### 输入与接口
 
@@ -56,7 +58,7 @@ lsh_candidates([("a",(1,2,3,4)),("b",(1,2,9,8)),("c",(7,6,5,4))],b=2,r=2)
 
 我会分三步做：把文档拆成 shingle 集合并算 MinHash 签名，用 LSH 找出可能重复的候选对，再对候选算精确 Jaccard 决定去不去。这样省掉了全量两两比较，但总成本仍取决于候选数量，报规模时要估候选对数。
 
-比如一篇 200 个词的文章，转载时只在末尾加了「footer copyright example」，字节级的精确哈希认不出来，Jaccard 却在 0.95 以上，这就是 MinHash 要抓的东西。要做去重，是因为 Lee et al. 2021 指出，训练集里的近重复浪费算力，也会让评测里「看起来像新文档」的内容变得眼熟，所以去重既改变模型能力，也改变评测结果的含义。另外 MinHash 不是加密哈希。
+比如一篇 200 个词的文章，转载时只在末尾加了「footer copyright example」，字节级的精确哈希认不出来，Jaccard 却在 0.95 以上，这就是 MinHash 要抓的东西。要做 deduplication，是因为 Lee et al. 2021 指出，training set 里的 near-duplicates 浪费算力，也会让评测里「看起来像新文档」的内容变得眼熟，所以 deduplication 既改变模型能力，也改变评测结果的含义。另外 MinHash 不是加密哈希。
 
 ## 数学先说 20 秒
 
@@ -80,7 +82,7 @@ def shingles(text, n=5):
     tokens = re.findall(r"\w+", text.lower())
     if len(tokens) < n:
         return {" ".join(tokens)} if tokens else set()
-    return {" ".join(tokens[i:i + n]) for i in range(len(tokens) - n + 1)}
+    return {" ".join(tokens[i : i + n]) for i in range(len(tokens) - n + 1)}
 
 
 def _hash(seed, s):
@@ -105,13 +107,13 @@ def lsh_candidates(signatures, b=16, r=8):
         if len(signature) != b * r:
             raise ValueError(f"signature length {len(signature)} != b*r = {b * r}")
         for band in range(b):
-            piece = signature[band * r:(band + 1) * r]
+            piece = signature[band * r : (band + 1) * r]
             buckets[(band, piece)].add(doc_id)
     pairs = set()
     for group in buckets.values():
         ids = sorted(group)
         for i, first in enumerate(ids):
-            for second in ids[i + 1:]:
+            for second in ids[i + 1 :]:
                 pairs.add((first, second))
     return pairs
 
@@ -164,28 +166,28 @@ except ValueError:
 
 $N=10^9$ 个文档时，签名存盘约 $N\times k\times 8$ 字节，$k=128$ 时约 1 TB。LSH 是一次 shuffle，`(band_id, band_key) → doc_id`，只在每个桶内两两比较，期望候选数远小于 $N^2$。给一个数量级就够：目标 $J=0.8$、取 $r=8$、$b=16$ 时，$J=0.8$ 的召回接近 1，$J=0.4$ 的误召回被压下去。现场用 $1-(1-J^r)^b$ 算一个点就行，不用背表。
 
-和评测隔离也有先后：先对冻结评测集算签名，训练文档只和评测的桶比。训练集内部去重可以更激进；对评测，只要「像到不能当新题」就算命中。
+和评测隔离也有先后：先对冻结 evaluation set 算签名，训练文档只和评测的桶比。training set 内部 deduplication 可以更激进；对评测，只要「像到不能当新题」就算命中。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert jaccard(base, reprint) > 0.95` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert jaccard(base, reprint) > 0.95` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
 **MinHash 能去语义重复吗？**
-不能，它近似的是词面 Jaccard。释义、翻译、改写要用 embedding 近邻，成本高两个数量级，只对高价值子集做。
+不能，它近似的是词面 Jaccard。释义、翻译、改写要用 embedding nearest neighbors，成本高两个数量级，只对高价值子集做。
 
 **为什么不先做精确哈希？**
 要先做。精确哈希去的是字节级复制，很便宜；MinHash 处理的是改了空白和页脚的转载。
 
 **阈值怎么定？**
-抽 1k 对人工看，权衡被误杀的正当 paraphrase 和漏掉的转载。阈值按域分别定，0.8 只是网页的起点。
+抽 1k 对人工看，权衡被 false rejection 的正当 paraphrase 和漏掉的转载。阈值按域分别定，0.8 只是网页的起点。
 
 **某个 band 撞上全网模板，桶爆了怎么办？**
 按域分片、先剥 boilerplate、对超大桶再切一层。「版权声明」这种全网重复的模板能让一个桶进几百万文档，候选对数跟着爆炸。

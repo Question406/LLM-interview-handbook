@@ -3,21 +3,23 @@ id: ali-algo-edit-distance
 section: alibaba-oa
 order: 32
 level: A
-title: 阿里手撕：编辑距离的状态和边界怎么写？
-quick: "用二维 DP，`dp[i][j]` 是把 $a$ 前 $i$ 个字符变成 $b$ 前 $j$ 个的最少操作数。字符相等就继承对角，不等就在删、插、改里取 min 再加一。空串边界就是 $i$ 或 $j$。"
+title: 阿里手撕：编辑距离的 state 和 base cases 怎么写？
+quick: >-
+  用二维 DP，`dp[i][j]` 是把 $a$ 前 $i$ 个字符变成 $b$ 前 $j$ 个的最少操作数。字符相等就继承对角，不等就在删、插、改里取
+  min 再加一。empty-string boundaries 就是 $i$ 或 $j$。
 tags:
   - Alibaba
   - DP
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 编辑距离
-    url: https://leetcode.cn/problems/edit-distance/
+    url: 'https://leetcode.cn/problems/edit-distance/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -25,7 +27,7 @@ sources:
 
 给定两个字符串，求把第一个字符串变成第二个字符串所需的最少编辑次数。一次编辑可以插入一个字符、删除一个字符，或把一个字符替换成另一个字符，每次代价均为 1。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -50,7 +52,7 @@ sources:
 
 - 对应：LeetCode 72，阿里校招 DP 深挖题
 
-我会用二维 DP，状态 `dp[i][j]` 是把 $a$ 的前 $i$ 个字符变成 $b$ 的前 $j$ 个字符的最少操作数。边界很好记：长度为 $i$ 的前缀变成空串要删 $i$ 次，空串变成长度为 $i$ 的串就是插 $i$ 次。
+我会用二维 DP，状态 `dp[i][j]` 是把 $a$ 的前 $i$ 个字符变成 $b$ 的前 $j$ 个字符的最少操作数。base cases 很好记：长度为 $i$ 的前缀变成空串要删 $i$ 次，空串变成长度为 $i$ 的串就是插 $i$ 次。
 
 ## 思路
 
@@ -119,7 +121,7 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 

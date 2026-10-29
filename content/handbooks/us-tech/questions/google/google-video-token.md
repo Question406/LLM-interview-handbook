@@ -3,8 +3,10 @@ id: google-video-token
 section: google
 order: 30
 level: A
-title: Google：视频 token 的时间采样，怎么和长上下文抢预算
-quick: "视频预算约等于帧数 $F$ 乘每帧空间 token，再加音频，并与文本共享窗口。每帧 256 token、1 fps 的一小时就约有 $9.2\\times 10^5$ 个视觉 token；动作密集时要提高采样率，讲座可用低 fps 配音频。评测要固定抽样协议，才能区分模型改进和输入增加。"
+title: Google：视频 token 的时间 sampling，怎么和长上下文抢预算
+quick: >-
+  视频预算约等于帧数 $F$ 乘每帧空间 token，再加音频，并与文本共享窗口。每帧 256 token、1 fps 的一小时就约有 $9.2\times
+  10^5$ 个视觉 token；动作密集时要提高 sampling 率，讲座可用低 fps 配音频。评测要固定抽样协议，才能区分模型改进和输入增加。
 tags:
   - Google
   - Gemini
@@ -13,25 +15,27 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
-  - title: Gemini 1.5 — Unlocking multimodal understanding across millions of tokens of context
-    url: https://arxiv.org/abs/2403.05530
+  - title: >-
+      Gemini 1.5 — Unlocking multimodal understanding across millions of tokens
+      of context
+    url: 'https://arxiv.org/abs/2403.05530'
     type: primary
   - title: Gemini — A Family of Highly Capable Multimodal Models
-    url: https://arxiv.org/abs/2312.11805
+    url: 'https://arxiv.org/abs/2312.11805'
     type: primary
   - title: ViViT — A Video Vision Transformer
-    url: https://arxiv.org/abs/2103.15691
+    url: 'https://arxiv.org/abs/2103.15691'
     type: secondary
   - title: Flamingo — a Visual Language Model for Few-Shot Learning
-    url: https://arxiv.org/abs/2204.14198
+    url: 'https://arxiv.org/abs/2204.14198'
     type: secondary
 ---
 
-我会先按帧数和每帧 token 数算视频预算，再根据任务调整采样率。比如同是一小时，讲座可以多依赖音频、少抽帧，操作演示却可能需要加密关键动作。Gemini 1.5 报告支持小时级视频，但这张卡不是逐字真题，也没有公开内部 fps；单帧预算见 `google-vit-patch`，窗口成本见 `google-gemini-longctx`。
+我会先按帧数和每帧 token 数算视频预算，再根据任务调整 sampling 率。比如同是一小时，讲座可以多依赖音频、少抽帧，操作演示却可能需要加密关键动作。Gemini 1.5 报告支持小时级视频，本卡依据该报告讨论视频机制；单帧预算见 `google-vit-patch`，窗口成本见 `google-gemini-longctx`。
 
-先按 $T_{\mathrm{vid}}\approx F\cdot N_{\mathrm{sp}}$ 估算视觉部分。令时长 $S$ 秒、采样 $r$ fps，则 $F\approx S\cdot r$（再加镜头边界帧）。每帧的空间 token $N_{\mathrm{sp}}$ 跟分辨率和 patch 走，可能再经 pooling / resampler。粗口算：
+先按 $T_{\mathrm{vid}}\approx F\cdot N_{\mathrm{sp}}$ 估算视觉部分。令时长 $S$ 秒、sampling $r$ fps，则 $F\approx S\cdot r$（再加 shot boundaries 帧）。每帧的空间 token $N_{\mathrm{sp}}$ 跟分辨率和 patch 走，可能再经 pooling / resampler。粗口算：
 
 $$
 T_{\mathrm{vid}}\approx F\cdot N_{\mathrm{sp}} + T_{\mathrm{aud}}
@@ -46,7 +50,7 @@ ViViT 一类 tubelet 把时空块当成一个 token，$F$ 和 $N_{\mathrm{sp}}$ 
 均匀 $r$ fps 可复现，适合做回归。产品上要按错误类型改：
 
 - 讲座、播客、屏幕录制讲稿：低 fps + 音频 + 关键字幕。画面几乎不动，$r$ 高是浪费。
-- 体育、操作演示、UI 点击：动作发生在短间隔。均匀 1 fps 会把关键帧抽掉。镜头切换检测、或「帧间差异超过阈值就增加采样」比盲目加 fps 便宜。
+- 体育、操作演示、UI 点击：动作发生在短间隔。均匀 1 fps 会把关键帧抽掉。镜头切换检测、或「帧间差异超过阈值就增加 sampling」比盲目加 fps 便宜。
 - 长监控 / 会议回看：先低分辨率全局时间线，用户或模型圈出窗口再提高局部 $r$ 和空间分辨率。这和文档动态切块是同一思想，见 `google-vit-patch`。
 
 抽样一旦进评测集就必须冻结。换 fps 等于换题：分数涨了不知道是模型还是多看了 3 倍帧。Gemini 报告里的视频能力，对比时要对齐抽样协议，不要和自家更高 fps 的私有集比。
@@ -59,12 +63,12 @@ ViViT 一类 tubelet 把时空块当成一个 token，$F$ 和 $N_{\mathrm{sp}}$ 
 
 常见误区是：把一段视频说成 1 个 token；说有 1M 窗口所以 30 fps 4K 随便喂；评测不公布 fps 还横向比。
 
-Decode 侧：输入预填充（prefill，即处理输入并建立缓存） 已经付了 $T_{\mathrm{vid}}$ 的二次项注意力；逐 token 生成（decode） 每步读整段 KV。视频把 $T$ 抬高后，GQA / 量化 cache 与文本长上下文使用相同的优化方法，见 `google-gqa-mqa`、`google-tpu-decode`。
+Decode 侧：输入 prefill 已经付了 $T_{\mathrm{vid}}$ 的二次项 attention；逐 token 生成（decode） 每步读整段 KV。视频把 $T$ 抬高后，GQA / 量化 cache 与文本长上下文使用相同的优化方法，见 `google-gqa-mqa`、`google-tpu-decode`。
 
 ## 追问
 
 **关键帧检测错了怎么办？**
-当召回问题：漏检用均匀兜底稀疏网格补；误检只浪费预算。安全相关任务宁可多抽。
+当召回问题：漏检用 uniform sampling 的 sparse grid 补；误检只浪费预算。安全相关任务宁可多抽。
 
 **多镜头、画中画怎么算 $F$？**
 按合成画面抽，另加裁剪轨如果产品要。单轨均匀抽会把小窗里的人脸抽成几个糊点。

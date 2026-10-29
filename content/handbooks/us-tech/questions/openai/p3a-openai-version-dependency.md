@@ -3,8 +3,10 @@ id: p3a-openai-version-dependency
 section: openai
 order: 620
 level: A
-title: "OpenAI：包版本依赖：约束解析与求解"
-quick: "用允许版本集合表示每个包的约束，选定一个版本后，把它的依赖与已有集合求交集，冲突就回溯。拓扑排序只决定安装先后，不能解决多版本冲突；参考实现优先试候选最少的包，找任意可行解，无解返回 None。"
+title: OpenAI：包版本依赖：约束解析与求解
+quick: >-
+  用允许版本集合表示每个包的约束，选定一个版本后，把它的依赖与已有集合求交集，冲突就回溯。拓扑排序只决定安装先后，不能解决多版本冲突；参考实现优先试候选最少的包，找任意可行解，无解返回
+  None。
 companies:
   - openai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · OpenAI · version-dependency"
-    url: https://www.1point3acres.com/interview/problems/company/openai/version-dependency
+  - title: 1Point3Acres · OpenAI · version-dependency
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/version-dependency
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现精确版本依赖解析，返回满足所有根约束和传递依赖的一组版本选择。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `resolve(repo,roots)` 返回 `{包名:版本}` 或 None。repo[pkg][version] 是该版本的依赖字典，依赖项映射到允许版本集合；roots 同样是包名到允许版本集合。版本为非负整数。
 
@@ -47,7 +53,7 @@ roots={A:{2},B:{1}}，返回 None。
 
 给一个包仓库，每个包有多个版本，每个版本声明自己依赖哪些包的哪些版本。要求解析这些依赖关系，支持查询，并为一组根需求选出一组互相兼容的版本。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。网站摘要对完整求解器的规格并不确定；下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。网站摘要对完整求解器的规格并不确定；下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -136,7 +142,7 @@ def resolve(repo, roots):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

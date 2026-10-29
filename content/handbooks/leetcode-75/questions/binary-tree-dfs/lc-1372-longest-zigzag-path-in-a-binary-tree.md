@@ -4,7 +4,9 @@ section: binary-tree-dfs
 order: 5
 level: A
 title: LC 1372 · 二叉树中的最长交错路径
-quick: "DFS 时给每个节点带两个状态：最后一步向左的交错长度 l，最后一步向右的长度 r。走到左孩子时延续 r，得到 r+1，另一状态归 0；走到右孩子时延续 l。遍历中更新最大边数，时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  DFS 时给每个节点带两个状态：最后一步向左的交错长度 l，最后一步向右的长度 r。走到左孩子时延续 r，得到 r+1，另一状态归 0；走到右孩子时延续
+  l。遍历中更新最大边数，时间 $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1372. Longest ZigZag Path in a Binary Tree
-    url: https://leetcode.com/problems/longest-zigzag-path-in-a-binary-tree/
+    url: 'https://leetcode.com/problems/longest-zigzag-path-in-a-binary-tree/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -153,7 +155,7 @@ print("simple tests passed")
 
 时间 $O(n)$。额外空间 $O(h)$，栈里最多一条路径的节点加上兄弟。
 
-## 边界
+## Edge Cases
 
 - 单节点时答案是 $0$。
 - 全左链每一步都同方向，答案是 $1$，别写成 $0$。

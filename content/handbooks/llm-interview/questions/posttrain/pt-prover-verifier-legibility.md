@@ -4,7 +4,9 @@ section: posttrain
 order: 36
 level: S
 title: 强 Prover 怎样在不牺牲正确性的前提下，生成弱 Verifier 也能检查的推理？
-quick: "把「正确」和「弱检查者能查」分开优化：先用可信的 correctness gate 丢掉错解，再在正确解里训练 prover 写出弱 verifier 能逐步核对的证据。直接拿「说服弱 judge」的分数当奖励，会训出看起来对、实际错的 sneaky proof。"
+quick: >-
+  把「正确」和「弱检查者能查」分开优化：先用可信的 correctness gate 丢掉错解，再在正确解里训练 prover 写出弱 verifier
+  能逐步核对的证据。直接拿「说服弱 judge」的分数当奖励，会训出看起来对、实际错的 sneaky proof。
 tags:
   - Verifier
   - Legibility
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: OpenAI — Prover-Verifier Games Improve Legibility
-    url: https://openai.com/index/prover-verifier-games-improve-legibility/
+    url: 'https://openai.com/index/prover-verifier-games-improve-legibility/'
     type: primary
 ---
 
@@ -29,11 +31,11 @@ $$
 r = \mathbf{1}[\mathrm{verifier\ accepts}]
 $$
 
-优化的就是这种伪装。弱 verifier 的接受率代理不了正确性，prover 知道 verifier 的能力边界时尤其如此。这份证明应该在 correctness gate 就被丢掉，拿不到任何「写得清楚」的加分。gate 用可执行检查、更强的独立 oracle 或人工，过了 gate，再在正确集合里优化简洁、引用和步骤可检查这些指标。
+优化的就是这种伪装。弱 verifier 的接受率代理不了正确性，prover 知道 verifier 的 capability limits 时尤其如此。这份证明应该在 correctness gate 就被丢掉，拿不到任何「写得清楚」的加分。gate 用可执行检查、更强的独立 oracle 或人工，过了 gate，再在正确集合里优化简洁、引用和步骤可检查这些指标。
 
-verifier 的边界要写清楚：查哪些局部事实、能不能调工具和计算器、看不看完整过程、一次读多少 token。边界不清，prover 会把关键跳跃藏在 verifier 读不到的段落。步长也要卡住，每一步小到弱 verifier 能局部核对，别出现「由引理 3 显然得证」。训练时让 prover 面对多个强度、规则不同的 verifier，免得只适配一个 judge 的用词习惯。
+verifier 的 coverage 要写清楚：查哪些局部事实、能不能调工具和计算器、看不看完整过程、一次读多少 token。decision criteria 不清楚，prover 会把关键跳跃藏在 verifier 读不到的段落。步长也要卡住，每一步小到弱 verifier 能局部核对，别出现「由引理 3 显然得证」。训练时让 prover 面对多个强度、规则不同的 verifier，免得只适配一个 judge 的用词习惯。
 
-合作和对抗两种 verifier 都要有。合作的那类让 prover 给诚实 verifier 写清楚的证明，减少误拒；对抗的那类专门抓伪装和引用幻觉。只有合作，模型会写得又长又客套；只有对抗，又可能变得过度隐晦。评估时两类分开报，「连对抗 verifier 也说服了」往往是 sneaky 成功，别当成好消息写进报告。过程奖励如果也来自同一个弱 verifier，会和训练目标共享同样的误判。更稳的是正确性走独立 gate，legibility 看弱 verifier 能不能复现关键步骤，它主观上喜不喜欢不算数。OpenAI 那篇强调的也是让弱者能查，弱者点不点赞不重要。
+合作和对抗两种 verifier 都要有。合作的那类让 prover 给诚实 verifier 写清楚的证明，减少误拒；对抗的那类专门抓伪装和引用 hallucination。只有合作，模型会写得又长又客套；只有对抗，又可能变得过度隐晦。评估时两类分开报，「连对抗 verifier 也说服了」往往是 sneaky 成功，别当成好消息写进报告。过程奖励如果也来自同一个弱 verifier，会和训练目标共享同样的误判。更稳的是正确性走独立 gate，legibility 看弱 verifier 能不能复现关键步骤，它主观上喜不喜欢不算数。OpenAI 那篇强调的也是让弱者能查，弱者点不点赞不重要。
 
 评估时四件事一起报：correctness、verifier acceptance、人工可审计性，以及 adversarial persuasion gap，也就是错解被弱 verifier 接受的比例。acceptance 升、correctness 降，说明 reward 已经被说服技巧劫持，应该马上停。人工抽检时，要试着只根据写出来的证据、不靠对 prover 的信任去复现结论。再报一个「局部可检查步的比例」：通篇只有一头一尾能核、中间全是叙事，不算可读。放行条件是正确性不降、弱 verifier 对正确解的接受率升、人工可复现率升、错解被说服的 gap 不升，最后一项单独变红就停。
 

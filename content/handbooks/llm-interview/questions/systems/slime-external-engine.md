@@ -41,8 +41,8 @@ veRL 少见「推理集群完全外置」这条一等路径；slime 把它当成
 **为什么和 `--sglang-config` 互斥？**
 一个是 slime 管生命周期（起停、PD 角色、卡账），一个是只连已有进程。两边都写，router 和 worker 所有权冲突。
 **异构卡为什么走 disk？**
-NCCL 组建不起来，或拓扑跨集群。disk / 共享存储换的是正确性，吞吐会掉，大 MoE 用 delta 降流量。
+NCCL 组建不起来，或拓扑跨集群。disk / 共享存储换的是正确性，throughput 会掉，大 MoE 用 delta 降流量。
 **新 replica 只收 delta 会怎样？**
-缺 full 基线，部分专家或层是随机/旧权，采样分布会产生不易察觉的偏差。先 full 再 delta。
+缺 full 基线，部分专家或层是随机/旧权，sampling 分布会产生不易察觉的偏差。先 full 再 delta。
 **`--rollout-num-gpus 0` 还算 colocate 吗？**
 不算。本地无 engine，是分池。同步和 KV flush 要单独设计。

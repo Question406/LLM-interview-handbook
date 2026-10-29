@@ -5,7 +5,8 @@ order: 5
 level: A
 title: LC 345 · 反转字符串中的元音字母
 quick: >-
-  用对撞双指针：转成字符数组，左右指针各自跳过非元音，两边都停在元音上就交换再内收，元音集合要含大写。时间 $O(n)$，额外空间 $O(n)$，因为 Python 字符串不可变。
+  用对撞双指针：转成字符数组，左右指针各自跳过非元音，两边都停在元音上就交换再内收，元音集合要含大写。时间 $O(n)$，额外空间 $O(n)$，因为
+  Python 字符串不可变。
 tags:
   - String
   - Two Pointers
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 345. Reverse Vowels of a String
-    url: https://leetcode.com/problems/reverse-vowels-of-a-string/
+    url: 'https://leetcode.com/problems/reverse-vowels-of-a-string/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -105,7 +106,7 @@ print("simple tests passed")
 
 时间 $O(n)$，两个指针合计走 $n$ 步。额外空间 $O(n)$，是那份字符数组；换成字符数组可变的语言就是 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - 没有元音时，内层循环让 `l`、`r` 相遇，最后一次交换是自己和自己，结果不变。
 - 只有一个元音，同样不动。

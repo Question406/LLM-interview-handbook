@@ -4,7 +4,9 @@ section: binary-tree
 order: 5
 level: S
 title: LC 105 · 从前序与中序遍历序列构造二叉树
-quick: "前序第一个 `pre[0]` 是根，拿它在中序里切开左右子树，再按左子树长度切前序，递归下去。中序下标先存进哈希，免得每次扫描找根。时间 $O(n)$，额外空间 $O(n)$。"
+quick: >-
+  前序第一个 `pre[0]` 是根，拿它在中序里切开左右子树，再按左子树长度切前序，递归下去。中序下标先存进哈希，免得每次扫描找根。时间
+  $O(n)$，额外空间 $O(n)$。
 tags:
   - Tree
   - Hash Table
@@ -12,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 105. 从前序与中序遍历序列构造二叉树
-    url: https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/
+    url: >-
+      https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -144,7 +147,7 @@ print("simple tests passed")
 
 每个节点只建一次，时间 $O(n)$。哈希占 $O(n)$，递归栈 $O(h)$。
 
-## 边界
+## Edge Cases
 
 单节点时前序和中序都是同一个值。全是左链的树，根在中序里排在最右，前序里除根以外都属于左子树。全是右链的树，根在中序最左，左段长度为 $0$。
 

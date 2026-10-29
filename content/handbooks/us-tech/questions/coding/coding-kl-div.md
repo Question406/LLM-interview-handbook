@@ -3,38 +3,48 @@ id: coding-kl-div
 section: coding
 order: 19
 level: S
-title: 白板：token 级 KL（策略 vs 参考策略），reduction 和 ignore pad
-quick: "每个位置先沿词表算 $\\mathrm{KL}(\\pi\\|\\pi_{\\mathrm{ref}})$，再对有效 token 平均。`F.kl_div(log_ref, pi)` 的方向才对应这个式子；二维 token 列表用 `batchmean`，有 pad 时要显式按 mask 归约。"
+title: 白板：token 级 KL（策略 vs reference policy），reduction 和 ignore pad
+quick: >-
+  每个位置先沿 vocabulary 算 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}})$，再对有效 token
+  平均。`F.kl_div(log_ref, pi)` 的方向才对应这个式子；二维 token 列表用 `batchmean`，有 pad 时要显式按
+  mask 归约。
 tags:
   - 完整编程练习
   - Coding
   - KL
   - RLHF
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: torch.nn.functional.kl_div
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.kl_div.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.nn.functional.kl_div.html'
     type: primary
   - title: Training language models to follow instructions with human feedback
-    url: https://arxiv.org/abs/2203.02155
+    url: 'https://arxiv.org/abs/2203.02155'
     type: primary
 ---
 
 ## 题目描述
 
-实现完整词表 KL、采样 token KL 估计，以及两种 reduction 的结果比较。
+实现完整 vocabulary KL、sampling token KL 估计，以及两种 reduction 的结果比较。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
 
-`token_kl_full(logits,logits_ref,mask)` 接收 `[B,T,V]` 的两组 logits 和 `[B,T]` 布尔 mask，返回有效位置 `KL(policy || reference)` 的均值，每个位置的 KL 覆盖完整词表。
+### 接口、输入与输出
 
-`token_kl_sampled(logp,logp_ref,mask)` 接收 `[B,T]` 的已采样 token 对数概率，返回有效位置 `(logp-logp_ref)` 的均值；该采样估计值允许为负。全部 mask 为 False 时，两函数返回连接策略计算图的 0。reference 为固定参考分布，不求梯度。
+`token_kl_full(logits,logits_ref,mask)` 接收 `[B,T,V]` 的两组 logits 和 `[B,T]` 布尔 mask，返回有效位置 `KL(policy || reference)` 的均值，每个位置的 KL 覆盖完整 vocabulary。
 
-`kl_div_footgun(log_pi,log_ref)` 接收 `[N,V]` 的归一化对数概率，返回 `(correct_batchmean,wrong_mean)`：前者将逐元素 KL 总和除以 N，后者除以 N*V，用于展示 reduction 差异。
+`token_kl_sampled(logp,logp_ref,mask)` 接收 `[B,T]` 的已 sampling token log probability，返回有效位置 `(logp-logp_ref)` 的均值；该 sampling 估计值允许为负。全部 mask 为 False 时，两函数返回连接策略计算图的 0。reference 为固定参考分布，不求梯度。
+
+`kl_div_footgun(log_pi,log_ref)` 接收 `[N,V]` 的 normalization log probability，返回 `(correct_batchmean,wrong_mean)`：前者将逐元素 KL 总和除以 N，后者除以 N*V，用于展示 reduction 差异。
+
+### 数据与 reduction 的含义
+
+一行对应同一个位置的完整 vocabulary distribution；mask=True 表示这个位置参与本次评价。`token_kl_full` 在每个位置先沿 V 求和，再对有效位置平均。`kl_div_footgun` 的 correct 值计算 `sum(exp(log_pi)*(log_pi-log_ref))/N`；wrong 值将同一个总和再除以 V。两者都计算 policy 到 reference 的方向，不对两个方向取平均。
 
 ### 示例
 
@@ -46,18 +56,18 @@ token_kl_full≈0.13081204；kl_div_footgun 的两个值约为 (0.13081204,0.065
 
 ## 解题思路与参考答案
 
-我会先算每个位置的全词表 KL，再按 mask 对有效 token 平均。全词表 KL 是 $\pi$ 加权的期望，因此用 $\pi$ 乘 $\log\pi-\log\pi_{\mathrm{ref}}$，沿词表求和。全程用 `log_softmax`，避免先 softmax 再取 log 时下溢。
+我会先算每个位置的全 vocabulary KL，再按 mask 对有效 token 平均。全 vocabulary KL 是 $\pi$ 加权的期望，因此用 $\pi$ 乘 $\log\pi-\log\pi_{\mathrm{ref}}$，沿 vocabulary 求和。全程用 `log_softmax`，避免先 softmax 再取 log 时下溢。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
-- `token_kl_full(logits, logits_ref, mask) -> 标量`：`logits*` 形状 `[B, T, V]`，`mask` 形状 `[B, T]`（True 表示有效 token）。每个位置沿完整词表算 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}})$，再对有效 token 取平均。
-- `token_kl_sampled(logp, logp_ref, mask) -> 标量`：`logp*` 形状 `[B, T]`，是采样 token 在两边的 log 概率。返回 log-ratio 在有效 token 上的平均，作为 KL 的采样估计；单个样本可以是负数。
+- `token_kl_full(logits, logits_ref, mask) -> 标量`：`logits*` 形状 `[B, T, V]`，`mask` 形状 `[B, T]`（True 表示有效 token）。每个位置沿完整 vocabulary 算 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}})$，再对有效 token 取平均。
+- `token_kl_sampled(logp, logp_ref, mask) -> 标量`：`logp*` 形状 `[B, T]`，是 sampling token 在两边的 log 概率。返回 log-ratio 在有效 token 上的平均，作为 KL 的 sampling 估计；单个样本可以是负数。
 - `kl_div_footgun(log_pi, log_ref) -> (正确值, 错误值)`：演示 `F.kl_div` 的正确用法（`batchmean`）和 `reduction="mean"` 的错误结果，输入形状 `[N, V]`。
-- `mask` 全为 False 时返回 0，并且仍然可以反传（梯度为 0）。reference 固定，不接梯度。
+- `mask` 全为 False 时返回 0，并且仍然可以 backpropagation（梯度为 0）。reference 固定，不接梯度。
 
 ### 输入输出示例
 
@@ -69,7 +79,7 @@ logp = -2, logp_ref = -1      -> token_kl_sampled = -1   # 单样本估计可以
 
 ### 解题思路与正确性
 
-采样版只看实际采到的 token，$\log\pi(y_t)-\log\pi_{\mathrm{ref}}(y_t)$ 在 $y_t\sim\pi$ 时期望等于 KL。单个样本出现负值并不说明 KL 可以为负，只说明这是有方差的估计。
+sampling 版只看实际采到的 token，$\log\pi(y_t)-\log\pi_{\mathrm{ref}}(y_t)$ 在 $y_t\sim\pi$ 时期望等于 KL。单个样本出现负值并不说明 KL 可以为负，只说明这是有方差的估计。
 
 用 `F.kl_div` 时，`input` 要传 `log_ref`、`target` 传 `pi`，得到的才是 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}})$。
 
@@ -81,17 +91,17 @@ import torch.nn.functional as F
 
 
 def token_kl_full(logits, logits_ref, mask):
-    """全词表 KL(π || π_ref) 在有效 token 上的平均。logits*: [B, T, V]；mask: [B, T]，True 为有效。"""
+    """全 vocabulary KL(π || π_ref) 在有效 token 上的平均。logits*: [B, T, V]；mask: [B, T]，True 为有效。"""
     log_pi = F.log_softmax(logits.float(), dim=-1)
     log_ref = F.log_softmax(logits_ref.float(), dim=-1)
     kl = (log_pi.exp() * (log_pi - log_ref)).sum(dim=-1)  # [B, T]
     if not bool(mask.any()):
-        return logits.sum() * 0.0  # 空 mask：返回可反传的 0，不是 NaN
+        return logits.sum() * 0.0  # 空 mask：返回可 backpropagation 的 0，不是 NaN
     return kl[mask].mean()
 
 
 def token_kl_sampled(logp, logp_ref, mask):
-    """采样 token 的 log-ratio 平均，是 KL 的蒙特卡洛估计。logp*: [B, T]。"""
+    """sampling token 的 log-ratio 平均，是 KL 的 Monte Carlo 估计。logp*: [B, T]。"""
     if not bool(mask.any()):
         return logp.sum() * 0.0
     return (logp - logp_ref).float()[mask].mean()
@@ -113,7 +123,7 @@ def kl_div_footgun(log_pi, log_ref):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -124,7 +134,7 @@ pi = torch.tensor([[[0.75, 0.25]]])
 ref = torch.tensor([[[0.5, 0.5]]])
 mask = torch.ones(1, 1, dtype=torch.bool)
 
-# 全词表 KL 等于按定义手算的值
+# 全 vocabulary KL 等于按定义手算的值
 kl = token_kl_full(pi.log(), ref.log(), mask)
 expected = (pi * (pi.log() - ref.log())).sum()
 assert torch.allclose(kl, expected)
@@ -145,7 +155,7 @@ ref2 = torch.cat([ref.log(), ref.log()], dim=1)
 keep_first = torch.tensor([[True, False]])
 assert torch.allclose(token_kl_full(logits2, ref2, keep_first), expected)
 
-# 采样估计的单样本值可以为负
+# sampling 估计的单样本值可以为负
 assert token_kl_sampled(torch.tensor([[-2.0]]), torch.tensor([[-1.0]]), mask) == -1
 
 # batchmean 等于真实 KL，mean 恰好小 V 倍
@@ -156,15 +166,15 @@ assert torch.allclose(wrong * 2, correct)
 
 ### 复杂度与追问
 
-设 batch 为 $B$、序列长 $T$、词表大小 $V$。`token_kl_full` 的时间和空间都是 $O(BTV)$，`token_kl_sampled` 是 $O(BT)$。
+设 batch 为 $B$、序列长 $T$、vocabulary 大小 $V$。`token_kl_full` 的时间和空间都是 $O(BTV)$，`token_kl_sampled` 是 $O(BT)$。
 
-- 追问「采样估计一定无偏吗」：只有 token 确实采自当前 $\pi$ 时才无偏。如果数据来自旧策略或别的分布，需要做重要性校正，不能无条件说它无偏。
+- 追问「sampling 估计一定无偏吗」：只有 token 确实采自当前 $\pi$ 时才无偏。如果数据来自旧策略或别的分布，需要做重要性校正，不能无条件说它无偏。
 
 ## 题怎么来的
 
-InstructGPT / PPO 式的基于人类反馈的强化学习（RLHF）会在奖励里减去 $\beta\,\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$。OpenAI / Anthropic 的白板题要求写清楚：token 级 KL 怎么算，pad 进不进分母，KL 的哪一边是 $\pi$。KL 方向以及为什么用反向 KL 见 `align-rlhf-kl`、`openai-instructgpt-kl`。这道题要求把公式落成能跑的 reduction。常见的植入 bug 有三种：`F.kl_div` 参数对调、`mean` 把词表维也平均掉、pad 被当成有效 token。
+InstructGPT / PPO 式的 RLHF 会在奖励里减去 $\beta\,\mathrm{KL}(\pi_\theta\|\pi_{\mathrm{ref}})$。OpenAI / Anthropic 的白板题要求写清楚：token 级 KL 怎么算，pad 进不进分母，KL 的哪一边是 $\pi$。KL 方向以及为什么用 reverse KL 见 `align-rlhf-kl`、`openai-instructgpt-kl`。这道题要求把公式落成能跑的 reduction。常见的植入 bug 有三种：`F.kl_div` 参数对调、`mean` 把 vocabulary 维也平均掉、pad 被当成有效 token。
 
-## 全词表 KL 和采样路径
+## 全 vocabulary KL 和 sampling 路径
 
 每个位置的分布之间的 KL 是：
 
@@ -173,9 +183,9 @@ $$
 =\sum_{v=1}^{V}\pi_t(v)\big(\log\pi_t(v)-\log\pi_{\mathrm{ref},t}(v)\big).
 $$
 
-它是一个非负标量，张量形状从 `[B, T, V]` 缩减到 `[B, T]`。到序列级再按 mask 平均，分母是有效 token 数，不是 $B\cdot T$。注意这不是交叉熵损失（CE）：用 one-hot 标签时 CE 是 $-\log\pi(y)$，两者关系见 `coding-cross-entropy`、`coding-logsumexp`。
+它是一个非负标量，张量形状从 `[B, T, V]` 缩减到 `[B, T]`。到序列级再按 mask 平均，分母是有效 token 数，不是 $B\cdot T$。注意这不是 cross entropy loss（CE）：用 one-hot 标签时 CE 是 $-\log\pi(y)$，两者关系见 `coding-cross-entropy`、`coding-logsumexp`。
 
-PPO 里更常见的是只在采样 token 上做蒙特卡洛估计：$\log\pi_\theta(y_t)-\log\pi_{\mathrm{ref}}(y_t)$。$y\sim\pi_\theta$ 时它对全词表 KL 是无偏的。不要再给这一项乘一遍 $\pi(y_t)$。teacher forcing 下的全词表 KL 和采样轨迹（rollout）上的估计不是同一个数，监控时不要画在同一条曲线上。
+PPO 里更常见的是只在 sampling token 上做 Monte Carlo 估计：$\log\pi_\theta(y_t)-\log\pi_{\mathrm{ref}}(y_t)$。$y\sim\pi_\theta$ 时它对全 vocabulary KL 是无偏的。不要再给这一项乘一遍 $\pi(y_t)$。teacher forcing 下的全 vocabulary KL 和 sampling 轨迹（rollout）上的估计不是同一个数，监控时不要画在同一条曲线上。
 
 `F.kl_div(input, target)` 算的是 $\mathrm{KL}(\mathrm{target}\|\mathrm{input})$，其中 `input` 是 log 概率。要得到 $\mathrm{KL}(\pi\|\pi_{\mathrm{ref}})$，就传 `input=log_ref`、`target=pi`。`log_target=True` 时 target 也要传 log 概率。`reduction="mean"` 会对所有元素（包括 $V$ 这一维）取平均，结果恰好比真实 KL 小 $V$ 倍。
 
@@ -187,9 +197,9 @@ Causal LM 仍然是 `logits[:, :-1]` 对齐 `labels[:, 1:]`。pad 和 ignore 的
 
 **为什么 `reduction='mean'` 是错的？**
 文档写得很清楚：`mean` 除以的是全体元素个数。分布之间的 KL 应该按 batch（或 token）平均，所以要用 `batchmean`。
-**正向 KL 能直接换 input 吗？**
+**forward KL 能直接换 input 吗？**
 能。$\mathrm{KL}(\pi_{\mathrm{ref}}\|\pi)$ 就是 `input=log_pi`、`target=pi_ref`。但 RLHF 默认不用这个方向，见 `align-rlhf-kl`。
-**只对采样 token 做差，还要沿词表求和吗？**
-不要。蒙特卡洛估计已经在 $y_t$ 上取了值，再对 $V$ 求和等于叠加了另一种估计。
+**只对 sampling token 做差，还要沿 vocabulary 求和吗？**
+不要。Monte Carlo 估计已经在 $y_t$ 上取了值，再对 $V$ 求和等于叠加了另一种估计。
 **mask 全为 False 怎么办？**
 把分母 clamp 到 $1$，或者直接返回 $0$。在空张量上 `mean` 会得到 NaN。

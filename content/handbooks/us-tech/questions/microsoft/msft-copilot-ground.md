@@ -4,24 +4,37 @@ section: microsoft
 order: 2
 level: S
 title: Microsoft：Copilot grounding（代码/文档检索），引用和权限
-quick: "Copilot 的答案要能定位到检索证据，检索证据又必须限制在当前用户权限内。先带身份查代码或 Graph 对象，再用短块生成并绑定 URI 与跨度；证据缺失或矛盾时降级。分别评召回、引用可定位与越权率，避免让引用分掩盖泄漏。"
+quick: >-
+  Copilot 的答案要能定位到检索证据，检索证据又必须限制在当前用户权限内。先带身份查代码或 Graph 对象，再用短块生成并绑定 URI
+  与跨度；证据缺失或矛盾时降级。分别评召回、引用可定位与越权率，避免让引用分掩盖泄漏。
 tags:
   - Microsoft
   - Copilot
   - Grounding
   - RAG
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Semantic Index for Copilot
-    url: https://learn.microsoft.com/en-us/microsoftsearch/semantic-index-for-copilot
+    url: >-
+      https://learn.microsoft.com/en-us/microsoftsearch/semantic-index-for-copilot
     type: primary
-  - title: Data, Privacy, and Security for Microsoft 365 Copilot
-    url: https://learn.microsoft.com/en-us/copilot/microsoft-365/microsoft-365-copilot-privacy
+  - title: 'Data, Privacy, and Security for Microsoft 365 Copilot'
+    url: >-
+      https://learn.microsoft.com/en-us/copilot/microsoft-365/microsoft-365-copilot-privacy
     type: primary
 ---
+
+## 可以这样回答
+
+Copilot grounding 要同时满足证据支持和访问权限：每个关键论断能指回检索跨度，证据只能来自当前用户可见内容。比如同一句问题，两个同事得到不同检索结果，可能恰好说明 ACL 正常生效。
+
+Microsoft 365 Copilot 的公开路径是 Graph 加语义索引，GitHub Copilot Chat 则检索仓库代码。这是公开系统设计讨论，未声明逐字面经。同类证据契约见 `apple-siri-grounded`、`amazon-bedrock-rag`，企业环境还要保持租户隔离和 Graph ACL 一致。
+
+## 技术备查
 
 Copilot grounding 要同时满足证据支持和访问权限：每个关键论断能指回检索跨度，证据只能来自当前用户可见内容。比如同一句问题，两个同事得到不同检索结果，可能恰好说明 ACL 正常生效。
 
@@ -39,7 +52,7 @@ Embedding 可以缓存，用户 A 的检索结果不能直接给 B。频道移�
 
 ## 分开处理引用错误与越权
 
-句子在 $E$ 中找不到支持，或绑定无关文件，是幻觉引用；句子正确但当前用户无法打开源文件，是越权引用。两者根因和修复不同，服务账号扫全库、索引未带 ACL 都可能造成后者。
+句子在 $E$ 中找不到支持，或绑定无关文件，是 hallucination 引用；句子正确但当前用户无法打开源文件，是越权引用。两者根因和修复不同，服务账号扫全库、索引未带 ACL 都可能造成后者。
 
 带引用问答不应使用预训练记忆补出「常见写法」，即使 IDE 补全允许生成这种建议。检索为空、$E$ 冲突或跨度对不上时，删句、说「没找到 / 不确定」，或者询问缺哪份文件。评测加入仓库不存在的 API 和不可见设计文档，检查是否拒答。
 
@@ -50,7 +63,7 @@ IDE 补全可按几十毫秒检索加短生成设计，仓库问答可接受 1-2
 ## 追问
 
 **为什么不能生成后再查 ACL？**
-模型已看到越权 token，日志或思维链也可能暴露，应在证据进入前过滤。
+模型已看到越权 token，日志或 chain of thought 也可能暴露，应在证据进入前过滤。
 
 **文件正确但行号漂移呢？**
 索引按 commit SHA 存块，工作区脏了按 buffer 重检索，或说明基于旧 commit。核验以跨度文本为准。

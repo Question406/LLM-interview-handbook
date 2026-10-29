@@ -3,8 +3,10 @@ id: p3a-microsoft-transformer-roofline-fp-precision
 section: microsoft
 order: 615
 level: S
-title: "Microsoft AI / Copilot：MAI AI Infra：roofline、CUDA 与精度转换梯度"
-quick: "我会先把计算量除以算力、最少访存量除以带宽，用较大的耗时判断 matmul 瓶颈，再谈布局和融合。FP32 转 FP16 的 cast 在反向计算中让梯度通过，但小梯度会下溢、大值会溢出，因此还要讨论 loss scaling 和 FP32 累加、主权重。"
+title: Microsoft AI / Copilot：MAI AI Infra：roofline、CUDA 与精度转换梯度
+quick: >-
+  我会先把计算量除以算力、最少访存量除以带宽，用较大的耗时判断 matmul 瓶颈，再谈布局和融合。FP32 转 FP16 的 cast
+  在反向计算中让梯度通过，但小梯度会下溢、大值会溢出，因此还要讨论 loss scaling 和 FP32 累加、主权重。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · transformer-roofline-fp-precision"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/transformer-roofline-fp-precision
+  - title: 1Point3Acres · Microsoft AI / Copilot · transformer-roofline-fp-precision
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/transformer-roofline-fp-precision
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现一个矩阵乘法 roofline 估算器和支持不整除分块的矩阵乘法。估计基于给定峰值参数与理想访存量，不要求实测特定硬件。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -52,7 +55,7 @@ gemm_blocked([[1,2]],[[3],[4]],block=1) -> [[11]]
 
 读一段 Transformer 代码，估算其中 matmul 的耗时并实现一个 kernel，然后分析把残差从 FP32 转成 FP16 时，梯度在 cast 这一步怎么传、会出什么数值问题。
 
-> 来源：一亩三分地 Microsoft AI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft AI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -136,8 +139,8 @@ def gemm_blocked(a, b, block=32):
         for j in range(0, cols, block):
             # 同一个输出块要把 K 方向所有分块的乘积累加起来
             for p in range(0, inner, block):
-                out[i:i + block, j:j + block] += (
-                    a[i:i + block, p:p + block] @ b[p:p + block, j:j + block]
+                out[i : i + block, j : j + block] += (
+                    a[i : i + block, p : p + block] @ b[p : p + block, j : j + block]
                 )
     return out
 ```
@@ -150,7 +153,7 @@ def gemm_blocked(a, b, block=32):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -161,6 +164,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 2x2x2：16 FLOPs、24 字节，带宽受限，下界 24 ns
 estimate = roofline(2, 2, 2, 1e9, 1e9)

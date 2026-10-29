@@ -4,7 +4,10 @@ section: labs
 order: 13
 level: A
 title: Anthropic 编程题：带权重的 DataBatcher，断点续跑怎么写？
-quick: "按 token 预算组 batch，checkpoint 保存每个数据源的读取 offset 和随机数状态，恢复时从原位置继续读；只恢复随机种子的话，每个源会从头再读一遍。数据源耗尽时把它的概率设为零并报告，不悄悄改变配比。权重本身由上层决定，调配比就是改 `weights`。"
+quick: >-
+  按 token 预算组 batch，checkpoint 保存每个数据源的读取 offset 和随机数状态，恢复时从原位置继续读；只恢复 random
+  seed 的话，每个源会从头再读一遍。数据源耗尽时把它的概率设为零并报告，不悄悄改变 data mix。权重本身由上层决定，调 data mix 就是改
+  `weights`。
 companies:
   - apple
 tags:
@@ -15,26 +18,27 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
-  - title: Data Batcher with Weighted Sampling (AceOffer, Anthropic reports)
-    url: https://aceoffer.app/interviews/data_batcher_with_weighted_sampling
+  - title: 'Data Batcher with Weighted Sampling (AceOffer, Anthropic reports)'
+    url: 'https://aceoffer.app/interviews/data_batcher_with_weighted_sampling'
     type: secondary
   - title: Apple Intelligence Foundation Language Models Tech Report 2025
-    url: https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
+    url: >-
+      https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 实现一个可以按权重从多个数据源取样、按 token 数凑批次并支持断点恢复的 `DataBatcher`。需要在恢复后继续产生与未中断运行相同的样本序列，且不能重新读取已经消费过的样本。
 
 ### 输入与接口
 
 - 构造函数为 `DataBatcher(registry, names, weights, batch_tokens, rng=None)`。`names` 是数据源名列表，`weights` 是同长度的非负权重，至少一个权重大于 0；`batch_tokens` 是正整数。
-- `registry.iterate(name, offset)` 提供从第 `offset` 条开始的迭代器，每条样本是包含正整数 `n_tokens` 的字典。可传入 `random.Random`；省略时使用种子 0。
+- `registry.iterate(name, offset)` 提供从第 `offset` 条开始的迭代器，每条样本是包含正整数 `n_tokens` 的字典。可传入 `random.Random`；省略时使用 seed 0。
 - 实现 `next_batch()`、`state_dict()` 和 `load_state_dict(state)`。
 
 ### 输出与约束
@@ -54,15 +58,15 @@ names=["a"], weights=[1], batch_tokens=5
 
 ## 解题思路与参考答案
 
-核心是两件事：batch 按 token 预算凑，断点续跑时保存每个源的 offset 和随机数状态，恢复后从原位置继续读。另外，某个源读完时要把它的概率打零并报出来，让配比的变化看得见，不悄悄把它的配额让给别的源。
+核心是两件事：batch 按 token 预算凑，断点续跑时保存每个源的 offset 和随机数状态，恢复后从原位置继续读。另外，某个源读完时要把它的概率打零并报出来，让 data mix 的变化看得见，不悄悄把它的配额让给别的源。
 
-最直接的写法是用 `random.choices` 按条采样，checkpoint 里只存 RNG seed，这样会出两个问题。按条采样时，长文档会把 token 配额吃爆，实际 mix 和设定的权重对不上。只存 seed 的话，恢复后每个源的 iterator 会从头再读一遍，已经训过的样本又被用了一次。这是 CoderPad 风格的 mix 题，和 `dt-temp-mix-code` 同一族，考点是可复现的 token 预算。
+最直接的写法是用 `random.choices` 按条 sampling，checkpoint 里只存 RNG seed，这样会出两个问题。按条 sampling 时，长文档会把 token 配额吃爆，实际 mix 和设定的权重对不上。只存 seed 的话，恢复后每个源的 iterator 会从头再读一遍，已经训过的样本又被用了一次。这是 CoderPad 风格的 mix 题，和 `dt-temp-mix-code` 同一族，考点是可复现的 token 预算。
 
 题目来源是 AceOffer 记过的两次（2025-10 到 2026-04）。`DataRegistry` 按名字取 iterator，iterator 接受 `offset`，后面几问依次加权重、断点和多源耗尽。
 
-写法上，registry 为每个数据集提供支持 offset 的 iterator。先把权重归一化成采样概率，然后按 token 数累计，凑满预算就出一个 batch。checkpoint 存每个源的 offset 和随机数状态，恢复时用 `iterate(name, offset=saved)` 从原位置接着读。某个源空了，概率打零并记下来，留给上层报警。
+写法上，registry 为每个数据集提供支持 offset 的 iterator。先把权 renormalization 成 sampling 概率，然后按 token 数累计，凑满预算就出一个 batch。checkpoint 存每个源的 offset 和随机数状态，恢复时用 `iterate(name, offset=saved)` 从原位置接着读。某个源空了，概率打零并记下来，留给上层报警。
 
-权重怎么定是上层的事。实际 mix 里，许可源、验证过的合成和 bulk 网页各是一个 iterator，权重写在 mix 卡上。AFM 2025 报告把多语比例从 8% 调到 30%，落到这里就是改 `weights`；桶内温度再套一层 `n_i**alpha`，见 `dt-temp-mix-code`。
+权重怎么定是上层的事。实际 mix 里，许可源、验证过的合成和 bulk 网页各是一个 iterator，权重写在 mix 卡上。AFM 2025 报告把 multilingual 比例从 8% 调到 30%，落到这里就是改 `weights`；桶内温度再套一层 `n_i**alpha`，见 `dt-temp-mix-code`。
 
 ```python
 import random
@@ -87,7 +91,9 @@ class DataBatcher:
             raise ValueError("batch_tokens must be positive")
         self.registry = registry
         self.names = list(names)
-        self.p = [weight / total_weight for weight in weights]  # 采样概率，DoReMi 可在线改
+        self.p = [
+            weight / total_weight for weight in weights
+        ]  # sampling 概率，DoReMi 可在线改
         self.batch_tokens = batch_tokens
         self.rng = rng or random.Random(0)
         self.offsets = {name: 0 for name in self.names}
@@ -137,11 +143,11 @@ class DataBatcher:
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert sum(sample["n_tokens"] for sample in first) == 50` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert sum(sample["n_tokens"] for sample in first) == 50` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -157,10 +163,12 @@ class ListRegistry:
 
 
 def make_registry():
-    return ListRegistry({
-        "web": [{"id": f"web-{i}", "n_tokens": 10} for i in range(100)],
-        "code": [{"id": f"code-{i}", "n_tokens": 10} for i in range(3)],
-    })
+    return ListRegistry(
+        {
+            "web": [{"id": f"web-{i}", "n_tokens": 10} for i in range(100)],
+            "code": [{"id": f"code-{i}", "n_tokens": 10} for i in range(3)],
+        }
+    )
 
 
 # 每个 batch 凑满 token 预算
@@ -201,7 +209,7 @@ except ValueError:
 ## 追问
 
 **packed 序列怎么办？**
-batch 按 token 凑齐之后，再按 `dt-packed-sft-code` 拼接，文档之间加 mask。Batcher 不负责交叉熵损失（CE）。
+batch 按 token 凑齐之后，再按 `dt-packed-sft-code` 拼接，文档之间加 mask。Batcher 不负责 cross-entropy 损失（CE）。
 
 **权重每 step 都变（DoReMi）怎么办？**
 直接改 `p`，offset 继续。不要为了换权重把 iterator 重置，见 `dt-doremi-mix`。

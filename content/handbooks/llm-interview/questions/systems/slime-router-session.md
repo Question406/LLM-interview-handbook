@@ -34,7 +34,7 @@ sources:
 
 `cache_aware` 会把同一会话的下一轮作为新请求，按当时水位换机。别的会话可能命中了公共模板，让全局命中率仍然很高，但本会话的 history 物理页在另一张卡上，这一轮还是冷启动。和 vLLM sticky routing + prefix cache 是同一类问题，见 `sys-prefix-cache`。验收看同一 `session_id` 是否连续打到同一 worker，不要只看全局 prefix hit。
 
-veRL 的 SGLang multi-turn 同样吃 session；若用 vLLM 则靠 prefix cache + sticky，能力取决于后端。`loss_mask` 决定训练图是否对观测结果（observation）计算梯度，router 的 session 粘性决定推理 KV 留在哪张卡。这两项需要分别配置：掩码正确但路由仍是 round-robin，依然会付出反复 prefill 的时间。
+veRL 的 SGLang multi-turn 同样吃 session；若用 vLLM 则靠 prefix cache + sticky，能力取决于后端。`loss_mask` 决定训练图是否对 observation 计算梯度，router 的 session 粘性决定推理 KV 留在哪张卡。这两项需要分别配置：mask 正确但路由仍是 round-robin，依然会付出反复 prefill 的时间。
 
 ## 追问
 

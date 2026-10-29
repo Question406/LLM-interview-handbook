@@ -4,31 +4,43 @@ section: anthropic
 order: 28
 level: S
 title: Anthropic：computer use 上动作级和轨迹级反馈差在哪？确认框为什么不能训进策略？
-quick: "动作级反馈告诉模型某一步点得对不对，信号密但易受截图滞后和奖励噪声影响；轨迹级按任务结果判分，更贴近目标但归功困难。可先用演示学 GUI 技能，再用外部检查器做结果奖励；确认授权由宿主管理，不作为可刷分的策略动作。"
+quick: >-
+  动作级反馈告诉模型某一步点得对不对，信号密但易受截图滞后和奖励噪声影响；轨迹级按任务结果判分，更贴近目标但归功困难。可先用演示学 GUI
+  技能，再用外部检查器做结果奖励；确认授权由宿主管理，不作为可刷分的策略动作。
 tags:
   - Anthropic
   - Computer use
   - RL
   - Agents
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Developing a computer use model (Anthropic)
-    url: https://www.anthropic.com/research/developing-computer-use
+    url: 'https://www.anthropic.com/research/developing-computer-use'
     type: primary
   - title: Computer use tool (Claude Docs)
-    url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool
+    url: >-
+      https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool
     type: primary
   - title: Constitutional AI — Harmlessness from AI Feedback
-    url: https://arxiv.org/abs/2212.08073
+    url: 'https://arxiv.org/abs/2212.08073'
     type: primary
 ---
 
+## 可以这样回答
+
 动作级反馈帮助模型学局部操作，轨迹级反馈判断整项任务是否成功，两者要配合。确认框则留在宿主权限层。比如把「页面发生变化」当动作奖励，模型乱点广告也可能得分；把「用户点了是」当任务奖励，又可能鼓励策略减少询问或催促确认。
 
-Anthropic 的研究文描述了在计算器、文本编辑器等离线软件上通过截图、数像素和点击训练，再泛化到其他环境。讨论训练时，要把 RL 如何归功与谁有权执行分开，相关执行边界见 `anthropic-computer-use`。
+Anthropic 的研究文描述了在计算器、文本编辑器等离线软件上通过截图、数像素和点击训练，再泛化到其他环境。讨论训练时，要把 RL 如何归功与谁有权执行分开，相关 execution constraints 见 `anthropic-computer-use`。
+
+## 技术备查
+
+动作级反馈帮助模型学局部操作，轨迹级反馈判断整项任务是否成功，两者要配合。确认框则留在宿主权限层。比如把「页面发生变化」当动作奖励，模型乱点广告也可能得分；把「用户点了是」当任务奖励，又可能鼓励策略减少询问或催促确认。
+
+Anthropic 的研究文描述了在计算器、文本编辑器等离线软件上通过截图、数像素和点击训练，再泛化到其他环境。讨论训练时，要把 RL 如何归功与谁有权执行分开，相关 execution constraints 见 `anthropic-computer-use`。
 
 ## 局部技能与任务结果各给什么信号
 
@@ -40,7 +52,7 @@ Anthropic 的研究文描述了在计算器、文本编辑器等离线软件上�
 
 $$r_t=0\ (t \lt T),\quad r_T=\mathbf{1}[\mathrm{success}]$$
 
-也可以像 OSWorld 给 $[0,1]$ 完成度。这样允许多条合法路径、重试和自我纠正，与对话 RLHF 给整段偏好类似。代价是几十步才得到一个 bit，REINFORCE 方差大；GAE / 价值网络能帮助归功，关键子目标的过程奖励也可辅助，但定义不能来自不可信页面。
+也可以像 OSWorld 给 $[0,1]$ 完成度。这样允许多条合法路径、重试和自我纠正，与对话 RLHF 给整段偏好类似。代价是几十步才得到一个 bit，REINFORCE 方差大；GAE / value network 能帮助归功，关键子目标的过程奖励也可辅助，但定义不能来自不可信页面。
 
 CAI 优化 $p_\theta(y\mid x)$ 的语言倾向，computer use 的 $a_t$ 会改变外部状态，见 `anthropic-rlaif`、`anthropic-constitutional-ai`。AI 可以比较两条轨迹是否鲁莽，得到轨迹偏好，仍需任务结果信号。官方强调训练时不开放上网，以减少真实互联网注入进入梯度；泛化依靠 GUI 技能，这与评测污染控制相关。
 
@@ -55,6 +67,8 @@ def exec_or_hold(a_t, user):
     if a_t["action"] in SENSITIVE:
         return "held" if not user.confirm(a_t) else computer.exec(a_t)
     return computer.exec(a_t)
+
+
 # held 对策略是合法观察，不是可跳过的内部动作
 ```
 

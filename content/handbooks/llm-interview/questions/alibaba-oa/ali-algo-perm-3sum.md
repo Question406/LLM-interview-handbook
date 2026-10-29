@@ -5,7 +5,8 @@ order: 38
 level: A
 title: 阿里手撕：全排列和三数之和各自防什么重复？
 quick: >-
-  全排列（46）要生成所有顺序，用 `used` 标记当前路径已用的元素，回溯时还原；用交换法的话换出去的位置要换回来。三数之和（15）要每个三元组只出现一次，先排序，固定一个数后双指针找另外两个，固定数和左右指针都跳过重复值。
+  全排列（46）要生成所有顺序，用 `used`
+  标记当前路径已用的元素，回溯时还原；用交换法的话换出去的位置要换回来。三数之和（15）要每个三元组只出现一次，先排序，固定一个数后双指针找另外两个，固定数和左右指针都跳过重复值。
 tags:
   - Alibaba
   - 回溯
@@ -13,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 全排列
-    url: https://leetcode.cn/problems/permutations/
+    url: 'https://leetcode.cn/problems/permutations/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -126,11 +127,11 @@ if __name__ == "__main__":
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
-**46 要测哪些边界？**
+**46 要覆盖哪些 edge cases？**
 $n=1$，以及输入已经有序的情况。
 
 **三数之和什么时候直接返回空？**

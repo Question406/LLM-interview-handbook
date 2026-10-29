@@ -3,8 +3,10 @@ id: p3a-openai-infection-spread-cellular-automata
 section: openai
 order: 601
 level: A
-title: "OpenAI：感染传播：分阶段规则的网格模拟"
-quick: "基础版用多源 BFS 按天扩展；有阈值和有限传染期时，记录感染日，每天先收集新感染、再统一写回。当天无新增就停，因为旧感染源只会减少；无法感染全部非墙格时返回 -1。"
+title: OpenAI：感染传播：分阶段规则的网格模拟
+quick: >-
+  基础版用多源 BFS
+  按天扩展；有阈值和有限传染期时，记录感染日，每天先收集新感染、再统一写回。当天无新增就停，因为旧感染源只会减少；无法感染全部非墙格时返回 -1。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · infection-spread-cellular-automata"
-    url: https://www.1point3acres.com/interview/problems/company/openai/infection-spread-cellular-automata
+  - title: 1Point3Acres · OpenAI · infection-spread-cellular-automata
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/infection-spread-cellular-automata
     type: secondary
 ---
 
@@ -54,7 +57,7 @@ spread(["XX", ".."], threshold=2)    -> (-1, [[0,0],[None,None]])
 
 在网格上模拟感染扩散：一些格子一开始就被感染，每过一天，感染会传给相邻的格子。题目分阶段加规则，比如免疫的格子、需要多个感染邻居才会被感染的阈值、感染后只在一段时间内有传染性，要求算出全部被感染需要几天，或者判断永远感染不完。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。网站列了五个小问，这份练习只固定其中一种分阶段变体；接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。网站列了五个小问，这份练习只固定其中一种分阶段变体；接口、约束和测试是手册补的练习约定。
 
 加上阈值或传染期之后，BFS「每个格子只访问一次」的前提就不成立了。一个格子今天邻居不够，明天可能就够了；一个感染源今天还有传染性，明天可能就失效了。这时要显式记录每个格子的感染时间，每天重新判断，而不是继续套 BFS。
 
@@ -167,7 +170,7 @@ def spread(grid, threshold=1, infectious_days=None):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -178,6 +181,7 @@ def expect_value_error(fn, *args, **kwargs):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 传染期 1 天：每个格子只在被感染当天传给下一格
 assert spread(["X.."], infectious_days=1) == (2, [[0, 1, 2]])
@@ -199,10 +203,10 @@ assert spread(["XX.", "..X"], threshold=2, infectious_days=1)[0] == -1
 # 全是墙：不需要任何一天
 assert spread(["##"]) == (0, [[None, None]])
 
-expect_value_error(spread, [])                      # 空网格
-expect_value_error(spread, ["X.", "."])             # 行长不一致
-expect_value_error(spread, ["X?"])                  # 非法字符
-expect_value_error(spread, ["X."], threshold=5)     # 阈值超出 1..4
+expect_value_error(spread, [])  # 空网格
+expect_value_error(spread, ["X.", "."])  # 行长不一致
+expect_value_error(spread, ["X?"])  # 非法字符
+expect_value_error(spread, ["X."], threshold=5)  # 阈值超出 1..4
 expect_value_error(spread, ["X."], infectious_days=0)
 ```
 

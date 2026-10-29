@@ -5,7 +5,8 @@ order: 2
 level: A
 title: Rippling：AI coding 电面，logger 先删子串再截断
 quick: >-
-  公开帖能核对的只有两步：打印前删掉配置的字符串的所有出现，再把消息截断，顺序是先删后截。2026 年这轮电面可选 AI coding，每改一个功能都要能 print 出当前结果。自己先定函数和顺序，不要把整段题干贴进模型。
+  公开帖能核对的只有两步：打印前删掉配置的字符串的所有出现，再把消息截断，顺序是先删后截。2026 年这轮电面可选 AI coding，每改一个功能都要能
+  print 出当前结果。自己先定函数和顺序，不要把整段题干贴进模型。
 tags:
   - Rippling
   - Coding
@@ -13,34 +14,34 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
   - title: Rippling SDE II 电面，logger，2026
-    url: https://www.1point3acres.com/bbs/thread-1176930-1-1.html
+    url: 'https://www.1point3acres.com/bbs/thread-1176930-1-1.html'
     type: candidate-first-hand
-  - title: Rippling Offer Received, AI Coding Experience
-    url: https://leetcode.com/discuss/post/7649290
+  - title: 'Rippling Offer Received, AI Coding Experience'
+    url: 'https://leetcode.com/discuss/post/7649290'
     type: candidate-first-hand
   - title: Implement logger and card ranking
-    url: https://prachub.com/coding-questions/implement-logger-and-card-ranking
+    url: 'https://prachub.com/coding-questions/implement-logger-and-card-ranking'
     type: secondary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 实现一个可配置日志器，每次打印消息前先删指定子串，再截断，并同时返回最终打印文本。公开帖能确认的核心是这两步；本练习不增加搜索、存储或大写转换命令。
 
 ### 输入与接口
 
-实现 Logger()，公开配置属性 remove 与 limit，初始均为None；提供 log(message)。message为字符串；remove为待删的非空字符串、空字符串或None；limit为非负整数或None，按Python字符串字符数截断。调用者直接更新配置属性。
+实现 Logger()，公开配置属性 remove 与 limit，初始均为 None；提供 log(message)。message 为字符串；remove 为待删的非空字符串、空字符串或 None；limit 为非负整数或 None，按 Python 字符串字符数截断。调用者直接更新配置属性。
 
 ### 输出与约束
 
-log先对原message做一次从左到右不重叠的子串删除，再保留前limit个字符。remove为None或空串时不删除，limit为None时不截断，limit=0时结果为空串。大小写敏感。返回处理后的字符串，并向标准输出打印同一字符串及一个换行。
+log 先对原 message 做一次从左到右不重叠的子串删除，再保留前 limit 个字符。remove 为 None 或空串时不删除，limit 为 None 时不截断，limit=0时结果为空串。大小写敏感。返回处理后的字符串，并向标准输出打印同一字符串及一个换行。
 
-删除只执行一次，不反复消除删除后新拼出的匹配。配置仅影响之后的log，不回溯修改之前输出。不修改传入字符串，也无需保存历史消息。所有配置输入均合法，不要求测试负数长度。
+删除只执行一次，不反复消除删除后新拼出的匹配。配置仅影响之后的 log，不回溯修改之前输出。不修改传入字符串，也无需保存历史消息。所有配置输入均合法，不要求测试负数长度。
 
 ### 示例
 

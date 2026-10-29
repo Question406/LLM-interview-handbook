@@ -5,7 +5,8 @@ order: 2
 level: S
 title: LC 735 · 小行星碰撞
 quick: >-
-  栈里存目前还活着的行星，只有「栈顶向右、当前向左」才会相撞。小的爆炸，一样大一起爆，当前行星更大就继续撞新的栈顶；每颗最多进出栈一次，时间 $O(n)$，额外空间 $O(n)$。
+  栈里存目前还活着的行星，只有「栈顶向右、当前向左」才会相撞。小的爆炸，一样大一起爆，当前行星更大就继续撞新的栈顶；每颗最多进出栈一次，时间
+  $O(n)$，额外空间 $O(n)$。
 tags:
   - Array
   - Stack
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 735. Asteroid Collision
-    url: https://leetcode.com/problems/asteroid-collision/
+    url: 'https://leetcode.com/problems/asteroid-collision/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -111,7 +112,7 @@ print("simple tests passed")
 
 时间 $O(n)$：每颗行星最多入栈一次、出栈一次，`while` 的总次数被出栈次数限住。额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 负数在前、正数在后的行星彼此背离，全部保留。
 

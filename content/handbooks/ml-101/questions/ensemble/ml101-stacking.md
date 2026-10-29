@@ -21,7 +21,7 @@ sources:
 
 比如一棵深树把训练集几乎记住，训练预测正确率很高，二层就给它很大权重；测试时它失去这个优势，组合也随之变差。生成折外预测（out-of-fold，OOF）时，把训练集分成若干折，每次在其余折拟合基础模型，只预测留出的那折，再拼回所有行。每一行的二层输入都来自没用过该行标签的拟合。
 
-二层在 OOF 特征和原标签上训练。准备上线时，基础模型通常在全训练集重训，再把新样本预测交给已经训练好的二层。[StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html) 区分了这两种拟合过程。标准化、目标编码等有学习过程的预处理，也应放在每折内部。
+二层在 OOF 特征和原标签上训练。准备上线时，基础模型通常在全训练集重训，再把新样本预测交给已经训练好的二层。[StackingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html) 区分了这两种拟合过程。standardization、目标编码等有学习过程的预处理，也应放在每折内部。
 
 ## 追问
 

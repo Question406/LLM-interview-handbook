@@ -4,7 +4,9 @@ section: coding
 order: 37
 level: A
 title: 白板：RLOO 的 leave-one-out baseline，向量化写法和它跟 GRPO 差在哪
-quick: "RLOO 把同组其余 $G-1$ 条奖励的均值当 baseline，用 `(sum - r) / (G - 1)` 就能向量化计算。它的 advantage 是减组均值的 $\\frac{G}{G-1}$ 倍；GRPO 还会除以每个 prompt 自己的 std，所以不同题的缩放也会不同。"
+quick: >-
+  RLOO 把同组其余 $G-1$ 条奖励的均值当 baseline，用 `(sum - r) / (G - 1)` 就能向量化计算。它的 advantage
+  是减组均值的 $\frac{G}{G-1}$ 倍；GRPO 还会除以每个 prompt 自己的 std，所以不同题的缩放也会不同。
 tags:
   - 完整编程练习
   - Coding
@@ -13,16 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "Back to Basics: Revisiting REINFORCE Style Optimization for Learning from Human Feedback in LLMs"
-    url: https://arxiv.org/abs/2402.14740
+  - title: >-
+      Back to Basics: Revisiting REINFORCE Style Optimization for Learning from
+      Human Feedback in LLMs
+    url: 'https://arxiv.org/abs/2402.14740'
     type: primary
-  - title: "Buy 4 REINFORCE Samples, Get a Baseline for Free!"
-    url: https://openreview.net/forum?id=r1lgTGL5DE
+  - title: 'Buy 4 REINFORCE Samples, Get a Baseline for Free!'
+    url: 'https://openreview.net/forum?id=r1lgTGL5DE'
     type: primary
-  - title: DeepSeekMath, GRPO
-    url: https://arxiv.org/abs/2402.03300
+  - title: 'DeepSeekMath, GRPO'
+    url: 'https://arxiv.org/abs/2402.03300'
     type: primary
 ---
 
@@ -52,7 +56,7 @@ rewards 跨两个 prompt 时，只在各自的 G 条之间比较，不能混组
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
@@ -88,8 +92,10 @@ def rloo_advantage(rewards, G):
     if G < 2:
         raise ValueError(f"leave-one-out needs G >= 2, got {G}")
     if rewards.numel() % G != 0:
-        raise ValueError(f"{rewards.numel()} rewards cannot be split into groups of {G}")
-    grouped = rewards.reshape(-1, G)                                  # [B, G]
+        raise ValueError(
+            f"{rewards.numel()} rewards cannot be split into groups of {G}"
+        )
+    grouped = rewards.reshape(-1, G)  # [B, G]
     baseline = (grouped.sum(dim=1, keepdim=True) - grouped) / (G - 1)
     return (grouped - baseline).reshape(-1)
 ```
@@ -102,7 +108,7 @@ def rloo_advantage(rewards, G):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -131,7 +137,9 @@ centered = (grouped - grouped.mean(dim=1, keepdim=True)).reshape(-1)
 assert torch.allclose(adv, centered * 3 / 2)
 
 # G = 2：两条互为 baseline
-assert torch.allclose(rloo_advantage(torch.tensor([3.0, 1.0]), 2), torch.tensor([2.0, -2.0]))
+assert torch.allclose(
+    rloo_advantage(torch.tensor([3.0, 1.0]), 2), torch.tensor([2.0, -2.0])
+)
 
 # G < 2 或长度不能整除 G 时报错
 expect_value_error(rloo_advantage, rewards, 1)
@@ -142,13 +150,13 @@ expect_value_error(rloo_advantage, rewards, 4)
 
 设 prompt 数为 $B$、每组 $G$ 条。时间 $O(BG)$，额外空间 $O(BG)$（baseline 张量）。
 
-- 追问「rollout 排布不是 `repeat_interleave` 而是 `repeat`」：同一个 prompt 的回答间隔 $B$ 个位置，要先 `reshape(G, B).T` 再算，或者让采样端改排布；不改就会悄悄混组。
+- 追问「rollout 排布不是 `repeat_interleave` 而是 `repeat`」：同一个 prompt 的回答间隔 $B$ 个位置，要先 `reshape(G, B).T` 再算，或者让 sampling 端改排布；不改就会悄悄混组。
 
 ## 题怎么来的
 
-每个输入提示（prompt）采样 $G$ 条回答，每条得到一个标量奖励。RLOO 用「其余 $G-1$ 条的平均奖励」当 baseline。题目让你写出向量化版本，再问它和 GRPO 的组内归一化是什么关系。
+每个 promptsampling $G$ 条回答，每条得到一个标量奖励。RLOO 用「其余 $G-1$ 条的平均奖励」当 baseline。题目让你写出向量化版本，再问它和 GRPO 的组内 normalization 是什么关系。
 
-采样轨迹（rollout）按 `prompts.repeat_interleave(G)` 排布，也就是 `[p0, p0, ..., p0, p1, p1, ...]`。
+sampling 轨迹（rollout）按 `prompts.repeat_interleave(G)` 排布，也就是 `[p0, p0, ..., p0, p1, p1, ...]`。
 
 ## 故意错误的起始片段（用于找 bug）
 
@@ -172,7 +180,7 @@ def rloo_advantage(rewards, G):
 
 ## 为什么不用自己
 
-baseline 不能依赖 $y_i$ 本身。$\mathbb{E}[b\,\nabla\log\pi(y_i)] = 0$ 成立的前提是 $b$ 和 $y_i$ 独立。其余 $G-1$ 条回答和 $y_i$ 是独立采样的，所以 leave-one-out baseline 不引入偏差。
+baseline 不能依赖 $y_i$ 本身。$\mathbb{E}[b\,\nabla\log\pi(y_i)] = 0$ 成立的前提是 $b$ 和 $y_i$ 独立。其余 $G-1$ 条回答和 $y_i$ 是独立 sampling 的，所以 leave-one-out baseline 不引入偏差。
 
 不过，包含自己的组均值和它其实只差一个常数倍：
 
@@ -188,7 +196,7 @@ GRPO 的 advantage 是 $(r_i - \bar r)/\mathrm{std}(r)$。减均值的部分和 
 
 ## 追问
 
-**组里奖励全是 0 或全是 1 怎么办？** leave-one-out 之后 advantage 全是 0，这个 prompt 不产生梯度。和 GRPO 一样，采到这种组等于浪费算力；DAPO 的动态采样就是把这些组过滤掉，再补采。
+**组里奖励全是 0 或全是 1 怎么办？** leave-one-out 之后 advantage 全是 0，这个 prompt 不产生梯度。和 GRPO 一样，采到这种组等于浪费算力；DAPO 的动态 sampling 就是把这些组过滤掉，再补采。
 
 **奖励里有 per-token 的 KL 惩罚怎么办？** RLOO 论文把 KL 并进序列级奖励，先算 $r - \beta\,\mathrm{KL}$，再做 leave-one-out。KL 放在奖励里还是放在损失（loss）里，见 `sys-kl-place`。
 

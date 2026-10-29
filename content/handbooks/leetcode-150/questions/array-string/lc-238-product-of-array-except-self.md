@@ -4,7 +4,9 @@ section: array-string
 order: 13
 level: S
 title: LC 238 · 除自身以外数组的乘积
-quick: "不用除法，用左右前缀积：先从左往右把左侧积写进答案，再从右往左乘上右侧积，`answer[i]` 就是两者的乘积，有 $0$ 也不用特判。时间 $O(n)$，额外空间 $O(1)$（不含答案数组）。"
+quick: >-
+  不用除法，用左右前缀积：先从左往右把左侧积写进答案，再从右往左乘上右侧积，`answer[i]` 就是两者的乘积，有 $0$ 也不用特判。时间
+  $O(n)$，额外空间 $O(1)$（不含答案数组）。
 tags:
   - Array
   - Prefix
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 238. 除自身以外数组的乘积
-    url: https://leetcode.cn/problems/product-of-array-except-self/
+    url: 'https://leetcode.cn/problems/product-of-array-except-self/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,7 +103,7 @@ print("simple tests passed")
 
 时间 $O(n)$。除答案数组外额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 恰好一个 $0$ 时，只有 $0$ 所在位置是其余元素的积，其他全是 $0$。两个及以上 $0$，答案全 $0$。含负数时符号自然反映在积里，算法不用特判。长度为 $2$ 时答案就是两个数互换。
 

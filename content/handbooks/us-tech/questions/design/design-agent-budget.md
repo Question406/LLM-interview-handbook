@@ -4,31 +4,34 @@ section: design
 order: 22
 level: A
 title: 设计：Agent 的步数与美元预算，以及降级到无工具
-quick: "预算由宿主循环执行，分别记录步数、工具次数、token、实际耗时和美元，任何一项耗尽就停止继续调用。调用前先估成本，耗尽后摘要已有结果、降级无工具或请求追加预算。验收同时看成功率、单位任务成本和降级后的幻觉率。"
+quick: >-
+  预算由宿主循环执行，分别记录步数、工具次数、token、实际耗时和美元，任何一项耗尽就停止继续调用。调用前先估成本，耗尽后摘要已有结果、降级无工具或请求追加预算。验收同时看成功率、单位任务成本和降级后的
+  hallucination 率。
 tags:
   - Agent
   - Anthropic
   - Microsoft
   - Cost
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
   - title: Function calling
-    url: https://platform.openai.com/docs/guides/function-calling
+    url: 'https://platform.openai.com/docs/guides/function-calling'
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -44,25 +47,34 @@ sources:
 
 限额具有实际执行效力，不能只作为模型提示。需要定义预计与实际费用、并行预留、部分失败和迟到计费的语义，且不能为节省预算跳过业务上必要的确认。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 任务还剩 0.01 美元，而一次搜索的最低预计费用为 0.02 美元时，该搜索不能无提示地继续执行；最终应返回当前已完成内容和停止原因或可选替代路径。
 
+## 可以这样回答
+
+Agent 的预算要放在宿主循环里硬性执行，每次调用前先判断剩余额度够不够。比如搜索已经超出剩余美元，应该直接进入降级路径；只在 prompt 里说“节省一点”，挡不住继续调用。这是 Microsoft Copilot、Anthropic 长工具循环和 OpenAI agent 产品的工程设计题型，公开博客强调预算放在循环外。沙箱与确认见 `design-agent-harness`，cost limits 见 `design-eval-agent`。
+
+我会先问：每任务的美元上限、是否允许用户加购、只读与写入是否分开、超时谁背锅。然后在宿主里记账，不把「省着点」写进 system prompt 当唯一控制。
+
+## 技术备查
+
 ## 解题思路与参考答案
 
-Agent 的预算要放在宿主循环里硬性执行，每次调用前先判断剩余额度够不够。比如搜索已经超出剩余美元，应该直接进入降级路径；只在 prompt 里说“节省一点”，挡不住继续调用。这是 Microsoft Copilot、Anthropic 长工具循环和 OpenAI agent 产品的工程设计题型，公开博客强调预算放在循环外，不是某次现场逐字题。沙箱与确认见 `design-agent-harness`，成本门禁见 `design-eval-agent`。
+Agent 的预算要放在宿主循环里硬性执行，每次调用前先判断剩余额度够不够。比如搜索已经超出剩余美元，应该直接进入降级路径；只在 prompt 里说“节省一点”，挡不住继续调用。这是 Microsoft Copilot、Anthropic 长工具循环和 OpenAI agent 产品的工程设计题型，公开博客强调预算放在循环外。沙箱与确认见 `design-agent-harness`，cost limits 见 `design-eval-agent`。
 
 ## 在每步执行前后记账
 
-我会先问：每任务的美元上限、是否允许用户加购、只读与写入是否分开、超时谁背锅。然后在宿主里记账，不把「省着点」写进 system 输入提示（prompt） 当唯一控制。
+我会先问：每任务的美元上限、是否允许用户加购、只读与写入是否分开、超时谁背锅。然后在宿主里记账，不把「省着点」写进 system prompt 当唯一控制。
 
 ```python
 class AgentBudget:
     def __init__(self, max_steps, max_calls, max_tokens, max_ms, max_usd):
-        self.left = dict(steps=max_steps, calls=max_calls,
-                         tokens=max_tokens, ms=max_ms, usd=max_usd)
+        self.left = dict(
+            steps=max_steps, calls=max_calls, tokens=max_tokens, ms=max_ms, usd=max_usd
+        )
 
     def charge(self, **kw):
         for k, v in kw.items():
@@ -86,19 +98,19 @@ class AgentBudget:
 3. 更便宜的只读路径。 缓存检索、小模型、缩短思考预算。不允许换成更贵的模型「再试一次」。思考预算泄漏见 `align-cot-leak`。
 4. 请用户授权加预算。 确认框展示将增加的步数 / 美元，而不是藏在条款里。
 
-降级策略要写进产品契约，并进评测：故意把预算打到极小，看是否还敢调支付。无工具成功率、超预算率、降级后的幻觉率是一等指标。平均步数往上走、任务成功不动，就是在烧美元刷 trace，和 `align-tool-rl` 的过程奖刷分同类。
+降级策略要写进产品契约，并进评测：故意把预算打到极小，看是否还敢调支付。无工具成功率、超预算率、降级后的 hallucination 率是一等指标。平均步数往上走、任务成功不动，就是在烧美元刷 trace，和 `align-tool-rl` 的过程奖刷分同类。
 
 每步剩余预算都要进入 trace，复盘时才能区分重复无效操作和上限设置不合理。前端流式告诉用户「还在检索，预算还剩几次」，可取消。取消要能杀掉进行中的只读调用。
 
 还要覆盖预算失效的情况：超 token 后截断工具结果，可能导致模型凭空生成；超美元后换未审计工具，会绕开控制。多 agent 各自领取预算会把总开销放大，见 `align-agent-rl`；浏览器 agent 也不能在步数耗尽后继续盲点，见 `design-browser-agent`。
 
-发版表加一列：P50/P95 USD 每任务、P95 步数、降级占比、降级后事故率。质量涨、成本涨一个数量级时，闸门应拦住。
+发版表加一列：P50/P95 USD 每任务、P95 步数、降级占比、降级后事故率。质量涨、成本涨一个数量级时，acceptance checks 应拦住。
 
 ## 追问
 
 **为什么不让模型自己看余额？**
 可以当提示，不能当执法。执法在 `charge` 抛错。
-**无工具会不会幻觉？**
+**无工具会不会 hallucination？**
 会。契约是声明不确定或拒答，不是用预训练补实时事实。
 **预算按用户还是按会话？**
 都要。会话防单次失控；用户日限额防刷。工具 ACL 另算。

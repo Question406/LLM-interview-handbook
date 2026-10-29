@@ -4,7 +4,10 @@ section: coding
 order: 35
 level: S
 title: Fireworks：把 clipped GRPO 写成 SFT 式的加权 logprob loss
-quick: "把 ratio × advantage × 单侧 clip mask detach 后当作 NLL 权重，就能得到与 clipped GRPO 相同的梯度。正 advantage 只挡上界，负 advantage 只挡下界；权重可正可负，要按 token 数平均，除以 `weights.sum()` 会改变符号或让分母接近零。"
+quick: >-
+  把 ratio × advantage × 单侧 clip mask detach 后当作 NLL 权重，就能得到与 clipped GRPO
+  相同的梯度。正 advantage 只挡上界，负 advantage 只挡下界；权重可正可负，要按 token 数平均，除以 `weights.sum()`
+  会改变符号或让分母接近零。
 tags:
   - 完整编程练习
   - Fireworks
@@ -14,13 +17,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Proximal Policy Optimization Algorithms
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: primary
-  - title: DeepSeekMath, GRPO
-    url: https://arxiv.org/abs/2402.03300
+  - title: 'DeepSeekMath, GRPO'
+    url: 'https://arxiv.org/abs/2402.03300'
     type: primary
 ---
 
@@ -28,14 +31,14 @@ sources:
 
 实现 GRPO 的 clipped 训练目标，并把其对 policy log-prob 的梯度改写为带固定权重的 SFT 损失。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
-- `sft_loss(weights,logprobs) -> Tensor` 返回标量 `-mean(stop_gradient(weights)*logprobs)`，权重允许正负，按 token 数归一化。
+- `sft_loss(weights,logprobs) -> Tensor` 返回标量 `-mean(stop_gradient(weights)*logprobs)`，权重允许正负，按 token 数 normalization。
 - `compute_grpo_loss_per_rollout(policy_logprobs,sampling_logprobs,advantages,clip_eps=0.2)` 返回标量 `-mean(min(r*A,clip(r,1-eps,1+eps)*A))`，r=exp(`policy_logprobs`-`sampling_logprobs`)，A=advantages，eps=`clip_eps`。
 - `compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs,sampling_logprobs,advantages,epsilon=0.2)` 必须复用 `sft_loss`，并使 `policy_logprobs` 的梯度与上述标准目标一致；不要求两标量数值相同。传给 `sft_loss` 的权重必须停止梯度。
-- 所有数组为相同长度 [N]、N>=1，输入有限，`sampling_logprobs` 和 advantages 固定，0<=eps<1。在恰好 r=1-eps 或 1+eps 的边界，保留对应未越界分支梯度，与 PyTorch clamp 在边界内的导数约定一致。
+- 所有数组为相同长度 [N]、N>=1，输入有限，`sampling_logprobs` 和 advantages 固定，0<=eps<1。在恰好 r=1-eps 或 1+eps 的 endpoints，保留对应未越界分支梯度，与 PyTorch clamp 在 clipping range 内的导数约定一致。
 
 ### 输入输出示例
 
@@ -53,14 +56,14 @@ compute_grpo_loss_per_rollout(policy_logprobs,sampling_logprobs,advantages) -> 0
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题；面试原代码见下文「故意错误的起始片段」。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定；面试原代码见下文「故意错误的起始片段」。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
-- `sft_loss(weights, logprobs) -> Tensor`：加权负对数似然，`-(weights.detach() * logprobs).mean()`。权重可正可负，按 token 数取平均，不按权重和归一化。
+- `sft_loss(weights, logprobs) -> Tensor`：加权 negative log likelihood，`-(weights.detach() * logprobs).mean()`。权重可正可负，按 token 数取平均，不按权重和 normalization。
 - `compute_grpo_loss_per_rollout(policy_logprobs, sampling_logprobs, advantages, clip_eps=0.2) -> Tensor`：标准 clipped 目标的负值，按 token 平均。
 - `compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs, sampling_logprobs, advantages, epsilon=0.2) -> Tensor`：复用 `sft_loss`，权重是 detach 后的 ratio × advantage × clip mask，对 `policy_logprobs` 的梯度与上一个函数相同。
-- 输入都是一维、长度 N ≥ 1 的有效 token；`sampling_logprobs` 和 `advantages` 是常量。clip mask 按 advantage 的符号选择单侧边界，ratio 和 mask 都不参与求导。
+- 输入都是一维、长度 N ≥ 1 的有效 token；`sampling_logprobs` 和 `advantages` 是常量。clip mask 按 advantage 的符号选择单侧 clipping limit，ratio 和 mask 都不参与求导。
 
 ### 输入输出示例
 
@@ -89,11 +92,13 @@ import torch
 
 
 def sft_loss(weights, logprobs):
-    """加权负对数似然，按 token 数平均；权重可正可负，不按权重和归一化。"""
+    """加权 negative log likelihood，按 token 数平均；权重可正可负，不按权重和 normalization。"""
     return -(weights.detach() * logprobs).mean()
 
 
-def compute_grpo_loss_per_rollout(policy_logprobs, sampling_logprobs, advantages, clip_eps=0.2):
+def compute_grpo_loss_per_rollout(
+    policy_logprobs, sampling_logprobs, advantages, clip_eps=0.2
+):
     """标准 clipped GRPO 目标的负值，按 token 平均。所有输入形状 [N]。"""
     ratio = torch.exp(policy_logprobs - sampling_logprobs)
     clipped_ratio = ratio.clamp(1 - clip_eps, 1 + clip_eps)
@@ -101,7 +106,9 @@ def compute_grpo_loss_per_rollout(policy_logprobs, sampling_logprobs, advantages
     return -objective.mean()
 
 
-def compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs, sampling_logprobs, advantages, epsilon=0.2):
+def compute_grpo_loss_per_rollout_with_sft_loss(
+    policy_logprobs, sampling_logprobs, advantages, epsilon=0.2
+):
     """复用 sft_loss 的等价写法：对 policy_logprobs 的梯度与上面的 clipped 目标相同。"""
     ratio = torch.exp(policy_logprobs - sampling_logprobs).detach()
     # 只挡住「朝有利方向走得太远」的那一侧
@@ -122,7 +129,7 @@ def compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs, sampling_logpro
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -131,8 +138,12 @@ def compute_grpo_loss_per_rollout_with_sft_loss(policy_logprobs, sampling_logpro
 logprobs = torch.tensor([math.log(1.5), math.log(0.5), 0.1, -0.1], requires_grad=True)
 old = torch.zeros(4)
 adv = torch.tensor([1.0, -1.0, 1.0, -1.0])
-(direct_grad,) = torch.autograd.grad(compute_grpo_loss_per_rollout(logprobs, old, adv), logprobs)
-(sft_grad,) = torch.autograd.grad(compute_grpo_loss_per_rollout_with_sft_loss(logprobs, old, adv), logprobs)
+(direct_grad,) = torch.autograd.grad(
+    compute_grpo_loss_per_rollout(logprobs, old, adv), logprobs
+)
+(sft_grad,) = torch.autograd.grad(
+    compute_grpo_loss_per_rollout_with_sft_loss(logprobs, old, adv), logprobs
+)
 assert torch.allclose(direct_grad, sft_grad)
 assert direct_grad[0] == 0
 assert direct_grad[1] == 0
@@ -140,7 +151,9 @@ assert direct_grad[1] == 0
 # 反方向越界不 clip：ratio 1.5 但 A<0、ratio 0.5 但 A>0 仍有梯度
 logprobs = torch.tensor([math.log(1.5), math.log(0.5)], requires_grad=True)
 adv = torch.tensor([-1.0, 1.0])
-(sft_grad,) = torch.autograd.grad(compute_grpo_loss_per_rollout_with_sft_loss(logprobs, torch.zeros(2), adv), logprobs)
+(sft_grad,) = torch.autograd.grad(
+    compute_grpo_loss_per_rollout_with_sft_loss(logprobs, torch.zeros(2), adv), logprobs
+)
 assert torch.all(sft_grad != 0)
 
 # 随机输入下两版梯度一致（边界上的不可微点概率为 0）
@@ -148,8 +161,12 @@ torch.manual_seed(0)
 logprobs = torch.randn(8, requires_grad=True)
 old = logprobs.detach() + 0.3 * torch.randn(8)
 adv = torch.randn(8)
-(direct_grad,) = torch.autograd.grad(compute_grpo_loss_per_rollout(logprobs, old, adv), logprobs)
-(sft_grad,) = torch.autograd.grad(compute_grpo_loss_per_rollout_with_sft_loss(logprobs, old, adv), logprobs)
+(direct_grad,) = torch.autograd.grad(
+    compute_grpo_loss_per_rollout(logprobs, old, adv), logprobs
+)
+(sft_grad,) = torch.autograd.grad(
+    compute_grpo_loss_per_rollout_with_sft_loss(logprobs, old, adv), logprobs
+)
 assert torch.allclose(direct_grad, sft_grad)
 
 # 两版的 loss 数值不同，只有梯度相同
@@ -184,7 +201,7 @@ import torch
 
 
 def sft_loss(
-    weights: torch.Tensor,   # [N], token weights
+    weights: torch.Tensor,  # [N], token weights
     logprobs: torch.Tensor,  # [N], token log probabilities
 ) -> torch.Tensor:
     """Return the weighted negative log-likelihood, summed over tokens."""
@@ -195,9 +212,9 @@ def sft_loss(
 
 
 def compute_grpo_loss_per_rollout(
-    policy_logprobs: torch.Tensor,    # [N], requires gradients
+    policy_logprobs: torch.Tensor,  # [N], requires gradients
     sampling_logprobs: torch.Tensor,  # [N], fixed rollout log-probs
-    advantages: torch.Tensor,         # [N], fixed token advantages
+    advantages: torch.Tensor,  # [N], fixed token advantages
     clip_eps: float = 0.2,
 ) -> torch.Tensor:
     ratio = torch.exp(policy_logprobs - sampling_logprobs)
@@ -228,7 +245,7 @@ def compute_grpo_loss_per_rollout_with_sft_loss(
 思路是对的：`detach` 之后的 `ratio * advantages` 可以直接当权重，正负 advantage 各管一侧的 mask 也对。错在两处：
 
 1. `compute_grpo_loss_per_rollout` 没有 `return loss`，函数返回 `None`。
-2. `sft_loss` 里的 `weights / weights.sum()`。监督微调（SFT）的权重非负，这样归一化没问题；但 GRPO 的权重是 $rA$，advantage 可以是负的。
+2. `sft_loss` 里的 `weights / weights.sum()`。SFT 的权重非负，这样 normalization 没问题；但 GRPO 的权重是 $rA$，advantage 可以是负的。
 
 第二处举个例子。三个 token 的 advantage 都是 $-1$，ratio 约等于 1，权重是 `[-1, -1, -1]`，和是 $-3$。除完变成 `[1/3, 1/3, 1/3]`，符号整体翻了过来，本来要压低概率的 token 被当成正样本往上推。如果一组里正负权重差不多抵消，`weights.sum()` 接近 0，梯度会直接爆掉。即使权重全是正的，除以和也改变了梯度的尺度，和直接写的那版对不上。
 
@@ -270,7 +287,7 @@ $A>0$ 时，我们想提高这个 token 的概率。$r > 1+\varepsilon$ 时 min 
 
 $A<0$ 时，我们想压低概率。$r < 1-\varepsilon$ 时进入平台，梯度为 0；有梯度的条件是 $r \ge 1-\varepsilon$。
 
-面试代码里的 `mask1`、`mask2` 就是这两条，只是用了严格不等号。边界上是测度为零的情况，不影响结果。$A=0$ 时走哪一支都一样，权重是 0。
+面试代码里的 `mask1`、`mask2` 就是这两条，只是用了严格不等号。恰好位于 endpoints 的情况是 measure-zero events，不影响结果。$A=0$ 时走哪一支都一样，权重是 0。
 
 容易写错的是两侧都 clip，即 `(ratio >= 1 - eps) & (ratio <= 1 + eps)`。这样 $A>0$ 且 $r$ 已经很小时，这个 token 会被错误地掐掉。PPO 的 min 是一个悲观下界，只挡住「往有利方向走得太远」的那一侧。
 
@@ -278,18 +295,18 @@ $A<0$ 时，我们想压低概率。$r < 1-\varepsilon$ 时进入平台，梯度
 
 ## 追问
 
-**两版 loss 数值一样吗？** 不一样。$r=1$ 时直接写的版本是 $-\mathrm{mean}(A)$，surrogate 是 $-\mathrm{mean}(A\log\pi)$，只有对 `policy_logprobs` 的梯度相等。所以把 surrogate 的 loss 曲线当成强化学习（RL）的目标值看没有意义，要看奖励分数（reward）、KL 和 clip fraction。
+**两版 loss 数值一样吗？** 不一样。$r=1$ 时直接写的版本是 $-\mathrm{mean}(A)$，surrogate 是 $-\mathrm{mean}(A\log\pi)$，只有对 `policy_logprobs` 的梯度相等。所以把 surrogate 的 loss 曲线当成 RL 的目标值看没有意义，要看奖励分数（reward）、KL 和 clip fraction。
 
 **这还算 SFT 吗？** 形式上是加权 NLL，但权重可以是负的：$A>0$ 时权重为正，提高 token 概率；$A<0$ 时权重为负，压低概率。准确的叫法是 weighted log-likelihood surrogate。好处是只要训练端支持逐 token 加权的 NLL，不改 loss 代码就能跑 GRPO。
 
-**「只在当前参数处等价」是什么意思？** 权重是这一步 detach 下来的常数。做完一次 optimizer step，$\pi_\theta$ 变了，ratio 和 mask 都要用新的 `policy_logprobs` 重算。在同一批采样轨迹（rollout）上跑多个 mini-epoch 时，每个 step 都要重新构造权重，不能缓存第一次的。
+**「只在当前参数处等价」是什么意思？** 权重是这一步 detach 下来的常数。做完一次 optimizer step，$\pi_\theta$ 变了，ratio 和 mask 都要用新的 `policy_logprobs` 重算。在同一批 sampling 轨迹（rollout）上跑多个 mini-epoch 时，每个 step 都要重新构造权重，不能缓存第一次的。
 
-**KL 项怎么办？** 对参考模型的 KL 不在这个 min 里。可以把它的梯度系数也折进权重，也可以单独加一项 loss。token 级 KL 的写法见 `coding-kl-div`，KL 放在 reward 里还是 loss 里见 `sys-kl-place`。
+**KL 项怎么办？** 对 reference model 的 KL 不在这个 min 里。可以把它的梯度系数也折进权重，也可以单独加一项 loss。token 级 KL 的写法见 `coding-kl-div`，KL 放在 reward 里还是 loss 里见 `sys-kl-place`。
 
 ## 相关题
 
 - [[coding-loss-atlas]]：把这里的思路推广到 SFT、PPO、DPO、CISPO 等一整张表，只比较各自的权重 $w_t$。
-- [[anthropic-grpo-debug]]：同一个 clipped surrogate 的调试版，NumPy 手写梯度，重点是找采样和零方差组的 bug。
+- [[anthropic-grpo-debug]]：同一个 clipped surrogate 的调试版，NumPy 手写梯度，重点是找 sampling 和零方差组的 bug。
 - [[coding-cispo]]：这里出界 token 的 clip mask 是 0，CISPO 改成截断权重后 detach，出界 token 仍有梯度。
 - [[openai-ppo-clip]]：口述题，讲 clip 只锚 $\pi_{\mathrm{old}}$、ratio 爆了怎么收，是这里 clip mask 的概念背景。
 - [[sys-kl-place]]：这里的 KL 追问的展开，KL 写进奖励时 detach，写进 loss 时对当前策略可导。

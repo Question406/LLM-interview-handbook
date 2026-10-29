@@ -4,20 +4,20 @@ section: binary-search
 order: 4
 level: S
 title: LC 33 · 搜索旋转排序数组
-quick: "旋转后 `mid` 两边总有一半有序。`target` 落在有序那一半的值域里就缩到这半，否则去另一半。数组无重复，一次二分，时间 $O(\\log n)$。"
+quick: 旋转后 `mid` 两边总有一半有序。`target` 落在有序那一半的值域里就缩到这半，否则去另一半。数组无重复，一次二分，时间 $O(\log n)$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 33. 搜索旋转排序数组
-    url: https://leetcode.cn/problems/search-in-rotated-sorted-array/
+    url: 'https://leetcode.cn/problems/search-in-rotated-sorted-array/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -112,7 +112,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 未旋转时 `nums[lo] \le nums[mid]` 始终成立，退化成普通的有序二分。旋转点在 $1$ 或 $n-1$ 时，有序半几乎是整段，无序半只有一个元素，比较仍然正确。$n=1$ 时一次 `mid == target` 判断就够。目标是最小值或最大值时，会落到断点两侧的值域判断里，不会因为不在有序半中间被漏掉。
 

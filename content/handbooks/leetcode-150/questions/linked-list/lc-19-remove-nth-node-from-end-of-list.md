@@ -4,7 +4,9 @@ section: linked-list
 order: 7
 level: S
 title: LC 19 · 删除链表的倒数第 N 个结点
-quick: "用哑结点加快慢指针，快指针先走 $n$ 步，然后两个一起走，快指针到末尾时，慢指针正好停在待删结点的前驱。一遍扫完，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  用哑结点加快慢指针，快指针先走 $n$ 步，然后两个一起走，快指针到末尾时，慢指针正好停在待删结点的前驱。一遍扫完，时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Linked List
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 19. 删除链表的倒数第 N 个结点
-    url: https://leetcode.cn/problems/remove-nth-node-from-end-of-list/
+    url: 'https://leetcode.cn/problems/remove-nth-node-from-end-of-list/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -126,7 +128,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。快指针走完全表一次。
 
-## 边界
+## Edge Cases
 
 - 删头（$n$ 等于链长）时，哑结点让 `slow` 停在 dummy，`dummy.next` 跳过原来的头。
 - 删尾（$n=1$）时，快指针先走 $1$ 步到原头，同步之后 `slow` 停在倒数第二个。

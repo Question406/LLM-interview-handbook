@@ -4,7 +4,9 @@ section: agent
 order: 191
 level: A
 title: 京东零售二面：Agent 的长期记忆系统是什么？Prompt 过长怎么处理？
-quick: "长期记忆是跨会话可检索的结构化记录，只存用户确认过的偏好、工具核实过的事实和未完成任务句柄，每条带来源、时间、置信度和失效条件。Prompt 太长时先把订单号、SKU、金额这些槽位抽到状态字段，再滚动摘要历史，大工具输出落存储只留句柄。模型自己猜的内容不入库。"
+quick: >-
+  长期记忆是跨会话可检索的结构化记录，只存用户确认过的偏好、工具核实过的事实和未完成任务句柄，每条带来源、时间、置信度和失效条件。Prompt
+  太长时先把订单号、SKU、金额这些槽位抽到状态字段，再滚动摘要历史，大工具输出落存储只留句柄。模型自己猜的内容不入库。
 tags:
   - JD
   - Memory
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 京东零售平台产品与研发中心二面
-    url: https://www.nowcoder.com/feed/main/detail/6a94272eee68460d9e8f90c72ddb8dab
+    url: 'https://www.nowcoder.com/feed/main/detail/6a94272eee68460d9e8f90c72ddb8dab'
     type: candidate-first-hand
 ---
 
@@ -25,7 +27,7 @@ sources:
 - 团队 / 岗位：零售平台产品与研发中心
 - 届别 / 流程：二面
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“Agent的长期记忆系统是什么”**；**“和大模型交互的时候Prompt过长怎么处理”**
+- 原始措辞：**“Agent 的长期记忆系统是什么”**；**“和大模型交互的时候 Prompt 过长怎么处理”**
 
 Agent 的长期记忆是跨会话可检索的结构化状态：用户确认过的偏好、工具核实过的事实、没做完的任务句柄，每条都带来源、时间、置信度和失效条件。Prompt 过长时，我先把不能丢的槽位抽出来单独存，再压历史，大的工具输出放到外面按需读。「把聊天记录全存进向量库」或者「换 128k 模型」都答不到点上，窗口变大只是推迟溢出。
 

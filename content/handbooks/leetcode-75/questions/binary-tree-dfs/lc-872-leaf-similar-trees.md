@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 872 · 叶子相似的树
 quick: >-
-  两棵树各做一次先左后右的 DFS，收集叶子值，再比较两个序列。时间 $O(n_1+n_2)$，额外空间 $O(n_1+n_2)$；改用生成器边走边比，可以降到 $O(h_1+h_2)$。
+  两棵树各做一次先左后右的 DFS，收集叶子值，再比较两个序列。时间 $O(n_1+n_2)$，额外空间
+  $O(n_1+n_2)$；改用生成器边走边比，可以降到 $O(h_1+h_2)$。
 tags:
   - Tree
   - DFS
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 872. Leaf-Similar Trees
-    url: https://leetcode.com/problems/leaf-similar-trees/
+    url: 'https://leetcode.com/problems/leaf-similar-trees/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -148,7 +149,7 @@ print("simple tests passed")
 
 时间 $O(n_1+n_2)$。额外空间 $O(n_1+n_2)$，来自栈和叶子列表。
 
-## 边界
+## Edge Cases
 
 - 单节点树的根本身就是叶子。
 - 叶子数量不同时，列表长度不同，直接不等。
@@ -162,6 +163,7 @@ print("simple tests passed")
 ```python
 from itertools import zip_longest
 
+
 def leafSimilarLazy(root1, root2):
     def gen(node):
         if node is None:
@@ -173,7 +175,9 @@ def leafSimilarLazy(root1, root2):
         yield from gen(node.right)
 
     sentinel = object()
-    return all(a == b for a, b in zip_longest(gen(root1), gen(root2), fillvalue=sentinel))
+    return all(
+        a == b for a, b in zip_longest(gen(root1), gen(root2), fillvalue=sentinel)
+    )
 ```
 
 **为什么迭代栈先压右再压左？**

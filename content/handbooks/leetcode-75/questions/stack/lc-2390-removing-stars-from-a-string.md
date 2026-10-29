@@ -5,7 +5,8 @@ order: 1
 level: A
 title: LC 2390 · 从字符串中移除星号
 quick: >-
-  星号要删的「左边最近的未删字符」就是后进先出，所以用栈：普通字符入栈，遇到 `*` 就弹栈顶，最后把栈拼回字符串。时间 $O(n)$，额外空间 $O(n)$。
+  星号要删的「左边最近的未删字符」就是后进先出，所以用栈：普通字符入栈，遇到 `*` 就弹栈顶，最后把栈拼回字符串。时间 $O(n)$，额外空间
+  $O(n)$。
 tags:
   - String
   - Stack
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2390. Removing Stars From a String
-    url: https://leetcode.com/problems/removing-stars-from-a-string/
+    url: 'https://leetcode.com/problems/removing-stars-from-a-string/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -99,7 +100,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 没有星号时原样返回；全部删光时返回空串。
 

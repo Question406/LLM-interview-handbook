@@ -1,0 +1,114 @@
+[
+  {
+    "id": "meta-conv2d-from-scratch",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta ML Coding：从零实现 batched 2D convolution",
+    "file": "content/handbooks/us-tech/questions/meta/meta-conv2d-from-scratch.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.reddit.com/r/leetcode/comments/1reuwrd/meta_ai_coding_interview/",
+      "https://docs.pytorch.org/docs/2.14/generated/torch.nn.functional.conv2d.html"
+    ]
+  },
+  {
+    "id": "meta-tree-diameter-node-count",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta：Tree diameter 改成按 nodes 计数",
+    "file": "content/handbooks/us-tech/questions/meta/meta-tree-diameter-node-count.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.reddit.com/r/leetcode/comments/1r37w7q/meta_ml_research_scientist_interview_experience/"
+    ]
+  },
+  {
+    "id": "meta-longest-valid-parentheses",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta：Longest Valid Parentheses 与 sentinel index",
+    "file": "content/handbooks/us-tech/questions/meta/meta-longest-valid-parentheses.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.reddit.com/r/leetcode/comments/1r37w7q/meta_ml_research_scientist_interview_experience/",
+      "https://leetcode.com/problems/longest-valid-parentheses/"
+    ]
+  },
+  {
+    "id": "openai-indexed-sequence-checkpoints",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI：Indexed sequence、插入与便宜的 checkpoints",
+    "file": "content/handbooks/us-tech/questions/openai/openai-indexed-sequence-checkpoints.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.reddit.com/r/OfferEngineering/comments/1wzedra/openai_senior_software_engineer_interview_it_felt/",
+      "https://landthelab.com/companies/openai"
+    ]
+  },
+  {
+    "id": "openai-async-tree-count-idempotency",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI：只用 async messages 给整棵树计数",
+    "file": "content/handbooks/us-tech/questions/openai/openai-async-tree-count-idempotency.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.screna.ai/experience/aa1b5634-5b22-42a3-9077-5787f791e718"
+    ]
+  },
+  {
+    "id": "xai-offline-autocomplete-trie",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI：Offline autocomplete 的 prefix top-K index",
+    "file": "content/handbooks/us-tech/questions/xai/xai-offline-autocomplete-trie.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/xai_autocomplete_input_box"
+    ]
+  },
+  {
+    "id": "humansand-top-p-live-debug",
+    "book": "us-startup",
+    "section": "humansand",
+    "company": "humansand",
+    "title": "Humans&：Top-p live coding 与现场 debug",
+    "file": "content/handbooks/us-startup/questions/humansand/humansand-top-p-live-debug.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.uscardforum.com/t/topic/535363",
+      "https://drustz.com/posts/2026/09/27/jobsearch3/"
+    ]
+  },
+  {
+    "id": "tml-batch-invariant-rmsnorm-reference",
+    "book": "us-startup",
+    "section": "thinking-machines",
+    "company": "thinking-machines",
+    "title": "Thinking Machines 机制练习：Batch-invariant RMSNorm",
+    "file": "content/handbooks/us-startup/questions/thinking-machines/tml-batch-invariant-rmsnorm-reference.md",
+    "realInterview": false,
+    "sources": [
+      "https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/"
+    ]
+  },
+  {
+    "id": "tml-lora-linear-forward-gradients",
+    "book": "us-startup",
+    "section": "thinking-machines",
+    "company": "thinking-machines",
+    "title": "Thinking Machines 机制练习：LoRA Linear、初始化与 gradients",
+    "file": "content/handbooks/us-startup/questions/thinking-machines/tml-lora-linear-forward-gradients.md",
+    "realInterview": false,
+    "sources": [
+      "https://thinkingmachines.ai/blog/lora/"
+    ]
+  }
+]

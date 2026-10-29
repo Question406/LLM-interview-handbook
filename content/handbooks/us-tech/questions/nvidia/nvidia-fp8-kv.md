@@ -4,30 +4,46 @@ section: nvidia
 order: 17
 level: A
 title: NVIDIA：FP8 KV cache 和权重量化不是一回事
-quick: "FP8 KV 减少常驻缓存和每步读取历史 K/V 的字节，权重量化则减少读 $W$ 的字节，两者要分别配置、评测。长上下文更容易受益于 KV FP8，但 K 的量化误差会直接影响注意力 logits，所以 scale、质量回归和 kernel 支持都要单独检查。"
+quick: >-
+  FP8 KV 减少常驻缓存和每步读取历史 K/V 的字节，权重量化则减少读 $W$ 的字节，两者要分别配置、评测。长上下文更容易受益于 KV FP8，但 K
+  的量化误差会直接影响 attention logits，所以 scale、质量回归和 kernel 支持都要单独检查。
 tags:
   - NVIDIA
   - FP8
   - KV Cache
   - TensorRT-LLM
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Quantization in TensorRT-LLM
-    url: https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/blogs/quantization-in-TRT-LLM.md
+    url: >-
+      https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/blogs/quantization-in-TRT-LLM.md
     type: primary
   - title: FP8 Quantization — TensorRT-LLM Performance Tuning
-    url: https://nvidia.github.io/TensorRT-LLM/performance/performance-tuning-guide/fp8-quantization.html
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/performance/performance-tuning-guide/fp8-quantization.html
     type: primary
   - title: Quantization — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/features/quantization.html
+    url: 'https://nvidia.github.io/TensorRT-LLM/features/quantization.html'
     type: primary
-  - title: NVIDIA TensorRT-LLM Supercharges Large Language Model Inference on NVIDIA H100 GPUs
-    url: https://developer.nvidia.com/blog/nvidia-tensorrt-llm-supercharges-large-language-model-inference-on-nvidia-h100-gpus/
+  - title: >-
+      NVIDIA TensorRT-LLM Supercharges Large Language Model Inference on NVIDIA
+      H100 GPUs
+    url: >-
+      https://developer.nvidia.com/blog/nvidia-tensorrt-llm-supercharges-large-language-model-inference-on-nvidia-h100-gpus/
     type: secondary
 ---
+
+## 可以这样回答
+
+我会分别核算权重和 KV 缓存：权重已是 FP8 或 INT4，长上下文仍可能被 KV 占满。例如把 KV 每元素从 fp16 的 2 字节降到 FP8 的 1 字节，容量和读缓存带宽都会变化，权重矩阵的读写则没有改变。TensorRT-LLM 把 KV 量化作为独立开关，允许 checkpoint 未开 FP8 KV、runtime 再启用；训练和权重量化见 `nvidia-fp8`、`nvidia-int8-quant`。
+
+$T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重、INT4 AWQ）对症。$T$ 长或并发高：KV 线性涨，权重每步不变，墙转到 cache。$b$ 从 2（fp16）收到 1（FP8），同样 HBM 能塞大约 2 倍 token 或更大 batch；读 KV 的带宽也减半。官方量化博客写过：GPT-J 一类从 fp16 KV 换 FP8 KV，H100 上 batch 可以到 2-3 倍，throughput 再跟一截。这和「权重 FP8 让 Tensor Core 更快」不是同一条 roofline。
+
+## 技术备查
 
 我会分别核算权重和 KV 缓存：权重已是 FP8 或 INT4，长上下文仍可能被 KV 占满。例如把 KV 每元素从 fp16 的 2 字节降到 FP8 的 1 字节，容量和读缓存带宽都会变化，权重矩阵的读写则没有改变。TensorRT-LLM 把 KV 量化作为独立开关，允许 checkpoint 未开 FP8 KV、runtime 再启用；训练和权重量化见 `nvidia-fp8`、`nvidia-int8-quant`。
 
@@ -40,7 +56,7 @@ $$
 W\approx \sum |W|\cdot b_W.
 $$
 
-$T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重、INT4 AWQ）对症。$T$ 长或并发高：KV 线性涨，权重每步不变，墙转到 cache。$b$ 从 2（fp16）收到 1（FP8），同样 HBM 能塞大约 2 倍 token 或更大 batch；读 KV 的带宽也减半。官方量化博客写过：GPT-J 一类从 fp16 KV 换 FP8 KV，H100 上 batch 可以到 2-3 倍，吞吐再跟一截。这和「权重 FP8 让 Tensor Core 更快」不是同一条 roofline。
+$T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重、INT4 AWQ）对症。$T$ 长或并发高：KV 线性涨，权重每步不变，墙转到 cache。$b$ 从 2（fp16）收到 1（FP8），同样 HBM 能塞大约 2 倍 token 或更大 batch；读 KV 的带宽也减半。官方量化博客写过：GPT-J 一类从 fp16 KV 换 FP8 KV，H100 上 batch 可以到 2-3 倍，throughput 再跟一截。这和「权重 FP8 让 Tensor Core 更快」不是同一条 roofline。
 
 因此权重和 KV 可以分别选择精度，常见组合包括：
 
@@ -49,13 +65,13 @@ $T$ 短、$B$ 小：读 $W$ 往往是主项，权重量化（W8A16、FP8 权重�
 - 两者都 FP8：Hopper serving 常见。
 - 权重 INT4、KV FP8：容量和读 $W$ 都狠，激活 / attention 仍可能较高精度。
 
-训练时的 FP8（Transformer Engine、延迟缩放、E4M3 / E5M2 分工）对的是正向 / 反向 GEMM，见 `nvidia-fp8`。KV cache 根本不参与反传。不要说「我们训了 FP8，所以 serving 的 cache 自动是 FP8」。
+训练时的 FP8（Transformer Engine、延迟缩放、E4M3 / E5M2 分工）对的是正向 / 反向 GEMM，见 `nvidia-fp8`。KV cache 根本不参与 backpropagation。不要说「我们训了 FP8，所以 serving 的 cache 自动是 FP8」。
 
 ## Scale 和误差不在同一个张量上
 
 权重量化：离线 PTQ，per-tensor 或 per-channel $s_W$，GEMM 里 $x_{\mathrm{fp8}} W_{\mathrm{fp8}}$，累加器 fp32 再 rescale。Outlier 在通道上，SmoothQuant / AWQ 那套故事，见 `nvidia-int8-quant`。
 
-KV 量化：K、V 是运行时写进去的激活，每步多一行。Scale 常常 per-tensor 粗、或沿 token / 通道更细。Attention 是 $QK^{\top}$，K 的误差直接进 logits；softmax 对少数过大的 logit 很敏感。V 的误差进加权和，相对钝一点。乱套「和权重同一个 per-tensor INT8」容易把长上下文注意力打崩。TRT-LLM 建议 Hopper / Ada 上 KV 用 FP8 而不是 INT8：E4M3 的动态范围对 cache 更友好，实测精度打击通常小于 INT8 KV。Ampere 没有原生 FP8 MMA，仍可能 FP8 存、算前转回。那是带宽收益，不是 Tensor Core 收益。
+KV 量化：K、V 是运行时写进去的激活，每步多一行。Scale 常常 per-tensor 粗、或沿 token / 通道更细。Attention 是 $QK^{\top}$，K 的误差直接进 logits；softmax 对少数过大的 logit 很敏感。V 的误差进加权和，相对钝一点。乱套「和权重同一个 per-tensor INT8」容易把长上下文 attention 打崩。TRT-LLM 建议 Hopper / Ada 上 KV 用 FP8 而不是 INT8：E4M3 的动态范围对 cache 更友好，实测精度打击通常小于 INT8 KV。Ampere 没有原生 FP8 MMA，仍可能 FP8 存、算前转回。那是带宽收益，不是 Tensor Core 收益。
 
 写 cache 时，attention plugin 可以在核内把新 K/V cast 成 FP8，再写入 paged block；读取时先 dequant 再和 $Q$ 点积，或者使用 FP8 attention。Paged 布局见 `nvidia-paged-kv`。Scale 要跟块一起存，否则 gather 回来无法还原。
 
@@ -82,4 +98,4 @@ $H_{\mathrm{kv}}$ 已经小了，容量压力轻一档，但 $T$ 到 128k 仍值
 - [[nvidia-kv-offload]]：KV 容量不够时的另一条路，算 PCIe 带宽为什么让热 KV 只能留在 HBM、先上 FP8。
 - [[nvidia-fp8]]：本题开头要区分的 FP8 训练配方，延迟缩放和 amax 历史都在那边。
 - [[sys-fp8-gemm]]：FP8 用在权重 GEMM 上的 scale 粒度和核，对应本题说的「权重量化」那笔账。
-- [[nvidia-int8-quant]]：常作为本题前一问的权重 INT8 量化，对称/非对称和校准都针对 GEMM 的权重和激活。
+- [[nvidia-int8-quant]]：常作为本题前一问的权重 INT8 量化，对称/非对称和 calibration 都针对 GEMM 的权重和激活。

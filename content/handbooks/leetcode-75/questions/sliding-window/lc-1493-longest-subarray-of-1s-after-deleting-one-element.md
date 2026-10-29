@@ -5,7 +5,8 @@ order: 4
 level: A
 title: LC 1493 · 删掉一个元素以后全为 1 的最长子数组
 quick: >-
-  删掉的那一格在结果里消失，所以等价于找「最多含一个 $0$」的最长窗口，答案是窗口长度减一。全 $1$ 时也必须删一个，答案 $n-1$。时间 $O(n)$，额外空间 $O(1)$。
+  删掉的那一格在结果里消失，所以等价于找「最多含一个 $0$」的最长窗口，答案是窗口长度减一。全 $1$ 时也必须删一个，答案 $n-1$。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Sliding Window
@@ -13,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1493. Longest Subarray of 1's After Deleting One Element
-    url: https://leetcode.com/problems/longest-subarray-of-1s-after-deleting-one-element/
+    url: >-
+      https://leetcode.com/problems/longest-subarray-of-1s-after-deleting-one-element/
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 全 $1$ 时最容易错。必须删一个，答案是 $n-1$，写成 $n$ 就错了；长度为 $1$ 时是 $0$。
 

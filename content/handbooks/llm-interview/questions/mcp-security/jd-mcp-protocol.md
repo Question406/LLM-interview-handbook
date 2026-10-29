@@ -4,7 +4,9 @@ section: mcp-security
 order: 190
 level: A
 title: 京东后端一面：MCP 底层协议是什么，它解决权限问题吗？
-quick: "MCP 底层是 JSON-RPC 风格的有状态会话：先 initialize 协商能力，再对 tools/resources/prompts 做 list 和 call。它统一的是怎么连、怎么发现、怎么回写结果，权限不归它管；执行前仍要在 Host 做身份、参数和副作用校验。"
+quick: >-
+  MCP 底层是 JSON-RPC 风格的有状态会话：先 initialize 协商能力，再对 tools/resources/prompts 做 list
+  和 call。它统一的是怎么连、怎么发现、怎么回写结果，权限不归它管；执行前仍要在 Host 做身份、参数和副作用校验。
 tags:
   - JD
   - MCP
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 京东后端-一面
-    url: https://www.nowcoder.com/feed/main/detail/ad9b86d7b29b4b5583840d0169458b0a
+    url: 'https://www.nowcoder.com/feed/main/detail/ad9b86d7b29b4b5583840d0169458b0a'
     type: candidate-first-hand
   - title: Model Context Protocol specification
-    url: https://modelcontextprotocol.io/specification/2025-03-26
+    url: 'https://modelcontextprotocol.io/specification/2025-03-26'
     type: primary
 ---
 
@@ -28,11 +30,11 @@ sources:
 - 团队 / 岗位：后端（问的几乎全是 Agent）
 - 届别 / 流程：一面
 - 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：“mcp底层协议是什么”
+- 原始措辞：“mcp 底层协议是什么”
 
 MCP 底层是 JSON-RPC 风格的有状态会话：Client / Host 先和 Server `initialize` 协商能力，之后对 tools、resources、prompts 做 list 和 call。它统一了怎么连、怎么发现、怎么回写结果，但不解决权限。谁能调、能动哪条数据，要在 Host 或网关上校验，Server 自己声明什么都不算数。
 
-京东这一面还追问了 Skills 和 AI IDE 的「幻读」，想听的就是这条边界：协议层连得上，策略层能不能拦住越权。只答到「能调工具」就停，或者说 MCP 已经做了权限，都会被追着问。
+京东这一面还追问了 Skills 和 AI IDE 的「幻读」，想听的就是这种区别：protocol 可以连通，策略层能不能拦住越权。只答到「能调工具」就停，或者说 MCP 已经做了权限，都会被追着问。
 
 举个例子：一个 Server 把查订单工具标成 `readOnly`，模型拿别人的 `order_id` 去调。参数完全符合 schema，协议调用也成功，如果 Host 不按当前登录用户校验订单归属，数据就漏出去了。
 
@@ -55,7 +57,7 @@ Server 可以声明工具注解，比如自称 `readOnly`、`destructive`，那�
 ## 追问
 
 **stdio 和 HTTP 哪个更安全？**
-都不会自动安全。stdio 默认是本机进程边界；HTTP 多了网络和会话劫持面，必须鉴权传输、设超时。
+都不会自动安全。stdio 默认是本机 process boundary；HTTP 多了网络和会话劫持面，必须鉴权传输、设超时。
 
 **inputSchema 够不够？**
 不够。它防的是类型错误，防不了「合法但越权」的参数，例如别人的 `order_id`。

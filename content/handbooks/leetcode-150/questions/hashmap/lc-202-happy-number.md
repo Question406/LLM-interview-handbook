@@ -5,7 +5,8 @@ order: 7
 level: A
 title: LC 202 · 快乐数
 quick: >-
-  不断把当前数换成各位数字的平方和，到 $1$ 就是快乐数，出现重复说明进了环。检环可以用 `seen` 集合，也可以用快慢指针，时间约 $O(\log n)$。
+  不断把当前数换成各位数字的平方和，到 $1$ 就是快乐数，出现重复说明进了环。检环可以用 `seen` 集合，也可以用快慢指针，时间约 $O(\log
+  n)$。
 tags:
   - Hash
   - Math
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 202. 快乐数
-    url: https://leetcode.cn/problems/happy-number/
+    url: 'https://leetcode.cn/problems/happy-number/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -103,7 +104,7 @@ print("simple tests passed")
 
 时间大约是 $O(\log n)$ 量级，因为下一步很快就掉进三位数以内。额外空间方面，集合是 $O(1)$ 量级，快慢指针是 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 已经在终点，直接返回真。$n=7$ 也会走到 $1$。
 

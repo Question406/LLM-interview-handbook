@@ -5,7 +5,9 @@ order: 1
 level: S
 title: Rippling：外卖员时薪结算，pay_up_to 不能双付
 quick: >-
-  每单带一个已付标记，pay_up_to 只结算 end 不超过截止时间的整单，同一单就不会付两次。接口是 addDriver、recordDelivery、getTotalCost，再加 pay_up_to 和未付金额，总工资在记单时累加。单子只在结束后写入，所以不用处理跨截止时间的单。
+  每单带一个已付标记，pay_up_to 只结算 end 不超过截止时间的整单，同一单就不会付两次。接口是
+  addDriver、recordDelivery、getTotalCost，再加 pay_up_to
+  和未付金额，总工资在记单时累加。单子只在结束后写入，所以不用处理跨截止时间的单。
 tags:
   - Rippling
   - Coding
@@ -13,37 +15,39 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
   - title: Rippling 店面过经，Driver Cost，2025-04
-    url: https://www.1point3acres.com/bbs/thread-1121843-1-1.html
+    url: 'https://www.1point3acres.com/bbs/thread-1121843-1-1.html'
     type: candidate-first-hand
   - title: Rippling SDE-2 Phone Screening，payUpToTime
-    url: https://leakcode.dev/question/33096
+    url: 'https://leakcode.dev/question/33096'
     type: secondary
   - title: Delivery Billing System
-    url: https://www.1point3acres.com/interview/problems/2a5d3aec-fd17-4ff7-9211-97a10e2a67b7
+    url: >-
+      https://www.1point3acres.com/interview/problems/2a5d3aec-fd17-4ff7-9211-97a10e2a67b7
     type: secondary
   - title: Rippling SDE-1 Interview Experience (2026)
-    url: https://medium.com/@parul947a/rippling-sde-1-interview-experience-2026-7583fe7ff8aa
+    url: >-
+      https://medium.com/@parul947a/rippling-sde-1-interview-experience-2026-7583fe7ff8aa
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 实现外卖员工资台账：登记时薪、记录已完成配送、查询累计工资，并将截止时间前已完成的整单标记为已支付，避免重复支付。
 
 ### 输入与接口
 
-实现 Payroll()，提供 `add_driver`(`driver_id`,`usd_hourly_rate`)、`record_delivery`(`driver_id`,start,end)、`get_total_cost`()、`pay_up_to`(`pay_time`)、unpaid()。driver_id为字符串；先登记再记单；时薪为非负有限美元数；start、end、pay_time使用Unix秒整数，start<end。每次record_delivery代表一笔不同的已完成订单。
+实现 Payroll()，提供 `add_driver`(`driver_id`,`usd_hourly_rate`)、`record_delivery`(`driver_id`,start,end)、`get_total_cost`()、`pay_up_to`(`pay_time`)、unpaid()。driver_id 为字符串；先登记再记单；时薪为非负有限美元数；start、end、pay_time 使用 Unix 秒整数，start<end。每次 record_delivery 代表一笔不同的已完成订单。
 
 ### 输出与约束
 
-每单金额单位为整数美分，按 round(`usd_hourly_rate`×(end-start)/3600×100) 计算，本练习沿用Python round的平票取偶约定。记单时固定金额；之后更新同司机时薪只影响新订单。同一司机重叠的订单分别计费，不合并时段。get_total_cost返回所有已记录订单总金额，含已付与未付；unpaid返回未付金额。
+每单金额单位为整数美分，按 round(`usd_hourly_rate`×(end-start)/3600×100) 计算，本练习沿用 Python round 的平票取偶约定。记单时固定金额；之后更新同司机时薪只影响新订单。同一司机重叠的订单分别计费，不合并时段。get_total_cost 返回所有已记录订单总金额，含已付与未付；unpaid 返回未付金额。
 
-pay_up_to只把end≤pay_time且尚未支付的整单标记已付，不按截止时间切分订单，返回None。重复付款或更早截止时间不得重复支付或撤销支付。付款后补录的订单初始仍为未付，下次适用的pay_up_to再结算。`add_driver`/record_delivery返回None，查询不得改变状态；空台账金额为0。
+pay_up_to 只把 end≤pay_time 且尚未支付的整单标记已付，不按截止时间切分订单，返回 None。重复付款或更早截止时间不得重复支付或撤销支付。付款后补录的订单初始仍为未付，下次适用的 pay_up_to 再结算。`add_driver`/record_delivery 返回 None，查询不得改变状态；空台账金额为0。
 
 ### 示例
 
@@ -60,7 +64,7 @@ pay_up_to(3600) 后 unpaid() -> 0
 
 这题的关键是给每单记一个已付标记，`pay_up_to` 只结算结束时间不超过截止时间、还没付过的整单，同一单就付不了两次。总工资在记单的时候累加，查询是 O(1)。
 
-题来自 2025 年 4 月的 Rippling 店面，作者原话是给外卖员算薪水。一开始三个接口：`add_driver(driver_id, usd_hourly_rate)`；`record_delivery(driver_id, start_time, end_time)`，订单完成后才写入；`get_total_cost()`，返回平台要付的总工资。后面再加 `pay_up_to(pay_time)`。楼主在回复里说只付已经结束的单，因为 record 只在结束时写入，所以输入里不会有「start 在截止前、end 在截止后、人还在送」这种单。重复支付不能发生。有现成测试，明显的边界建议自己提出来，用 print 看。
+题来自 2025 年 4 月的 Rippling 店面，作者原话是给外卖员算薪水。一开始三个接口：`add_driver(driver_id, usd_hourly_rate)`；`record_delivery(driver_id, start_time, end_time)`，订单完成后才写入；`get_total_cost()`，返回平台要付的总工资。后面再加 `pay_up_to(pay_time)`。楼主在回复里说只付已经结束的单，因为 record 只在结束时写入，所以输入里不会有「start 在截止前、end 在截止后、人还在送」这种单。重复支付不能发生。有现成测试，明显的 edge cases 建议自己提出来，用 print 看。
 
 2026 年 2 月另一则 SDE-2 电面（LeakCode 转的 Reddit）API 名字略不同：`addDriver`、`addDelivery(start, end)`、`getTotalCost`，然后 `payUpToTime` 和 `getCostToBePaid`。作者把未付写成总额减去已付，面试官说线性扫区间可以。这轮测试都过了，人还是被拒了。
 

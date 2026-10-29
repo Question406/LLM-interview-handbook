@@ -4,7 +4,9 @@ section: openai
 order: 41
 level: A
 title: OpenAI：可恢复迭代器，getState 之后还能接着 next
-quick: "我会把状态定义为下一次 next 要读取的位置，保存时返回独立值，setState 后能重复恢复，耗尽状态也一样。比如读完 1、2 时保存，恢复后下一项仍是 3；多文件时再把文件标识、版本和内部偏移嵌进状态。"
+quick: >-
+  我会把状态定义为下一次 next 要读取的位置，保存时返回独立值，setState 后能重复恢复，耗尽状态也一样。比如读完 1、2 时保存，恢复后下一项仍是
+  3；多文件时再把文件标识、版本和内部偏移嵌进状态。
 tags:
   - 完整编程练习
   - OpenAI
@@ -13,13 +15,15 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: Targeting OpenAI SWE Roles, r/leetcode
-    url: https://www.reddit.com/r/leetcode/comments/1qlzflr/targeting_openai_swe_roles_insights_on_what_to/
+  - title: 'Targeting OpenAI SWE Roles, r/leetcode'
+    url: >-
+      https://www.reddit.com/r/leetcode/comments/1qlzflr/targeting_openai_swe_roles_insights_on_what_to/
     type: secondary
-  - title: "FAANG-Coding-Interview-Questions, OpenAI bank"
-    url: https://github.com/ombharatiya/FAANG-Coding-Interview-Questions/blob/main/FAANG-Recent-Questions.md
+  - title: 'FAANG-Coding-Interview-Questions, OpenAI bank'
+    url: >-
+      https://github.com/ombharatiya/FAANG-Coding-Interview-Questions/blob/main/FAANG-Recent-Questions.md
     type: secondary
 ---
 
@@ -27,7 +31,7 @@ sources:
 
 实现嵌套数据的整数叶子遍历、结构恢复，以及可保存并恢复下一读取位置的迭代器。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -51,7 +55,7 @@ list(it) -> [2, 3]; it.set_state(s); next(it) -> 2
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试；公开来源只给了题型（见下面「题怎么来的」）。Python 3，只用标准库。
+> 下面的接口、约束和测试是手册补的练习约定；公开来源只给了题型（见下面「题怎么来的」）。Python 3，只用标准库。
 
 ### 题面、接口与约束
 
@@ -132,7 +136,7 @@ class Iterator:
     """遍历嵌套结构的叶子；状态是下一次 next 要返回的叶子下标。"""
 
     def __init__(self, x):
-        self.items = flatten(x)   # 构造后数据视为不可变
+        self.items = flatten(x)  # 构造后数据视为不可变
         self.pos = 0
 
     def __iter__(self):
@@ -163,7 +167,7 @@ class Iterator:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

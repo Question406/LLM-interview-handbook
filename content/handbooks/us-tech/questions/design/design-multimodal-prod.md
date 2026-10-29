@@ -3,32 +3,36 @@ id: design-multimodal-prod
 section: design
 order: 8
 level: A
-title: 设计：多模态助手（图/屏/语音），模态延迟不齐
-quick: "语音、图像、屏幕三路到达时间差一个数量级。契约是：没到的模态不当证据，先到的可以先应答或先问。端侧保隐私和首包；云端跑重视觉。评测分别看答案是否有证据、是否正确、是否适合口头播报，以及各模态超时后的行为。"
+title: 设计：multimodal 助手（图/屏/语音），模态延迟不齐
+quick: >-
+  语音、图像、屏幕三路到达时间差一个数量级。契约是：没到的模态不当证据，先到的可以先应答或先问。on-device
+  保隐私和首包；云端跑重视觉。评测分别看答案是否有证据、是否正确、是否适合口头播报，以及各模态超时后的行为。
 tags:
   - Multimodal
   - Apple
   - Google
   - Latency
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Introducing Apple Foundation Models
-    url: https://machinelearning.apple.com/research/introducing-apple-foundation-models
+    url: >-
+      https://machinelearning.apple.com/research/introducing-apple-foundation-models
     type: primary
   - title: Gemini — A Family of Highly Capable Multimodal Models
-    url: https://arxiv.org/abs/2312.11805
+    url: 'https://arxiv.org/abs/2312.11805'
     type: primary
   - title: Robust Speech Recognition via Large-Scale Weak Supervision
-    url: https://arxiv.org/abs/2212.04356
+    url: 'https://arxiv.org/abs/2212.04356'
     type: primary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -36,19 +40,27 @@ sources:
 
 ### 需要满足的功能
 
-- 将带时间戳的多模态输入关联到正确会话和当前问题。
+- 将带时间戳的 multimodal 输入关联到正确会话和当前问题。
 - 根据任务说明确定是否需要等待尚未就绪的模态，支持超时、部分可用和取消。
 - 支持回答播放中被用户打断，以及重新定位“这个/刚才那张”等指代。
 
 ### 约束与交付物
 
-需要说明各模态延迟与成本、设备/云端边界、信息保留和权限要求。未拿到当前图片时不能冒充看到了它，旧任务的工具结果也不能污染新一轮回答。
+需要说明各模态延迟与成本、on-device / server 分工、信息保留和权限要求。未拿到当前图片时不能冒充看到了它，旧任务的工具结果也不能 contamination 新一轮回答。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 用户问“图片上是什么品牌”，图片上传尚未完成时不能给出具体品牌；用户随后说“算了，问另一个问题”，旧图片的迟到结果不能继续推进已取消的回答。
+
+## 可以这样回答
+
+我会把语音、图像和屏幕当作带时间戳的证据流，按问题需要决定等哪一路。比如问「现在几点」可以先答，问「图里是什么牌子」就必须等图；图超时时明确说没看到，不能用参数记忆补一个品牌。状态机还要处理用户打断，停 TTS 并取消未发出的工具。
+
+Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看屏都涉及这类设计。Gemini 报告介绍模型能力，Apple 公开叙述包括 on-device 和 Private Cloud Compute。语音证据依据见 `apple-siri-grounded`；工具循环见 `design-agent-harness`。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
@@ -64,7 +76,7 @@ Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看�
 
 - 流式 ASR 部分假设：几百毫秒出词，整句更长。
 - 图编码 / 上传：三百毫秒到数秒，看分辨率和网。
-- 屏幕：全帧太贵，先 OCR + 区域裁剪 + 小视觉编码器；连续帧要采样，不要 30 fps 进大模型。
+- 屏幕：全帧太贵，先 OCR + 区域裁剪 + 小视觉编码器；连续帧要 sampling，不要 30 fps 进 large model。
 
 策略：
 
@@ -73,21 +85,21 @@ Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看�
 3. **超时。** 每路有 deadline。超时当该模态缺失，走拒答策略，而不是拿过期缓存图当这张图。
 4. **打断。** 用户说话时停 TTS、取消未发出的工具。状态机要能从「生成中」退回听。
 
-证据 $E$ 是带模态标签的结构：ASR 文本、图像 embedding / 描述、OCR 字、工具结果。生成条件是 $(q, E_{\mathrm{ready}})$，解码要对齐到 $E$ 里的跨度，同 Siri grounded 契约。
+证据 $E$ 是带模态标签的结构：ASR 文本、图像 embedding / 描述、OCR 字、工具结果。生成条件是 $(q, E_{\mathrm{ready}})$，decoding 要对齐到 $E$ 里的跨度，同 Siri grounded 契约。
 
-## 端侧、云端、失败模式
+## on-device、云端、失败模式
 
-隐私：截屏、相册、消息优先端侧小模型。不够再 PCC / 云，要用户可见的指示。逐帧上传会影响隐私和成本，Apple 场景要说明端侧优先的处理；Google / Microsoft 场景同样要交代保留期和关停开关。
+隐私：截屏、相册、消息优先 on-device small model。不够再 PCC / 云，要用户可见的指示。逐帧上传会影响隐私和成本，Apple 场景要说明 on-device 优先的处理；Google / Microsoft 场景同样要交代保留期和关停开关。
 
 对齐：用户说「这个」时，指的是当前帧还是上一张图，要把 UI 焦点和时间戳写进 $E$。语音时间轴和视频帧 ID 对不上，就会答错对象。多图要编号，口头也说编号。
 
-失败模式：图还没到，模型用预训练知识喊出品牌（听着很自信）；ASR 把药名听错，视觉其实对，融合时信了 ASR；屏幕 OCR 把价格小数点吃掉，工具下单用错金额；金额必须走确认框；首包为了快用了小模型，大模型稍后推翻，用户听到两套说法。
+失败模式：图还没到，模型用 pre-training 知识喊出品牌（听着很自信）；ASR 把药名听错，视觉其实对，融合时信了 ASR；屏幕 OCR 把价格小数点吃掉，工具下单用错金额；金额必须走确认框；首包为了快用了 small model，large model 稍后推翻，用户听到两套说法。
 
 延迟拆：TTFA（首包音频）、端到端、各模态等待时间、打断后静音间隔。p95 按网况分层。视觉超时率也要作为主要指标持续监控，不能只当作偶发问题。
 
-状态机四个态就够讲：听、等模态、说、打断。图超时从「等模态」进「说」时，口头必须带「我没看到图」。禁止在等图时用预训练知识报品牌。金额、药名、车牌这类槽位，ASR 和 OCR 不一致就问一句，不要默默选一边。
+状态机四个态就够讲：听、等模态、说、打断。图超时从「等模态」进「说」时，口头必须带「我没看到图」。禁止在等图时用 pre-training 知识报品牌。金额、药名、车牌这类槽位，ASR 和 OCR 不一致就问一句，不要默默选一边。
 
-分别评测：证据支持（答案能否在 $E$ 定位）、正确（工具/图金标）、voice fitness（长度、可 TTS）、模态缺失时的拒答是否对、延迟曲线随图像分辨率的变化。不要用 BLEU。人工集要覆盖：只有语音、只有图、图文冲突、弱网、打断。冲突时以用户当前焦点为准，并在口头里承认不确定。
+分别评测：证据支持（答案能否在 $E$ 定位）、正确（工具/图 gold labels）、voice fitness（长度、可 TTS）、模态缺失时的拒答是否对、延迟曲线随图像分辨率的变化。不要用 BLEU。人工集要覆盖：只有语音、只有图、图文冲突、弱网、打断。冲突时以用户当前焦点为准，并在口头里承认不确定。
 
 和内容安全：图和屏都要过同步轻量审核，儿童安全和违法图像不能等异步，见 `design-moderation`。
 
@@ -98,6 +110,6 @@ Apple Intelligence / Siri、Google Gemini 相机问答、Microsoft Copilot 看�
 **图后到要不要改口？**
 要，但先停 TTS 再补一句纠正；两段并存会像两个助手吵架。
 **连续看屏怎么控成本？**
-场景变化才重编码，差分帧、OCR 缓存、区域关注。固定 fps 进大模型会快速消耗费用和电量。
-**端侧和云端结果不一致？**
+场景变化才重编码，差分帧、OCR 缓存、区域关注。固定 fps 进 large model 会快速消耗费用和电量。
+**on-device 和云端结果不一致？**
 以用户当前会话选的路径为准并审计；不要静默升级到云。

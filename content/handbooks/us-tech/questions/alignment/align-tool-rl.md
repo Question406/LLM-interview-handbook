@@ -4,7 +4,9 @@ section: alignment
 order: 23
 level: A
 title: 对齐：只对工具成功给奖，还是逐步过程奖
-quick: "工具 RL 以任务最终成功为主奖励，再给可可靠检查的中间事件少量过程分。比如参数合法、HTTP 成功可以辅助学习，但不能代替工单真的处理完；否则模型可能靠重复调用刷分。"
+quick: >-
+  工具 RL 以任务最终成功为主奖励，再给可可靠检查的中间事件少量过程分。比如参数合法、HTTP
+  成功可以辅助学习，但不能代替工单真的处理完；否则模型可能靠重复调用刷分。
 tags:
   - OpenAI
   - Anthropic
@@ -13,16 +15,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Let's Verify Step by Step
-    url: https://arxiv.org/abs/2305.20050
+    url: 'https://arxiv.org/abs/2305.20050'
     type: primary
   - title: Function calling
-    url: https://platform.openai.com/docs/guides/function-calling
+    url: 'https://platform.openai.com/docs/guides/function-calling'
     type: primary
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
 ---
 
@@ -40,7 +42,7 @@ $$
 
 $\lambda$ 一大，策略会最大化 $\sum s_k$：无必要调用、重复查询、把同一 API 拆成十次。$r^{\mathrm{out}}$ 变成装饰。所以过程奖只做 shaping，任务成功仍要单独检查。
 
-另一种更隐蔽的问题：奖「调用了工具」而不是「调用对了」。trace 里出现 tool 块就加分，模型学会每轮都调，却不认真利用工具返回的结果。正确的过程事件是环境可观测的：返回码、单测断言、是否改到了目标文件。人读 思维链（CoT，即分步推理过程） 打的「这一步有用吗」噪声大，且不可复现。
+另一种更隐蔽的问题：奖「调用了工具」而不是「调用对了」。trace 里出现 tool 块就加分，模型学会每轮都调，却不认真利用工具返回的结果。正确的过程事件是环境可观测的：返回码、单测断言、是否改到了目标文件。人读 chain of thought（CoT，即分步推理过程） 打的「这一步有用吗」噪声大，且不可复现。
 
 ```python
 def tool_reward(task_ok, events, lam=0.05):
@@ -53,9 +55,9 @@ $\lambda$ 从小值开始逐步试验。曲线要同时看任务成功率、平�
 
 ## 怎么接入训练和评测
 
-能用规则核验的中间状态，优先用规则。开放网页没有 oracle 时，学习到的工具 PRM 容易只奖励「看起来会用浏览器」。也可以让过程分只做搜索启发式，outcome 做终局门禁，减少它改变训练目标的风险。
+能用规则核验的中间状态，优先用规则。开放网页没有 oracle 时，学习到的工具 PRM 容易只奖励「看起来会用浏览器」。也可以让过程分只做搜索启发式，outcome 做终局 acceptance checks，减少它改变训练目标的风险。
 
-和 RFT 的关系：grader 可以只看终局，也可以看 trace 约束（禁止某工具、必须引用）。约束是政策，不是稠密 shaping。政策用硬规则在宿主执行，见 `design-agent-harness`；只靠强化学习（RL）让模型学会「别调用」，收敛慢且容易失效。
+和 RFT 的关系：grader 可以只看终局，也可以看 trace 约束（禁止某工具、必须引用）。约束是政策，不是稠密 shaping。政策用硬规则在宿主执行，见 `design-agent-harness`；只靠 RL 让模型学会「别调用」，收敛慢且容易失效。
 
 评测要检查工具失败重试是否也拿了过程分，确认框是否在模拟器里被默认跳过，以及模型有没有对错误站点拿到 200。模拟器版本要固定，否则训练和线上契约可能不一致。
 

@@ -29,9 +29,9 @@ Warmup 有用，是因为训练刚开始时 optimizer 的一阶 / 二阶矩、�
 
 Adam / AdamW 的 $\hat{m},\hat{v}$ 从 0 起步，前几步 $v$ 偏小，这就是上面例子的来源。Adam 的偏差修正 $(\hat{m}/(1-\beta_1^t))$ 在 $t$ 很小时还会放大早期梯度，这是矩估计本身的问题，warmup 用小 $\eta$ 去对冲这段不可靠。
 
-Transformer 还有自己的早期毛病：残差和注意力还没学会合理的尺度，过大的更新会让某一层的输出范数主导后面所有层。Warmup 期间模型相当于在用很小的步长做校准，等二阶矩和激活进入可工作的范围，再用目标 LR。Goyal 等人把线性 warmup 当作大 batch SGD 能逼近小 batch 曲线的条件之一，Vaswani 等人的 Transformer 用的是 warmup 后再逆平方根衰减。两者场景不同，思路一样：先让优化器和网络进入可预测的局部，再给满步长。
+Transformer 还有自己的早期毛病：残差和 attention 还没学会合理的尺度，过大的更新会让某一层的输出范数主导后面所有层。Warmup 期间模型相当于在用很小的步长做 calibration，等二阶矩和激活进入可工作的范围，再用目标 LR。Goyal 等人把线性 warmup 当作大 batch SGD 能逼近小 batch 曲线的条件之一，Vaswani 等人的 Transformer 用的是 warmup 后再逆平方根衰减。两者场景不同，思路一样：先让优化器和网络进入可预测的局部，再给满步长。
 
-所以 warmup 多长没有和模型无关的定律，要看初始化、batch、深度、是否用预归一化。Pre-LN 通常比 Post-LN 更能忍短 warmup，但也不能据此就取消。小 batch 的噪声本身像一种正则，warmup 的收益往往更小。面试时别背「Transformer 都必须 warmup 多少步」，说清它在保护什么就够了。
+所以 warmup 多长没有和模型无关的定律，要看初始化、batch、深度、是否用预 normalization。Pre-LN 通常比 Post-LN 更能忍短 warmup，但也不能据此就取消。小 batch 的噪声本身像一种正则，warmup 的收益往往更小。面试时别背「Transformer 都必须 warmup 多少步」，说清它在保护什么就够了。
 
 ## 日程怎么接、怎么验收
 
@@ -43,7 +43,7 @@ Warmup 和 gradient clipping 是两件事：clip 限制单步范数，warmup 限
 
 ## Post-training 和 RL 里的同类问题
 
-监督微调（SFT）之后接 PPO / GRPO 时，奖励分数（reward）和 advantage 的尺度一开始也不稳：奖励模型（RM）分数没归一，组内 baseline 还在抖。这时用目标 KL 系数和学习率直接推策略，容易一步 drift。短 warmup，或者从小 $\eta$、从保守的 $\beta$ 过渡，作用和预训练一样，等优势估计的统计稳定了再允许较大更新。机制相同，保护的对象不同：预训练保的是激活和 Adam 矩，RL 保的是策略相对 $\pi_{\mathrm{ref}}$ 的距离。
+SFT 之后接 PPO / GRPO 时，奖励分数（reward）和 advantage 的尺度一开始也不稳：reward model（RM）分数没归一，组内 baseline 还在抖。这时用目标 KL 系数和学习率直接推策略，容易一步 drift。短 warmup，或者从小 $\eta$、从保守的 $\beta$ 过渡，作用和预训练一样，等 advantage estimation 的统计稳定了再允许较大更新。机制相同，保护的对象不同：预训练保的是激活和 Adam 矩，RL 保的是策略相对 $\pi_{\mathrm{ref}}$ 的距离。
 
 RL 里用自适应 KL controller 也有滞后。前几步实测的 KL 不可靠，立刻按它猛调 $\beta$ 会振荡；先固定 $\beta$ 或限制 $\beta$ 的变化率，相当于给 controller 做 warmup。SFT 自己也可以 warmup：从预训练 LR 切到指令数据时分布突变，短 warmup 能减少一上来就把指令格式冲掉。原则都一样，统计没稳时别给满步长。
 

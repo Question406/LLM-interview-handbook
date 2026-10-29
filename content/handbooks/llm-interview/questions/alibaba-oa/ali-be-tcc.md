@@ -5,20 +5,21 @@ order: 56
 level: A
 title: 阿里研发面：2PC、TCC、Seata 各解决什么？
 quick: >-
-  2PC 由协调者收集参与者投票，再决定提交或回滚，强一致，但等待期间可能一直占着资源。TCC 由业务实现 Try 预留、Confirm 提交和 Cancel 释放，要处理空回滚、悬挂和幂等。Seata 提供 AT 模式，用 SQL 拦截和 undo 自动处理，也提供业务自己实现的 TCC 模式。
+  2PC 由协调者收集参与者投票，再决定提交或回滚，强一致，但等待期间可能一直占着资源。TCC 由业务实现 Try 预留、Confirm 提交和 Cancel
+  释放，要处理空回滚、悬挂和幂等。Seata 提供 AT 模式，用 SQL 拦截和 undo 自动处理，也提供业务自己实现的 TCC 模式。
 tags:
   - Alibaba
   - 分布式事务
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
   - title: 阿里校招 Java 面经（秒杀/LRU）
-    url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
+    url: 'https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6'
     type: candidate-first-hand
 ---
 
@@ -63,4 +64,4 @@ Seata 在中台项目里出现得多。新服务如果 SQL 规整、冲突不高
 略大于下游 P99 之和。太长会占着库存，太短会误 Cancel。
 
 **怎么证明幂等做对了？**
-同一个 `xid` 重复 Confirm，库存只少一次，并且有唯一索引兜底。
+同一个 `xid` 重复 Confirm，库存只少一次，并且有 unique constraint 防止重复写入。

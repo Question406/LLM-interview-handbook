@@ -1,0 +1,213 @@
+[
+  {
+    "id": "report-gray-swan-ipi",
+    "title": "Gray Swan IPI / ART：frontier reports 怎样测多次尝试后的 injection risk？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-gray-swan-ipi.md",
+    "benchmarkIds": [
+      "gray-swan-ipi"
+    ]
+  },
+  {
+    "id": "report-strongreject",
+    "title": "StrongREJECT：怎样避免把空洞回答误判为成功 jailbreak？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-strongreject.md",
+    "benchmarkIds": [
+      "strongreject"
+    ]
+  },
+  {
+    "id": "report-crescendo",
+    "title": "Crescendo：多轮 jailbreak 方法为什么不能当成固定测试集？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-crescendo.md",
+    "benchmarkIds": [
+      "crescendo"
+    ]
+  },
+  {
+    "id": "report-cyberseceval",
+    "title": "CyberSecEval：一个 suite 为什么包含方向相反的安全指标？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-cyberseceval.md",
+    "benchmarkIds": [
+      "cyberseceval"
+    ]
+  },
+  {
+    "id": "report-cybench",
+    "title": "Cybench：CTF pass@k 可以说明 agent 的哪种能力？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-cybench.md",
+    "benchmarkIds": [
+      "cybench"
+    ]
+  },
+  {
+    "id": "report-cybergym",
+    "title": "CyberGym：为什么曾经常见，而最新报告开始换掉它？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-cybergym.md",
+    "benchmarkIds": [
+      "cybergym"
+    ]
+  },
+  {
+    "id": "report-cve-bench",
+    "title": "CVE-Bench：zero-day / one-day、source access 和任务子集怎样影响结果？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-cve-bench.md",
+    "benchmarkIds": [
+      "cvebench"
+    ]
+  },
+  {
+    "id": "report-exploit-frontier",
+    "title": "ExploitBench / ExploitGym：为什么 crash 不够，为什么还要看 capability ladder？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-exploit-frontier.md",
+    "benchmarkIds": [
+      "exploitbench",
+      "exploitgym"
+    ]
+  },
+  {
+    "id": "report-shade-arena",
+    "title": "SHADE-Arena：高 stealth success 和高 safety score 到底方向相同吗？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-shade-arena.md",
+    "benchmarkIds": [
+      "shade"
+    ]
+  },
+  {
+    "id": "report-linux-arena",
+    "title": "LinuxArena：为什么真实工作环境中的 control evaluation 值得关注？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-linux-arena.md",
+    "benchmarkIds": [
+      "linuxarena"
+    ]
+  },
+  {
+    "id": "report-mask-honesty",
+    "title": "MASK / MASK-Rectified：honesty 为什么不能用 factual accuracy 替代？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-mask-honesty.md",
+    "benchmarkIds": [
+      "mask"
+    ]
+  },
+  {
+    "id": "report-bbq",
+    "title": "BBQ：为什么 ambiguous accuracy、disambiguated accuracy 和 bias score 都要看？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-bbq.md",
+    "benchmarkIds": [
+      "bbq"
+    ]
+  },
+  {
+    "id": "report-bio-risk-suite",
+    "title": "WMDP、LAB-Bench、VCT、ProtocolQA、FORTRESS：怎样区分 knowledge 与 safeguards？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-bio-risk-suite.md",
+    "benchmarkIds": [
+      "wmdp",
+      "labbench",
+      "vct",
+      "protocolqa",
+      "fortress"
+    ]
+  },
+  {
+    "id": "report-healthbench",
+    "title": "HealthBench / Professional：为什么属于 safety report，又不是通用 security benchmark？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-healthbench.md",
+    "benchmarkIds": [
+      "healthbench",
+      "healthbenchpro"
+    ]
+  },
+  {
+    "id": "report-internal-injection",
+    "title": "报告里的 internal injection evals：怎样读 OpenAI、Claude 与 Gemini 的不同 surfaces？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-internal-injection.md",
+    "benchmarkIds": [
+      "gptred",
+      "openai-injection",
+      "anthropic-injection",
+      "gemini-injection"
+    ]
+  },
+  {
+    "id": "report-internal-alignment",
+    "title": "Destructive actions、CoT monitoring 与 behavioral audits：怎样避免把观测性当安全性？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-internal-alignment.md",
+    "benchmarkIds": [
+      "monitorability",
+      "destructive-actions"
+    ]
+  },
+  {
+    "id": "report-capability-controls",
+    "title": "SWE-bench、Terminal-Bench、OSWorld、MCP-Atlas：为什么安全实验也要看这些？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-capability-controls.md",
+    "benchmarkIds": [
+      "capability-controls"
+    ]
+  },
+  {
+    "id": "report-metrics-comparability",
+    "title": "读 safety 表格：百分比、ASR、pass@k 与 refusal 为什么不能直接排名？",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-metrics-comparability.md",
+    "benchmarkIds": [
+      "gray-swan-ipi",
+      "mask",
+      "harmful-benign"
+    ]
+  },
+  {
+    "id": "report-benchmarks-map",
+    "title": "Frontier Reports：主流 Safety / Security Benchmarks 速查与阅读顺序",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-benchmarks-map.md",
+    "benchmarkIds": [
+      "gray-swan-ipi",
+      "cyberseceval",
+      "strongreject",
+      "shade",
+      "linuxarena",
+      "mask",
+      "bbq",
+      "cybergym",
+      "cvebench",
+      "monitorability"
+    ]
+  },
+  {
+    "id": "report-benchmarks-evidence",
+    "title": "官方采用证据表：Benchmark、Report、版本、公开程度与历史替换",
+    "file": "content/handbooks/llm-safety-security/questions/report-benchmarks/report-benchmarks-evidence.md",
+    "benchmarkIds": [
+      "gray-swan-ipi",
+      "strongreject",
+      "crescendo",
+      "cyberseceval",
+      "cybench",
+      "cybergym",
+      "cvebench",
+      "exploitbench",
+      "exploitgym",
+      "shade",
+      "linuxarena",
+      "mask",
+      "bbq",
+      "wmdp",
+      "labbench",
+      "vct",
+      "protocolqa",
+      "fortress",
+      "healthbench",
+      "healthbenchpro",
+      "gptred",
+      "openai-injection",
+      "anthropic-injection",
+      "gemini-injection",
+      "monitorability",
+      "destructive-actions",
+      "harmful-benign",
+      "capability-controls",
+      "harmbench",
+      "xstest",
+      "agentdojo"
+    ]
+  }
+]

@@ -4,29 +4,32 @@ section: xai
 order: 3
 level: A
 title: xAI coding：API rate limiter，多租户公平和突发
-quick: "我会用懒填充令牌桶，每个 key 只存余额和时间戳，请求到来再按经过的时间补额度。多租户同时检查用户桶和全局桶，都够才原子扣减；配额隔离之外，排队还要单独按权重调度，才能处理公平和突发。"
+quick: >-
+  我会用懒填充令牌桶，每个 key
+  只存余额和时间戳，请求到来再按经过的时间补额度。多租户同时检查用户桶和全局桶，都够才原子扣减；配额隔离之外，排队还要单独按权重调度，才能处理公平和突发。
 tags:
   - 完整编程练习
   - xAI
   - Rate Limiter
   - Token Bucket
   - Coding
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Get a Job at xAI — Interview Process and Top Questions
-    url: https://www.tryexponent.com/blog/xai-interview-process
+    url: 'https://www.tryexponent.com/blog/xai-interview-process'
     type: secondary
   - title: xAI Software Engineer Interview Guide
-    url: https://www.tryexponent.com/guides/xai-software-engineer-interview
+    url: 'https://www.tryexponent.com/guides/xai-software-engineer-interview'
     type: secondary
   - title: xAI Interview Questions from Candidate Reports
-    url: https://aceoffer.app/interviews/xai
+    url: 'https://aceoffer.app/interviews/xai'
     type: secondary
   - title: Practice xAI Mock Interviews
-    url: https://igotanoffer.com/en/mock-interviews/company/xai
+    url: 'https://igotanoffer.com/en/mock-interviews/company/xai'
     type: secondary
 ---
 
@@ -34,7 +37,9 @@ sources:
 
 实现每用户与全局共同生效的令牌桶限流器，保证并发请求的扣费原子性。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Limiter(user_capacity,user_rate,global_capacity,global_rate)` 接收有限正数。用户桶首次出现时为满桶，全局桶初始也为满桶；每桶按经过时间乘对应 rate 补充令牌，最多补至 capacity。
 
@@ -57,7 +62,7 @@ allow("b",1,1)=True
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是原帖题面或官方测试。Python 3，只用标准库。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3，只用标准库。
 
 ### 题面、接口与约束
 
@@ -99,14 +104,16 @@ class Limiter:
     def __init__(self, user_capacity, user_rate, global_capacity, global_rate):
         params = (user_capacity, user_rate, global_capacity, global_rate)
         if any(not math.isfinite(value) or value <= 0 for value in params):
-            raise ValueError(f"capacities and rates must be positive and finite, got {params}")
+            raise ValueError(
+                f"capacities and rates must be positive and finite, got {params}"
+            )
         self.user_capacity = user_capacity
         self.user_rate = user_rate
         self.global_capacity = global_capacity
         self.global_rate = global_rate
-        self.user_buckets = {}         # user -> (tokens, last_refill_time)
+        self.user_buckets = {}  # user -> (tokens, last_refill_time)
         self.global_tokens = global_capacity
-        self.last_time = None          # 上一次调用的 now，整个 limiter 共用
+        self.last_time = None  # 上一次调用的 now，整个 limiter 共用
         self.lock = Lock()
 
     def allow(self, user, cost, now):
@@ -120,11 +127,15 @@ class Limiter:
                 if now < self.last_time:
                     raise ValueError(f"time went backwards: {now} < {self.last_time}")
                 elapsed = now - self.last_time
-                self.global_tokens = min(self.global_capacity,
-                                         self.global_tokens + elapsed * self.global_rate)
+                self.global_tokens = min(
+                    self.global_capacity,
+                    self.global_tokens + elapsed * self.global_rate,
+                )
             self.last_time = now
             tokens, last_refill = self.user_buckets.get(user, (self.user_capacity, now))
-            tokens = min(self.user_capacity, tokens + (now - last_refill) * self.user_rate)
+            tokens = min(
+                self.user_capacity, tokens + (now - last_refill) * self.user_rate
+            )
             accepted = tokens >= cost and self.global_tokens >= cost
             if accepted:
                 tokens -= cost
@@ -141,7 +152,7 @@ class Limiter:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -204,7 +215,7 @@ assert accepted == 7
 
 ## 题怎么来的
 
-公开汇总里这道题有 coding 和 design 两种形态：先实现单个 URL 或单个 key 的限流，再加复合规则、按 payload 计费和多租户配额。Exponent 把 rate limiter 和 KV 事务并列为 xAI 的高频应用题，AceOffer 写过 lazy-refill 令牌桶。它不是某一场能引用 experience id 的逐字原题，准备目标是「写出能跑的类，并把公平和突发讲清楚」。口味和 `xai-kv-txn` 一样：考的是共享状态、时钟和并发，不是 LeetCode 花样。
+公开汇总里这道题有 coding 和 design 两种形态：先实现单个 URL 或单个 key 的限流，再加复合规则、按 payload 计费和多租户配额。Exponent 把 rate limiter 和 KV 事务并列为 xAI 的高频应用题，AceOffer 写过 lazy-refill 令牌桶。来源：本手册题型整理，练习目标是「写出能跑的类，并把公平和突发讲清楚」。口味和 `xai-kv-txn` 一样：考的是共享状态、时钟和并发，不是 LeetCode 花样。
 
 ## 先写懒填充桶，再谈分布式
 
@@ -242,7 +253,7 @@ class TokenBucket:
 常见误区：
 
 - 另起线程定时 refill。OA 里很难测，还会和请求线程抢状态。
-- 用固定窗口计数。窗口边界处可以出现两倍的突发。
+- 用固定窗口计数。window boundaries 处可以出现两倍的突发。
 - 用漏桶。漏桶只做平滑，不能「先攒再爆」，和产品说的 burst 对不上。
 
 滑动窗口更准，但状态更重，留作 follow-up。
@@ -275,7 +286,7 @@ burst 先吃掉尖峰，之后返回 429。公平队列保证小租户仍能拿�
 限流在入口保护 GPU 队列，batching 在内部提高利用率。入口公平不等于 decode 阶段的公平，后者还要看 KV 占用和抢占，见 `xai-grok-moe`。
 
 **固定窗口能过吗？**
-计数可以写对，但窗口边界处的突发会达到 $2r$。要自己点出这一点，再换成令牌桶。
+计数可以写对，但 window boundaries 处的突发会达到 $2r$。要自己点出这一点，再换成令牌桶。
 
 ## 相关题
 

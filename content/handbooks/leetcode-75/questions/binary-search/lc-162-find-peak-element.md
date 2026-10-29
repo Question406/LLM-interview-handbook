@@ -5,20 +5,21 @@ order: 3
 level: S
 title: LC 162 · 寻找峰值
 quick: >-
-  比较 `mid` 和 `mid+1` 做二分，往更大的一侧走，那一侧一定有峰（两端外视为 $-\infty$）。时间 $O(\log n)$，额外空间 $O(1)$。
+  比较 `mid` 和 `mid+1` 做二分，往更大的一侧走，那一侧一定有峰（两端外视为 $-\infty$）。时间 $O(\log n)$，额外空间
+  $O(1)$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 162. Find Peak Element
-    url: https://leetcode.com/problems/find-peak-element/
+    url: 'https://leetcode.com/problems/find-peak-element/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -114,7 +115,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $n=1$ 时两端外侧都是 $-\infty$，唯一元素就是峰，循环不进，返回 $0$。
 - 单调升时每次都往右收，`lo` 推到末尾，峰在最后一个。

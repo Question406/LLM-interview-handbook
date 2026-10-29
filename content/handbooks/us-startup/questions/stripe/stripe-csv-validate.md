@@ -5,7 +5,8 @@ order: 2
 level: S
 title: Stripe：多行 CSV 做数据集校验，店面三 part
 quick: >-
-  先写一个只管切行切列的 reader，再每个 part 加一条规则：逐行拒绝空字段，按 banned word 滤掉，用 stop word 对其中两列做 tokenize。输入是一整段多行 CSV 字符串。题干很长，先和面试官整理成能测试的规则，再写实现。
+  先写一个只管切行切列的 reader，再每个 part 加一条规则：逐行拒绝空字段，按 banned word 滤掉，用 stop word 对其中两列做
+  tokenize。输入是一整段多行 CSV 字符串。题干很长，先和面试官整理成能测试的规则，再写实现。
 tags:
   - Stripe
   - Coding
@@ -13,31 +14,31 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
   - title: Stripe L3 全套挂经，2026 年 3 月 senior 店面
-    url: https://www.1point3acres.com/bbs/thread-1171504-1-1.html
+    url: 'https://www.1point3acres.com/bbs/thread-1171504-1-1.html'
     type: candidate-first-hand
   - title: Stripe Software Engineer Interview Guide，CSV 另一变体
-    url: https://www.tryexponent.com/guides/stripe-software-engineer-interview
+    url: 'https://www.tryexponent.com/guides/stripe-software-engineer-interview'
     type: secondary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
-实现数据集校验的CSV读取核心：把整段CSV字符串解析为表头和数据行，并保留带引号字段中的逗号。公开面经提及空字段检查、banned word和两列tokenize，但没有留下后两部分完整语义；本页可运行主练习仅覆盖已有明确实现的reader。
+实现数据集校验的 CSV 读取核心：把整段 CSV 字符串解析为表头和数据行，并保留带引号字段中的逗号。公开面经提及空字段检查、banned word 和两列 tokenize，但没有留下后两部分完整语义；本页可运行主练习仅覆盖已有明确实现的 reader。
 
 ### 输入与接口
 
-实现 rows(text)。text为合法CSV语法的非空字符串，第一条记录是表头；表头名唯一且非空，原样保留。合法练习输入中的每条数据记录与表头列数一致，且字段去首尾空白后非空；允许带引号的逗号与标准CSV转义。
+实现 rows(text)。text 为合法 CSV 语法的非空字符串，第一条记录是表头；表头名唯一且非空，原样保留。合法练习输入中的每条数据记录与表头列数一致，且字段去首尾空白后非空；允许带引号的逗号与标准 CSV 转义。
 
 ### 输出与约束
 
-返回 (header,out)：header为表头字符串列表；out按数据记录输入顺序返回字典列表，键为对应表头，值为字段去首尾空白后的字符串。只含表头时返回空out，不把字段自动转换成数字或布尔值；不修改表头大小写。
+返回 (header,out)：header 为表头字符串列表；out 按数据记录输入顺序返回字典列表，键为对应表头，值为字段去首尾空白后的字符串。只含表头时返回空 out，不把字段自动转换成数字或布尔值；不修改表头大小写。
 
-需使用标准CSV字段语义，不能简单按逗号split。空字段拒绝、banned word过滤与去stop words分词是后续需求讨论，正常输入测例不要求异常处理；后两项必须另行明确列名、大小写、词边界及输出格式后再实现，不能把推测规则混入rows默认行为。
+需使用标准 CSV 字段语义，不能简单按逗号 split。空字段拒绝、banned word 过滤与去 stop words 分词是后续需求讨论，正常输入测例不要求异常处理；后两项必须另行明确列名、大小写、word boundaries 及输出格式后再实现，不能把推测规则混入 rows 默认行为。
 
 ### 示例
 
@@ -62,6 +63,7 @@ rows("name,note\n" 中含实际换行) -> (["name","note"],[])
 import csv
 import io
 
+
 def rows(text):
     reader = csv.reader(io.StringIO(text))
     header = next(reader)
@@ -73,7 +75,7 @@ def rows(text):
     return header, out
 ```
 
-第二 part 用集合查 banned word。帖子没说是整格相等还是子串，我会问。整格相等就是 `value in banned`；子串的话还要定大小写和单词边界。
+第二 part 用集合查 banned word。帖子没说是整格相等还是子串，我会问。整格相等就是 `value in banned`；子串的话还要定大小写和 word boundaries。
 
 第三 part 只对面试官点名的两列切词，stop word 先放进 set。切完如果要求「两列之间有某种重合」，就用集合交集，别双重循环扫词。
 

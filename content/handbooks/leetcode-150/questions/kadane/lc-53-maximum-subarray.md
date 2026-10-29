@@ -5,7 +5,8 @@ order: 1
 level: S
 title: LC 53 · 最大子数组和
 quick: >-
-  用 Kadane：`dp = max(x, dp + x)`，当前数要么单开一段，要么接在上一段后面，同时维护全局最大。时间 $O(n)$，额外空间 $O(1)$。
+  用 Kadane：`dp = max(x, dp + x)`，当前数要么单开一段，要么接在上一段后面，同时维护全局最大。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - DP
   - Kadane
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 53. 最大子数组和
-    url: https://leetcode.cn/problems/maximum-subarray/
+    url: 'https://leetcode.cn/problems/maximum-subarray/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 全是负数时 `cur` 每次都从自己重开，`best` 是最大的那个负数。这题不允许空子数组（和为 $0$），所以不能返回 $0$。只有一个元素时循环不进，返回它自己。全是正数时整段加起来就是答案。
 

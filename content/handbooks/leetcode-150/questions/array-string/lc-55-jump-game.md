@@ -4,7 +4,9 @@ section: array-string
 order: 9
 level: S
 title: LC 55 · 跳跃游戏
-quick: "贪心维护最远可达下标 `farthest`：扫到 $i$ 时若 $i \\gt$ `farthest` 就失败，否则用 $i+$`nums[i]` 更新最远，碰到终点就成功。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  贪心维护最远可达下标 `farthest`：扫到 $i$ 时若 $i \gt$ `farthest` 就失败，否则用 $i+$`nums[i]`
+  更新最远，碰到终点就成功。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 55. 跳跃游戏
-    url: https://leetcode.cn/problems/jump-game/
+    url: 'https://leetcode.cn/problems/jump-game/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时已经站在终点，返回 `true`。中间有 $0$ 但能从更早的位置越过时，`farthest` 会先跨过这个 $0$。最后一个是 $0$ 也没关系，踩到它就算到达，不用再往前跳。
 

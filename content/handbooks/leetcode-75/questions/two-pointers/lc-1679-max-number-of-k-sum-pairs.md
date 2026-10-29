@@ -5,7 +5,8 @@ order: 4
 level: A
 title: LC 1679 · K 和数对的最大数目
 quick: >-
-  先排序，再用双指针从两端往中间收：和小了 `l` 右移，大了 `r` 左移，等于 `k` 就配一对、两边同时内收。这样是 $O(n\log n)$；换成计数哈希扫一遍，可以做到 $O(n)$ 时间、$O(n)$ 空间。
+  先排序，再用双指针从两端往中间收：和小了 `l` 右移，大了 `r` 左移，等于 `k` 就配一对、两边同时内收。这样是 $O(n\log
+  n)$；换成计数哈希扫一遍，可以做到 $O(n)$ 时间、$O(n)$ 空间。
 tags:
   - Array
   - Two Pointers
@@ -14,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1679. Max Number of K-Sum Pairs
-    url: https://leetcode.com/problems/max-number-of-k-sum-pairs/
+    url: 'https://leetcode.com/problems/max-number-of-k-sum-pairs/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -115,7 +116,7 @@ print("simple tests passed")
 
 排序版时间 $O(n\log n)$，额外空间 $O(n)$，花在 `sorted` 拷贝上；原地排序的话就是排序的栈空间。
 
-## 边界
+## Edge Cases
 
 `k` 是偶数且有多个 `k/2` 时，比如 `[3,3,3]`、$k=6$，只能配一对，指针相遇就停下。
 

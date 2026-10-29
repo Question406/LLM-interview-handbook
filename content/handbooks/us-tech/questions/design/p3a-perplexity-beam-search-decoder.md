@@ -3,8 +3,8 @@ id: p3a-perplexity-beam-search-decoder
 section: design
 order: 609
 level: S
-title: "Perplexity：Beam Search：`next_token_fn` 与停止条件"
-quick: "beam 保存 token 序列、累计 log 概率和结束标记，每步只扩展活跃 beam 并全局截断，步数用完或全部 beam 结束时停止。"
+title: Perplexity：Beam Search：`next_token_fn` 与停止条件
+quick: beam 保存 token 序列、累计 log 概率和结束标记，每步只扩展活跃 beam 并全局截断，步数用完或全部 beam 结束时停止。
 companies:
   - ai-labs
 tags:
@@ -16,29 +16,30 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · beam-search-decoder"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/beam-search-decoder
+  - title: 1Point3Acres · Perplexity · beam-search-decoder
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/beam-search-decoder
     type: secondary
 ---
 
 ## 题目描述
 
-给定一个返回下一 token 对数概率的回调，实现无长度惩罚、带 EOS 停止条件的 beam decoder。
+给定一个返回下一 token log probability 的回调，实现无长度惩罚、带 EOS 停止条件的 beam decoder。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `beam_search(next_logprobs, start, eos, width, max_new)`：`start` 是已有 token id 列表，`eos` 是终止 token id；从 `start` 开始最多生成 `max_new` 个 token，返回剩下的所有 beam，格式是 `[(tokens, score), ...]`，按分数降序。
-- `next_logprobs(tokens)` 返回词表上 V 个已归一化的 log 概率。合法 log 概率不含 NaN 且不大于 0；值为 $-\infty$ 的扩展直接丢弃。
+- `next_logprobs(tokens)` 返回 vocabulary 上 V 个已 normalization 的 log 概率。合法 log 概率不含 NaN 且不大于 0；值为 $-\infty$ 的扩展直接丢弃。
 - 每一步只扩展未结束的 beam，已生成 EOS 的 beam 原样保留。所有候选按累计 log 概率降序、token 序列升序排序，截断到 `width` 个。EOS 保留在返回的序列里，没有长度惩罚，初始分数为 0，仅累加新生成 token 的 log 概率。
 - `width >= 1`，`max_new >= 0`。$V \le 100$，`max_new` 不超过 30。
 
 ### 输入输出示例
 
-词表是 {0, 1}，1 是 EOS，模型每步都给出 P(0) = 0.4、P(1) = 0.6：
+vocabulary 是 {0, 1}，1 是 EOS，模型每步都给出 P(0) = 0.4、P(1) = 0.6：
 
 ```text
 beam_search(model, [], eos=1, width=1, max_new=10)  -> [([1], log 0.6)]
@@ -52,13 +53,13 @@ beam_search(model, [8], eos=1, width=1, max_new=0)  -> [([8], 0.0)]
 
 给一段写了一半的 beam search，把它补完整，要处理 beam 大小、最大生成 token 数和停止条件。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
 我会让每个 beam 记录 token 序列、累计 log 概率和结束标记，每步把活跃 beam 的扩展放在一起，全局取前 `width` 个。已经生成 EOS 的序列不再扩展，但仍参与排序，这样高分的已完成序列不会被丢掉。
 
-停止条件有两种：生成步数到了 `max_new`，或者截断后所有 beam 都已经结束。如果题目要求长度归一化，或者「凑够 k 个完成序列就停」这类提前停止，排序分数和停止判断都要跟着改，要先和面试官对齐评分定义。
+停止条件有两种：生成步数到了 `max_new`，或者截断后所有 beam 都已经结束。如果题目要求长度 normalization，或者「凑够 k 个完成序列就停」这类提前停止，排序分数和停止判断都要跟着改，要先和面试官对齐评分定义。
 
 检查时用一个能手算的小模型：比如每步固定 P(0) = 0.4、P(1) = 0.6，手算两步内每条路径的分数，再和代码输出对比。
 
@@ -67,13 +68,13 @@ beam_search(model, [8], eos=1, width=1, max_new=0)  -> [([8], 0.0)]
 ### 题面、接口与约束
 
 - `beam_search(next_logprobs, start, eos, width, max_new)`：从 `start` 开始最多生成 `max_new` 个 token，返回剩下的所有 beam，格式是 `[(tokens, score), ...]`，按分数降序。
-- `next_logprobs(tokens)` 返回词表上 V 个已归一化的 log 概率。值为 NaN 或大于 0 时抛 `ValueError`；值为 $-\infty$ 的扩展直接丢弃。
+- `next_logprobs(tokens)` 返回 vocabulary 上 V 个已 normalization 的 log 概率。值为 NaN 或大于 0 时抛 `ValueError`；值为 $-\infty$ 的扩展直接丢弃。
 - 每一步只扩展未结束的 beam，已生成 EOS 的 beam 原样保留。所有候选按累计 log 概率降序、token 序列升序排序，截断到 `width` 个。EOS 保留在返回的序列里，没有长度惩罚。
 - `width >= 1`，`max_new >= 0`，否则抛 `ValueError`。$V \le 100$，`max_new` 不超过 30。
 
 ### 输入输出示例
 
-词表是 {0, 1}，1 是 EOS，模型每步都给出 P(0) = 0.4、P(1) = 0.6：
+vocabulary 是 {0, 1}，1 是 EOS，模型每步都给出 P(0) = 0.4、P(1) = 0.6：
 
 ```text
 beam_search(model, [], eos=1, width=1, max_new=10)  -> [([1], log 0.6)]
@@ -96,7 +97,7 @@ import math
 def beam_search(next_logprobs, start, eos, width, max_new):
     """逐步 beam search，返回 [(tokens, score), ...]，按分数降序。
 
-    next_logprobs(tokens) 返回词表上每个 token 的 log 概率。
+    next_logprobs(tokens) 返回 vocabulary 上每个 token 的 log 概率。
     已经生成 EOS 的 beam 不再扩展，原样参与后续排序；没有长度惩罚。
     分数相同时按 token 序列的字典序排，保证结果确定。
     """
@@ -137,14 +138,15 @@ def beam_search(next_logprobs, start, eos, width, max_new):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 def constant_model(tokens):
-    # 词表 {0, 1}，1 是 EOS；每一步 P(0) = 0.4，P(1) = 0.6
+    # vocabulary {0, 1}，1 是 EOS；每一步 P(0) = 0.4，P(1) = 0.6
     return [math.log(0.4), math.log(0.6)]
+
 
 # width = 1 时就是贪心：第一步选 EOS 后停止
 result = beam_search(constant_model, [], 1, 1, 10)
@@ -165,10 +167,10 @@ assert {tuple(tokens) for tokens, _ in result} == {(1,), (0, 1), (0, 0)}
 
 ### 复杂度与追问
 
-设词表大小为 V，最多生成 L = `max_new` 步，宽度为 W。每一步最多产生 $W \cdot V$ 个候选，排序是 $O(WV \log(WV))$；复制 token 元组还要乘上序列长度。总时间约 $O(L \cdot WV \log(WV))$，候选池占 $O(WV \cdot L)$ 空间。排序可以换成 `heapq.nlargest`，降到 $O(WV \log W)$。
+设 vocabulary 大小为 V，最多生成 L = `max_new` 步，宽度为 W。每一步最多产生 $W \cdot V$ 个候选，排序是 $O(WV \log(WV))$；复制 token 元组还要乘上序列长度。总时间约 $O(L \cdot WV \log(WV))$，候选池占 $O(WV \cdot L)$ 空间。排序可以换成 `heapq.nlargest`，降到 $O(WV \log W)$。
 
 **怎么加入长度惩罚？**
-把排序用的分数换成 $\text{score} / \text{len}^{\alpha}$。这会改变「最优」的定义，短序列不再天然占优，要和面试官确认用哪种归一化。
+把排序用的分数换成 $\text{score} / \text{len}^{\alpha}$。这会改变「最优」的定义，短序列不再天然占优，要和面试官确认用哪种 normalization。
 
 **真实模型里怎样批量执行？**
 活跃 beam 应该拼成一个 batch 一次前向，截断后按每个新 beam 的 parent 下标重排 KV cache。

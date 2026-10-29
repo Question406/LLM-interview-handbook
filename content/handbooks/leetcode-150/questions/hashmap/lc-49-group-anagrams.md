@@ -4,21 +4,20 @@ section: hashmap
 order: 5
 level: S
 title: LC 49 · 字母异位词分组
-quick: >-
-  我会给每个串做一个可哈希的签名，异位词的签名相同：26 维计数元组，或者排完序的串。签名相同的放进同一个桶，计数元组的时间大约 $O(nk)$。
+quick: 我会给每个串做一个可哈希的签名，异位词的签名相同：26 维计数元组，或者排完序的串。签名相同的放进同一个桶，计数元组的时间大约 $O(nk)$。
 tags:
   - Hash
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 49. 字母异位词分组
-    url: https://leetcode.cn/problems/group-anagrams/
+    url: 'https://leetcode.cn/problems/group-anagrams/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -75,6 +74,7 @@ def groupAnagrams(strs: List[str]) -> List[List[str]]:
 
 
 if __name__ == "__main__":
+
     def norm(gs):
         return sorted(sorted(g) for g in gs)
 
@@ -94,10 +94,12 @@ if __name__ == "__main__":
 
 ```python
 def norm(gs):
-        return sorted(sorted(g) for g in gs)
+    return sorted(sorted(g) for g in gs)
+
+
 assert norm(groupAnagrams(["eat", "tea", "tan", "ate", "nat", "bat"])) == norm(
-        [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
-    )
+    [["bat"], ["nat", "tan"], ["ate", "eat", "tea"]]
+)
 assert norm(groupAnagrams([""])) == [[""]]
 assert norm(groupAnagrams(["a"])) == [["a"]]
 print("simple tests passed")
@@ -109,7 +111,7 @@ print("simple tests passed")
 
 时间 $O(nk)$，额外空间 $O(nk)$。$n$ 是单词数，$k$ 是最长单词长度。用排序串当 key 就是 $O(nk\log k)$。
 
-## 边界
+## Edge Cases
 
 空串自己成一组，单个字符也是一组。全部相同就只有一组，全部互不相同就每个词一组。
 
@@ -134,6 +136,7 @@ def isAnagram(s, t):
 
 ```python
 from collections import defaultdict
+
 
 def groupAnagrams(strs):
     groups = defaultdict(list)

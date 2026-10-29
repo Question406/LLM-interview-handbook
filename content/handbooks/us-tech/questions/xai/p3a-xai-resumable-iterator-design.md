@@ -3,8 +3,10 @@ id: p3a-xai-resumable-iterator-design
 section: xai
 order: 602
 level: A
-title: "xAI：迭代器 checkpoint：跨进程与嵌套恢复"
-quick: "状态统一定义成下一个要返回的位置，保存时复制，耗尽状态也能恢复。嵌套结构用 O(h) 游标栈避免提前展开，跨进程再保存路径、文件版本和偏移；本练习代码用列表展开换取简单实现。"
+title: xAI：迭代器 checkpoint：跨进程与嵌套恢复
+quick: >-
+  状态统一定义成下一个要返回的位置，保存时复制，耗尽状态也能恢复。嵌套结构用 O(h)
+  游标栈避免提前展开，跨进程再保存路径、文件版本和偏移；本练习代码用列表展开换取简单实现。
 companies:
   - xai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - xAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · xAI · resumable-iterator-design"
-    url: https://www.1point3acres.com/interview/problems/company/xai/resumable-iterator-design
+  - title: 1Point3Acres · xAI · resumable-iterator-design
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/resumable-iterator-design
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现嵌套容器的叶子遍历、结构重建和可保存恢复位置的迭代器。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 数据由整数叶子以及 list、tuple、字符串键 dict 递归组成，bool 不作为整数叶子；字典按插入顺序遍历。构造后数据不再改变，整数叶子不超过 10000，深度不超过 100。
 
@@ -53,11 +59,11 @@ set_state(1) 后 next 为 2；再次 set_state(1)，next 仍为 2。
 
 设计一个可以保存进度、之后再恢复的迭代器：先支持在当前位置保存状态并恢复，再扩展到「迭代器的迭代器」，也就是嵌套结构的情况。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 扁平的列表只需要一个下标。嵌套结构的标准答案是游标栈：栈里每一层记录「当前在哪个容器、下一个要看第几个元素」。`next` 从栈顶推进，遇到子容器就压栈，遇到叶子就返回，一层走完就弹栈。保存状态就是把每层的下标复制一份；恢复时从根开始，按这些下标逐层走回原来的位置。这个做法只用 O(h) 额外内存，h 是嵌套深度。
 
-几个容易漏的边界：空的子容器、连续好几层都是空的、在末尾保存再恢复。保存的状态必须是一份拷贝，否则继续迭代时快照也跟着变了。
+几个容易漏的 edge cases：空的子容器、连续好几层都是空的、在末尾保存再恢复。保存的状态必须是一份拷贝，否则继续迭代时快照也跟着变了。
 
 如果数据来自文件流、要跨进程恢复，状态里还要有资源标识，比如文件路径、文件版本和字节偏移，不能只存活着的对象引用。
 
@@ -178,7 +184,7 @@ class Iterator:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -189,6 +195,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 data = [1, (), {"a": [2, 3]}]
 assert flatten(data) == [1, 2, 3]
@@ -202,10 +209,10 @@ assert list(it) == [2, 3]
 it.set_state(state)
 assert list(it) == [2, 3]
 
-expect_value_error(unflatten, data, [1])           # 值不够
+expect_value_error(unflatten, data, [1])  # 值不够
 expect_value_error(unflatten, data, [1, 2, 3, 4])  # 值多了
-expect_value_error(flatten, [True])                # bool 不算整数叶子
-expect_value_error(it.set_state, 4)                # 超出叶子数
+expect_value_error(flatten, [True])  # bool 不算整数叶子
+expect_value_error(it.set_state, 4)  # 超出叶子数
 assert list(Iterator([[], (), {}])) == []
 ```
 

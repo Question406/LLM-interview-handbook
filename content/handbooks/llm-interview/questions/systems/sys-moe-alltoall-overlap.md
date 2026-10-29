@@ -4,20 +4,32 @@ section: systems
 order: 270
 level: A
 title: MoE 的 All-to-All 如何与 GEMM 重叠？什么会挡住 overlap？
-quick: "MoE 通信与 GEMM 的重叠要错开微批：当前批算专家 GEMM，下一批做 dispatch，或上一批做 combine。同一微批的 GEMM 要等 dispatch 的输入，所以直接开双流叠不上。DeepSeek-V3 用 DeepEP 和 DualPipe 组织这类流水，但热点专家、小消息和动态 shape 仍会把等待暴露出来。"
+quick: >-
+  MoE 通信与 GEMM 的重叠要错开微批：当前批算专家 GEMM，下一批做 dispatch，或上一批做 combine。同一微批的 GEMM 要等
+  dispatch 的输入，所以直接开双流叠不上。DeepSeek-V3 用 DeepEP 和 DualPipe 组织这类流水，但热点专家、小消息和动态
+  shape 仍会把等待暴露出来。
 tags:
   - MoE
   - Communication Overlap
   - All-to-All
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
 ---
+
+## 可以这样回答
+
+MoE 的 all-to-all 要通过错开微批与 GEMM 重叠。同一批 token 必须先 dispatch 到专家所在卡，GEMM 才有输入；能并行的是下一批的通信和当前批的计算。比如 compute stream 处理当前专家输入时，comm stream 提前搬下一批，这才形成独立工作。EP 路由后才知道消息长度，和固定尺寸的 Dense TP all-reduce 不同，机制见 `sys-expert-parallel`；DeepSeek-V3 用 DeepEP 和 DualPipe 把这条流水接起来。
+
+DeepEP 把跨节点 RDMA 与节点内 NVLink 的不规则 all-to-all 做成可与 GEMM 并发的原语，避免「一个 fused kernel 里又算又等」。反向对称：expert 的 dgrad / wgrad 与 combine 梯度的 all-to-all 同样按微批错开。Pipeline 更深时，DualPipe 把前向通信与反向计算叠在相邻 stage，那是 PP 级 overlap，和 EP 微批 overlap 是两层，我会分开说。
+
+## 技术备查
 
 MoE 的 all-to-all 要通过错开微批与 GEMM 重叠。同一批 token 必须先 dispatch 到专家所在卡，GEMM 才有输入；能并行的是下一批的通信和当前批的计算。比如 compute stream 处理当前专家输入时，comm stream 提前搬下一批，这才形成独立工作。EP 路由后才知道消息长度，和固定尺寸的 Dense TP all-reduce 不同，机制见 `sys-expert-parallel`；DeepSeek-V3 用 DeepEP 和 DualPipe 把这条流水接起来。
 

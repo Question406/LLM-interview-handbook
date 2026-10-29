@@ -4,20 +4,22 @@ section: trie
 order: 2
 level: A
 title: LC 211 · 添加与搜索单词 - 数据结构设计
-quick: "底层还是 Trie，`addWord` 和普通插入一样。`search` 改成 DFS：普通字符走固定边，遇到 `'.'` 表示任意字母，就对当前节点所有孩子分叉。全是 `'.'` 时最坏 $O(26^L)$。"
+quick: >-
+  底层还是 Trie，`addWord` 和普通插入一样。`search` 改成 DFS：普通字符走固定边，遇到 `'.'`
+  表示任意字母，就对当前节点所有孩子分叉。全是 `'.'` 时最坏 $O(26^L)$。
 tags:
   - Trie
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 211. 添加与搜索单词 - 数据结构设计
-    url: https://leetcode.cn/problems/design-add-and-search-words-data-structure/
+    url: 'https://leetcode.cn/problems/design-add-and-search-words-data-structure/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -122,7 +124,7 @@ print("simple tests passed")
 
 `addWord` $O(L)$。`search` 无通配 $O(L)$，全是 `'.'` 时最坏 $O(26^L)$。空间同插入节点数。
 
-## 边界
+## Edge Cases
 
 搜一个没加过的词，要么普通路径中途走丢，要么走到尾但 `is_end` 为假，都返回假。
 

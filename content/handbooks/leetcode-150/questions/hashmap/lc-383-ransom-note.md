@@ -5,20 +5,21 @@ order: 1
 level: A
 title: LC 383 · 赎金信
 quick: >-
-  先统计 `magazine` 每个字母的次数，再扫 `ransomNote` 逐个减一，任何字母减到负数就说明不够用。时间 $O(m+n)$，额外空间 $O(1)$（26 个桶）。
+  先统计 `magazine` 每个字母的次数，再扫 `ransomNote` 逐个减一，任何字母减到负数就说明不够用。时间 $O(m+n)$，额外空间
+  $O(1)$（26 个桶）。
 tags:
   - Hash
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 383. 赎金信
-    url: https://leetcode.cn/problems/ransom-note/
+    url: 'https://leetcode.cn/problems/ransom-note/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +100,7 @@ print("simple tests passed")
 
 时间 $O(m+n)$，额外空间 $O(1)$。$m$、$n$ 是两个串的长度，字母表固定 26 个。
 
-## 边界
+## Edge Cases
 
 `ransomNote` 为空时一个字母都不用，恒为真。`magazine` 更短时字母种类也可能看起来够，但某个字母次数不够，减到负数就该停。
 
@@ -110,6 +111,7 @@ print("simple tests passed")
 
 ```python
 from collections import Counter
+
 
 def canConstruct(note, mag):
     cnt = Counter(mag)
@@ -125,6 +127,7 @@ def canConstruct(note, mag):
 
 ```python
 from collections import defaultdict, deque
+
 
 def constructIndices(note, mag):
     pos = defaultdict(deque)

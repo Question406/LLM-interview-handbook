@@ -5,7 +5,8 @@ order: 17
 level: B
 title: 阿里春招 0401：离 $x$ 最近的质数，同距如何破？
 quick: >-
-  距离从 $0$ 往外扩，每个距离先测 $x-d$ 再测 $x+d$，第一个命中的就是最近的，同距时自然取到较小的。判质用试除，只试 $6k\pm 1$，试到 $\sqrt{v}$。
+  距离从 $0$ 往外扩，每个距离先测 $x-d$ 再测 $x+d$，第一个命中的就是最近的，同距时自然取到较小的。判质用试除，只试 $6k\pm 1$，试到
+  $\sqrt{v}$。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里系列 2026.04.01 算法岗机试
-    url: https://leetcode.cn/discuss/post/3943532/chun-zhao-bi-shi-a-li-xi-lie-ji-shi-fu-p-t91w/
+    url: >-
+      https://leetcode.cn/discuss/post/3943532/chun-zhao-bi-shi-a-li-xi-lie-ji-shi-fu-p-t91w/
     type: secondary
 ---
 
@@ -24,7 +26,7 @@ sources:
 
 给定整数 x，找到距离 x 最近的质数。质数指大于 1、只有 1 和自身两个正因数的整数。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -139,7 +141,7 @@ print("simple tests passed")
 
 单次询问的最坏代价和「到附近质数的间隙 $\times$ 试除 $\sqrt{x}$」有关，对普通 $32$ 位整数足够。多询问且值域小时，先筛到 $\mathrm{MAX}+\Delta$，再对每个 $x$ 左右各走一步。
 
-## 边界
+## Edge Cases
 
 $x=1$ 或 $x\le 0$ 得到 $2$；$x=4$ 时 $3$ 与 $5$ 同距，输出 $3$；$x=8$ 输出 $7$。$x$ 本身是质数时 $d=0$ 直接返回。
 

@@ -3,8 +3,10 @@ id: p3a-microsoft-max-number-occurrences-in-suffix
 section: microsoft
 order: 607
 level: A
-title: "Microsoft AI / Copilot：MAI 后缀最大值出现次数"
-quick: "我会从右向左预处理，维护后缀最大值和次数：新值更大就重置为 1，相等就加 1，更小就保持。把每个起点的次数存下来，预处理 O(n)，查询只要 O(1)，负数也要正确处理。"
+title: Microsoft AI / Copilot：MAI 后缀最大值出现次数
+quick: >-
+  我会从右向左预处理，维护后缀最大值和次数：新值更大就重置为 1，相等就加 1，更小就保持。把每个起点的次数存下来，预处理 O(n)，查询只要
+  O(1)，负数也要正确处理。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · max-number-occurrences-in-suffix"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/max-number-occurrences-in-suffix
+  - title: 1Point3Acres · Microsoft AI / Copilot · max-number-occurrences-in-suffix
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/max-number-occurrences-in-suffix
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 给定整数数组和若干后缀起点，分别返回每个后缀中最大值出现的次数。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -51,7 +54,7 @@ suffix_counts([-2, -2, -3], [0, 1, 2]) -> [2, 1, 1]
 
 给一个整数数组和若干个起点下标。对每个起点 i，求后缀 `nums[i:]` 的最大值在这个后缀里出现了几次。查询很多时，不能每次都重新扫一遍后缀。
 
-> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -63,7 +66,7 @@ suffix_counts([-2, -2, -3], [0, 1, 2]) -> [2, 1, 1]
 
 把每个位置的次数存进数组，之后每个查询直接查表。预处理 O(n)，单次查询 O(1)。
 
-和面试官确认的边界：空数组和越界下标怎么处理（这里抛 `ValueError`），负数是否允许（允许，所以最大值初始化成 `None`，不能用 0）。
+与面试官确认的 edge cases：空数组和越界下标怎么处理（这里抛 `ValueError`），负数是否允许（允许，所以最大值初始化成 `None`，不能用 0）。
 
 ## 完整编程练习（手册重构版）
 
@@ -159,7 +162,7 @@ def above(nums, threshold):
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -170,6 +173,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # suffix_counts：最大值重复、负数
 assert suffix_counts([3, 1, 3], [0, 1, 2]) == [2, 1, 1]
@@ -188,7 +192,12 @@ expect_value_error(topk, [1, 2], 3)
 assert dfs([("a", "b"), ("a", "c"), ("b", "c")], "a") == ["a", "b", "c"]
 assert dfs([("a", "c"), ("a", "b"), ("b", "d")], "a") == ["a", "b", "d", "c"]
 # 入栈时就标记的写法在这里会得到 a, b, d, c
-assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == ["a", "b", "c", "d"]
+assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == [
+    "a",
+    "b",
+    "c",
+    "d",
+]
 assert dfs([], "x") == ["x"]
 
 # above：严格大于；空数组

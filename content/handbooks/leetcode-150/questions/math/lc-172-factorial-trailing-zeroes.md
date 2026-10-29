@@ -4,20 +4,22 @@ section: math
 order: 3
 level: A
 title: LC 172 · 阶乘后的零
-quick: "尾零来自因子 $10=2\\times 5$，而 $2$ 永远比 $5$ 多，所以数因子 $5$ 的个数就够了，也就是 $n/5 + n/25 + n/125+\\cdots$。别真去算 $n!$。"
+quick: >-
+  尾零来自因子 $10=2\times 5$，而 $2$ 永远比 $5$ 多，所以数因子 $5$ 的个数就够了，也就是 $n/5 + n/25 +
+  n/125+\cdots$。别真去算 $n!$。
 tags:
   - Math
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 172. 阶乘后的零
-    url: https://leetcode.cn/problems/factorial-trailing-zeroes/
+    url: 'https://leetcode.cn/problems/factorial-trailing-zeroes/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -94,7 +96,7 @@ print("simple tests passed")
 
 时间 $O(\log_5 n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=0$ 或 $n\lt 5$ 时没有因子 $5$，答案是 $0$。
 
@@ -110,6 +112,8 @@ def count_factor(n, p):
         n //= p
         ans += n
     return ans
+
+
 # count_factor(n, 2) > count_factor(n, 5) 对 n >= 5 成立
 ```
 

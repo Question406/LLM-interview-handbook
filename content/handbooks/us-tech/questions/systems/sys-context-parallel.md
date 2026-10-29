@@ -4,7 +4,9 @@ section: systems
 order: 13
 level: S
 title: 系统：context parallel 长上下文，ring 传 KV
-quick: "CP 沿序列切 attention，Q 留本地、KV 分块环传，用在线 softmax 合并。它与只减少 LN / dropout 复制的 Megatron SP 可以叠加；因果任务还需 zigzag 平衡负载，并把 KV 通信与计算重叠。"
+quick: >-
+  CP 沿序列切 attention，Q 留本地、KV 分块环传，用在线 softmax 合并。它与只减少 LN / dropout 复制的 Megatron
+  SP 可以叠加；因果任务还需 zigzag 平衡负载，并把 KV 通信与计算重叠。
 tags:
   - NVIDIA
   - Megatron
@@ -13,19 +15,22 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Ring Attention with Blockwise Transformers for Near-Infinite Context
-    url: https://arxiv.org/abs/2310.01889
+    url: 'https://arxiv.org/abs/2310.01889'
     type: primary
   - title: Context Parallel Overview — Megatron Core
-    url: https://docs.nvidia.com/megatron-core/developer-guide/nightly/user-guide/features/context_parallel.html
+    url: >-
+      https://docs.nvidia.com/megatron-core/developer-guide/nightly/user-guide/features/context_parallel.html
     type: secondary
   - title: Reducing Activation Recomputation in Large Transformer Models
-    url: https://arxiv.org/abs/2205.05198
+    url: 'https://arxiv.org/abs/2205.05198'
     type: primary
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
 ---
 
@@ -35,7 +40,7 @@ NVIDIA Megatron Core 用 `context_parallel_size` 配置这条轴。Megatron SP �
 
 配置时还要验证因果 mask 下的负载是否均衡，以及 KV 交换能否与 Flash kernel overlap。
 
-注意力要每个 query 看见整段 KV。CP 度为 $P$ 时，每卡只持有 $[B, T/P, h]$ 的 Q/K/V。朴素做法是 all-gather 全部 KV，显存又回到完整 $T$，CP 白开。Ring Attention / Megatron 的 p2p CP：Q 留在本卡，把本地 KV 块发给邻居、收下上一跳的块，对当前块做一次局部注意力，用在线 softmax 累加分子和分母。转 $P-1$ 圈后，每个 query 都见过全部 KV，本卡始终只存一块 KV 工作区。
+attention 要每个 query 看见整段 KV。CP 度为 $P$ 时，每卡只持有 $[B, T/P, h]$ 的 Q/K/V。朴素做法是 all-gather 全部 KV，显存又回到完整 $T$，CP 白开。Ring Attention / Megatron 的 p2p CP：Q 留在本卡，把本地 KV 块发给邻居、收下上一跳的块，对当前块做一次局部 attention，用在线 softmax 累加分子和分母。转 $P-1$ 圈后，每个 query 都见过全部 KV，本卡始终只存一块 KV 工作区。
 
 每卡搬运大约 $(P-1)\cdot(T/P)\cdot 2\cdot n_{\mathrm{kv}}\cdot d_h$ 量级（K 和 V），$P$ 大时接近一份完整 KV。GQA / MQA 让 $n_{\mathrm{kv}}$ 远小于查询头，环上体积跟着降，这是长上下文爱 GQA 的系统理由之一。通信是点对点、可和当前块的 attention kernel overlap； Megatron 文档写明 p2p 能叠，`all_gather` 模式拿齐再算、叠不上。
 
@@ -43,20 +48,20 @@ NVIDIA Megatron Core 用 `context_parallel_size` 配置这条轴。Megatron SP �
 
 Decoder 下，靠前的 query 合法 KV 短，靠后的长。按连续切片排环，末段那张卡每圈都在算大块，前面的卡很闲，step time 等于最忙的那张。Megatron CP 把序列切成 $2P$ 块，让每卡同时拿一块靠前、一块靠后（zigzag / load-balanced），有用的 FLOPs 拉齐。因此环的拓扑和有效计算量要一起核对。
 
-Flash / cuDNN 注意力可以按块喂，不必自己写 $T\times T$ 分数矩阵。CP 省的是激活和 KV 工作区，不是把 $O(T^2)$ 的 FLOPs 变没；总计算仍在，只是摊到 $P$ 张卡。checkpoint 仍然要，见 `sys-act-checkpoint`。不要说「开了 CP 就可以关 SP」：SP 处理的是 TP 复制的 LN 激活，CP 处理的是注意力的序列轴，长上下文经常两件一起开。
+Flash / cuDNN attention 可以按块喂，不必自己写 $T\times T$ 分数矩阵。CP 省的是激活和 KV 工作区，不是把 $O(T^2)$ 的 FLOPs 变没；总计算仍在，只是摊到 $P$ 张卡。checkpoint 仍然要，见 `sys-act-checkpoint`。不要说「开了 CP 就可以关 SP」：SP 处理的是 TP 复制的 LN 激活，CP 处理的是 attention 的序列轴，长上下文经常两件一起开。
 
 一个数量级：$T=128\mathrm{k}$，$P=8$，BF16，GQA 下 $n_{\mathrm{kv}}=8$、$d_h=128$。每卡驻留 $16\mathrm{k}$ 个 token 的 KV；环上转 7 圈，每圈搬一块，总量接近一份完整 KV，大约 $2\cdot 128\mathrm{k}\cdot 8\cdot 128\cdot 2$ 字节量级，百 MB 而不是 GB。若改 all-gather 齐再算，HBM 峰值回到完整 $T$ 的 KV，CP 的显存意义没了。Nsight 上若 p2p 和 attention kernel 串行，就是通信墙，不是「环传很便宜」。
 
-反向对称：对 KV 的梯度沿环 reduce，Q 的梯度留本地。通信体积仍是 KV 块量级，同样要和本地 dgrad overlap。GQA 让反向也变轻。和 PP 叠时，每个 stage 内部自己环；不要让 CP 环跨过 pipeline 边界，否则 P2P 激活和 KV 环抢同一条 IB。
+反向对称：对 KV 的梯度沿环 reduce，Q 的梯度留本地。通信体积仍是 KV 块量级，同样要和本地 dgrad overlap。GQA 让反向也变轻。和 PP 叠时，每个 stage 内部自己环；不要让 CP 环跨过 pipeline boundaries，否则 P2P 激活和 KV 环抢同一条 IB。
 
 这里切的是序列，按 batch 切分属于 DP。Q 应留本地，传 Q 会随查询头数产生更大体积；即使不 overlap 也能降低显存压力，但会付出明确的通信时间。
 
-推理侧不要把训练环原样搬到逐 token 生成（decode）：在线 batch 不齐、$T$ 每步在涨，环的负载均衡假设不再成立。Serving 更常是分页 KV、分块输入预填充（chunked prefill） 或 PD 分离。训练 CP 解决的是「单卡装不下这一条长序列的注意力工作区」。
+推理侧不要把训练环原样搬到逐 token 生成（decode）：在线 batch 不齐、$T$ 每步在涨，环的负载均衡假设不再成立。Serving 更常是分页 KV、分块输入 prefill（chunked prefill） 或 PD 分离。训练 CP 解决的是「单卡装不下这一条长序列的 attention 工作区」。
 
 ## 追问
 
 **和 Megatron SP 一句话差在哪？**
-SP 改 LN/dropout 布局，注意力仍要完整 $T$。CP 切注意力的 $T$，通信是 KV 块。
+SP 改 LN/dropout 布局，attention 仍要完整 $T$。CP 切 attention 的 $T$，通信是 KV 块。
 **为什么环传 KV 不传 Q？**
 每个 query 只需见全部 KV；Q 分片留本地。GQA 下 KV 更窄，传 KV 更划算。
 **P 能不能大于头数？**

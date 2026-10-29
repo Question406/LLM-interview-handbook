@@ -4,7 +4,9 @@ section: agent
 order: 112
 level: A
 title: 百川智能：Query 改写用了什么模型，为什么不用大模型？
-quick: "Query 改写先看能不能提高检索质量和任务成功率。小模型延迟和成本低、输出稳定、便于私有部署，所以默认用小模型或规则，用 router 把有歧义、需要多跳或难判断的 query 交给 LLM，再比较检索增益、p95 延迟和失败率，验证分流是否有效。"
+quick: >-
+  Query 改写先看能不能提高检索质量和任务成功率。小模型延迟和成本低、输出稳定、便于私有部署，所以默认用小模型或规则，用 router
+  把有歧义、需要多跳或难判断的 query 交给 LLM，再比较检索增益、p95 延迟和失败率，验证分流是否有效。
 tags:
   - Baichuan
   - RAG
@@ -13,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 百川智能大模型实习一面 压力好大（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
+    url: 'https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530'
     type: candidate-first-hand
 ---
 ## 真题记录
@@ -26,7 +28,7 @@ sources:
 - 届别 / 流程：实习；一面
 - 面试时间：原帖未披露；帖子发布于 2026-02-12
 - 来源类型与可信度：牛客候选人原帖，B（公司、实习性质、轮次与发帖时间明确，届别和面试日期未披露）
-- 原始措辞：**“query改写用了什么模型 为什么不用大模型”**
+- 原始措辞：**“query 改写用了什么模型 为什么不用大模型”**
 
 Query 改写默认用小模型或规则，只把有歧义、多跳、难判断的 query 路由给 LLM。改写的目标是检索和任务上的增益，改得更像人说话没有意义；小模型延迟和成本低、输出稳定、方便私有部署，全量用大模型改写会带来延迟、隐私和 query drift。原帖没给出项目用的模型名，面试时别编「我们用了某 7B」。
 

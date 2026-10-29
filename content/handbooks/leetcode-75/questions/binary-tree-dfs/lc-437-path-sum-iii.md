@@ -5,7 +5,8 @@ order: 4
 level: S
 title: LC 437 · 路径总和 III
 quick: >-
-  把根到当前节点看成一个数组，用前缀和加哈希计数：答案加上 $cnt[cur - target]$。离开节点时撤销当前前缀和，保证哈希里只有祖先链。时间 $O(n)$，额外空间 $O(h)$。
+  把根到当前节点看成一个数组，用前缀和加哈希计数：答案加上 $cnt[cur - target]$。离开节点时撤销当前前缀和，保证哈希里只有祖先链。时间
+  $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -15,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 437. Path Sum III
-    url: https://leetcode.com/problems/path-sum-iii/
+    url: 'https://leetcode.com/problems/path-sum-iii/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -122,7 +123,9 @@ def pathSum(root: Optional[TreeNode], targetSum: int) -> int:
 
 if __name__ == "__main__":
     assert pathSum(build_tree([10, 5, -3, 3, 2, None, 11, 3, -2, None, 1]), 8) == 3
-    assert pathSum(build_tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, 5, 1]), 22) == 3
+    assert (
+        pathSum(build_tree([5, 4, 8, 11, None, 13, 4, 7, 2, None, None, 5, 1]), 22) == 3
+    )
     assert pathSum(build_tree([]), 0) == 0
     assert pathSum(build_tree([1]), 1) == 1
     assert pathSum(build_tree([0, 0, 0]), 0) == 5
@@ -149,7 +152,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个节点一次哈希查询和两次更新。额外空间 $O(h)$：哈希里只保留当前祖先链的前缀和，外加递归栈。
 
-## 边界
+## Edge Cases
 
 - 空树返回 $0$。
 - 值为 $0$ 或正负抵消时，同一个前缀和会出现多次，所以哈希存次数，用集合会少算。
@@ -167,11 +170,17 @@ def pathSumBrute(root, targetSum):
         if node is None:
             return 0
         remain -= node.val
-        return (remain == 0) + from_node(node.left, remain) + from_node(node.right, remain)
+        return (
+            (remain == 0) + from_node(node.left, remain) + from_node(node.right, remain)
+        )
 
     if root is None:
         return 0
-    return from_node(root, targetSum) + pathSumBrute(root.left, targetSum) + pathSumBrute(root.right, targetSum)
+    return (
+        from_node(root, targetSum)
+        + pathSumBrute(root.left, targetSum)
+        + pathSumBrute(root.right, targetSum)
+    )
 ```
 
 **路径必须从根到叶（LC 112 / 113）呢？**

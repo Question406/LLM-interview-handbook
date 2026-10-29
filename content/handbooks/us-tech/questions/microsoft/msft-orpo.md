@@ -3,39 +3,50 @@ id: msft-orpo
 section: microsoft
 order: 4
 level: A
-title: Microsoft：ORPO 相对 DPO/PPO，少了参考模型意味着什么
-quick: "ORPO 在单模型、单阶段中结合 chosen 的 SFT NLL 与 odds ratio 偏好损失，不加载冻结参考模型，也不另训奖励模型。节省权重与前向的同时，失去了显式 KL 锚，需要监控 chosen / rejected 概率、长度、熵和语言回归。"
+title: Microsoft：ORPO 相对 DPO/PPO，少了 reference model 意味着什么
+quick: >-
+  ORPO 在单模型、单阶段中结合 chosen 的 SFT NLL 与 odds ratio 偏好损失，不加载冻结 reference model，也不另训
+  reward model。节省权重与前向的同时，失去了显式 KL 锚，需要监控 chosen / rejected 概率、长度、熵和语言回归。
 tags:
   - Microsoft
   - ORPO
   - DPO
   - Alignment
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: ORPO — Monolithic Preference Optimization without Reference Model
-    url: https://arxiv.org/abs/2403.07691
+    url: 'https://arxiv.org/abs/2403.07691'
     type: primary
   - title: Training language models to follow instructions with human feedback
-    url: https://arxiv.org/abs/2203.02155
+    url: 'https://arxiv.org/abs/2203.02155'
     type: primary
 ---
 
-ORPO 把 SFT 和偏好学习合在一次更新里，省去冻结参考模型与独立奖励模型，但也不再有参考策略的显式 KL 锚。比如 7B bf16 的参考权重约多占 14GB，显存紧的小模型训练省下一份很有价值，语言行为是否漂移则要靠回归评测检查。
+## 可以这样回答
+
+ORPO 把 SFT 和 preference learning 合在一次更新里，省去冻结 reference model 与独立 reward model，但也不再有 reference policy 的显式 KL 锚。比如 7B bf16 的参考权重约多占 14GB，显存紧的小模型训练省下一份很有价值，语言行为是否漂移则要靠回归评测检查。
+
+论文来自 KAIST 的 Hong 等，实验包含 Phi-2，不能称作微软论文。它可作为 Azure / 开源小模型的一阶段基线，与 `msft-phi-slm` 的部署约束相关。PPO + KL 背景见 `openai-instructgpt-kl`。
+
+## 技术备查
+
+ORPO 把 SFT 和 preference learning 合在一次更新里，省去冻结 reference model 与独立 reward model，但也不再有 reference policy 的显式 KL 锚。比如 7B bf16 的参考权重约多占 14GB，显存紧的小模型训练省下一份很有价值，语言行为是否漂移则要靠回归评测检查。
 
 论文来自 KAIST 的 Hong 等，实验包含 Phi-2，不能称作微软论文。它可作为 Azure / 开源小模型的一阶段基线，与 `msft-phi-slm` 的部署约束相关。PPO + KL 背景见 `openai-instructgpt-kl`。
 
 ## 对照三种损失与模型数量
 
-PPO 式 RLHF 通常有策略、冻结参考、奖励模型和 critic，除了这些前向还要采样 rollout。其奖励可写为：
+PPO 式 RLHF 通常有策略、冻结参考、reward model 和 critic，除了这些前向还要 sampling rollout。其奖励可写为：
 
 $$
 r(x,y)=r_{\phi}(x,y)-\beta\log\frac{\pi_\theta(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)}.
 $$
 
-KL 用于限制策略偏离参考语言行为，也降低钻 RM 空子的程度，代价是显存、吞吐和 RM 偏差。
+KL 用于限制策略偏离参考语言行为，也降低钻 RM 空子的程度，代价是显存、throughput 和 RM 偏差。
 
 DPO 消去显式 RM，损失依赖 $(\pi_\theta,\pi_{\mathrm{ref}})$：
 

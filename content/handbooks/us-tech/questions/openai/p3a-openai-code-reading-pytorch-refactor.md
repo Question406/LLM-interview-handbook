@@ -3,8 +3,10 @@ id: p3a-openai-code-reading-pytorch-refactor
 section: openai
 order: 628
 level: S
-title: "OpenAI：大型 PyTorch 文件阅读与复杂度分析"
-quick: "我会先从入口、张量形状和输出理清调用路径，跑通基线后只改本轮需求涉及的部分，再用同一结果对照。比如标准化误用了测试统计量，或 sigmoid 直接 exp 溢出，都要靠固定的数据划分和数值约定定位；复杂度按 batch、样本数和维度分别写。"
+title: OpenAI：大型 PyTorch 文件阅读与复杂度分析
+quick: >-
+  我会先从入口、张量形状和输出理清调用路径，跑通基线后只改本轮需求涉及的部分，再用同一结果对照。比如 standardization 误用了测试统计量，或
+  sigmoid 直接 exp 溢出，都要靠固定的数据划分和数值约定定位；复杂度按 batch、样本数和维度分别写。
 companies:
   - openai
 tags:
@@ -16,30 +18,31 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · code-reading-pytorch-refactor"
-    url: https://www.1point3acres.com/interview/problems/company/openai/code-reading-pytorch-refactor
+  - title: 1Point3Acres · OpenAI · code-reading-pytorch-refactor
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/code-reading-pytorch-refactor
     type: secondary
 ---
 
 ## 题目描述
 
-完成一个独立可运行的数值训练练习，用以检验模型代码重构是否保留行为：训练二分类逻辑回归，复用训练统计量进行预测，计算分类指标，并用独立可信校准标签选择和汇总标注员。
+完成一个独立可运行的数值训练练习，用以检验模型代码重构是否保留行为：训练二分类逻辑回归，复用训练统计量进行预测，计算分类指标，并用独立可信 calibration 标签选择和汇总标注员。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
 - `fit(x, y, steps=1000, lr=0.1, l2=0.01)`：`x` 是 $N \times D$ 的有限数值矩阵，`y` 是 0/1 标签。返回训练集的均值、标准差和权重 `(mean, std, weights)`。
-- `predict(model, x)`：只能用 `fit` 返回的统计量做标准化，预测概率不低于 0.5 判为 1。
+- `predict(model, x)`：只能用 `fit` 返回的统计量做 standardization，预测概率不低于 0.5 判为 1。
 - `metrics(y_true, y_pred)`：返回 accuracy、precision、recall、F1，分母为 0 时记为 0。
-- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信校准集，返回准确率不低于阈值的标注员下标。
+- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信 calibration 集，返回准确率不低于阈值的标注员下标。
 - `vote(votes, selected)`：只用选中的标注员做多数票，生成训练标签，平票取 0；假定至少有一个可用标注员。
 - 输入不含缺失值，类别特征要在上游编码好。测试集不能用来筛选标注员。$N \le 5000$，$D \le 100$。
 
-- `mean`、`std` 形状为 `[D]`，按训练集总体标准差标准化，常数列的标准差记为 1；权重形状为 `[D+1]`，最后一项是偏置。训练从零权重开始，完成 `steps` 次全批量梯度下降，目标为平均二元交叉熵加 `l2/2 * sum(weights[:-1]^2)`，偏置不受正则。`lr` 为正，`steps` 为非负整数。
-- `predict` 返回 `[M]` 的 0/1 整数数组；`metrics` 返回按 `accuracy`、`precision`、`recall`、`f1` 命名的字典。校准投票和可信标签均为 0/1，标注员下标从 0 开始，按升序返回。
+- `mean`、`std` 形状为 `[D]`，按训练集总体标准差 standardization，常数列的标准差记为 1；权重形状为 `[D+1]`，最后一项是偏置。训练从零权重开始，完成 `steps` 次全批量梯度下降，目标为平均 binary cross entropy 加 `l2/2 * sum(weights[:-1]^2)`，偏置不受正则。`lr` 为正，`steps` 为非负整数。
+- `predict` 返回 `[M]` 的 0/1 整数数组；`metrics` 返回按 `accuracy`、`precision`、`recall`、`f1` 命名的字典。calibration 投票和可信标签均为 0/1，标注员下标从 0 开始，按升序返回。
 ### 示例
 
 ```text
@@ -51,13 +54,13 @@ vote([[1, 0]], [0, 1])                                        -> [0]
 
 ## 解题思路与参考答案
 
-我会先从入口跟一遍数据形状和输出，跑通原代码留下对照，再定位这轮需求涉及的最短修改路径。比如练习里把标准化改成测试集统计量，程序仍能运行，但已经泄漏了测试信息；读代码时要把这些数据约定也一起核对。
+我会先从入口跟一遍数据形状和输出，跑通原代码留下对照，再定位这轮需求涉及的最短修改路径。比如练习里把 standardization 改成测试集统计量，程序仍能运行，但已经泄漏了测试信息；读代码时要把这些数据约定也一起核对。
 
 ## 题目
 
 面试给一份四百多行的 PyTorch 代码，要求读懂后分几个阶段修改，并分析时间和空间开销。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -67,20 +70,20 @@ vote([[1, 0]], [0, 1])                                        -> [0]
 
 题卡摘要把这道题和噪声标注员分类器联系在一起，但这不代表每一轮用的都是同一份脚本。
 
-下面的练习可以当作代码阅读的靶子：故意把标准化改成用测试集的统计量，或者把 sigmoid 改成直接 `exp`，看自己能否通过固定的校准集和验证集约定定位出泄漏和溢出。
+下面的练习可以当作代码阅读的靶子：故意把 standardization 改成用测试集的统计量，或者把 sigmoid 改成直接 `exp`，看自己能否通过固定的 calibration 集和验证集约定定位出泄漏和溢出。
 
 相关题：[[p3a-openai-classifier-noisy-annotators]]（同一份练习代码，那道题关注的是标注员筛选本身）。
 
 ## 完整编程练习（手册重构版）
 
-这份练习把题目落到一个可以手写、可以测试的二分类基线上：NumPy 逻辑回归、评估指标，以及用可信校准集筛选标注员。
+这份练习把题目落到一个可以手写、可以测试的二分类基线上：NumPy 逻辑回归、评估指标，以及用可信 calibration 集筛选标注员。
 
 ### 题面、接口与约束
 
 - `fit(x, y, steps=1000, lr=0.1, l2=0.01)`：`x` 是 $N \times D$ 的有限数值矩阵，`y` 是 0/1 标签。返回训练集的均值、标准差和权重 `(mean, std, weights)`。
-- `predict(model, x)`：只能用 `fit` 返回的统计量做标准化，预测概率不低于 0.5 判为 1。
+- `predict(model, x)`：只能用 `fit` 返回的统计量做 standardization，预测概率不低于 0.5 判为 1。
 - `metrics(y_true, y_pred)`：返回 accuracy、precision、recall、F1，分母为 0 时记为 0。
-- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信校准集，返回准确率不低于阈值的标注员下标。
+- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信 calibration 集，返回准确率不低于阈值的标注员下标。
 - `vote(votes, selected)`：只用选中的标注员做多数票，生成训练标签，平票取 0；没有可用标注员时抛 `ValueError`。
 - 输入不含缺失值，类别特征要在上游编码好。测试集不能用来筛选标注员。$N \le 5000$，$D \le 100$。
 
@@ -93,11 +96,11 @@ select_annotators([[0, 1], [0, 1], [1, 0], [1, 0]], [0, 0, 1, 1]) -> [0]
 vote([[1, 0]], [0, 1])                                        -> [0]
 ```
 
-第二个标注员在校准集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
+第二个标注员在 calibration 集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
 
 ### 解题思路与正确性
 
-`fit` 先用训练集的均值和标准差把特征标准化，标准差为 0 的常数列不缩放。然后拼一列 1 作为偏置，用全批量梯度下降最小化平均逻辑损失加 L2 正则。逻辑损失对权重的梯度是 $X^\top(\sigma(Xw) - y) / N$，L2 只加在非偏置的维度上。`predict` 复用训练时的统计量，测试数据的分布信息就不会漏进模型。
+`fit` 先用训练集的均值和标准差把特征 standardization，标准差为 0 的常数列不缩放。然后拼一列 1 作为偏置，用全批量梯度下降最小化平均逻辑损失加 L2 正则。逻辑损失对权重的梯度是 $X^\top(\sigma(Xw) - y) / N$，L2 只加在非偏置的维度上。`predict` 复用训练时的统计量，测试数据的分布信息就不会漏进模型。
 
 sigmoid 写成 `exp(-logaddexp(0, -z))`，数学上等于 $1 / (1 + e^{-z})$，但 $z$ 很大或很小时都不会溢出。
 
@@ -152,7 +155,7 @@ def fit(x, y, steps=1000, lr=0.1, l2=0.01):
 
 
 def predict(model, x):
-    """用训练时的 mean/std 标准化，概率 >= 0.5 判为 1。"""
+    """用训练时的 mean/std standardization，概率 >= 0.5 判为 1。"""
     mean, std, weights = model
     x = np.asarray(x, dtype=float)
     design = add_bias((x - mean) / std)
@@ -184,7 +187,7 @@ def metrics(y_true, y_pred):
 
 
 def select_annotators(votes, trusted, min_accuracy=0.7):
-    """votes 形状 (N, A)，trusted 形状 (N,)：返回在可信校准集上准确率达标的标注员下标。"""
+    """votes 形状 (N, A)，trusted 形状 (N,)：返回在可信 calibration 集上准确率达标的标注员下标。"""
     votes = np.asarray(votes)
     trusted = np.asarray(trusted)
     if votes.ndim != 2 or len(votes) != len(trusted) or len(votes) == 0:
@@ -209,7 +212,7 @@ def vote(votes, selected):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -220,6 +223,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 一维可分数据：训练后全部预测正确
 x = np.array([[-2.0], [-1.0], [1.0], [2.0]])

@@ -4,7 +4,9 @@ section: systems
 order: 26
 level: A
 title: 如何为模型、system prompt、tool schema 与 retrieval index 的组合变更做 canary 和一键回滚？
-quick: "把模型、prompt、schema、index 等组件组成不可变的发布版本，回滚时整组还原。先跑离线 golden 和对抗切片，再 shadow、小流量 canary；任务、安全、格式、P95 延迟和成本分别设门槛，并保留 snapshot、adapter 与回滚包。"
+quick: >-
+  把模型、prompt、schema、index 等组件组成不可变的发布版本，回滚时整组还原。先跑离线 golden 和对抗切片，再 shadow、小流量
+  canary；任务、安全、格式、P95 延迟和成本分别设 threshold，并保留 snapshot、adapter 与回滚包。
 tags:
   - Canary
   - Rollback
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Google SRE Workbook — Canarying Releases
-    url: https://sre.google/workbook/canarying-releases/
+    url: 'https://sre.google/workbook/canarying-releases/'
     type: primary
 ---
 
@@ -29,7 +31,7 @@ sources:
 
 上线前就要定好回滚线，让 SRE canary 的自动比较和自动停止机制执行。流量要从 1% 扩到 10% 再扩全量，每档都复用同一组 gate；中途某一档超过回滚阈值就停止，不要「再观察一下」把坏组合放更大。
 
-回滚 artifact 包括整组版本、index snapshot、schema adapter。有外部副作用的 tool（下单、写库）使用幂等键、审计和 kill switch，避免半发布状态继续执行。只回滚模型、index 仍是新的，用户会看到「旧模型 + 新检索」的第三种组合，比不回滚更难查。发布记录里要能一键切回上一组已签名的 artifact，而不是靠人工修改四五个配置项。canary 期间的写操作最好打上版本标签，回滚后可按标签补偿或冻结。
+回滚 artifact 包括整组版本、index snapshot、schema adapter。有外部副作用的 tool（下单、写库）使用 idempotency key、审计和 kill switch，避免半发布状态继续执行。只回滚模型、index 仍是新的，用户会看到「旧模型 + 新检索」的第三种组合，比不回滚更难查。发布记录里要能一键切回上一组已签名的 artifact，而不是靠人工修改四五个配置项。canary 期间的写操作最好打上版本标签，回滚后可按标签补偿或冻结。
 
 ## 追问
 

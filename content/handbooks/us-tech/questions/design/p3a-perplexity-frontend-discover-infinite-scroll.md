@@ -3,8 +3,10 @@ id: p3a-perplexity-frontend-discover-infinite-scroll
 section: design
 order: 603
 level: A
-title: "Perplexity：Discover 前端：分页、无限滚动与布局"
-quick: "把分页逻辑放在独立状态模型里，同一时刻复用一个在途请求，成功后再推进 cursor。按稳定 id 去重，并给 reset 加版本号，迟到的旧响应就不会覆盖新列表。"
+title: Perplexity：Discover 前端：分页、无限滚动与布局
+quick: >-
+  把分页逻辑放在独立状态模型里，同一时刻复用一个在途请求，成功后再推进 cursor。按稳定 id 去重，并给 reset
+  加版本号，迟到的旧响应就不会覆盖新列表。
 companies:
   - ai-labs
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · frontend-discover-infinite-scroll"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/frontend-discover-infinite-scroll
+  - title: 1Point3Acres · Perplexity · frontend-discover-infinite-scroll
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/frontend-discover-infinite-scroll
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现可加载下一页的 Discover feed 状态模型及 React 列表，处理分页、去重、重试和请求失效等行为。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -54,7 +57,7 @@ done -> true；之后调用 next() 不再发起请求。
 
 用给定的数据和 fetch helper，实现一个类似 Discover 页面的无限滚动信息流（原题要求 TypeScript）：滚到底部自动加载下一页，加载中、失败和全部加载完都要有对应的状态。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原始面试代码；练习用 JavaScript 和 React 写成，环境是 Node 22 + React 19。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定，不是原始面试代码；练习用 JavaScript 和 React 写成，环境是 Node 22 + React 19。
 
 ## 思路
 
@@ -98,14 +101,23 @@ cursor 只在成功分支里更新。失败时只写入错误信息，cursor 保
 ### 完整参考实现（JavaScript / React）
 
 ```javascript
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
-const INITIAL_STATE = { items: [], cursor: '', done: false, loading: false, error: null };
+const INITIAL_STATE = {
+  items: [],
+  cursor: "",
+  done: false,
+  loading: false,
+  error: null,
+};
 
 function isValidPage(page) {
-  const itemsOk = Array.isArray(page?.items)
-    && page.items.every((item) => typeof item.id === 'string' && typeof item.title === 'string');
-  const cursorOk = page?.nextCursor === null || typeof page?.nextCursor === 'string';
+  const itemsOk =
+    Array.isArray(page?.items) &&
+    page.items.every(
+      (item) => typeof item.id === "string" && typeof item.title === "string",
+    );
+  const cursorOk = page?.nextCursor === null || typeof page?.nextCursor === "string";
   return itemsOk && cursorOk;
 }
 
@@ -135,7 +147,7 @@ export class FeedModel {
 
   next() {
     if (this.closed) {
-      return Promise.reject(new Error('FeedModel is disposed'));
+      return Promise.reject(new Error("FeedModel is disposed"));
     }
     if (this.state.done) {
       return Promise.resolve();
@@ -158,10 +170,12 @@ export class FeedModel {
       await Promise.resolve();
       const page = await this.fetchPage(cursor, { signal: controller.signal });
       if (!isValidPage(page)) {
-        throw new TypeError('page must be { items: [{ id, title }], nextCursor: string | null }');
+        throw new TypeError(
+          "page must be { items: [{ id, title }], nextCursor: string | null }",
+        );
       }
       if (page.nextCursor === cursor) {
-        throw new Error('cursor did not advance');
+        throw new Error("cursor did not advance");
       }
       if (!isCurrent()) {
         return;
@@ -174,7 +188,7 @@ export class FeedModel {
     } catch (error) {
       // 失败时 cursor 不变，下一次 next() 会重试同一页
       if (isCurrent()) {
-        const message = error.name === 'AbortError' ? null : String(error.message);
+        const message = error.name === "AbortError" ? null : String(error.message);
         this.publish({ error: message });
       }
     } finally {
@@ -226,7 +240,7 @@ export function Discover({ fetchPage }) {
     model.next();
 
     let observer = null;
-    if (typeof IntersectionObserver !== 'undefined') {
+    if (typeof IntersectionObserver !== "undefined") {
       observer = new IntersectionObserver((entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
           model.next();
@@ -246,21 +260,23 @@ export function Discover({ fetchPage }) {
     };
   }, [fetchPage]);
 
-  let label = 'Load more';
+  let label = "Load more";
   if (state.done) {
-    label = 'All loaded';
+    label = "All loaded";
   } else if (state.loading) {
-    label = 'Loading…';
+    label = "Loading…";
   }
-  const items = state.items.map((item) => React.createElement('li', { key: item.id }, item.title));
+  const items = state.items.map((item) =>
+    React.createElement("li", { key: item.id }, item.title),
+  );
 
   return React.createElement(
-    'main',
+    "main",
     null,
-    React.createElement('ul', null, items),
-    React.createElement('p', { 'aria-live': 'polite' }, state.error || ''),
+    React.createElement("ul", null, items),
+    React.createElement("p", { "aria-live": "polite" }, state.error || ""),
     React.createElement(
-      'button',
+      "button",
       {
         ref: buttonRef,
         onClick: () => modelRef.current?.next(),
@@ -280,27 +296,33 @@ export function Discover({ fetchPage }) {
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```javascript
-import assert from 'node:assert/strict';
-import { renderToString } from 'react-dom/server';
+import assert from "node:assert/strict";
+import { renderToString } from "react-dom/server";
 
 // 第一页 [a]；第二页第一次失败，重试后返回 [a(重复), b] 并结束
 let calls = 0;
 let failOnce = true;
 const model = new FeedModel(async (cursor) => {
   calls++;
-  if (cursor === '') {
-    return { items: [{ id: 'a', title: 'A' }], nextCursor: '2' };
+  if (cursor === "") {
+    return { items: [{ id: "a", title: "A" }], nextCursor: "2" };
   }
   if (failOnce) {
     failOnce = false;
-    throw new Error('retry');
+    throw new Error("retry");
   }
-  return { items: [{ id: 'a', title: 'A2' }, { id: 'b', title: 'B' }], nextCursor: null };
+  return {
+    items: [
+      { id: "a", title: "A2" },
+      { id: "b", title: "B" },
+    ],
+    nextCursor: null,
+  };
 });
 
 // 同时调用两次 next() 共享同一个请求
@@ -312,13 +334,16 @@ assert.equal(calls, 1);
 
 // 失败时 cursor 停在第二页，并展示错误
 await model.next();
-assert.equal(model.state.cursor, '2');
+assert.equal(model.state.cursor, "2");
 assert.match(model.state.error, /retry/);
 
 // 重试成功：按 id 去重，保留最早的 a
 await model.next();
-assert.deepEqual(model.state.items.map((item) => item.id), ['a', 'b']);
-assert.equal(model.state.items[0].title, 'A');
+assert.deepEqual(
+  model.state.items.map((item) => item.id),
+  ["a", "b"],
+);
+assert.equal(model.state.items[0].title, "A");
 assert.equal(model.state.done, true);
 
 // 加载完后 next() 不再发请求；dispose 后 next() 被拒绝
@@ -329,22 +354,31 @@ await assert.rejects(model.next());
 
 // reset 之后，旧请求迟到的响应被丢弃
 let resolveStale;
-const stale = new FeedModel(() => new Promise((resolve) => { resolveStale = resolve; }));
+const stale = new FeedModel(
+  () =>
+    new Promise((resolve) => {
+      resolveStale = resolve;
+    }),
+);
 const stalePromise = stale.next();
 await Promise.resolve();
 stale.reset();
-resolveStale({ items: [{ id: 'x', title: 'X' }], nextCursor: null });
+resolveStale({ items: [{ id: "x", title: "X" }], nextCursor: null });
 await stalePromise;
 assert.deepEqual(stale.state.items, []);
 stale.dispose();
 
 // cursor 没有前进视为错误，避免无限重复请求同一页
-const stuck = new FeedModel(async () => ({ items: [], nextCursor: '' }));
+const stuck = new FeedModel(async () => ({ items: [], nextCursor: "" }));
 await stuck.next();
 assert.match(stuck.state.error, /did not advance/);
 
 // 服务端渲染：首屏是空列表和可点击的 Load more 按钮
-const html = renderToString(React.createElement(Discover, { fetchPage: async () => ({ items: [], nextCursor: null }) }));
+const html = renderToString(
+  React.createElement(Discover, {
+    fetchPage: async () => ({ items: [], nextCursor: null }),
+  }),
+);
 assert.match(html, /<button[^>]*>Load more<\/button>/);
 ```
 

@@ -5,7 +5,8 @@ order: 214
 level: A
 title: 腾讯 TEG 三面：零钱兑换 I / II 差在哪？
 quick: >-
-  I 求最少硬币数，`dp[x] = min(dp[x], dp[x-c]+1)`，无解为 inf；II 求组合数，外层硬币、内层金额，这样不会把排列算进去。先定义状态再写转移，别上来就写递归。
+  I 求最少硬币数，`dp[x] = min(dp[x], dp[x-c]+1)`，无解为 inf；II
+  求组合数，外层硬币、内层金额，这样不会把排列算进去。先定义状态再写转移，别上来就写递归。
 tags:
   - Tencent
   - TEG
@@ -14,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 腾讯混元TEG大模型三面-实习面经
-    url: https://www.nowcoder.com/feed/main/detail/30d3886e7f4c4a76a5f1a4f3c243dfb4
+    url: 'https://www.nowcoder.com/feed/main/detail/30d3886e7f4c4a76a5f1a4f3c243dfb4'
     type: candidate-first-hand
 ---
 
@@ -25,15 +26,15 @@ sources:
 
 完成两种零钱兑换：一种求凑出金额所需的最少硬币数，另一种统计不同的无序硬币组合数。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `coin_change(coins,amount)` 与 `change(amount,coins)`。coins为互不相同的正整数面额列表，每种可用无限枚；amount为非负整数。
+实现 `coin_change(coins,amount)` 与 `change(amount,coins)`。coins 为互不相同的正整数面额列表，每种可用无限枚；amount 为非负整数。
 
 ### 输出与约束
 
-`coin_change`返回最少枚数，无法凑出则返回-1。change返回组合数量，硬币顺序不同不另计。金额0时最少枚数为0，组合数为1（空组合）；面额列表可为空。
+`coin_change`返回最少枚数，无法凑出则返回-1。change 返回组合数量，硬币顺序不同不另计。金额0时最少枚数为0，组合数为1（空组合）；面额列表可为空。
 
 ### 示例
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 
@@ -116,4 +117,4 @@ I 返回 $0$，II 返回 $1$（空组合）。有硬币但凑不出来时，I �
 外层金额会把排列也算进去。当场用 `[1,2]` 凑 $3$ 画个表就能看出来：组合是 $2$，排列是 $3$。
 
 **每种硬币只能用一次呢？**
-那就是 01 背包，金额倒序遍历。开放题单独回答，先把 DP 的实现和边界说完。
+那就是 01 背包，金额倒序遍历。开放题单独回答，先把 DP implementation 和 base cases 说完。

@@ -3,8 +3,10 @@ id: p3a-microsoft-dna-shotgun-sequencing
 section: microsoft
 order: 600
 level: A
-title: "Microsoft AI / Copilot：DNA fragments：有向链、欧拉路径与多链"
-quick: "我会把片段当有向边、两端标签当顶点，用 Hierholzer 算法找欧拉路径，让每个片段恰好用一次。先检查出入度，最后检查路线长度，避免把不连通的边漏掉；多链是否要求最少条数要另行确认。"
+title: Microsoft AI / Copilot：DNA fragments：有向链、欧拉路径与多链
+quick: >-
+  我会把片段当有向边、两端标签当顶点，用 Hierholzer
+  算法找欧拉路径，让每个片段恰好用一次。先检查出入度，最后检查路线长度，避免把不连通的边漏掉；多链是否要求最少条数要另行确认。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · dna-shotgun-sequencing"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/dna-shotgun-sequencing
+  - title: 1Point3Acres · Microsoft AI / Copilot · dna-shotgun-sequencing
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/dna-shotgun-sequencing
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 把 DNA 片段简化为带起点和终点标签的有向边，恢复连接顺序；另一个接口允许将无法全部连成一条的输入拆成多条链。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -53,7 +56,7 @@ chains([("a", "b"), ("c", "d")])                   -> [["a", "b"], ["c", "d"]]
 
 每个 DNA 片段用起始标签和结束标签表示，要求把所有片段首尾相接，恢复出原来的序列。之后再逐步扩展到无向片段和多条链的版本。
 
-> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -168,13 +171,14 @@ def chains(edges):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 def used_edges(paths):
     return Counter(pair for path in paths for pair in zip(path, path[1:]))
+
 
 # 单链：a -> b -> a -> c，每条边恰好用一次
 edges = [("a", "b"), ("b", "a"), ("a", "c")]

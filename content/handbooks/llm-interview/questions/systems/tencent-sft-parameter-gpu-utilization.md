@@ -4,24 +4,35 @@ section: systems
 order: 104
 level: S
 title: 腾讯 WXG：如何估算 SFT 参数量与显卡利用率？
-quick: "先声明全参还是 LoRA、dtype、并行策略和 batch，再分别估算训练显存与计算利用率。显存包括参数状态、激活和临时缓冲；计算侧同时看有效 tokens/s、MFU、通信等待和数据停顿，显存占用高并不代表算得快。"
+quick: >-
+  先声明全参还是 LoRA、dtype、并行策略和 batch，再分别估算训练显存与计算利用率。显存包括参数状态、激活和临时缓冲；计算侧同时看有效
+  tokens/s、MFU、通信等待和数据停顿，显存占用高并不代表算得快。
 tags:
   - Tencent
   - WXG
   - SFT
   - Training Systems
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: 腾讯WXG暑期实习面经-大模型算法（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/d3c8e5962e1b43aab21aa5af52423b56
+    url: 'https://www.nowcoder.com/feed/main/detail/d3c8e5962e1b43aab21aa5af52423b56'
     type: candidate-first-hand
   - title: ZeRO
-    url: https://arxiv.org/abs/1910.02054
+    url: 'https://arxiv.org/abs/1910.02054'
     type: primary
 ---
+
+## 可以这样回答
+
+我会把参数量、训练显存和计算利用率分别回答。用显存 $\div$ 2 字节倒推参数量，或者只用 `nvidia-smi` 的 occupied% 判断计算效率，都会漏掉状态和等待。先声明 dtype、全参 AdamW 还是 LoRA、world size、ZeRO/TP/PP，以及是否 checkpoint 和 packing，再估每卡显存；利用率则结合有效 tokens/s 和 MFU 判断。例如 7B 的 BF16 权重约 14GB，但全参训练的参数状态起点约 112GB，还没有加激活。
+
+全参 mixed-precision AdamW 常见五份状态：BF16 权重 $2$、梯度 $2$、FP32 master $4$，Adam $m/v$ 各 $4$，合计约 $16$ bytes/param。对 $N$ 参数，未分片约 $16N$ 字节，7B 量级约 $112\,\mathrm{GB}$；$7\mathrm{B}\times 2=14\,\mathrm{GB}$ 只算了权重。LoRA 则按可训参数计算优化器等状态，底座仍可能占一份 BF16。
+
+## 技术备查
 
 我会把参数量、训练显存和计算利用率分别回答。用显存 $\div$ 2 字节倒推参数量，或者只用 `nvidia-smi` 的 occupied% 判断计算效率，都会漏掉状态和等待。先声明 dtype、全参 AdamW 还是 LoRA、world size、ZeRO/TP/PP，以及是否 checkpoint 和 packing，再估每卡显存；利用率则结合有效 tokens/s 和 MFU 判断。例如 7B 的 BF16 权重约 14GB，但全参训练的参数状态起点约 112GB，还没有加激活。
 

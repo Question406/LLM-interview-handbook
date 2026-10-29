@@ -5,7 +5,8 @@ order: 1
 level: S
 title: 阿里校招笔试 / 研发面应该按哪几条线刷？
 quick: >-
-  机试按变形刷：环形、不相邻、贪心构造、区间调度、数位和方差维护；手撕抓链表、DP、LRU；研发面再补 JVM/Redis/MQ/MySQL 和「流量 ×100」。LLM 算法题用「按公司」筛阿里。
+  机试按变形刷：环形、不相邻、贪心构造、区间调度、数位和方差维护；手撕抓链表、DP、LRU；研发面再补 JVM/Redis/MQ/MySQL 和「流量
+  ×100」。LLM 算法题用「按公司」筛阿里。
 tags:
   - Alibaba
   - 备考地图
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
   - title: 阿里 0325 AI 研发笔试复盘
-    url: https://www.nowcoder.com/discuss/866741961221292032
+    url: 'https://www.nowcoder.com/discuss/866741961221292032'
     type: candidate-first-hand
 ---
 
@@ -37,15 +38,15 @@ sources:
 - 维护结构：`ali-oa-variance`（树状数组维护区间方差）、`ali-oa-jam`、`ali-oa-reverse-seq`
 - 模拟 / 压缩：`ali-oa-match3`、`ali-oa-color-ops`、`ali-oa-bin-compress`、`ali-oa-k-repeat-substr`、`ali-oa-perm-subseq`、`ali-oa-spotlight`、`ali-oa-candy`
 
-每天闭卷复述 1 道，讲清「状态 / 贪心不变量 / 会炸的边界」，别对着题解抄。
+每天闭卷复述 1 道，讲清「状态 / 贪心不变量 / 可能失败的 edge cases」，别对着题解抄。
 
 ## 线 2：AI 笔试选择 + Prompt
 
-0325 AI 研发场考了三块：`ali-oa-ai-mcq`（Teacher forcing / GQA / ReAct / MCP）、`ali-oa-taxi-prompt`（把规则写成可过的提示词）、`ali-oa-cs-mcq`（TCP、Best Fit、GROUP BY、锁）。概念题点到为止，要展开就回 `code-gqa` 和 Agent 章，这条线上不用默写整套公式。
+0325 AI 研发场考了三块：`ali-oa-ai-mcq`（Teacher forcing / GQA / ReAct / MCP）、`ali-oa-taxi-prompt`（把规则写成可过的 prompt）、`ali-oa-cs-mcq`（TCP、Best Fit、GROUP BY、锁）。概念题点到为止，要展开就回 `code-gqa` 和 Agent 章，这条线上不用默写整套公式。
 
 ## 线 3：技术面手撕
 
-链表 + DP + LRU 是门槛，清单见 `ali-algo-prep-list`。必刷卡是 `ali-algo-list-family`、`ali-algo-edit-distance`、`ali-algo-kth-largest`、`ali-algo-level-order`、`ali-algo-lru`，写完接着练 `ali-algo-scale-100x`。
+链表 + DP + LRU 是 threshold，清单见 `ali-algo-prep-list`。必刷卡是 `ali-algo-list-family`、`ali-algo-edit-distance`、`ali-algo-kth-largest`、`ali-algo-level-order`、`ali-algo-lru`，写完接着练 `ali-algo-scale-100x`。
 
 ## 线 4：研发八股（Java / 后端岗）
 

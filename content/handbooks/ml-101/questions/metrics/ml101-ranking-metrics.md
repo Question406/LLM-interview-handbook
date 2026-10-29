@@ -3,24 +3,28 @@ id: ml101-ranking-metrics
 section: metrics
 order: 8
 level: A
-title: "Precision@K、Recall@K、MAP 和 NDCG 怎么选？"
-quick: "只关心前 K 个里有多少可用结果，看 Precision@K；关心找全多少相关结果，看 Recall@K。MAP 用二元相关性奖励相关结果靠前，NDCG 可处理多级相关性并折扣靠后位置；所有指标都要说明候选集、截断和无相关结果时的规则。"
+title: Precision@K、Recall@K、MAP 和 NDCG 怎么选？
+quick: >-
+  只关心前 K 个里有多少可用结果，看 Precision@K；关心找全多少相关结果，看 Recall@K。MAP 用二元相关性奖励相关结果靠前，NDCG
+  可处理多级相关性并折扣靠后位置；所有指标都要说明候选集、截断和无相关结果时的规则。
 tags:
   - ML101
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "TensorFlow Ranking: MeanAveragePrecisionMetric"
-    url: https://www.tensorflow.org/ranking/api_docs/python/tfr/keras/metrics/MeanAveragePrecisionMetric
+  - title: 'TensorFlow Ranking: MeanAveragePrecisionMetric'
+    url: >-
+      https://www.tensorflow.org/ranking/api_docs/python/tfr/keras/metrics/MeanAveragePrecisionMetric
     type: primary
-  - title: "scikit-learn: ndcg_score"
-    url: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.ndcg_score.html
+  - title: 'scikit-learn: ndcg_score'
+    url: >-
+      https://scikit-learn.org/stable/modules/generated/sklearn.metrics.ndcg_score.html
     type: primary
 ---
 
-先按用户怎样消费结果选指标。前 K 个位置是否够准，用 Precision@K；检索阶段有没有把需要的结果找回来，用 Recall@K；二元相关性下想综合奖励靠前命中，可以用 MAP；相关程度有高低、位置价值也不同，则用 NDCG。TensorFlow Ranking 给出 MAP 的定义，scikit-learn 的 NDCG 则明确用位置折扣和理想排序归一化。[TensorFlow Ranking: MeanAveragePrecisionMetric](https://www.tensorflow.org/ranking/api_docs/python/tfr/keras/metrics/MeanAveragePrecisionMetric)、[scikit-learn: ndcg_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.ndcg_score.html)。
+先按用户怎样消费结果选指标。前 K 个位置是否够准，用 Precision@K；检索阶段有没有把需要的结果找回来，用 Recall@K；二元相关性下想综合奖励靠前命中，可以用 MAP；相关程度有高低、位置价值也不同，则用 NDCG。TensorFlow Ranking 给出 MAP 的定义，scikit-learn 的 NDCG 则明确用位置折扣和理想排序 normalization。[TensorFlow Ranking: MeanAveragePrecisionMetric](https://www.tensorflow.org/ranking/api_docs/python/tfr/keras/metrics/MeanAveragePrecisionMetric)、[scikit-learn: ndcg_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.ndcg_score.html)。
 
 设前 K 个结果中有 $h$ 个相关，全部相关结果共有 $R$ 个，那么 Precision@K 是 $h/K$，Recall@K 是 $h/R$。同一个命中数，前者问展示位置浪费了多少，后者问应该找的结果漏了多少。例如相关文档共 10 篇，前 5 个找到 3 篇，Precision@5 为 0.6，Recall@5 为 0.3。
 
@@ -38,10 +42,10 @@ $$
 ## 追问
 
 **没有任何相关结果的查询怎么算？**
-分母可能为零，应提前规定记零、单独统计或排除的规则，并报告此类查询比例。不能在看到模型结果后再选择有利口径。
+分母可能为零，应提前规定记零、单独统计或排除的规则，并报告此类查询比例。不能在看到模型结果后再选择有利定义。
 
 **只标过曝光结果，Recall@K 可靠吗？**
-不一定。未曝光结果的相关性未知，真实分母可能缺失。要说明标注覆盖与候选池，必要时补充池化评审或其他验证。
+不一定。未曝光结果的相关性未知，真实分母可能缺失。要说明标注覆盖与候选池，必要时补充 pooling 评审或其他验证。
 
 **前 K 个命中数相同，排序就一样好吗？**
 不是。Precision@K 不区分 K 个位置内部的顺序，AP 和 NDCG 会奖励更早的相关命中，因此还要看用户对位置是否敏感。

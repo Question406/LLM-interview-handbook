@@ -3,18 +3,20 @@ id: ml101-threshold
 section: metrics
 order: 4
 level: S
-title: "分类阈值为什么不一定是 0.5？"
-quick: "0.5 适合把校准概率用于误报、漏报代价对称的简单二分类。实际阈值要按业务成本、审核容量或召回约束，在独立验证数据上选择；改变阈值会改变分类结果，但不改变原始分数的排序。"
+title: 分类阈值为什么不一定是 0.5？
+quick: >-
+  0.5 适合把 calibration
+  概率用于误报、漏报代价对称的简单二分类。实际阈值要按业务成本、审核容量或召回约束，在独立验证数据上选择；改变阈值会改变分类结果，但不改变原始分数的排序。
 tags:
   - Machine Learning
   - metrics
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Tuning the decision threshold"
-    url: https://scikit-learn.org/stable/modules/classification_threshold.html
+  - title: 'scikit-learn: Tuning the decision threshold'
+    url: 'https://scikit-learn.org/stable/modules/classification_threshold.html'
     type: primary
 ---
 

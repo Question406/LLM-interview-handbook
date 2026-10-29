@@ -27,13 +27,13 @@ sources:
 
 除了 DeepSpeed，还可以从计算图、激活显存、算子和可训参数几层优化。先看峰值显存、MFU 和 step time 里的通信等待，再结合参数量 $N$ 选对应手段，才能说明每项优化解决了什么问题。72B 全参和 72B LoRA 的成本差很多，应该先问清训练方式。
 
-如果放不下，ZeRO / FSDP 能分片参数状态；activation checkpoint 用重算换显存；CPU / NVMe offload 把优化器甚至参数搬出去，以速度换空间。长序列的 activation 不在 ZeRO 分片范围内，还要考虑减序列长度、序列并行 / 上下文并行，或者 checkpoint。开了 ZeRO-3，8k 监督微调（SFT）仍可能出现显存或数值异常。
+如果放不下，ZeRO / FSDP 能分片参数状态；activation checkpoint 用重算换显存；CPU / NVMe offload 把优化器甚至参数搬出去，以速度换空间。长序列的 activation 不在 ZeRO 分片范围内，还要考虑减序列长度、序列并行 / 上下文并行，或者 checkpoint。开了 ZeRO-3，8k SFT 仍可能出现显存或数值异常。
 
 如果算不满，可以考虑 FlashAttention、fused softmax / LayerNorm、MoE permute 融合、更大的有效 micro-batch 和通信重叠。先查 GPU 是在等 all-reduce、被 padding 稀释，还是 data loader stall。FlashAttention 降低 $T^2$ 工作区，改善同一层的计算与激活峰值，但它不切参数，也不替代 ZeRO。
 
 如果跨节点慢，就检查 TP size 是否跨过节点、PP 的 micro-batch 是否合理，采用 1F1B 等方式减少 PP bubble。小模型过早使用 ZeRO-3，每层 gather 的代价可能比计算还大，继续加分片会更慢。SP/CP 切序列激活，ZeRO 切 DP 维上的状态，长上下文可能两者都需要。
 
-微调先看 LoRA / QLoRA 是否足够。可训参数可以减少两个数量级，优化器状态也随之下降，底座冻结后 FSDP / 单机可能已经够用；若底座仍参与计算、显存还是紧，再叠加分片。显存极紧而吞吐要求不高时，才优先考虑 offload，预训练通常不把它放在最前面。
+微调先看 LoRA / QLoRA 是否足够。可训参数可以减少两个数量级，优化器状态也随之下降，底座冻结后 FSDP / 单机可能已经够用；若底座仍参与计算、显存还是紧，再叠加分片。显存极紧而 throughput 要求不高时，才优先考虑 offload，预训练通常不把它放在最前面。
 
 框架可以点名 Megatron-LM 的 TP/PP、PyTorch FSDP2，或 Megatron-DeepSpeed 混合。TP 切隐层矩阵、PP 切层、SP/CP 切序列、EP 切专家，分别作用于计算图；checkpoint、offload、分片和冻结底座影响要存什么；融合 kernel 则影响同一层怎么算。这几层要解释清楚。
 

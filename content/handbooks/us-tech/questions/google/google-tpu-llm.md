@@ -4,30 +4,42 @@ section: google
 order: 17
 level: S
 title: Google：TPU 上训 Transformer，MXU、流水线和 GPU 三维并行怎么对照
-quick: "TPU 训练 Transformer 时，要用大 GEMM 填满 $128\\times 128$ 的 MXU，softmax、LayerNorm 等算子则走向量单元。并行仍要考虑样本、层内矩阵和层间切分，但 PaLM 这类配置优先采用 Pod 内 data/model 两轴，再按容量和拓扑决定是否加流水线，不能固定套用 $\\mathrm{TP}=8$。"
+quick: >-
+  TPU 训练 Transformer 时，要用大 GEMM 填满 $128\times 128$ 的 MXU，softmax、LayerNorm
+  等算子则走向量单元。并行仍要考虑样本、层内矩阵和层间切分，但 PaLM 这类配置优先采用 Pod 内 data/model
+  两轴，再按容量和拓扑决定是否加流水线，不能固定套用 $\mathrm{TP}=8$。
 tags:
   - Google
   - TPU
   - MXU
   - Parallelism
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: PaLM — Scaling Language Modeling with Pathways
-    url: https://arxiv.org/abs/2204.02311
+    url: 'https://arxiv.org/abs/2204.02311'
     type: primary
   - title: Cloud TPU System Architecture
-    url: https://cloud.google.com/tpu/docs/system-architecture-tpu-vm
+    url: 'https://cloud.google.com/tpu/docs/system-architecture-tpu-vm'
     type: secondary
   - title: Efficiently Scaling Transformer Inference
-    url: https://arxiv.org/abs/2211.05102
+    url: 'https://arxiv.org/abs/2211.05102'
     type: primary
   - title: GSPMD — General and Scalable Parallelization for ML Computation Graphs
-    url: https://arxiv.org/abs/2105.04663
+    url: 'https://arxiv.org/abs/2105.04663'
     type: primary
 ---
+
+## 可以这样回答
+
+我会先让 Transformer 的大矩阵乘法填满 MXU，再按容量和互连成本选择 data/model 两轴切分，放不下时才考虑流水线。比如训练的矩阵行数是 $B\cdot T$，通常足够大；decode 退化到并发数 $B$，同一套布局的利用率就可能差很多。Mesh 轴的命名见 `google-tpu-mesh`，这里重点解释芯片执行和并行取舍。
+
+Attention 里 $QK^\top$ 和 $PV$ 是 GEMM，可以上 MXU；行内 softmax 不是。把 $[T,T]$ 写到 HBM 再读回来做 softmax，MXU 在等内存。TPU 上的 Splash / Pallas attention 和 FlashAttention 做同一件事：tile 留在 VMEM，见 `google-flash-attention`。TPU 也能通过分块和融合实现精确 attention。
+
+## 技术备查
 
 我会先让 Transformer 的大矩阵乘法填满 MXU，再按容量和互连成本选择 data/model 两轴切分，放不下时才考虑流水线。比如训练的矩阵行数是 $B\cdot T$，通常足够大；decode 退化到并发数 $B$，同一套布局的利用率就可能差很多。Mesh 轴的命名见 `google-tpu-mesh`，这里重点解释芯片执行和并行取舍。
 
@@ -35,9 +47,9 @@ TPU 的峰值在脉动阵列 MXU 上，常见收缩维是 128。大块 $X W$ 才
 
 - $d_{\mathrm{model}}$、$d_{\mathrm{ff}}$、$B\cdot T$ 尽量对齐 128 的倍数。差 1 个 token 的动态长度，XLA 会 pad；你不 pad，编译器也会。
 - Prefill / 训练：$[B\cdot T, D]\times[D, D]$ 矩阵行数较大，MFU 较高。
-- Decode：$T=1$，左矩阵行数是并发 $B$。$B=8$ 时 MXU 大部分格子空转。这是 TPU serving 必须靠 batch / 连续批处理的原因，和 GPU Tensor Core 怕瘦 GEMM 是同一类问题，只是 128 这个粒度更硬。
+- Decode：$T=1$，左矩阵行数是并发 $B$。$B=8$ 时 MXU 大部分格子空转。这是 TPU serving 必须靠 batch / continuous batching 的原因，和 GPU Tensor Core 怕瘦 GEMM 是同一类问题，只是 128 这个粒度更硬。
 
-Attention 里 $QK^\top$ 和 $PV$ 是 GEMM，可以上 MXU；行内 softmax 不是。把 $[T,T]$ 写到 HBM 再读回来做 softmax，MXU 在等内存。TPU 上的 Splash / Pallas 注意力和 FlashAttention 做同一件事：tile 留在 VMEM，见 `google-flash-attention`。TPU 也能通过分块和融合实现精确注意力。
+Attention 里 $QK^\top$ 和 $PV$ 是 GEMM，可以上 MXU；行内 softmax 不是。把 $[T,T]$ 写到 HBM 再读回来做 softmax，MXU 在等内存。TPU 上的 Splash / Pallas attention 和 FlashAttention 做同一件事：tile 留在 VMEM，见 `google-flash-attention`。TPU 也能通过分块和融合实现精确 attention。
 
 MFU 我当诊断工具：理论峰值按 MXU 算。掉下去先看是 GEMM 的矩阵行数太少、是等待 ICI、还是重计算 / 流水线气泡，不要先改学习率。JAX 里层怎么 `scan` / `remat` 见 `google-jax-transformer`。
 
@@ -66,7 +78,7 @@ GSPMD 可以把流水线也做成一条 mesh 轴，Python 仍写完整网络。A
 ## 追问
 
 **为什么 decode 的 MXU 利用率差？**
-收缩维还够，但 batch 维只有并发数。连续批处理是在增加 MXU 上的矩阵行数。
+收缩维还够，但 batch 维只有并发数。continuous batching 是在增加 MXU 上的矩阵行数。
 
 **TPU 上 FSDP 叫什么？**
 还是参数分片 + 按需 gather。名字随意，字节和通信时机才重要。

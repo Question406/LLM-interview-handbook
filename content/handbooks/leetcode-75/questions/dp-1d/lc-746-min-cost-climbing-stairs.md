@@ -4,20 +4,23 @@ section: dp-1d
 order: 2
 level: A
 title: LC 746 · 使用最小花费爬楼梯
-quick: "令 $dp[i]$ 为站到第 $i$ 级、还没付这级费用时的最小花费，$dp[0]=dp[1]=0$，$dp[i]=\\min(dp[i-1]+cost[i-1],\\,dp[i-2]+cost[i-2])$，答案是 $dp[n]$。滚两个变量，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  令 $dp[i]$ 为站到第 $i$
+  级、还没付这级费用时的最小花费，$dp[0]=dp[1]=0$，$dp[i]=\min(dp[i-1]+cost[i-1],\,dp[i-2]+cost[i-2])$，答案是
+  $dp[n]$。滚两个变量，时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 746. Min Cost Climbing Stairs
-    url: https://leetcode.com/problems/min-cost-climbing-stairs/
+    url: 'https://leetcode.com/problems/min-cost-climbing-stairs/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -99,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=2$ 时，从较便宜的那级一步跨两级到顶，答案 $\min(cost[0], cost[1])$。
 

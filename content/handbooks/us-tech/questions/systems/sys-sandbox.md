@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-代码奖励要在独立、短命的沙箱里执行每个样本。关闭网络，只提供题目允许的文件和只读测试，再限制 CPU、内存与时间，才能避免生成的程序影响训练环境。这是按代码执行类强化学习（RL）的常见隔离需求拟成，浏览器 agent 的沙箱另见 `design-browser-agent`。
+代码奖励要在独立、短命的沙箱里执行每个样本。关闭网络，只提供题目允许的文件和只读测试，再限制 CPU、内存与时间，才能避免生成的程序影响训练环境。这是按代码执行类 RL 的常见隔离需求拟成，浏览器 agent 的沙箱另见 `design-browser-agent`。
 
 网络关闭是为了防止程序下载答案或访问内网。工作目录只放允许的代码和测试，跑完就删除，不挂载训练集群的密钥、数据集或 checkpoint 目录。测试本身必须只读，避免模型修改评分依据。
 
@@ -31,6 +31,7 @@ sources:
 
 ```python
 import subprocess
+
 
 def run_tests(code, tests, timeout_s=5):
     # tests are mounted read-only; no network; fresh work dir

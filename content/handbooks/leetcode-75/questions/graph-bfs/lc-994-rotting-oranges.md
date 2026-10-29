@@ -4,7 +4,9 @@ section: graph-bfs
 order: 2
 level: S
 title: LC 994 · 腐烂的橘子
-quick: "用多源 BFS：所有烂橘子一起作为第 $0$ 层入队，一层就是一分钟，同时数新鲜橘子。BFS 结束后还有新鲜的就返回 $-1$，否则返回层数。时间 $O(mn)$，额外空间 $O(mn)$。"
+quick: >-
+  用多源 BFS：所有烂橘子一起作为第 $0$ 层入队，一层就是一分钟，同时数新鲜橘子。BFS 结束后还有新鲜的就返回 $-1$，否则返回层数。时间
+  $O(mn)$，额外空间 $O(mn)$。
 tags:
   - Graph
   - BFS
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 994. Rotting Oranges
-    url: https://leetcode.com/problems/rotting-oranges/
+    url: 'https://leetcode.com/problems/rotting-oranges/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -118,7 +120,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，每个格子最多入队一次。额外空间 $O(mn)$，最坏整张网格都在队列里。
 
-## 边界
+## Edge Cases
 
 一开始就没有新鲜橘子时返回 $0$，哪怕也没有烂橘子。
 
@@ -136,6 +138,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def rotTimes(grid):
     m, n = len(grid), len(grid[0])

@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 649 · Dota2 参议院
 quick: >-
-  贪心，每个参议员都禁掉下一个将要行动的对手。两个队列按下标存 R 和 D，每次比较队头，下标小的先行动、禁掉对方队头，自己以 `i+n` 重新入队进入下一轮；某队空了，另一方获胜。时间 $O(n)$，额外空间 $O(n)$。
+  贪心，每个参议员都禁掉下一个将要行动的对手。两个队列按下标存 R 和 D，每次比较队头，下标小的先行动、禁掉对方队头，自己以 `i+n`
+  重新入队进入下一轮；某队空了，另一方获胜。时间 $O(n)$，额外空间 $O(n)$。
 tags:
   - String
   - Queue
@@ -14,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 649. Dota2 Senate
-    url: https://leetcode.com/problems/dota2-senate/
+    url: 'https://leetcode.com/problems/dota2-senate/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -112,7 +113,7 @@ print("simple tests passed")
 
 时间 $O(n)$：每次循环两个出队、一个入队，总人数减一。额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 只有一方时循环不执行，直接获胜。
 
@@ -127,6 +128,7 @@ print("simple tests passed")
 
 ```python
 from collections import Counter, deque
+
 
 def predictPartyVictoryCount(senate):
     q = deque(senate)

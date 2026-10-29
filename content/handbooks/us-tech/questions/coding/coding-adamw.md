@@ -4,23 +4,26 @@ section: coding
 order: 3
 level: A
 title: 白板：AdamW 一步更新，m/v、bias correction、decoupled decay
-quick: "AdamW 用梯度更新并纠偏 $m,v$，再按自适应步长更新参数，权重衰减单独作用于更新前的参数。比如梯度为零时仍会按比例衰减；把 decay 加进梯度会让它进入矩估计、被 $\\sqrt{v}$ 缩放，得到耦合 L2。"
+quick: >-
+  AdamW 用梯度更新并纠偏 $m,v$，再按自适应步长更新参数，weight decay 单独作用于更新前的参数。比如梯度为零时仍会按比例衰减；把
+  decay 加进梯度会让它进入矩估计、被 $\sqrt{v}$ 缩放，得到耦合 L2。
 tags:
   - 完整编程练习
   - Coding
   - AdamW
   - Optimizer
   - Meta
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Decoupled Weight Decay Regularization
-    url: https://arxiv.org/abs/1711.05101
+    url: 'https://arxiv.org/abs/1711.05101'
     type: primary
   - title: torch.optim.AdamW
-    url: https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html'
     type: primary
 ---
 
@@ -28,11 +31,17 @@ sources:
 
 实现一次 AdamW 参数更新，返回更新后的参数和优化器状态。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出
 
 `adamw_step(p,g,m,v,t,lr=0.001,b1=0.9,b2=0.999,eps=1e-8,wd=0.01)` 返回 `(new_p,new_m,new_v)`，不修改输入。p、g、m、v 是同形浮点张量，依次为当前参数、梯度、此前一阶矩、此前二阶矩；t 是从 1 开始计数的本次更新序号。
 
-采用标准 AdamW 定义：一阶矩按 b1 平滑梯度，二阶矩按 b2 平滑梯度平方，使用第 t 步的偏差校正；参数更新包含自适应梯度项及独立于梯度的 `lr*wd*p` 权重衰减。分母为校正二阶矩的平方根加 eps。b1、b2 在 `[0,1)`，eps 为正，lr、wd 非负。
+采用标准 AdamW 定义：一阶矩按 b1 平滑梯度，二阶矩按 b2 平滑梯度平方，使用第 t 步的偏差校正；参数更新包含自适应梯度项及独立于梯度的 `lr*wd*p` weight decay。分母为校正二阶矩的平方根加 eps。b1、b2 在 `[0,1)`，eps 为正，lr、wd 非负。
+
+### 完整数值定义
+
+令 `m_new=b1*m+(1-b1)*g`，`v_new=b2*v+(1-b2)*g*g`，再计算 `m_hat=m_new/(1-b1**t)`、`v_hat=v_new/(1-b2**t)`。最终 `new_p=(1-lr*wd)*p-lr*m_hat/(sqrt(v_hat)+eps)`。返回值顺序为 `(new_p,m_new,v_new)`；weight decay 使用旧 p，不进入 m、v。所有运算逐元素执行。
 
 ### 示例
 
@@ -49,11 +58,11 @@ p=[1], g=[2], m=v=[0], t=1, lr=0.1, wd=0
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证，用 `torch.optim.AdamW` 做数值对照。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证，用 `torch.optim.AdamW` 做数值对照。
 
 ### 题面、接口与约束
 
-- `adamw_step(p, g, m, v, t, lr, b1, b2, eps, wd) -> (p, m, v)`：做一步 AdamW 更新，返回新参数和新的一阶、二阶矩状态，不修改输入张量。要用 bias correction 和解耦权重衰减（decoupled weight decay）。
+- `adamw_step(p, g, m, v, t, lr, b1, b2, eps, wd) -> (p, m, v)`：做一步 AdamW 更新，返回新参数和新的一阶、二阶矩状态，不修改输入张量。要用 bias correction 和解耦 weight decay（decoupled weight decay）。
 - 约束：`p`、`g`、`m`、`v` 是同形状的浮点张量；`t` 从 1 开始；`0 <= b1, b2 < 1`；`eps > 0`。不满足时抛 `ValueError`。
 
 ### 输入输出示例
@@ -65,9 +74,9 @@ p=[1, -2], g=[0.5, 0.25], t=1         -> 和 torch.optim.AdamW(lr=1e-3, weight_d
 
 ### 解题思路与正确性
 
-先用梯度更新 $m$、$v$ 两个指数滑动平均，再分别除以 $1-\beta_1^t$、$1-\beta_2^t$ 做纠偏。$m,v$ 初始化为 0，前几步会偏小，纠偏把它们放大回无偏估计。
+先用梯度更新 $m$、$v$ 两个指数滑动平均，再分别除以 $1-\beta_1^t$、$1-\beta_2^t$ 做纠偏。$m,v$ 初始化为 0，前几步会偏小，纠偏把它们放大回 unbiased estimate。
 
-权重衰减直接乘在参数上：`p *= (1 - lr * wd)`，用的是更新前的参数。它不加进梯度，所以不会进入 $m$、$v$，也不会被 $\sqrt{\hat v}$ 缩放。这正是 AdamW 和「Adam + L2」的区别。
+weight decay 直接乘在参数上：`p *= (1 - lr * wd)`，用的是更新前的参数。它不加进梯度，所以不会进入 $m$、$v$，也不会被 $\sqrt{\hat v}$ 缩放。这正是 AdamW 和「Adam + L2」的区别。
 
 ### 完整参考实现（Python 3）
 
@@ -80,7 +89,7 @@ def adamw_step(p, g, m, v, t, lr=1e-3, b1=0.9, b2=0.999, eps=1e-8, wd=0.01):
     """AdamW 的一步更新，不修改输入，返回 (新参数, 新 m, 新 v)。
 
     p, g, m, v 同形状；t 是从 1 开始的 optimizer step 计数。
-    权重衰减直接作用在参数上（decoupled），不进入梯度和矩估计。
+    weight decay 直接作用在参数上（decoupled），不进入梯度和矩估计。
     """
     if t < 1:
         raise ValueError(f"step t starts at 1, got {t}")
@@ -90,9 +99,9 @@ def adamw_step(p, g, m, v, t, lr=1e-3, b1=0.9, b2=0.999, eps=1e-8, wd=0.01):
         raise ValueError(f"eps must be positive, got {eps}")
     m = b1 * m + (1.0 - b1) * g
     v = b2 * v + (1.0 - b2) * g * g
-    m_hat = m / (1.0 - b1 ** t)   # bias correction：早期 m、v 偏向 0
-    v_hat = v / (1.0 - b2 ** t)
-    p = p * (1.0 - lr * wd)       # decoupled decay，用更新前的参数
+    m_hat = m / (1.0 - b1**t)  # bias correction：早期 m、v 偏向 0
+    v_hat = v / (1.0 - b2**t)
+    p = p * (1.0 - lr * wd)  # decoupled decay，用更新前的参数
     p = p - lr * m_hat / (v_hat.sqrt() + eps)
     return p, m, v
 ```
@@ -105,7 +114,7 @@ def adamw_step(p, g, m, v, t, lr=1e-3, b1=0.9, b2=0.999, eps=1e-8, wd=0.01):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -142,7 +151,15 @@ for step in (2, 3):
 assert torch.allclose(current, reference)
 
 # 梯度为 0 时只剩衰减：1 * (1 - 0.1 * 0.2) = 0.98
-decayed, _, _ = adamw_step(torch.tensor([1.0]), torch.zeros(1), torch.zeros(1), torch.zeros(1), 1, lr=0.1, wd=0.2)
+decayed, _, _ = adamw_step(
+    torch.tensor([1.0]),
+    torch.zeros(1),
+    torch.zeros(1),
+    torch.zeros(1),
+    1,
+    lr=0.1,
+    wd=0.2,
+)
 assert torch.allclose(decayed, torch.tensor([0.98]))
 
 # 不修改输入
@@ -164,11 +181,11 @@ expect_value_error(adamw_step, params, grad, m0, v0, 1, eps=0.0)
 
 ## 题怎么来的
 
-Llama / GPT 的训练栈默认用 AdamW，它不是「Adam 加一点 L2」。Meta、OpenAI、Anthropic 的研究岗会让你在白板上写一步更新，再追问为什么耦合的权重衰减会让梯度大的参数几乎衰减不动。方法出自 Loshchilov & Hutter 的论文，PyTorch 的 `AdamW` 按解耦方式实现。NVIDIA 还会问混合精度下这一步和 GradScaler 的先后顺序。
+Llama / GPT 的训练栈默认用 AdamW，它不是「Adam 加一点 L2」。Meta、OpenAI、Anthropic 的研究岗会让你在白板上写一步更新，再追问为什么耦合的 weight decay 会让梯度大的参数几乎衰减不动。方法出自 Loshchilov & Hutter 的论文，PyTorch 的 `AdamW` 按解耦方式实现。NVIDIA 还会问混合精度下这一步和 GradScaler 的先后顺序。
 
 ## 一步更新：$m,v$ → 纠偏 → 自适应步长 → 衰减
 
-梯度 $g_t=\nabla_\theta L(\theta_{t-1})$，其中不含权重衰减项：
+梯度 $g_t=\nabla_\theta L(\theta_{t-1})$，其中不含 weight decay 项：
 
 $$
 \begin{aligned}
@@ -192,7 +209,7 @@ $$
 
 Adam 加 L2 是把正则写进损失：$g \leftarrow g+\lambda\theta$，然后整体除以 $\sqrt{v}$。$|g|$ 大的坐标 $v$ 也大，衰减项被自适应分母缩小，正则强度就和梯度尺度绑在了一起。AdamW 把 $\lambda\theta$ 留在参数空间里单独作用，论文标题里的 decoupled 指的就是这一点。因此解释 AdamW 时，需要指出衰减没有进入自适应分母。
 
-混合精度下的顺序是：先 `unscale_`，再梯度裁剪，最后 `optimizer.step()`。梯度裁剪见 `coding-grad-clip`。$t$ 是 optimizer step 的计数，用 gradient accumulation 时，累积多个 micro-step 才加一次 $t$。
+混合精度下的顺序是：先 `unscale_`，再 gradient clipping，最后 `optimizer.step()`。gradient clipping 见 `coding-grad-clip`。$t$ 是 optimizer step 的计数，用 gradient accumulation 时，累积多个 micro-step 才加一次 $t$。
 
 ## 追问
 

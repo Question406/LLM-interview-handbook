@@ -5,7 +5,8 @@ order: 3
 level: A
 title: LC 1448 · 统计二叉树中好节点的数目
 quick: >-
-  前序 DFS，把「根到父节点路径上的最大值」往下传。当前值不小于它就计一个好节点，再用 $\max$ 更新后传给孩子。时间 $O(n)$，额外空间 $O(h)$。
+  前序 DFS，把「根到父节点路径上的最大值」往下传。当前值不小于它就计一个好节点，再用 $\max$ 更新后传给孩子。时间 $O(n)$，额外空间
+  $O(h)$。
 tags:
   - Tree
   - DFS
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1448. Count Good Nodes in Binary Tree
-    url: https://leetcode.com/problems/count-good-nodes-in-binary-tree/
+    url: 'https://leetcode.com/problems/count-good-nodes-in-binary-tree/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -141,7 +142,7 @@ print("simple tests passed")
 
 时间 $O(n)$。额外空间 $O(h)$，链状最坏 $O(n)$。
 
-## 边界
+## Edge Cases
 
 - 只有根时答案是 $1$。
 - 和路径最大值相等也算好节点，比较用 `>=`。

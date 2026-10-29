@@ -3,18 +3,20 @@ id: ml101-train-valid-test
 section: data
 order: 1
 level: S
-title: "训练集、验证集和测试集怎么分工？"
-quick: "训练集用来拟合参数，验证集用来选模型、超参数和决策阈值，测试集在方案确定后估计最终效果。切分比例取决于样本量和任务，最重要的是让评估样本符合实际使用场景，并避免相同实体或未来信息穿过边界。"
+title: 训练集、验证集和测试集怎么分工？
+quick: >-
+  训练集用来拟合参数，验证集用来选模型、超参数和决策阈值，测试集在方案确定后估计最终效果。切分比例取决于样本量和任务，最重要的是让评估样本符合实际使用场景，并避免相同实体或未来信息泄露到其他
+  split。
 tags:
   - Machine Learning
   - data
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Cross-validation"
-    url: https://scikit-learn.org/stable/modules/cross_validation.html
+  - title: 'scikit-learn: Cross-validation'
+    url: 'https://scikit-learn.org/stable/modules/cross_validation.html'
     type: primary
 ---
 
@@ -30,4 +32,4 @@ sources:
 可以继续研发，但这份测试集已经影响了选择。后续最终评价需要新的独立数据，或明确披露它已变成开发数据。
 
 **最终在训练加验证集上重训，预处理怎么办？**
-按已经确定的流程重新拟合全部预处理和模型。标准化参数可以从合并后的开发数据学习，但仍不能使用最终测试数据。
+按已经确定的流程重新拟合全部预处理和模型。standardization 参数可以从合并后的开发数据学习，但仍不能使用最终测试数据。

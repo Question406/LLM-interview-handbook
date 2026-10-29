@@ -4,7 +4,9 @@ section: anthropic
 order: 30
 level: A
 title: Anthropic：tool 往返结果过大、截断、cache 前缀被破坏，怎么处理？
-quick: "我会给工具输出设固定上限，超限时明确告诉模型截掉了什么，再让它按需读剩余内容。tools 和 system 保持稳定，最新结果放在缓存点之后；改写旧结果、改变截断长度或回贴顺序，都会让后面的缓存失效。"
+quick: >-
+  我会给工具输出设固定上限，超限时明确告诉模型截掉了什么，再让它按需读剩余内容。tools 和 system
+  保持稳定，最新结果放在缓存点之后；改写旧结果、改变截断长度或回贴顺序，都会让后面的缓存失效。
 tags:
   - Anthropic
   - Tool use
@@ -13,16 +15,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Prompt caching (Claude Docs)
-    url: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+    url: 'https://platform.claude.com/docs/en/build-with-claude/prompt-caching'
     type: primary
   - title: Tool use overview (Claude Docs)
-    url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+    url: 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview'
     type: primary
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
 ---
 
@@ -38,10 +40,12 @@ sources:
 
 截图的占用更大：每张按 `anthropic-vision` 的 $T_{\mathrm{vis}}$ 计，二十步不丢历史，视觉 token 能到三万。只留最近 1–2 张，旧的改成文本动作记录。`is_error` 的结果不要再塞半截 HTML；给错误码和可修的字段。
 
-不要把堆栈、密钥、Set-Cookie 回灌进上下文。结果当不可信数据，边界见 `anthropic-prompt-injection` 和 `anthropic-xml-prompt`。
+不要把堆栈、密钥、Set-Cookie 回灌进上下文。结果当不可信数据，相关 constraints 见 `anthropic-prompt-injection` 和 `anthropic-xml-prompt`。
 
 ```python
 MAX = 8000
+
+
 def pack_result(text, tool_use_id):
     if len(text) <= MAX:
         body = text
@@ -72,7 +76,7 @@ def pack_result(text, tool_use_id):
 
 流式、MCP 和窗口预算也会影响结果处理。
 
-流式还没拼完 JSON 就执行，结果形状会漂，见 `anthropic-streaming-tools`。MCP 服务器返回的资源当数据，描述进上下文等于可执行 输入提示（prompt），见 `anthropic-mcp`。窗口预算：文本结果按 tokenizer 计，图按 $T_{\mathrm{vis}}$ 计，两者抢同一条 $T$，见 `anthropic-long-context`。
+流式还没拼完 JSON 就执行，结果形状会漂，见 `anthropic-streaming-tools`。MCP 服务器返回的资源当数据，描述进上下文等于可执行 prompt，见 `anthropic-mcp`。窗口预算：文本结果按 tokenizer 计，图按 $T_{\mathrm{vis}}$ 计，两者抢同一条 $T$，见 `anthropic-long-context`。
 
 常见误区是：结果超过窗口就静默丢最后一轮；截断不标注；把「本次检索时间」写进要缓存的 system；为了省 token 把旧工具结果改写成摘要却仍指望命中旧 cache。
 

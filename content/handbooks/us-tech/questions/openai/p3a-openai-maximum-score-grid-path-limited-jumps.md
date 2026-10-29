@@ -3,8 +3,10 @@ id: p3a-openai-maximum-score-grid-path-limited-jumps
 section: openai
 order: 622
 level: A
-title: "OpenAI：有限跨行跳跃的最大分数路径"
-quick: "DP 用当前行、列、已用跳数记录状态，按行递增转移。新分数更高就覆盖分数、条数和前驱，同分才累加路径数，最后从前驱还原一条最优路径；奖励依赖历史时还要扩状态。"
+title: OpenAI：有限跨行跳跃的最大分数路径
+quick: >-
+  DP
+  用当前行、列、已用跳数记录状态，按行递增转移。新分数更高就覆盖分数、条数和前驱，同分才累加路径数，最后从前驱还原一条最优路径；奖励依赖历史时还要扩状态。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · maximum-score-grid-path-limited-jumps"
-    url: https://www.1point3acres.com/interview/problems/company/openai/maximum-score-grid-path-limited-jumps
+  - title: 1Point3Acres · OpenAI · maximum-score-grid-path-limited-jumps
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/maximum-score-grid-path-limited-jumps
     type: secondary
 ---
 
@@ -54,7 +57,7 @@ grid_path([[1], [2]], 0, 0, bonus=5) -> (8, 1, [(0, 0), (1, 0)])
 
 给一个整数网格和第一行的起点，每步往下走，可以下移 1 行，也可以最多 K 次下移 2 行（跨过中间一行）。要求最高分数、一条最优路径、最优路径的条数，以及加上「奖励规则」之后的扩展版本。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 所有移动都让行号变大，所以按行从上到下处理状态就是合法的拓扑序：处理一个状态时，能到达它的状态都已经算完了。
 
@@ -176,7 +179,7 @@ def grid_path(grid, start, k, bonus=0):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -187,6 +190,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 单列，逐行走最好
 assert grid_path([[1], [2], [3]], 0, 1) == (6, 1, [(0, 0), (1, 0), (2, 0)])

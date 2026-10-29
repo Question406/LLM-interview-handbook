@@ -4,23 +4,35 @@ section: systems
 order: 36
 level: S
 title: MoE 专家计算为什么要用 Grouped GEMM，而不是 for-loop 或 pad 成 batched GEMM？
-quick: "Grouped GEMM 适合专家各自 token 数 $n_i$ 不同的情况：一次 kernel 接受多组变长矩阵，避免 for-loop 反复启动，也省掉 batched GEMM 为对齐形状补出的空位。训练和大 prefill 通常适合它；decode 的单专家输入太小时，还要考虑 fused MoE kernel。"
+quick: >-
+  Grouped GEMM 适合专家各自 token 数 $n_i$ 不同的情况：一次 kernel 接受多组变长矩阵，避免 for-loop
+  反复启动，也省掉 batched GEMM 为对齐形状补出的空位。训练和大 prefill 通常适合它；decode 的单专家输入太小时，还要考虑
+  fused MoE kernel。
 tags:
   - MoE
   - Grouped GEMM
   - Systems
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: MegaBlocks
-    url: https://arxiv.org/abs/2211.15841
+    url: 'https://arxiv.org/abs/2211.15841'
     type: primary
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
 ---
+
+## 可以这样回答
+
+MoE 专家输入长度不一，用 Grouped GEMM 可以一次提交各组计算，少启动 kernel，也少算 padding。比如路由后有的专家收到很多 token，有的只收到几个，把 $N$ 个 `nn.Linear` 放进循环会频繁启动 kernel；补成相同长度再算则会把空位也算进去。Permute 已经把同一专家的 token 排成连续段，下一步就是选择怎样把这些变长矩阵交给 Tensor Core。
+
+Permute 之后专家 $i$ 的输入是 $X_i\in\mathbb{R}^{n_i\times d}$，权重 $W_i\in\mathbb{R}^{d\times d_{\mathrm{ff}}}$（SwiGLU 再乘一门一升）。$n_i$ 随路由变。
+
+## 技术备查
 
 MoE 专家输入长度不一，用 Grouped GEMM 可以一次提交各组计算，少启动 kernel，也少算 padding。比如路由后有的专家收到很多 token，有的只收到几个，把 $N$ 个 `nn.Linear` 放进循环会频繁启动 kernel；补成相同长度再算则会把空位也算进去。Permute 已经把同一专家的 token 排成连续段，下一步就是选择怎样把这些变长矩阵交给 Tensor Core。
 

@@ -3,8 +3,10 @@ id: p3a-xai-common-ngrams
 section: xai
 order: 750
 level: S
-title: "xAI：高频 N-grams：边界、计数与确定性排序"
-quick: "我会在每篇文档内滑动长度为 n 的 token 窗口，用 tuple 计数，再按次数降序、tuple 字典序取前 k 个。窗口重叠也分别计数；原题只有标题线索，token 单位、大小写和跨文档边界都要先确认。"
+title: xAI：高频 N-grams：edge cases、计数与确定性排序
+quick: >-
+  我会在每篇文档内滑动长度为 n 的 token 窗口，用 tuple 计数，再按次数降序、tuple 字典序取前 k
+  个。窗口重叠也分别计数；原题只有标题线索，token 单位、大小写和跨 document boundaries 都要先确认。
 companies:
   - xai
 tags:
@@ -15,18 +17,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: 1Point3Acres xAI source
-    url: https://www.1point3acres.com/interview/problems/4ccdfde5-3895-413d-afaf-05181effd6aa
+    url: >-
+      https://www.1point3acres.com/interview/problems/4ccdfde5-3895-413d-afaf-05181effd6aa
     type: secondary
 ---
 
 ## 题目描述
 
-统计多篇已分词文档中出现最频繁的 n-gram，明确文档边界、重叠窗口与次数相同时的返回顺序。
+统计多篇已分词文档中出现最频繁的 n-gram，明确 document boundaries、重叠窗口与次数相同时的返回顺序。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -60,7 +63,7 @@ n-gram 是连续 n 个 token。每篇文档单独滑窗，窗口内容转成 tup
 因为原题条件不明，面试时要先问清楚这几件事：
 
 - token 的单位是字节、字符还是分好的词，要不要做大小写归一；
-- 窗口能不能跨文档边界（一般不能，否则会凭空造出不存在的 n-gram）；
+- 窗口能不能跨 document boundaries（一般不能，否则会凭空造出不存在的 n-gram）；
 - 次数相同时怎么排序，k 比不同 n-gram 总数还大时返回什么。
 
 窗口是重叠的，比如 `a b a b` 里 `(a, b)` 出现两次。并列时显式按 tuple 字典序排，输出就不会依赖哈希表的遍历顺序。
@@ -105,7 +108,7 @@ def top_ngrams(documents, n, k):
     for tokens in documents:
         # 窗口只在单个文档内滑动，不跨文档拼接
         for start in range(len(tokens) - n + 1):
-            counts[tuple(tokens[start:start + n])] += 1
+            counts[tuple(tokens[start : start + n])] += 1
     ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
     return ranked[:k]
 ```
@@ -118,7 +121,7 @@ def top_ngrams(documents, n, k):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

@@ -4,34 +4,48 @@ section: systems
 order: 5
 level: S
 title: 系统：continuous batching，iteration-level 调度，hole 碎片
-quick: "Continuous batching 在每个 decode iteration 移出结束请求并补入新请求，减少等最长序列造成的空槽。还要用 ragged / packed 计算和分页 KV，分别填补计算与内存空洞，并按 TPOT SLO 限制 batch。"
+quick: >-
+  Continuous batching 在每个 decode iteration 移出结束请求并补入新请求，减少等最长序列造成的空槽。还要用 ragged
+  / packed 计算和分页 KV，分别填补计算与内存空洞，并按 TPOT SLO 限制 batch。
 tags:
   - Serving
   - NVIDIA
   - vLLM
   - TGI
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: "Orca: A Distributed Serving System for Transformer-Based Generative Models"
-    url: https://www.usenix.org/conference/osdi22/presentation/yu
+  - title: 'Orca: A Distributed Serving System for Transformer-Based Generative Models'
+    url: 'https://www.usenix.org/conference/osdi22/presentation/yu'
     type: primary
   - title: Continuous batching from first principles
-    url: https://huggingface.co/blog/continuous_batching
+    url: 'https://huggingface.co/blog/continuous_batching'
     type: secondary
-  - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
-    url: https://arxiv.org/abs/2309.06180
+  - title: >-
+      Efficient Memory Management for Large Language Model Serving with
+      PagedAttention
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
-  - title: Paged Attention, IFB, and Request Scheduling — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
+  - title: 'Paged Attention, IFB, and Request Scheduling — TensorRT-LLM'
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
     type: secondary
 ---
 
+## 可以这样回答
+
 Continuous batching 把调度粒度改成每个 decode iteration，短请求结束就释放槽位，从 waiting 补新请求。比如 24 条 decode 加 2 条 prefill，结束 3 条后可以立刻补 3 条，其他请求无需等最长那条完成。
 
-NVIDIA TensorRT-LLM 将它称为 in-flight batching，vLLM / Hugging Face TGI 称为 continuous batching，论文起点是 OSDI'22 Orca。OpenAI serving 对应题见 `openai-continuous-batching`。动态 padding 仍可能等整批结束，调度边界不同。
+NVIDIA TensorRT-LLM 将它称为 in-flight batching，vLLM / Hugging Face TGI 称为 continuous batching，论文起点是 OSDI'22 Orca。OpenAI serving 对应题见 `openai-continuous-batching`。动态 padding 仍可能等整批结束，scheduling boundaries 不同。
+
+## 技术备查
+
+Continuous batching 把调度粒度改成每个 decode iteration，短请求结束就释放槽位，从 waiting 补新请求。比如 24 条 decode 加 2 条 prefill，结束 3 条后可以立刻补 3 条，其他请求无需等最长那条完成。
+
+NVIDIA TensorRT-LLM 将它称为 in-flight batching，vLLM / Hugging Face TGI 称为 continuous batching，论文起点是 OSDI'22 Orca。OpenAI serving 对应题见 `openai-continuous-batching`。动态 padding 仍可能等整批结束，scheduling boundaries 不同。
 
 $B$ 条请求一起 generate，长度可以差一个数量级。静态实现 pad 到最长那条：先结束的行仍占着计算槽和按 `max_len` 预留的 KV，直到最慢那条写完。GPU 看起来在做 $[B,d]\times[d,d]$，有的行已经是 mask 掉的废计算。LLM 生成长度方差远大于分类模型，由此带来的浪费也更明显。
 
@@ -51,18 +65,18 @@ GPU 上的有效 $B$ 维持在高位，decode 的瘦 GEMM 被喂得更满。Hugg
 
 - **计算空洞：** 还用稠密 padded 张量，结束行仍在 GEMM 里吃 mask。要 packed / ragged kernel，只算有效的 token。
 - **内存空洞：** 仍按 `max_len` 连续预留 KV，新请求没有地方插。要 PagedAttention 按块分配、结束即回收，见 `sys-paged-attn`。
-- **prefill 打断：** 一条长输入提示（prompt） 插入 decode batch，会把 memory-bound 的 decode 流水拆碎。工程上用 chunked prefill 把长 prompt 切块，块之间仍插入 decode；干扰仍然严重时，再考虑 prefill/decode 分池，见 `sys-prefill-decode-disagg`。
+- **prefill 打断：** 一条长 prompt 插入 decode batch，会把 memory-bound 的 decode 流水拆碎。工程上用 chunked prefill 把长 prompt 切块，块之间仍插入 decode；干扰仍然严重时，再考虑 prefill/decode 分池，见 `sys-prefill-decode-disagg`。
 
 调度目标往往是 SLO 内的 goodput，不是瞬时 tokens/s。`max_num_seqs` 提高到接近 KV 容量上限，P99 TPOT 先坏。短请求一直插入会饿死长请求，要 aging / 抢占。NVIDIA 岗可能追 Nsight 上 SM 是在算 decode、在算一段巨大 prefill，还是在等 KV 分配失败后的抢占。
 
 ## 追问
 
 **和动态 padding 是一回事吗？**
-不是。动态 padding 仍等整 batch 结束才换人；continuous batching 在每个 decode token 边界就移出、插入。
+不是。动态 padding 仍等整 batch 结束才换人；continuous batching 在每个 decode token boundaries 就移出、插入。
 **没有 paging 只做 iteration 调度行不行？**
 很快 OOM：结束序列的 KV 按最大长度占着，新请求没有页。Orca 的调度和 vLLM 的分页是配套。
 **batch 越大越好吗？**
-有效 $B$ 提高 decode 算术强度，但 KV 容量和 TPOT SLO 封顶。应比较满足 SLO 的有效吞吐量（goodput）。
+有效 $B$ 提高 decode 算术强度，但 KV 容量和 TPOT SLO 封顶。应比较满足 SLO 的有效 throughput（goodput）。
 **和 PD 分离什么关系？**
 Continuous batching 是单池时间复用；PD 分离是跨池空间复用。Chunked prefill 是单池折中。三层不要说成一个开关。
 **hole 和 KV 碎片是一件事吗？**

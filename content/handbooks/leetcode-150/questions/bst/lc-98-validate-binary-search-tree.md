@@ -4,7 +4,9 @@ section: bst
 order: 3
 level: S
 title: LC 98 · 验证二叉搜索树
-quick: "递归时带上下界：左子树的值必须 $\\lt$ 当前值，右子树必须 $\\gt$ 当前值，边界沿路径往下收紧；也可以检查中序是否严格递增。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  递归时带上下界：左子树的值必须 $\lt$ 当前值，右子树必须 $\gt$ 当前值，valid range 沿路径逐步收紧；也可以检查中序是否严格递增。时间
+  $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - BST
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 98. 验证二叉搜索树
-    url: https://leetcode.cn/problems/validate-binary-search-tree/
+    url: 'https://leetcode.cn/problems/validate-binary-search-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -55,7 +57,7 @@ sources:
 
 拿 `[5, 4, 6, null, null, 3, 7]` 看：$4 \lt 5$、$6 \gt 5$、$3 \lt 6$、$7 \gt 6$，每一对父子都合法。但 $3$ 在根的右子树里，它的区间是 $(5, 6)$，$3$ 不在里面，所以返回假。
 
-另一种写法是检查中序是否严格递增，维护前驱就行。节点值可能是 `INT_MIN` / `INT_MAX`，边界用空值或 `None` 表示，别写成 `node.val > INT_MIN` 这种硬编码。
+另一种写法是检查中序是否严格递增，维护前驱就行。节点值可能是 `INT_MIN` / `INT_MAX`，bounds 用空值或 `None` 表示，别写成 `node.val > INT_MIN` 这种硬编码。
 
 ## 参考代码
 
@@ -121,7 +123,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 单节点是有效的 BST。有重复值时，本题要求严格，相等就无效。右子树里藏着比祖先还小的节点，就是上面那个例子，只比父子会漏掉。
 
@@ -149,4 +151,4 @@ def isValidBST_inorder(root):
 ```
 
 **允许等于（非严格 BST）怎么改？**
-把开区间改成闭区间：左界改成 `node.val < lo` 才失败，右界改成 `node.val > hi` 才失败；中序版改成非严格递增，`node.val < prev` 才失败。本题题面是严格的，动手前先确认。值可能是 $32$ 位的最值，边界照样用 `None`。
+把开区间改成闭区间：左界改成 `node.val < lo` 才失败，右界改成 `node.val > hi` 才失败；中序版改成非严格递增，`node.val < prev` 才失败。本题题面是严格的，动手前先确认。值可能是 $32$ 位的最值，bounds 仍然用 `None`。

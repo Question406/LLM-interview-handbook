@@ -3,8 +3,8 @@ id: p3a-mistral-daily-gpu-remaining
 section: overview
 order: 800
 level: A
-title: "Mistral：每日 GPU 余量统计"
-quick: "每天从满容量复制一份，再按 (day, cluster) 扣掉乱序记录里的用量，输出第 0 天到最大日的余量矩阵；前一天的余量不结转。"
+title: Mistral：每日 GPU 余量统计
+quick: '每天从满容量复制一份，再按 (day, cluster) 扣掉乱序记录里的用量，输出第 0 天到最大日的余量矩阵；前一天的余量不结转。'
 companies:
   - mistral
 tags:
@@ -12,13 +12,15 @@ tags:
   - 1Point3Acres
   - Frontier-2026-10
   - mistral
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Mistral：每日 GPU 余量统计"
-    url: https://www.1point3acres.com/interview/problems/d17c9b3f-c87d-4976-b339-e901cdb6f076
+  - title: 1Point3Acres · Mistral：每日 GPU 余量统计
+    url: >-
+      https://www.1point3acres.com/interview/problems/d17c9b3f-c87d-4976-b339-e901cdb6f076
     type: secondary
 ---
 
@@ -26,7 +28,9 @@ sources:
 
 计算各集群每日剩余 GPU，并比较自由切换与限制切换次数时的最大可用总量。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `remaining(capacity,usages)` 中 capacity 是 C 个集群每日容量，usages 是无序 `(day,cluster,count)` 列表，同日同集群用量相加。返回从第 0 天到最大 day 的 `[D,C]` 剩余量，缺失天按满容量处理，每天容量重新开始；空 usages 返回空列表。
 
@@ -46,7 +50,7 @@ remain=[[9,1],[1,9],[9,1]]：limited(k=1)=19，limited(k=2)=27。
 
 给定每个集群每天的 GPU 容量，以及一批 `(day, cluster, gpus)` 使用记录，算出每一天每个集群还剩多少 GPU。每天容量从满额重新开始，使用记录可能乱序。
 
-> 来源：一亩三分地 Mistral 题目详情（2026-10-18 读取），题面由网站从面经整理，没有逐条核对原帖，网站收录也不等于公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题；这份练习把余量统计、无限切换和最多 K 次切换三问串成同一组接口。
+> 来源：一亩三分地 Mistral 题目详情（2026-10-18 读取），题面由网站从面经整理，网站收录也不等于公司官方确认。下面的接口、约束和测试是手册补的练习约定；这份练习把余量统计、无限切换和最多 K 次切换三问串成同一组接口。
 
 ## 思路
 
@@ -159,7 +163,7 @@ def limited(remain, k):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -167,12 +171,14 @@ def limited(remain, k):
 import itertools
 import random
 
+
 def expect_value_error(fn, *args):
     try:
         fn(*args)
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 def brute_force(remain, k):
     """枚举每天的集群选择，只保留切换次数不超过 k 的路径。"""
@@ -182,6 +188,7 @@ def brute_force(remain, k):
         if switches <= k:
             totals.append(sum(remain[day][cluster] for day, cluster in enumerate(path)))
     return max(totals)
+
 
 # 乱序记录；每天容量重置，不把前一天的余量带过去
 remain_matrix = remaining([10, 20], [(1, 0, 3), (0, 0, 5), (0, 1, 13)])
@@ -195,10 +202,10 @@ assert remaining([4], []) == []
 
 # 非法输入
 expect_value_error(remaining, [5], [(0, 0, 3), (0, 0, 3)])  # 当天累计超额
-expect_value_error(remaining, [5], [(0, 1, 1)])             # 集群越界
-expect_value_error(remaining, [], [])                       # 空容量
+expect_value_error(remaining, [5], [(0, 1, 1)])  # 集群越界
+expect_value_error(remaining, [], [])  # 空容量
 expect_value_error(limited, [[1]], -1)
-expect_value_error(limited, [[1, 2], [3]], 1)               # 不是矩形
+expect_value_error(limited, [[1, 2], [3]], 1)  # 不是矩形
 
 # 与暴力枚举对拍：交错的矩阵每多一次切换都能多拿分
 zigzag = [[9, 1], [1, 9], [9, 1]]

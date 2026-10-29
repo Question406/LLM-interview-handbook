@@ -5,33 +5,36 @@ order: 5
 level: A
 title: Position Interpolation、NTK-aware scaling、YaRN 大致在做什么？
 quick: >-
-  三者都在改 RoPE 的 $t\theta_i$ 映射，让长位置的旋转落回模型见过的范围：PI 把所有位置按同一比例压进训练区间，近处分辨率下降；NTK-aware
-  按频率区别缩放，尽量保住高频；YaRN 分段更平滑地插值并调注意力温度。只把 max_position_embeddings 改大不起作用。
+  三者都在改 RoPE 的 $t\theta_i$ 映射，让长位置的旋转落回模型见过的范围：PI
+  把所有位置按同一比例压进训练区间，近处分辨率下降；NTK-aware 按频率区别缩放，尽量保住高频；YaRN 分段更平滑地插值并调 attention
+  温度。只把 max_position_embeddings 改大不起作用。
 tags:
   - Long Context
   - RoPE
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
-  - title: Extending Context Window of Large Language Models via Positional Interpolation
-    url: https://arxiv.org/abs/2306.15595
+  - title: >-
+      Extending Context Window of Large Language Models via Positional
+      Interpolation
+    url: 'https://arxiv.org/abs/2306.15595'
     type: primary
   - title: YaRN
-    url: https://arxiv.org/abs/2309.00071
+    url: 'https://arxiv.org/abs/2309.00071'
     type: primary
 ---
 
-这三种方法都在重新定义 RoPE 长位置下的频率，让外推时的旋转仍然落在模型见过的范围附近。PI 把长位置统一压缩进训练区间，代价是近处分辨率下降；NTK-aware 按频率区别缩放，尽量保住高频的局部信息；YaRN 按频率分段、插值更平滑，还调节注意力温度。它们改的都是 $t\theta_i$ 这条映射，长依赖任务和 KV 成本仍要单独评。
+这三种方法都在重新定义 RoPE 长位置下的频率，让外推时的旋转仍然落在模型见过的范围附近。PI 把长位置统一压缩进训练区间，代价是近处分辨率下降；NTK-aware 按频率区别缩放，尽量保住高频的局部信息；YaRN 按频率分段、插值更平滑，还调节 attention 温度。它们改的都是 $t\theta_i$ 这条映射，长依赖任务和 KV 成本仍要单独评。
 
 面试里我会先讲为什么只把 `max_position_embeddings` 改大没用，再比较三种频率策略各牺牲了什么。
 
 ## 为什么直接外推 RoPE 会坏
 
-RoPE 把位置 $t$ 编码成一组频率 $\theta_i$ 上的旋转。频率是几何级数，越靠后的维度 $\theta_i$ 越小、波长越长：低频分量管远距离的相对位置，高频分量管近邻文本处理单位（token）的精细相位。训练长度 $L$ 以内，$t\theta_i$ 有界；推理到 $t'=8L$ 时，高频维度会多转很多圈，相对位置编码跑出训练分布。于是长距离依赖先坏，严重时短距离注意力也不稳。
+RoPE 把位置 $t$ 编码成一组频率 $\theta_i$ 上的旋转。频率是几何级数，越靠后的维度 $\theta_i$ 越小、波长越长：低频分量管远距离的相对位置，高频分量管近邻 token 的精细相位。训练长度 $L$ 以内，$t\theta_i$ 有界；推理到 $t'=8L$ 时，高频维度会多转很多圈，相对位置编码跑出训练分布。于是长距离依赖先坏，严重时短距离 attention 也不稳。
 
-这是位置编码的分布外数据（OOD，即与训练数据明显不同的数据）问题，窗口数字写小了并不是原因。把 `max_position_embeddings` 改大，只是多了可写的下标，频谱还按旧的 $\theta_i$ 转。长上下文外推时，短波长的维度先转出训练见过的圈数，所以高频最怕直接外推；低频维度还没转出范围，在统一压缩里却会被不必要地压扁。后面两种方法都在利用这张频谱图，位置不能当成一个标量 index 处理。扩完之后还要不要少量长文本微调，决定了能扩多狠，纯测试时外推更脆。
+这是位置编码的 out-of-distribution 数据（OOD，即与训练数据明显不同的数据）问题，窗口数字写小了并不是原因。把 `max_position_embeddings` 改大，只是多了可写的下标，频谱还按旧的 $\theta_i$ 转。长上下文外推时，短波长的维度先转出训练见过的圈数，所以高频最怕直接外推；低频维度还没转出范围，在统一压缩里却会被不必要地压扁。后面两种方法都在利用这张频谱图，位置不能当成一个标量 index 处理。扩完之后还要不要少量长文本微调，决定了能扩多狠，纯测试时外推更脆。
 
 ## PI：把长 index 压回训练区间
 
@@ -43,7 +46,7 @@ PI 对所有频率一刀切，没区分「高频怕外推、低频怕被压」�
 
 NTK-aware scaling 的观察是：高频对外推失真更敏感，低频对插值压缩更敏感。所以它让高频少改，保住邻域分辨率；低频多改，把超长距离仍编进可表示的相位。它比 PI 更细，但仍是一条全局规则，极端倍数下某些频段会出现突变。
 
-YaRN 再进一步按频率分段：一部分维度接近 PI，一部分接近 NTK-aware，中间插值，并引入 attention temperature，缓解扩展后注意力过尖或过平。目标是在「近处仍分得清、远处仍有相对位置」之间做更平滑的折中，用的 token 比全量长上下文预训练少得多。YaRN 论文把 PI 和 NTK-aware 放进同一框架比较，现场可以记成「PI 一刀切、NTK 按频、YaRN 分段再加温度」，画出低频 / 高频不同策略再加温度就够，具体公式和超参以论文为准。
+YaRN 再进一步按频率分段：一部分维度接近 PI，一部分接近 NTK-aware，中间插值，并引入 attention temperature，缓解扩展后 attention 过尖或过平。目标是在「近处仍分得清、远处仍有相对位置」之间做更平滑的折中，用的 token 比全量长上下文预训练少得多。YaRN 论文把 PI 和 NTK-aware 放进同一框架比较，现场可以记成「PI 一刀切、NTK 按频、YaRN 分段再加温度」，画出低频 / 高频不 on-policy 再加温度就够，具体公式和超参以论文为准。
 
 三种方法都给不了免费的无限窗口，KV cache、延迟、中间位置利用率差这些问题还在。长度扩展解决的是位置编码 OOD，不会自动解决 Lost-in-the-Middle。评测要看真实的长依赖任务，光看 perplexity 能不能接着往下算不够。用 ALiBi 这类非 RoPE 方案的模型，这三套方法都不适用。
 
@@ -59,4 +62,4 @@ YaRN 再进一步按频率分段：一部分维度接近 PI，一部分接近 NT
 按频率区别缩放，尽量保住高频局部信息，把扩展主要交给低频。它仍是一条全局规则，极端倍数上可能有频段突变。
 
 **YaRN 还多了什么？**
-分段插值更平滑，并考虑 attention 温度，通常配少量长数据做适配。它改的仍是 RoPE 映射，注意力算法本身没换。
+分段插值更平滑，并考虑 attention 温度，通常配少量长数据做适配。它改的仍是 RoPE 映射，attention 算法本身没换。

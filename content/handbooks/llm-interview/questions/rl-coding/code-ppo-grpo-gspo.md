@@ -4,51 +4,63 @@ section: rl-coding
 order: 8
 level: S
 title: 手写 PPO / GRPO / GSPO：TRL 和 verl 各改哪一段？
-quick: "把一次更新拆成优势、ratio、clip、归约四根独立旋钮：PPO 用 GAE 再 whiten，GRPO 用组内 $(r-\\mathrm{mean})/(\\mathrm{std}+\\varepsilon)$，Dr.GRPO 去掉除 std；clip 有对称 PPO、DAPO 的不对称上界、verl 的 dual-clip（$A\\lt 0$ 时用 `clip_ratio_c` 封顶）、CISPO 的 detach 权重、GSPO 的序列几何平均；归约对照 verl 的 `agg_loss` 和 TRL 的 `loss_type`，TRL 默认已经是 `dapo`，论文原版要改成 `grpo`。"
+quick: >-
+  把一次更新拆成优势、ratio、clip、归约四根独立旋钮：PPO 用 GAE 再 whiten，GRPO 用组内
+  $(r-\mathrm{mean})/(\mathrm{std}+\varepsilon)$，Dr.GRPO 去掉除 std；clip 有对称
+  PPO、DAPO 的不对称上界、verl 的 dual-clip（$A\lt 0$ 时用 `clip_ratio_c` 封顶）、CISPO 的 detach
+  权重、GSPO 的序列几何平均；归约对照 verl 的 `agg_loss` 和 TRL 的 `loss_type`，TRL 默认已经是
+  `dapo`，论文原版要改成 `grpo`。
 tags:
   - PPO
   - GRPO
   - GSPO
   - TRL
   - verl
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: '2026-10-27'
 sources:
   - title: TRL GRPO Trainer
-    url: https://huggingface.co/docs/trl/grpo_trainer
+    url: 'https://huggingface.co/docs/trl/grpo_trainer'
     type: primary
   - title: TRL paper index（GSPO / DAPO / Dr.GRPO 配置）
-    url: https://huggingface.co/docs/trl/paper_index
+    url: 'https://huggingface.co/docs/trl/paper_index'
     type: primary
   - title: verl GSPO example
-    url: https://github.com/verl-project/verl/blob/main/examples/gspo_trainer/README.md
+    url: >-
+      https://github.com/verl-project/verl/blob/main/examples/gspo_trainer/README.md
     type: primary
   - title: verl GRPO
-    url: https://verl.readthedocs.io/en/latest/algo/grpo.html
+    url: 'https://verl.readthedocs.io/en/latest/algo/grpo.html'
     type: primary
   - title: GSPO
-    url: https://arxiv.org/abs/2507.18071
+    url: 'https://arxiv.org/abs/2507.18071'
     type: primary
   - title: verl core_algos.py
-    url: https://github.com/verl-project/verl/blob/main/verl/trainer/ppo/core_algos.py
+    url: >-
+      https://github.com/verl-project/verl/blob/main/verl/trainer/ppo/core_algos.py
     type: primary
 ---
 
 ## 题目描述
 
-实现一组小型PyTorch策略损失函数，用同一组张量比较PPO、GRPO与GSPO的计算约定。本卡的默认可运行小题是 `ppo_clip_losses`；其余函数是可逐项练习的扩展，后面的TRL/verl配置与框架路径用于代码阅读，不要求安装训练框架。
+实现一组小型 PyTorch 策略损失函数，用同一组张量比较 PPO、GRPO 与 GSPO 的计算约定。本卡的默认可运行小题是 `ppo_clip_losses`；其余函数是可逐项练习的扩展，后面的 TRL/verl 配置与框架路径用于代码阅读，不要求安装训练框架。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
+
+### 本次交付与扩展阅读
+
+本次可运行练习只要求实现 `ppo_clip_losses(logp,old_logp,adv,eps=0.2)` 并返回 `(losses,rho)`。其余函数列在下文，是训练框架代码阅读的扩展，不要求在这一次练习中实现，也不根据未给出的扩展接口评分。默认实现不得附加 KL、entropy、value loss 或 reduction。
 
 ### 接口与输入
 
-默认接口 `ppo_clip_losses(logp,old_logp,adv,eps=0.2)`：三个同形浮点张量，logp/`old_logp`是新旧策略在相同采样token上的log概率，adv是已算好的优势；0≤eps<1。扩展使用[B,T]逐token数据和同形0/1 `response_mask`；`completion_logprobs(logits,input_ids)` 输入[B,T,V]与[B,T]，输出移位对齐的[B,T-1]。
+默认接口 `ppo_clip_losses(logp,old_logp,adv,eps=0.2)`：三个同形浮点张量，logp/`old_logp`是新旧策略在相同 sampling token 上的 log 概率，adv 是已算好的优势；0≤eps<1。扩展使用[B,T]逐 token 数据和同形0/1 `response_mask`；`completion_logprobs(logits,input_ids)` 输入[B,T,V]与[B,T]，输出移位对齐的[B,T-1]。
 
 ### 输出与约束
 
-默认返回 `(losses,rho)`，均同形。rho=exp(clamp(logp-`old_logp`,-20,20))；losses为 -adv*rho 和 -adv*clamp(rho,1-eps,1+eps) 的较大者，不做归约。扩展约定：`asymmetric_clip_losses`将上下epsilon分开；`dual_clip_losses`仅对负优势把loss封顶为-adv*c；`cispo_losses`使用截断后detach的ratio乘-adv*logp；`gspo_losses`前向ratio为有效token log-ratio均值的指数并广播，每token梯度只走自身logp；`sapo_losses`输出-adv*sigmoid(tau*(rho-1))*4/tau。`grpo_outcome_advantage`按`prompt_index`分组，把各回复有效奖励总和减组均值，可除样本标准差+eps，再广播乘mask；单样本组按mean=0,std=1。`masked_whiten`用全批mask有效位置的总体均值/方差标准化，但不额外把输出无效位置清零；`gae_advantages`返回whiten后的优势，无外部bootstrap。`rollout_is_weight`按mode结尾mask把区间外ratio置0，其他模式截断。`agg_loss`可做token均值/和，或每有效序列的token和/均值再平均；norm模式还除给定常数或T。
+默认返回 `(losses,rho)`，均同形。rho=exp(clamp(logp-`old_logp`,-20,20))；losses 为 -adv*rho 和 -adv*clamp(rho,1-eps,1+eps) 的较大者，不做归约。扩展约定：`asymmetric_clip_losses`将上下 epsilon 分开；`dual_clip_losses`仅对负优势把 loss 封顶为-adv*c；`cispo_losses`使用截断后 detach 的 ratio 乘-adv*logp；`gspo_losses`前向 ratio 为有效 token log-ratio 均值的指数并广播，每 token 梯度只走自身 logp；`sapo_losses`输出-adv*sigmoid(tau*(rho-1))*4/tau。`grpo_outcome_advantage`按`prompt_index`分组，把各回复有效奖励总和减组均值，可除样本标准差+eps，再广播乘 mask；单样本组按 mean=0,std=1。`masked_whiten`用全批 mask 有效位置的总体均值/方差 standardization，但不额外把输出无效位置清零；`gae_advantages`返回 whiten 后的优势，无外部 bootstrap。`rollout_is_weight`按 mode 结尾 mask 把区间外 ratio 置0，其他模式截断。`agg_loss`可做 token 均值/和，或每有效序列的 token 和/均值再平均；norm 模式还除给定常数或 T。
 
 ### 示例
 
@@ -77,6 +89,7 @@ ppo_clip_losses -> losses=[-1.2,0.8], rho=[1.5,0.5]
 import torch
 import torch.nn.functional as F
 
+
 def completion_logprobs(logits, input_ids):
     # logits[b, t] 预测的是 input_ids[b, t+1]，所以丢掉最后一格 logits、丢掉第一个 input id。
     # 返回 [B, T-1]，和 response_mask 的时间维对齐。prompt 位置在 mask 里是 0。
@@ -96,6 +109,7 @@ def masked_whiten(x, mask, eps=1e-8):
     var = ((x - mean).square() * mask).sum() / denom
     return (x - mean) / var.sqrt().clamp(min=eps)
 
+
 def gae_advantages(rewards, values, response_mask, gamma=1.0, lam=1.0):
     # rewards, values, response_mask: [B, T]。values 与 rewards 同长，t 之后的 bootstrap 用 next value。
     # mask=0 的位置（prompt / pad）不产生新的 delta，并把上一时刻的 value / GAE 原样带过来。
@@ -106,16 +120,22 @@ def gae_advantages(rewards, values, response_mask, gamma=1.0, lam=1.0):
         delta = rewards[:, t] + gamma * next_value - values[:, t]
         last_gae_ = delta + gamma * lam * last_gae
         # mask=0：value 和 GAE 都沿用更靠后的那一格，不把 pad 上的 V 写进递推。
-        next_value = values[:, t] * response_mask[:, t] + (1 - response_mask[:, t]) * next_value
-        last_gae = last_gae_ * response_mask[:, t] + (1 - response_mask[:, t]) * last_gae
+        next_value = (
+            values[:, t] * response_mask[:, t] + (1 - response_mask[:, t]) * next_value
+        )
+        last_gae = (
+            last_gae_ * response_mask[:, t] + (1 - response_mask[:, t]) * last_gae
+        )
         advantages[:, t] = last_gae
     return masked_whiten(advantages, response_mask)
 ```
 
-GRPO 不训 $V$。verl `compute_grpo_outcome_advantage` 先把 token 奖励沿时间求和，每条回复得到一个标量，再按输入提示（prompt）id 分组。`norm_adv_by_std_in_grpo=True` 时除以组内标准差（原论文做法）；`False` 时只减均值，这就是 Dr.GRPO。标量再乘 `response_mask` 广播回每个 response token，同一条回复的 token 共享同一个 $A$。`torch.std` 默认 `unbiased=True`（除 $G-1$）。
+GRPO 不训 $V$。verl `compute_grpo_outcome_advantage` 先把 token 奖励沿时间求和，每条回复得到一个标量，再按 promptid 分组。`norm_adv_by_std_in_grpo=True` 时除以组内标准差（原论文做法）；`False` 时只减均值，这就是 Dr.GRPO。标量再乘 `response_mask` 广播回每个 response token，同一条回复的 token 共享同一个 $A$。`torch.std` 默认 `unbiased=True`（除 $G-1$）。
 
 ```python
-def grpo_outcome_advantage(token_rewards, response_mask, prompt_index, eps=1e-6, norm_by_std=True):
+def grpo_outcome_advantage(
+    token_rewards, response_mask, prompt_index, eps=1e-6, norm_by_std=True
+):
     # token_rewards, response_mask: [B, T]
     # prompt_index: 长度 B 的 prompt id。同一道题的 G 条必须同一个 id，不能按 batch 下标猜。
     scores = (token_rewards * response_mask).sum(dim=-1)  # [B]，outcome 标量
@@ -128,16 +148,20 @@ def grpo_outcome_advantage(token_rewards, response_mask, prompt_index, eps=1e-6,
             mean, std = group.new_zeros(()), group.new_ones(())
         else:
             mean = group.mean()
-            std = group.std(unbiased=True)  # 与 compute_grpo_outcome_advantage 里的 torch.std 一致
+            std = group.std(
+                unbiased=True
+            )  # 与 compute_grpo_outcome_advantage 里的 torch.std 一致
         if norm_by_std:
             adv[members] = (group - mean) / (std + eps)
         else:
-            adv[members] = group - mean  # Dr.GRPO：algorithm.norm_adv_by_std_in_grpo=False
+            adv[members] = (
+                group - mean
+            )  # Dr.GRPO：algorithm.norm_adv_by_std_in_grpo=False
     # 广播。padding 乘 0。返回的第二项在 verl 里也是这份张量，他们管它叫 returns。
     return adv[:, None] * response_mask
 ```
 
-TRL 的 `scale_rewards` 只管这一步的除标准差，不动归约：`"group"`（默认）用组内 std；`"batch"` 整批一个 std（Lite PPO）；`False` / `"none"` 不除 std。多奖励时，`multi_objective_aggregation="sum_then_normalize"` 先加权求和再标准化；`"normalize_then_sum"` 是 GDPO，每个奖励维先在组内标准化再相加，免得大尺度奖励把其余项淹掉。verl 里对应的是 `compute_gdpo_outcome_advantage`。
+TRL 的 `scale_rewards` 只管这一步的除标准差，不动归约：`"group"`（默认）用组内 std；`"batch"` 整批一个 std（Lite PPO）；`False` / `"none"` 不除 std。多奖励时，`multi_objective_aggregation="sum_then_normalize"` 先加权求和再 standardization；`"normalize_then_sum"` 是 GDPO，每个奖励维先在组内 standardization 再相加，免得大尺度奖励把其余项淹掉。verl 里对应的是 `compute_gdpo_outcome_advantage`。
 
 ## Clip
 
@@ -186,7 +210,7 @@ CISPO 换掉的是 clip 的对象，优势没动。TRL `loss_type="cispo"` 时�
 ```python
 def cispo_losses(logp, old_logp, adv, eps_max=5.0):
     rho = (logp - old_logp).exp()
-    # detach：上界是常数系数。反传只走 logp，不走被截断的 ρ。
+    # detach：上界是常数系数。backpropagation 只走 logp，不走被截断的 ρ。
     weight = rho.clamp(max=eps_max).detach()
     return -(weight * adv * logp), rho
 ```
@@ -197,15 +221,15 @@ $$
 \log s_{i,t}=\mathrm{sg}[\log s_i]+\log\pi_\theta(y_t)-\mathrm{sg}[\log\pi_\theta(y_t)].
 $$
 
-数值上 $s_{i,t}=s_i$。如果直接对 $\exp(\mathrm{mean}\log\rho)$ 反传，$1/|y|$ 会进到 ratio 的梯度里；verl 把这一项停掉了，长度权重交给后面的 `agg_loss`。log 在 exp 之前再夹到不超过 10。窗口用 $3\times 10^{-4}$ / $4\times 10^{-4}$，因为几何平均离 1 很近，套 0.2 几乎永远不会触发。GSPO 这条函数自己不再做 dual-clip。
+数值上 $s_{i,t}=s_i$。如果直接对 $\exp(\mathrm{mean}\log\rho)$ backpropagation，$1/|y|$ 会进到 ratio 的梯度里；verl 把这一项停掉了，长度权重交给后面的 `agg_loss`。log 在 exp 之前再夹到不超过 10。窗口用 $3\times 10^{-4}$ / $4\times 10^{-4}$，因为几何平均离 1 很近，套 0.2 几乎永远不会触发。GSPO 这条函数自己不再做 dual-clip。
 
 ```python
 def gspo_losses(logp, old_logp, adv, response_mask, eps_low=3e-4, eps_high=4e-4):
     log_ratio = logp - old_logp
-    lengths = response_mask.sum(dim=-1).clamp(min=1)          # [B]
+    lengths = response_mask.sum(dim=-1).clamp(min=1)  # [B]
     # (1/|y|) * Σ_t log ρ_t ，只在 response token 上平均。
     seq_log_ratio = (log_ratio * response_mask).sum(dim=-1) / lengths
-    # 前向 = 广播后的序列比；序列均值不参与反传。
+    # 前向 = 广播后的序列比；序列均值不参与 backpropagation。
     log_s = logp - logp.detach() + seq_log_ratio.detach()[:, None]
     log_s = log_s.clamp(max=10.0)
     rho = log_s.exp()
@@ -221,12 +245,14 @@ SAPO 拿掉了硬 clip，改成一个温度门。verl `compute_policy_loss_sapo`
 ```python
 def sapo_losses(logp, old_logp, adv, tau_pos=1.0, tau_neg=1.05):
     rho = (logp - old_logp).clamp(-20.0, 20.0).exp()
-    tau = torch.where(adv > 0, torch.full_like(adv, tau_pos), torch.full_like(adv, tau_neg))
+    tau = torch.where(
+        adv > 0, torch.full_like(adv, tau_pos), torch.full_like(adv, tau_neg)
+    )
     gate = torch.sigmoid(tau * (rho - 1.0)) * (4.0 / tau)
     return -(gate * adv), rho
 ```
 
-还有一层：采样引擎和训练前向的 logprob 可能对不上。这是另外乘在算好的 token loss 上的权重，上面的 PPO clip 照样要做。TRL 默认 `vllm_importance_sampling_correction=True`、`vllm_importance_sampling_mode="sequence_mask"`、上界 `vllm_importance_sampling_clip_max=3.0`。`*_truncate` 把比值夹进 $[C_{\min},C_{\max}]$；`*_mask` 把区间外的比值改成 0，这个样本这一步就没有梯度。verl 把同样的系数放进 `rollout_is_weights`，在 `pg_losses` 上再乘一次。
+还有一层：sampling 引擎和训练前向的 logprob 可能对不上。这是另外乘在算好的 token loss 上的权重，上面的 PPO clip 照样要做。TRL 默认 `vllm_importance_sampling_correction=True`、`vllm_importance_sampling_mode="sequence_mask"`、上界 `vllm_importance_sampling_clip_max=3.0`。`*_truncate` 把比值夹进 $[C_{\min},C_{\max}]$；`*_mask` 把区间外的比值改成 0，这个样本这一步就没有梯度。verl 把同样的系数放进 `rollout_is_weights`，在 `pg_losses` 上再乘一次。
 
 ```python
 def rollout_is_weight(rho, mode="sequence_mask", c_max=3.0, c_min=None):
@@ -251,8 +277,8 @@ def agg_loss(loss_mat, response_mask, mode, loss_scale_factor=None):
     # token-sum：不除 token 数。长 batch 的梯度按 token 总数线性变大。
     if mode == "token-sum":
         return (loss_mat * response_mask).sum()
-    seq_sum = (loss_mat * response_mask).sum(dim=-1)          # [B]
-    seq_len = response_mask.sum(dim=-1)                        # [B]
+    seq_sum = (loss_mat * response_mask).sum(dim=-1)  # [B]
+    seq_len = response_mask.sum(dim=-1)  # [B]
     valid = (seq_len > 0).float()
     # seq-mean-token-sum：每条先求和，再对有效序列平均。长回复更响。
     # 这是 TRL loss_type="grpo" 去掉「再除 |o_i|」之前的近亲；TRL 的 "grpo" 还要再除 |o_i|，见下。
@@ -262,7 +288,9 @@ def agg_loss(loss_mat, response_mask, mode, loss_scale_factor=None):
     # 设成 max_completion_length 就对齐 TRL loss_type="dr_grpo" 的 1/(L·G) 里的 L。
     # 分母不随这条回复的真实长度变，短回复不会因为除以更小的 |o_i| 而被放大。
     if mode == "seq-mean-token-sum-norm":
-        horizon = response_mask.size(-1) if loss_scale_factor is None else loss_scale_factor
+        horizon = (
+            response_mask.size(-1) if loss_scale_factor is None else loss_scale_factor
+        )
         return (seq_sum * valid).sum() / valid.sum().clamp(min=1) / horizon
     # seq-mean-token-mean：每条内部先平均，再对序列平均。每条回复权重相同。
     # TRL loss_type="grpo" 是这一式。GSPO 例子显式要求它。verl 的 SAPO 把它写死。
@@ -283,7 +311,7 @@ def agg_loss(loss_mat, response_mask, mode, loss_scale_factor=None):
 
 Dr.GRPO 在 verl 里要三处一起改，光改归约不够：`norm_adv_by_std_in_grpo=False`、`loss_agg_mode=seq-mean-token-sum-norm`、`use_kl_loss=False`。TRL 这边是 `scale_rewards=False` 加 `loss_type="dr_grpo"`。
 
-KL 不在这张归约表里。TRL 的 `beta`（默认 0）大于 0 时，可导的 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 加在每个 token 的 $l_{i,t}$ 里，和 ratio 一起反传；`use_bias_correction_kl=True`（默认）还会再乘重要性比。verl 的 `use_kl_loss` 是 surrogate 旁边另加的一项，`kl_loss_type=low_var_kl` 就是 Schulman $k_3$。PPO 也可以先把 KL 扣进奖励分数（reward）再送进 GAE，那会改变优势的符号，见 `ant-grpo-kl-vs-ppo`。
+KL 不在这张归约表里。TRL 的 `beta`（默认 0）大于 0 时，可导的 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 加在每个 token 的 $l_{i,t}$ 里，和 ratio 一起 backpropagation；`use_bias_correction_kl=True`（默认）还会再乘重要性比。verl 的 `use_kl_loss` 是 surrogate 旁边另加的一项，`kl_loss_type=low_var_kl` 就是 Schulman $k_3$。PPO 也可以先把 KL 扣进奖励分数（reward）再送进 GAE，那会改变优势的符号，见 `ant-grpo-kl-vs-ppo`。
 
 ## 对照着开
 
@@ -305,18 +333,18 @@ paper_grpo = GRPOConfig(
 dapo = GRPOConfig(
     loss_type="dapo",
     epsilon=0.2,
-    epsilon_high=0.28,          # clip-higher
+    epsilon_high=0.28,  # clip-higher
     mask_truncated_completions=True,
     beta=0.0,
 )
 gspo = GRPOConfig(
-    loss_type="grpo",            # 序列等权。换成 "dapo" 就改成 token 等权
+    loss_type="grpo",  # 序列等权。换成 "dapo" 就改成 token 等权
     importance_sampling_level="sequence",
     beta=0.0,
     epsilon=3e-4,
     epsilon_high=4e-4,
     gradient_accumulation_steps=1,
-    steps_per_generation=4,      # 必须大于 gradient_accumulation_steps，序列比才不等于 1
+    steps_per_generation=4,  # 必须大于 gradient_accumulation_steps，序列比才不等于 1
 )
 cispo = GRPOConfig(loss_type="cispo", epsilon_high=5.0)
 sapo = GRPOConfig(loss_type="sapo", sapo_temperature_pos=1.0, sapo_temperature_neg=1.05)
@@ -333,12 +361,12 @@ actor_rollout_ref:
     n: 8
   actor:
     policy_loss:
-      loss_mode: vanilla          # gspo / sapo / gpg
+      loss_mode: vanilla # gspo / sapo / gpg
     loss_agg_mode: token-mean
     clip_ratio: 0.2
-    clip_ratio_low: 0.2           # DAPO 保持 0.2
-    clip_ratio_high: 0.2          # DAPO 改成 0.28
-    clip_ratio_c: 3.0             # dual-clip，只作用于 A<0
+    clip_ratio_low: 0.2 # DAPO 保持 0.2
+    clip_ratio_high: 0.2 # DAPO 改成 0.28
+    clip_ratio_c: 3.0 # dual-clip，只作用于 A<0
     use_kl_loss: true
     kl_loss_coef: 0.001
     kl_loss_type: low_var_kl
@@ -380,7 +408,9 @@ actor_rollout_ref:
 只复制前面的 PyTorch 函数定义，不需要“对照着开”中的 TRL 配置。用正负优势各一个位置，手算 PPO 裁剪后的逐 token loss 为 -1.2 与 0.8；这是结果测试，函数内部的参数合法性断言不能代替它。
 
 ```python
-losses, ratio = ppo_clip_losses(torch.tensor([1.5, 0.5]).log(), torch.zeros(2), torch.tensor([1., -1.]))
+losses, ratio = ppo_clip_losses(
+    torch.tensor([1.5, 0.5]).log(), torch.zeros(2), torch.tensor([1.0, -1.0])
+)
 torch.testing.assert_close(losses, torch.tensor([-1.2, 0.8]))
 torch.testing.assert_close(ratio, torch.tensor([1.5, 0.5]))
 print("simple tests passed")
@@ -395,12 +425,12 @@ print("simple tests passed")
 源码的单样本分支不是零。组里只有 1 条时，mean 被设成 0、std 设成 1，优势等于原始分数；数学上 $n=1$ 减掉自己的均值才是 0。要做组内对照，仍然得 `rollout.n>1`，文档也这样要求，见 `sys-rl-group-n`。
 
 **GSPO 的 $1/|y|$ 在梯度的哪一段？**
-verl 把序列均值 detach 了，ratio 的梯度里没有 $1/|y|$，长度出现在 `seq-mean-token-mean` 的分母里。直接对 $\exp(\mathrm{mean}\log\rho)$ 反传，才会在 ratio 里再除一次长度。
+verl 把序列均值 detach 了，ratio 的梯度里没有 $1/|y|$，长度出现在 `seq-mean-token-mean` 的分母里。直接对 $\exp(\mathrm{mean}\log\rho)$ backpropagation，才会在 ratio 里再除一次长度。
 
 **dual-clip 和 DAPO 的上界是一回事吗？**
 两回事。`clip_ratio_high` 移动的是 $1+\varepsilon$，正负优势都看这个窗口；`clip_ratio_c` 只封 $A\lt 0$ 且 $\rho$ 很大时的损失，默认 3，离 1 很远。
 
 **CISPO 越界还有梯度吗？**
-有。权重是 detach 后的常数，反传走 $\log\pi$；PPO / GRPO / GSPO 的 `maximum` 在有利一侧越界时梯度是 0，见 `pt-cispo`。
+有。权重是 detach 后的常数，backpropagation 走 $\log\pi$；PPO / GRPO / GSPO 的 `maximum` 在有利一侧越界时梯度是 0，见 `pt-cispo`。
 
 相关：`code-grpo`（组优势片段）、`code-ppo-clip`（对称 clip 的符号）、`code-gae`（GAE 的 terminal / truncation）、`pt-cispo`（CISPO 的动机）、`pt-dapo`（DAPO 的四个旋钮）、`baidu-grpo-loss-agg`（归约口试）

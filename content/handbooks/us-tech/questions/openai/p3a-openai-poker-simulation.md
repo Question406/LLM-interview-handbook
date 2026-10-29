@@ -3,8 +3,10 @@ id: p3a-openai-poker-simulation
 section: openai
 order: 614
 level: A
-title: "OpenAI：三张牌模拟与可扩展牌型比较"
-quick: "每手牌编码成可按字典序比较的 tuple，先放牌型等级，再放该牌型破平局的点数。加同花只扩展评估器，弃牌则在发牌后、比较前过滤。发牌、评估和选赢家分开，规则变化时就不必重写整个模拟。"
+title: OpenAI：三张牌模拟与可扩展牌型比较
+quick: >-
+  每手牌编码成可按字典序比较的
+  tuple，先放牌型等级，再放该牌型破平局的点数。加同花只扩展评估器，弃牌则在发牌后、比较前过滤。发牌、评估和选赢家分开，规则变化时就不必重写整个模拟。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · poker-simulation"
-    url: https://www.1point3acres.com/interview/problems/company/openai/poker-simulation
+  - title: 1Point3Acres · OpenAI · poker-simulation
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/poker-simulation
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 模拟三张牌的简化扑克比赛，实现牌型排序和确定性发牌，并支持只让对子或三条玩家继续参与比较的规则。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -52,7 +55,7 @@ rank_hand([(14,0), (10,1), (5,2)]) == rank_hand([(14,3), (10,2), (5,1)])  -> Tru
 
 模拟一个三张牌的扑克游戏：给每个玩家发三张牌，记录过程，按三条、对子、高牌比较大小选出赢家。之后面试官会加新规则，比如引入同花牌型、允许没有对子的玩家弃牌。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -135,11 +138,13 @@ def deal(players, seed=0, discard=False):
         raise ValueError(f"players must be in 1..17, got {players}")
     deck = [(rank, suit) for rank in range(2, 15) for suit in range(4)]
     cards = random.Random(seed).sample(deck, players * 3)  # 一次抽样保证全局不重复
-    hands = [cards[i * 3:i * 3 + 3] for i in range(players)]
+    hands = [cards[i * 3 : i * 3 + 3] for i in range(players)]
 
     folded = []
     if discard:
-        folded = [i for i, hand in enumerate(hands) if len({rank for rank, _ in hand}) == 3]
+        folded = [
+            i for i, hand in enumerate(hands) if len({rank for rank, _ in hand}) == 3
+        ]
     live = [i for i in range(players) if i not in folded]
 
     scores = {i: rank_hand(hands[i]) for i in live}
@@ -156,7 +161,7 @@ def deal(players, seed=0, discard=False):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

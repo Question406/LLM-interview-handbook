@@ -4,7 +4,10 @@ section: agent
 order: 101
 level: S
 title: 月之暗面：桌面 Agent 接入本地文件与目录，权限提示怎样设计？
-quick: "把「选择文件」和「授权 Agent 做什么」分开：执行前用任务语言讲清资源范围、动作、副作用和有效期，用户可以缩小或拒绝。递归目录、外发、覆盖写和删除要升级确认，中途扩大范围弹增量授权。运行时由 capability 校验，并留可撤销的审计记录，光靠提示词约束不了模型。"
+quick: >-
+  把「选择文件」和「授权 Agent
+  做什么」分开：执行前用任务语言讲清资源范围、动作、副作用和有效期，用户可以缩小或拒绝。递归目录、外发、覆盖写和删除要升级确认，中途扩大范围弹增量授权。运行时由
+  capability 校验，并留可撤销的审计记录，光靠 prompt 约束不了模型。
 tags:
   - Moonshot AI
   - AI-Native
@@ -13,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 月之暗面 Desktop 研发工程师面经（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/09158c1da13b420bbe00ba1751177efb?urlSource=sitemap
+    url: >-
+      https://www.nowcoder.com/feed/main/detail/09158c1da13b420bbe00ba1751177efb?urlSource=sitemap
     type: candidate-first-hand
 ---
 
@@ -35,9 +39,9 @@ sources:
 
 提示里至少讲清四件事：谁（本会话的哪个 Agent、哪个任务），碰什么（路径、是否递归、文件类型），做什么（读、写、删、外发），多久（本次任务、一次性、直到撤销）。用户可以缩小范围、拒绝，或者改成一次性。风险按档位升级：单文件只读 $\lt$ 目录只读 $\lt$ 递归目录 $\lt$ 外发 / 上传 $\lt$ 覆盖写入 $\lt$ 删除。后面几档要二次确认，写和删要展示 dry-run 或 diff；用户「打开文件夹」时，不能顺手预授权删除。模型中途要扩大范围，就弹增量授权，别再来一次全盘允许。
 
-前端提示要落到执行端的 capability 上。执行端用 allowlist 实施：路径前缀、操作动词、是否允许网络。模型请求超出授权就直接拒绝，并回写给任务中心，换一段输入提示（prompt）再试也绕不过去。每次访问记一条可回看的审计：时间、路径、动作、是否经过用户确认。任务中途可以撤销剩下的权限，重试或分支也不能悄悄扩大访问面。任务对象怎么建模见 `moonshot-desktop-task-center`；多窗口协作时，授权属于任务真相，不能每个窗口各记一份、互相覆盖，见 `moonshot-desktop-multiwindow-state`。
+前端提示要落到执行端的 capability 上。执行端用 allowlist 实施：路径前缀、操作动词、是否允许网络。模型请求超出授权就直接拒绝，并回写给任务中心，换一段 prompt 再试也绕不过去。每次访问记一条可回看的审计：时间、路径、动作、是否经过用户确认。任务中途可以撤销剩下的权限，重试或分支也不能悄悄扩大访问面。任务对象怎么建模见 `moonshot-desktop-task-center`；多窗口协作时，授权属于任务真相，不能每个窗口各记一份、互相覆盖，见 `moonshot-desktop-multiwindow-state`。
 
-还有两类边界。多模态输入里，截图和网页另算资源，用户贴了一张图，不等于默认可读整个桌面，见 `moonshot-desktop-multimodal-context`。恶意文件的内容仍然可能做 prompt injection，权限再小，也要把工具描述和不可信文本隔开，见 `agent-prompt-injection`、`agent-skill-security`。通用的工具权限设计见 `agent-tool-permissions`。
+还有两类 access restrictions。多模态输入里，截图和网页另算资源，用户贴了一张图，不等于默认可读整个桌面，见 `moonshot-desktop-multimodal-context`。恶意文件的内容仍然可能做 prompt injection，权限再小，也要把工具描述和不可信文本隔开，见 `agent-prompt-injection`、`agent-skill-security`。通用的工具权限设计见 `agent-tool-permissions`。
 
 ## 追问
 

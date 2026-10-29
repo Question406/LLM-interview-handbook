@@ -5,20 +5,21 @@ order: 2
 level: A
 title: LC 205 · 同构字符串
 quick: >-
-  同时维护 $s\to t$ 和 $t\to s$ 两张映射表。扫到一对字符时，任一侧已有映射却对不上，就说明出现了一对多或者多对一，不同构。时间 $O(n)$。
+  同时维护 $s\to t$ 和 $t\to s$ 两张映射表。扫到一对字符时，任一侧已有映射却对不上，就说明出现了一对多或者多对一，不同构。时间
+  $O(n)$。
 tags:
   - Hash
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 205. 同构字符串
-    url: https://leetcode.cn/problems/isomorphic-strings/
+    url: 'https://leetcode.cn/problems/isomorphic-strings/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(|\Sigma|)$。$n$ 是串长，字符集通常很小。
 
-## 边界
+## Edge Cases
 
 单个字符互相同构，空串也同构。`aaa`/`bbb` 是真，禁止的是多对一，同一条一对一的规则可以反复用。`aba`/`baa` 是假，`a` 不能同时映到 `b` 和 `a`。
 

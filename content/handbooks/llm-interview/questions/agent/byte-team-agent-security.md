@@ -4,7 +4,9 @@ section: agent
 order: 207
 level: A
 title: 字节实习一面：团队内部 Coding Agent 怎么管权限、命令和敏感信息？
-quick: "权限放在工具服务端和策略引擎里，按用户身份、仓库 ACL、命令白名单三层放行，默认只读当前有权限的 repo。密钥扫描拦住 `.env` 和私钥，输出在执行层脱敏，审计日志放在模型写不到的独立通道。模型只拿短期会话 token，不持有生产凭据。"
+quick: >-
+  权限放在工具服务端和策略引擎里，按用户身份、仓库 ACL、命令白名单三层放行，默认只读当前有权限的 repo。密钥扫描拦住 `.env`
+  和私钥，输出在执行层脱敏，审计日志放在模型写不到的独立通道。模型只拿短期会话 token，不持有生产凭据。
 tags:
   - ByteDance
   - Security
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 字节实习 agent开发一面
-    url: https://www.nowcoder.com/feed/main/detail/075c06bf50a143a785c039f9951624f6
+    url: 'https://www.nowcoder.com/feed/main/detail/075c06bf50a143a785c039f9951624f6'
     type: candidate-first-hand
 ---
 
@@ -26,7 +28,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，A
 - 原始措辞：**“如果让你把这个本地 Coding Agent 做成团队内部工具，你会怎么处理权限、安全和审计？比如文件读写、命令执行、敏感信息泄露。”**
 
-我会把边界放在工具服务端和策略引擎里：按人、仓库、命令三层授权，密钥和敏感输出在执行层拦截，审计日志单独存、模型写不了。写在输入提示（prompt）里的「请不要泄露」挡不住注入，一句「忽略以上指令」就能打穿，所以它最多算提醒。这一层就是 Harness 的授权层。
+我会在 tool server 和 policy engine 中执行 authorization checks：按人、仓库、命令三层授权，密钥和敏感输出在执行层拦截，审计日志单独存、模型写不了。写在 prompt 里的「请不要泄露」挡不住注入，一句「忽略以上指令」就能打穿，所以它最多算提醒。这一层就是 Harness 的授权层。
 
 举个例子。同学 A 在有写权限的 `frontend` 仓里，可以改 `src/**`、跑 `npm test`；同一个 Agent 被要求 `cat ~/.ssh/id_rsa`，或者把 `.env` 发到外网，策略引擎直接拒掉并记一条审计。同学 B 没有这个仓的 ACL，用同一套模型也读不到。模型是同一个，能做什么取决于背后是谁、在哪个仓。
 

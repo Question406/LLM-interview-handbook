@@ -1,0 +1,168 @@
+{
+  "updatedAt": "2026-10-25",
+  "chromeStatus": "Native pipe startup failed; no new browsing performed",
+  "entries": [
+    {
+      "company": "google",
+      "title": "Google：骨骼电面",
+      "url": "https://www.1point3acres.com/interview/thread/1161213",
+      "evidence": "existing-thread-review-record",
+      "previousCollectionDate": "2026-10-22",
+      "reopenedThisRun": false,
+      "card": "sd-company-google"
+    },
+    {
+      "company": "google",
+      "title": "Google MLE面试凉经",
+      "url": "https://www.1point3acres.com/interview/thread/1157141",
+      "evidence": "existing-thread-review-record",
+      "previousCollectionDate": "2026-10-22",
+      "reopenedThisRun": false,
+      "card": "sd-company-google"
+    },
+    {
+      "company": "google",
+      "title": "狗家MLE挂经",
+      "url": "https://www.1point3acres.com/interview/thread/1159435",
+      "evidence": "existing-thread-review-record",
+      "previousCollectionDate": "2026-10-22",
+      "reopenedThisRun": false,
+      "card": "sd-company-google"
+    },
+    {
+      "company": "google",
+      "title": "Google ML Design",
+      "url": "https://www.1point3acres.com/interview/thread/1150617",
+      "evidence": "existing-thread-review-record",
+      "previousCollectionDate": "2026-10-22",
+      "reopenedThisRun": false,
+      "card": "sd-company-google"
+    },
+    {
+      "company": "doordash",
+      "title": "门冲 MLE 全套",
+      "url": "https://www.1point3acres.com/interview/thread/1169615",
+      "evidence": "existing-thread-review-record",
+      "previousCollectionDate": "2026-10-22",
+      "reopenedThisRun": false,
+      "card": "sd-company-doordash"
+    },
+    {
+      "company": "capital-one",
+      "title": "Capital One MLE VO过经",
+      "url": "https://www.1point3acres.com/interview/thread/1155534",
+      "evidence": "existing-thread-review-record",
+      "previousCollectionDate": "2026-10-22",
+      "reopenedThisRun": false,
+      "card": "sd-company-capital-one"
+    },
+    {
+      "company": "openai",
+      "title": "OpenAI题卡摘要：Slack：消息、多设备与大频道",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-slack",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-openai"
+    },
+    {
+      "company": "openai",
+      "title": "OpenAI题卡摘要：短链",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-url-shortener",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-openai"
+    },
+    {
+      "company": "openai",
+      "title": "OpenAI题卡摘要：日历",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-google-calendar",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-openai"
+    },
+    {
+      "company": "openai",
+      "title": "OpenAI题卡摘要：Cloud IDE",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-cloud-ide",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-openai"
+    },
+    {
+      "company": "openai",
+      "title": "OpenAI题卡摘要：视频生成",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-sora-video-generation",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-openai"
+    },
+    {
+      "company": "openai",
+      "title": "OpenAI题卡摘要：AI聊天服务",
+      "url": "https://www.1point3acres.com/interview/problems/company/openai/design-ai-chatbot-system",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-openai"
+    },
+    {
+      "company": "anthropic",
+      "title": "Anthropic题卡摘要：现场设计文档评审",
+      "url": "https://www.1point3acres.com/interview/problems/company/anthropic/onsite-design-doc-review",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-anthropic"
+    },
+    {
+      "company": "meta",
+      "title": "Meta题卡摘要：AI-enabled Agent系统",
+      "url": "https://www.1point3acres.com/interview/problems/company/meta/system-design-ai-enabled-agent-system",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-meta"
+    },
+    {
+      "company": "microsoft",
+      "title": "Microsoft AI题卡摘要：MAI分布式爬虫",
+      "url": "https://www.1point3acres.com/interview/problems/company/microsoft/web-crawler-system-design",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-microsoft"
+    },
+    {
+      "company": "xai",
+      "title": "xAI题卡摘要：新帖通知粉丝",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/notification-system-design",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-xai"
+    },
+    {
+      "company": "xai",
+      "title": "xAI题卡摘要：限流器设计",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/rate-limiter-design",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-xai"
+    },
+    {
+      "company": "xai",
+      "title": "xAI题卡摘要：RAG系统设计",
+      "url": "https://www.1point3acres.com/interview/problems/company/xai/rag-system-design",
+      "evidence": "secondary-summary-unverified-thread",
+      "previousCollectionDate": "2026-10-18",
+      "reopenedThisRun": false,
+      "card": "sd-company-xai"
+    }
+  ]
+}

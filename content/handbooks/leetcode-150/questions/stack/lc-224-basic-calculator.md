@@ -4,20 +4,22 @@ section: stack
 order: 5
 level: A
 title: LC 224 · 基本计算器
-quick: "一层括号相当于给里面整段乘一个符号，所以用栈保存外层的结果和符号。扫数字累加，遇 `+`/`-` 把 `sign * num` 加进结果并换符号；`(` 把当前结果与 `sign` 入栈清零，`)` 出栈把括号值乘符号再加回外层。"
+quick: >-
+  一层括号相当于给里面整段乘一个符号，所以用栈保存外层的结果和符号。扫数字累加，遇 `+`/`-` 把 `sign * num` 加进结果并换符号；`(`
+  把当前结果与 `sign` 入栈清零，`)` 出栈把括号值乘符号再加回外层。
 tags:
   - Stack
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 224. 基本计算器
-    url: https://leetcode.cn/problems/basic-calculator/
+    url: 'https://leetcode.cn/problems/basic-calculator/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -110,7 +112,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$（括号嵌套深度）。每个字符处理一次。
 
-## 边界
+## Edge Cases
 
 前导空格、数字之间的空格都不是目标字符，直接跳过。`1-( -2)` 里括号内的负号按减号处理，空格不影响。
 
@@ -168,6 +170,7 @@ def calculate772(s):
             if c == ")":
                 return sum(st)
             op, num = c, 0
+
     return expr(iter(s))
 ```
 

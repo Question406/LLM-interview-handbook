@@ -4,7 +4,7 @@ section: hashmap
 order: 2
 level: A
 title: LC 1207 · 独一无二的出现次数
-quick: "先用哈希数出每个值的出现次数，再把这些次数放进集合；集合大小等于不同值的个数，就说明次数两两不同。时间 $O(n)$，额外空间 $O(n)$。"
+quick: 先用哈希数出每个值的出现次数，再把这些次数放进集合；集合大小等于不同值的个数，就说明次数两两不同。时间 $O(n)$，额外空间 $O(n)$。
 tags:
   - Array
   - Hash
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1207. Unique Number of Occurrences
-    url: https://leetcode.com/problems/unique-number-of-occurrences/
+    url: 'https://leetcode.com/problems/unique-number-of-occurrences/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -97,7 +97,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 只有一个不同值时，一定是 `true`。
 
@@ -112,6 +112,7 @@ print("simple tests passed")
 
 ```python
 from collections import Counter
+
 
 def minDeletions(arr):
     freqs = sorted(Counter(arr).values(), reverse=True)

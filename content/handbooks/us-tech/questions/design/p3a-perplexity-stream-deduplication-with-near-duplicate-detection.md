@@ -3,8 +3,9 @@ id: p3a-perplexity-stream-deduplication-with-near-duplicate-detection
 section: design
 order: 607
 level: A
-title: "Perplexity：流式去重：精确与近似重复"
-quick: "精确去重用集合记录已见字符串；近似去重先约定规范化与相似度，再只和已保留的代表比较。相似关系不传递，代表选择会受处理顺序影响，不能直接用并查集当作同一种语义。"
+title: Perplexity：流式去重：精确与近似重复
+quick: >-
+  精确去重用集合记录已见字符串；近似去重先约定规范化与相似度，再只和已保留的代表比较。相似关系不传递，代表选择会受处理顺序影响，不能直接用并查集当作同一种语义。
 companies:
   - ai-labs
 tags:
@@ -16,10 +17,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · stream-deduplication-with-near-duplicate-detection"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/stream-deduplication-with-near-duplicate-detection
+  - title: >-
+      1Point3Acres · Perplexity ·
+      stream-deduplication-with-near-duplicate-detection
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/stream-deduplication-with-near-duplicate-detection
     type: secondary
 ---
 
@@ -50,7 +54,7 @@ dedup(["a", "a b", "b"], threshold=0.5)     -> ["a", "b"]
 
 处理一个字符串流，每个字符串只保留第一次出现的那一份。进一步扩展到近似重复：和之前保留的某个字符串足够相似（相似度超过阈值）就丢掉。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -124,7 +128,7 @@ def dedup(stream, threshold=1.0):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -135,6 +139,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # threshold = 1：词集合完全相同才算重复，忽略词序
 assert list(dedup(["a b", "b a", "a c"], 1)) == ["a b", "a c"]

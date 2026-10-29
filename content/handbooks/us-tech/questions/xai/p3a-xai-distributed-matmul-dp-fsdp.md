@@ -3,8 +3,10 @@ id: p3a-xai-distributed-matmul-dp-fsdp
 section: xai
 order: 601
 level: S
-title: "xAI：分布式 matmul：DP 与 FSDP 模拟"
-quick: "我会先画分片坐标：A 按行切，DP 每卡乘完整 B 后按 rank 拼行；FSDP 模拟则把 B 的列分片沿环传递，按 owner 写入输出列。所有 rank 在无界队列上先发后收，既避免互等，也要处理不整除与空分片。"
+title: xAI：分布式 matmul：DP 与 FSDP 模拟
+quick: >-
+  我会先画分片坐标：A 按行切，DP 每卡乘完整 B 后按 rank 拼行；FSDP 模拟则把 B 的列分片沿环传递，按 owner 写入输出列。所有
+  rank 在无界队列上先发后收，既避免互等，也要处理不整除与空分片。
 companies:
   - xai
 tags:
@@ -13,16 +15,18 @@ tags:
   - Frontier-2026-10
   - ML
   - xAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · xAI · distributed-matmul-dp-fsdp"
-    url: https://www.1point3acres.com/interview/problems/company/xai/distributed-matmul-dp-fsdp
+  - title: 1Point3Acres · xAI · distributed-matmul-dp-fsdp
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/distributed-matmul-dp-fsdp
     type: secondary
   - title: xAI ML/Infra 原帖与作者补充
-    url: https://www.1point3acres.com/interview/thread/1171574
+    url: 'https://www.1point3acres.com/interview/thread/1171574'
     type: candidate-first-hand
 ---
 
@@ -30,7 +34,9 @@ sources:
 
 用本地工作者模拟数据并行和分片权重的矩阵乘法，并实现其反向梯度。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `dp_matmul(a,b,world_size)` 与 `fsdp_matmul(a,b,world_size)` 都返回 a@b。a 为 `[M,K]`、b 为 `[K,N]`，`world_size` 为正整数，各维不超过 100，维度不能整除工作者数时也应支持，允许空分片。
 
@@ -55,7 +61,7 @@ grad_out=[[1],[1]]：backward 返回
 
 给一个基于 `Queue` 的通信器，用它模拟多卡矩阵乘法 $Y = AB$。分两个版本：数据并行（DP）下每张卡算一段行；FSDP 下权重 $B$ 也被切开，每张卡只持有一个分片，需要通过循环 all-gather 轮流拿到其他分片。
 
-> 来源：一亩三分地 xAI 题卡摘要，本次（2026-10-18 整理）另外读取了原帖正文和作者补充，核实了 DP/FSDP starter 的分片方向；题卡本身是网站的二手整理。第二轮的 patchify 题见独立练习卡。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要，本次（2026-10-18 整理）另外读取了原帖正文和作者补充，核实了 DP/FSDP starter 的分片方向；题卡本身是网站的二手整理。第二轮的 patchify 题见独立练习卡。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -66,7 +72,7 @@ grad_out=[[1],[1]]：backward 返回
 
 通信顺序上，所有 rank 都先发后收。若一起先收，大家都等不到消息；队列有容量上限并被写满时，发送也可能互相等待，所以练习使用无界队列。尺寸不整除时还要接受 `np.array_split` 产生的长短不同、甚至为空的分片。
 
-相关题：[[p3a-openai-sharded-matmul-backprop-debugging]]（同一份参考实现，那张卡侧重反向传播和分片后的梯度通信）。
+相关题：[[p3a-openai-sharded-matmul-backprop-debugging]]（同一份参考实现，那张卡侧重 backpropagation 和分片后的梯度通信）。
 
 ## 完整编程练习（手册重构版）
 
@@ -143,7 +149,7 @@ def fsdp_matmul(a, b, world_size):
         owner, shard = rank, col_shards[rank]
         for step in range(world_size):
             # 消息里带着 owner，才知道这块结果该写到哪几列
-            out[:, col_offsets[owner]:col_offsets[owner + 1]] = rows @ shard
+            out[:, col_offsets[owner] : col_offsets[owner + 1]] = rows @ shard
             if step + 1 < world_size:
                 # 所有 rank 都先发后收，环上每一轮都有消息可取，不会互相等死
                 inboxes[(rank + 1) % world_size].put((owner, shard))
@@ -163,7 +169,9 @@ def backward(a, b, grad_out):
     if a.ndim != 2 or b.ndim != 2 or a.shape[1] != b.shape[0]:
         raise ValueError(f"bad matmul shapes: {a.shape} @ {b.shape}")
     if grad_out.shape != (a.shape[0], b.shape[1]):
-        raise ValueError(f"grad_out shape {grad_out.shape} != {(a.shape[0], b.shape[1])}")
+        raise ValueError(
+            f"grad_out shape {grad_out.shape} != {(a.shape[0], b.shape[1])}"
+        )
     return grad_out @ b.T, a.T @ grad_out
 ```
 
@@ -175,7 +183,7 @@ def backward(a, b, grad_out):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -187,12 +195,14 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
 
+
 def numeric_grad(loss, x, index, h=1e-5):
     plus = x.copy()
     minus = x.copy()
     plus[index] += h
     minus[index] -= h
     return (loss(plus) - loss(minus)) / (2 * h)
+
 
 # 手算的小例子
 a = [[1, 2], [3, 4]]

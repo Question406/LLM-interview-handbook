@@ -4,7 +4,10 @@ section: dp-multi
 order: 3
 level: A
 title: LC 714 · 买卖股票的最佳时机含手续费
-quick: "每天只记两个状态：`cash` 是当天结束时不持股的最大利润，`hold` 是持股的最大利润。$cash=\\max(cash,\\,hold+p-fee)$，$hold=\\max(hold,\\,cash-p)$。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  每天只记两个状态：`cash` 是当天结束时不持股的最大利润，`hold`
+  是持股的最大利润。$cash=\max(cash,\,hold+p-fee)$，$hold=\max(hold,\,cash-p)$。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
   - Greedy
@@ -12,13 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 714. Best Time to Buy and Sell Stock with Transaction Fee
-    url: https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/
+    url: >-
+      https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -107,7 +111,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 只有一天时没法卖，利润是 $0$。
 

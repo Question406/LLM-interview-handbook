@@ -1,0 +1,32 @@
+{
+  "collectedAt": "2026-10-26",
+  "method": "Chrome original main post and visible author replies, parent-created research tab 1006832494",
+  "threads": [
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-950206-1-1.html",
+      "title": "Apple CV/ML 面经",
+      "publishedAtDisplayedInChrome": "2022-12-02 14:37:36",
+      "timeZone": "not stated; web search displayed 2022-12-03, retained the Chrome page value",
+      "team": "Apple CV/ML MLE; specific team and AFM membership not disclosed",
+      "visibleScope": "Main post and first-page author replies readable in existing Chrome session; no login, payment or bypass performed",
+      "confirmedTopics": [
+        "Implement an unspecified paper layer in TensorFlow/PyTorch",
+        "Analytical and approximate derivatives, gradient descent, scalar to vector extension",
+        "Code review, software engineering practices",
+        "BatchNorm, regularization and project-based detection",
+        "K-means, complexity and operation optimization"
+      ],
+      "newCard": "dt-p3a-paper-gated-layer",
+      "notDisclosed": [
+        "paper identity",
+        "layer formula",
+        "original code review snippet"
+      ],
+      "classification": "source-theme extension, realInterview false, toy gated formula is original handbook exercise",
+      "duplicateCoverage": [
+        "gradient check and gradient descent already in ml-101",
+        "k-means already in us-tech Apple"
+      ]
+    }
+  ]
+}

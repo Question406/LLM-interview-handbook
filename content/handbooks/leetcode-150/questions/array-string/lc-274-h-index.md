@@ -4,7 +4,9 @@ section: array-string
 order: 11
 level: A
 title: LC 274 · H 指数
-quick: "升序排序后从左往右找：位置 $i$ 往右还有 $n-i$ 篇，若 `citations[i] >= n-i`，$n-i$ 就是合法的 $h$，第一个满足的就是最大的。时间 $O(n\\log n)$，额外空间 $O(1)$；桶计数可以做到 $O(n)$ 时间、$O(n)$ 空间。"
+quick: >-
+  升序排序后从左往右找：位置 $i$ 往右还有 $n-i$ 篇，若 `citations[i] >= n-i`，$n-i$ 就是合法的
+  $h$，第一个满足的就是最大的。时间 $O(n\log n)$，额外空间 $O(1)$；桶计数可以做到 $O(n)$ 时间、$O(n)$ 空间。
 tags:
   - Array
   - Sorting
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 274. H 指数
-    url: https://leetcode.cn/problems/h-index/
+    url: 'https://leetcode.cn/problems/h-index/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +101,7 @@ print("simple tests passed")
 
 排序 $O(n\log n)$ 时间、$O(1)$ 或 $O(n)$ 空间（取决于是否原地）。计数排序做法时间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 全是 $0$ 时没有一篇引用 $\ge 1$，H 是 $0$。只有一篇且引用很大，最多也只有 $1$ 篇，H 只能是 $1$。每篇引用都 $\ge n$ 时，全部 $n$ 篇都满足，H 是 $n$。
 

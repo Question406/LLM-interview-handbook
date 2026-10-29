@@ -5,17 +5,18 @@ order: 59
 level: A
 title: 阿里研发面：分库分表和雪花 ID 要注意什么？
 quick: >-
-  分片键要同时满足查询能带上、数据能打散，订单一般按买家 ID 或订单号哈希，日志按时间分；跨片查询要在应用层聚合。雪花 ID 是时间戳 + 机器 + 序列，本地发号、趋势递增，时钟回拨或 workerId 冲突会撞号。
+  分片键要同时满足查询能带上、数据能打散，订单一般按买家 ID 或订单号哈希，日志按时间分；跨片查询要在应用层聚合。雪花 ID 是时间戳 + 机器 +
+  序列，本地发号、趋势递增，时钟回拨或 workerId 冲突会撞号。
 tags:
   - Alibaba
   - 分库分表
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -51,7 +52,7 @@ ID 这边，阿里和美团都有号段服务的实践。校招可以一句话�
 **热点卖家怎么拆？**
 对这个卖家再哈希到子片，或者单独给一个库，再加缓存。
 
-**雪花 ID 能当聚簇主键吗？**
+**雪花 ID 能当 clustering key 吗？**
 能。它趋势递增，比 UUID 友好，但还是不如纯自增紧凑。
 
 **号段用完了怎么续？**

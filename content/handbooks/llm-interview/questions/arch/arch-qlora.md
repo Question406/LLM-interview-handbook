@@ -4,7 +4,10 @@ section: arch
 order: 12
 level: A
 title: QLoRA 的 NF4、Double Quantization、Paged Optimizer 是什么？
-quick: "QLoRA 把冻结的基座权重用 4-bit NF4 存着，只训练 LoRA，省显存主要靠基座不用存 Adam 状态。NF4 按正态分布的分位数摆量化格子，Double Quantization 再把量化常数压一遍，Paged Optimizer 把优化器状态分页换出，削掉显存峰值。"
+quick: >-
+  QLoRA 把冻结的基座权重用 4-bit NF4 存着，只训练 LoRA，省显存主要靠基座不用存 Adam 状态。NF4
+  按正态分布的分位数摆量化格子，Double Quantization 再把量化常数压一遍，Paged Optimizer
+  把优化器状态分页换出，削掉显存峰值。
 tags:
   - QLoRA
   - Quantization
@@ -12,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: ↗ QLoRA
     url: 'https://arxiv.org/abs/2305.14314'
@@ -27,7 +30,7 @@ QLoRA 是训练期省显存的办法：冻结的基座用 4-bit 存，只给 LoR
 
 预训练权重近似零均值正态，大部分值挤在中心附近。均匀 4-bit 把格子平均铺在整个范围上，和这个分布对不上。NF4（NormalFloat4）按标准正态定义 $2^4-1$ 个分位，让离散格子贴着分布摆，再对每个 block 做缩放。面试说一句就够：同样是 4 bit，NF4 的格子是按数据分布切的。
 
-这和 MoE、SwiGLU、RoPE 互不相干。量化的是线性权重的存储，门控 $\mathrm{SiLU}(xW_1)\odot xW_2$ 和旋转 $R_{\theta,m}$ 照样在解量化之后的计算里发生。
+这和 MoE、SwiGLU、RoPE 互不相干。量化的是线性权重的存储，gating $\mathrm{SiLU}(xW_1)\odot xW_2$ 和旋转 $R_{\theta,m}$ 照样在解量化之后的计算里发生。
 
 ## Double Quantization 和 Paged Optimizer
 

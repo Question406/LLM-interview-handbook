@@ -4,7 +4,7 @@ section: swe-agent
 order: 193
 level: A
 title: 大规模仓库中如何做测试选择与变更影响分析，加速 Agent 验证环？
-quick: "Agent 迭代时按改动文件和符号的依赖闭包选测试子集，再用历史失败关联补漏；合并前跑全量或宽集保底。子集选错会假绿，所以节省的时间和漏检率要一起报。"
+quick: Agent 迭代时按改动文件和符号的依赖闭包选测试子集，再用历史失败关联补漏；合并前跑全量或宽集保底。子集选错会假绿，所以节省的时间和漏检率要一起报。
 tags:
   - Test Selection
   - Impact Analysis
@@ -12,14 +12,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Predictive Test Selection
-    url: https://arxiv.org/abs/1810.05286
+    url: 'https://arxiv.org/abs/1810.05286'
     type: primary
 ---
 
-我会让 Agent 在迭代时只跑影响集，合并前再跑全量或扩大的宽集保底。子集是在漏检率约束下省时间，全量门禁一直都在。
+我会让 Agent 在迭代时只跑影响集，合并前再跑全量或扩大的宽集保底。子集是在漏检率约束下省时间，全量 acceptance checks 一直都在。
 
 为什么要这样拆：Agent 每轮改三行就跑一次全量，验证环太慢；可子集一旦选错，假绿会把错误补丁送进合并。Facebook 的 Predictive Test Selection 就是这么算账的：在漏检率的约束下省基础设施，全量照样跑。所以度量要同时报省了多少时间和漏检率，只报加速比等于鼓励漏测。「静态 import 闭包一定安全」「历史失败模型一定快」这两种说法我都不会直接接受。
 
@@ -31,7 +31,7 @@ $$
 \ell = |F_{\mathrm{full}}\setminus F_{\mathrm{sel}}| / |F_{\mathrm{full}}|,
 $$
 
-目标是 $\ell \lt \varepsilon$。生产上常见的口径是按出故障的变更有没有被抓到来算，比按单测条数算更多，预测选择那篇工作对 faulty changes 就有很高的捕获约束。节省时间和 $\ell$ 必须放在同一张表里。
+目标是 $\ell \lt \varepsilon$。生产上常见的定义是按出故障的变更有没有被抓到来算，比按单测条数算更多，预测选择那篇工作对 faulty changes 就有很高的捕获约束。节省时间和 $\ell$ 必须放在同一张表里。
 
 flaky 测试要单独处理。它不进选择器的训练标签，否则模型会把噪声当成相关性，学会躲开闪烁的测试，躲开无关测试的本事没学到。另外 Agent 能看到的测试名单不能等于评测的 hidden tests。选择器优化的是开发验证环，它不能当 `swe-test-contract` 里 resolved 的定义。Agent 可以在子集上快速否定假设，但不能在子集上宣布修好了。
 
@@ -51,4 +51,4 @@ flaky 测试要单独处理。它不进选择器的训练标签，否则模型�
 既不当失败标签，也不当「可以跳过」。否则模型学会的是规避噪声，规避无关测试的能力没学到。
 
 **$\varepsilon$ 已经很小了，为什么合并前还要全量？**
-再小的 $\varepsilon$ 也会漏，发布门禁要用宽集把漏检暴露出来。
+再小的 $\varepsilon$ 也会漏，release criteria 要用宽集把漏检暴露出来。

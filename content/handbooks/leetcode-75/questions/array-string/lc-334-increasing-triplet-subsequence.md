@@ -4,7 +4,9 @@ section: array-string
 order: 8
 level: S
 title: LC 334 · 递增的三元子序列
-quick: "贪心维护两个变量：`first` 是目前最小的数，`second` 是「前面有更小数」的数里最小的那个。之后只要遇到比 `second` 更大的数，递增三元组就存在。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  贪心维护两个变量：`first` 是目前最小的数，`second` 是「前面有更小数」的数里最小的那个。之后只要遇到比 `second`
+  更大的数，递增三元组就存在。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 334. Increasing Triplet Subsequence
-    url: https://leetcode.com/problems/increasing-triplet-subsequence/
+    url: 'https://leetcode.com/problems/increasing-triplet-subsequence/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - 长度小于 $3$ 时直接不成立，循环走完也会返回假。
 - 大量相等值靠 `<=` 更新处理，相等的数不会被当成递增。

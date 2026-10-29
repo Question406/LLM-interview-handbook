@@ -4,7 +4,9 @@ section: coding
 order: 5
 level: A
 title: 白板：RMSNorm 比 LayerNorm 少了什么，Llama 为什么用
-quick: "RMSNorm 沿最后一维把 $x$ 除以 $\\mathrm{RMS}(x)$，再乘 $\\gamma$，省掉 LayerNorm 的减均值，通常也没有 $\\beta$。Llama 选择它是为了减少约简和读写开销，同时保持接近 LN 的质量；两者在输入均值非零时结果不同。"
+quick: >-
+  RMSNorm 沿最后一维把 $x$ 除以 $\mathrm{RMS}(x)$，再乘 $\gamma$，省掉 LayerNorm 的减均值，通常也没有
+  $\beta$。Llama 选择它是为了减少约简和读写开销，同时保持接近 LN 的质量；两者在输入均值非零时结果不同。
 tags:
   - 完整编程练习
   - Coding
@@ -14,16 +16,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Root Mean Square Layer Normalization
-    url: https://arxiv.org/abs/1910.07467
+    url: 'https://arxiv.org/abs/1910.07467'
     type: primary
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
   - title: torch.nn.RMSNorm
-    url: https://pytorch.org/docs/stable/generated/torch.nn.RMSNorm.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.nn.RMSNorm.html'
     type: primary
 ---
 
@@ -31,7 +33,7 @@ sources:
 
 实现一个 PyTorch RMSNorm 层，并提供与不带仿射参数的 LayerNorm 对照接口。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -56,11 +58,11 @@ LayerNorm(x) = [-1, 1]（无仿射）                 # 先减均值 3.5
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
-- `RMSNorm(dim, eps=1e-6)`：`nn.Module`，可训练参数 `weight` 形状 `[dim]`，初始化为 1。`forward(x)` 沿最后一维用平方均值归一化，不减均值，再乘 `weight`。
+- `RMSNorm(dim, eps=1e-6)`：`nn.Module`，可训练参数 `weight` 形状 `[dim]`，初始化为 1。`forward(x)` 沿最后一维用平方均值 normalization，不减均值，再乘 `weight`。
 - 内部用 float32 计算，输出 dtype 与输入相同。
 - `vs_layernorm(x, eps=1e-6) -> (ln, rms)`：对照用，返回不带仿射参数的 LayerNorm 和 RMSNorm 结果。
 - `eps > 0`，否则抛 `ValueError`。
@@ -120,14 +122,14 @@ def vs_layernorm(x, eps=1e-6):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 torch.manual_seed(0)
 
-# 与公式一致，并且能反传
+# 与公式一致，并且能 backpropagation
 norm = RMSNorm(4)
 x = torch.randn(2, 3, 4, requires_grad=True)
 y = norm(x)
@@ -137,7 +139,11 @@ y.sum().backward()
 assert torch.isfinite(x.grad).all()
 
 # 例子 [3, 4]：分母是 sqrt(12.5 + eps)
-assert torch.allclose(RMSNorm(2)(torch.tensor([3.0, 4.0])), torch.tensor([3.0, 4.0]) / 12.5 ** 0.5, atol=1e-5)
+assert torch.allclose(
+    RMSNorm(2)(torch.tensor([3.0, 4.0])),
+    torch.tensor([3.0, 4.0]) / 12.5**0.5,
+    atol=1e-5,
+)
 
 # 零向量：eps 保护，输出仍是 0
 assert torch.all(norm(torch.zeros(2, 4)) == 0)
@@ -196,8 +202,8 @@ Llama 用 pre-norm：每个 attention / FFN 子层的入口做 RMSNorm，残差�
 不叫，那是去掉 $\beta$ 的 LN 变体。Llama 明确不减均值。
 **$\gamma$ 能去掉吗？**
 能跑，但失去了按通道恢复尺度的自由度。公开 checkpoint 都保留了 `weight`。
-**和 BatchNorm、或者沿 $T$ 标准化是一回事吗？**
-都不是，轴始终是特征维 $D$。沿 $T$ 标准化会让 padding 污染统计量，逐步 decode 时也和训练对不上。
+**和 BatchNorm、或者沿 $T$ standardization 是一回事吗？**
+都不是，轴始终是特征维 $D$。沿 $T$ standardization 会让 padding 污染统计量，逐步 decode 时也和训练对不上。
 
 ## 相关题
 

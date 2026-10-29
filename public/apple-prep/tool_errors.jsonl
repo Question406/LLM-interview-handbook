@@ -1,0 +1,6 @@
+{"id":"t1","bucket":"hard","request":"查找明天活动，不要创建","expected_tool":"calendar.search","actual_tool":"calendar.create","args":{"title":"活动"},"final_state":{"created":true},"reply":"已查到","audit":"tool_selection_and_unauthorized_write"}
+{"id":"t2","bucket":"easy","request":"把图中18:30的活动加入日历","expected":{"hour":18,"minute":30},"actual_tool":"calendar.create","args":{"hour":8,"minute":30},"final_state":{"created":true},"audit":"argument_or_evidence_error"}
+{"id":"t3","bucket":"hard","request":"创建活动一次","trace":[{"tool":"create","request_id":"a","result":"timeout"},{"tool":"create","request_id":"b","result":"ok"}],"final_state":{"created_count":2},"audit":"retry_without_idempotency"}
+{"id":"t4","bucket":"hard","request":"查下周会议","trace":[{"tool":"search","result":[]}],"reply":"找到了三场会议","final_state":{"events":[]},"audit":"unsupported_success_claim"}
+{"id":"t5","bucket":"hard","request":"将当地时间00:30活动转为UTC","evidence":{"date":"2026-01-02","offset_hours":8},"expected_utc":"2026-01-01T16:30:00Z","actual_utc":"2026-01-02T16:30:00Z","audit":"cross_day_error"}
+{"id":"t6","bucket":"easy","request":"添加一个无明确日期的海报活动","evidence":{"date":null},"expected_action":"clarify","actual_action":"create","audit":"missing_evidence_guessed"}

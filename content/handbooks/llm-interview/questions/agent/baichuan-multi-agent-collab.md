@@ -4,7 +4,9 @@ section: agent
 order: 125
 level: A
 title: 百川智能：多 Agent 如何协作？
-quick: "先定义共享任务状态、角色接口和每项资源的唯一写者，再从路由、流水线、辩论复核里选一种，别做成几个 chatbot 互聊。协议里要写清交接、冲突解决、超时和失败升级，用端到端任务成功来评，对话轮数说明不了什么。"
+quick: >-
+  先定义共享任务状态、角色接口和每项资源的唯一写者，再从路由、流水线、辩论复核里选一种，别做成几个 chatbot
+  互聊。协议里要写清交接、冲突解决、超时和失败升级，用端到端任务成功来评，对话轮数说明不了什么。
 tags:
   - Baichuan
   - Multi-Agent
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 百川智能大模型实习一面 压力好大
-    url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
+    url: 'https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530'
     type: candidate-first-hand
 ---
 
@@ -26,7 +28,7 @@ sources:
 - 届别 / 流程：实习；一面
 - 面试时间：原帖未披露；帖子发布于 2026-02-12
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“多 agent如何如何做的协作”**
+- 原始措辞：**“多 agent 如何如何做的协作”**
 
 多 Agent 协作要先定协议：共享的任务状态、每个角色的输入输出、每项资源由谁唯一写入，然后再从路由、流水线、辩论复核里选一种拓扑。交接、冲突解决、超时和失败升级都要写进协议，评的是端到端任务成功，轮数说明不了什么。做成几个 chatbot 互相聊天是最常见的错法。而且多 Agent 只在单个模型的上下文或技能过载时才值得拆。
 

@@ -4,20 +4,23 @@ section: binary-search
 order: 5
 level: A
 title: LC 34 · 在排序数组中查找元素的第一个和最后一个位置
-quick: "两次二分。下界是第一个 $\\ge$ `target` 的位置，上界是第一个 $\\gt$ `target` 的位置，最后一次出现是上界减一；下界越界或值不等于 `target` 就返回 $[-1,-1]$。时间 $O(\\log n)$。"
+quick: >-
+  两次二分。下界是第一个 $\ge$ `target` 的位置，上界是第一个 $\gt$ `target` 的位置，最后一次出现是上界减一；下界越界或值不等于
+  `target` 就返回 $[-1,-1]$。时间 $O(\log n)$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 34. 在排序数组中查找元素的第一个和最后一个位置
-    url: https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/
+    url: >-
+      https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -52,7 +55,7 @@ sources:
 
 ## 思路
 
-我会写两次二分，各找一个边界。下界是第一个 $\ge target$ 的位置，如果它越界或者值不是 `target`，说明数组里没有；上界是第一个 $> target$ 的位置，最后一次出现就是它减一。两次二分的比较符只差一个等号，代码里用一个 `upper` 参数合成了一个函数。
+我会写两次二分，分别寻找 left / right bounds。下界是第一个 $\ge target$ 的位置，如果它越界或者值不是 `target`，说明数组里没有；上界是第一个 $> target$ 的位置，最后一次出现就是它减一。两次二分的比较符只差一个等号，代码里用一个 `upper` 参数合成了一个函数。
 
 拿 `[5,7,7,8,8,10]` 找 8。第一个不小于 8 的是下标 3，第一个大于 8 的是下标 5（值 10），所以答案是 `[3,4]`。找 6 时下界落在下标 1，值是 7，不等于 6，返回 $[-1,-1]$。
 
@@ -108,7 +111,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 空数组时 `bound` 返回 $0$，$0 == n$，直接 $[-1,-1]$。只出现一次时，下界和上界减一重合。整段都是 `target` 时，下界 $0$、上界 $n$，答案 $[0, n-1]$。`target` 比全部都小时下界是 $0$ 但值不匹配，比全部都大时下界是 $n$，都返回 $[-1,-1]$。
 
@@ -128,6 +131,7 @@ def count(nums, target):
             else:
                 hi = mid
         return lo
+
     return bound(True) - bound(False)
 ```
 

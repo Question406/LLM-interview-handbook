@@ -4,15 +4,20 @@ section: probability
 order: 15
 level: A
 title: 样本方差为什么除以 n−1？什么情况下用 n？
-quick: 用同一批样本估计均值后，围绕样本均值的平方偏差和平均只有 (n−1)σ²，因此除以 n−1 才是总体方差的无偏估计。这个结论要求独立同分布、有限方差且 n≥2，不要求正态。若总体均值已知，或只计算这批数据的描述性方差，可以使用不同的分母；正态模型的方差 MLE 也除以 n。
-tags: [ML Fundamentals, Statistics]
+quick: >-
+  用同一批样本估计均值后，围绕样本均值的平方偏差和平均只有 (n−1)σ²，因此除以 n−1 才是总体方差的 unbiased
+  estimate。这个结论要求独立同分布、有限方差且 n≥2，不要求正态。若总体均值已知，或只计算这批数据的描述性方差，可以使用不同的分母；正态模型的方差
+  MLE 也除以 n。
+tags:
+  - ML Fundamentals
+  - Statistics
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-23
+updatedAt: 2026-10-23T00:00:00.000Z
 sources:
-  - title: NumPy var, ddof and sample variance
-    url: https://numpy.org/doc/stable/reference/generated/numpy.var.html
+  - title: 'NumPy var, ddof and sample variance'
+    url: 'https://numpy.org/doc/stable/reference/generated/numpy.var.html'
     type: primary
 ---
 
@@ -30,7 +35,7 @@ $$
 
 例如数据 [1,2,3] 的样本均值为 2，平方偏差和为 2。除以 n 得到 2/3，除以 n−1 得到 1。两个数分别对应不同的估计目标；单次得到 1 不代表它一定更接近未知真实方差，无偏说的是重复抽样的平均结果。
 
-如果总体均值 $\mu$ 已知，$\sum_i(X_i-\mu)^2/n$ 已经是无偏估计，不需要再为估计均值补偿。正态模型均值未知时，方差最大似然估计使用分母 n，虽然有偏，却直接对应似然优化目标。若只是把眼前有限列表当作全部对象描述，也常用分母 n。
+如果总体均值 $\mu$ 已知，$\sum_i(X_i-\mu)^2/n$ 已经是 unbiased estimate，不需要再为估计均值补偿。正态模型均值未知时，方差 maximum likelihood estimation 使用分母 n，虽然有偏，却直接对应似然优化目标。若只是把眼前有限列表当作全部对象描述，也常用分母 n。
 
 **NumPy 的 ddof 应怎样设？**
 `np.var(x)` 默认 ddof=0，分母为 n；`np.var(x, ddof=1)` 使用 n−1。应根据目标选择，并保证有效样本数大于 ddof。只有一个样本时无法用这种方式估计未知均值下的总体方差。

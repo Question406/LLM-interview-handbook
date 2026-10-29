@@ -4,7 +4,11 @@ section: coding
 order: 42
 level: A
 title: 手写 AdamW 一步：m/v、bias correction、解耦 weight decay
-quick: "AdamW 一步是：$m\\leftarrow\\beta_1 m+(1-\\beta_1)g$，$v\\leftarrow\\beta_2 v+(1-\\beta_2)g^2$，做 bias correction 得 $\\hat m=m/(1-\\beta_1^t)$、$\\hat v=v/(1-\\beta_2^t)$，参数先乘 $1-\\lambda\\eta$ 做 decay，再减 $\\eta\\,\\hat m/(\\sqrt{\\hat v}+\\varepsilon)$，$t$ 从 1 起。decay 不进 $m/v$，这就是它和 Adam+L2 的差别。"
+quick: >-
+  AdamW 一步是：$m\leftarrow\beta_1 m+(1-\beta_1)g$，$v\leftarrow\beta_2
+  v+(1-\beta_2)g^2$，做 bias correction 得 $\hat m=m/(1-\beta_1^t)$、$\hat
+  v=v/(1-\beta_2^t)$，参数先乘 $1-\lambda\eta$ 做 decay，再减 $\eta\,\hat m/(\sqrt{\hat
+  v}+\varepsilon)$，$t$ 从 1 起。decay 不进 $m/v$，这就是它和 Adam+L2 的差别。
 tags:
   - AdamW
   - Optimizer
@@ -12,18 +16,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
   - title: Decoupled Weight Decay Regularization
-    url: https://arxiv.org/abs/1711.05101
+    url: 'https://arxiv.org/abs/1711.05101'
     type: primary
 ---
 
 ## 题目描述
 
-实现一次 AdamW 参数更新。输入当前参数、梯度、一阶和二阶矩状态，输出更新后的三份张量；权重衰减与梯度的矩估计分开处理。
+实现一次 AdamW 参数更新。输入当前参数、梯度、一阶和二阶矩状态，输出更新后的三份张量；weight decay 与梯度的矩估计分开处理。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -67,28 +71,43 @@ def adamw_step(p, g, m, v, t, lr=1e-3, b1=0.9, b2=0.999, eps=1e-8, wd=0.01):
     # t 从 1 起。decay 直接乘 p，不写进 g。
     m = b1 * m + (1 - b1) * g
     v = b2 * v + (1 - b2) * (g * g)
-    mh = m / (1 - b1 ** t)
-    vh = v / (1 - b2 ** t)
+    mh = m / (1 - b1**t)
+    vh = v / (1 - b2**t)
     p = p * (1 - lr * wd) - lr * mh / (vh.sqrt() + eps)
     return p, m, v
 ```
 
-和梯度裁剪一起用的时候，顺序是：AMP 下先把缩放过的梯度还原（unscale），再做梯度裁剪 clip，最后调 `adamw_step`。clip 见 `code-grad-clip`，动态损失缩放见 `code-grad-accum-amp`。
+和 gradient clipping 一起用的时候，顺序是：AMP 下先把缩放过的梯度还原（unscale），再做 gradient clipping clip，最后调 `adamw_step`。clip 见 `code-grad-clip`，动态损失缩放见 `code-grad-accum-amp`。
 
 ## 简单测试怎么写
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-第一步设 p=1、g=2、lr=0.1，校正后的 m=2、v=4，预期参数约 0.9。再单测零梯度与权重衰减，参数应变为 0.98。
+第一步设 p=1、g=2、lr=0.1，校正后的 m=2、v=4，预期参数约 0.9。再单测零梯度与 weight decay，参数应变为 0.98。
 
 ```python
 import torch
-p, m, v = adamw_step(torch.tensor([1.]), torch.tensor([2.]),
-                      torch.zeros(1), torch.zeros(1), 1, lr=0.1, wd=0.)
+
+p, m, v = adamw_step(
+    torch.tensor([1.0]),
+    torch.tensor([2.0]),
+    torch.zeros(1),
+    torch.zeros(1),
+    1,
+    lr=0.1,
+    wd=0.0,
+)
 torch.testing.assert_close(p, torch.tensor([0.9]))
 torch.testing.assert_close(m, torch.tensor([0.2]))
-p, _, _ = adamw_step(torch.tensor([1.]), torch.zeros(1), torch.zeros(1),
-                      torch.zeros(1), 1, lr=0.1, wd=0.2)
+p, _, _ = adamw_step(
+    torch.tensor([1.0]),
+    torch.zeros(1),
+    torch.zeros(1),
+    torch.zeros(1),
+    1,
+    lr=0.1,
+    wd=0.2,
+)
 torch.testing.assert_close(p, torch.tensor([0.98]))
 print("simple tests passed")
 ```

@@ -4,27 +4,40 @@ section: anthropic
 order: 29
 level: S
 title: Anthropic：OSWorld / WebArena 类公开基准怎么讲？污染和成功定义卡在哪？
-quick: "Agent 基准先按任务终态判功能正确，再固定分数汇总、步数预算和输入模态。WebArena 查最终状态，OSWorld 部分题有 [0, 1] 完成度，要保留原始分。公开题面、检查器和轨迹都可能泄漏，发版还需私有任务与单列安全指标。"
+quick: >-
+  Agent 基准先按任务终态判功能正确，再固定分数汇总、步数预算和输入模态。WebArena 查最终状态，OSWorld 部分题有 [0, 1]
+  完成度，要保留原始分。公开题面、检查器和轨迹都可能泄漏，发版还需私有任务与单列安全指标。
 tags:
   - Anthropic
   - Agents
   - Evaluation
   - Computer use
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: "WebArena: A Realistic Web Environment for Building Autonomous Agents"
-    url: https://arxiv.org/abs/2307.13854
+  - title: 'WebArena: A Realistic Web Environment for Building Autonomous Agents'
+    url: 'https://arxiv.org/abs/2307.13854'
     type: primary
-  - title: "OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments"
-    url: https://arxiv.org/abs/2404.07972
+  - title: >-
+      OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real
+      Computer Environments
+    url: 'https://arxiv.org/abs/2404.07972'
     type: primary
   - title: Developing a computer use model (Anthropic)
-    url: https://www.anthropic.com/research/developing-computer-use
+    url: 'https://www.anthropic.com/research/developing-computer-use'
     type: primary
 ---
+
+## 可以这样回答
+
+WebArena / OSWorld 应先看任务有没有完成，再解释成功率怎么算、用了多少步，以及训练是否见过题。比如文件早已在磁盘上，agent 随便点一圈也拿分，终态分虽然高，轨迹并没有证明操作能力。需要把功能检查与轨迹抽查结合。
+
+WebArena（Zhou 等，约 812 题）运行在可自托管的电商、论坛、开发协作和 CMS 站点。它用 functional correctness 检查数据库、页面内容和最终 URL，合法路径可以不止一条。原论文最佳 GPT-4 配置约 14%，人类约 78%，差距反映了长程规划与恢复等困难。
+
+## 技术备查
 
 WebArena / OSWorld 应先看任务有没有完成，再解释成功率怎么算、用了多少步，以及训练是否见过题。比如文件早已在磁盘上，agent 随便点一圈也拿分，终态分虽然高，轨迹并没有证明操作能力。需要把功能检查与轨迹抽查结合。
 
@@ -45,7 +58,7 @@ OSWorld（Xie 等，约 369 题）转到真实桌面，主评 Ubuntu，也讨论
 | GitHub 上的任务 JSON / README | 模型背指令和站点结构 | 训练切分、检索重叠 |
 | 评测脚本 | 直接优化检查器而不是任务 | 换等价检查器看分是否崩 |
 | 人类示范视频和轨迹 | 变成逐步克隆 | 打乱 UI 主题 / 分辨率 |
-| 排行榜本身 | 在测试集上调 输入提示（prompt） | 留私有持出、定期换题 |
+| 排行榜本身 | 在测试集上调 prompt | 留私有持出、定期换题 |
 
 UI 版本也会改变结果：Ubuntu 22 的 Save 在 24 中换位置，记住轨迹的策略可能掉点。公开分包含能力和污染的影响，需要配合冻结私有集、任务轮换，必要时用直播站验证。`anthropic-eval-honesty` 中的证据检查，在这里对应抽查任务究竟是怎样做完的。
 
@@ -59,7 +72,7 @@ UI 版本也会改变结果：Ubuntu 22 的 Save 在 24 中换位置，记住轨
 不适合。合法绕路会被误判，克隆演示又可能被高估；动作匹配可用于定位单元测试。
 
 **LLM 裁判能做什么？**
-可以辅助失败聚类和轨迹分析，但它有长度偏差，可能被看起来忙的长轨迹误导。
+可以辅助失败聚类和轨迹分析，但它有 length bias，可能被看起来忙的长轨迹误导。
 
 **和 needle、Arena 怎么分工？**
 `anthropic-needle` 测窗口检索，对话 Arena 测观感，agent 基准测任务副作用，分别解释。

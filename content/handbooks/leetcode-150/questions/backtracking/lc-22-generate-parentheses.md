@@ -4,20 +4,22 @@ section: backtracking
 order: 6
 level: S
 title: LC 22 · 括号生成
-quick: "用回溯，带两个计数器。`open < n` 时可以加 `(`，`close < open` 时才能加 `)`，这样任何前缀都合法，长度到 $2n$ 直接收答案。方案数是卡特兰数 $C_n$。"
+quick: >-
+  用回溯，带两个计数器。`open < n` 时可以加 `(`，`close < open` 时才能加 `)`，这样任何前缀都合法，长度到 $2n$
+  直接收答案。方案数是卡特兰数 $C_n$。
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 22. 括号生成
-    url: https://leetcode.cn/problems/generate-parentheses/
+    url: 'https://leetcode.cn/problems/generate-parentheses/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -98,12 +100,12 @@ if __name__ == "__main__":
 
 ```python
 assert generateParenthesis(3) == [
-        "((()))",
-        "(()())",
-        "(())()",
-        "()(())",
-        "()()()",
-    ]
+    "((()))",
+    "(()())",
+    "(())()",
+    "()(())",
+    "()()()",
+]
 assert generateParenthesis(1) == ["()"]
 print("simple tests passed")
 ```
@@ -114,7 +116,7 @@ print("simple tests passed")
 
 方案数为第 $n$ 个卡特兰数 $C_n=\frac{1}{n+1}\binom{2n}{n}$。时间 $O(C_n\cdot n)$，空间 $O(n)$ 加输出。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时只有 `"()"`。$n=2$ 时只有 `"(())"` 与 `"()()"`，`")(()"` 这类前缀非法的串不会出现。$n=0$ 按题意通常不出现；真出现的话，卡特兰 $C_0=1$，对应空串。
 

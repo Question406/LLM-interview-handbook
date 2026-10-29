@@ -28,7 +28,7 @@ sources:
 
 ## 三路各自在算什么
 
-BM25 是词项匹配加文档长度归一，对稀有的精确字符串很强，对 paraphrase 弱。Dense / bi-encoder 把 query 和文档分开编码，文档向量可以预先算好，用内积或余弦加 ANN 从百万级文档里取 top-$K$，擅长字面不同、语义相近的情况。Cross-encoder 把每个 query-doc 对一起送进 Transformer，做 token 级 attention，准确，但文档侧没法预计算，复杂度随候选数线性涨，所以只用来 rerank 召回集。DPR 把双塔检索做成了可训练的召回器，BERT rerank 把交叉注意力放在了精排。
+BM25 是词项匹配加文档长度归一，对稀有的精确字符串很强，对 paraphrase 弱。Dense / bi-encoder 把 query 和文档分开编码，文档向量可以预先算好，用内积或余弦加 ANN 从百万级文档里取 top-$K$，擅长字面不同、语义相近的情况。Cross-encoder 把每个 query-doc 对一起送进 Transformer，做 token 级 attention，准确，但文档侧没法预计算，复杂度随候选数线性涨，所以只用来 rerank 召回集。DPR 把双塔检索做成了可训练的召回器，BERT rerank 把 cross-attention 放在了精排。
 
 ## 为什么是级联
 

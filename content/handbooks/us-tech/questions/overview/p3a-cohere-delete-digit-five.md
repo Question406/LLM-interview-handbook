@@ -3,8 +3,8 @@ id: p3a-cohere-delete-digit-five
 section: overview
 order: 804
 level: A
-title: "Cohere：删除数字 5 的题目线索"
-quick: "只有标题线索，无法确定是删一个 5、删全部 5 还是可以选择删几个；先和面试官确认题意，再选字符串过滤或枚举删除位置的做法，并处理好负号和删空的情况。"
+title: Cohere：删除数字 5 的题目线索
+quick: 只有标题线索，无法确定是删一个 5、删全部 5 还是可以选择删几个；先和面试官确认题意，再选字符串过滤或枚举删除位置的做法，并处理好负号和删空的情况。
 companies:
   - cohere
 tags:
@@ -15,10 +15,11 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Cohere：删除数字 5 的题目线索"
-    url: https://www.1point3acres.com/interview/problems/7db16bf3-5b95-55de-a7dc-7da080f1a1e3
+  - title: 1Point3Acres · Cohere：删除数字 5 的题目线索
+    url: >-
+      https://www.1point3acres.com/interview/problems/7db16bf3-5b95-55de-a7dc-7da080f1a1e3
     type: secondary
 ---
 
@@ -33,7 +34,7 @@ sources:
 - `remove_all_fives(n)`：删除 $|n|$ 的十进制表示中所有的 5，保留原符号；删空时结果为 0。
 - `remove_one_five(n)`：恰好删除一个 5，返回能得到的最大整数；该接口假定 $|n|$ 的表示中至少出现一个 5。
 - $n$ 为整数，$|n| \le 10^{18}$。
-- 两个接口只是对标题两种理解的练习，不代表原题就是其中之一。
+- 两个接口只是对标题两种理解的练习。
 
 ### 示例
 
@@ -51,7 +52,7 @@ remove_one_five(5)      -> 0
 
 一亩三分地的 Cohere 目录里有一道题，标题是 Remove All Digit Fives to Maximize a Number，大意是从一个整数里删掉数字 5，让结果尽量大。完整题干没有看到。
 
-> 来源：一亩三分地 Cohere 公司目录（2026-10-18 用 Chrome 读取），只读到标题，完整题干未核实，因此不标为已核实真题（`realInterview: false`）；网站收录也不等于公司官方确认，不能把它归到 Cohere 的具体岗位。下面的两个接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Cohere 公司目录（2026-10-18 用 Chrome 读取），只读到标题，完整题干未核实，因此不标为已核实真题（`realInterview: false`）；网站收录也不等于公司官方确认，不能把它归到 Cohere 的具体岗位。下面的两个接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -71,7 +72,7 @@ remove_one_five(5)      -> 0
 - `remove_all_fives(n)`：删除 $|n|$ 的十进制表示中所有的 5，保留原符号；删空时结果为 0。
 - `remove_one_five(n)`：恰好删除一个 5，返回能得到的最大整数；$n$ 中没有 5 时抛 `ValueError`。
 - $n$ 为整数，$|n| \le 10^{18}$。
-- 两个接口只是对标题两种理解的练习，不代表原题就是其中之一。
+- 两个接口只是对标题两种理解的练习。
 
 ### 输入输出示例
 
@@ -108,7 +109,7 @@ def remove_one_five(n):
     """恰好删除一个 5，返回能得到的最大整数；n 中没有 5 时抛 ValueError。"""
     digits = str(abs(n))
     candidates = [
-        to_signed_int(digits[:i] + digits[i + 1:], n < 0)
+        to_signed_int(digits[:i] + digits[i + 1 :], n < 0)
         for i, digit in enumerate(digits)
         if digit == "5"
     ]
@@ -126,7 +127,7 @@ def remove_one_five(n):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

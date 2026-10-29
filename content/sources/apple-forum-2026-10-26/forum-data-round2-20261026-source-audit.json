@@ -1,0 +1,43 @@
+{
+  "collectedAt": "2026-10-26",
+  "method": "Chrome CUA connected extension, dedicated tab 1006832485",
+  "newQuestionCount": 3,
+  "newSourceThreadsForQuestions": 1,
+  "notes": "Only candidate-visible descriptions are treated as interview evidence. Added interfaces, metrics, examples and limits are handbook exercise conventions. No bypass, login, posting, payment or contact with others performed.",
+  "threads": [
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1129820-1-1.html",
+      "title": "水果cvml全套",
+      "publishedAtVisible": "2025-05-21 10:23:20",
+      "interviewPeriodVisible": "2024 Q4",
+      "timeZone": "not stated",
+      "context": "Candidate says CVML; candidate explicitly uncertain whether DS/gen-AI evaluation. Not confirmed AFM Data Team.",
+      "visibleScope": "Main post and first-page replies, no content gate shown",
+      "confirmedTopics": ["kNN end-to-end coding", "circular padding coding", "Transformer, ViT, diffusion", "evaluation of generated images"],
+      "draftIds": ["p3a-apple-cvml-image-evaluation", "p3a-apple-cvml-circular-padding", "p3a-apple-cvml-knn-pipeline"],
+      "notExpanded": "Two LC variants are only named obliquely, with no details, and not reconstructed as interview questions."
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1120533-1-1.html",
+      "title": "分享一个苹果家MLE挂经",
+      "publishedAtVisible": "2025-03-27 12:14:59",
+      "visibleScope": "Main post and first page, including candidate reply dated 2025-03-28 clarifying LLM/Transformer topics",
+      "decision": "Evidence only; Jupyter table analysis, NN/LLM/Transformer, system-design and AB-testing rounds mentioned without specific problem details. No question card fabricated."
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1158691-1-1.html",
+      "title": "果子电面+昂赛",
+      "publishedAtVisible": "2025-12-19 13:58:52",
+      "visibleScope": "Main post and first-page follow-up",
+      "context": "DS/analysis role, causal focus; not confirmed AFM",
+      "decision": "Delegated k-fold CV and k-means coding evidence to coding agent; vague LLM case-study topic not expanded here."
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1150910-1-1.html",
+      "title": "Apple Foundation Model Team， HR 打死不告诉我面什么",
+      "publishedAtVisible": "2025-10-20 17:35:44",
+      "visibleScope": "Both pages inspected, including follow-ups through 2026-10-17",
+      "decision": "Exclude as concrete question source: original post asks about expected rounds, replies give no sufficiently specified new technical problem; generic DP/ML/coding topics are not complete questions."
+    }
+  ]
+}

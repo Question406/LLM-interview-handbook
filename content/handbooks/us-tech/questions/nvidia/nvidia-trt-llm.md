@@ -4,30 +4,47 @@ section: nvidia
 order: 13
 level: A
 title: NVIDIA：TensorRT-LLM 相对 vLLM / Triton 的定位，plugin、inflight、量化
-quick: "TensorRT-LLM 和 vLLM 负责 LLM 引擎执行及逐轮调度，Triton Inference Server 负责模型接入、多后端和网关功能。TensorRT-LLM 用 plugin 和相应 kernel 处理注意力、GEMM 与量化，runtime 管 in-flight batching 和 paged KV；选择时要分别评估执行、调度和服务接入。"
+quick: >-
+  TensorRT-LLM 和 vLLM 负责 LLM 引擎执行及逐轮调度，Triton Inference Server
+  负责模型接入、多后端和网关功能。TensorRT-LLM 用 plugin 和相应 kernel 处理 attention、GEMM 与量化，runtime
+  管 in-flight batching 和 paged KV；选择时要分别评估执行、调度和服务接入。
 tags:
   - NVIDIA
   - TensorRT-LLM
   - Inference
   - Serving
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: NVIDIA TensorRT-LLM Supercharges Large Language Model Inference on NVIDIA H100 GPUs
-    url: https://developer.nvidia.com/blog/nvidia-tensorrt-llm-supercharges-large-language-model-inference-on-nvidia-h100-gpus/
+  - title: >-
+      NVIDIA TensorRT-LLM Supercharges Large Language Model Inference on NVIDIA
+      H100 GPUs
+    url: >-
+      https://developer.nvidia.com/blog/nvidia-tensorrt-llm-supercharges-large-language-model-inference-on-nvidia-h100-gpus/
     type: secondary
   - title: TensorRT-LLM Overview
-    url: https://nvidia.github.io/TensorRT-LLM/overview.html
+    url: 'https://nvidia.github.io/TensorRT-LLM/overview.html'
     type: primary
-  - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
-    url: https://arxiv.org/abs/2309.06180
+  - title: >-
+      Efficient Memory Management for Large Language Model Serving with
+      PagedAttention
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
   - title: NVIDIA TensorRT-LLM
-    url: https://github.com/NVIDIA/TensorRT-LLM
+    url: 'https://github.com/NVIDIA/TensorRT-LLM'
     type: primary
 ---
+
+## 可以这样回答
+
+我会按职责来放这三个组件：TensorRT-LLM 和 vLLM 都负责 LLM 如何执行和调度，Triton Inference Server 负责模型接入、版本、多后端和服务编排。比如请求从 Triton 进入 TensorRT-LLM backend 后，生成循环里哪个请求占用 KV、哪个请求下一轮进入 batch，是引擎自己的 scheduler 决定的。
+
+TensorRT-LLM 把模型定义组织成执行计划，也有 PyTorch 路径，执行时使用 GPT Attention plugin、GEMM plugin 和量化 kernel，并配合 paged KV、in-flight batching、chunked prefill。多卡 TP、PP、EP 在模型定义中安排，HTTP、模型仓库和 A/B 则交给服务层。
+
+## 技术备查
 
 我会按职责来放这三个组件：TensorRT-LLM 和 vLLM 都负责 LLM 如何执行和调度，Triton Inference Server 负责模型接入、版本、多后端和服务编排。比如请求从 Triton 进入 TensorRT-LLM backend 后，生成循环里哪个请求占用 KV、哪个请求下一轮进入 batch，是引擎自己的 scheduler 决定的。
 
@@ -41,13 +58,13 @@ Triton Inference Server 在服务层提供动态 batch、ensemble、多后端和
 
 ## Plugin 在补什么
 
-朴素 TensorRT 吃固定形状 CNN / Encoder 很稳。自回归 LLM 每步 query 长度是 1、KV 变长、还要 RoPE / 量化 / paged gather，计算图会被拆成一串小 kernel。Plugin 把这些操作融合成自定义 op：
+朴素 TensorRT 吃固定形状 CNN / Encoder 很稳。autoregressive LLM 每步 query 长度是 1、KV 变长、还要 RoPE / 量化 / paged gather，计算图会被拆成一串小 kernel。Plugin 把这些操作融合成自定义 op：
 
 - **GPT Attention plugin**：context 走 FMHA（FlashAttention 一类，不物化 $[T, T]$），generation 走 masked MHA，原地写 KV。RoPE、QKV bias、KV 的量化 / 反量化可以在核里做。关掉 context FMHA 会把 $QK^{\top}$ 写回 HBM，长 prompt 会大幅增加显存占用和带宽需求。
 - **GEMM plugin**：cuBLAS / 量化 GEMM，Hopper 上 FP8 走 Tensor Core。
 - **remove_input_padding**：变长序列 packed，不再为对齐 pad 到 `max_seq_len`。
 
-这些 plugin 负责让执行计划支持 KV cache 和 in-flight 调度的间接索引，并避免把注意力矩阵完整写回显存。FlashAttention 的 IO 账见 `nvidia-flash-attn`。
+这些 plugin 负责让执行计划支持 KV cache 和 in-flight 调度的间接索引，并避免把 attention 矩阵完整写回显存。FlashAttention 的 IO 账见 `nvidia-flash-attn`。
 
 ## 调度与量化分别解决什么
 

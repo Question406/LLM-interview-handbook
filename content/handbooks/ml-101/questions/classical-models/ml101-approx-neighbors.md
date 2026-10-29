@@ -3,20 +3,23 @@ id: ml101-approx-neighbors
 section: classical-models
 order: 8
 level: A
-title: "近似最近邻为什么更快？怎么评价召回和速度？"
-quick: "近似最近邻用索引缩小搜索范围或近似计算距离，少比较候选，因此更快，但可能漏掉真实最近邻。评价时用精确搜索作参照，同时报告 recall@k、延迟分位数、吞吐与索引内存。调搜索预算得到召回和速度的曲线，再按业务门槛选点。"
+title: 近似最近邻为什么更快？怎么评价召回和速度？
+quick: >-
+  近似最近邻用索引缩小搜索范围或近似计算距离，少比较候选，因此更快，但可能漏掉真实最近邻。评价时用精确搜索作参照，同时报告
+  recall@k、延迟分位数、throughput 与索引内存。调搜索预算得到召回和速度的曲线，再按业务 threshold 选点。
 tags:
   - ML Fundamentals
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Faiss: Faiss indexes"
-    url: https://github.com/facebookresearch/faiss/wiki/Faiss-indexes
+  - title: 'Faiss: Faiss indexes'
+    url: 'https://github.com/facebookresearch/faiss/wiki/Faiss-indexes'
     type: primary
-  - title: "Faiss: Index IO, cloning and hyper parameter tuning"
-    url: https://github.com/facebookresearch/faiss/wiki/Index-IO,-cloning-and-hyper-parameter-tuning
+  - title: 'Faiss: Index IO, cloning and hyper parameter tuning'
+    url: >-
+      https://github.com/facebookresearch/faiss/wiki/Index-IO,-cloning-and-hyper-parameter-tuning
     type: primary
 ---
 

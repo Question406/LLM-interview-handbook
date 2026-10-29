@@ -5,7 +5,8 @@ order: 2
 level: S
 title: LC 724 · 寻找数组的中心下标
 quick: >-
-  右侧和可以由总和推出来，所以先求总和 `total`，从左扫时维护左侧和 `left`，右侧和就是 `total - left - nums[i]`，相等即返回，第一个命中的就是最左的 $i$。时间 $O(n)$，额外空间 $O(1)$。
+  右侧和可以由总和推出来，所以先求总和 `total`，从左扫时维护左侧和 `left`，右侧和就是 `total - left -
+  nums[i]`，相等即返回，第一个命中的就是最左的 $i$。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Prefix Sum
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 724. Find Pivot Index
-    url: https://leetcode.com/problems/find-pivot-index/
+    url: 'https://leetcode.com/problems/find-pivot-index/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -106,7 +107,7 @@ print("simple tests passed")
 
 时间 $O(n)$，两遍扫描。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 答案可能在最左端。`[2, 1, -1]` 右侧和为 $0$，左侧空和也是 $0$，返回 $0$。
 

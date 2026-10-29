@@ -3,8 +3,11 @@ id: fund-finite-sample-baseline
 section: fundamentals
 order: 148
 level: S
-title: 组均值含当前样本、Leave-one-out、batch 标准化，有限样本下谁还无偏？
-quick: "只有 leave-one-out 是严格无偏的，因为无偏要求 baseline 不依赖当前样本。组均值含 $r_i$，会把优势缩成 $(G-1)/G$ 倍；RLOO 只用其余 $G-1$ 条算 baseline；batch 均值的偏差随 batch 变大而消失，但除 $\\sigma$ 不管在组内还是全局都在改权重。"
+title: 组均值含当前样本、Leave-one-out、batch standardization，有限样本下谁还无偏？
+quick: >-
+  只有 leave-one-out 是严格无偏的，因为无偏要求 baseline 不依赖当前样本。组均值含 $r_i$，会把优势缩成 $(G-1)/G$
+  倍；RLOO 只用其余 $G-1$ 条算 baseline；batch 均值的偏差随 batch 变大而消失，但除 $\sigma$
+  不管在组内还是全局都在改权重。
 tags:
   - RL
   - Baseline
@@ -14,23 +17,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Back to Basics — REINFORCE Leave-One-Out (RLOO)
-    url: https://arxiv.org/abs/2402.14740
+    url: 'https://arxiv.org/abs/2402.14740'
     type: primary
   - title: DeepSeekMath / GRPO
-    url: https://arxiv.org/abs/2402.03300
+    url: 'https://arxiv.org/abs/2402.03300'
     type: primary
   - title: REINFORCE++
-    url: https://arxiv.org/abs/2501.03262
+    url: 'https://arxiv.org/abs/2501.03262'
     type: secondary
 ---
 严格无偏的只有 leave-one-out（RLOO）。恒等式 $\mathbb{E}_a[\nabla\log\pi\,b(s)]=0$ 里的 $b(s)$ 不能是当前这条 $a$ 的函数，而有限样本里，组均值、batch 均值、组标准差都「看见」了当前的 $r_i$，所以「减了均值就无偏」不能直接从期望公式搬到大小为 $G$ 的一组样本上，得重新算。和 `pt-rloo-vs-grpo` 的区别是，那题比算法选型，这题只解释有限样本偏差从哪来。
 
 ## 组均值含自身：偏差是 $1/G$
 
-对同一输入提示采样 $G$ 条回答，得到 $r_1,\ldots,r_G$。GRPO 常用
+对同一 prompt sampling $G$ 条回答，得到 $r_1,\ldots,r_G$。GRPO 常用
 
 $$
 \bar r=\frac{1}{G}\sum_{j=1}^G r_j,\qquad \hat A_i=r_i-\bar r=\frac{G-1}{G}\Big(r_i-\frac{1}{G-1}\sum_{j\neq i}r_j\Big).
@@ -48,11 +51,11 @@ $$
 
 白板上用 $G=2$、$r=(1,0)$ 走一遍最清楚：GRPO 得到 $A=(+0.5,-0.5)$（如果再除 $\sigma$ 还会再缩放），RLOO 得到 $A=(+1,-1)$。能说清「含不含自身」，比背论文名字重要。
 
-## Batch 标准化：偏差随 batch 消失，除 $\sigma$ 另算
+## Batch standardization：偏差随 batch 消失，除 $\sigma$ 另算
 
-REINFORCE++ 一类做法把 baseline 换成全局 batch 均值，可选地再除全局 $\sigma$。相比输入提示（prompt）级的小 $G$，batch 往往大几十倍，$O(1/N)$ 的偏差可以忽略，论文因此说「effective unbiased」。它解决的是「别在 8 条样本里估 $\sigma$」，并没有证明除标准差是无偏的。
+REINFORCE++ 一类做法把 baseline 换成全局 batch 均值，可选地再除全局 $\sigma$。相比 prompt 级的小 $G$，batch 往往大几十倍，$O(1/N)$ 的偏差可以忽略，论文因此说「effective unbiased」。它解决的是「别在 8 条样本里估 $\sigma$」，并没有证明除标准差是无偏的。
 
-除 $\sigma$ 不管在组内还是全局，都是依赖数据的重加权：方差小的切片有效学习率变大。Dr.GRPO 批评的 question-level reweighting 就是组内这一层，见 `pt-drgrpo`、`fund-adv-norm-bias`。全局 $\sigma$ 把不同输入提示的样本放在同一个尺度下，偏差的形式不一样：不再按题放大，但 batch 组成一变，同一条轨迹的 $A$ 含义就跟着变。归纳一下，减均值（常数 baseline）还在无偏族里，除 $\sigma$ 是在改目标。
+除 $\sigma$ 不管在组内还是全局，都是依赖数据的重加权：方差小的切片有效学习率变大。Dr.GRPO 批评的 question-level reweighting 就是组内这一层，见 `pt-drgrpo`、`fund-adv-norm-bias`。全局 $\sigma$ 把不同 prompt 的样本放在同一个尺度下，偏差的形式不一样：不再按题放大，但 batch 组成一变，同一条轨迹的 $A$ 含义就跟着变。归纳一下，减均值（常数 baseline）还在无偏族里，除 $\sigma$ 是在改目标。
 
 ## 追问
 

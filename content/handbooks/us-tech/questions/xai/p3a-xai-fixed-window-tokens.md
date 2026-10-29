@@ -3,8 +3,10 @@ id: p3a-xai-fixed-window-tokens
 section: xai
 order: 750
 level: S
-title: "xAI：固定窗口 Token Limiter：乱序时间戳与 RESET"
-quick: "我会用 (key, t // width) 定位每个窗口的已用 token，只有不超额才增加计数，刚好用满也允许。这样乱序请求不会覆盖别的窗口；RESET 删除该 key 的所有窗口，包括旧时间戳对应的记录，旧窗口是否能清理要另定乱序范围。"
+title: xAI：固定窗口 Token Limiter：乱序时间戳与 RESET
+quick: >-
+  我会用 (key, t // width) 定位每个窗口的已用 token，只有不超额才增加计数，刚好用满也允许。这样乱序请求不会覆盖别的窗口；RESET
+  删除该 key 的所有窗口，包括旧时间戳对应的记录，旧窗口是否能清理要另定乱序范围。
 companies:
   - xai
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: 1Point3Acres xAI source
-    url: https://www.1point3acres.com/interview/problems/b6025b30-5ff6-5b70-8a92-fa46a1ebc43c
+    url: >-
+      https://www.1point3acres.com/interview/problems/b6025b30-5ff6-5b70-8a92-fa46a1ebc43c
     type: secondary
 ---
 
@@ -26,7 +29,7 @@ sources:
 
 实现按 key 独立计量的固定窗口 token 限流器。请求时间允许乱序，同一个 key 的不同窗口互不占用配额。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -132,7 +135,7 @@ class Limiter:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -143,6 +146,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 limiter = Limiter(limit=10, width=60)
 

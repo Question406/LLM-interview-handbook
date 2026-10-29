@@ -4,7 +4,9 @@ section: coding
 order: 15
 level: S
 title: 白板：FlashAttention 的 online softmax，两遍归约怎么写
-quick: "一遍扫描维护 running max 和 sumexp，最大值变大时把旧和换到新基准，第二遍即可写 softmax。注意力还同步 rescale 已累加的输出，最后归一化，不能让各 tile 独立 softmax。"
+quick: >-
+  一遍扫描维护 running max 和 sumexp，最大值变大时把旧和换到新基准，第二遍即可写 softmax。attention 还同步
+  rescale 已累加的输出，最后 normalization，不能让各 tile 独立 softmax。
 tags:
   - 完整编程练习
   - Coding
@@ -14,22 +16,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: FlashAttention — Fast and Memory-Efficient Exact Attention with IO-Awareness
-    url: https://arxiv.org/abs/2205.14135
+  - title: >-
+      FlashAttention — Fast and Memory-Efficient Exact Attention with
+      IO-Awareness
+    url: 'https://arxiv.org/abs/2205.14135'
     type: primary
   - title: Online normalizer calculation for softmax
-    url: https://arxiv.org/abs/1805.02867
+    url: 'https://arxiv.org/abs/1805.02867'
     type: primary
-  - title: FlashAttention-2 — Faster Attention with Better Parallelism and Work Partitioning
-    url: https://arxiv.org/abs/2307.08691
+  - title: >-
+      FlashAttention-2 — Faster Attention with Better Parallelism and Work
+      Partitioning
+    url: 'https://arxiv.org/abs/2307.08691'
     type: primary
 ---
 
 ## 题目描述
 
-实现只能分块读取分数或 key/value 的数值稳定归一化接口。先为非空分数向量返回足以重建 softmax 的统计量，再提供使用这些统计量的归一化接口，以及单 query 的分块 attention 接口。
+实现只能分块读取分数或 key/value 的数值稳定 normalization 接口。先为非空分数向量返回足以重建 softmax 的统计量，再提供使用这些统计量的 normalization 接口，以及单 query 的分块 attention 接口。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
@@ -37,7 +43,7 @@ sources:
 
 - `online_stats(x) -> (m, ell)`：一遍扫描非空的有限向量 `x`，返回全局最大值 $m$ 和 $\ell=\sum_j e^{x_j-m}$。
 - `softmax_from_stats(x, m, ell)`：用上面的统计量做第二遍，返回 softmax 概率。
-- `online_attn_row(q, k, v, scale, tile=16)`：单个 query 的注意力，`q` 是 `[D]`，`k`、`v` 是 `[S, D]`。按每块 `tile` 个 key 扫描，不物化长度为 $S$ 的完整分数向量，返回 `softmax(k @ q * scale) @ v`，形状 `[D]`。假定 `S >= 1`、`tile >= 1`。
+- `online_attn_row(q, k, v, scale, tile=16)`：单个 query 的 attention，`q` 是 `[D]`，`k`、`v` 是 `[S, D]`。按每块 `tile` 个 key 扫描，不物化长度为 $S$ 的完整分数向量，返回 `softmax(k @ q * scale) @ v`，形状 `[D]`。假定 `S >= 1`、`tile >= 1`。
 - 分数都是有限值，不处理整行被 mask 成 $-\infty$ 的情况。
 
 ### 示例
@@ -54,14 +60,14 @@ online softmax 把求 max 和 sumexp 合进一遍扫描，随后用全局统计�
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，CPU 上用 float64 验证，没有验证 GPU kernel 或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + NumPy，CPU 上用 float64 验证，没有验证 GPU kernel 或性能。
 
 ### 题面、接口与约束
 
 - `online_stats(x) -> (m, ell)`：一遍扫描非空的有限向量 `x`，返回全局最大值 $m$ 和 $\ell=\sum_j e^{x_j-m}$。空输入抛 `ValueError`。
 - `softmax_from_stats(x, m, ell)`：用上面的统计量做第二遍，返回 softmax 概率。
-- `online_attn_row(q, k, v, scale, tile=16)`：单个 query 的注意力，`q` 是 `[D]`，`k`、`v` 是 `[S, D]`。按每块 `tile` 个 key 扫描，不物化长度为 $S$ 的完整分数向量，返回 `softmax(k @ q * scale) @ v`，形状 `[D]`。$S=0$ 或 `tile < 1` 时抛 `ValueError`。
-- 分数都是有限值，不处理整行被 mask 成 $-\infty$ 的情况（见下文「Tile 上不能各自归一化」）。
+- `online_attn_row(q, k, v, scale, tile=16)`：单个 query 的 attention，`q` 是 `[D]`，`k`、`v` 是 `[S, D]`。按每块 `tile` 个 key 扫描，不物化长度为 $S$ 的完整分数向量，返回 `softmax(k @ q * scale) @ v`，形状 `[D]`。$S=0$ 或 `tile < 1` 时抛 `ValueError`。
+- 分数都是有限值，不处理整行被 mask 成 $-\infty$ 的情况（见下文「Tile 上不能各 self-normalization」）。
 
 ### 输入输出示例
 
@@ -73,7 +79,7 @@ online_attn_row(q, k, v, 0.5, tile=3)      -> 与 softmax(k @ q / 2) @ v 一致�
 
 ### 解题思路与正确性
 
-注意力里还要维护未归一化的输出 $O=\sum_j e^{s_j-m}v_j$。它和 $\ell$ 用同一个 rescale 系数 $\alpha=e^{m-m'}$：每来一块 key，先把旧的 $O$ 和 $\ell$ 乘 $\alpha$，再加上本块的贡献。最后返回 $O/\ell$。第一块时 $m=-\infty$，$\alpha=0$，旧值本来就是 0，不需要特判。
+attention 里还要维护未 normalization 的输出 $O=\sum_j e^{s_j-m}v_j$。它和 $\ell$ 用同一个 rescale 系数 $\alpha=e^{m-m'}$：每来一块 key，先把旧的 $O$ 和 $\ell$ 乘 $\alpha$，再加上本块的贡献。最后返回 $O/\ell$。第一块时 $m=-\infty$，$\alpha=0$，旧值本来就是 0，不需要特判。
 
 ### 完整参考实现（Python 3）
 
@@ -89,18 +95,20 @@ def online_stats(x):
     running_sum = 0.0
     for value in np.asarray(x, dtype=np.float64):
         new_max = max(running_max, value)
-        running_sum = running_sum * np.exp(running_max - new_max) + np.exp(value - new_max)
+        running_sum = running_sum * np.exp(running_max - new_max) + np.exp(
+            value - new_max
+        )
         running_max = new_max
     return running_max, running_sum
 
 
 def softmax_from_stats(x, m, ell):
-    """第二遍：用全局 max 和 sumexp 归一化。"""
+    """第二遍：用全局 max 和 sumexp normalization。"""
     return np.exp(np.asarray(x, dtype=np.float64) - m) / ell
 
 
 def online_attn_row(q, k, v, scale, tile=16):
-    """单个 query 的分块注意力。q: [D]，k / v: [S, D]，返回 [D]。
+    """单个 query 的分块 attention。q: [D]，k / v: [S, D]，返回 [D]。
 
     按 key 块扫描，running max 变化时同时 rescale 已累加的输出和 sumexp。
     """
@@ -113,11 +121,11 @@ def online_attn_row(q, k, v, scale, tile=16):
     running_sum = 0.0
     output = np.zeros(head_dim, dtype=np.float64)
     for start in range(0, seq_len, tile):
-        scores = (k[start:start + tile] @ q) * scale  # [tile]
+        scores = (k[start : start + tile] @ q) * scale  # [tile]
         new_max = max(running_max, float(np.max(scores)))
         weights = np.exp(scores - new_max)
-        alpha = np.exp(running_max - new_max)          # 旧标尺 -> 新标尺
-        output = output * alpha + weights @ v[start:start + tile]
+        alpha = np.exp(running_max - new_max)  # 旧标尺 -> 新标尺
+        output = output * alpha + weights @ v[start : start + tile]
         running_sum = running_sum * alpha + float(weights.sum())
         running_max = new_max
     return output / running_sum
@@ -131,7 +139,7 @@ def online_attn_row(q, k, v, scale, tile=16):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -158,7 +166,7 @@ assert m == x.max()
 assert np.isclose(ell, np.exp(x - x.max()).sum())
 assert np.isclose(softmax_from_stats(x, m, ell).sum(), 1.0)
 
-# 分块注意力与完整 softmax 注意力一致，与 tile 大小无关
+# 分块 attention 与完整 softmax attention 一致，与 tile 大小无关
 q = rng.normal(size=4)
 k = rng.normal(size=(7, 4))
 v = rng.normal(size=(7, 4))
@@ -204,11 +212,11 @@ $$
 
 扫完时 $m_S,\ell_S$ 就是全局 max 和 sumexp，和分开算的结果在数学上相等。于是第二遍直接写出 $p_i=\exp(x_i-m_S)/\ell_S$，总共两遍。
 
-注意力连 $p$ 都不需要物化：每块的 $p$ 直接乘上对应的 $V$ 累加进输出；max 更新时，把已有输出乘上 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$。单测时，`online_stats` 要对上 `x.max()` 和 `exp(x - m).sum()`，`online_attn_row` 要对上 `softmax(scale * K q) @ V`。对不上，通常是某处漏乘了 rescale 系数。
+attention 连 $p$ 都不需要物化：每块的 $p$ 直接乘上对应的 $V$ 累加进输出；max 更新时，把已有输出乘上 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$。单测时，`online_stats` 要对上 `x.max()` 和 `exp(x - m).sum()`，`online_attn_row` 要对上 `softmax(scale * K q) @ V`。对不上，通常是某处漏乘了 rescale 系数。
 
-## Tile 上不能各自归一化
+## Tile 上不能各 self-normalization
 
-FlashAttention 的外层沿 $K,V$ 块走。块 $j$ 上局部的 $\mathrm{softmax}(Q K_j^\top)$，分母只是这一块的和，不是全局的 $\ell$，各块的权重彼此对不上，结果就不是精确注意力。必须在每一行上保留 $(m,\ell,O)$，新块只提供增量。
+FlashAttention 的外层沿 $K,V$ 块走。块 $j$ 上局部的 $\mathrm{softmax}(Q K_j^\top)$，分母只是这一块的和，不是全局的 $\ell$，各块的权重彼此对不上，结果就不是精确 attention。必须在每一行上保留 $(m,\ell,O)$，新块只提供增量。
 
 因果 mask 在 tile 内填 $-\infty$。如果一整行都是 $-\infty$，$\ell=0$，$O/\ell$ 会是 NaN，所以要跳过这种行，或者先检查有没有有限值。
 
@@ -218,15 +226,15 @@ decode 时 $T_q=1$，分数只是 `[1, S]`。online 省下的是把长度为 $S$
 
 **和减 max 的稳定 softmax 是什么关系？**
 每一步减的是当前的 running max，而不是最终的全局 max；用 $e^{m_{\mathrm{old}}-m_{\mathrm{new}}}$ 把旧的 $\ell$ 和 $O$ 换到新标尺上，效果等价于从头减全局 max。
-**为什么 FlashAttention 仍然有归一化这一步？**
-统计量 $m,\ell$ 一遍就能扫完，但写出归一化后的 $P$ 仍要再访问 $x$。注意力把这「第二遍」融进了 $PV$ 的累加里，训练时反向再重算一次。
+**为什么 FlashAttention 仍然有 normalization 这一步？**
+统计量 $m,\ell$ 一遍就能扫完，但写出 normalization 后的 $P$ 仍要再访问 $x$。attention 把这「第二遍」融进了 $PV$ 的累加里，训练时反向再重算一次。
 **块内先 softmax、再把各块加权平均，能凑合吗？**
-不能。那是错误的归一化，不算 FlashAttention 的近似。
+不能。那是错误的 normalization，不算 FlashAttention 的近似。
 
 ## 相关题
 
 - [[coding-softmax-stable]]：先把单行减全局 max 的稳定 softmax 写对，这张把它改成流式的 running max。
-- [[coding-fused-ce]]：同一套 running $(m,\ell)$ 用在词表维上，算 CE 时不物化完整 logits。
+- [[coding-fused-ce]]：同一套 running $(m,\ell)$ 用在 vocabulary 维上，算 CE 时不物化完整 logits。
 - [[coding-flash-decode]]：把这里串行扫 $K$ 块改成多段并行，各段的 $(m,\ell,O)$ 再按同一套 rescale 合并。
 - [[nvidia-flash-decode]]：同一个 split-K 练习，从 NVIDIA 角度对照训练核和 decode 核切的轴。
 - [[openai-flash-decode]]：同一个 split-K 练习，OpenAI 问法侧重 decode 时并行度为什么不够、什么时候不必切。

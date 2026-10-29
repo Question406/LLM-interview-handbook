@@ -4,8 +4,7 @@ section: intervals
 order: 2
 level: S
 title: LC 56 · 合并区间
-quick: >-
-  先按起点排序，再扫一遍：下一个区间能和答案末段重叠（含端点相接）就把 `end` 扩到更大，否则新开一段。时间 $O(n\log n)$。
+quick: 先按起点排序，再扫一遍：下一个区间能和答案末段重叠（含端点相接）就把 `end` 扩到更大，否则新开一段。时间 $O(n\log n)$。
 tags:
   - Intervals
   - Sorting
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 56. 合并区间
-    url: https://leetcode.cn/problems/merge-intervals/
+    url: 'https://leetcode.cn/problems/merge-intervals/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +99,7 @@ print("simple tests passed")
 
 时间 $O(n\log n)$，额外空间 $O(n)$（排序与答案）。合并本身是线性的。
 
-## 边界
+## Edge Cases
 
 只有一个区间时循环不进，原样返回。完全包含时 `end` 取 `max`，里面那个被吞掉。只在端点相接时 $start \le res[-1][1]$ 成立，合成一段。起点乱序时必须先按起点排序，否则没法线性扫。零宽度区间和负坐标都不影响比较规则。
 

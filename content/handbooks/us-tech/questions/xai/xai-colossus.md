@@ -4,7 +4,9 @@ section: xai
 order: 4
 level: S
 title: xAI：超大集群训练，故障、checkpoint、重同步面试怎么讲
-quick: "超大集群先按故障域处理，再从完整 checkpoint 恢复，让所有 rank 对齐 step、RNG 和数据位置并重建通信。Series C 公开过 10 万 Hopper、122 天就绪、首批服务器后 19 天跑负载，以及 Spectrum-X 扩至 20 万卡的计划，内部切分和故障率未公开。"
+quick: >-
+  超大集群先按故障域处理，再从完整 checkpoint 恢复，让所有 rank 对齐 step、RNG 和数据位置并重建通信。Series C 公开过 10
+  万 Hopper、122 天就绪、首批服务器后 19 天跑负载，以及 Spectrum-X 扩至 20 万卡的计划，内部切分和故障率未公开。
 tags:
   - xAI
   - Colossus
@@ -13,19 +15,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: xAI Series C (6 billion USD)
-    url: https://x.ai/blog/series-c
+    url: 'https://x.ai/blog/series-c'
     type: primary
   - title: Grok 3 Beta — The Age of Reasoning Agents
-    url: https://x.ai/blog/grok-3
+    url: 'https://x.ai/blog/grok-3'
     type: primary
-  - title: MegaScale — Scaling Large Language Model Training to More Than 10,000 GPUs
-    url: https://arxiv.org/abs/2402.15627
+  - title: 'MegaScale — Scaling Large Language Model Training to More Than 10,000 GPUs'
+    url: 'https://arxiv.org/abs/2402.15627'
     type: primary
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
 ---
 
@@ -53,7 +57,7 @@ checkpoint 可以按下面的顺序发布：
 1. 写到 `step=N/` 临时目录（模型、优化器、RNG、dataloader 偏移、并行拓扑）。
 2. 校验 size / checksum，再写 `COMMIT` 标记或原子 rename 成当前最新。
 3. 保留最近 $k$ 份。读只认有标记的。
-4. 异步流水：拷贝重叠在前向，但提交点仍是一步边界。不要「拷到一半就算成功」。
+4. 异步流水：拷贝重叠在前向，但提交点仍是一 step boundaries。不要「拷到一半就算成功」。
 
 保存间隔要在 I/O 开销和故障后的重做窗口之间取舍。平均无故障时间随规模变差时，保存太稀会降低有效 MFU；太密又会占满存储和 CPU 拷贝。这里没有可引用的 xAI 内部分钟数。若要少几台机器继续训练，还需调整数据并行度、优化器分片和数据切分，弹性恢复比原拓扑重启更复杂。
 
@@ -70,4 +74,4 @@ checkpoint 可以按下面的顺序发布：
 **和推理故障的差别？**
 训练要步对齐的全局一致性；推理可以丢一个 replica。别用「重启 pod」一套话搪塞两边。
 **公开 10 万卡是不是你内部数字？**
-不是。那是 Series C 博文的公开表述。更大口径以当时官网为准，面试不需要背未公开拓扑。
+不是。那是 Series C 博文的公开表述。更大定义以当时官网为准，面试不需要背未公开拓扑。

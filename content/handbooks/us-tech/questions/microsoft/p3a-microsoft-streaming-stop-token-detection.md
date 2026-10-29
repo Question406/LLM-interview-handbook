@@ -3,8 +3,10 @@ id: p3a-microsoft-streaming-stop-token-detection
 section: microsoft
 order: 609
 level: S
-title: "Microsoft AI / Copilot：LLM 流式停止序列：跨 chunk 且不泄露前缀"
-quick: "我会扣住输出末尾可能属于 stop 前缀的字符，只发出已经确定安全的部分。stop 完整出现就丢掉并停止，流结束还没凑成 stop 的尾巴则原样发出；还要先约定按最先完成还是最早起点匹配，两者的延迟和结果可能不同。"
+title: Microsoft AI / Copilot：LLM 流式停止序列：跨 chunk 且不泄露前缀
+quick: >-
+  我会扣住输出末尾可能属于 stop 前缀的字符，只发出已经确定安全的部分。stop 完整出现就丢掉并停止，流结束还没凑成 stop
+  的尾巴则原样发出；还要先约定按最先完成还是最早起点匹配，两者的延迟和结果可能不同。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · streaming-stop-token-detection"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/streaming-stop-token-detection
+  - title: 1Point3Acres · Microsoft AI / Copilot · streaming-stop-token-detection
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/streaming-stop-token-detection
     type: secondary
 ---
 
@@ -58,7 +61,7 @@ truncate_at_first_stop("xabcd", ["abcd", "bc"])             -> "x"
 
 LLM 的输出按 chunk 流式到达，需要实时检测停止序列（stop sequence）：一旦某个 stop 出现就立刻停止，而且 stop 本身和它的任何前缀都不能已经发给了客户端。stop 可能被切在两个 chunk 之间，也不能把整条流缓存下来再处理。
 
-> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -66,7 +69,7 @@ LLM 的输出按 chunk 流式到达，需要实时检测停止序列（stop sequ
 
 实现上可以每来一个字符检查一次后缀，也可以用自动机做增量匹配。要拿来自测的例子：
 
-- stop 被切在 chunk 边界上，比如 `"hello ST"` + `"OP"`；
+- stop 被切在 chunk boundaries 上，比如 `"hello ST"` + `"OP"`；
 - 互相重叠的 stop，比如 `["abc", "bc"]`；
 - 流结束时缓冲里还有半个 stop，这部分应该作为正常文本发出。
 
@@ -116,7 +119,7 @@ def truncate_at_first_stop(text, stops):
         raise ValueError("stops must be non-empty strings")
     starts = [text.find(stop) for stop in stops]
     hits = [start for start in starts if start != -1]
-    return text[:min(hits)] if hits else text
+    return text[: min(hits)] if hits else text
 
 
 class Stopper:
@@ -150,13 +153,13 @@ class Stopper:
             matches = [stop for stop in self.stops if self.pending.endswith(stop)]
             if matches:
                 longest = max(matches, key=len)
-                output.append(self.pending[:-len(longest)])
+                output.append(self.pending[: -len(longest)])
                 self.pending = ""
                 self.done = True
                 break
             hold = self._held_suffix_length()
-            output.append(self.pending[:len(self.pending) - hold])
-            self.pending = self.pending[len(self.pending) - hold:]
+            output.append(self.pending[: len(self.pending) - hold])
+            self.pending = self.pending[len(self.pending) - hold :]
         return "".join(output)
 
     def finish(self):
@@ -177,7 +180,7 @@ class Stopper:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -188,6 +191,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # stop 跨 chunk：前缀先扣住，凑齐后丢弃并停止
 stopper = Stopper(["STOP"])

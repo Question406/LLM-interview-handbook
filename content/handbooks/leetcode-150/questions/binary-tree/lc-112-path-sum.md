@@ -4,7 +4,9 @@ section: binary-tree
 order: 9
 level: A
 title: LC 112 · 路径总和
-quick: "DFS 带着剩余和往下减，走到叶子时看剩余是否等于叶子的值，左右只要有一侧走通就为真，空树返回假。节点可负，所以中途不剪枝。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  DFS 带着剩余和往下减，走到叶子时看剩余是否等于叶子的值，左右只要有一侧走通就为真，空树返回假。节点可负，所以中途不剪枝。时间 $O(n)$，额外空间
+  $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 112. 路径总和
-    url: https://leetcode.cn/problems/path-sum/
+    url: 'https://leetcode.cn/problems/path-sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -107,10 +109,10 @@ if __name__ == "__main__":
 
 ```python
 root = TreeNode(
-        5,
-        TreeNode(4, TreeNode(11, TreeNode(7), TreeNode(2))),
-        TreeNode(8, TreeNode(13), TreeNode(4, None, TreeNode(1))),
-    )
+    5,
+    TreeNode(4, TreeNode(11, TreeNode(7), TreeNode(2))),
+    TreeNode(8, TreeNode(13), TreeNode(4, None, TreeNode(1))),
+)
 assert hasPathSum(root, 22)
 assert not hasPathSum(TreeNode(1, TreeNode(2), TreeNode(3)), 5)
 assert not hasPathSum(None, 0)
@@ -123,7 +125,7 @@ print("simple tests passed")
 
 最坏要看完整棵树，时间 $O(n)$，额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 空树返回假，即使 `targetSum=0` 也一样。单节点时，值等于目标和为真，否则为假。
 
@@ -157,6 +159,7 @@ def pathSum(root, targetSum):
 
 ```python
 from collections import defaultdict
+
 
 def pathSum(root, targetSum):
     cnt = defaultdict(int)

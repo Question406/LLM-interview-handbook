@@ -3,20 +3,41 @@ id: ml101-bias-variance
 section: generalization
 order: 8
 level: S
-title: "偏差和方差分别是什么？能推一下误差分解吗？"
-quick: "偏差表示模型平均预测离真实规律有多远，方差表示换一批训练样本后预测变化多大。在平方误差和零条件均值噪声的假设下，期望测试误差等于偏差平方、方差与不可约噪声之和。"
+title: 偏差和方差分别是什么？能推一下误差分解吗？
+quick: >-
+  假设模型无论换什么训练样本都只能学出一条过于简单的关系，这是高 bias 的直观情形。另一种情况是换一批样本，预测就变化很大，这是高 variance
+  的直观情形。
 tags:
   - Machine Learning
   - generalization
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: '2026-10-28'
 sources:
-  - title: "scikit-learn: Validation curves and learning curves"
-    url: https://scikit-learn.org/stable/modules/learning_curve.html
+  - title: 'scikit-learn: Validation curves and learning curves'
+    url: 'https://scikit-learn.org/stable/modules/learning_curve.html'
     type: primary
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设模型无论换什么训练样本都只能学出一条过于简单的关系，这是高 bias 的直观情形。
+>
+> **做法与原因：** 前者可能需要更合适的特征或模型能力；后者可能需要更多独立数据、regularization 或降低复杂度。
+>
+> **检查与取舍：** 我会结合 training/validation 表现和重复划分后的稳定性判断，而不是只凭一次训练结果给模型贴标签。
+
+## 可以这样回答
+
+假设模型无论换什么训练样本都只能学出一条过于简单的关系，这是高 bias 的直观情形。另一种情况是换一批样本，预测就变化很大，这是高 variance 的直观情形。
+
+前者可能需要更合适的特征或模型能力；后者可能需要更多独立数据、regularization 或降低复杂度。实际任务还包含无法由输入解释的 noise，不能指望所有误差都通过换模型消除。
+
+我会结合 training/validation 表现和重复划分后的稳定性判断，而不是只凭一次训练结果给模型贴标签。正式误差分解及其假设放在后面的推导中说明。
+
+## 技术备查
 
 偏差描述模型长期学偏了多少，方差描述它对训练样本变化有多敏感。用直线拟合明显弯曲的关系，常有较高偏差；用复杂曲线紧贴少量带噪声样本，常有较高方差。
 

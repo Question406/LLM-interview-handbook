@@ -3,8 +3,10 @@ id: p3a-openai-gpu-credits
 section: openai
 order: 600
 level: A
-title: "OpenAI：GPU Credits：乱序事件、过期额度与负余额变体"
-quick: "把发放和扣款保存为事件，查询时按时间戳重放；扣款只能使用当时有效、最早到期的 grant。先确认到期端点和透支契约，本练习用闭区间，负余额记债，新 grant 先还债。"
+title: OpenAI：GPU Credits：乱序事件、过期额度与负余额变体
+quick: >-
+  把发放和扣款保存为事件，查询时按时间戳重放；扣款只能使用当时有效、最早到期的 grant。先确认到期端点和透支契约，本练习用闭区间，负余额记债，新
+  grant 先还债。
 companies:
   - openai
 tags:
@@ -16,10 +18,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · gpu-credits"
-    url: https://www.1point3acres.com/interview/problems/company/openai/gpu-credits
+  - title: 1Point3Acres · OpenAI · gpu-credits
+    url: 'https://www.1point3acres.com/interview/problems/company/openai/gpu-credits'
     type: secondary
 ---
 
@@ -27,7 +29,7 @@ sources:
 
 实现有生效时间、过期时间和消费记录的 GPU credits 账本，支持事件乱序到达以及任意时刻余额查询。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -59,7 +61,7 @@ balance(19) -> None      # 还没有任何 grant
 
 实现一个 GPU 额度账本，支持三种操作：发放带有效期的额度、在某个时刻扣款、查询某个时刻的余额。扣款优先花最早过期的额度，而且事件可以乱序到达。
 
-> 来源：一亩三分地 OpenAI GPU Credits 详情页（2026-10-18 读取），包含闭区间到期、乱序重放和负余额变体，是网站对候选人报告的归纳，没有逐条核对原帖。原页面有一条重放建议有歧义：不能在查询时先丢弃所有已过期的 grant，而要逐个事件判断有效性，因为这个 grant 可能付过更早的扣款。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI GPU Credits 详情页（2026-10-18 读取），包含闭区间到期、乱序重放和负余额变体，是网站对候选人报告的归纳。原页面有一条重放建议有歧义：不能在查询时先丢弃所有已过期的 grant，而要逐个事件判断有效性，因为这个 grant 可能付过更早的扣款。下面的接口、约束和测试是手册补的练习约定。
 
 这道题的细节变体很多，动手前要和面试官确认：
 
@@ -186,7 +188,7 @@ def spend_earliest_expiring(active, amount):
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -198,13 +200,14 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
 
+
 # 扣款先于 grant 到达：重放后结果和按时间顺序到达一样
 credits = Credits()
 credits.subtract(2, 35)
 credits.add("a", 4, 20, 40)
 credits.add("b", 3, 30, 10)
-assert credits.balance(40) == 5   # 35 时先花最早到期的 b
-assert credits.balance(41) == 4   # b 在 40 之后过期
+assert credits.balance(40) == 5  # 35 时先花最早到期的 b
+assert credits.balance(41) == 4  # b 在 40 之后过期
 assert credits.balance(19) is None
 
 # 恰好花完但 grant 仍有效返回 0；过期后没有有效 grant 返回 None
@@ -229,9 +232,9 @@ credits.add("a", 6, 2, 10)
 assert credits.balance(2) == 2
 
 # 非法输入
-expect_value_error(credits.add, "a", 1, 50, 1)   # grant id 重复
-expect_value_error(credits.subtract, 1, 2)       # 时间戳重复
-expect_value_error(credits.subtract, -1, 60)     # 负金额
+expect_value_error(credits.add, "a", 1, 50, 1)  # grant id 重复
+expect_value_error(credits.subtract, 1, 2)  # 时间戳重复
+expect_value_error(credits.subtract, -1, 60)  # 负金额
 ```
 
 ### 复杂度与追问

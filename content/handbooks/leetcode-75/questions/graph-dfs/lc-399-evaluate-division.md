@@ -4,7 +4,9 @@ section: graph-dfs
 order: 4
 level: A
 title: LC 399 · 除法求值
-quick: "把等式建成带权有向图：$a/b=v$ 对应 $a\\to b$ 权重 $v$，反向 $b\\to a$ 权重 $1/v$。每个查询用 BFS/DFS 找一条连接两个变量的路径，把沿途权重相乘；不连通或变量不存在返回 $-1$。每个查询 $O(V+E)$。"
+quick: >-
+  把等式建成带权有向图：$a/b=v$ 对应 $a\to b$ 权重 $v$，反向 $b\to a$ 权重 $1/v$。每个查询用 BFS/DFS
+  找一条连接两个变量的路径，把沿途权重相乘；不连通或变量不存在返回 $-1$。每个查询 $O(V+E)$。
 tags:
   - Graph
   - BFS
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 399. Evaluate Division
-    url: https://leetcode.com/problems/evaluate-division/
+    url: 'https://leetcode.com/problems/evaluate-division/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -139,22 +141,22 @@ if __name__ == "__main__":
 
 ```python
 ans = calcEquation(
-        [["a", "b"], ["b", "c"]],
-        [2.0, 3.0],
-        [["a", "c"], ["b", "a"], ["a", "e"], ["a", "a"], ["x", "x"]],
-    )
+    [["a", "b"], ["b", "c"]],
+    [2.0, 3.0],
+    [["a", "c"], ["b", "a"], ["a", "e"], ["a", "a"], ["x", "x"]],
+)
 assert close(ans, [6.0, 0.5, -1.0, 1.0, -1.0])
 ans = calcEquation(
-        [["a", "b"], ["b", "c"], ["bc", "cd"]],
-        [1.5, 2.5, 5.0],
-        [["a", "c"], ["c", "b"], ["bc", "cd"], ["cd", "bc"]],
-    )
+    [["a", "b"], ["b", "c"], ["bc", "cd"]],
+    [1.5, 2.5, 5.0],
+    [["a", "c"], ["c", "b"], ["bc", "cd"], ["cd", "bc"]],
+)
 assert close(ans, [3.75, 0.4, 5.0, 0.2])
 ans = calcEquation(
-        [["a", "b"]],
-        [0.5],
-        [["a", "b"], ["b", "a"], ["a", "c"], ["x", "y"]],
-    )
+    [["a", "b"]],
+    [0.5],
+    [["a", "b"], ["b", "a"], ["a", "c"], ["x", "y"]],
+)
 assert close(ans, [0.5, 2.0, -1.0, -1.0])
 print("simple tests passed")
 ```
@@ -165,7 +167,7 @@ print("simple tests passed")
 
 建图 $O(E)$。每个查询最坏 $O(V+E)$，总计 $O(Q\cdot(V+E))$，空间 $O(V+E)$。题目里变量和等式都不超过 $20$ 个，这个量级完全够用。
 
-## 边界
+## Edge Cases
 
 查询两端相同但变量从没出现过，比如 `["x", "x"]`，要返回 $-1$。只有变量在图里时 $x/x=1$。
 

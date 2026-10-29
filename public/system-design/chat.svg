@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" role="img" aria-labelledby="title desc"><title id="title">聊天：持久化与异步投递</title><desc id="desc">核心数据流示意；完整权限和故障语义见题目正文。</desc>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8Z" fill="#64748b"/></marker></defs><rect width="960" height="470" rx="16" fill="#f8fafc"/>
+<text x="30" y="42" font-size="23" font-weight="700" fill="#0f172a" font-family="system-ui,sans-serif">聊天：持久化与异步投递</text>
+<path d="M280 144 L350 144" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M600 144 L670 144" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M795 188 L795 300" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<text x="795.0" y="235.0" text-anchor="middle" font-size="12" fill="#475569" font-family="system-ui,sans-serif">提交后</text>
+<path d="M670 344 L600 344" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M350 344 L280 344" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="30" y="100" width="250" height="88" rx="12" fill="white" stroke="#cbd5e1"/>
+<text x="155" y="135" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a" font-family="system-ui,sans-serif">发送客户端</text>
+<text x="155" y="161" text-anchor="middle" font-size="14" fill="#475569" font-family="system-ui,sans-serif">消息 + 幂等标识</text>
+<rect x="350" y="100" width="250" height="88" rx="12" fill="white" stroke="#cbd5e1"/>
+<text x="475" y="135" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a" font-family="system-ui,sans-serif">网关 / 消息服务</text>
+<text x="475" y="161" text-anchor="middle" font-size="14" fill="#475569" font-family="system-ui,sans-serif">鉴权与成员校验</text>
+<rect x="670" y="100" width="250" height="88" rx="12" fill="white" stroke="#cbd5e1"/>
+<text x="795" y="135" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a" font-family="system-ui,sans-serif">消息主存</text>
+<text x="795" y="161" text-anchor="middle" font-size="14" fill="#475569" font-family="system-ui,sans-serif">会话序号 / 提交</text>
+<rect x="30" y="300" width="250" height="88" rx="12" fill="white" stroke="#cbd5e1"/>
+<text x="155" y="335" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a" font-family="system-ui,sans-serif">接收设备</text>
+<text x="155" y="361" text-anchor="middle" font-size="14" fill="#475569" font-family="system-ui,sans-serif">游标补取 / 去重</text>
+<rect x="350" y="300" width="250" height="88" rx="12" fill="white" stroke="#cbd5e1"/>
+<text x="475" y="335" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a" font-family="system-ui,sans-serif">连接网关</text>
+<text x="475" y="361" text-anchor="middle" font-size="14" fill="#475569" font-family="system-ui,sans-serif">在线通知</text>
+<rect x="670" y="300" width="250" height="88" rx="12" fill="white" stroke="#cbd5e1"/>
+<text x="795" y="335" text-anchor="middle" font-size="18" font-weight="600" fill="#0f172a" font-family="system-ui,sans-serif">投递事件与队列</text>
+<text x="795" y="361" text-anchor="middle" font-size="14" fill="#475569" font-family="system-ui,sans-serif">失败可恢复</text>
+<text x="30" y="442" font-size="13" fill="#64748b" font-family="system-ui,sans-serif">面试讨论用逻辑图；不表示部署拓扑、机器数量或跨服务事务保证。</text></svg>

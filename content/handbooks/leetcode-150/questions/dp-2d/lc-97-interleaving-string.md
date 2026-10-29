@@ -4,20 +4,22 @@ section: dp-2d
 order: 5
 level: A
 title: LC 97 · 交错字符串
-quick: "先检查三串长度。$dp[i][j]$ 表示 `s1` 的前 $i$ 个字符和 `s2` 的前 $j$ 个字符能否交错成 `s3` 的前 $i+j$ 个字符，看 `s3` 当前末字符能否由 $s1[i-1]$ 或 $s2[j-1]$ 提供，从对应的前一个状态转移。表可以压成一维，时间 $O(mn)$。"
+quick: >-
+  先检查三串长度。$dp[i][j]$ 表示 `s1` 的前 $i$ 个字符和 `s2` 的前 $j$ 个字符能否交错成 `s3` 的前 $i+j$
+  个字符，看 `s3` 当前末字符能否由 $s1[i-1]$ 或 $s2[j-1]$ 提供，从对应的前一个状态转移。表可以压成一维，时间 $O(mn)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 97. 交错字符串
-    url: https://leetcode.cn/problems/interleaving-string/
+    url: 'https://leetcode.cn/problems/interleaving-string/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,7 +106,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，一维额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 两串都空时 `s3` 也必须为空，`dp[0]=True`。长度和不相等说明字符数对不上，直接否。其中一串为空时，另一串必须和 `s3` 完全相等，第一行或第一列按单串匹配滚动。
 

@@ -4,7 +4,9 @@ section: binary-tree-bfs
 order: 4
 level: A
 title: LC 103 · 二叉树的锯齿形层序遍历
-quick: "先按普通 BFS 切层收集，根层从左到右，下一层反转，之后交替。入队顺序一直是先左后右；也可以用双端队列决定每层头插还是尾插。时间 $O(n)$，额外空间 $O(w)$。"
+quick: >-
+  先按普通 BFS 切层收集，根层从左到右，下一层反转，之后交替。入队顺序一直是先左后右；也可以用双端队列决定每层头插还是尾插。时间 $O(n)$，额外空间
+  $O(w)$。
 tags:
   - Tree
   - BFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 103. 二叉树的锯齿形层序遍历
-    url: https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal/
+    url: 'https://leetcode.cn/problems/binary-tree-zigzag-level-order-traversal/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -127,7 +129,7 @@ print("simple tests passed")
 
 时间 $O(n)$，反转一层也是线性的。额外空间 $O(w)$。
 
-## 边界
+## Edge Cases
 
 空树返回 `[]`。只有一层时不用反转。该反转的那一层只有一个节点时，反不反转都一样。
 
@@ -141,6 +143,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def zigzagLevelOrder(root):
     if root is None:

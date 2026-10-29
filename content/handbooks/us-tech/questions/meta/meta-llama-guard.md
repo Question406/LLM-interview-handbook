@@ -4,7 +4,9 @@ section: meta
 order: 17
 level: A
 title: Meta：Llama Guard 当独立安全分类器，和基座对齐怎么分工
-quick: "Llama Guard 是独立训练的因果 LM 安全分类器，输入风险策略和对话，输出 safe / unsafe 与风险类别，用首 token 概率设阈值。基座对齐负责改变生成行为，Guard 提供可独立更新的输入输出检查，两者互补，同时要量延迟、FPR 与过度拒答。"
+quick: >-
+  Llama Guard 是独立训练的因果 LM 安全分类器，输入风险策略和对话，输出 safe / unsafe 与风险类别，用首 token
+  概率设阈值。基座对齐负责改变生成行为，Guard 提供可独立更新的输入输出检查，两者互补，同时要量延迟、FPR 与 over-refusal。
 tags:
   - Meta
   - Llama
@@ -13,19 +15,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Llama Guard — LLM-based Input-Output Safeguard for Human-AI Conversations
-    url: https://arxiv.org/abs/2312.06674
+    url: 'https://arxiv.org/abs/2312.06674'
     type: primary
   - title: The Llama 3 Herd of Models
-    url: https://arxiv.org/abs/2407.21783
+    url: 'https://arxiv.org/abs/2407.21783'
     type: primary
   - title: PurpleLlama Llama Guard
-    url: https://github.com/meta-llama/PurpleLlama
+    url: 'https://github.com/meta-llama/PurpleLlama'
     type: primary
   - title: Llama Guard 3 8B model card
-    url: https://huggingface.co/meta-llama/Llama-Guard-3-8B
+    url: 'https://huggingface.co/meta-llama/Llama-Guard-3-8B'
     type: primary
 ---
 
@@ -37,7 +39,7 @@ Llama Guard 与基座对齐分开，是为了让安全分类按独立的策略�
 
 ## 部署时怎样分工
 
-预训练、SFT、DPO 的安全改变基座生成分布，政策变更可能要重训，也可能影响能力，合成 SFT 还会改变拒答风格，见 `meta-synth-sft`。Guard 作为独立 7B/8B 检查器可单独改 prompt 或微调权重，无需每次改政策重训 405B；系统仍需正则、工具白名单与检索过滤等其他边界。
+预训练、SFT、DPO 的安全改变基座生成分布，政策变更可能要重训，也可能影响能力，合成 SFT 还会改变拒答风格，见 `meta-synth-sft`。Guard 作为独立 7B/8B 检查器可单独改 prompt 或微调权重，无需每次改政策重训 405B；系统仍需正则、工具白名单与检索过滤等其他 safeguards。
 
 主模型生成外再跑 Guard，相当于额外 $8\mathrm{B}$ prefill，也可只对高风险流量用，不能当零成本。短输入通常较容易接受，长上下文要考虑量化、分类窗口截断或触发词后的满窗检查，同时验证覆盖。分类不能只看最后一句，RAG 检索片段与代码工具结果也需进入 response 判定，避免遗漏有害引用。
 

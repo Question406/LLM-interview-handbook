@@ -4,20 +4,22 @@ section: matrix
 order: 4
 level: A
 title: LC 73 · 矩阵置零
-quick: "借第一行和第一列当标记位，就能做到 $O(1)$ 额外空间：先扫内部把零记到行首、列首，再按标记置零。`matrix[0][0]` 同时管着第一行和第一列，所以另用两个布尔量记下它们原本有没有零。时间 $O(mn)$。"
+quick: >-
+  借第一行和第一列当标记位，就能做到 $O(1)$ 额外空间：先扫内部把零记到行首、列首，再按标记置零。`matrix[0][0]`
+  同时管着第一行和第一列，所以另用两个布尔量记下它们原本有没有零。时间 $O(mn)$。
 tags:
   - Matrix
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 73. 矩阵置零
-    url: https://leetcode.cn/problems/set-matrix-zeroes/
+    url: 'https://leetcode.cn/problems/set-matrix-zeroes/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -117,7 +119,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 只有 `(0,0)` 是零时，第一行和第一列都要清。这时靠的是两个布尔量同时为真，单看 `matrix[0][0]` 分不出是哪一条。
 

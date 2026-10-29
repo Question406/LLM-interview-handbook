@@ -4,7 +4,10 @@ section: agentrl
 order: 194
 level: A
 title: Agent 分层 Policy（Manager-Worker）怎样划分动作与 credit？
-quick: "Manager 选子目标或技能，Worker 执行具体工具调用。子目标写成能验证的状态断言，达成或超时就结束这个 option，在边界上分别结算两层的奖励：子目标达成但任务失败记 Manager，子目标没达成再查 Worker 或目标是否可行。两层只用自由文本聊天，失败责任就分不清。"
+quick: >-
+  Manager 选子目标或技能，Worker 执行具体工具调用。子目标写成能验证的状态断言，达成或超时就结束这个 option，在 decision
+  points 分别计算两层的奖励：子目标达成但任务失败记 Manager，子目标没达成再查 Worker
+  或目标是否可行。两层只用自由文本聊天，失败责任就分不清。
 tags:
   - Hierarchical RL
   - Options
@@ -12,18 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: The Option-Critic Architecture
-    url: https://arxiv.org/abs/1604.05079
+    url: 'https://arxiv.org/abs/1604.05079'
     type: primary
 ---
 
-Manager 选子目标或技能，Worker 执行具体的工具调用。子目标写成能验证的状态断言，断言满足或超时就结束这个 option，在 option 边界上分别给两层结算奖励。两层都用自由文本聊天的话，任务失败时分不清是谁的责任。
+Manager 选子目标或技能，Worker 执行具体的工具调用。子目标写成能验证的状态断言，断言满足或超时就结束这个 option，在 option boundaries 上分别给两层结算奖励。两层都用自由文本聊天的话，任务失败时分不清是谁的责任。
 
 举个修 bug 的例子。Manager 发出子目标「让登录相关的单测变绿」，Worker 去改代码、跑测试。测试绿了，整个任务却还是失败，说明 Manager 拆错了或者漏了约束；测试一直不绿，要么 Worker 执行得差，要么这个子目标本来就做不到。要是 Manager 只说一句「你看着办」，Worker 回一段散文，失败后两边吃到同一个 $+1$ 或 $-1$，谁也学不到东西。
 
-分层的意义是缩短有效的决策时长，并给出可审计的边界。Options 把技能写成 $o=(I,\pi_o,\beta)$，也就是发起条件、内部策略和终止函数。Agent 里 Manager 选 $o$ 或子目标，Worker 执行原子 tool-call。接口要是可验证的状态断言，比如「单测已绿」「表单字段已填」，否则 Manager 的奖励只是又一层没法执行的 shaping。如果把分层讲成「再加一个规划模型」，多半还没碰到 credit 边界。
+分层的意义是缩短有效的决策时长，并给出可审计的 constraints。Options 把技能写成 $o=(I,\pi_o,\beta)$，也就是发起条件、内部策略和终止函数。Agent 里 Manager 选 $o$ 或子目标，Worker 执行原子 tool-call。接口要是可验证的状态断言，比如「单测已绿」「表单字段已填」，否则 Manager 的奖励只是又一层没法执行的 shaping。如果把分层讲成「再加一个规划模型」，多半还没碰到 credit-assignment unit。
 
 ## 动作怎么切，信用在哪一层结算
 
@@ -33,7 +36,7 @@ $$
 R^{\mathrm{mgr}}=\mathbf{1}[\text{subgoal achieved}]-\lambda\cdot\mathbf{1}[T_{\mathrm{opt}}\gt B]
 $$
 
-Worker 用模仿学习加局部强化学习（RL），信号来自子目标达成、单测、artifact 验证器（verifier）；Manager 用稀疏的任务奖励。两层别同时对同一个文本处理单位（token）灌 team $+1$。失败归因就按开头那个例子：子目标达成但任务失败，记 Manager；子目标没达成，看是 Worker 执行差还是目标本身不可行，不可行的话该罚 Manager 的目标生成，别只罚工人。也可以冻住一层先训另一层，减少非平稳。Manager 的动作要短、离散、可计数，否则 option 边界会糊成又一段思维链（CoT，即分步推理过程），分层就名存实亡了。
+Worker 用模仿学习加局部 RL，信号来自子目标达成、单测、artifact 验证器（verifier）；Manager 用稀疏的任务奖励。两层别同时对同一个 token 灌 team $+1$。失败归因就按开头那个例子：子目标达成但任务失败，记 Manager；子目标没达成，看是 Worker 执行差还是目标本身不可行，不可行的话该罚 Manager 的目标生成，别只罚工人。也可以冻住一层先训另一层，减少非平稳。Manager 的动作要短、离散、可计数，否则 option boundaries 会糊成又一段 chain of thought（CoT，即分步推理过程），分层就名存实亡了。
 
 ## 接口要可验证，通信别变成第二个聊天室
 

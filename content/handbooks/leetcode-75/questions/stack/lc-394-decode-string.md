@@ -3,9 +3,10 @@ id: lc-394-decode-string
 section: stack
 order: 3
 level: S
-title: LC 394 · 字符串解码
+title: LC 394 · 字符串 decoding
 quick: >-
-  嵌套括号用栈，栈里存「进括号前的字符串和倍数」。遇到 `[` 把当前串和数字压栈并清空；遇到 `]` 弹出，拼成 `prev + cur * k`；多位数字要边读边乘 10。时间和空间都是 $O(L)$，$L$ 为解码后长度。
+  嵌套括号用栈，栈里存「进括号前的字符串和倍数」。遇到 `[` 把当前串和数字压栈并清空；遇到 `]` 弹出，拼成 `prev + cur *
+  k`；多位数字要边读边乘 10。时间和空间都是 $O(L)$，$L$ 为 decoding 后长度。
 tags:
   - String
   - Stack
@@ -13,29 +14,29 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 394. Decode String
-    url: https://leetcode.com/problems/decode-string/
+    url: 'https://leetcode.com/problems/decode-string/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
 ## 题目描述
 
-一个字符串用形如 k[内容] 的写法表示把方括号内的内容重复 k 次；这种写法可以嵌套，括号外普通字母直接保留。给定合法编码，返回完整解码后的字符串。多位数字表示一个重复次数，不是连续多个独立指令。
+一个字符串用形如 k[内容] 的写法表示把方括号内的内容重复 k 次；这种写法可以嵌套，括号外普通字母直接保留。给定合法编码，返回完整 decoding 后的字符串。多位数字表示一个重复次数，不是连续多个独立指令。
 
 ### 输入与输出
 
-实现 `decodeString(s) -> str`，输出解码后的全部小写字母。数字只用于重复次数，原始文本不含数字；不能把方括号或次数数字保留到结果中。
+实现 `decodeString(s) -> str`，输出 decoding 后的全部小写字母。数字只用于重复次数，原始文本不含数字；不能把方括号或次数数字保留到结果中。
 
 ### 约束与约定
 
 - `1 <= len(s) <= 30`；字符仅为小写英文字母、数字、方括号。
 - 每个重复次数在 1 到 300 之间。
-- 输入保证括号匹配、语法合法，解码后长度不超过 100000。
+- 输入保证括号匹配、语法合法，decoding 后长度不超过 100000。
 
 ### 示例
 
@@ -52,7 +53,7 @@ sources:
 
 ## 题意
 
-编码规则是 `k[encoded_string]`，表示方括号里的串重复 $k$ 次，可以嵌套。输入保证合法：没有多余空格，括号匹配，数字只表示重复次数（原文里不含数字）。返回解码后的字符串。$|s| \le 30$，$k \le 300$，输出长度不超过 $10^5$。
+编码规则是 `k[encoded_string]`，表示方括号里的串重复 $k$ 次，可以嵌套。输入保证合法：没有多余空格，括号匹配，数字只表示重复次数（原文里不含数字）。返回 decoding 后的字符串。$|s| \le 30$，$k \le 300$，输出长度不超过 $10^5$。
 
 ## 思路
 
@@ -114,7 +115,7 @@ print("simple tests passed")
 
 时间 $O(L)$，$L$ 是输出长度（字符串重复与拼接的总量受输出长度约束）；额外空间 $O(L)$。严格说深层嵌套时 `prev + cur * k` 会重复拷贝，最坏多一个嵌套深度的因子，本题数据下可以忽略。
 
-## 边界
+## Edge Cases
 
 数字可能有好几位，比如 `"10[a]"`、`"100[ab]"`，要边读边累积，只取一位会错。
 

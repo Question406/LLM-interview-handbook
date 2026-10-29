@@ -3,8 +3,10 @@ id: p3a-microsoft-kv-store-with-snapshot
 section: microsoft
 order: 604
 level: A
-title: "Microsoft AI / Copilot：快照 KV：基于历史版本分支写入"
-quick: "我会先用深拷贝保证快照不可变、fork 后相互独立，明确快照是否包含未提交改动。数据大了再改成复制写入或持久结构，分支读取沿父版本找，删除用 tombstone，避免祖先的旧值重新出现。"
+title: Microsoft AI / Copilot：快照 KV：基于历史版本分支写入
+quick: >-
+  我会先用深拷贝保证快照不可变、fork 后相互独立，明确快照是否包含未提交改动。数据大了再改成复制写入或持久结构，分支读取沿父版本找，删除用
+  tombstone，避免祖先的旧值重新出现。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · kv-store-with-snapshot"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/kv-store-with-snapshot
+  - title: 1Point3Acres · Microsoft AI / Copilot · kv-store-with-snapshot
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/kv-store-with-snapshot
     type: secondary
 ---
 
@@ -58,7 +61,7 @@ b.get("a")                                     -> 3
 
 实现一个支持快照的 KV 存储：可以随时生成快照，按 snapshot id 读取当时的数据，并从某个快照分出一个新分支继续写入，分支上的写入不影响原数据和其他快照。
 
-> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -167,7 +170,7 @@ class KV:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -178,6 +181,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 嵌套事务：内层删除，回滚后恢复外层的值
 store = KV()

@@ -4,20 +4,22 @@ section: graph-bfs
 order: 2
 level: A
 title: LC 433 · 最小基因变化
-quick: "把 `bank` 里的串当节点、只差一位的串连边，BFS 一层算一次变化：每位换成 `A/C/G/T`，落在剩余 `bank` 里就入队并删掉。第一次到达终点的层数就是最少变化次数，到不了返回 $-1$。"
+quick: >-
+  把 `bank` 里的串当节点、只差一位的串连边，BFS 一层算一次变化：每位换成 `A/C/G/T`，落在剩余 `bank`
+  里就入队并删掉。第一次到达终点的层数就是最少变化次数，到不了返回 $-1$。
 tags:
   - BFS
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 433. 最小基因变化
-    url: https://leetcode.cn/problems/minimum-genetic-mutation/
+    url: 'https://leetcode.cn/problems/minimum-genetic-mutation/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -106,13 +108,13 @@ if __name__ == "__main__":
 ```python
 assert minMutation("AACCGGTT", "AACCGGTA", ["AACCGGTA"]) == 1
 assert (
-        minMutation(
-            "AACCGGTT",
-            "AAACGGTA",
-            ["AACCGGTA", "AACCGCTA", "AAACGGTA"],
-        )
-        == 2
+    minMutation(
+        "AACCGGTT",
+        "AAACGGTA",
+        ["AACCGGTA", "AACCGCTA", "AAACGGTA"],
     )
+    == 2
+)
 assert minMutation("AACCGGTT", "AACCGGTA", []) == -1
 print("simple tests passed")
 ```
@@ -123,7 +125,7 @@ print("simple tests passed")
 
 时间 $O(B\cdot L\cdot 4)$，$B$ 为库大小，$L=8$；空间 $O(B)$。
 
-## 边界
+## Edge Cases
 
 `bank` 为空时，只要终点不就是起点，就返回 $-1$。起点已经是终点时，如果题意允许 $0$ 次且不要求进库，直接返回 $0$；否则仍要求终点在 `bank` 里。上面的代码对「同串且不在库」返回 $0$。终点不在库中时，它没法作为合法的中间态或终止态，返回 $-1$。完整 26 字母、变长词的版本见 LC 127，独立卡 `lc-127-word-ladder`。
 
@@ -134,6 +136,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def minMutationFree(start, end):
     if start == end:
@@ -158,4 +161,4 @@ def minMutationFree(start, end):
 ```
 
 **变成单词接龙呢？**
-字母表扩成 $26$、长度 $L$ 不固定、词必须在 `wordList` 里，求的是含起终点的序列长度，比变化次数多一。骨架和本题一样，隐式图加 BFS 加入队删词，就是 LC 127，独立卡 `lc-127-word-ladder`。词表大时双向 BFS 更有用。
+字母表扩成 $26$、长度 $L$ 不固定、词必须在 `wordList` 里，求的是含起终点的序列长度，比变化次数多一。骨架和本题一样，隐式图加 BFS 加入队删词，就是 LC 127，独立卡 `lc-127-word-ladder`。vocabulary 大时双向 BFS 更有用。

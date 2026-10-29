@@ -32,7 +32,7 @@ sources:
 - `ColumnParallelLinear(W,b,world,gather_output=False)`：实例通过 `__call__(xs)` 调用；xs 是长度为 world 的张量列表，每个元素均为相同的完整输入 `[... ,in]`。返回长度为 world 的列表，默认每个 rank 按输出特征分得一个结果切片；`gather_output`=True 时，每个元素均为拼回的完整结果。
 - `RowParallelLinear(W,b,world)`：实例通过 `__call__(xs)` 调用；xs 是长度为 world 的张量列表，xs[r] 是按 rank 顺序分配的输入特征切片 `[... ,in/world]`。返回长度为 world 的列表，每个元素都等于未分片线性层的完整输出；bias 只能贡献一次。
 - `ParallelMLP(W1,b1,W2,b2,world)`：实例通过 `__call__(x)` 调用，x 是单个完整输入张量 `[... ,in]`；返回长度为 world 的列表，各 rank 的结果相同，数学语义为两层线性变换之间使用 GELU。
-- `parallel_attention(x,Wq,Wk,Wv,Wo,n_heads,world)` 模拟按头分片的因果自注意力，返回每个 rank 的完整 `[B,T,d]` 输出。
+- `parallel_attention(x,Wq,Wk,Wv,Wo,n_heads,world)` 模拟按头分片的因果 self-attention，返回每个 rank 的完整 `[B,T,d]` 输出。
 
 相应输入/输出维度及头数都能整除 world，参数形状保证合法。
 
@@ -59,42 +59,51 @@ x=[[1,2]], W=[[1,2],[3,4]], b=[5,6], world=2
 import torch
 import torch.nn.functional as F
 
+
 def all_reduce(xs):
     s = torch.stack(xs).sum(0)
     return [s.clone() for _ in xs]
+
 
 def all_gather(xs, dim=-1):
     y = torch.cat(xs, dim=dim)
     return [y.clone() for _ in xs]
 
+
 class ColumnParallelLinear:
     def __init__(self, W, b, world, gather_output=False):
         assert W.shape[0] % world == 0
-        self.W = list(W.chunk(world, dim=0))    # 每份 [out/world, in]
-        self.b = list(b.chunk(world, dim=0))    # bias 跟着输出维切
+        self.W = list(W.chunk(world, dim=0))  # 每份 [out/world, in]
+        self.b = list(b.chunk(world, dim=0))  # bias 跟着输出维切
         self.gather = gather_output
-    def __call__(self, xs):                     # xs[r]: 完整输入 [..., in]
+
+    def __call__(self, xs):  # xs[r]: 完整输入 [..., in]
         ys = [x @ w.T + b for x, w, b in zip(xs, self.W, self.b)]  # [..., out/world]
         return all_gather(ys) if self.gather else ys
+
 
 class RowParallelLinear:
     def __init__(self, W, b, world):
         assert W.shape[1] % world == 0
-        self.W = list(W.chunk(world, dim=1))    # 每份 [out, in/world]
-        self.b = b                              # 不切，只在 reduce 之后加一次
-    def __call__(self, xs):                     # xs[r]: 已切好的输入 [..., in/world]
-        partial = [x @ w.T for x, w in zip(xs, self.W)]            # 部分和 [..., out]
+        self.W = list(W.chunk(world, dim=1))  # 每份 [out, in/world]
+        self.b = b  # 不切，只在 reduce 之后加一次
+
+    def __call__(self, xs):  # xs[r]: 已切好的输入 [..., in/world]
+        partial = [x @ w.T for x, w in zip(xs, self.W)]  # 部分和 [..., out]
         return [y + self.b for y in all_reduce(partial)]
+
 
 class ParallelMLP:
     def __init__(self, W1, b1, W2, b2, world):
         self.world = world
         self.fc1 = ColumnParallelLinear(W1, b1, world)
         self.fc2 = RowParallelLinear(W2, b2, world)
+
     def __call__(self, x):
-        xs = [x] * self.world                   # f：前向 identity
-        h = [F.gelu(y) for y in self.fc1(xs)]   # 逐元素激活，在切片上直接算
-        return self.fc2(h)                      # g：前向唯一一次 all-reduce
+        xs = [x] * self.world  # f：前向 identity
+        h = [F.gelu(y) for y in self.fc1(xs)]  # 逐元素激活，在切片上直接算
+        return self.fc2(h)  # g：前向唯一一次 all-reduce
+
 
 def parallel_attention(x, Wq, Wk, Wv, Wo, n_heads, world):
     # x: [B, T, d]；W*: [d, d]；每个 rank 拿 n_heads/world 个 head
@@ -103,10 +112,12 @@ def parallel_attention(x, Wq, Wk, Wv, Wo, n_heads, world):
     outs = []
     for r in range(world):
         sl = slice(r * hr * hd, (r + 1) * hr * hd)
-        q, k, v = [(x @ W[sl].T).view(B, T, hr, hd).transpose(1, 2) for W in (Wq, Wk, Wv)]
+        q, k, v = [
+            (x @ W[sl].T).view(B, T, hr, hd).transpose(1, 2) for W in (Wq, Wk, Wv)
+        ]
         o = F.scaled_dot_product_attention(q, k, v, is_causal=True)  # [B, hr, T, hd]
         o = o.transpose(1, 2).reshape(B, T, hr * hd)
-        outs.append(o @ Wo[:, sl].T)            # Wo 按输入维切，得到部分和
+        outs.append(o @ Wo[:, sl].T)  # Wo 按输入维切，得到部分和
     return all_reduce(outs)
 ```
 
@@ -125,8 +136,8 @@ Attention 是同一个道理。$W_Q,W_K,W_V$ 按 head 切，本质上就是 colu
 用两个 rank 的单进程模拟与普通线性层比较。非零 bias 可以发现 row-parallel 在归约之前重复加 bias 的错误。
 
 ```python
-x = torch.tensor([[1., 2.]])
-W, bias = torch.tensor([[1., 2.], [3., 4.]]), torch.tensor([5., 6.])
+x = torch.tensor([[1.0, 2.0]])
+W, bias = torch.tensor([[1.0, 2.0], [3.0, 4.0]]), torch.tensor([5.0, 6.0])
 expected = x @ W.T + bias
 column = ColumnParallelLinear(W, bias, 2, gather_output=True)
 row = RowParallelLinear(W, bias, 2)

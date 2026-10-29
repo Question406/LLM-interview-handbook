@@ -4,7 +4,9 @@ section: coding
 order: 1
 level: S
 title: 白板：数值稳定 softmax，为什么减 max，轴怎么选
-quick: "先确定哪些位置一起分配概率，再沿那一维逐行减 max、取 exp 并归一化。分子分母同乘常数，分布保持不变，同时每行至少有一项指数是 1，避免溢出和整行下溢；分类沿词表维，attention 沿 key 维。"
+quick: >-
+  先确定哪些位置一起分配概率，再沿那一维逐行减 max、取 exp 并 normalization。分子分母同乘常数，分布保持不变，同时每行至少有一项指数是
+  1，避免溢出和整行下溢；分类沿 vocabulary 维，attention 沿 key 维。
 tags:
   - 完整编程练习
   - Coding
@@ -14,28 +16,29 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.nn.functional.softmax
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html'
     type: primary
   - title: scaled_dot_product_attention
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
     type: primary
 ---
 
 ## 题目描述
 
-用 NumPy 实现按指定轴归一化的 softmax 和 log-softmax，适用于数值较大的 logits 和合法的屏蔽项。
+用 NumPy 实现按指定轴 normalization 的 softmax 和 log-softmax，适用于数值较大的 logits 和合法的屏蔽项。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `softmax(x, axis=-1)`：沿指定轴做数值稳定的 softmax，输出形状和输入相同。
 - `log_softmax(x, axis=-1)`：沿指定轴做数值稳定的 log-softmax。
 - 输入里允许出现 `-inf`，表示这个位置被屏蔽，对应概率精确为 0。
-- 归一化轴非空，每行至少有一个有限值，不含 NaN 或 `+inf`。
+- normalization 轴非空，每行至少有一个有限值，不含 NaN 或 `+inf`。
 - 不修改输入；内部用 float64 计算。
 
 ### 输入输出示例
@@ -47,19 +50,19 @@ softmax([0, -inf])       -> [1, 0]
 
 ## 解题思路与参考答案
 
-我会沿指定轴逐行减最大值，再取指数并除以该行指数和。比如 [1000, 1000] 先变成 [0, 0]，就能稳定得到 [0.5, 0.5]。代码还要明确全屏蔽行的处理；这份练习选择报错，避免对全 -inf 的行继续归一化。
+我会沿指定轴逐行减最大值，再取指数并除以该行指数和。比如 [1000, 1000] 先变成 [0, 0]，就能稳定得到 [0.5, 0.5]。代码还要明确全屏蔽行的处理；这份练习选择报错，避免对全 -inf 的行继续 normalization。
 
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + NumPy，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + NumPy，CPU 上验证。
 
 ### 题面、接口与约束
 
 - `softmax(x, axis=-1)`：沿指定轴做数值稳定的 softmax，输出形状和输入相同。
 - `log_softmax(x, axis=-1)`：沿指定轴做数值稳定的 log-softmax。
 - 输入里允许出现 `-inf`，表示这个位置被屏蔽，对应概率精确为 0。
-- 整行都是 `-inf`（全屏蔽）、含 NaN 或 `+inf`、归一化的轴长度为 0 时，抛 `ValueError`。
+- 整行都是 `-inf`（全屏蔽）、含 NaN 或 `+inf`、normalization 的轴长度为 0 时，抛 `ValueError`。
 - 不修改输入；内部用 float64 计算。
 
 ### 输入输出示例
@@ -72,7 +75,7 @@ softmax([-inf, -inf])    -> ValueError（全屏蔽行）
 
 ### 解题思路与正确性
 
-沿归一化的那一维减去该行的最大值，再做 `exp` 和归一化。分子分母同时乘了 $e^{-m}$，分布不变；每行最大的一项变成 $e^0=1$，其余都在 $(0,1]$，不会上溢，分母也至少是 1。
+沿 normalization 的那一维减去该行的最大值，再做 `exp` 和 normalization。分子分母同时乘了 $e^{-m}$，分布不变；每行最大的一项变成 $e^0=1$，其余都在 $(0,1]$，不会上溢，分母也至少是 1。
 
 如果对整个 tensor 减同一个常数，在精确算术下分布同样不变，所以不能说它「数学上错了」。问题在数值上：logits 远小于全局最大值的那些行，所有指数可能一起下溢成 0，分母变成 0。逐行减 max 保证每行至少有一项等于 1。
 
@@ -118,7 +121,7 @@ def log_softmax(x, axis=-1):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -143,7 +146,7 @@ assert np.allclose(softmax(logits + np.array([[500.0], [-700.0]])), probs)
 # 示例：[1000, 1000] -> [0.5, 0.5]
 assert np.allclose(softmax([1000.0, 1000.0]), [0.5, 0.5])
 
-# axis=0 时沿列归一化
+# axis=0 时沿列 normalization
 assert np.allclose(softmax(logits, axis=0).sum(axis=0), 1)
 
 # log_softmax 和 softmax 一致
@@ -180,18 +183,18 @@ $$
 \mathrm{softmax}(z)_i=\frac{e^{z_i}}{\sum_j e^{z_j}}=\frac{e^{z_i-m}}{\sum_j e^{z_j-m}},\quad m=\max_j z_j.
 $$
 
-减的是同一条比较轴上的最大值，不是整个 tensor 的一个标量。减完后 $e^{z-m}\in(0,1]$。fp16 里原始 logits 到十几（$e^{12}$ 已经超过 fp16 的最大值 65504）就会得到 `inf`，归一化之后全是 NaN。减 max 不改变分布，只改变中间结果的量级。
+减的是同一条比较轴上的最大值，不是整个 tensor 的一个标量。减完后 $e^{z-m}\in(0,1]$。fp16 里原始 logits 到十几（$e^{12}$ 已经超过 fp16 的最大值 65504）就会得到 `inf`，normalization 之后全是 NaN。减 max 不改变分布，只改变中间结果的量级。
 
 写的时候要带上 `keepdims=True`。否则 `[B, T]` 的 max 和 `[B, T, D]` 的输入对不上，NumPy 可能悄悄广播到错误的轴上。
 
-后面要接交叉熵时，优先保留 `log_softmax`，不要先 softmax 再取 `log`，见 `coding-cross-entropy`。
+后面要接 cross entropy 时，优先保留 `log_softmax`，不要先 softmax 再取 `log`，见 `coding-cross-entropy`。
 
-## 轴：在哪一维归一化概率
+## 轴：在哪一维 normalization 概率
 
 先把 shape 写出来，再选 `axis`：
 
-- 分类 logits `[B, T, V]`：沿词表维 $V$。
-- 注意力 scores `[B, H, T, S]`：沿 key 长度 $S$，也就是最后一维。写成 `dim=0` 或沿 head 维，是 OpenAI 题里的经典 bug。
+- 分类 logits `[B, T, V]`：沿 vocabulary 维 $V$。
+- attention scores `[B, H, T, S]`：沿 key 长度 $S$，也就是最后一维。写成 `dim=0` 或沿 head 维，是 OpenAI 题里的经典 bug。
 
 mask 必须在 softmax 之前填成 $-\infty$，不能填 $0$，因为 $e^0=1$，填 0 的位置仍然会分到概率。全部位置都是 $-\infty$ 时最大值也是 $-\infty$，相减得到 NaN，所以要先检查每行有没有有限值。温度 $z/T$ 也要在 softmax 之前除，顺序见 `coding-topk-nucleus`。
 
@@ -204,12 +207,12 @@ NVIDIA 的面试官可能会追问：约简沿最后一维时，warp 可以连�
 **fp16 还要升精度吗？**
 减 max 之后大多数情况够用。遇到极端 logits，或者 entropy 这类约简，可以把这一步放到 fp32 里算，再转回去。
 **和 log-sum-exp 的关系？**
-$\log\sum e^{z}=m+\log\sum e^{z-m}$，softmax 的分母就是它的指数。交叉熵损失（CE）直接用 log-sum-exp 计算，不需要把 $p$ 算出来，见 `coding-logsumexp`。
+$\log\sum e^{z}=m+\log\sum e^{z-m}$，softmax 的分母就是它的指数。cross entropy loss（CE）直接用 log-sum-exp 计算，不需要把 $p$ 算出来，见 `coding-logsumexp`。
 
 ## 相关题
 
 - [[coding-logsumexp]]：同一个减 max 技巧放到 log 域，用来直接算 CE 而不先算概率。
 - [[coding-online-softmax]]：把这里一次性减全局 max 改成流式的 running max，是 FlashAttention 的基础。
-- [[openai-softmax-bug]]：OpenAI debug 题，softmax 轴选错、mask 填 0 时注意力会怎样，这张的「轴」一节是它的前置。
+- [[openai-softmax-bug]]：OpenAI debug 题，softmax 轴选错、mask 填 0 时 attention 会怎样，这张的「轴」一节是它的前置。
 - [[openai-entropy-l1]]：OpenAI 真题，先用稳定 softmax 得到概率再算熵，追问把损失换成 L1 时梯度怎么传。
-- [[coding-gumbel-max]]：从 softmax 分布采样的另一种写法，顺带区分采样温度和 Gumbel-softmax 的温度。
+- [[coding-gumbel-max]]：从 softmax 分布 sampling 的另一种写法，顺带区分 sampling 温度和 Gumbel-softmax 的温度。

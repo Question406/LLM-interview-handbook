@@ -4,7 +4,9 @@ section: systems
 order: 275
 level: S
 title: AReaL 和 slime 对 rollout bottleneck 的理解差在哪？
-quick: "AReaL 主要用 fully async 消除同步长尾与训推互等，再用 staleness-aware PPO 处理混版本数据。slime 更侧重 Megatron、SGLang 和 Data Buffer 的整条数据流，连同采样、回收和权重同步一起优化。"
+quick: >-
+  AReaL 主要用 fully async 消除同步长尾与训推互等，再用 staleness-aware PPO 处理混版本数据。slime 更侧重
+  Megatron、SGLang 和 Data Buffer 的整条数据流，连同 sampling、回收和权重同步一起优化。
 tags:
   - AReaL
   - slime
@@ -13,26 +15,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: AReaL — A Large-Scale Asynchronous Reinforcement Learning System
-    url: https://arxiv.org/abs/2505.24298
+    url: 'https://arxiv.org/abs/2505.24298'
     type: primary
   - title: THUDM/slime
-    url: https://github.com/THUDM/slime
+    url: 'https://github.com/THUDM/slime'
     type: primary
   - title: HybridFlow / verl
-    url: https://arxiv.org/abs/2409.19256
+    url: 'https://arxiv.org/abs/2409.19256'
     type: primary
 ---
 
-AReaL 重点解决同步训练里的等待：生成等最长样本，训练和推理阶段彼此空转。slime 则把 Megatron、SGLang 和 Buffer 之间的数据流一起优化，瓶颈可能出在采样、验证器、组对齐或权重同步。两者都能异步，但侧重点和实现路径不同；veRL / slime 的进程放置可以另外对照 `sys-verl-vs-slime`。
+AReaL 重点解决同步训练里的等待：生成等最长样本，训练和推理阶段彼此空转。slime 则把 Megatron、SGLang 和 Buffer 之间的数据流一起优化，瓶颈可能出在 sampling、验证器、组对齐或权重同步。两者都能异步，但侧重点和实现路径不同；veRL / slime 的进程放置可以另外对照 `sys-verl-vs-slime`。
 
 ## AReaL：瓶颈是等待
 
-同步 强化学习（RL） 交替做 generate 和 train。生成必须等 batch 内最长输出，推理卡空转；训练时推理卡再空，训练时生成卡也空。加卡并不能线性涨 逐 token 生成（decode） 吞吐，因为每卡 batch 变小，更容易掉进 memory-IO-bound。AReaL 的解法是解耦：
+同步 RL 交替做 generate 和 train。生成必须等 batch 内最长输出，推理卡空转；训练时推理卡再空，训练时生成卡也空。加卡并不能线性涨 逐 token 生成（decode） throughput，因为每卡 batch 变小，更容易掉进 memory-IO-bound。AReaL 的解法是解耦：
 
-- 采样轨迹（rollout） worker 流式生成，不等全局 batch 结束；
+- sampling 轨迹（rollout） worker 流式生成，不等全局 batch 结束；
 - trainer 凑够 batch 就更新；
 - `update_weights` 可打断进行中的生成，丢掉旧 KV 再续写，见 `sys-partial-kv-policy`；
 - 训练 batch 会混多个 policy 版本，所以改 PPO：按 staleness 过滤 / 加权，而不是假装 on-policy。

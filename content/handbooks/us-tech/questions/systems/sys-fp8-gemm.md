@@ -51,7 +51,7 @@ GEMM 在 Tensor Core 上做 $D \approx (X_{\mathrm{fp8}} s_x)\,(W_{\mathrm{fp8}}
 
 Transformer Engine 训练侧常用 delayed scaling：用历史 amax，避免每步为当前 tensor 做一次同步。推理侧权重 scale 冻结，激活往往动态 per-token 或 per-tile，和训练 delayed 不是同一套统计。不要把 TE 训练故事原样搬到 serving GEMM。
 
-Dense 层 $M=T_{\mathrm{tokens}}$（输入预填充（prefill，即处理输入并建立缓存） 大、逐 token 生成（decode） 的 $M=B$ 很小）、$N=K=d$ 或 $d_{\mathrm{ff}}$。Decode 的 $M$ 经常是几十到几百，FP8 Tensor Core 有最小 tile，太瘦会退回带宽墙，实际算力就可能远低于 FP8 峰值。Prefill 和宽 MoE expert 才容易吃满。Decode 侧更该凑 batch，见 `sys-decode-batch`。
+Dense 层 $M=T_{\mathrm{tokens}}$（输入 prefill 大、逐 token 生成（decode） 的 $M=B$ 很小）、$N=K=d$ 或 $d_{\mathrm{ff}}$。Decode 的 $M$ 经常是几十到几百，FP8 Tensor Core 有最小 tile，太瘦会退回带宽墙，实际算力就可能远低于 FP8 峰值。Prefill 和宽 MoE expert 才容易吃满。Decode 侧更该凑 batch，见 `sys-decode-batch`。
 
 MoE 的形状还更不规整：每个 expert 一块不同的 $M_i$，要 grouped GEMM 一次 launch 吃一组不规则 $M$，见 `nvidia-moe-gemm`。DeepGEMM 公开仓库写：JIT、少依赖、dense 和两种 MoE 布局、`fp8_gemm_nt` 以及 masked grouped 接口（对接 DeepEP 的低延迟输出）。这体现了按变化的矩阵形状 JIT 生成计算核的思路。
 
@@ -68,7 +68,7 @@ MoE 的 dispatch 出 FP8 token，GEMM 直接吃，少一次 cast，见 `sys-ep-d
 
 错误说法：开了 FP8 一定 2 倍实际耗时（decode 太瘦时几乎不涨）；DeepSeek 的 128 是魔法，随便改 group 不改核；用训练 delayed amax 当推理动态激活 scale。Group 大小要和核 tile 对齐，乱改会对不齐或回退到慢路径。
 
-质量：不要只看 PPL。看长上下文、工具 JSON、数学。Scale 过粗，先坏的是尾部通道上的细信号。校准和在线 amax 要分开说：推理激活常用在线 max，权重用离线 block scale。
+质量：不要只看 PPL。看长上下文、工具 JSON、数学。Scale 过粗，先坏的是尾部通道上的细信号。calibration 和在线 amax 要分开说：推理激活常用在线 max，权重用离线 block scale。
 
 ## 追问
 
@@ -85,14 +85,14 @@ MoE 的 dispatch 出 FP8 token，GEMM 直接吃，少一次 cast，见 `sys-ep-d
 $M$ 太小，吃不满 Tensor Core，墙在读 $W$。这时更该凑 batch，见 `sys-decode-batch`。
 
 **和 Transformer Engine 训练 FP8 是一回事吗？**
-都是 E4M3/E5M2 + scale。训练有延迟 amax 和反传；推理权重冻结、激活动态。核和统计都不同。
+都是 E4M3/E5M2 + scale。训练有延迟 amax 和 backpropagation；推理权重冻结、激活动态。核和统计都不同。
 
 **Block 128 能改成 32 吗？**
 能更准、scale 更多，但必须有对应核。没有核就先 dequant 成 BF16 再 GEMM，带宽账是假的。
 
 ## 相关题
 
-- [[nvidia-fp8]]：同样是 E4M3/E5M2 加 scale，但问的是训练时的延迟 amax 和反传，本题只管推理 GEMM。
+- [[nvidia-fp8]]：同样是 E4M3/E5M2 加 scale，但问的是训练时的延迟 amax 和 backpropagation，本题只管推理 GEMM。
 - [[sys-mixed-precision]]：训练混合精度和 master weights，用来分清「训练 FP8」和「部署 FP8」两套配方。
 - [[nvidia-w4a8]]：W4 权重配 FP8 激活的另一条部署路线，和纯 FP8 W8A8 怎么取舍在那边。
 - [[nvidia-fp8-kv]]：FP8 用在 KV cache 上，省的是 attention 读历史的字节，不是权重 GEMM。

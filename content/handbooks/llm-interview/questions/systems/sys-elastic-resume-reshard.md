@@ -4,23 +4,32 @@ section: systems
 order: 269
 level: A
 title: 弹性扩缩容后如何 Resume，并对模型状态 Reshard？
-quick: "弹性恢复要先等通信结束，保存一致的 checkpoint，再按新 TP/PP/EP/DP 布局重切状态并重建通信组。Checkpoint 应按逻辑参数 ID 存，Adam 动量和数据位置也要一起映射。恢复后检查 loss 是否连续；RL 还要对齐 `policy_version` 并清掉旧 KV。"
+quick: >-
+  弹性恢复要先等通信结束，保存一致的 checkpoint，再按新 TP/PP/EP/DP 布局重切状态并重建通信组。Checkpoint 应按逻辑参数 ID
+  存，Adam 动量和数据位置也要一起映射。恢复后检查 loss 是否连续；RL 还要对齐 `policy_version` 并清掉旧 KV。
 tags:
   - Elastic Training
   - Reshard
   - Checkpoint
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: PyTorch Distributed Elastic
-    url: https://pytorch.org/docs/stable/distributed.elastic.html
+    url: 'https://pytorch.org/docs/stable/distributed.elastic.html'
     type: primary
   - title: PyTorch Distributed Checkpoint
-    url: https://pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html
+    url: 'https://pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html'
     type: primary
 ---
+
+## 可以这样回答
+
+扩缩容后，要先结束当前通信并保存一致的 checkpoint，再按新的并行布局 reshard 状态、重建通信组。比如旧 checkpoint 里的 `rank=3, shard=2`，换了 world size 后就不再代表同一段参数，不能直接交给新 rank。PyTorch Elastic 管 rendezvous 和进程生命周期，DCP 管逻辑状态读写；恢复需要把两者接起来，并选用已经完整落盘的版本，落盘语义见 `sys-async-checkpoint`。
+
+## 技术备查
 
 扩缩容后，要先结束当前通信并保存一致的 checkpoint，再按新的并行布局 reshard 状态、重建通信组。比如旧 checkpoint 里的 `rank=3, shard=2`，换了 world size 后就不再代表同一段参数，不能直接交给新 rank。PyTorch Elastic 管 rendezvous 和进程生命周期，DCP 管逻辑状态读写；恢复需要把两者接起来，并选用已经完整落盘的版本，落盘语义见 `sys-async-checkpoint`。
 
@@ -47,9 +56,9 @@ Expert 从一张卡搬到另一张，路由表和 all-to-all 组成员全换。�
 
 优化器状态必须跟权重同一套 plan 切：Adam 的 $m,v$ 与 $\theta$ 逐元素对齐。只 reshard 权重、动量仍按旧 rank 摆，下一步就会更新错切片。RNG 无法在不同 worker 数下逐比特复现，验收允许种子差，但 **损失应在噪声范围内连续**，不能跳一个数量级。
 
-## 在安全边界重建训练与采样进程
+## 在 security constraints 重建训练与 sampling 进程
 
-运行中改拓扑前，必须排空 in-flight NCCL：没有正在进行的 all-reduce / all-to-all / pipeline send。通常在 step 边界、ckpt 栅栏之后再杀进程或加进程。中途插入 rank，集合通信的参与者集合不一致，典型症状是 hang，见分布式 hang 题。梯度桶、CUDA graph、bucket 大小都要按新 world 重建，不要复用旧指针。
+运行中改拓扑前，必须排空 in-flight NCCL：没有正在进行的 all-reduce / all-to-all / pipeline send。通常在 step boundaries、ckpt 栅栏之后再杀进程或加进程。中途插入 rank，集合通信的参与者集合不一致，典型症状是 hang，见分布式 hang 题。梯度桶、CUDA graph、bucket 大小都要按新 world 重建，不要复用旧指针。
 
 RL 集群还要重建 生成训练轨迹的 rollout worker 的路由：哪组 GPU 跑 generate、哪组跑 trainer、weight sync 的 collective 是谁。HybridEngine 同卡方案改的是卡数与布局，分卡方案改的是两池比例，见 `sys-verl-hybridengine`、`sys-rl-dataplane-controlplane`。Resume 后 rollout 必须加载 **同一 `policy_version`**，并 清空 KV 缓存，否则旧策略生成的轨迹会混进第一步。弹性不是只把 trainer 拉起来。
 
@@ -58,7 +67,7 @@ RL 集群还要重建 生成训练轨迹的 rollout worker 的路由：哪组 GP
 ## 追问
 
 **为什么不能热加卡接着训？**
-飞行中的 collective 不知道新成员；分片边界也变了。必须先结束通信，再重新切分状态。
+飞行中的 collective 不知道新成员；shard boundaries 也变了。必须先结束通信，再重新切分状态。
 **DP 和 EP 哪个更怕弹性？**
 EP。Expert 布局和不规则 all-to-all 组成员都变。DP 多半只改副本数。
 **数值对不齐就算失败吗？**

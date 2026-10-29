@@ -3,18 +3,20 @@ id: ml101-random-forest
 section: ensemble
 order: 3
 level: S
-title: "随机森林为什么要同时随机采样样本和特征？"
-quick: "随机森林训练多棵树，再平均回归预测或分类概率。样本自助采样让树看到不同数据，分裂时随机选特征进一步降低树之间的相关性；只有各树犯错不完全同步，平均才能明显降低方差，单棵树过弱也会损失效果。"
+title: 随机森林为什么要同时 random sampling 样本和特征？
+quick: >-
+  随机森林训练多棵树，再平均回归预测或分类概率。样本自助 sampling
+  让树看到不同数据，分裂时随机选特征进一步降低树之间的相关性；只有各树犯错不完全同步，平均才能明显降低方差，单棵树过弱也会损失效果。
 tags:
   - Machine Learning
   - ensemble
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Ensembles"
-    url: https://scikit-learn.org/stable/modules/ensemble.html
+  - title: 'scikit-learn: Ensembles'
+    url: 'https://scikit-learn.org/stable/modules/ensemble.html'
     type: primary
 ---
 
@@ -30,8 +32,8 @@ $$\operatorname{Var}(\bar f)=\rho\sigma^2+\frac{1-\rho}{B}\sigma^2.$$
 
 ## 面试追问
 
-**随机森林树数越多越容易过拟合吗？**
-增加树数主要减少有限棵树平均的随机波动，通常不会像不断加深单棵树那样明显加重过拟合，但收益会趋稳，训练和预测成本继续增加。
+**随机森林树数越多越容易 overfitting 吗？**
+增加树数主要减少有限棵树平均的随机波动，通常不会像不断加深单棵树那样明显加重 overfitting，但收益会趋稳，训练和预测成本继续增加。
 
 **随机森林能预测训练范围之外的目标值吗？**
 普通回归森林的叶子输出训练标签均值，平均后仍在训练标签范围内，因此不擅长线性趋势外推。预测未来持续增长的数据时需要特别验证。

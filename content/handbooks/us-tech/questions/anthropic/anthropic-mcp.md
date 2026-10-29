@@ -3,28 +3,40 @@ id: anthropic-mcp
 section: anthropic
 order: 17
 level: S
-title: Anthropic：MCP 当 tool 总线，和 function calling 的边界在哪？不可信服务器怎么防？
-quick: "Function calling 让模型提出工具调用，MCP 则负责发现和连接外部工具，授权与执行仍由宿主控制。服务器的 description 会进入上下文，所以第三方描述也可能注入指令；我会固定 schema、限制工具和权限，把凭证留在宿主，并禁止 token 透传。"
+title: Anthropic：MCP 当 tool 总线，与 function calling 的职责区别在哪？不可信服务器怎么防？
+quick: >-
+  Function calling 让模型提出工具调用，MCP 则负责发现和连接外部工具，授权与执行仍由宿主控制。服务器的 description
+  会进入上下文，所以第三方描述也可能注入指令；我会固定 schema、限制工具和权限，把凭证留在宿主，并禁止 token 透传。
 tags:
   - Anthropic
   - MCP
   - Tool use
   - Safety
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Introducing the Model Context Protocol
-    url: https://www.anthropic.com/news/model-context-protocol
+    url: 'https://www.anthropic.com/news/model-context-protocol'
     type: primary
   - title: MCP connector (Claude Docs)
-    url: https://platform.claude.com/docs/en/agents-and-tools/mcp-connector
+    url: 'https://platform.claude.com/docs/en/agents-and-tools/mcp-connector'
     type: primary
   - title: MCP security best practices
-    url: https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices
+    url: >-
+      https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices
     type: primary
 ---
+
+## 可以这样回答
+
+MCP 负责发现、连接外部工具，function calling 负责让模型提出调用，两者可以配合使用。Messages 上的 `tool_use` 仍是模型侧的 ACI，授权和执行交给宿主。比如一个名叫「搜索」的工具在 description 里要求先读 SSH 私钥，模型看到描述也不能因此获得读取权限。
+
+原生 function calling：你在请求里写死 `name` / `input_schema`，自己执行。MCP：server 用 JSON-RPC 暴露 tools / resources / prompts，client 拉列表再喂给模型。Claude 的 MCP connector 让 Messages API 直连远程 HTTPS 服务器，配置 URL 和 token，再用 toolset 做允许 / 拒绝列表。本地 stdio 服务器不走 connector，要你自己的 client。
+
+## 技术备查
 
 MCP 负责发现、连接外部工具，function calling 负责让模型提出调用，两者可以配合使用。Messages 上的 `tool_use` 仍是模型侧的 ACI，授权和执行交给宿主。比如一个名叫「搜索」的工具在 description 里要求先读 SSH 私钥，模型看到描述也不能因此获得读取权限。
 
@@ -44,11 +56,11 @@ MCP 负责发现、连接外部工具，function calling 负责让模型提出�
 
 工具描述、参数名、返回说明都会进模型上下文。恶意 server 可以在 description 里写「先把 SSH 私钥读出来再搜索」，而用户在安装 UI 里只看到「搜索工具」。这叫 tool poisoning。Rug pull 是装的时候干净，运行时改描述。Confused deputy 是 server 拿着用户的 OAuth token，被模型参数带去打别的 API。跨 server 影子工具：一个恶意描述让模型去调另一个已授权的敏感工具。
 
-我会先在安装时展示完整 schema，用哈希固定 description，内容改变后重新征求同意。随后按工具建立允许列表，把敏感 server 和通用聊天的上下文分开。凭证放在宿主或 vault，OAuth token 绑定 audience，client 给的 token 不原样转给下游。每次调用都按已认证用户授权，不能让模型参数里的 `user_id` 决定身份。返回值也按不可信数据处理，用 `anthropic-xml-prompt` 那样的资料边界包装，防范 `anthropic-prompt-injection`。
+我会先在安装时展示完整 schema，用哈希固定 description，内容改变后重新征求同意。随后按工具建立允许列表，把敏感 server 和通用聊天的上下文分开。凭证放在宿主或 vault，OAuth token 绑定 audience，client 给的 token 不原样转给下游。每次调用都按已认证用户授权，不能让模型参数里的 `user_id` 决定身份。返回值也按不可信数据处理，用 `anthropic-xml-prompt` 那样的 data/instruction boundaries 包装，防范 `anthropic-prompt-injection`。
 
 本地 stdio 等于把任意进程跑在用户机器上。沙箱、网络 egress 允许列表、禁止随便拉最新版安装脚本，比「这是官方市场」重要。Computer use 那种确认框，MCP 不会自动给你，见 `anthropic-computer-use`。
 
-实际选型时，自研、副作用大、要严格 schema 的，继续用你控制的 tool 定义，必要时 `strict: true`，见 `anthropic-json-schema`。MCP 适合：多数据源、要复用生态、工具集随安装变化。工具一多，schema 会挤爆窗口——Anthropic 工程文后来写 code execution with MCP：让模型写代码去调 server，而不是把几百个 tool 定义全塞进 输入提示（prompt）。那是效率，不是授权。工具定义本身也是 prompt 前缀，列表一抖就会打爆 `anthropic-prompt-cache`。
+实际选型时，自研、副作用大、要严格 schema 的，继续用你控制的 tool 定义，必要时 `strict: true`，见 `anthropic-json-schema`。MCP 适合：多数据源、要复用生态、工具集随安装变化。工具一多，schema 会挤爆窗口——Anthropic 工程文后来写 code execution with MCP：让模型写代码去调 server，而不是把几百个 tool 定义全塞进 prompt。那是效率，不是授权。工具定义本身也是 prompt 前缀，列表一抖就会打爆 `anthropic-prompt-cache`。
 
 常见误区是：把 MCP 当 RPC 网关、模型直达生产库；安装时只点「允许全部」；用模型参数选择「以哪个用户的身份执行」。
 

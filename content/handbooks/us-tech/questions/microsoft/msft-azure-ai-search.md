@@ -4,7 +4,9 @@ section: microsoft
 order: 15
 level: A
 title: Microsoft：Azure AI Search + 生成，混合检索、权限、引用
-quick: "Azure AI Search 让 BM25 与向量并行召回，用 RRF 融合，再可选语义排序器。查询按当前用户权限过滤，证据通过权限检查后才进 LLM；生成论断绑定 document_key 和文本跨度，用户也必须能用同一身份打开引用。"
+quick: >-
+  Azure AI Search 让 BM25 与向量并行召回，用 RRF 融合，再可选语义排序器。查询按当前用户权限过滤，证据通过权限检查后才进
+  LLM；生成论断绑定 document_key 和文本跨度，用户也必须能用同一身份打开引用。
 tags:
   - Microsoft
   - Azure AI Search
@@ -13,23 +15,25 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Hybrid search overview in Azure AI Search
-    url: https://learn.microsoft.com/en-us/azure/search/hybrid-search-overview
+    url: 'https://learn.microsoft.com/en-us/azure/search/hybrid-search-overview'
     type: primary
   - title: Semantic ranking overview
-    url: https://learn.microsoft.com/en-us/azure/search/semantic-search-overview
+    url: 'https://learn.microsoft.com/en-us/azure/search/semantic-search-overview'
     type: primary
   - title: Document-level access control
-    url: https://learn.microsoft.com/en-us/azure/search/search-document-level-access-overview
+    url: >-
+      https://learn.microsoft.com/en-us/azure/search/search-document-level-access-overview
     type: primary
   - title: Retrieval-augmented generation in Azure AI Search
-    url: https://learn.microsoft.com/en-us/azure/search/retrieval-augmented-generation-overview
+    url: >-
+      https://learn.microsoft.com/en-us/azure/search/retrieval-augmented-generation-overview
     type: primary
 ---
 
-本卡讨论公开方案，`realInterview: false`。Azure AI Search 可以先用 BM25 和向量并行召回，再用 RRF 融合，必要时做语义重排。接生成模型时，最关键的边界是用户权限和引用位置。比如答案内容正确却引到用户打不开的设计文档，仍是越权事故。
+本卡讨论公开方案，`realInterview: false`。Azure AI Search 可以先用 BM25 和向量并行召回，再用 RRF 融合，必要时做语义重排。接生成模型时，最关键的 checks 是 user permissions 和 citation locations。比如答案内容正确却引到用户打不开的设计文档，仍是越权事故。
 
 ## 先检索授权证据，再生成
 
@@ -41,13 +45,13 @@ sources:
 
 文档权限可走两条路。原生方案在索引同步 ACL / RBAC / Purview 标签 / SharePoint 权限，请求带 Entra token（`x-ms-query-source-authorization`），由引擎裁剪，无需应用自己展开嵌套组。自定义身份则索引 `group_ids`，查询加 `filter=group_ids/any(...)`，组变化时同步重索引或明确允许的短暂脏读。
 
-索引可全租户建立，查询必须带身份。模型看到越权 token 后再删结果，日志或思维链仍可能泄漏。移出频道或标签升级要及时影响检索，embedding 缓存可保留，但按用户得到的命中列表不能跨用户复用。向量子查询用了 `filterOverride` 时还要重写 ACL 谓词，避免关键词路过滤而向量路绕过。
+索引可全租户建立，查询必须带身份。模型看到越权 token 后再删结果，日志或 chain of thought 仍可能泄漏。移出频道或标签升级要及时影响检索，embedding 缓存可保留，但按用户得到的命中列表不能跨用户复用。向量子查询用了 `filterOverride` 时还要重写 ACL 谓词，避免关键词路过滤而向量路绕过。
 
 ## 引用检查内容支持与访问权限
 
 每个断言绑定 `document_key`、段落 id 和文本跨度，不能在证据 $E$ 中找到支持就删句或说「索引里没写」，契约见 `msft-copilot-ground`。语义 caption 是摘要高亮，文档键和 chunk id 才用于定位主键；装饰性的行号无法代替可核验跨度。
 
-引用点击也要使用当前用户身份，不能让应用身份提供越权预览。约束解码可以把 doc id 限制在此次检索集合内，减少乱写文件名，见 `msft-constrained-decode`；它不负责权限，权限在 L1 检查。
+引用点击也要使用当前用户身份，不能让应用身份提供越权预览。约束 decoding 可以把 doc id 限制在此次检索集合内，减少乱写文件名，见 `msft-constrained-decode`；它不负责权限，权限在 L1 检查。
 
 评测分别报用户可见金标的 recall@k、越权率（要求 0）、引用可点击率和证据外命题率。多召回无关 wiki 不一定更好，召回用户不可见文档则直接违反权限。过期文档按 item id 删除旧块重写，回答带时间戳，时效由元数据管理。
 

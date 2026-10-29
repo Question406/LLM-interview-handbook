@@ -19,9 +19,9 @@ sources:
     type: primary
 ---
 
-当长上下文的 prefill 挡住 decode，或者两者需要不同并行度和机型时，才值得拆 PD。它调整的是 SGLang 采样轨迹（rollout）池，Megatron 训练图保持原样：输入预填充（prefill，即处理输入并建立缓存）重吞吐，逐 token 生成（decode）更需要 KV 空间和较低 TP。短 GSM8K、卡少或 colocate 显存已很紧的任务，额外的 KV 传输和调度反而可能增加耗时。相关机制见 `sys-chunk-pd`、`sys-prefill-decode`。
+当长上下文的 prefill 挡住 decode，或者两者需要不同并行度和机型时，才值得拆 PD。它调整的是 SGLang sampling 轨迹（rollout）池，Megatron 训练图保持原样：输入 prefill 重 throughput，逐 token 生成（decode）更需要 KV 空间和较低 TP。短 GSM8K、卡少或 colocate 显存已很紧的任务，额外的 KV 传输和调度反而可能增加耗时。相关机制见 `sys-chunk-pd`、`sys-prefill-decode`。
 
-强化学习（RL）rollout 的工具历史会把输入提示（prompt）拉得很长，decode 还会有长尾，负载形态和监督微调（SFT）的一批短 completion 不同。同一张卡上，一条 $8\mathrm{k}$ prefill 会长时间占用计算资源，让正在生成的请求等待，每个 token 的生成间隔突然变长。要拆的信号：
+RLrollout 的工具历史会把 prompt 拉得很长，decode 还会有长尾，负载形态和 SFT 的一批短 completion 不同。同一张卡上，一条 $8\mathrm{k}$ prefill 会长时间占用计算资源，让正在生成的请求等待，每个 token 的生成间隔突然变长。要拆的信号：
 
 - 多轮 / 长上下文，prefill 占实际耗时
 - decode 要更低 TP、更高 `mem_fraction_static` 给 KV

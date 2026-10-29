@@ -4,20 +4,22 @@ section: sliding-window
 order: 1
 level: A
 title: LC 209 · 长度最小的子数组
-quick: "元素全是正数，所以能用滑动窗口：右指针一直扩、累加和，和 $\\ge$ `target` 时更新最短长度并左缩。找不到返回 $0$。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  元素全是正数，所以能用滑动窗口：右指针一直扩、累加和，和 $\ge$ `target` 时更新最短长度并左缩。找不到返回 $0$。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Sliding Window
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 209. 长度最小的子数组
-    url: https://leetcode.cn/problems/minimum-size-subarray-sum/
+    url: 'https://leetcode.cn/problems/minimum-size-subarray-sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -107,7 +109,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个下标最多进、出窗口各一次。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 单个元素就 $\ge$ `target` 时，第一次进 `while` 记下的长度就是 $1$。
 
@@ -122,6 +124,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def shortestSubarray(nums, target):
     n = len(nums)

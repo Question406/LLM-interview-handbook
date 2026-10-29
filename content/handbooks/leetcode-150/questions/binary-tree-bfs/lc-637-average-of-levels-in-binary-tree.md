@@ -4,7 +4,7 @@ section: binary-tree-bfs
 order: 2
 level: A
 title: LC 637 · 二叉树的层平均值
-quick: "层序 BFS 切层，每层求和再除以这一层的节点数，结果用浮点。时间 $O(n)$，额外空间 $O(w)$。"
+quick: 层序 BFS 切层，每层求和再除以这一层的节点数，结果用浮点。时间 $O(n)$，额外空间 $O(w)$。
 tags:
   - Tree
   - BFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 637. 二叉树的层平均值
-    url: https://leetcode.cn/problems/average-of-levels-in-binary-tree/
+    url: 'https://leetcode.cn/problems/average-of-levels-in-binary-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -129,7 +129,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(w)$。Python 的 `int` 不会溢出；其他语言用 `long` 再除。
 
-## 边界
+## Edge Cases
 
 空树返回 `[]`。单节点时返回 `[root.val]` 的浮点。某层只有一个很大的数时，Python `int` 是安全的，其他语言先用 `long` 再除。
 
@@ -140,6 +140,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def levelSums(root):
     if root is None:
@@ -163,6 +164,7 @@ def levelSums(root):
 
 ```python
 from collections import deque
+
 
 def medianOfLevels(root):
     if root is None:

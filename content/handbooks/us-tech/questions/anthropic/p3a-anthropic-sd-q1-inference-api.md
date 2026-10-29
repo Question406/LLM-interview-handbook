@@ -3,8 +3,10 @@ id: p3a-anthropic-sd-q1-inference-api
 section: anthropic
 order: 621
 level: A
-title: "Anthropic：Inference API：动态批处理与 GPU 利用率"
-quick: "我会按 token 和 KV cache 预算控制准入，再用连续批处理调度 GPU。一个请求结束或取消就回收资源、补进下一个请求，同时看首 token 时延、吞吐和长短请求的公平性。"
+title: Anthropic：Inference API：dynamic batching 与 GPU 利用率
+quick: >-
+  我会按 token 和 KV cache 预算控制准入，再用 continuous batching 调度
+  GPU。一个请求结束或取消就回收资源、补进下一个请求，同时看首 token 时延、throughput 和长短请求的公平性。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · sd-q1-inference-api"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/sd-q1-inference-api
+  - title: 1Point3Acres · Anthropic · sd-q1-inference-api
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/sd-q1-inference-api
     type: secondary
 ---
 
@@ -27,13 +30,13 @@ sources:
 
 设计一个跨多块 GPU 的 LLM 推理服务。面试官会深入追问流量突增时怎么办，以及 prefill 和 decode 两个阶段怎样处理。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；收录为面经题型不代表公司官方确认。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。规模数字、SLO 和故障情景是手册补的练习约定。
 
 ## 思路
 
-准入层按 token 数和 KV cache 预算排队，而不是按请求数。调度器支持连续批处理（continuous batching）：一个请求生成结束就立刻把它的位置让给等待中的请求，不必等整批结束。
+准入层按 token 数和 KV cache 预算排队，而不是按请求数。调度器支持 continuous batching：一个请求生成结束就立刻把它的位置让给等待中的请求，不必等整批结束。
 
-回答里要说明三类目标和问题：首 token 时延与吞吐之间的取舍、长请求和短请求之间的公平，以及取消和 OOM 的处理。如果提出把 prefill 和 decode 分到不同机器上，要算出 KV cache 跨机传输的成本。
+回答里要说明三类目标和问题：首 token 时延与 throughput 之间的取舍、长请求和短请求之间的公平，以及取消和 OOM 的处理。如果提出把 prefill 和 decode 分到不同机器上，要算出 KV cache 跨机传输的成本。
 
 ## 完整非编程练习（场景与参考回答）
 
@@ -51,7 +54,7 @@ API 接收长短 prompt 混合的请求，支持流式响应和取消。设定 G
 
 取消或客户端断开时及时释放 slot 和 KV。worker 失联时，要么重跑，要么明确报失败，两次生成直接拼起来可能不连贯。准入限制应在 OOM 前生效。
 
-容量要从实测 token/s 倒推 GPU 数量，同时监控 TTFT、TPOT、排队等待、KV 利用率、padding 浪费和 SLO 违约。批次变大通常能换吞吐，但每个请求会更慢；如果要把 prefill 和 decode 分到不同机器，还得先算 KV 跨机传输是否划算。
+容量要从实测 token/s 倒推 GPU 数量，同时监控 TTFT、TPOT、排队等待、KV 利用率、padding 浪费和 SLO 违约。批次变大通常能换 throughput，但每个请求会更慢；如果要把 prefill 和 decode 分到不同机器，还得先算 KV 跨机传输是否划算。
 
 ### 面试追问与参考回答
 

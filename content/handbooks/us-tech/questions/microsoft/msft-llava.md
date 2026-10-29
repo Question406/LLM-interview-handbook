@@ -4,7 +4,10 @@ section: microsoft
 order: 6
 level: A
 title: Microsoft：LLaVA 类图文投影，视觉 token 数和上下文预算
-quick: "LLaVA 将 CLIP patch 网格投影到 LLM 词嵌入，视觉 token 数为 $(H/P)\\times(W/P)$，与文本共享窗口和 KV cache。224px 约 256 个、336px 约 576 个；多图和切块要先算总预算，再选择 ROI、OCR 或分辨率。"
+quick: >-
+  LLaVA 将 CLIP patch 网格投影到 LLM token embedding，视觉 token 数为
+  $(H/P)\times(W/P)$，与文本共享窗口和 KV cache。224px 约 256 个、336px 约 576
+  个；多图和切块要先算总预算，再选择 ROI、OCR 或分辨率。
 tags:
   - Microsoft
   - LLaVA
@@ -13,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Visual Instruction Tuning (LLaVA)
-    url: https://arxiv.org/abs/2304.08485
+    url: 'https://arxiv.org/abs/2304.08485'
     type: primary
   - title: Improved Baselines with Visual Instruction Tuning (LLaVA-1.5)
-    url: https://arxiv.org/abs/2310.03744
+    url: 'https://arxiv.org/abs/2310.03744'
     type: primary
 ---
 
@@ -57,7 +60,7 @@ Phi-3-Vision 等小模型也可先将图转成短 OCR 加少量缩略 token，�
 BLIP-2 路线能省上下文，但可能损失小字与空间定位。按目标任务比较预算与细节。
 
 **视频 token 怎么算？**
-帧数 $\times N_{\mathrm{vis}}$，1 fps 抽 16 帧、每帧 576 已过万，需要抽帧、时序池化或先字幕。
+帧数 $\times N_{\mathrm{vis}}$，1 fps 抽 16 帧、每帧 576 已过万，需要抽帧、时序 pooling 或先字幕。
 
 **模型说图里有猫，但没有呢？**
 按 grounding 处理，论断对不上区域就拒答。评测分开感知是否正确与回答是否受支持。

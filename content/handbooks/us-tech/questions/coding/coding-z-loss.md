@@ -4,7 +4,9 @@ section: coding
 order: 23
 level: A
 title: 白板：PaLM z-loss，为什么往 logits 上加这一项
-quick: "PaLM 在 CE 上加 $10^{-4}(\\log Z)^2$，把 log-partition 拉回 0 附近。CE 对 logits 整体平移不敏感，$\\log Z$ 却可能持续漂移，低精度下会损害数值稳定性；z-loss 约束这个自由度，分类 argmax 仍由相对大小决定。"
+quick: >-
+  PaLM 在 CE 上加 $10^{-4}(\log Z)^2$，把 log-partition 拉回 0 附近。CE 对 logits
+  整体平移不敏感，$\log Z$ 却可能持续漂移，低精度下会损害数值稳定性；z-loss 约束这个自由度，分类 argmax 仍由相对大小决定。
 tags:
   - 完整编程练习
   - Coding
@@ -14,26 +16,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: PaLM — Scaling Language Modeling with Pathways
-    url: https://arxiv.org/abs/2204.02311
+    url: 'https://arxiv.org/abs/2204.02311'
     type: primary
   - title: torch.logsumexp
-    url: https://pytorch.org/docs/stable/generated/torch.logsumexp.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.logsumexp.html'
     type: primary
 ---
 
 ## 题目描述
 
-实现包含 z-loss 的语言模型交叉熵，分别返回总损失、交叉熵与未乘系数的 z-loss。
+实现包含 z-loss 的语言模型 cross entropy，分别返回总损失、cross entropy 与未乘系数的 z-loss。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
-- `ce_with_z_loss(logits, target, ignore_index=-100, z_coef=1e-4) -> (total, ce, z_loss)`：令 `log Z = log(sum(exp(logits), last_dim))`，`total = ce + z_coef * z_loss`。返回总 loss、交叉熵和未乘系数的 $\mathrm{mean}(\log Z^2)$，三者都只对有效 token 平均。
-- 约束：`logits` 是 `[B, T, V]`，`target` 是 `[B, T]`，取值是合法下标或 `ignore_index`；`z_coef >= 0`。所有 token 都被忽略时返回可以反传的 0。
+- `ce_with_z_loss(logits, target, ignore_index=-100, z_coef=1e-4) -> (total, ce, z_loss)`：令 `log Z = log(sum(exp(logits), last_dim))`，`total = ce + z_coef * z_loss`。返回总 loss、cross entropy 和未乘系数的 $\mathrm{mean}(\log Z^2)$，三者都只对有效 token 平均。
+- 约束：`logits` 是 `[B, T, V]`，`target` 是 `[B, T]`，取值是合法下标或 `ignore_index`；`z_coef >= 0`。所有 token 都被忽略时返回可以 backpropagation 的 0。
 
 ### 输入输出示例
 
@@ -45,17 +47,17 @@ ce_with_z_loss(...) -> (0.74119248, 0.69314718, 0.48045301)  # 近似值
 
 ## 解题思路与参考答案
 
-我会用一次 logsumexp 同时计算 CE 和 z-loss，再对两者使用相同的有效 token mask。比如把一行 logits 整体加 50，CE 保持不变，z-loss 应变大，这正好检查它是否约束了 CE 管不到的整体平移。全 ignore 时则返回可反传的 0。
+我会用一次 logsumexp 同时计算 CE 和 z-loss，再对两者使用相同的有效 token mask。比如把一行 logits 整体加 50，CE 保持不变，z-loss 应变大，这正好检查它是否约束了 CE 管不到的整体平移。全 ignore 时则返回可 backpropagation 的 0。
 
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
-- `ce_with_z_loss(logits, target, ignore_index=-100, z_coef=1e-4) -> (total, ce, z_loss)`：返回总 loss、交叉熵和未乘系数的 $\mathrm{mean}(\log Z^2)$，三者都只对有效 token 平均。
-- 约束：`logits` 是 `[B, T, V]`，`target` 是 `[B, T]`，取值是合法下标或 `ignore_index`；`z_coef >= 0`，否则抛 `ValueError`。所有 token 都被忽略时返回可以反传的 0。
+- `ce_with_z_loss(logits, target, ignore_index=-100, z_coef=1e-4) -> (total, ce, z_loss)`：返回总 loss、cross entropy 和未乘系数的 $\mathrm{mean}(\log Z^2)$，三者都只对有效 token 平均。
+- 约束：`logits` 是 `[B, T, V]`，`target` 是 `[B, T]`，取值是合法下标或 `ignore_index`；`z_coef >= 0`，否则抛 `ValueError`。所有 token 都被忽略时返回可以 backpropagation 的 0。
 
 ### 输入输出示例
 
@@ -67,7 +69,7 @@ target 全是 -100                 -> (0, 0, 0)，梯度为 0
 
 ### 解题思路与正确性
 
-交叉熵里 $-\log p_y = \log Z - x_y$，logits 整体加常数时两项一起变，CE 不变；z-loss 直接约束 $\log Z$ 本身，所以会随平移变化。实现时 $\log Z$ 只用 `logsumexp` 算一次，CE 和 z-loss 共用。
+cross entropy 里 $-\log p_y = \log Z - x_y$，logits 整体加常数时两项一起变，CE 不变；z-loss 直接约束 $\log Z$ 本身，所以会随平移变化。实现时 $\log Z$ 只用 `logsumexp` 算一次，CE 和 z-loss 共用。
 
 先算出有效 token 的 mask 和分母，CE 和 z-loss 都用这一个分母，被忽略的 token 在两项里都不出现。
 
@@ -82,18 +84,18 @@ Z_COEF = 1e-4
 
 
 def ce_with_z_loss(logits, target, ignore_index=-100, z_coef=Z_COEF):
-    """交叉熵 + PaLM z-loss，只在有效 token 上平均。
+    """cross entropy + PaLM z-loss，只在有效 token 上平均。
 
-    logits: [B, T, V]；target: [B, T]，取值是合法词表下标或 ignore_index（负数）。
+    logits: [B, T, V]；target: [B, T]，取值是合法 vocabulary 下标或 ignore_index（负数）。
     返回 (total, ce, z_loss)，其中 z_loss 是未乘系数的 mean(logZ^2)。
-    全部 token 被忽略时三项都是 0，且仍可反传。
+    全部 token 被忽略时三项都是 0，且仍可 backpropagation。
     """
     if z_coef < 0:
         raise ValueError(f"z_coef must be non-negative, got {z_coef}")
     x = logits.float()
-    log_z = torch.logsumexp(x, dim=-1)                      # [B, T]
-    logp = x - log_z.unsqueeze(-1)                          # [B, T, V]
-    safe_target = target.clamp(min=0)                       # ignore 位置先换成 0，gather 后再 mask 掉
+    log_z = torch.logsumexp(x, dim=-1)  # [B, T]
+    logp = x - log_z.unsqueeze(-1)  # [B, T, V]
+    safe_target = target.clamp(min=0)  # ignore 位置先换成 0，gather 后再 mask 掉
     nll = -logp.gather(-1, safe_target.unsqueeze(-1)).squeeze(-1)
     mask = target != ignore_index
     denom = mask.sum().clamp_min(1)
@@ -110,7 +112,7 @@ def ce_with_z_loss(logits, target, ignore_index=-100, z_coef=Z_COEF):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -133,7 +135,7 @@ assert torch.allclose(ce, torch.tensor(math.log(2)))
 assert torch.allclose(reg, torch.tensor(math.log(2) ** 2))
 assert torch.allclose(total, ce + 1e-4 * reg)
 
-# 全部 ignore：三项都是 0，且可以反传、梯度为 0
+# 全部 ignore：三项都是 0，且可以 backpropagation、梯度为 0
 all_ignored = ce_with_z_loss(logits, torch.full_like(target, -100))
 assert all(value == 0 for value in all_ignored)
 assert torch.all(torch.autograd.grad(all_ignored[0], logits)[0] == 0)
@@ -156,7 +158,7 @@ expect_value_error(ce_with_z_loss, logits, target, z_coef=-1.0)
 
 ### 复杂度与追问
 
-设 batch 为 $B$、序列长 $T$、词表大小 $V$。时间和空间都是 $O(BTV)$，主要花在 `logsumexp` 和 `logp` 上；z-loss 本身只多 $O(BT)$。
+设 batch 为 $B$、序列长 $T$、vocabulary 大小 $V$。时间和空间都是 $O(BTV)$，主要花在 `logsumexp` 和 `logp` 上；z-loss 本身只多 $O(BT)$。
 
 - 追问「`ignore_index` 是正数怎么办」：这里用 `clamp(min=0)` 处理 ignore 位置，只对负数的 `ignore_index` 成立。如果允许任意值，要像 `coding-cross-entropy` 那样先筛出有效目标再 gather。
 
@@ -173,7 +175,7 @@ z=\mathrm{logsumexp}(x)=\log\sum_i e^{x_i},\qquad
 \mathcal{L}_z=\lambda z^2,\quad \lambda=10^{-4}.
 $$
 
-PaLM 把 $\mathcal{L}_z$ 加到 token 级交叉熵损失（CE）上。因为 softmax$(x)=$softmax$(x+c)$，而且 $x_y$ 和 $z$ 会一起加 $c$，所以 CE 也不变。也就是说，对 CE 来说 $x\leftarrow x+c$ 这个方向完全没有梯度，$z$ 可以一路漂到几百。bf16 在绝对值大的地方精度很粗，`exp` 和 GEMM 都更容易溢出成 inf，或者把相近的数舍入成同一个值。$z^2$ 的梯度把 $z$ 往 0 推，相当于希望 $\sum e^{x_i}\approx 1$，让 logits 落在合理的范围内。分类结果（argmax）仍然只由 logits 之间的相对差决定。
+PaLM 把 $\mathcal{L}_z$ 加到 token 级 cross entropy loss（CE）上。因为 softmax$(x)=$softmax$(x+c)$，而且 $x_y$ 和 $z$ 会一起加 $c$，所以 CE 也不变。也就是说，对 CE 来说 $x\leftarrow x+c$ 这个方向完全没有梯度，$z$ 可以一路漂到几百。bf16 在绝对值大的地方精度很粗，`exp` 和 GEMM 都更容易溢出成 inf，或者把相近的数舍入成同一个值。$z^2$ 的梯度把 $z$ 往 0 推，相当于希望 $\sum e^{x_i}\approx 1$，让 logits 落在合理的范围内。分类结果（argmax）仍然只由 logits 之间的相对差决定。
 
 不要把 z-loss 写成 $\lambda\|x\|_2^2$。那会压缩 logits 之间的相对差，损害 CE。z-loss 正则的是标量 $z$，不是整行 logits。
 
@@ -181,14 +183,14 @@ pad 位置必须和 CE 共用同一个 mask：如果对 ignore 位置也加 $z^2
 
 ## 系数和什么时候需要
 
-$\lambda=10^{-4}$ 是 PaLM 公开的值。太大会过度强迫 $z\approx 0$，和 CE 抢优化方向；太小又压不住漂移。小模型、fp32 训练时往往感觉不到它的作用；词表大到 $10^5$ 量级、用 bf16 / fp8 训练时，这一项才开始有明显价值。
+$\lambda=10^{-4}$ 是 PaLM 公开的值。太大会过度强迫 $z\approx 0$，和 CE 抢优化方向；太小又压不住漂移。小模型、fp32 训练时往往感觉不到它的作用；vocabulary 大到 $10^5$ 量级、用 bf16 / fp8 训练时，这一项才开始有明显价值。
 
 它不是 label smoothing，也不是 entropy bonus：它不鼓励输出分布变均匀，只防止 log-partition 出现极端值。它和 MoE 的 load-balancing aux loss 也不是一类东西，不要往路由损失上套。
 
 ## 追问
 
 **为什么不直接 clip logits？**
-clip 在边界外梯度为 0，还会损伤 logits 之间的相对差。$z^2$ 是平滑的，而且只约束整体平移这一个自由度。
+clip 在 clipping range 外梯度为 0，还会损伤 logits 之间的相对差。$z^2$ 是平滑的，而且只约束整体平移这一个自由度。
 **$z$ 能不能直接用 `log(sum(exp))` 算？**
 不行。$x$ 很大时 `exp` 溢出成 inf，辅助损失本身就成了 NaN。必须用 log-sum-exp 技巧，见 `coding-logsumexp`。
 **推理时还加吗？**
@@ -198,5 +200,5 @@ weight decay 管参数的范数，z-loss 管 logits 的绝对尺度。两者可�
 
 ## 相关题
 
-- [[coding-logsumexp]]：z-loss 里的 $\log Z$ 必须用减 max 的 logsumexp 算，那张讲这个技巧和整行 $-\infty$ 的边界。
+- [[coding-logsumexp]]：z-loss 里的 $\log Z$ 必须用减 max 的 logsumexp 算，那张讲这个技巧和整行 $-\infty$ 的 edge case。
 - [[coding-cross-entropy]]：z-loss 加在这个 CE 上，那张讲 CE 本身的 log 域写法和 ignore 下标的分母。

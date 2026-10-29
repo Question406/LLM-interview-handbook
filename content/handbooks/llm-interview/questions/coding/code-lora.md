@@ -5,7 +5,9 @@ order: 13
 level: A
 title: 手写 LoRA 前向：$y=Wx+(\alpha/r)BAx$
 quick: >-
-  冻住 $W$，只训 $A\in\mathbb{R}^{r\times d_{\mathrm{in}}}$ 和 $B\in\mathbb{R}^{d_{\mathrm{out}}\times r}$，前向是 $Wx+(\alpha/r)B(Ax)$。$A$ 用高斯、$B$ 全零初始化，起步就等价于原模型；$\alpha/r$ 把更新幅度从 rank 里解耦。LoRA 别接在 LayerNorm 后面。
+  冻住 $W$，只训 $A\in\mathbb{R}^{r\times d_{\mathrm{in}}}$ 和
+  $B\in\mathbb{R}^{d_{\mathrm{out}}\times r}$，前向是 $Wx+(\alpha/r)B(Ax)$。$A$
+  用高斯、$B$ 全零初始化，起步就等价于原模型；$\alpha/r$ 把更新幅度从 rank 里解耦。LoRA 别接在 LayerNorm 后面。
 tags:
   - LoRA
   - PEFT
@@ -13,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: LoRA
-    url: https://arxiv.org/abs/2106.09685
+    url: 'https://arxiv.org/abs/2106.09685'
     type: primary
 ---
 
@@ -24,7 +26,7 @@ sources:
 
 为已有线性层增加低秩可训练增量，同时冻结原权重。初始化后应与原线性层完全相同。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -55,6 +57,7 @@ $$
 import torch
 import torch.nn as nn
 
+
 class LoRALinear(nn.Module):
     def __init__(self, W, r=8, alpha=16):
         super().__init__()
@@ -76,13 +79,13 @@ class LoRALinear(nn.Module):
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-B 初始化为零时，LoRA 输出必须等于原线性层。之后反向传播检查 B 有梯度且被冻结的 W 没有梯度；这能发现初始化或冻结方式的错误。
+B 初始化为零时，LoRA 输出必须等于原线性层。之后 backpropagation 检查 B 有梯度且被冻结的 W 没有梯度；这能发现初始化或冻结方式的错误。
 
 ```python
 torch.manual_seed(7)
 W = torch.randn(3, 2)
 layer = LoRALinear(W, r=1, alpha=1)
-x = torch.tensor([[1., 2.]])
+x = torch.tensor([[1.0, 2.0]])
 torch.testing.assert_close(layer(x), x @ W.T)
 layer(x).sum().backward()
 assert layer.B.grad is not None and layer.B.grad.abs().sum() > 0

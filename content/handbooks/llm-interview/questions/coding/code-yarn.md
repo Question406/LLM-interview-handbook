@@ -67,8 +67,10 @@ $$
 ```python
 import torch
 
+
 def ntk_base(base, scale, dh):
     return base * scale ** (dh / (dh - 2))
+
 
 def yarn_ramp(dim_idx, dh, beta_fast=32.0, beta_slow=1.0):
     # 0=外推，1=内插
@@ -76,11 +78,12 @@ def yarn_ramp(dim_idx, dh, beta_fast=32.0, beta_slow=1.0):
     lo, hi = 1.0 / beta_fast, 1.0 / beta_slow
     return ((inv_dim - lo) / (hi - lo)).clamp(0, 1)
 
+
 def yarn_inv_freq(dh, scale, base=10000.0):
     dim_idx = torch.arange(0, dh, 2).float()
     inv = 1.0 / (base ** (dim_idx / dh))
     ramp = yarn_ramp(dim_idx, dh)
-    return inv / (scale ** ramp)
+    return inv / (scale**ramp)
 ```
 
 建表时 $\cos(t\omega')$ 仍按绝对位置 $t$ 算。KV cache 里的 $K$ 在写入时已经用当时的 $\omega'$ 转过了，换 scale 就等于换了位置编码，旧 cache 不能直接复用。
@@ -92,12 +95,12 @@ def yarn_inv_freq(dh, scale, base=10000.0):
 scale=1 时频率应退化为普通 RoPE；scale=2 时频率不应放大。测试覆盖这里的简化频率公式，不代表已经验证完整 YaRN 的长上下文效果。
 
 ```python
-base_freq = 1 / (10000. ** (torch.arange(0, 8, 2).float() / 8))
+base_freq = 1 / (10000.0 ** (torch.arange(0, 8, 2).float() / 8))
 torch.testing.assert_close(yarn_inv_freq(8, 1), base_freq)
 scaled = yarn_inv_freq(8, 2)
 assert scaled.shape == (4,) and torch.isfinite(scaled).all()
 assert (scaled > 0).all() and (scaled <= base_freq).all()
-assert ntk_base(10000., 1, 8) == 10000.
+assert ntk_base(10000.0, 1, 8) == 10000.0
 print("simple tests passed")
 ```
 

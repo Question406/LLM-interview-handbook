@@ -5,20 +5,21 @@ order: 6
 level: S
 title: LC 1 · 两数之和
 quick: >-
-  一遍哈希：边扫边把「值 $\to$ 下标」存进表，扫到 $x$ 时先查 complement $= target - x$ 在不在表里，在就直接返回两个下标。先查再写，同一个元素不会被用两次，时间 $O(n)$。
+  一遍哈希：边扫边把「值 $\to$ 下标」存进表，扫到 $x$ 时先查 complement $= target - x$
+  在不在表里，在就直接返回两个下标。先查再写，同一个元素不会被用两次，时间 $O(n)$。
 tags:
   - Hash
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 1. 两数之和
-    url: https://leetcode.cn/problems/two-sum/
+    url: 'https://leetcode.cn/problems/two-sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$，每个元素只入表一次。
 
-## 边界
+## Edge Cases
 
 负数和零都合法，哈希只看「这个值出现过没有」，和正负无关。两个相同值的情况（`[3,3]`、$target=6$）靠先查再写处理。答案可能在开头也可能在结尾，从左到右扫一遍都能覆盖。
 

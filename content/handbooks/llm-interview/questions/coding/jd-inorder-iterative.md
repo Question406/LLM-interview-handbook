@@ -4,19 +4,19 @@ section: coding
 order: 191
 level: B
 title: 京东零售二面：二叉树中序遍历如何非递归写？
-quick: >-
-  用栈：一路向左压栈，弹出时访问，再转到右子树。题目要非递归，递归版不算数。边界测空树、只有左链、只有右链。
+quick: 用栈：一路向左压栈，弹出时访问，再转到右子树。题目要非递归，递归版不算数。edge-case tests 覆盖空树、只有左链、只有右链。
 tags:
   - JD
   - Coding
   - Tree
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-27'
 sources:
   - title: 京东零售平台产品与研发中心二面
-    url: https://www.nowcoder.com/feed/main/detail/6a94272eee68460d9e8f90c72ddb8dab
+    url: 'https://www.nowcoder.com/feed/main/detail/6a94272eee68460d9e8f90c72ddb8dab'
     type: candidate-first-hand
 ---
 
@@ -25,6 +25,8 @@ sources:
 给定一棵二叉树的根节点 `root`，实现 `inorder(root)`，**不使用递归**，返回按“左子树、节点自身、右子树”顺序访问得到的节点值列表。
 
 候选人记录明确要求非递归中序遍历；以下对象接口为手册重构练习约定：节点提供 `val`、`left`、`right` 属性，空孩子和空树用 `None` 表示。节点值可为整数，树中允许重复值；输入为有限、无环的二叉树，不要求是二叉搜索树。不得修改树的连接关系。
+
+### 接口、输入与输出要求
 
 ### 示例
 
@@ -43,7 +45,7 @@ sources:
 
 非递归中序用一个栈加一个指针：`cur` 不空就一路向左压栈，走到头就弹出一个节点访问，再把 `cur` 转到它的右子树，循环到栈空、`cur` 也空为止。
 
-这是京东零售平台产品与研发中心的二面题，来自牛客候选人原帖，可信度 B，原话是**“手撕：二叉树的中序遍历（非递归方式），在本地txt文件里写”**。原帖要求在本地 txt 里手写，边界得自己测：空树、单节点、只有左链、只有右链。常见翻车是交了递归版，或者写成「先访问再压左」，那其实是前序。中序是左-根-右，所以要先把左链压完，弹出时才访问。BST 的中序是有序的，可以拿来验证结果。
+这是京东零售平台产品与研发中心的二面题，来自牛客候选人原帖，可信度 B，原话是**“手撕：二叉树的中序遍历（非递归方式），在本地 txt 文件里写”**。原帖要求在本地 txt 里手写，edge cases 需要自行测试：空树、单节点、只有左链、只有右链。常见翻车是交了递归版，或者写成「先访问再压左」，那其实是前序。中序是左-根-右，所以要先把左链压完，弹出时才访问。BST 的中序是有序的，可以拿来验证结果。
 
 ## 栈模拟：左链压完再访问根
 
@@ -62,7 +64,7 @@ def inorder(root):
     return out
 ```
 
-拿几个边界走一遍：只有左链时，全部压栈后依次弹出，对；只有右链时，栈里每次只有一个节点，访问完走向右孩子，对；空树不进循环，返回 `[]`。别在内层 `while cur` 里访问，那样根就跑到左子树前面去了。
+用几个 edge cases 手动检查：只有左链时，全部压栈后依次弹出，对；只有右链时，栈里每次只有一个节点，访问完走向右孩子，对；空树不进循环，返回 `[]`。别在内层 `while cur` 里访问，那样根就跑到左子树前面去了。
 
 ## 简单测试怎么写
 
@@ -73,8 +75,10 @@ def inorder(root):
 ```python
 from types import SimpleNamespace
 
+
 def node(value, left=None, right=None):
     return SimpleNamespace(val=value, left=left, right=right)
+
 
 assert inorder(node(2, node(1), node(3))) == [1, 2, 3]
 assert inorder(None) == []

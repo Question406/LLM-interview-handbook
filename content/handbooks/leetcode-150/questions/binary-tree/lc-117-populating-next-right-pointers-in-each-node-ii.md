@@ -4,7 +4,9 @@ section: binary-tree
 order: 7
 level: A
 title: LC 117 · 填充每个节点的下一个右侧节点指针 II
-quick: "这题是任意二叉树。层序遍历当然能做；更省空间的写法是用当前层已经连好的 `next` 去串下一层，哑节点当下一层的头，空孩子跳过。时间 $O(n)$，额外空间 $O(1)$（不计递归）。"
+quick: >-
+  这题是任意二叉树。层序遍历当然能做；更省空间的写法是用当前层已经连好的 `next` 去串下一层，哑节点当下一层的头，空孩子跳过。时间
+  $O(n)$，额外空间 $O(1)$（不计递归）。
 tags:
   - Tree
   - BFS
@@ -12,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 117. 填充每个节点的下一个右侧节点指针 II
-    url: https://leetcode.cn/problems/populating-next-right-pointers-in-each-node-ii/
+    url: >-
+      https://leetcode.cn/problems/populating-next-right-pointers-in-each-node-ii/
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -136,7 +139,7 @@ print("simple tests passed")
 
 时间 $O(n)$。利用已建好的 `next` 时额外空间 $O(1)$；层序队列最坏 $O(n)$。
 
-## 边界
+## Edge Cases
 
 空树返回 `None`。缺左孩子或缺右孩子时，哑节点串下一层要跳过空孩子。底层不连续、中间有空时，靠当前层的 `next` 跳到右侧第一个有孩子的节点，不要假设 `next.left` 一定存在。
 

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "gpt56",
+    "title": "GPT-5.6 System Card",
+    "url": "https://deploymentsafety.openai.com/gpt-5-6",
+    "kind": "official system card",
+    "coverage": "2026-07 release，含 2026-08 更新；重点核对 prompt injection、cyber、monitorability 与 health sections",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "agent",
+    "title": "ChatGPT Agent System Card",
+    "url": "https://deploymentsafety.openai.com/chatgpt-agent",
+    "kind": "official system card",
+    "coverage": "Agent-level evaluation，重点核对 prompt injection、cyber ranges 与 self-improvement sections",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "claude55",
+    "title": "Claude Opus 5.5 System Card",
+    "url": "https://www.anthropic.com/claude-opus-5-5-system-card",
+    "kind": "official system card · PDF",
+    "coverage": "2026-09；核对 safety / agentic / alignment / capability 相关 pages，含 PDF visual review",
+    "checkedAt": "2026-10-28",
+    "sha256": "7311c9c6bbb16d012f1c12c7418b05949fcf7ae3e30d2c40f22050074b2a7378",
+    "localInspectionFile": "claude-opus-5-5.pdf"
+  },
+  {
+    "id": "claude46",
+    "title": "Claude Opus 4.6 System Card",
+    "url": "https://www-cdn.anthropic.com/0dd865075ad3132672ee0ab40b05a53f14cf5288.pdf",
+    "kind": "official system card · PDF",
+    "coverage": "2026-02；核对 Cybench、CyberGym、ART 与 capability sections，追踪历史版本",
+    "checkedAt": "2026-10-28",
+    "sha256": "dade02e99e07be11a5b984f6e82c67651b1c45327e5bee8fefbbea2e948e9177",
+    "localInspectionFile": "claude-opus-4-6.pdf"
+  },
+  {
+    "id": "gemini4",
+    "title": "Gemini 4 Argon Safety & Security Report",
+    "url": "https://storage.googleapis.com/deepmind-media/gemini/gemini_4_safety_report.pdf",
+    "kind": "official safety/security report · PDF",
+    "coverage": "2026-10；重点核对 Section 6.1、Gray Swan IPI figure 与 monitoring / health sections",
+    "checkedAt": "2026-10-28",
+    "sha256": "8124f1900313b733df6329433a1376ca28285c4bd8f9a276a87328ceca956adb",
+    "localInspectionFile": "gemini-4-safety.pdf"
+  },
+  {
+    "id": "grok47",
+    "title": "Grok 4.7 Model Card",
+    "url": "https://media.x.ai/v1/website/card4p7-3a96f40b.pdf",
+    "kind": "official model card · PDF",
+    "coverage": "重点核对 Sections 6–11 与 references；jailbreak table 已 visual review",
+    "checkedAt": "2026-10-28",
+    "sha256": "c40541597ac3c461d71a914c922d43b200b468e41434b699fdd11c9a8761c56f",
+    "localInspectionFile": "grok-4-7.pdf"
+  },
+  {
+    "id": "grok46",
+    "title": "Grok 4.6 Model Card",
+    "url": "https://media.x.ai/v1/website/card-4p6-4cd2dc57.pdf",
+    "kind": "official model card · PDF",
+    "coverage": "重点核对 Sections 7–12，作为上一代沿用证据",
+    "checkedAt": "2026-10-28",
+    "sha256": "1fbb3ab6d7c572720e05d501eab8f11052b32db8d5936e66802c5c49b2261f4f",
+    "localInspectionFile": "grok-4-6.pdf"
+  },
+  {
+    "id": "llama3",
+    "title": "The Llama 3 Herd of Models",
+    "url": "https://arxiv.org/html/2407.21783v1",
+    "kind": "official technical report",
+    "coverage": "重点核对 Sections 5.4 / 5.5；CyberSecEval 为实际使用，ToxiGen / XSTest 区分为讨论引用",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "llama4",
+    "title": "Llama 4 official model card",
+    "url": "https://raw.githubusercontent.com/meta-llama/llama-models/main/models/llama4/MODEL_CARD.md",
+    "kind": "official model card",
+    "coverage": "核对 safety / cyber sections；本次未从该页确认对下表具体公开 safety benchmark 的逐项采用",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "qwen3",
+    "title": "Qwen3 Technical Report",
+    "url": "https://arxiv.org/html/2505.09388v1",
+    "kind": "official technical report",
+    "coverage": "核对 evaluation / safety mentions；本次未据此认定下表某个 named public safety benchmark 被实际采用",
+    "checkedAt": "2026-10-28"
+  }
+]

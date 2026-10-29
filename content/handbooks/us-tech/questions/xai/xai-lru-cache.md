@@ -4,7 +4,9 @@ section: xai
 order: 9
 level: A
 title: xAI：手写 LRU / 并发缓存，和 KV 事务题怎么衔接
-quick: "我会用哈希表定位节点、双向链表维护 LRU 顺序，命中也要移动节点并加锁；扩吞吐时再按 key 分片。接事务 KV 时，共享缓存只放已提交版本，旧版本不能覆盖新版本，快照读遇到过新缓存要回源。"
+quick: >-
+  我会用哈希表定位节点、双向链表维护 LRU 顺序，命中也要移动节点并加锁；扩 throughput 时再按 key 分片。接事务 KV
+  时，共享缓存只放已提交版本，旧版本不能覆盖新版本，快照读遇到过新缓存要回源。
 tags:
   - 完整编程练习
   - xAI
@@ -14,19 +16,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Get a Job at xAI — Interview Process and Top Questions
-    url: https://www.tryexponent.com/blog/xai-interview-process
+    url: 'https://www.tryexponent.com/blog/xai-interview-process'
     type: secondary
   - title: xAI Software Engineer Interview Guide
-    url: https://www.tryexponent.com/guides/xai-software-engineer-interview
+    url: 'https://www.tryexponent.com/guides/xai-software-engineer-interview'
     type: secondary
   - title: xAI Interview Questions from Candidate Reports
-    url: https://aceoffer.app/interviews/xai
+    url: 'https://aceoffer.app/interviews/xai'
     type: secondary
   - title: Practice xAI Mock Interviews
-    url: https://igotanoffer.com/en/mock-interviews/company/xai
+    url: 'https://igotanoffer.com/en/mock-interviews/company/xai'
     type: secondary
 ---
 
@@ -34,7 +36,7 @@ sources:
 
 实现按条目权重计容量、支持并发调用的 LRU 缓存。命中与更新都影响最近使用顺序，条目过大则拒绝更新并保留旧内容。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -62,7 +64,7 @@ get("a")                             -> "A"            # 旧值还在
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是原帖完整题面或官方测试。Python 3 标准库，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 标准库，CPU 上验证。
 
 ### 题面、接口与约束
 
@@ -114,10 +116,10 @@ class LRUCache:
         if type(capacity) is not int or capacity < 0:
             raise ValueError(f"capacity must be a non-negative int, got {capacity!r}")
         self.capacity = capacity
-        self.used = 0                 # 存活条目的权重之和
-        self.nodes = {}               # key -> Node
-        self.head = Node()            # 哨兵：head.next 是最久未使用
-        self.tail = Node()            # 哨兵：tail.prev 是最近使用
+        self.used = 0  # 存活条目的权重之和
+        self.nodes = {}  # key -> Node
+        self.head = Node()  # 哨兵：head.next 是最久未使用
+        self.tail = Node()  # 哨兵：tail.prev 是最近使用
         self.head.next = self.tail
         self.tail.prev = self.head
         self.lock = RLock()
@@ -175,7 +177,7 @@ class LRUCache:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -271,11 +273,11 @@ assert all(cache.get(i) == i for i in range(100))
 
 设存活的 key 数为 n。`get` 是 O(1)；`put` 单次是 O(1 + 本次淘汰的条目数)，但每个插入的节点最多被淘汰一次，所以整个操作序列均摊 O(1)。空间 O(n)。
 
-- 追问「全局锁够不够」：它只保证单机多线程安全，吞吐受限，也不能据此声称分布式一致性。分片的做法见下文。
+- 追问「全局锁够不够」：它只保证单机多线程安全，throughput 受限，也不能据此声称分布式一致性。分片的做法见下文。
 
 ## 题怎么来的
 
-Exponent 和 AceOffer 把 LRU（包括加权变体）列为 xAI coding 的高频题，和 KV 事务、rate limiter 是一类：考的是一个能跑的类、边界和并发，而不是链表细节。这张卡 `realInterview: false`，是按公开题库准备的。和 `xai-kv-txn` 的衔接点在于：事务要快照隔离，缓存是快照的物化，淘汰策略不能破坏隔离。
+Exponent 和 AceOffer 把 LRU（包括加权变体）列为 xAI coding 的高频题，和 KV 事务、rate limiter 是一类：考的是一个能跑的类、edge cases 和 concurrency，而不是链表细节。这张卡 `realInterview: false`，是按公开题库准备的。和 `xai-kv-txn` 的衔接点在于：事务要快照隔离，缓存是快照的物化，淘汰策略不能破坏隔离。
 
 ## 先写对 $O(1)$，再加容量
 

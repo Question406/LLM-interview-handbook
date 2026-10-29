@@ -4,7 +4,9 @@ section: systems
 order: 184
 level: A
 title: 小红书 Agent 一面：多员工同时用如何限流降级？多租户怎么理解？
-quick: "租户是配额、账单和数据隔离边界，应用是租户内的产品与 SLO 档位。按租户、应用和必要的用户层分配 QPS、并发与 token 预算，过载时先降并行和检索宽度，再换模型、限时排队，最后拒收。"
+quick: >-
+  租户是配额、账单和 data isolation requirements，应用是租户内的产品与 SLO 档位。按租户、应用和必要的用户层分配
+  QPS、并发与 token 预算，过载时先降并行和检索宽度，再换模型、限时排队，最后拒收。
 tags:
   - Xiaohongshu
   - Rate Limit
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 小红书Ai agent算法一面 攒人品
-    url: https://www.nowcoder.com/feed/main/detail/6819d2a74f00489ea3e3913a5139346a
+    url: 'https://www.nowcoder.com/feed/main/detail/6819d2a74f00489ea3e3913a5139346a'
     type: candidate-first-hand
   - title: Kubernetes Resource Quotas
-    url: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+    url: 'https://kubernetes.io/docs/concepts/policy/resource-quotas/'
     type: primary
 ---
 
@@ -30,7 +32,7 @@ sources:
 
 过载时可以依次关闭多 Agent 并行、缩短检索 top-k、换小模型、只检索不生成，再限时排队，最后拒收并返回明确错误。关键应用禁止降到只检索。先拒收可能让用户立即重试，反过来加重压力；排队也必须有 deadline，避免队列长期占内存、消耗任务链剩余时间。
 
-拒收或排队失败时返回明确的 429 / 错误和 retry-after，客户端需要尊重它并采用 backoff，不能再把请求丢回模型重试。写操作带幂等键，否则排队或重试成功两次就会双写。前端超时后自动重打，也可能瞬间打满租户桶。
+拒收或排队失败时返回明确的 429 / 错误和 retry-after，客户端需要尊重它并采用 backoff，不能再把请求丢回模型重试。写操作带 idempotency key，否则排队或重试成功两次就会双写。前端超时后自动重打，也可能瞬间打满租户桶。
 
 看板按与限流相同的 `tenant_id + app_id` 分组，观察 p95、拒绝率、降级率和 token 消耗，记录使用了哪档模型、是否跳过检索，用户侧最好也能看到已降级。只看集群平均值或 p95，会掩盖某条业务线持续被挤占的情况。
 

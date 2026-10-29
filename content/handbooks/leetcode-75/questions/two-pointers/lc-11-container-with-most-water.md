@@ -5,7 +5,9 @@ order: 3
 level: S
 title: LC 11 · 盛最多水的容器
 quick: >-
-  用双指针从两端往中间收，面积是 $\min(h[l],h[r])\cdot(r-l)$。每次把较矮的一侧内移，因为矮边限制了高度，留着它再缩宽度只会更小。时间 $O(n)$，额外空间 $O(1)$。
+  用双指针从两端往中间收，面积是
+  $\min(h[l],h[r])\cdot(r-l)$。每次把较矮的一侧内移，因为矮边限制了高度，留着它再缩宽度只会更小。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Two Pointers
   - Greedy
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 11. Container With Most Water
-    url: https://leetcode.com/problems/container-with-most-water/
+    url: 'https://leetcode.com/problems/container-with-most-water/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -107,7 +109,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每步丢掉一条边，所以是线性的。
 
-## 边界
+## Edge Cases
 
 只有两条线时，答案就是 $\min(h[0],h[1])\cdot 1$。
 

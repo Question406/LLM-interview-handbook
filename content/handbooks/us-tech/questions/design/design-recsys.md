@@ -4,31 +4,35 @@ section: design
 order: 2
 level: S
 title: 设计：推荐系统召回-排序-重排，多目标与探索
-quick: "召回先保留足够候选，排序预测相关性，重排再处理多样性、规则和探索槽位。点击、时长、伤害等目标要分别评估并显式加权，完整性要求作为硬约束；同时检查特征一致性和探索预算，防止反馈循环只推热门。"
+quick: >-
+  召回先保留足够候选，排序预测相关性，重排再处理多样性、规则和探索槽位。点击、时长、伤害等目标要分别评估并显式加权，完整性要求作为硬约束；同时检查特征一致性和探索预算，防止反馈循环只推热门。
 tags:
   - RecSys
   - Meta
   - Google
   - Ranking
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Deep Neural Networks for YouTube Recommendations
-    url: https://dl.acm.org/doi/10.1145/2959100.2959190
+    url: 'https://dl.acm.org/doi/10.1145/2959100.2959190'
     type: primary
-  - title: Deep Learning Recommendation Model for Personalization and Recommendation Systems
-    url: https://arxiv.org/abs/1906.00091
+  - title: >-
+      Deep Learning Recommendation Model for Personalization and Recommendation
+      Systems
+    url: 'https://arxiv.org/abs/1906.00091'
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -44,11 +48,19 @@ sources:
 
 需要说明规模与延迟假设、训练数据和标签、反馈延迟、线上离线的一致性，以及效果下降时的降级。不能把用户交互之后才出现的结果当成请求时已知的输入。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 用户刚看过某频道的多个视频，下一次请求仍要返回相关但不全是重复频道的列表；刚上架且缺少交互的新视频也应有明确的处理路径。
+
+## 可以这样回答
+
+我会用召回、排序、重排三阶段逐步缩小候选，再把多目标权重和探索预算显式写出来。比如从 $10^{8}$ 件物品里选 10 条，无法在线对全库逐一做复杂交叉；先用便宜的多路召回保留候选，再用更重的排序模型。YouTube 双塔、Meta 信息流 / DLRM、Amazon 首页、Microsoft Feed 都涉及这类设计。公开论文给出召回再排序的骨架，白板上还要说明候选规模、延迟和反馈循环。
+
+推荐关注长期体验，广告还涉及广告主预算，见 `design-ads-rank`。特征点查见 `design-feature-store`。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
@@ -64,7 +76,7 @@ sources:
 
 1. **召回。** 多路：双塔（用户塔 / 物品塔点积）、协同过滤、热门、图走几跳、编辑池。每路几百到几千，合并去重后 $O(10^{3})$。双塔用 ANN（HNSW / IVF）点查，用户塔在线算或缓存，物品塔离线灌索引。物品更新频率决定索引 SLO。
 2. **排序。** 交叉特征、序列、多模态侧信息，DLRM 式稀疏 embedding + MLP。打分必须在预算内，例如 50–80 ms 打完两千条。这里才用到交叉，召回阶段交叉会爆。
-3. **重排。** 多样性（同作者/同话题打压）、位置偏差修正、完整性规则、广告插入、探索槽位。规则在模型外面，不要把「政治敏感降权」默默塞进一个隐式 label。
+3. **重排。** 多样性（同作者/同话题打压）、position bias 修正、完整性规则、广告插入、探索槽位。规则在模型外面，不要把「政治敏感降权」默默塞进一个隐式 label。
 
 冷启动：新物品走内容塔 + 探索流量；新用户走上下文和热门，不要等交互矩阵长好再服务。
 
@@ -78,13 +90,13 @@ $$
 s = \sum_i w_i \hat{m}_i
 $$
 
-$w$ 由产品定，并在 A/B 里动，不在训练 损失（loss） 里偷偷改。完整性（暴力、误导）是约束不是奖励：超过阈值直接不可露出，不参与加权。位置偏差：用户总点第一条，用 IPS 或位置特征，否则模型学会「排前面的就是好的」。
+$w$ 由产品定，并在 A/B 里动，不在训练 损失（loss） 里偷偷改。完整性（暴力、误导）是约束不是奖励：超过阈值直接不可露出，不参与加权。position bias：用户总点第一条，用 IPS 或位置特征，否则模型学会「排前面的就是好的」。
 
 延迟反馈：完播、复购要小时到天。训练用窗口和重要性加权，serving 仍用当前特征。别把未来的完播漏进训练行，那是泄漏，线下怎好线上都会掉。
 
 探索：纯贪心会把新物品和长尾掐死，反馈环放大头部。给召回或重排一个明确探索预算（$\varepsilon$-greedy、Thompson、或单独探索配额），探索流量也要完整性过滤。短视 CTR 上升、周留存掉，是没探索或权重只认点击的典型症状。
 
-离线：召回 recall@$k$ / hit rate（注意随机切会泄漏，按时间切）；排序 AUC、logloss、校准；重排后的多样性、规则命中。线上：人均时长、互动、隐藏率、完整性事故、作者侧覆盖。校准差时，多目标加权没有物理意义，因为 $\hat{m}_i$ 不在同一尺度。
+离线：召回 recall@$k$ / hit rate（注意随机切会泄漏，按时间切）；排序 AUC、logloss、calibration；重排后的多样性、规则命中。线上：人均时长、互动、隐藏率、完整性事故、作者侧覆盖。calibration 差时，多目标加权没有物理意义，因为 $\hat{m}_i$ 不在同一尺度。
 
 失败模式：训练-serving 特征不一致（一个用实时计数、一个用 T+1）；popularity bias；物品塔索引落后，新内容永远进不了 ANN；重排规则和模型对着干，离线增益被规则吃光。Meta / Google 风格是你能指出反馈环，而不是再报一个模型名字。
 

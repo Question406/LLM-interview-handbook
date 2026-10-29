@@ -5,7 +5,8 @@ order: 4
 level: A
 title: LC 605 · 种花问题
 quick: >-
-  从左到右贪心：当前格为空、左右也为空（越界算空）就立刻种下并计数，够 $n$ 朵提前返回。能种就种不会让后面变差。时间 $O(m)$，额外空间 $O(1)$。
+  从左到右贪心：当前格为空、左右也为空（越界算空）就立刻种下并计数，够 $n$ 朵提前返回。能种就种不会让后面变差。时间 $O(m)$，额外空间
+  $O(1)$。
 tags:
   - Array
   - Greedy
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 605. Can Place Flowers
-    url: https://leetcode.com/problems/can-place-flowers/
+    url: 'https://leetcode.com/problems/can-place-flowers/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -73,7 +74,11 @@ def canPlaceFlowers(flowerbed: List[int], n: int) -> bool:
     for i in range(m):
         if count >= n:
             return True
-        if bed[i] == 0 and (i == 0 or bed[i - 1] == 0) and (i == m - 1 or bed[i + 1] == 0):
+        if (
+            bed[i] == 0
+            and (i == 0 or bed[i - 1] == 0)
+            and (i == m - 1 or bed[i + 1] == 0)
+        ):
             bed[i] = 1
             count += 1
     return count >= n
@@ -109,7 +114,7 @@ print("simple tests passed")
 
 时间 $O(m)$。额外空间 $O(1)$；参考代码拷了一份数组，是为了不改调用方的输入，面试里可以直接原地改。
 
-## 边界
+## Edge Cases
 
 - 两端格子越界那一侧视为空，所以 `[0]` 能种一朵。
 - $n = 0$ 时，不管花坛怎样都为真。

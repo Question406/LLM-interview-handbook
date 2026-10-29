@@ -4,7 +4,9 @@ section: binary-tree
 order: 1
 level: S
 title: LC 104 · 二叉树的最大深度
-quick: "用后序 DFS：空树返回 $0$，否则深度是 $1+\\max(\\text{左深},\\text{右深})$，层序 BFS 数层数也行。每个节点看一次，时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  用后序 DFS：空树返回 $0$，否则深度是 $1+\max(\text{左深},\text{右深})$，层序 BFS 数层数也行。每个节点看一次，时间
+  $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 104. 二叉树的最大深度
-    url: https://leetcode.cn/problems/maximum-depth-of-binary-tree/
+    url: 'https://leetcode.cn/problems/maximum-depth-of-binary-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -111,7 +113,7 @@ print("simple tests passed")
 
 每个节点只访问一次，时间 $O(n)$。额外空间是递归栈 $O(h)$，$h$ 是树高，最坏链状时是 $O(n)$。
 
-## 边界
+## Edge Cases
 
 空树直接返回 $0$。只有根一个节点时深度是 $1$。只有左链或只有右链的树，深度就等于节点数。
 
@@ -122,6 +124,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def minDepth(root):
     if root is None:

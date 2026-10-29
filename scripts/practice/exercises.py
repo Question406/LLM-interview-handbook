@@ -80,6 +80,24 @@ def load_exercise(book, question):
     if not handbook:
         raise ValueError("Unknown handbook")
     files = list((ROOT / "content/handbooks" / handbook["slug"] / "questions").glob(f"**/{question}.md"))
+    if not files:
+        # Collections keep original implementations in their canonical handbook.
+        references_path = ROOT / "content/handbooks" / handbook["slug"] / "question-refs.json"
+        if references_path.exists():
+            references = json.loads(references_path.read_text())
+            matches = [entry for entry in references if entry.get("question") == question]
+            if len(matches) == 1:
+                source_book = matches[0].get("book", "")
+                if not re.fullmatch(r"[a-z0-9-]+", source_book) or source_book == handbook["slug"]:
+                    raise ValueError("Invalid exercise source handbook")
+                source_entry = next((entry for entry in catalog if entry["slug"] == source_book), None)
+                if not source_entry:
+                    raise ValueError("Unknown exercise source handbook")
+                canonical = ROOT / "content/handbooks" / source_book / "questions"
+                if len(list(canonical.glob(f"**/{question}.md"))) != 1:
+                    raise ValueError("Referenced exercise must have one canonical source")
+                exercise = load_exercise(source_book, question)
+                return {**exercise, "book": handbook["id"]}
     if len(files) != 1:
         raise ValueError("Question source not found")
     source = files[0].read_text()

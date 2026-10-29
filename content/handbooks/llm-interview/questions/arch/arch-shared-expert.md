@@ -4,7 +4,10 @@ section: arch
 order: 203
 level: A
 title: Shared expert 和 routed expert 怎么分工？什么时候必须留 shared？
-quick: "Shared expert 对每个 token 都常开，承接大家都要的公共变换；routed expert 走 top-$k$，承接长尾专长。专家又多又小、$k/N$ 很小的细粒度 MoE 必须留 shared，否则公共知识要么被复制进所有专家，要么挤进少数热点。算账时总参数按全部专家计，激活 FLOPs 只算 shared $+k$ 路。"
+quick: >-
+  Shared expert 对每个 token 都常开，承接大家都要的公共变换；routed expert 走
+  top-$k$，承接长尾专长。专家又多又小、$k/N$ 很小的细粒度 MoE 必须留
+  shared，否则公共知识要么被复制进所有专家，要么挤进少数热点。算账时总参数按全部专家计，激活 FLOPs 只算 shared $+k$ 路。
 tags:
   - MoE
   - DeepSeek
@@ -12,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: DeepSeekMoE
-    url: https://arxiv.org/abs/2401.06066
+    url: 'https://arxiv.org/abs/2401.06066'
     type: primary
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
 ---
 
@@ -34,7 +37,7 @@ $$
 y=\sum_{s=1}^{n_{\mathrm{s}}}E_{s}^{\mathrm{shared}}(x)+\sum_{i\in\mathrm{top}k}g_{i}\,E_{i}^{\mathrm{routed}}(x).
 $$
 
-$E^{\mathrm{shared}}$ 每个 token 都算，没有门控，也不参加 top-$k$ 竞选。只有 $E^{\mathrm{routed}}$ 由 router 打分，V3 用 sigmoid 亲和度选出 $k$ 个，门控权重用未加 bias 的分数归一化，见 `arch-moe-noaux`。直觉上，共享支路学「大家都要的」变换（句法、通用语义、残差式的稠密 FFN），路由专家学领域、语种、格式里的长尾。
+$E^{\mathrm{shared}}$ 每个 token 都算，没有 gating，也不参加 top-$k$ 竞选。只有 $E^{\mathrm{routed}}$ 由 router 打分，V3 用 sigmoid 亲和度选出 $k$ 个，gating weights 用未加 bias 的分数 normalization，见 `arch-moe-noaux`。直觉上，共享支路学「大家都要的」变换（句法、通用语义、残差式的稠密 FFN），路由专家学领域、语种、格式里的长尾。
 
 DeepSeekMoE 还做了细粒度切分：把原来一个大 FFN 切成很多小专家，增加专家的组合数。切得越碎，越需要一条常开通道把公共计算拿走，不然 $k$ 路小专家拼不出稳定的稠密变换。V3 的量级是 1 个共享加 256 个路由，每个 token 再激活 8 个路由专家，所以激活的 FFN 是 $9$ 路，$257$ 个专家里只有这 9 个参与计算。
 
@@ -48,7 +51,7 @@ DeepSeekMoE 还做了细粒度切分：把原来一个大 FFN 切成很多小专
 
 ## 参数账和 FLOP 账要分开算
 
-常见的错是把「671B 总参数」当成每个 token 的 FLOPs。总参数里，所有 shared 和所有 routed 的 FFN 都占显存和 checkpoint；激活 FLOPs 只算 $n_{\mathrm{s}}+k$ 路，再加上注意力和路由的开销。把 256 个 routed 全乘进 $6ND$ 的 $N$，就是把稀疏模型当成稠密模型算了。反过来，只报激活参数、却拿总参数说「世界最大」，是方向相反的同一类错。
+常见的错是把「671B 总参数」当成每个 token 的 FLOPs。总参数里，所有 shared 和所有 routed 的 FFN 都占显存和 checkpoint；激活 FLOPs 只算 $n_{\mathrm{s}}+k$ 路，再加上 attention 和路由的开销。把 256 个 routed 全乘进 $6ND$ 的 $N$，就是把稀疏模型当成稠密模型算了。反过来，只报激活参数、却拿总参数说「世界最大」，是方向相反的同一类错。
 
 EP 的布局也不一样。routed 按专家切卡，token 要做 all-to-all；shared 每个 token 都要用，通常复制在每张卡上（或者只做 TP 切矩阵），不走 dispatch。面试时如果把 shared 也画进 EP 的 all-to-all，通信模式就画错了。通信和计算怎么重叠见 `sys-expert-parallel`。
 

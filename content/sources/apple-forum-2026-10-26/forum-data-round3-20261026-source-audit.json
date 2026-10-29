@@ -1,0 +1,39 @@
+{
+  "collectedAt": "2026-10-26",
+  "tags": ["AFM 专项 2026-10", "Apple 面经继续检索第三轮"],
+  "method": "Dedicated Chrome CUA extension tab 1006832505; focused search then direct candidate-page inspection",
+  "newQuestions": 0,
+  "reason": "No sufficiently specific new AFM/data/evaluation question was verified in the candidates inspected. Topic mentions and inaccessible search snippets were not reconstructed as interview questions.",
+  "candidates": [
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1159873-1-1.html",
+      "title": "想问下LLM evaluation的前景",
+      "publishedAtVisible": "2026-01-02 12:40:05",
+      "timeZone": "not stated",
+      "visibleScope": "Chrome main post fully visible, forum shows 0 replies",
+      "context": "Job/career discussion, not an interview-experience report; mentions Apple DS LLM-evaluation job-description keywords",
+      "observedContentSummary": "Author asks about the technical role and prospects of LLM evaluation; mentions automated pipelines, retrieval, human-in-the-loop and LLM-as-judge as job-description terms.",
+      "decision": "Exclude as a question source: no concrete question asked during an actual interview. Existing generic evaluation cards already cover the themes."
+    },
+    {
+      "url": "https://www.aced.io/experiences/apple-senior-product-manager-interview-6f4f3b?returnPath=%2Fguides%2Fapple-product-manager-interview%2Fexperiences",
+      "title": "Senior AI PM Interview Experience",
+      "platform": "Aced, formerly Exponent",
+      "publishedAtVisible": null,
+      "visibleScope": "Chrome shows title, role/level, general summary and a visible access gate; detailed interview contents not available without contribution or membership",
+      "context": "Apple Senior AI Product Manager; not AFM technical/data-role evidence",
+      "observedContentSummary": "Visible overview describes an engineering-heavy discussion of data, evals, architecture and production tradeoffs, but no specific technical problem details.",
+      "gateVisible": "Share your experience to unlock this interview experience / Become a member",
+      "searchSnippetBoundary": "Search results exposed more specific data-gap and production-evaluation questions, but those details were not visible in Chrome. They were not used to create a card or represented as verified interview questions.",
+      "decision": "Exclude from new technical question cards: different role, insufficient visible details, and detailed experience gated. No login, contribution, purchase, or access-control bypass attempted."
+    }
+  ],
+  "otherSearchFindings": [
+    {
+      "url": "https://jobs.apple.com/en-sg/details/200657934/data-scientist-synthetic-data-and-ml-evaluations-special-projects",
+      "kind": "Official job description, not interview evidence",
+      "decision": "Not counted as a candidate interview source or converted to realInterview questions."
+    }
+  ],
+  "previouslyReviewedThreadsAvoided": [1145559, 1141557, 1145563, 1170085, 1170122, 789348, 1165265, 1180339, 1084615, 1158691, 1041756, 1129820, 1149108, 950206, 1120533, 1150910, 1177713, 1176800]
+}

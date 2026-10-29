@@ -5,7 +5,8 @@ order: 22
 level: A
 title: 淘天 0403：哪些区间拼接后能被 3 整除？
 quick: >-
-  $10\equiv 1\pmod 3$，所以十进制数模 $3$ 等于数位和模 $3$，拼接时的移位也不改变余数。用前缀和算出每段的数位和 $p_r-p_{l-1}$，各段加起来看是否 $\equiv 0\pmod 3$ 就行。
+  $10\equiv 1\pmod 3$，所以十进制数模 $3$ 等于数位和模 $3$，拼接时的移位也不改变余数。用前缀和算出每段的数位和
+  $p_r-p_{l-1}$，各段加起来看是否 $\equiv 0\pmod 3$ 就行。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -143,7 +144,7 @@ print("simple tests passed")
 
 预处理 $O(n)$，每段询问 $O(1)$，总时间 $O(n+\sum t)$，空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 单段 `[1,n]` 就是整个数字；$t=0$ 的空拼接视为 $0$，能被 $3$ 整除（如果现场保证 $t\ge 1$，就不会出现）；全 `0` 是 $0$，输出 `YES`。
 

@@ -4,34 +4,47 @@ section: google
 order: 31
 level: A
 title: Google：多模态 SFT，交错图文、纯文本回退、灾难遗忘
-quick: "多模态 SFT 要把交错图文对话和纯文本回放混着训，避免模型只适应看图回答、损害原来的文本能力。数据里应包含中途插图、多图和撤图后的对话；解冻视觉塔或 LM 的范围，要结合细节识别和遗忘的验证结果决定。"
+quick: >-
+  多模态 SFT 要把交错图文对话和纯文本回放混着训，避免模型只适应看图回答、损害原来的文本能力。数据里应包含中途插图、多图和撤图后的对话；解冻视觉塔或 LM
+  的范围，要结合细节识别和遗忘的验证结果决定。
 tags:
   - Google
   - Multimodal
   - SFT
   - Forgetting
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Gemini — A Family of Highly Capable Multimodal Models
-    url: https://arxiv.org/abs/2312.11805
+    url: 'https://arxiv.org/abs/2312.11805'
     type: primary
-  - title: Gemini 1.5 — Unlocking multimodal understanding across millions of tokens of context
-    url: https://arxiv.org/abs/2403.05530
+  - title: >-
+      Gemini 1.5 — Unlocking multimodal understanding across millions of tokens
+      of context
+    url: 'https://arxiv.org/abs/2403.05530'
     type: primary
   - title: Flamingo — a Visual Language Model for Few-Shot Learning
-    url: https://arxiv.org/abs/2204.14198
+    url: 'https://arxiv.org/abs/2204.14198'
     type: secondary
   - title: PaliGemma — A versatile 3B VLM for transfer
-    url: https://arxiv.org/abs/2407.07726
+    url: 'https://arxiv.org/abs/2407.07726'
     type: secondary
 ---
 
+## 可以这样回答
+
 我会把交错图文对话和纯文本回放一起做 SFT，再根据验证结果决定解冻哪些模块。比如用户先聊三轮文字、再贴截图追问表里的数，训练样本就要覆盖这种顺序。Gemini 报告把后训练列为多模态对齐的一部分，但配比和解冻细节未公开；预训练交错见 `google-gemini-mm`，PaLI 多任务前缀见 `google-pali`。
 
-连接器时代的默认样本是：图像 token 前缀 + 一句问 + 一句答。真实产品是聊天：先纯文本三轮，再贴截图，再追问图里的数，中间还可能夹另一张图。序列形状是文本和视觉在 $T$ 维上拼成 $[B,\ T_{\mathrm{txt}}+T_{\mathrm{vis}},\ D]$。因果掩码仍从左到右，但指代要跨模态：「上面那张表的第三列」依赖位置和轮次边界，不是依赖 CLIP 相似度。图永远放开头，模型会学到错误先验：所有视觉条件都在 输入提示（prompt） 顶部。评测要包含中途插图、多图、图后纯文本追问。
+PaLI 用任务前缀（caption / VQA / OCR）也能做生成，但不等于对话。把前缀机直接当 chat 模型，会表现为会做题不会拒绝、不会追问缺的图。PaliGemma 公开定位是 transfer 底座，要聊天还得再 SFT。Flamingo 则几乎不靠 SFT 对话，靠交错 few-shot，见 `google-flamingo`。三种配方别并成一个「视觉对齐」。
+
+## 技术备查
+
+我会把交错图文对话和纯文本回放一起做 SFT，再根据验证结果决定解冻哪些模块。比如用户先聊三轮文字、再贴截图追问表里的数，训练样本就要覆盖这种顺序。Gemini 报告把后训练列为多模态对齐的一部分，但配比和解冻细节未公开；预训练交错见 `google-gemini-mm`，PaLI 多任务前缀见 `google-pali`。
+
+连接器时代的默认样本是：图像 token 前缀 + 一句问 + 一句答。真实产品是聊天：先纯文本三轮，再贴截图，再追问图里的数，中间还可能夹另一张图。序列形状是文本和视觉在 $T$ 维上拼成 $[B,\ T_{\mathrm{txt}}+T_{\mathrm{vis}},\ D]$。因果 mask 仍从左到右，但指代要跨模态：「上面那张表的第三列」依赖位置和 turn boundaries，不是依赖 CLIP 相似度。图永远放开头，模型会学到错误先验：所有视觉条件都在 prompt 顶部。评测要包含中途插图、多图、图后纯文本追问。
 
 PaLI 用任务前缀（caption / VQA / OCR）也能做生成，但不等于对话。把前缀机直接当 chat 模型，会表现为会做题不会拒绝、不会追问缺的图。PaliGemma 公开定位是 transfer 底座，要聊天还得再 SFT。Flamingo 则几乎不靠 SFT 对话，靠交错 few-shot，见 `google-flamingo`。三种配方别并成一个「视觉对齐」。
 
@@ -57,7 +70,7 @@ Serving 回退还要在格式层：没有图时不要留无意义的视觉占位
 
 补救优先级：先把文本回放比例提到掉点可接受（用验证曲线，不要背一个常数），再考虑冻底层、回放预训练文本。不要一掉点就加参数。评测集要固定：同一条 case 的带图版和不带图版都跑，防止「平均分」靠视觉题涨、文本题崩。
 
-视频 SFT 和图片 SFT 不能当一种。时间采样和预算见 `google-video-token`。只喂图片再问视频时间戳，是分布外。
+视频 SFT 和图片 SFT 不能当一种。时间 sampling 和预算见 `google-video-token`。只喂图片再问视频时间戳，是 out-of-distribution。
 
 常见误区是：把冻塔投影说成 Gemini 预训练；说做了多模态 SFT 所以纯文本一定更好；用 caption 分数当对话验收。
 

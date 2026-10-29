@@ -3,8 +3,11 @@ id: code-grad-clip
 section: coding
 order: 43
 level: A
-title: 手写 global-norm 梯度裁剪：总 L2、缩放系数、遇到 inf/nan 怎么办
-quick: "把所有参数梯度的 L2 合成一个标量 $n=\\sqrt{\\sum\\|g_i\\|_2^2}$，$n>\\texttt{max\\_norm}$ 时每个梯度都乘 $\\texttt{max\\_norm}/(n+\\varepsilon)$，否则不动。$n$ 不是有限值就把梯度清零、跳过这一步，别拿 NaN 去做除法。AMP 下必须先 unscale 再量 $n$。"
+title: 手写 global-norm gradient clipping：总 L2、缩放系数、遇到 inf/nan 怎么办
+quick: >-
+  把所有参数梯度的 L2 合成一个标量 $n=\sqrt{\sum\|g_i\|_2^2}$，$n>\texttt{max\_norm}$ 时每个梯度都乘
+  $\texttt{max\_norm}/(n+\varepsilon)$，否则不动。$n$ 不是有限值就把梯度清零、跳过这一步，别拿 NaN
+  去做除法。AMP 下必须先 unscale 再量 $n$。
 tags:
   - GradClip
   - Training
@@ -12,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
   - title: On the difficulty of training Recurrent Neural Networks
-    url: https://arxiv.org/abs/1211.5063
+    url: 'https://arxiv.org/abs/1211.5063'
     type: primary
 ---
 
@@ -42,7 +45,7 @@ params为空 -> 返回0
 
 ## 解题思路与参考答案
 
-Global-norm 梯度裁剪是把所有参数的梯度当成一个大向量，算一个总的 L2 范数 $n$；$n$ 超过 `max_norm` 时，所有梯度共用同一个系数 $\texttt{max\_norm}/(n+\varepsilon)$ 缩小，没超过就不动。$n$ 是 inf 或 nan 的话，就把梯度清零、跳过这一步。Llama 常见的设置是 `max_grad_norm=1.0`。
+Global-norm gradient clipping 是把所有参数的梯度当成一个大向量，算一个总的 L2 范数 $n$；$n$ 超过 `max_norm` 时，所有梯度共用同一个系数 $\texttt{max\_norm}/(n+\varepsilon)$ 缩小，没超过就不动。$n$ 是 inf 或 nan 的话，就把梯度清零、跳过这一步。Llama 常见的设置是 `max_grad_norm=1.0`。
 
 这题面试常和 AMP 连着问。容易写错成两种：按参数各自 clip，那是 clip-by-value 或者 per-tensor 裁剪；或者先 clip 再 unscale，阈值和真实的 $n$ 差了一个 scale。
 
@@ -57,6 +60,7 @@ $n$ 是一个标量，所有张量共用一个系数。先 `stack` 各张量自�
 
 ```python
 import torch
+
 
 def clip_grad_norm_(params, max_norm):
     grads = [p.grad for p in params if p.grad is not None]
@@ -83,8 +87,8 @@ $n$ 不是有限值时清梯度，是为了这一步的 Adam 状态不被 inf �
 
 ```python
 p1, p2 = torch.nn.Parameter(torch.zeros(1)), torch.nn.Parameter(torch.zeros(1))
-p1.grad, p2.grad = torch.tensor([3.]), torch.tensor([4.])
-torch.testing.assert_close(clip_grad_norm_([p1, p2], 1), torch.tensor(5.))
+p1.grad, p2.grad = torch.tensor([3.0]), torch.tensor([4.0])
+torch.testing.assert_close(clip_grad_norm_([p1, p2], 1), torch.tensor(5.0))
 torch.testing.assert_close(p1.grad, torch.tensor([0.6]))
 torch.testing.assert_close(p2.grad, torch.tensor([0.8]))
 assert clip_grad_norm_([], 1).item() == 0

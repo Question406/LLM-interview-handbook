@@ -4,7 +4,10 @@ section: tech-screen
 order: 14
 level: A
 title: CoderPad：HTML 去导航条，文本密度怎么写，什么时候才上 LLM 抽取？
-quick: "先用块级的文本密度和链接密度把导航、页脚这类模板块滤掉，这一步最便宜。按域统计抽取失败率，静态抽取失败的域再开 headless 渲染，仍失败才上 LLM 抽取。每页都调大模型成本高，抽取带来的变化也难追踪；用了 LLM 要记模型版本，抽出的正文照样过质量检查和评测污染检查。"
+quick: >-
+  先用块级的文本密度和链接密度把导航、页脚这类模板块滤掉，这一步最便宜。按域统计抽取失败率，静态抽取失败的域再开 headless 渲染，仍失败才上 LLM
+  抽取。每页都调 large model 成本高，抽取带来的变化也难追踪；用了 LLM 要记模型版本，抽出的正文照样过质量检查和 evaluation
+  contamination 检查。
 companies:
   - apple
 tags:
@@ -15,22 +18,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: Boilerplate Detection using Shallow Text Features (Kohlschütter et al.)
-    url: https://www.l3s.de/~kohlschuetter/publications/wsdm187-kohlschuetter.pdf
+    url: 'https://www.l3s.de/~kohlschuetter/publications/wsdm187-kohlschuetter.pdf'
     type: primary
   - title: Trafilatura
-    url: https://aclanthology.org/2021.acl-demo.15/
+    url: 'https://aclanthology.org/2021.acl-demo.15/'
     type: primary
   - title: Apple Intelligence Foundation Language Models Tech Report 2025
-    url: https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
+    url: >-
+      https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 给定已经从网页中提取出的块列表，剔除本题定义的导航、页脚和短按钮等样板内容，将剩余块拼成正文。不需要解析 HTML、启动浏览器或调用语言模型。
 
@@ -44,7 +48,7 @@ sources:
 
 成功返回 `(正文字符串, "ok")`；保留下来的正文词数少于 `min_tokens` 时返回 `(None, "too_short_or_nav")`。正文块按原顺序保留，块内只去除首尾空白，块间用两个换行连接。
 
-排除标签 `nav/footer/header/aside`；排除词数小于 8 且链接密度大于阈值的块；排除词数小于 5 且没有逗号的块。比较边界均按这里给出的严格小于或大于执行。输入字段保证合法。
+排除标签 `nav/footer/header/aside`；排除词数小于 8 且链接密度大于阈值的块；排除词数小于 5 且没有逗号的块。comparison operators 均按这里给出的严格小于或大于执行。输入字段保证合法。
 
 ### 示例
 
@@ -59,7 +63,7 @@ extract([Block("span","Read more",0,1)],min_tokens=5) -> (None,"too_short_or_nav
 
 我会先写一个只看浅层特征的抽取器：链接多、标点少、文本又短的块，大概率是导航条、按钮或页脚，直接扔掉。规则抽不出正文的域，再升级到 headless 渲染，还不行才考虑 LLM 抽取。
 
-抽取在预训练管线的最前面，也是脏数据的第一来源。比如一篇新闻页，顶上是「Home About Contact」，底下是「Copyright 2026, all rights reserved」，抽取器要是把这两段也当正文，cookie 墙和评论框就一起混进了训练文本。Kohlschütter 那篇已经说明浅层特征就能识别样板，Trafilatura 把这类规则做成了能直接跑的抽取器。CoderPad 上给一个打平的块列表就够了，不会让你解析完整浏览器。
+抽取在 pre-training pipeline 的最前面，也是脏数据的第一来源。比如一篇新闻页，顶上是「Home About Contact」，底下是「Copyright 2026, all rights reserved」，抽取器要是把这两段也当正文，cookie 墙和评论框就一起混进了训练文本。Kohlschütter 那篇已经说明浅层特征就能识别样板，Trafilatura 把这类规则做成了能直接跑的抽取器。CoderPad 上给一个打平的块列表就够了，不会让你解析完整浏览器。
 
 ## 链接密度和文本密度
 
@@ -110,9 +114,13 @@ def extract(blocks, min_tokens=40, max_link_density=0.5):
 测试覆盖正文保留、导航和按钮剥掉、中文逗号、除零这几种情况：
 
 ```python
-article = Block("p", "This is a long paragraph, with commas, " * 10, n_links=0, n_nodes=1)
+article = Block(
+    "p", "This is a long paragraph, with commas, " * 10, n_links=0, n_nodes=1
+)
 nav = Block("div", "Home About Contact", n_links=3, n_nodes=3)
-footer = Block("footer", "Copyright 2026, all rights reserved, " * 10, n_links=0, n_nodes=1)
+footer = Block(
+    "footer", "Copyright 2026, all rights reserved, " * 10, n_links=0, n_nodes=1
+)
 button = Block("span", "Read more", n_links=0, n_nodes=1)
 
 # 正文块保留，导航、footer 标签和短按钮被剥掉
@@ -133,33 +141,33 @@ assert density(Block("p", "你好，世界", n_links=0, n_nodes=1)) == (1, 0.0, 
 assert density(Block("p", "", n_links=2, n_nodes=0)) == (1, 2.0, 0)
 ```
 
-返回 `None` 的页面先隔离检查，别当作短文档混进训练集，PDF 扫描件、纯图片页也走同一个失败原因。这套规则有一个已知误伤：注释、代码块和表格的文本密度低，会被当成样板扔掉，所以文档站和 GitHub README 要按域关掉链接密度门，或者对 `tag in {pre, code, table}` 直接放行。复杂度是块数的线性一遍，成本几乎可以忽略。
+返回 `None` 的页面先隔离检查，别当作短文档混进 training set，PDF 扫描件、纯图片页也走同一个失败原因。这套规则有一个已知误伤：注释、代码块和表格的文本密度低，会被当成样板扔掉，所以文档站和 GitHub README 要按域关掉链接密度门，或者对 `tag in {pre, code, table}` 直接放行。复杂度是块数的线性一遍，成本几乎可以忽略。
 
 ## 什么时候升级到 headless 和 LLM
 
-默认用静态 HTML 加密度规则，成本最低。同时按域记录失败率，某个域有 40% 的页面抽空，就对这个域开 headless 渲染；AFM 2025 公开写了先 headless 渲染、再用 LLM 抽主内容，因为现代网站大量内容由 JS 生成。headless 之后仍然抽空，或者主内容藏在 JSON 里，才上 LLM 抽取。抽取模型的版本要写进 lineage，抽出来的正文还要过质量门和评测指纹，这部分在 `dt-pipeline-talk` 里讲。
+默认用静态 HTML 加密度规则，成本最低。同时按域记录失败率，某个域有 40% 的页面抽空，就对这个域开 headless 渲染；AFM 2025 公开写了先 headless 渲染、再用 LLM 抽主内容，因为现代网站大量内容由 JS 生成。headless 之后仍然抽空，或者主内容藏在 JSON 里，才上 LLM 抽取。抽取模型的版本要写进 lineage，抽出来的正文还要过 data quality checks 和评测指纹，这部分在 `dt-pipeline-talk` 里讲。
 
-一开始就对每页调 GPT-4o 抽取，会同时带来高成本、教师偏差和评测污染风险，版本追踪的负担也重。
+一开始就对每页调 GPT-4o 抽取，会同时带来高成本、teacher 偏差和 evaluation contamination 风险，版本追踪的负担也重。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert reason == "ok"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert reason == "ok"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
 **评论区留不留？**
-预训练通常扔掉。SFT 要用的论坛答疑是另一个桶，别拿网页样板门去筛它。
+pre-training 通常扔掉。SFT 要用的论坛答疑是另一个桶，别拿网页样板门去筛它。
 
-**多语言的逗号怎么处理？**
+**multilingual 的逗号怎么处理？**
 特征要按语言定义：中文用 `，`，日语用 `、`。这和 `dt-quality-filter-code` 是同一个教训。
 
-**抽取模型会不会泄漏评测？**
+**抽取模型会不会 leakage 评测？**
 会，所以它的输出照样要过 `dt-ngram-contam-code`。
 
 **这题和 Panel 上的网页抽取题有什么区别？**

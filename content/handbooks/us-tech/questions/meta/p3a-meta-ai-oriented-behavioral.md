@@ -3,8 +3,10 @@ id: p3a-meta-ai-oriented-behavioral
 section: meta
 order: 816
 level: A
-title: "Meta AI BQ：AI 工具协作与失败判断"
-quick: "选一个真实任务，先讲清 AI 帮了哪部分、你怎样验证结果，再讲一次它出错后你如何发现和补救。收益按审查、返工和运行成本都算进去后的总时间衡量；遇到模型处理不了的不变量，就要换方法。"
+title: Meta AI BQ：AI 工具协作与失败判断
+quick: >-
+  选一个真实任务，先讲清 AI
+  帮了哪部分、你怎样验证结果，再讲一次它出错后你如何发现和补救。收益按审查、返工和运行成本都算进去后的总时间衡量；遇到模型处理不了的不变量，就要换方法。
 companies:
   - meta
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Meta AI BQ：AI 工具协作与失败判断"
-    url: https://www.1point3acres.com/interview/problems/company/meta/ai-oriented-behavioral
+  - title: 1Point3Acres · Meta AI BQ：AI 工具协作与失败判断
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/meta/ai-oriented-behavioral
     type: secondary
 ---
 
@@ -26,7 +29,7 @@ sources:
 
 这一轮行为面的重点转向了 AI 工具的使用：你在工作中怎么用 AI，怎么判断它的输出对不对，遇到过哪些失败模式。
 
-> 来源：一亩三分地 Meta 题卡摘要（2026-10-18 读取），未核实完整题干或原帖，网站收录也不代表公司官方确认；公司内不同岗位之间不要互相套用，工具规则和轮次也会变化，历史题卡不保证未来流程。下面的演示回答是手册写的假想示例，不是候选人原话或真实经历。
+> 来源：一亩三分地 Meta 题卡摘要（2026-10-18 读取）；公司内不同岗位之间不要互相套用，工具规则和轮次也会变化，历史题卡不保证未来流程。下面的演示回答是手册写的假想示例。
 
 ## 思路
 
@@ -46,7 +49,7 @@ sources:
 
 模型给的实现对正常文本没问题，但它一看到反引号 run 的前半截就立即输出，后续的数据块再也没法纠正。这时我停止靠追加 prompt 修补，自己把状态收敛成 plain、inline、block 三种，反引号 run 等到能确定长度后再判定，并且对每一个可能的切分位置都跑一遍测试。
 
-之后 AI 继续用来枚举边界情况和给重构建议，但最终的行为以契约和测试为准。”
+之后 AI 继续用来枚举 edge cases 和给重构建议，但最终的行为以契约和测试为准。”
 
 ### 面试追问与参考回答
 

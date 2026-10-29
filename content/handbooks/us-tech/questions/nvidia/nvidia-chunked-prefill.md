@@ -4,30 +4,44 @@ section: nvidia
 order: 20
 level: A
 title: NVIDIA：chunked prefill 把长 prompt 切开和 decode 混部
-quick: "我会把长 prompt 分块，每轮先推进已有请求的 decode，再用剩余 token 预算处理输入块，避免长 prefill 让生成停顿。块要足够大以利用矩阵计算，也要小到满足 token 间隔，并对齐 KV 页；这仍是在同一套设备上混部。"
+quick: >-
+  我会把长 prompt 分块，每轮先推进已有请求的 decode，再用剩余 token 预算处理输入块，避免长 prefill
+  让生成停顿。块要足够大以利用矩阵计算，也要小到满足 token 间隔，并对齐 KV 页；这仍是在同一套设备上混部。
 tags:
   - NVIDIA
   - Chunked Prefill
   - TensorRT-LLM
   - Serving
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: SARATHI — Efficient LLM Inference by Piggybacking Decodes with Chunked Prefills
-    url: https://arxiv.org/abs/2308.16369
+  - title: >-
+      SARATHI — Efficient LLM Inference by Piggybacking Decodes with Chunked
+      Prefills
+    url: 'https://arxiv.org/abs/2308.16369'
     type: primary
   - title: Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve
-    url: https://arxiv.org/abs/2403.02310
+    url: 'https://arxiv.org/abs/2403.02310'
     type: primary
   - title: Long Sequences — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/latest/features/long-sequence.html
+    url: 'https://nvidia.github.io/TensorRT-LLM/latest/features/long-sequence.html'
     type: primary
-  - title: Paged Attention, IFB, and Request Scheduling — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
+  - title: 'Paged Attention, IFB, and Request Scheduling — TensorRT-LLM'
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
     type: primary
 ---
+
+## 可以这样回答
+
+Chunked prefill 把长输入切成块，每轮处理一块，同时推进其他请求的 decode，避免生成过程被长输入打断。比如完整 8k 输入占住 GPU 几百毫秒时，正在输出的请求就会明显停顿。大模型的 prefill 处理输入，decode 则每步生成一个新 token，分块让两类工作可以交替推进。vLLM 使用 chunked prefill 这个名称，TensorRT-LLM 称为 chunked context。Sarathi 和 Sarathi-Serve 讨论了这种减少生成停顿的调度方式。
+
+Prefill 中，一条序列的 $Q,K,V$ 都是 $[T_{\mathrm{in}}, D]$。输入长度增加时，矩阵乘法可以利用更多计算能力，但整轮执行也可能达到几十至几百毫秒。
+
+## 技术备查
 
 Chunked prefill 把长输入切成块，每轮处理一块，同时推进其他请求的 decode，避免生成过程被长输入打断。比如完整 8k 输入占住 GPU 几百毫秒时，正在输出的请求就会明显停顿。大模型的 prefill 处理输入，decode 则每步生成一个新 token，分块让两类工作可以交替推进。vLLM 使用 chunked prefill 这个名称，TensorRT-LLM 称为 chunked context。Sarathi 和 Sarathi-Serve 讨论了这种减少生成停顿的调度方式。
 
@@ -74,7 +88,7 @@ $U$ 太大时，单个输入块仍会让生成请求等待；$U$ 太小时，输
 混合批次的 token 数会变化，完整图较难捕获。常见做法是纯 decode 使用图，带输入块的批次用普通执行或分段图。
 
 **为什么需要分页 KV？**
-分块和动态批处理使各请求的缓存逐步增长。继续按最大长度连续预留，会重新引入浪费与碎片问题。
+分块和 dynamic batching 使各请求的缓存逐步增长。继续按最大长度连续预留，会重新引入浪费与碎片问题。
 
 **只有长文档，没有交互式生成呢？**
 分块仍可降低峰值工作集，但混合调度收益较小，可以考虑更大的 $U$ 或独立 prefill 池。

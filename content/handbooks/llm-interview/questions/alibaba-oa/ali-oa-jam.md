@@ -4,7 +4,9 @@ section: alibaba-oa
 order: 15
 level: S
 title: 淘天研发 0411：果酱平衡为什么是分组 DP + 前缀差值？
-quick: "每行能删一个前缀，目标是剩下的格子里 B 和 S 一样多。把 B 记为 +1、S 记为 -1，每行枚举切点得到「剩余差值、删除代价」，再用分组背包每行选一个方案，让总差值为 0、总代价最小。"
+quick: >-
+  每行能删一个前缀，目标是剩下的格子里 B 和 S 一样多。把 B 记为 +1、S 记为
+  -1，每行枚举切点得到「剩余差值、删除代价」，再用分组背包每行选一个方案，让总差值为 0、总代价最小。
 tags:
   - Alibaba
   - OA
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 淘天研发 2026.04.11 改编真题
-    url: https://www.nowcoder.com/discuss/872969146470887424
+    url: 'https://www.nowcoder.com/discuss/872969146470887424'
     type: secondary
 ---
 
@@ -112,7 +114,7 @@ def min_deletions(grid):
 def main():
     data = sys.stdin.read().split()
     n, m = int(data[0]), int(data[1])
-    grid = data[2:2 + n]
+    grid = data[2 : 2 + n]
     print(min_deletions(grid))
 
 
@@ -137,7 +139,7 @@ print("simple tests passed")
 
 状态 $O(n\cdot nm)$，每层转移 $O(nm\cdot m)$，总时间 $O(n^2 m^2)$，空间 $O(nm)$。现场如果是 $n,m\le 80$ 量级，可以通过。如果现场 $n=2$、$m$ 很大，可以改成对两行枚举切点，$O(m^2)$。
 
-## 边界
+## Edge Cases
 
 全删光是合法的，所以答案至多 $nm$；已经平衡、不必删时答案是 $0$。只有 `B` 且 $nm$ 为奇数时，即使删到只剩偶数个 `B` 也可能无法配平，DP 会自然得到 $-1$。
 

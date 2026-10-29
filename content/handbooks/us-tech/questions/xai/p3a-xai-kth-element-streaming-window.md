@@ -3,8 +3,10 @@ id: p3a-xai-kth-element-streaming-window
 section: xai
 order: 611
 level: A
-title: "xAI：有限内存时间窗第 k 大/小"
-quick: "静态数组我会选 quickselect 或大小为 k 的堆；时间窗则同时维护到期队列和按值排序的多重集，过期时两边各删一次。先确认边界、时间顺序和 k 越界规则；任意值域、任意输入速率却要求固定内存时，只能改为有误差约定的近似分位数。"
+title: xAI：有限内存时间窗第 k 大/小
+quick: >-
+  静态数组我会选 quickselect 或大小为 k 的堆；时间窗则同时维护到期队列和按值排序的多重集，过期时两边各删一次。先确认 input
+  constraints、时间顺序和 k 越界规则；任意值域、任意输入速率却要求固定内存时，只能改为有误差约定的近似分位数。
 companies:
   - xai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - xAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · xAI · kth-element-streaming-window"
-    url: https://www.1point3acres.com/interview/problems/company/xai/kth-element-streaming-window
+  - title: 1Point3Acres · xAI · kth-element-streaming-window
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/kth-element-streaming-window
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现时间滑动窗口内的精确第 k 小值查询，重复值按出现次数计数。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Window(width)` 的 width 为正数。`add(timestamp,value)` 加入数值，`kth(now,k)` 返回时间区间 `(now-width,now]` 内的第 k 小值，k 从 1 开始；k 不在当前元素数量范围内时返回 None。
 
@@ -50,7 +56,7 @@ kth(15,1)=None，因为时间 5 的元素也恰好过期。
 
 先在一个静态数组里找第 k 大（或第 k 小）的元素，然后扩展到数据流：数据带时间戳持续到达，要求随时查询最近 N 秒内数据的第 k 小，并讨论内存有限时怎么办。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -63,7 +69,7 @@ kth(15,1)=None，因为时间 5 的元素也恰好过期。
 
 过期时从有序结构里删掉对应的值。如果值域小（例如 0 到 1000 的整数），可以用计数桶或 Fenwick 树按前缀和找第 k 个；值域任意时用有序多重集或顺序统计树。
 
-我会先确认窗口边界、时间戳是否单调，以及 k 越界的返回值。若值域和输入速率都没有限制，固定内存就无法保证精确答案；这时改用 t-digest、KLL sketch 等近似分位数结构，并明确允许的误差。
+我会先确认 window boundaries、时间戳是否单调，以及 k 越界的返回值。若值域和输入速率都没有限制，固定内存就无法保证精确答案；这时改用 t-digest、KLL sketch 等近似分位数结构，并明确允许的误差。
 
 ## 完整编程练习（手册重构版）
 
@@ -90,7 +96,7 @@ w.kth(15, 1)  -> None    # 全部过期
 
 时间队列和有序列表始终保存完全相同的一组有效元素：加入时两边各加一份，过期时两边各删一份。删除有序列表时用 `bisect_left` 找到一个相等的值只删一次，所以重复值不会被一起删掉。
 
-每次 `add` 和 `kth` 都先把时钟推进到当前时间、清掉过期项，再做操作。这样无论哪种操作，看到的窗口边界都是同一个 $(now - width, now]$。
+每次 `add` 和 `kth` 都先把时钟推进到当前时间、清掉过期项，再做操作。这样无论哪种操作，看到的 window boundaries 都是同一个 $(now - width, now]$。
 
 ### 完整参考实现（Python 3）
 
@@ -141,7 +147,7 @@ class Window:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -152,6 +158,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 重复值各自计数
 window = Window(10)

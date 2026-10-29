@@ -3,37 +3,53 @@ id: google-block-attn
 section: google
 order: 24
 level: S
-title: Google：长序列注意力的 blockwise / ring IO，和 FlashAttention 什么关系
-quick: "FlashAttention 把 $QK^\\top$ tile 留在 SRAM，将 HBM 流量从 $O(T^2)$ 降到约 $O(T^2 d/M)$；Blockwise 降低层激活峰值，Ring 则把序列分到多设备。三者可以叠加，仍算精确注意力，训练 / prefill 与 decode 的布局也可以不同。"
+title: Google：长序列 attention 的 blockwise / ring IO，和 FlashAttention 什么关系
+quick: >-
+  FlashAttention 把 $QK^\top$ tile 留在 SRAM，将 HBM 流量从 $O(T^2)$ 降到约 $O(T^2
+  d/M)$；Blockwise 降低层激活峰值，Ring 则把序列分到多设备。三者可以叠加，仍算精确 attention，训练 / prefill 与
+  decode 的布局也可以不同。
 tags:
   - Google
   - Attention
   - Ring Attention
   - IO
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: FlashAttention — Fast and Memory-Efficient Exact Attention with IO-Awareness
-    url: https://arxiv.org/abs/2205.14135
+  - title: >-
+      FlashAttention — Fast and Memory-Efficient Exact Attention with
+      IO-Awareness
+    url: 'https://arxiv.org/abs/2205.14135'
     type: primary
   - title: Blockwise Parallel Transformer for Large Context Models
-    url: https://arxiv.org/abs/2305.19370
+    url: 'https://arxiv.org/abs/2305.19370'
     type: primary
   - title: Ring Attention with Blockwise Transformers for Near-Infinite Context
-    url: https://arxiv.org/abs/2310.01889
+    url: 'https://arxiv.org/abs/2310.01889'
     type: primary
-  - title: Gemini 1.5 — Unlocking multimodal understanding across millions of tokens of context
-    url: https://arxiv.org/abs/2403.05530
+  - title: >-
+      Gemini 1.5 — Unlocking multimodal understanding across millions of tokens
+      of context
+    url: 'https://arxiv.org/abs/2403.05530'
     type: primary
 ---
 
-FlashAttention、Blockwise Transformer 和 Ring Attention 可以叠加，分别处理芯片内 IO、层内激活和跨设备序列容量。它们仍在算精确注意力。比如长到百万 token 的训练或 prefill，即使单个 attention 核已省 IO，整层激活和 KV 仍可能超出单卡容量，还得继续分块、分设备。
+## 可以这样回答
 
-标准实现会物化 $S=QK^\top$，形状 $[T,T]$，占用 HBM，精确注意力计算量仍是 $\Theta(T^2 d)$。FlashAttention 把 $Q,K,V$ tile 留在 SRAM，TPU 对应 VMEM，用在线 softmax 避免把 $S$ 写回 HBM，反向重算 $P$。HBM 访问大约 $O(T^2 d^2/M)$，其中 $M$ 是片上容量。TPU 的 Splash / Pallas 也在优化同一层 IO。
+FlashAttention、Blockwise Transformer 和 Ring Attention 可以叠加，分别处理芯片内 IO、层内激活和跨设备序列容量。它们仍在算精确 attention。比如长到百万 token 的训练或 prefill，即使单个 attention 核已省 IO，整层激活和 KV 仍可能超出单卡容量，还得继续分块、分设备。
 
-Blockwise Parallel Transformer（Liu et al.）把序列切块，按块完成注意力后立即接 FFN / 残差，再处理下一块，减少整层 $[T, D]$ 注意力输出与 FFN 中间量同时驻留的峰值。块内仍可用 FlashAttention。
+标准实现会物化 $S=QK^\top$，形状 $[T,T]$，占用 HBM，精确 attention 计算量仍是 $\Theta(T^2 d)$。FlashAttention 把 $Q,K,V$ tile 留在 SRAM，TPU 对应 VMEM，用在线 softmax 避免把 $S$ 写回 HBM，反向重算 $P$。HBM 访问大约 $O(T^2 d^2/M)$，其中 $M$ 是片上容量。TPU 的 Splash / Pallas 也在优化同一层 IO。
+
+## 技术备查
+
+FlashAttention、Blockwise Transformer 和 Ring Attention 可以叠加，分别处理芯片内 IO、层内激活和跨设备序列容量。它们仍在算精确 attention。比如长到百万 token 的训练或 prefill，即使单个 attention 核已省 IO，整层激活和 KV 仍可能超出单卡容量，还得继续分块、分设备。
+
+标准实现会物化 $S=QK^\top$，形状 $[T,T]$，占用 HBM，精确 attention 计算量仍是 $\Theta(T^2 d)$。FlashAttention 把 $Q,K,V$ tile 留在 SRAM，TPU 对应 VMEM，用在线 softmax 避免把 $S$ 写回 HBM，反向重算 $P$。HBM 访问大约 $O(T^2 d^2/M)$，其中 $M$ 是片上容量。TPU 的 Splash / Pallas 也在优化同一层 IO。
+
+Blockwise Parallel Transformer（Liu et al.）把序列切块，按块完成 attention 后立即接 FFN / 残差，再处理下一块，减少整层 $[T, D]$ attention 输出与 FFN 中间量同时驻留的峰值。块内仍可用 FlashAttention。
 
 Ring Attention 再把序列分到设备上，每卡 $T/N$，本地保存自己的 $Q$，KV 块沿环转一圈，边接收边算 attention 并累加。每跳通信 $O((T/N) d)$，共 $N$ 跳，总量 $O(T d)$，与全量 all-gather 同阶，优势在于能与本地计算重叠，且单卡无需保存全 KV。块不够大或环上带宽不足，就可能从 HBM 容量受限变成 ICI 通信延迟受限。
 
@@ -41,7 +57,7 @@ Ring Attention 再把序列分到设备上，每卡 $T/N$，本地保存自己�
 
 Decode 的 $T_q=1$，没有完整 $[T,T]$ 分数矩阵，重点转向 KV 头数和 cache 量化。历史 KV 分在多卡时，每步小消息收集可能拖慢延迟，因此有系统 prefill 切序列、decode 收拢 KV 或按层流水。训练拓扑不能直接搬到 serving，单卡 HBM 也仍受随 $T$ 增长的 KV 与激活限制。
 
-稀疏窗、Linformer、线性注意力才是修改数学结构、可能把 FLOPs 降到近线性的路线，但不规则访存可能让实际耗时不如精确注意力 + Flash。Gemini 1.5 的公开百万 token 检索能力不说明只有一种实现，先解释精确 IO 栈，再按需求考虑稀疏或分层。窗口内的局部 $S$ 同样可以用 Flash，blockwise 本身不会把复杂度降成 $O(T)$。
+稀疏窗、Linformer、线性 attention 才是修改数学结构、可能把 FLOPs 降到近线性的路线，但不规则访存可能让实际耗时不如精确 attention + Flash。Gemini 1.5 的公开百万 token 检索能力不说明只有一种实现，先解释精确 IO 栈，再按需求考虑稀疏或分层。窗口内的局部 $S$ 同样可以用 Flash，blockwise 本身不会把复杂度降成 $O(T)$。
 
 ## 追问
 

@@ -5,20 +5,21 @@ order: 1
 level: A
 title: LC 374 · 猜数字大小
 quick: >-
-  在 $[1, n]$ 上标准二分：`guess(mid)` 返回 $-1$ 说明猜大了，收右端；返回 $1$ 说明猜小了，收左端；返回 $0$ 就是答案。时间 $O(\log n)$，额外空间 $O(1)$。
+  在 $[1, n]$ 上标准二分：`guess(mid)` 返回 $-1$ 说明猜大了，收右端；返回 $1$ 说明猜小了，收左端；返回 $0$
+  就是答案。时间 $O(\log n)$，额外空间 $O(1)$。
 tags:
   - Binary Search
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 374. Guess Number Higher or Lower
-    url: https://leetcode.com/problems/guess-number-higher-or-lower/
+    url: 'https://leetcode.com/problems/guess-number-higher-or-lower/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -126,7 +127,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，最多约 $31$ 次调用。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $n=1$ 时一次猜中。
 - 答案在两端（$1$ 或 $n$）时，闭区间写法能收敛到端点。

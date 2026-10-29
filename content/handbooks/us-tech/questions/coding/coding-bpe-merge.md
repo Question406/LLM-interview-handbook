@@ -3,24 +3,27 @@ id: coding-bpe-merge
 section: coding
 order: 7
 level: A
-title: 白板：BPE 训练一步 merge，词表膨胀；词尾标记写成 endofword 禁止 XML
-quick: "BPE 训练先统计相邻 pair，选最高频的一对，从左到右非重叠合并，记录顺序并让词表加 1。比如 a a a 的 pair 计数是 2，但一次只替换前两个；encode 回放固定 merge 表，词尾标记用 `endofword`。"
+title: 白板：BPE 训练一步 merge，vocabulary 膨胀；词尾标记写成 endofword 禁止 XML
+quick: >-
+  BPE 训练先统计相邻 pair，选最高频的一对，从左到右非重叠合并，记录顺序并让 vocabulary 加 1。比如 a a a 的 pair 计数是
+  2，但一次只替换前两个；encode 回放固定 merge 表，词尾标记用 `endofword`。
 tags:
   - 完整编程练习
   - Coding
   - BPE
   - Tokenizer
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Neural Machine Translation of Rare Words with Subword Units
-    url: https://arxiv.org/abs/1508.07909
+    url: 'https://arxiv.org/abs/1508.07909'
     type: primary
   - title: tiktoken
-    url: https://github.com/openai/tiktoken
+    url: 'https://github.com/openai/tiktoken'
     type: primary
 ---
 
@@ -28,11 +31,13 @@ sources:
 
 实现 BPE 训练中的一次合并操作，只选择一个相邻 token 对并在语料中替换。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `bpe_one_merge(corpus, merges)` 返回 `(new_corpus,new_merges)`。corpus 是 token 字符串列表的列表，每个内层列表表示独立词或序列，词结束标记若需要已包含在 token 中；merges 是已有合并对的有序列表。
 
-统计每个序列内部相邻 token 对的出现次数，包括相互重叠的出现，不跨序列边界。选择频次最高的一对，并列时选 Python 字符串二元组字典序较大的一对。仅将该获选对在每个序列中从左到右、不重叠地替换为两 token 拼接的字符串，并将获选对追加到历史。正常合并不修改输入；若没有任何相邻对，直接返回原 corpus、merges 对象。
+统计每个序列内部相邻 token 对的出现次数，包括相互重叠的出现，不跨 sequence boundaries。选择频次最高的一对，并列时选 Python 字符串二元组字典序较大的一对。仅将该获选对在每个序列中从左到右、不重叠地替换为两 token 拼接的字符串，并将获选对追加到历史。正常合并不修改输入；若没有任何相邻对，直接返回原 corpus、merges 对象。
 
 ### 示例
 
@@ -49,7 +54,7 @@ corpus = [["a","a","a"]], merges = []
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 标准库。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 标准库。
 
 ### 题面、接口与约束
 
@@ -102,7 +107,11 @@ def bpe_one_merge(corpus, merges):
         index = 0
         output = []
         while index < len(tokens):
-            if index + 1 < len(tokens) and tokens[index] == left and tokens[index + 1] == right:
+            if (
+                index + 1 < len(tokens)
+                and tokens[index] == left
+                and tokens[index + 1] == right
+            ):
                 output.append(merged)
                 index += 2  # 非重叠：跳过已合并的两个 token
             else:
@@ -120,7 +129,7 @@ def bpe_one_merge(corpus, merges):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -166,34 +175,34 @@ assert new_merges == [("q", "r"), ("a", "a")]
 
 ## 题怎么来的
 
-Sennrich et al. 2016 提出的 BPE 是 GPT / Claude 词表的前身。Anthropic 公开题库里有手写 tokenizer 的题；OpenAI 的 coding 环节也会问一步 merge 到底发生了什么。要讲清楚三件事：训练时合并谁、词表怎么增长、encode 为什么不能每步重新数频次。完整的 encode/decode 不变量见 `anthropic-bpe-tokenizer`。
+Sennrich et al. 2016 提出的 BPE 是 GPT / Claude vocabulary 的前身。Anthropic 公开题库里有手写 tokenizer 的题；OpenAI 的 coding 环节也会问一步 merge 到底发生了什么。要讲清楚三件事：训练时合并谁、vocabulary 怎么增长、encode 为什么不能每步重新数频次。完整的 encode/decode 不变量见 `anthropic-bpe-tokenizer`。
 
 白板上不要把词尾标记写成 XML 标签，手册的构建器会把它当成 HTML 吞掉；写成 `endofword` 或「词尾标记」。
 
-## 一步 merge：数 pair、合最高频、词表 +1
+## 一步 merge：数 pair、合最高频、vocabulary +1
 
 语料先切成符号序列。字符级 BPE 从单个字符出发，每个词末尾贴一个 `endofword`，这样 `cat` 和 `cater` 的前缀不会混在一起统计。字节级 BPE 从 0–255 这 256 个字节出发，任何输入都能表示，所以没有 unk。每一步做三件事：
 
 1. 统计所有相邻 pair 的频次（同一个词出现 $n$ 次，它的 pair 就乘以 $n$）；
 2. 选频次最高的 pair，平手时要有确定的 tie-break，比如字典序；
-3. 把这个 pair 合成一个新符号，词表大小加 1，并记下这次 merge 的顺序。
+3. 把这个 pair 合成一个新符号，vocabulary 大小加 1，并记下这次 merge 的顺序。
 
-同一个 pair 在不同轮的频次会变，因为上一轮的合并改变了它的邻居。所以每轮都要重数，不能拿初始的 pair 表一路合到底。达到目标词表大小或 merge 次数时停止。最终词表 = 基础符号 ∪ 每次 merge 产生的新符号。
+同一个 pair 在不同轮的频次会变，因为上一轮的合并改变了它的邻居。所以每轮都要重数，不能拿初始的 pair 表一路合到底。达到目标 vocabulary 大小或 merge 次数时停止。最终 vocabulary = 基础符号 ∪ 每次 merge 产生的新符号。
 
 ## Encode 不是再训练一遍
 
 上线后没有语料频次，只有一张冻结的 merge 表。Encode 的做法是：把词拆成基础符号，按训练时的 merge 顺序能合就合，直到没有任何一条 merge 能命中。常见的误区是在当前序列上每步重新找频次最高的 pair，那是在训练，不是 encode。
 
-在训练字符集上，`decode(encode(s))` 必须等于 `s`。空格规则要前后对称：GPT-2 把前导空格当成 token 的一部分，`"a b"` 和 `"ab"` 不能编成同一串 id。词表 id 一旦对外发布，重新训练时就不能打乱顺序，除非同时保存新旧 id 的映射。
+在训练字符集上，`decode(encode(s))` 必须等于 `s`。空格规则要前后对称：GPT-2 把前导空格当成 token 的一部分，`"a b"` 和 `"ab"` 不能编成同一串 id。vocabulary id 一旦对外发布，重新训练时就不能打乱顺序，除非同时保存新旧 id 的映射。
 
 ## 追问
 
-**词表为什么会膨胀？**
-每 merge 一次就多一个符号。目标 50k 的词表 ≈ 基础符号数 + merge 次数，并不是把整词全塞进去。
+**vocabulary 为什么会膨胀？**
+每 merge 一次就多一个符号。目标 50k 的 vocabulary ≈ 基础符号数 + merge 次数，并不是把整词全塞进去。
 **WordPiece / Unigram 有什么不同？**
-WordPiece 按合并后的似然增益选 pair；Unigram 是子词级的语言模型，从大词表往下剪。BPE 是确定性地按频次 merge。Claude 和 GPT 都属于 BPE 家族。
+WordPiece 按合并后的似然增益选 pair；Unigram 是子词级的语言模型，从大 vocabulary 往下剪。BPE 是确定性地按频次 merge。Claude 和 GPT 都属于 BPE 家族。
 **为什么要词尾标记？**
-没有它，词中间的 `st` 和词尾的 `st` 会共享统计；逐 token 解码时也分不清词的边界。写成 `endofword`，不要用 XML。
+没有它，词中间的 `st` 和词尾的 `st` 会共享统计；逐 token decoding 时也分不清 word boundaries。写成 `endofword`，不要用 XML。
 
 ## 相关题
 

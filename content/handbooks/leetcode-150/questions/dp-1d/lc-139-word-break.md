@@ -4,20 +4,22 @@ section: dp-1d
 order: 3
 level: A
 title: LC 139 · 单词拆分
-quick: "用前缀 DP：$dp[i]$ 表示前 $i$ 个字符能否拆成词典单词，$dp[0]$ 为真。对每个 $i$ 枚举切分点 $j$，$dp[j]$ 为真且 $s[j:i]$ 在词典里，$dp[i]$ 就为真。时间约 $O(n^2)$，可用最大词长截断内层。"
+quick: >-
+  用前缀 DP：$dp[i]$ 表示前 $i$ 个字符能否拆成词典单词，$dp[0]$ 为真。对每个 $i$ 枚举切分点 $j$，$dp[j]$ 为真且
+  $s[j:i]$ 在词典里，$dp[i]$ 就为真。时间约 $O(n^2)$，可用最大词长截断内层。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 139. 单词拆分
-    url: https://leetcode.cn/problems/word-break/
+    url: 'https://leetcode.cn/problems/word-break/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -50,7 +52,7 @@ sources:
 
 ## 题意
 
-给字符串 `s` 和单词表 `wordDict`，判断 `s` 能否用空格切成若干个词典单词，单词可以重复用。
+给字符串 `s` 和单 vocabulary `wordDict`，判断 `s` 能否用空格切成若干个词典单词，单词可以重复用。
 
 ## 思路
 
@@ -105,7 +107,7 @@ print("simple tests passed")
 
 时间 $O(n^2\cdot L)$，$L$ 是切片哈希的代价；额外空间 $O(n+|dict|)$。用最大词长截断内层，可以压到 $O(n\cdot maxlen)$。
 
-## 边界
+## Edge Cases
 
 `s` 本身就是一个词时，`j=0` 那次 `s[0:n]` 就在词典里，`dp[n]` 直接为真。词典词比 `s` 还长也不影响正确性，切片对不上而已，可以用最大词长把内层截断。完全拼不出时，除 `dp[0]` 外全是假，返回 `False`。
 
@@ -126,6 +128,7 @@ def wordBreakII(s, wordDict):
                 can[i] = True
                 break
     ans, path = [], []
+
     def dfs(i):
         if i == n:
             ans.append(" ".join(path))
@@ -135,6 +138,7 @@ def wordBreakII(s, wordDict):
                 path.append(s[i:j])
                 dfs(j)
                 path.pop()
+
     if can[0]:
         dfs(0)
     return ans

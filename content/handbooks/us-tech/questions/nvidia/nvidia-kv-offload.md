@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-KV 可以卸载，但正在 decode、每步都要读取的热 KV 应优先留在 HBM。TensorRT-LLM 的 `host_cache_size` 支持把待淘汰的 GPU 页移到 pinned host，命中时再搬回。官方 issue 说明原生路径使用 host DRAM；NVMe 或远端需要自己实现 KV connector，不能直接当成 GDS 开关。FlexGen 则通过 GPU、CPU 和磁盘之间的权重与缓存调度追求单卡吞吐，评估它时要和在线 decode 的 SLO 区分。
+KV 可以卸载，但正在 decode、每步都要读取的热 KV 应优先留在 HBM。TensorRT-LLM 的 `host_cache_size` 支持把待淘汰的 GPU 页移到 pinned host，命中时再搬回。官方 issue 说明原生路径使用 host DRAM；NVMe 或远端需要自己实现 KV connector，不能直接当成 GDS 开关。FlexGen 则通过 GPU、CPU 和磁盘之间的权重与缓存调度追求单卡 throughput，评估它时要和在线 decode 的 SLO 区分。
 
 ## 先算每一步搬 KV 要多久
 
@@ -58,7 +58,7 @@ TRT-LLM：`host_cache_size` 分配 pinned host 二级池；GPU 页按优先级�
 3. **卸载留给冷数据：** 共享 system prefix 的二级副本、刚结束但可能多轮接着来的会话、被抢占暂停的请求、disagg 里 prefill 节点做好等 decode 节点来拉的块。
 4. **NVMe** 只当「比重算 prefill 便宜的归档」。128k 会话的冷前缀可以落盘；当前生成那 4k 窗口不行。LMCache 一类社区方案走这条，TRT-LLM 要自己接 connector。
 
-常见误区是：把 FlexGen 的「单卡跑 175B、追求 token/s」搬到在线 chat。FlexGen 用大 batch、层间换入换出换吞吐，首个 token 的等待时间（TTFT） / TBT 不是目标。在线 IFB 每步都有活着的 $B$ 条序列，它们的 KV 全是热的，见 `nvidia-inflight-batch`。
+常见误区是：把 FlexGen 的「单卡跑 175B、追求 token/s」搬到在线 chat。FlexGen 用大 batch、层间换入换出换 throughput，首个 token 的等待时间（TTFT） / TBT 不是目标。在线 IFB 每步都有活着的 $B$ 条序列，它们的 KV 全是热的，见 `nvidia-inflight-batch`。
 
 和重算比较时，我会算实际要搬的字节数和能省下的 prefill。
 

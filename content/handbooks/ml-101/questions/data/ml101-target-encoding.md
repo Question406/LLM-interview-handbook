@@ -3,17 +3,20 @@ id: ml101-target-encoding
 section: data
 order: 7
 level: A
-title: "目标编码怎么避免标签泄漏？"
-quick: "先划分外层训练和验证，再在训练集内部做折外目标编码：每行只用其他折的标签统计。验证与测试使用整个外层训练集学到的映射；高基数和小样本类别还需平滑，时间或用户相关数据要按相应边界构造编码。"
+title: 目标编码怎么避免标签泄漏？
+quick: >-
+  先划分外层训练和验证，再在训练集内部做折外目标编码：每行只用其他折的标签统计。验证与测试使用整个外层训练集学到的映射；高基数和小样本类别还需平滑，时间或用户相关数据要按相应
+  split 构造 encoding。
 tags:
   - ML101
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: TargetEncoder"
-    url: https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.TargetEncoder.html
+  - title: 'scikit-learn: TargetEncoder'
+    url: >-
+      https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.TargetEncoder.html
     type: primary
 ---
 

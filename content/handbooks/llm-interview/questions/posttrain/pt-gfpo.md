@@ -28,7 +28,7 @@ GRPO 之后回答变长，不全是因为「更会思考」了。很多 token �
 
 ## 先滤，再算组优势
 
-同一道题采一个更大的组，过滤键常见两种：一种按长度，留下更短的正确（或更高分）的回复；一种按 token 效率 $R/|y|$，同样的分数，越短越值钱。过滤之后，只在剩下的回复上算 $\hat A_i=(R_i-\mu)/(\sigma+\epsilon)$。长度没进标量奖励，所以不会和正确率抢权重，也不会出现「长度惩罚把该写的证明写没了」。Adaptive Difficulty 变体按当前难度把探索预算多分给难题，和动态采样是同一类课程设计，见 `pt-dapo`、`data-rlvr-select`。
+同一道题采一个更大的组，过滤键常见两种：一种按长度，留下更短的正确（或更高分）的回复；一种按 token 效率 $R/|y|$，同样的分数，越短越值钱。过滤之后，只在剩下的回复上算 $\hat A_i=(R_i-\mu)/(\sigma+\epsilon)$。长度没进标量奖励，所以不会和正确率抢权重，也不会出现「长度惩罚把该写的证明写没了」。Adaptive Difficulty 变体按当前难度把探索预算多分给难题，和动态 sampling 是同一类课程设计，见 `pt-dapo`、`data-rlvr-select`。
 
 论文标题里那句 sample more to think less 就是它的取舍：训练时的实际耗时略涨，换来的是部署时的延迟下降。论文报告长度膨胀砍掉了一大截、准确率基本保住；具体数字随模型和题集变化，面试讲机制就行，别背百分比。
 
@@ -40,10 +40,10 @@ GRPO 之后回答变长，不全是因为「更会思考」了。很多 token �
 | --- | --- | --- |
 | DAPO overlong | 奖励 shaping | 超长软惩罚，截断不再一刀零分 |
 | 长度惩罚系数 | 标量 $R$ | 和任务分抢权重，容易提前收束 |
-| Long-to-short 蒸馏 | 监督信号 | 已经会的长 思维链（CoT，即分步推理过程） 压给学生，见 `pt-long-to-short-reasoning` |
+| Long-to-short distillation | 监督信号 | 已经会的长 chain of thought（CoT，即分步推理过程） 压给学生，见 `pt-long-to-short-reasoning` |
 | GFPO | 谁进梯度 | 组内先滤，优势仍只看任务 $R$ |
 
-Dr.GRPO 修的是 std 和长度归一化带来的估计偏置，见 `pt-drgrpo`；GFPO 修的是「正确但灌水」还能拿正优势。两者可以叠加使用。
+Dr.GRPO 修的是 std 和长度 normalization 带来的估计偏置，见 `pt-drgrpo`；GFPO 修的是「正确但灌水」还能拿正优势。两者可以叠加使用。
 
 ## 追问
 

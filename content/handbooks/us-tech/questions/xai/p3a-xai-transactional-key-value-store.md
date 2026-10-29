@@ -3,8 +3,10 @@ id: p3a-xai-transactional-key-value-store
 section: xai
 order: 609
 level: A
-title: "xAI：嵌套事务 KV：begin、commit 与 rollback"
-quick: "嵌套事务按栈处理，commit 只提交最内层，rollback 只丢当前层。完整副本版读写顶层；overlay 版只存改动，读取从内向外找，删除要写 tombstone，防止旧值从父层重新出现。"
+title: xAI：嵌套事务 KV：begin、commit 与 rollback
+quick: >-
+  嵌套事务按栈处理，commit 只提交最内层，rollback 只丢当前层。完整副本版读写顶层；overlay 版只存改动，读取从内向外找，删除要写
+  tombstone，防止旧值从父层重新出现。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · transactional-key-value-store"
-    url: https://www.1point3acres.com/interview/problems/company/xai/transactional-key-value-store
+  - title: 1Point3Acres · xAI · transactional-key-value-store
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/transactional-key-value-store
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现支持嵌套事务的键值存储，并提供快照和独立分支；不同事务层与分支间必须具有明确的数据隔离语义。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -58,7 +61,7 @@ b.get("a")                                     -> 3
 
 实现一个内存 KV 存储，支持 `get`、`set`、`delete`，并支持可以嵌套的事务：`begin` 开启一层，`commit` 提交，`rollback` 回滚。事务内的读要能看到本事务自己的写入。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 面试里更常被期待的是 overlay 写法：每层只记本事务改过的键，删除记一个 tombstone，读取从最内层往外查，遇到 tombstone 就当不存在。子事务提交时把改动和 tombstone 合并进父层，只有最外层提交才写进基础存储；回滚只丢当前层。
 
@@ -167,7 +170,7 @@ class KV:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -178,6 +181,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 嵌套事务：内层删除，回滚后恢复外层的值
 store = KV()

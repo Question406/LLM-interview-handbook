@@ -4,7 +4,10 @@ section: systems
 order: 61
 level: A
 title: 系统：生成用左填充，打分为什么会打到 prompt 上？
-quick: "生成的左填充和奖励模型的打分索引必须一起检查，分数要取在回答最后一个真实 token 上。变长 prompt 左填充后，不能沿用右填充的长度减一规则；要结合 attention mask、prompt 长度和回答边界定位。取到 prompt 上，奖励就可能与回答内容无关。"
+quick: >-
+  生成的左填充和 reward model 的打分索引必须一起检查，分数要取在回答最后一个真实 token 上。变长 prompt
+  左填充后，不能沿用右填充的长度减一规则；要结合 attention mask、prompt 长度和 response offsets 定位。取到
+  prompt 上，奖励就可能与回答内容无关。
 tags:
   - Post-train
   - Padding
@@ -12,18 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-24
+updatedAt: 2026-09-24T00:00:00.000Z
 sources:
   - title: RLHF-pipeline，左填充下奖励打到了 prompt token
-    url: https://github.com/TheYellowDuck/RLHF-pipeline
+    url: 'https://github.com/TheYellowDuck/RLHF-pipeline'
     type: primary
 ---
 
-左填充时，奖励模型要按回答的实际边界取分，不能直接沿用右填充的索引习惯。比如前面补了 pad，却只按真实长度减一定位，位置就可能落回 prompt。一个公开 RLHF 实现记录过生成用左填充、奖励打到 prompt 上的 bug，这道题据此整理；loss mask 见 `sys-eos-mask`。
+左填充时，reward model 要按 response endpoint 取分，不能直接沿用右填充的索引习惯。比如前面补了 pad，却只按真实长度减一定位，位置就可能落回 prompt。一个公开 RLHF 实现记录过生成用左填充、奖励打到 prompt 上的 bug，这道题据此整理；loss mask 见 `sys-eos-mask`。
 
-同一批里 prompt 长短不同。逐 token 生成（decode） 一步要一个矩形张量。把 pad 放在左边，各条已经写出的 token 在右边对齐，位置和 KV 的增长方向一致。右填充则每条的「下一个 token」不在同一列，不能一次采样。
+同一批里 prompt 长短不同。逐 token 生成（decode） 一步要一个矩形张量。把 pad 放在左边，各条已经写出的 token 在右边对齐，位置和 KV 的增长方向一致。右填充则每条的「下一个 token」不在同一列，不能一次 sampling。
 
-训练前向可以右填充。两条路径的 pad 方向不同是正常的。打分索引则要按对应路径的 padding 和回答边界重新计算。
+训练前向可以右填充。两条路径的 pad 方向不同是正常的。打分索引则要按对应路径的 padding 和 response offsets 重新计算。
 
 句尾是这条回答的最后一个非 pad、并且属于回答而不是 prompt 的位置。左填充时，序列开头的 pad 不算，prompt 的最后一个 token 也不算，除非奖励故意打在问题上。实现上用 attention mask 和 prompt 长度一起算，不要用 `logits[:, -1]`。
 

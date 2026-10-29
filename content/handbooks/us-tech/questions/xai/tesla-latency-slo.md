@@ -4,7 +4,9 @@ section: xai
 order: 8
 level: A
 title: Tesla：车载延迟 SLO，几乎不能凑 batch，和云端 LLM serving 差在哪
-quick: "车载推理跟相机与规划周期同步，同车多相机要一起处理，车辆 batch 几乎为 1。超时会让控制拿到过期结果，不能靠排队凑吞吐；预算要覆盖预处理、骨干、占用、规划和控制，并测试热降频下的尾延迟。"
+quick: >-
+  车载推理跟相机与规划周期同步，同车多相机要一起处理，车辆 batch 几乎为 1。超时会让控制拿到过期结果，不能靠排队凑
+  throughput；预算要覆盖预处理、骨干、占用、规划和控制，并测试热降频下的尾延迟。
 tags:
   - Tesla
   - Latency
@@ -13,19 +15,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Tesla AI Day 2022
-    url: https://www.youtube.com/watch?v=ODSJsviD_SU
+    url: 'https://www.youtube.com/watch?v=ODSJsviD_SU'
     type: primary
   - title: Tesla AI
-    url: https://www.tesla.com/AI
+    url: 'https://www.tesla.com/AI'
     type: primary
   - title: Tesla AI Day 2021
-    url: https://www.youtube.com/watch?v=j0z4FweCy4M
+    url: 'https://www.youtube.com/watch?v=j0z4FweCy4M'
     type: primary
-  - title: Orca — A Distributed Serving System for Transformer-Based Generative Models
-    url: https://www.usenix.org/conference/osdi22/presentation/yu
+  - title: >-
+      Orca — A Distributed Serving System for Transformer-Based Generative
+      Models
+    url: 'https://www.usenix.org/conference/osdi22/presentation/yu'
     type: primary
 ---
 
@@ -36,7 +40,7 @@ sources:
 来一帧就要在本周期内输出占用、车道和障碍，再送给控制。每辆车有自己的加速器，无法等另外 31 辆车凑成 batch=32；例如等 50ms 凑 32 车这样的策略就不适用。因此有下面这些约束：
 
 - Batch 几乎恒为 1（多相机是同一时刻的 $N_{\mathrm{cam}}$ 路，不是 $N_{\mathrm{car}}$ 个请求）。
-- 不能用排队换吞吐。队列 20ms 就是漏帧。漏帧比平均延迟更致命。
+- 不能用排队换 throughput。队列 20ms 就是漏帧。漏帧比平均延迟更致命。
 - 尾延迟就是安全。p50 好看、p99 抖，规划会在关键加塞上拿到过期占用。
 - 热和功耗是一等约束。芯片降频等于延迟 SLO 被物理改写。云端可以加机器，车上不能。
 
@@ -52,13 +56,13 @@ Occupancy 必须进规划周期，见 `tesla-occupancy-net`。Hydra 共享骨干
 | Batch | 同车多相机，$B_{\mathrm{car}}=1$ | 跨用户连续 batch |
 | 超时 | 漏帧 / 控制过期 | 排队、429、降级模型 |
 | 重试 | 基本不能「再推理一次」 | 可以重试或换副本 |
-| 目标 | 最坏情况延迟 | 吞吐 + p95 TTFT |
+| 目标 | 最坏情况延迟 | throughput + p95 TTFT |
 
 xAI 的 Grok serving 更接近表里的云端：通过并发增大 MoE 专家的 GEMM，见 `xai-grok-moe`。连续 batching 在这里适合作为对照，不能直接套到单车实时调度。
 
 车上能做的「并行」是流水：预处理下一帧、NPU 跑本帧、CPU 规划上一帧结果。这是时间重叠，不是请求级 batch。形状固定才好编译（TensorRT / 自研编译器），动态序列长度是云端的问题。
 
-验证时要看最坏延迟和热节流，不能用云端 p50 吞吐替代。等 8 帧再推理会改变观测时效。数据引擎的离线模型可以更重、采用较大 batch，和车载预算分别设计，见 `tesla-data-engine`。
+验证时要看最坏延迟和热节流，不能用云端 p50 throughput 替代。等 8 帧再推理会改变观测时效。数据引擎的离线模型可以更重、采用较大 batch，和车载预算分别设计，见 `tesla-data-engine`。
 
 ## 追问
 

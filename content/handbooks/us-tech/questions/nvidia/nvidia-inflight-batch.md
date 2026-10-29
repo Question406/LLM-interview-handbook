@@ -37,7 +37,7 @@ $B$ 条请求一起 generate，长度可能相差一个数量级。请求级调�
 
 1. **Padding。** 长度 20 和 200 坐一桌，短的每步都在算废行。
 2. **队头阻塞。** 先结束的行仍占计算槽和按 `max_seq_len` 预留的 KV，等到整桌散场。
-3. **Prefill 霸占。** 一条 8k 输入提示（prompt） 进来，整个静态 batch 要么等它算完，要么根本不和 decode 混。
+3. **Prefill 霸占。** 一条 8k prompt 进来，整个静态 batch 要么等它算完，要么根本不和 decode 混。
 
 GPU 看起来在做 $[B, D]\times[D, D]$，有的行已经 mask 掉。LLM 生成长度方差远大于分类模型，这类开销更明显。Triton 那种等几毫秒拼 `preferred_batch_size` 的动态 batch，解决的是「形状相同的一次 launch」，不是「每步换人」，见 `nvidia-triton-infer`。
 
@@ -49,9 +49,9 @@ GPU 看起来在做 $[B, D]\times[D, D]$，有的行已经 mask 掉。LLM 生成
 2. waiting 里能 admit 的新请求（显存还够、`max_batch_size` / `max_num_tokens` 没打满）插进来。新来的先走 context，老的走 generation。
 3. 组一次 ragged batch：packed token，不再为对齐 pad 到全局 max。Attention plugin 用 block table 做 gather，见 `nvidia-paged-kv`。
 
-吞吐提高，是因为 SM 和 HBM 主要处理这一步仍然有效的 token。静态 $B=32$ 里可能只有 8 条真在写；inflight 的瞬时 $B$ 一直贴着 KV 水位。NVIDIA 博客写过真实流量上 IFB 加 kernel 优化，H100 吞吐可以翻倍量级；面试用数量级，不要背具体倍数。
+throughput 提高，是因为 SM 和 HBM 主要处理这一步仍然有效的 token。静态 $B=32$ 里可能只有 8 条真在写；inflight 的瞬时 $B$ 一直贴着 KV 水位。NVIDIA 博客写过真实流量上 IFB 加 kernel 优化，H100 throughput 可以翻倍量级；面试用数量级，不要背具体倍数。
 
-Context 和 generation 同一步：输入预填充（prefill，即处理输入并建立缓存） 是算力墙，decode 是带宽墙。混在一起能填 decode 的计算空洞，但一条超长 context 仍可能把这一步的实际耗时拉长，每个 token 的生成间隔突然变长。这就是 chunked prefill 要切 prompt 的原因，见 `nvidia-chunked-prefill`。IFB 解决「人进出」；chunking 解决「一次 context 太大」。
+Context 和 generation 同一步：输入 prefill 是算力墙，decode 是带宽墙。混在一起能填 decode 的计算空洞，但一条超长 context 仍可能把这一步的实际耗时拉长，每个 token 的生成间隔突然变长。这就是 chunked prefill 要切 prompt 的原因，见 `nvidia-chunked-prefill`。IFB 解决「人进出」；chunking 解决「一次 context 太大」。
 
 ## 调度预算怎么和显存配合
 

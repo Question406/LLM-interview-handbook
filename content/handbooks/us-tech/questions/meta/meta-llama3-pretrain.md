@@ -4,7 +4,9 @@ section: meta
 order: 15
 level: S
 title: Meta：Llama 3 预训练公开故事——数据、退火、长上下文阶段怎么讲
-quick: "405B 的公开预训练分为三段：约 15.6T token 在 8k 窗口学习，约 800B token 分六段扩到 128k，最后用 40M token 退火到零学习率并上采样高质量数据。先学表示再扩长窗，可以控制二次注意力的计算成本；退火则另管末期学习率和数据质量。"
+quick: >-
+  405B 的公开预训练分为三段：约 15.6T token 在 8k 窗口学习，约 800B token 分六段扩到 128k，最后用 40M token
+  退火到零学习率并 upsampling 高质量数据。先学表示再扩长窗，可以控制二次 attention 的计算成本；退火则另管末期学习率和数据质量。
 tags:
   - Meta
   - Llama
@@ -13,23 +15,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: The Llama 3 Herd of Models
-    url: https://arxiv.org/abs/2407.21783
+    url: 'https://arxiv.org/abs/2407.21783'
     type: primary
   - title: Introducing Meta Llama 3
-    url: https://ai.meta.com/blog/meta-llama-3/
+    url: 'https://ai.meta.com/blog/meta-llama-3/'
     type: primary
   - title: Introducing Llama 3.1
-    url: https://ai.meta.com/blog/meta-llama-3-1/
+    url: 'https://ai.meta.com/blog/meta-llama-3-1/'
     type: primary
   - title: Llama 2 — Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
 ---
 
-Llama 3 Herd 论文把 405B 训练分为初始预训练、长上下文续训和退火。这样先在短窗中学表示，再支付长窗更高的注意力成本，最后用高质量数据和较低学习率收尾。8B / 70B 配方同类，具体数字应按公开报告的阶段和模型区分。
+Llama 3 Herd 论文把 405B 训练分为初始预训练、长上下文续训和退火。这样先在短窗中学表示，再支付长窗更高的 attention 成本，最后用高质量数据和较低学习率收尾。8B / 70B 配方同类，具体数字应按公开报告的阶段和模型区分。
 
 ## 初始预训练怎样分配数据和算力
 
@@ -37,22 +39,22 @@ Llama 3 Herd 论文把 405B 训练分为初始预训练、长上下文续训和�
 
 数据 mix 用知识分类器 + 小模型 scaling law 扫，不会「爬到什么训什么」。论文对外的最终配比大约是：一般知识 $50\%$、数学与推理 $25\%$、代码 $17\%$、多语言 $8\%$。网上娱乐类被下调；训练中途还加过非英语、数学、更新的网页，并下调后来判定为低质的子集。公开配比没有细化到每种语言各多少 T。
 
-过滤包括启发式、去重和模型质量评分，分类器的结果还用于决定哪些来源上采样或下采样。tokenizer 压缩（英语大约 $3.17\to 3.94$ 字符/token）让同样 $T$ 读到的字变多，这是数据题也是算力题。
+过滤包括启发式、去重和模型质量评分，分类器的结果还用于决定哪些来源 upsampling 或 downsampling。tokenizer 压缩（英语大约 $3.17\to 3.94$ 字符/token）让同样 $T$ 读到的字变多，这是数据题也是算力题。
 
-实现上这段就是标准 packed causal LM：文档拼进 $8\mathrm{k}$，next-token 交叉熵损失（CE）。文档边界和 mask 的坑见 `meta-pack-seq`。GQA 从 8B 起就在，见 `meta-llama-gqa`。
+实现上这段就是标准 packed causal LM：文档拼进 $8\mathrm{k}$，next-token cross entropy loss（CE）。document boundaries 和 mask 的坑见 `meta-pack-seq`。GQA 从 8B 起就在，见 `meta-llama-gqa`。
 
 ## 扩长窗与最后退火各改变什么
 
-注意力算力跟 $T^2$ 走，所以**不要一上来就训 128k**。405B 从 $8\mathrm{k}$ 起分六段加长，直到 $128\mathrm{k}$，这段大约 $800\mathrm{B}$ token。每段都要满足两个验收条件：
+attention 算力跟 $T^2$ 走，所以**不要一上来就训 128k**。405B 从 $8\mathrm{k}$ 起分六段加长，直到 $128\mathrm{k}$，这段大约 $800\mathrm{B}$ token。每段都要满足两个验收条件：
 
 1. 短上下文评测完全恢复；
 2. 该长度上 needle-in-a-haystack 全对。
 
-只报 haystack、短任务还没回来，就是过拟合到长窗相位。RoPE 侧公开做法是提高 `rope_theta` 并在目标长度上继续训；别只在推理时改 `max_position_embeddings`。社区 NTK / YaRN 是另一条旋钮，见 `meta-yarn-ntk`。
+只报 haystack、短任务还没回来，就是 overfitting 到长窗相位。RoPE 侧公开做法是提高 `rope_theta` 并在目标长度上继续训；别只在推理时改 `max_position_embeddings`。社区 NTK / YaRN 是另一条旋钮，见 `meta-yarn-ntk`。
 
-长窗阶段仍是预训练目标，还没进入监督微调（SFT）。序列变长后，激活显存和 attention 实际耗时一起涨，训练栈要跟着改 packing、checkpoint、wrap 粒度，见 `meta-fsdp-llm`。
+长窗阶段仍是预训练目标，还没进入 SFT。序列变长后，激活显存和 attention 实际耗时一起涨，训练栈要跟着改 packing、checkpoint、wrap 粒度，见 `meta-fsdp-llm`。
 
-长窗完成后，最后 **$40\mathrm{M}$ token**（注意是 M 不是 B）：学习率线性收到 $0$，窗仍是 $128\mathrm{k}$，数据改成上采样非常高质量的来源，尤其代码和数学。最后对退火期间的 checkpoint 做 Polyak 平均，得到预训练权重。
+长窗完成后，最后 **$40\mathrm{M}$ token**（注意是 M 不是 B）：学习率线性收到 $0$，窗仍是 $128\mathrm{k}$，数据改成 upsampling 非常高质量的来源，尤其代码和数学。最后对退火期间的 checkpoint 做 Polyak 平均，得到预训练权重。
 
 他们还用退火实验测试小数据集的效果：在训到一半的 8B 上，用 $40\mathrm{B}$ token 把学习率收到 $0$，新数据占 $30\%$、原 mix 占 $70\%$，判断是否值得加入正式训练。这比每次都做 scaling law 便宜。
 
@@ -63,10 +65,10 @@ Llama 3 Herd 论文把 405B 训练分为初始预训练、长上下文续训和�
 ## 追问
 
 **为什么不全程 128k？**
-自注意力二次，早训长窗会把 FLOPs 浪费在还没学好的表示上。先 8k 把知识装进去，再分段加窗。
+self-attention 二次，早训长窗会把 FLOPs 浪费在还没学好的表示上。先 8k 把知识装进去，再分段加窗。
 **15.6T 和 Llama 2 的 2T 怎么比？**
-量级差一截，再叠加词表、GQA、数据过滤。不要只说「数据多了就强」。
+量级差一截，再叠加 vocabulary、GQA、数据过滤。不要只说「数据多了就强」。
 **Polyak 平均和 EMA 的差别？**
 论文写的是退火阶段 checkpoint 平均。面试说「末期多份权平均，减抖动」，不要发明系数。
 **和后训练的关系？**
-预训练产出 base；SFT / 直接偏好优化（DPO） / 合成数据是另一段，见 `meta-synth-sft`。Code 专家是从主 run 分叉再继续训，见 `meta-continual-pt`。
+预训练产出 base；SFT / DPO / 合成数据是另一段，见 `meta-synth-sft`。Code 专家是从主 run 分叉再继续训，见 `meta-continual-pt`。

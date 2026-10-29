@@ -3,8 +3,9 @@ id: p3a-perplexity-todo-list-for-ai
 section: design
 order: 601
 level: A
-title: "Perplexity：AI ToDoList：依赖、就绪与失败传播"
-quick: "同时维护任务依赖和反向依赖图：所有前置完成才就绪，完成时检查直接后继，失败时沿反向边传播到全部未结束后代。只允许依赖已有任务可保证无环；若允许补加边，就要逐次做环检测。"
+title: Perplexity：AI ToDoList：依赖、就绪与失败传播
+quick: >-
+  同时维护任务依赖和反向依赖图：所有前置完成才就绪，完成时检查直接后继，失败时沿反向边传播到全部未结束后代。只允许依赖已有任务可保证无环；若允许补加边，就要逐次做环检测。
 companies:
   - ai-labs
 tags:
@@ -16,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · todo-list-for-ai"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/todo-list-for-ai
+  - title: 1Point3Acres · Perplexity · todo-list-for-ai
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/todo-list-for-ai
     type: secondary
 ---
 
@@ -27,7 +29,7 @@ sources:
 
 实现带依赖关系的 AI 任务清单。任务完成或失败时，其后续任务的可执行状态应按依赖关系变化。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -51,7 +53,7 @@ add("d", ["b"])                       -> d 一开始就是 "failed"
 
 给 AI agent 设计一个 ToDo 列表：先实现任务的基本状态流转（待做、进行中、完成），再加上任务之间的依赖关系，并且在某个任务失败时，把依赖它的下游任务级联标记为失败。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -96,8 +98,8 @@ class Tasks:
     """
 
     def __init__(self):
-        self.state = {}     # task_id -> 状态字符串
-        self.deps = {}      # task_id -> 它依赖的任务集合
+        self.state = {}  # task_id -> 状态字符串
+        self.deps = {}  # task_id -> 它依赖的任务集合
         self.children = {}  # task_id -> 直接依赖它的任务集合（反向边）
 
     def _require(self, task_id):
@@ -173,7 +175,7 @@ class Tasks:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -184,6 +186,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 链式依赖 a -> b -> c：a 完成后只有 b 变 ready
 tasks = Tasks()
@@ -220,11 +223,11 @@ tasks.finish("right")
 assert tasks.snapshot()["join"] == "ready"
 
 # 非法操作
-expect_value_error(tasks.add, "root")              # 重复 id
-expect_value_error(tasks.add, "x", ["missing"])    # 依赖不存在
-expect_value_error(tasks.start, "root")            # 已完成的任务不能再 start
-expect_value_error(tasks.finish, "join")           # ready 还没 start
-expect_value_error(tasks.start, "missing")         # 未知任务
+expect_value_error(tasks.add, "root")  # 重复 id
+expect_value_error(tasks.add, "x", ["missing"])  # 依赖不存在
+expect_value_error(tasks.start, "root")  # 已完成的任务不能再 start
+expect_value_error(tasks.finish, "join")  # ready 还没 start
+expect_value_error(tasks.start, "missing")  # 未知任务
 ```
 
 ### 复杂度与追问

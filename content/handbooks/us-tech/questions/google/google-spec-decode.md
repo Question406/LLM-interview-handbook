@@ -3,37 +3,51 @@ id: google-spec-decode
 section: google
 order: 18
 level: S
-title: Google：投机解码怎么保证无损，和 Medusa / EAGLE 差在哪
-quick: "草稿模型先提 $\\gamma$ 个 token，目标模型一次前向并行算出这些位置的概率，再按 $p/q$ 接受前缀，拒绝时从修正分布采样，就能保持原模型的输出分布。加速取决于接受长度和草稿成本。Medusa 和 EAGLE 把草稿生成放在共享主干的头或特征空间里，具体验证方式还要分别看。"
+title: Google：speculative decoding 怎么保证无损，和 Medusa / EAGLE 差在哪
+quick: >-
+  草稿模型先提 $\gamma$ 个 token，目标模型一次前向并行算出这些位置的概率，再按 $p/q$ 接受前缀，拒绝时从修正分布
+  sampling，就能保持原模型的输出分布。加速取决于接受长度和草稿成本。Medusa 和 EAGLE
+  把草稿生成放在共享主干的头或特征空间里，具体验证方式还要分别看。
 tags:
   - Google
   - Speculative Decoding
   - Inference
   - Sampling
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Fast Inference from Transformers via Speculative Decoding
-    url: https://arxiv.org/abs/2211.17192
+    url: 'https://arxiv.org/abs/2211.17192'
     type: primary
   - title: Accelerating Large Language Model Decoding with Speculative Sampling
-    url: https://arxiv.org/abs/2302.01318
+    url: 'https://arxiv.org/abs/2302.01318'
     type: primary
-  - title: "Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads"
-    url: https://arxiv.org/abs/2401.10774
+  - title: >-
+      Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding
+      Heads
+    url: 'https://arxiv.org/abs/2401.10774'
     type: secondary
-  - title: "EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty"
-    url: https://arxiv.org/abs/2401.15077
+  - title: 'EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty'
+    url: 'https://arxiv.org/abs/2401.15077'
     type: secondary
 ---
 
-投机解码先让便宜的草稿模型提一串 token，再用目标模型一次前向并行验证；拒绝采样负责保证输出分布仍等于目标模型。比如草稿前几个 token 被接受，后面被拒，就保留已接受前缀、重新采样下一步。Google 的 Leviathan 等人和 DeepMind 的 Chen 等人几乎同时提出这类无损加速。它减少 decode 的逐步前向次数，长上下文的 $T^2$ 成本仍在，KV 带宽见 `google-gqa-mqa`。
+## 可以这样回答
 
-记目标分布 $p$（大模型），草稿分布 $q$（小模型或草稿头）。草稿先自回归写出 $x_1,\ldots,x_\gamma$。目标模型用这 $\gamma$ 个 token 做一次前向（带上已有前缀的 KV），得到每个位置的 $p(\cdot\mid \mathrm{prefix})$。
+speculative decoding 先让便宜的草稿模型提一串 token，再用目标模型一次前向并行验证；rejection sampling 负责保证输出分布仍等于目标模型。比如草稿前几个 token 被接受，后面被拒，就保留已接受前缀、重新 sampling 下一步。Google 的 Leviathan 等人和 DeepMind 的 Chen 等人几乎同时提出这类无损加速。它减少 decode 的逐步前向次数，长上下文的 $T^2$ 成本仍在，KV 带宽见 `google-gqa-mqa`。
 
-逐个位置做拒绝采样：抽 $u\sim U[0,1]$，若
+记目标分布 $p$（大模型），草稿分布 $q$（小模型或草稿头）。草稿先 autoregressive 写出 $x_1,\ldots,x_\gamma$。目标模型用这 $\gamma$ 个 token 做一次前向（带上已有前缀的 KV），得到每个位置的 $p(\cdot\mid \mathrm{prefix})$。
+
+## 技术备查
+
+speculative decoding 先让便宜的草稿模型提一串 token，再用目标模型一次前向并行验证；rejection sampling 负责保证输出分布仍等于目标模型。比如草稿前几个 token 被接受，后面被拒，就保留已接受前缀、重新 sampling 下一步。Google 的 Leviathan 等人和 DeepMind 的 Chen 等人几乎同时提出这类无损加速。它减少 decode 的逐步前向次数，长上下文的 $T^2$ 成本仍在，KV 带宽见 `google-gqa-mqa`。
+
+记目标分布 $p$（大模型），草稿分布 $q$（小模型或草稿头）。草稿先 autoregressive 写出 $x_1,\ldots,x_\gamma$。目标模型用这 $\gamma$ 个 token 做一次前向（带上已有前缀的 KV），得到每个位置的 $p(\cdot\mid \mathrm{prefix})$。
+
+逐个位置做 rejection sampling：抽 $u\sim U[0,1]$，若
 
 $$
 u \le \min\bigl(1,\, p(x_i)/q(x_i)\bigr)
@@ -43,41 +57,41 @@ $$
 
 实际耗时：原来每步一次大模型前向；现在每 $\gamma$ 个草稿位一次大模型前向，外加草稿自己的代价 $c$（相对大模型）。期望加速大致是 $(1+\mathrm{E}[\text{接受长度}]) / (c + \gamma\text{ 的摊销})$。评估时应实际测量平均接受长度。$q$ 很接近 $p$，接受长，加速明显；代码、模板、低温度下更有效。开放域、高温度、事实性长尾，草稿动不动被拒，加速趋近 1，还可能更慢。
 
-实现不变量：拒绝之后 KV cache 必须滚回接受前缀。只改输出文本、不改 cache，后续全错。这和连续批处理绑在一起，白板要提一句。
+实现不变量：拒绝之后 KV cache 必须滚回接受前缀。只改输出文本、不改 cache，后续全错。这和 continuous batching 绑在一起，白板要提一句。
 
-经典配置：另训 / 另蒸馏一个同词表小模型当 $q$。词表必须对齐，否则 token 对不上。延迟上小模型也要能 batch，不然 $c$ 把红利吃光。蒸馏出草稿模型见 `google-distill-llm`。
+经典配置：另训 / 另 distillation 一个同 vocabulary 小模型当 $q$。vocabulary 必须对齐，否则 token 对不上。延迟上小模型也要能 batch，不然 $c$ 把红利吃光。distillation 出草稿模型见 `google-distill-llm`。
 
 自投机族不另跑一座小模型：
 
-- Medusa：在已有 LM 的最后隐状态上加若干额外头，并行猜 $t+2,t+3,\ldots$。常配树状注意力，一次验证多条草稿前缀。训练多是后加头，不是从头改预训练目标。
-- EAGLE：草稿发生在特征空间：用上一层隐状态加 token 嵌入，跑一个便宜的自回归头，再映射回词表。直觉是「下一 token 的不确定性在特征里比在 token 里更好预测」。
-- Meta 的 multi-token 头是预训练就加多步 交叉熵损失（CE），推理再拿去投机，概念同类，训练阶段更早。
+- Medusa：在已有 LM 的最后隐状态上加若干额外头，并行猜 $t+2,t+3,\ldots$。常配树状 attention，一次验证多条草稿前缀。训练多是后加头，不是从头改预训练目标。
+- EAGLE：草稿发生在特征空间：用上一层隐状态加 token 嵌入，跑一个便宜的 autoregressive 头，再映射回 vocabulary。直觉是「下一 token 的不确定性在特征里比在 token 里更好预测」。
+- Meta 的 multi-token 头是预训练就加多步 cross entropy loss（CE），推理再拿去投机，概念同类，训练阶段更早。
 
-比较这些方案时，我会检查：草稿计算图是否共享主干、验证是否仍用原 $p$、是否还做拒绝采样（无损）还是直接 argmax 拼上去（有损）。产品若能接受轻微分布漂移，有损会更快；Google 论文主叙事是无损。别把三个名字背成一种 kernel。
+比较这些方案时，我会检查：草稿计算图是否共享主干、验证是否仍用原 $p$、是否还做 rejection sampling（无损）还是直接 argmax 拼上去（有损）。产品若能接受轻微分布漂移，有损会更快；Google 论文主叙事是无损。别把三个名字背成一种 kernel。
 
-和「并行采样」别混：那是同时抽 $N$ 条完整样本做投票，见 `google-cot-reason`，付的是 $N$ 倍 decode。投机是同一条生成轨迹上少跑大模型步数。
+和「并行 sampling」别混：那是同时抽 $N$ 条完整样本做投票，见 `google-cot-reason`，付的是 $N$ 倍 decode。投机是同一条生成轨迹上少跑大模型步数。
 
-说投机改变了 $p$，那叫蒸馏或投机训练，不是这篇算法。说 $\gamma$ 越大越快：后面的草稿条件更远离 $p$，接受率掉，$\gamma$ 有最优不是单调。说 TPU 上不好做：验证步是标准前向，TPU 友好；难的是 decode 步 $B$ 小、草稿模型也要占 MXU，见 `google-tpu-llm`。
+说投机改变了 $p$，那叫 distillation 或投机训练，不是这篇算法。说 $\gamma$ 越大越快：后面的草稿条件更远离 $p$，接受率掉，$\gamma$ 有最优不是单调。说 TPU 上不好做：验证步是标准前向，TPU 友好；难的是 decode 步 $B$ 小、草稿模型也要占 MXU，见 `google-tpu-llm`。
 
 ## 追问
 
 **温度怎么进公式？**
-$p$ 和 $q$ 都是加温之后的分布。两边温度不一致，校正不再对应你真正的采样策略。
+$p$ 和 $q$ 都是加温之后的分布。两边温度不一致，校正不再对应你真正的 sampling 策略。
 
-**草稿必须同词表吗？**
-经典算法要同词表。跨词表要先对齐 token 边界，工程上几乎当新问题。
+**草稿必须同 vocabulary 吗？**
+经典算法要同 vocabulary。跨 vocabulary 要先对齐 token boundaries，工程上几乎当新问题。
 
 **和 beam 的差别？**
-Beam 是搜索多条假设；投机是用便宜假设加速采样，默认仍是一条链。
+Beam 是搜索多条假设；投机是用便宜假设加速 sampling，默认仍是一条链。
 
 **失败模式？**
 接受率随域漂。代码高、闲聊低。上线要按任务监控平均接受长度，不要只报离线 HumanEval 加速比。
 
 ## 相关题
 
-- [[coding-spec-accept]]：把 $\min(1,p/q)$ 接受和残差重采样写成代码，并测输出分布服从 $p$。
+- [[coding-spec-accept]]：把 $\min(1,p/q)$ 接受和残差 resampling 写成代码，并测输出分布服从 $p$。
 - [[p3a-cursor-speculative-decoding-acceptance]]：Cursor 的编程题，要求写出完整的草稿、验证循环。
 - [[nvidia-spec-medusa]]：专讲 Medusa 和 EAGLE 的草稿结构，比本卡的一节更细。
 - [[meta-multi-token]]：多 token 预测的额外头也能当自投机草稿，从训练目标那一侧讲。
-- [[sys-spec-sys]]：系统侧：草稿长度怎么选、拒绝后 KV 怎么回滚、吞吐怎么测。
+- [[sys-spec-sys]]：系统侧：草稿长度怎么选、拒绝后 KV 怎么回滚、throughput 怎么测。
 - [[apple-spec-edge]]：端侧版本，回本条件和草稿该放在哪块芯片上。

@@ -3,8 +3,11 @@ id: fund-adv-norm-bias
 section: fundamentals
 order: 151
 level: S
-title: Advantage 减均值、除标准差、按长度归一化，分别改了什么目标？
-quick: "三步改的东西不一样。减均值（常数或 state baseline）不改策略梯度期望，只降方差；除 $\\sigma$ 会放大低方差的题，等于按题重新加权，改了目标；按回复长度平均让每条序列等权，全局 token 平均让每个 token 等权。Dr.GRPO / DAPO 争的就是后两层，没有脱离目标的「正确归一化」。"
+title: Advantage 减均值、除标准差、按长度 normalization，分别改了什么目标？
+quick: >-
+  三步改的东西不一样。减均值（常数或 state baseline）不改 policy gradient 期望，只降方差；除 $\sigma$
+  会放大低方差的题，等于按题重新加权，改了目标；按回复长度平均让每条序列等权，全局 token 平均让每个 token 等权。Dr.GRPO / DAPO
+  争的就是后两层，没有脱离目标的「正确 normalization」。
 tags:
   - Advantage
   - GRPO
@@ -13,16 +16,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Understanding R1-Zero-Like Training — A Critical Perspective (Dr.GRPO)
-    url: https://arxiv.org/abs/2503.20783
+    url: 'https://arxiv.org/abs/2503.20783'
     type: primary
   - title: DAPO — Decoupled Clip and Dynamic sAmpling Policy Optimization
-    url: https://arxiv.org/abs/2503.14476
+    url: 'https://arxiv.org/abs/2503.14476'
     type: primary
   - title: Proximal Policy Optimization Algorithms
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: secondary
 ---
 这三步要分开看：减均值是合法的 baseline，只降方差；除标准差和 loss 按什么单位平均，都在改不同样本对目标的权重。OpenRLHF / veRL 里默认的 `adv = (adv - mean) / std` 常被当成「标准无偏预处理」，其实只有前一半是。Dr.GRPO 的价值就在于指出 normalization 本身就是目标的一部分，见 `pt-drgrpo`。
@@ -31,11 +34,11 @@ sources:
 
 ## 减均值：合法 baseline，或者「相对这个 batch」
 
-只依赖 state / 输入提示（prompt）的均值，比如同题组均值或价值评估模型（critic）的 $V(s)$，属于 `fund-pg-baseline`，期望不变。有限样本里组均值含自身，会带来 $O(1/G)$ 的收缩，见 `fund-finite-sample-baseline`。
+只依赖 state / prompt 的均值，比如同题组均值或价值评估模型（critic）的 $V(s)$，属于 `fund-pg-baseline`，期望不变。有限样本里组均值含自身，会带来 $O(1/G)$ 的收缩，见 `fund-finite-sample-baseline`。
 
 全局 batch 减一个数，就是常数 baseline，仍然无偏。代价是同一条高分回答放进「全是高分的 batch」里优势会变小，训练稳了，但跨实验的 advantage 曲线就不能比绝对值。
 
-如果对已经是 $A=Q-V$ 的量再减一次均值：$A$ 已经在 state 上 centered 的话，这一步几乎只影响数值；如果不同输入提示混在一起减，等于把题与题之间的绝对难度又抹掉一层。
+如果对已经是 $A=Q-V$ 的量再减一次均值：$A$ 已经在 state 上 centered 的话，这一步几乎只影响数值；如果不同 prompt 混在一起减，等于把题与题之间的绝对难度又抹掉一层。
 
 PPO 实现里常见对当前 mini-batch 的 advantage 做 whitening。减均值这一半问题不大，危险在紧接着的除 $\sigma$。
 
@@ -74,5 +77,5 @@ $$
 **组内 $A$ 加起来等于 0，是不是说明无偏？**
 只说明做了中心化。无偏问的是 $\mathbb{E}[\nabla\log\pi\cdot\hat A]$ 是否等于 $\nabla J$，跟组内和是不是 0 无关。
 
-**长度归一化能消掉 length bias 吗？**
+**长度 normalization 能消掉 length bias 吗？**
 消不掉，它只是定义了另一种 length weighting。先写清楚自己要的目标，再选归约方式。

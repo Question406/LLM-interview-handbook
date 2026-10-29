@@ -4,30 +4,45 @@ section: systems
 order: 10
 level: S
 title: 系统：专家并行，token 调度不均和 all-to-all
-quick: "专家并行让每张卡只保存一部分 expert，路由后先 all-to-all 发送 token，本地计算，再把输出送回原 rank 加权。它节省专家权重的单卡驻留，但动态通信和热点专家会拖慢整步。调容量、aux loss 和偏置时，要同时看质量与负载尾部。"
+quick: >-
+  专家并行让每张卡只保存一部分 expert，路由后先 all-to-all 发送 token，本地计算，再把输出送回原 rank
+  加权。它节省专家权重的单卡驻留，但动态通信和热点专家会拖慢整步。调容量、aux loss 和偏置时，要同时看质量与负载尾部。
 tags:
   - Google
   - NVIDIA
   - MoE
   - Expert Parallel
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Switch Transformers — Scaling to Trillion Parameter Models with Simple and Efficient Sparsity
-    url: https://arxiv.org/abs/2101.03961
+  - title: >-
+      Switch Transformers — Scaling to Trillion Parameter Models with Simple and
+      Efficient Sparsity
+    url: 'https://arxiv.org/abs/2101.03961'
     type: primary
-  - title: GShard — Scaling Giant Models with Conditional Computation and Automatic Sharding
-    url: https://arxiv.org/abs/2006.16668
+  - title: >-
+      GShard — Scaling Giant Models with Conditional Computation and Automatic
+      Sharding
+    url: 'https://arxiv.org/abs/2006.16668'
     type: primary
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
   - title: Mixtral of Experts
-    url: https://arxiv.org/abs/2401.04088
+    url: 'https://arxiv.org/abs/2401.04088'
     type: primary
 ---
+
+## 可以这样回答
+
+EP 按专家集合切卡，每张卡只保存一部分 expert，token 按路由结果发送过去计算，再送回原来的 rank。比如大部分 token 都选中同一卡上的专家，那张卡会同时承担更多通信和计算，其他卡也得等它。这是 Switch / GShard、Megatron-MoE、Mixtral 和 DeepSeek EP 都会面对的问题；与 dense 三维并行的区别见 `sys-3d-parallel`，Google 侧机制见 `google-gemini-moe`。
+
+Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。MoE 有 $E$ 个 expert，$E$ 可以远大于卡数。还用 TP 把每个 expert 复制到所有卡，显存吃不下。EP 的定义：**每张卡只存 $E/\mathrm{EP}$ 个 expert**，token 按路由结果搬家。
+
+## 技术备查
 
 EP 按专家集合切卡，每张卡只保存一部分 expert，token 按路由结果发送过去计算，再送回原来的 rank。比如大部分 token 都选中同一卡上的专家，那张卡会同时承担更多通信和计算，其他卡也得等它。这是 Switch / GShard、Megatron-MoE、Mixtral 和 DeepSeek EP 都会面对的问题；与 dense 三维并行的区别见 `sys-3d-parallel`，Google 侧机制见 `google-gemini-moe`。
 
@@ -38,7 +53,7 @@ Dense FFN 用 TP 把同一套 $W$ 按列/行切开，每层一次 all-reduce。M
 1. 本卡 router 算出 top-$k$ 目的 expert。
 2. Dispatch all-to-all：按目的 rank 把 hidden 发出去。消息长度随负载变，不是固定 $B\cdot T$。
 3. 本地 expert GEMM（内部还可以再套 TP）。
-4. Combine all-to-all：输出送回 token 原来的 rank，按门控权重加权。
+4. Combine all-to-all：输出送回 token 原来的 rank，按 gating weights 加权。
 
 通信量粗算 $2k\cdot T\cdot d$ 字节量级（dispatch + combine），外加变长索引。均值好看，尾部由 **收 token 最多的那张卡** 决定：它既算得多，all-to-all 也更堵。这和 dense all-reduce「每卡同样大的固定消息」完全不同。
 
@@ -50,9 +65,9 @@ Router 塌缩时，少数 expert 吃掉大部分 token。Switch 用容量因子�
 - TP：切单个 expert 内部矩阵，通信规则、适合 NVLink。
 - EP：切专家集合，通信是不规则 all-to-all。
 
-常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP 吞吐会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批。同批 dispatch 与该批 GEMM 有先后依赖，重叠要跨微批安排。
+常见拓扑：节点内 TP 乘 EP，跨节点 DP。EP 加大能放下更多 expert，但消息更碎、跳数更多；专家计算已经很小、通信占比过半时，再加 EP throughput 会掉。DeepSeek-V3 用专用 dispatch/combine 和计算重叠；不规则 all-to-all 和 GEMM 同微批有数据依赖，overlap 要切微批。同批 dispatch 与该批 GEMM 有先后依赖，重叠要跨微批安排。
 
-推理侧 输入预填充（prefill，即处理输入并建立缓存） 的 $T$ 大，all-to-all 有体积；逐 token 生成（decode） 每步 token 少，all-to-all 变成小消息延迟墙。所以 MoE serving 经常 prefill / decode 用不同 EP 度，或 decode 把 expert 复制一份换通信。不要把训练拓扑原样搬到 decode。
+推理侧 输入 prefill 的 $T$ 大，all-to-all 有体积；逐 token 生成（decode） 每步 token 少，all-to-all 变成小消息延迟墙。所以 MoE serving 经常 prefill / decode 用不同 EP 度，或 decode 把 expert 复制一份换通信。不要把训练拓扑原样搬到 decode。
 
 监控：tokens/s、all-to-all 等待、每 expert 的 token 直方图、P99 步时。只报平均 MFU 会掩盖热点卡在等。
 

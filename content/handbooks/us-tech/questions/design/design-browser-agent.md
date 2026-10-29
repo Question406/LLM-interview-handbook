@@ -4,31 +4,35 @@ section: design
 order: 19
 level: S
 title: 设计：浏览器 agent 的沙箱、确认与选择器脆弱
-quick: "浏览器 agent 要用隔离 profile，限制域名、下载和资源，把凭证留在宿主；下单、发信、改权限前展示关键参数并确认。定位优先用角色与可访问名称，再用文本或稳定截屏，CSS / XPath 容易受改版影响。每步留快照，并在冻结环境里评测。"
+quick: >-
+  浏览器 agent 要用隔离
+  profile，限制域名、下载和资源，把凭证留在宿主；下单、发信、改权限前展示关键参数并确认。定位优先用角色与可访问名称，再用文本或稳定截屏，CSS /
+  XPath 容易受改版影响。每步留快照，并在冻结环境里评测。
 tags:
   - Agent
   - Anthropic
   - OpenAI
   - Browser
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: WebArena — A Realistic Web Environment for Building Autonomous Agents
-    url: https://arxiv.org/abs/2307.13854
+    url: 'https://arxiv.org/abs/2307.13854'
     type: primary
   - title: Computer use (Anthropic)
-    url: https://www.anthropic.com/news/computer-use
+    url: 'https://www.anthropic.com/news/computer-use'
     type: primary
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -42,17 +46,25 @@ sources:
 
 ### 约束与交付物
 
-网页中的指令不能改变任务授权。需要说明会话与凭证边界、下载和本地文件访问范围、资源上限、错误动作恢复及端到端成功判定。
+网页中的指令不能改变任务授权。需要说明 session isolation 与 credential access rules、下载和本地文件访问范围、资源上限、错误动作恢复及端到端成功判定。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 用户要求“查找可取消的预订并准备取消”，系统可以查到记录并展示取消条款；未经所需确认，不能直接提交取消。网页按钮布局变化后也不能盲点旧坐标。
 
+## 可以这样回答
+
+我会先给浏览器一个隔离 profile 和有限动作集，再解决定位稳定性，并把有副作用的提交放在确认后执行。比如 A/B 改了 class，CSS 选择器可能点错按钮；视觉坐标也会受动画和分辨率影响，所以每次动作都要能回看当时的页面。Anthropic computer use、OpenAI 电脑/浏览器使用和 Microsoft Copilot 都涉及这些问题，WebArena 也说明真实站点的功能验证很难；这里是题型整理。通用控制见 `design-agent-harness`，评测非确定性见 `design-eval-agent`。
+
+模型动作集尽量小：点击、输入、滚动、等待、截屏。不要给「执行任意 JS」除非在更死的沙箱里。computer use 用截屏 + 坐标，避开 DOM，但坐标随分辨率和动画漂，要在稳定帧上点。
+
+## 技术备查
+
 ## 解题思路与参考答案
 
-我会先给浏览器一个隔离 profile 和有限动作集，再解决定位稳定性，并把有副作用的提交放在确认后执行。比如 A/B 改了 class，CSS 选择器可能点错按钮；视觉坐标也会受动画和分辨率影响，所以每次动作都要能回看当时的页面。Anthropic computer use、OpenAI 电脑/浏览器使用和 Microsoft Copilot 都涉及这些问题，WebArena 也说明真实站点的功能验证很难；这里是题型整理，不是某次现场逐字题。通用控制见 `design-agent-harness`，评测非确定性见 `design-eval-agent`。
+我会先给浏览器一个隔离 profile 和有限动作集，再解决定位稳定性，并把有副作用的提交放在确认后执行。比如 A/B 改了 class，CSS 选择器可能点错按钮；视觉坐标也会受动画和分辨率影响，所以每次动作都要能回看当时的页面。Anthropic computer use、OpenAI 电脑/浏览器使用和 Microsoft Copilot 都涉及这些问题，WebArena 也说明真实站点的功能验证很难；这里是题型整理。通用控制见 `design-agent-harness`，评测非确定性见 `design-eval-agent`。
 
 ## 先限制浏览器能访问和执行什么
 
@@ -90,14 +102,14 @@ def find_target(page, spec):
 
 评测还要控制站点本身的变化。
 
-WebArena 用功能正确性，不是 BLEU。线上站点会变、会弹广告、会按时间显示。发布闸门要用冻结镜像或录制回放，否则「成功率 +3%」可能是网站改了按钮文案。选择器过拟合某一个 DOM 也是污染。红队覆盖恶意页面文案，见 `align-red-team`、`align-mm-harm`（截屏里的指令）。
+WebArena 用功能正确性，不是 BLEU。线上站点会变、会弹广告、会按时间显示。release criteria 要用冻结镜像或录制回放，否则「成功率 +3%」可能是网站改了按钮文案。选择器 overfitting 某一个 DOM 也是污染。红队覆盖恶意页面文案，见 `align-red-team`、`align-mm-harm`（截屏里的指令）。
 
 ## 追问
 
 **为什么不让模型看完整 HTML？**
 太大、注入面大、还是会过时。无障碍树更短、更接近用户所见。
 **视觉点击是不是就稳了？**
-对改 class 稳，对动画、遮罩、响应式布局不稳。仍要确认框和预算。
+对改 class 稳，对动画、mask、响应式布局不稳。仍要确认框和预算。
 **已登录会话能不能复用用户的 Chrome？**
 攻击面是整个 cookie 罐。默认独立 profile + 最小 scope。
 **无限滚动列表怎么点第 50 项？**

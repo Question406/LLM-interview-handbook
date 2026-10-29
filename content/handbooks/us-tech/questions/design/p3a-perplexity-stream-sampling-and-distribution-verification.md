@@ -3,8 +3,10 @@ id: p3a-perplexity-stream-sampling-and-distribution-verification
 section: design
 order: 606
 level: A
-title: "Perplexity：Reservoir Sampling 与分布验证"
-quick: "用 reservoir sampling：先放前 k 项，第 i 项以 k/i 概率入池，均匀替换一个槽位，一遍扫描只需 O(k) 空间。均匀性用归纳法证明，分布验证则重复抽样，比较入选频率与理论概率。"
+title: Perplexity：Reservoir Sampling 与分布验证
+quick: >-
+  用 reservoir sampling：先放前 k 项，第 i 项以 k/i 概率入池，均匀替换一个槽位，一遍扫描只需 O(k)
+  空间。均匀性用归纳法证明，分布验证则重复抽样，比较入选频率与理论概率。
 companies:
   - ai-labs
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · stream-sampling-and-distribution-verification"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/stream-sampling-and-distribution-verification
+  - title: 1Point3Acres · Perplexity · stream-sampling-and-distribution-verification
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/stream-sampling-and-distribution-verification
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现对未知长度流的固定容量均匀抽样，并通过重复实验检查样本分布。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -50,7 +53,7 @@ reservoir(range(10), k=3, rng) 的一个可能结果 -> [7, 1, 4]
 
 数据流长度未知，只能扫描一遍，要在 O(k) 空间里均匀地无放回抽出 k 个元素（reservoir sampling）。写完之后还要说明怎么验证抽样结果确实近似均匀。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -112,7 +115,7 @@ def reservoir(stream, k, rng):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

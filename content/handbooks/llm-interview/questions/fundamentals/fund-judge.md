@@ -4,7 +4,10 @@ section: fundamentals
 order: 17
 level: S
 title: LLM-as-Judge 有哪些常见 Bias？怎么缓解？
-quick: "常见的有位置偏差、冗长偏差、偏爱特定文风或自己 / 同家族模型的输出，评分还会对提示词敏感。缓解从最便宜的 swap test 做起：交换顺序看结论是否翻转，再加随机位置、按维度打分、多评委，并用人工校准集和对抗样例检验。同一个 judge 不能直接当 RL 的唯一奖励。"
+quick: >-
+  常见的有 position bias、冗长偏差、偏爱特定文风或自己 / 同家族模型的输出，评分还会对 prompt 敏感。缓解从最便宜的 swap test
+  做起：交换顺序看结论是否翻转，再加随机位置、按维度打分、多评委，并用人工 calibration 集和对抗样例检验。同一个 judge 不能直接当 RL
+  的唯一奖励。
 tags:
   - Eval
   - LLM Judge
@@ -12,13 +15,13 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Judging LLM-as-a-Judge
     url: 'https://arxiv.org/abs/2306.05685'
     type: primary
 ---
-LLM-as-Judge 主要有三类偏差：位置、篇幅，以及偏爱「像自己」的输出，缓解的第一步是每次 pairwise 都交换顺序再评一遍。不处理这些偏差，拿 judge 的 win-rate 去排模型、筛数据，甚至当强化学习（RL）的奖励分数（reward），就是把评委自己的偏好当成了模型能力。Zheng et al. 的 MT-Bench / Chatbot Arena 工作已经把这些偏差写成了必须处理的工程问题。
+LLM-as-Judge 主要有三类偏差：位置、篇幅，以及偏爱「像自己」的输出，缓解的第一步是每次 pairwise 都交换顺序再评一遍。不处理这些偏差，拿 judge 的 win-rate 去排模型、筛数据，甚至当 RL 的奖励分数（reward），就是把评委自己的偏好当成了模型能力。Zheng et al. 的 MT-Bench / Chatbot Arena 工作已经把这些偏差写成了必须处理的工程问题。
 
 举个例子，两个回答 A 和 B，A 放前面时 judge 说 A 好，把 B 换到前面它又说 B 好，这说明它比的是顺序；再给 B 加一段内容重复的总结，分数涨了，说明它在奖励篇幅。
 
@@ -26,7 +29,7 @@ LLM-as-Judge 主要有三类偏差：位置、篇幅，以及偏爱「像自己�
 
 Position bias 是 pairwise 里 A / B 对调后结论翻转，有的模型稳定偏爱先出现的，有的偏爱后出现的。Verbosity bias 是更长、看起来更「完整」的答案被偏爱，哪怕事实更差、在灌水。Self / family preference 是 judge 偏爱同家族的语气、格式和推理套路；再叠上 style bias，标题、自信的措辞、列表排版会压过正确性。Prompt 稍微改一下，排名就会抖。
 
-这些偏差还会进数据：被抬高的长答案进了 SFT / DPO，下一轮模型更长、更像 judge，形成闭环。
+这些偏差还会进数据：被抬高的长答案进了 SFT / DPO，下一轮模型更长、更像 judge，形成 feedback loop。
 
 ## 最低成本的检验是 swap
 
@@ -43,7 +46,7 @@ Pointwise 能独立给出标量分，方便做回归和定阈值，但尺度会�
 ## 追问
 
 **Pairwise 一定比 pointwise 稳吗？**
-相对比较通常更容易，但有 position / order bias，必须做 swap。Pointwise 能量化、好定阈值，但尺度漂、跨题不可比。选哪种看你要排名还是要校准过的分数。
+相对比较通常更容易，但有 position / order bias，必须做 swap。Pointwise 能量化、好定阈值，但尺度漂、跨题不可比。选哪种看你要排名还是要 calibration 过的分数。
 
 **怎么测 verbosity bias？**
 构造内容等价、长度不同的 controlled pair，或者给同一答案加冗余段落，看分数是否随长度单调变好。长度匹配以后差距消失，就说明原先是在偏爱篇幅。

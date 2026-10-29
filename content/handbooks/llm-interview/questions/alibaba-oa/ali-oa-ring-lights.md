@@ -5,7 +5,8 @@ order: 3
 level: A
 title: 淘天/阿里国际实习笔试：环形黄蓝灯最大积分怎么做？
 quick: >-
-  每盏灯黄 / 蓝 / 不亮，相邻不能同色，首尾相连。我会固定第一盏的状态，拆成「首黄 / 首蓝 / 首不亮」三次线性 DP，最后丢掉尾灯与首灯同色的方案，三条取最大。
+  每盏灯黄 / 蓝 / 不亮，相邻不能同色，首尾相连。我会固定第一盏的状态，拆成「首黄 / 首蓝 / 首不亮」三次线性
+  DP，最后丢掉尾灯与首灯同色的方案，三条取最大。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 淘天/阿里国际 2025 实习笔试解析
-    url: http://www.jsqmd.com/news/1167387/
+    url: 'http://www.jsqmd.com/news/1167387/'
     type: secondary
 ---
 
@@ -24,7 +25,7 @@ sources:
 
 n 盏灯围成一圈，每盏可以不亮、亮黄色或亮蓝色。第 i 盏亮黄的得分为 x[i]，亮蓝的得分为 y[i]，不亮得分为 0。要求相邻两盏已亮的灯不能同色，最大化总得分。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -32,7 +33,7 @@ n 盏灯围成一圈，每盏可以不亮、亮黄色或亮蓝色。第 i 盏亮
 
 ### 输出与约束
 
-返回最大总分，允许全部不亮。不亮可以与任意状态相邻，包括另一盏不亮。n=1 时不对灯自身施加相邻限制；n=0 返回 0。接口与这些边界为本卡重构约定。
+返回最大总分，允许全部不亮。不亮可以与任意状态相邻，包括另一盏不亮。n=1 时不对灯自身施加相邻限制；n=0 返回 0。interface 与这些 edge-case conventions 为本卡重构约定。
 
 ### 示例
 
@@ -88,7 +89,7 @@ $$
 ```python
 import sys
 
-NEG = -10**30
+NEG = -(10**30)
 
 
 def linear_best(x, y, first_state):
@@ -128,8 +129,8 @@ def max_ring_score(x, y):
 def main():
     data = list(map(int, sys.stdin.read().split()))
     n = data[0]
-    x = data[1:1 + n]
-    y = data[1 + n:1 + 2 * n]
+    x = data[1 : 1 + n]
+    y = data[1 + n : 1 + 2 * n]
     print(max_ring_score(x, y))
 
 

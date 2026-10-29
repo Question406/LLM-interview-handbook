@@ -4,7 +4,9 @@ section: linked-list
 order: 4
 level: A
 title: LC 138 · 随机链表的复制
-quick: "用哈希表记「旧节点到新节点」，第一遍按 `next` 建副本，第二遍接 `next` 和 `random`，时间 $O(n)$，哈希空间 $O(n)$。想省掉哈希，可以三步交织复制，把副本插在原节点后面。"
+quick: >-
+  用哈希表记「旧节点到新节点」，第一遍按 `next` 建副本，第二遍接 `next` 和 `random`，时间 $O(n)$，哈希空间
+  $O(n)$。想省掉哈希，可以三步交织复制，把副本插在原节点后面。
 tags:
   - Linked List
   - Hash
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 138. 随机链表的复制
-    url: https://leetcode.cn/problems/copy-list-with-random-pointer/
+    url: 'https://leetcode.cn/problems/copy-list-with-random-pointer/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -65,7 +67,9 @@ from typing import List, Optional
 
 
 class Node:
-    def __init__(self, x: int, next: Optional["Node"] = None, random: Optional["Node"] = None):
+    def __init__(
+        self, x: int, next: Optional["Node"] = None, random: Optional["Node"] = None
+    ):
         self.val = int(x)
         self.next = next
         self.random = random
@@ -88,7 +92,9 @@ def to_pairs(head: Optional[Node]) -> List[List[Optional[int]]]:
         nodes.append(cur)
         cur = cur.next
     index = {id(n): i for i, n in enumerate(nodes)}
-    return [[n.val, index[id(n.random)] if n.random is not None else None] for n in nodes]
+    return [
+        [n.val, index[id(n.random)] if n.random is not None else None] for n in nodes
+    ]
 
 
 def copyRandomList(head: Optional[Node]) -> Optional[Node]:
@@ -140,7 +146,7 @@ print("simple tests passed")
 
 时间 $O(n)$。哈希写法额外空间 $O(n)$；交织复制额外空间 $O(1)$（不含新表）。
 
-## 边界
+## Edge Cases
 
 - 空表直接返回 `None`。
 - 单节点的 `random` 指向自己时，哈希里能查到它自己的副本。

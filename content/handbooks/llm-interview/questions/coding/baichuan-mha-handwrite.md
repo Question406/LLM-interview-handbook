@@ -3,8 +3,10 @@ id: baichuan-mha-handwrite
 section: coding
 order: 184
 level: A
-title: 百川智能二面：手写多头注意力时和 DeepSeek 练习卡差在哪？
-quick: "写法和 DeepSeek 那张练习卡一样：算 $QKV$，拆头，做缩放点积加 mask，再把各头拼回去。百川二面的差别在后面连着问 GQA/MHA 的区别和 DPO/PPO 公式，所以 Attention 要十分钟内写完主干，留时间给后面几题。"
+title: 百川智能二面：手写 multi-head attention 时和 DeepSeek 练习卡差在哪？
+quick: >-
+  写法和 DeepSeek 那张练习卡一样：算 $QKV$，拆头，做缩放点积加 mask，再把各头拼回去。百川二面的差别在后面连着问 GQA/MHA 的区别和
+  DPO/PPO 公式，所以 Attention 要十分钟内写完主干，留时间给后面几题。
 tags:
   - Baichuan
   - Attention
@@ -12,16 +14,16 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 百川大模型算法二面-日常实习
-    url: https://www.nowcoder.com/feed/main/detail/326e80fe4eb14fd58e9712ca2852ec1a
+    url: 'https://www.nowcoder.com/feed/main/detail/326e80fe4eb14fd58e9712ca2852ec1a'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-实现一个不带 bias、dropout 或 KV cache 的多头自注意力函数。输入是同一段序列的隐藏表示，以及已给定的四个投影矩阵；返回投影后的注意力输出。
+实现一个不带 bias、dropout 或 KV cache 的 multi-head self-attention 函数。输入是同一段序列的隐藏表示，以及已给定的四个投影矩阵；返回投影后的 attention 输出。
 
 ### 接口与张量
 
@@ -41,7 +43,7 @@ mha(...) -> 形状 [1,2,4] 的全零张量
 
 ## 解题思路与参考答案
 
-手写多头注意力的步骤和 DeepSeek 那张练习卡完全一样：算 $Q,K,V$，拆成多个头，做缩放点积加 mask，最后把各头拼回去，骨架见 `deepseek-mha-handwrite`、`pdd-attention-handwrite`。百川二面的差别在后面：紧接着会问 GQA、DPO/PPO，还有二分求根（见 `baichuan-sqrt-binary-search`、`baichuan-grpo-ppo-dpo`）。所以 Attention 要写得快、写得对，写成 `nn.MultiheadAttention` 一行是不算数的。
+手写 multi-head attention 的步骤和 DeepSeek 那张练习卡完全一样：算 $Q,K,V$，拆成多个头，做缩放点积加 mask，最后把各头拼回去，骨架见 `deepseek-mha-handwrite`、`pdd-attention-handwrite`。百川二面的差别在后面：紧接着会问 GQA、DPO/PPO，还有二分求根（见 `baichuan-sqrt-binary-search`、`baichuan-grpo-ppo-dpo`）。所以 Attention 要写得快、写得对，写成 `nn.MultiheadAttention` 一行是不算数的。
 
 最容易卡住的地方是 reshape，比如把 $[B,T,H,d_h]$ 和 $[B,H,T,d_h]$ 搞反，后面的 `view` 就全错了。我的习惯是先把形状写在旁边，再写公式。
 
@@ -55,6 +57,7 @@ $d_{\mathrm{model}}$ 要能被 $H$ 整除，$d_h=d_{\mathrm{model}}/H$。拆头�
 
 ```python
 import torch
+
 
 def mha(x, wq, wk, wv, wo, n_heads, mask=None):
     b, t, c = x.shape
@@ -74,7 +77,7 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
 
 ## 同一场连着问 DPO/PPO
 
-直接偏好优化（DPO）先把每个 token 的 logp 加总成整段回答的 logp，再算
+DPO 先把每个 token 的 logp 加总成整段回答的 logp，再算
 
 $$
 L=-\log\sigma\bigl(\beta(\log\pi_\theta(y_w)-\log\pi_\theta(y_l)-\log\pi_{\mathrm{ref}}(y_w)+\log\pi_{\mathrm{ref}}(y_l))\bigr).
@@ -92,7 +95,7 @@ PPO 的目标是 $\min(\rho A,\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)A)$
 x = torch.zeros(1, 2, 4)
 w = torch.eye(4)
 torch.testing.assert_close(mha(x, w, w, w, w, 2), x)
-x = torch.tensor([[[1., 0., 1., 0.], [0., 1., 0., 1.]]])
+x = torch.tensor([[[1.0, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 1.0]]])
 mask = torch.ones(2, 2, dtype=torch.bool).triu(1)
 a = mha(x, w, w, w, w, 2, mask)
 changed = x.clone()
@@ -122,4 +125,4 @@ MLA 压的是表示的维度，头数没少，见 `arch-mla`。百川如果只�
 
 ## 真题记录
 
-这题来自牛客候选人原帖：百川智能大模型算法日常实习二面，原帖没写面试时间，帖子发布于 2026-02-13，可信度 A。原话是 **“手写多头注意力机制”**；同一场还有 **“手写一下 dpo和ppo”**、**“手写梯度下降法的二分”**。
+这题来自牛客候选人原帖：百川智能大模型算法日常实习二面，原帖没写面试时间，帖子发布于 2026-02-13，可信度 A。原话是 **“手写 multi-head attention 机制”**；同一场还有 **“手写一下 dpo 和 ppo”**、**“手写梯度下降法的二分”**。

@@ -3,8 +3,10 @@ id: p3a-xai-parallel-integer-sort
 section: xai
 order: 617
 level: A
-title: "xAI：并行整数排序：分区、worker 和合并"
-quick: "我会把数组分成多块交给 worker 排序，再用 k 路归并得到全局升序，保留重复元素且不改输入。小数据可能被线程启动、复制和归并开销拖慢，CPython 的 GIL 也限制真实加速；换多进程或语言后仍要实际测量。"
+title: xAI：并行整数排序：分区、worker 和合并
+quick: >-
+  我会把数组分成多块交给 worker 排序，再用 k 路归并得到全局升序，保留重复元素且不改输入。小数据可能被线程启动、复制和归并开销拖慢，CPython
+  的 GIL 也限制真实加速；换多进程或语言后仍要实际测量。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · parallel-integer-sort"
-    url: https://www.1point3acres.com/interview/problems/company/xai/parallel-integer-sort
+  - title: 1Point3Acres · xAI · parallel-integer-sort
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/parallel-integer-sort
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现多线程整数排序接口，返回保留所有重复值的升序新列表，并支持线程数大于元素个数的情况。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -49,7 +52,7 @@ parallel_sort([2, 1], workers=8)       -> [1, 2]
 
 用多线程实现整数排序，不能只调用一次单线程的 `sort`。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -94,7 +97,7 @@ from math import ceil
 def split_chunks(nums, parts):
     """按 ceil(len / parts) 切块，最多 parts 块，只有最后一块可能更短。"""
     size = ceil(len(nums) / parts)
-    return [nums[start:start + size] for start in range(0, len(nums), size)]
+    return [nums[start : start + size] for start in range(0, len(nums), size)]
 
 
 def parallel_sort(nums, workers=4):
@@ -119,12 +122,13 @@ def parallel_sort(nums, workers=4):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 import random
+
 
 def expect_value_error(fn, *args):
     try:
@@ -132,6 +136,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 题面示例，含重复值
 assert parallel_sort([3, 1, 2, 1], 2) == [1, 1, 2, 3]

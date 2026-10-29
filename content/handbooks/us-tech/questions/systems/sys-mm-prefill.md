@@ -47,9 +47,9 @@ Batch 不齐出在三处：
 **占位符和 feature 对不齐。**
 模板说这张图占 256 个 token，encoder 却出了 1024，embedding 对不上，是正确性 bug，不是慢。调度切块时不要把一张图的视觉 token 从中间切开。Chunked prefill 的文本块可以切，图块不行，见 `sys-chunked-prefill`。
 
-口算：LLM 70B prefill 吃 $[T,d]\times[d,d]$；ViT 是另一套小得多的权重。Encoder 相对 LLM 往往更轻，但高清、多图、并发时 Conv / ViT 仍能占满 首个 token 的等待时间（TTFT）。默认把 encoder 跟 LLM 一起做 TP、切 encoder 权重，小 ViT 的 GEMM 更瘦、还要同步。vLLM 公开了 encoder 按图做 batch 维 DP、LLM 仍 TP 的旋钮。文档给过 TP$=8$ 大约一成 TTFT / 吞吐，未优化的 Conv3D 还能再挖一截。这项公开配置说明 encoder 和 LLM 可以采用不同并行方式。
+口算：LLM 70B prefill 吃 $[T,d]\times[d,d]$；ViT 是另一套小得多的权重。Encoder 相对 LLM 往往更轻，但高清、多图、并发时 Conv / ViT 仍能占满 首个 token 的等待时间（TTFT）。默认把 encoder 跟 LLM 一起做 TP、切 encoder 权重，小 ViT 的 GEMM 更瘦、还要同步。vLLM 公开了 encoder 按图做 batch 维 DP、LLM 仍 TP 的旋钮。文档给过 TP$=8$ 大约一成 TTFT / throughput，未优化的 Conv3D 还能再挖一截。这项公开配置说明 encoder 和 LLM 可以采用不同并行方式。
 
-Encoder 偏 compute、形状乱；LLM decode 偏带宽、要稳定的瘦 GEMM。同一 GPU 上：一条 4k 视觉 token 的 encoder+prefill 可以占满 SM 几百毫秒，在飞 decode 的 每个 token 的生成间隔突然变长。这和纯文本长 输入提示（prompt） 同一类伤害，见 `sys-prefill-decode-disagg`，只是前面多了一段 encoder。
+Encoder 偏 compute、形状乱；LLM decode 偏带宽、要稳定的瘦 GEMM。同一 GPU 上：一条 4k 视觉 token 的 encoder+prefill 可以占满 SM 几百毫秒，在飞 decode 的 每个 token 的生成间隔突然变长。这和纯文本长 prompt 同一类伤害，见 `sys-prefill-decode-disagg`，只是前面多了一段 encoder。
 
 我会按负载选择以下处理方式：
 

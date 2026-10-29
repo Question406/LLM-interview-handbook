@@ -3,8 +3,11 @@ id: coding-swiglu
 section: coding
 order: 17
 level: A
-title: 白板：SwiGLU / Llama MLP，门控和中间维为什么是 8/3
-quick: "SwiGLU 先让 gate 分支经过 SiLU，再与线性的 up 分支逐元素相乘，最后用 down 投回原维度：$\\mathrm{SwiGLU}(x)=(\\mathrm{SiLU}(xW_g)\\odot xW_u)W_d$。Llama 用三个无 bias 线性层，中间维取 $\\tfrac{8}{3}D$ 后向上对齐，使参数量与旧 $4D$ FFN 大致相同。"
+title: 白板：SwiGLU / Llama MLP，gating 和中间维为什么是 8/3
+quick: >-
+  SwiGLU 先让 gate 分支经过 SiLU，再与线性的 up 分支逐元素相乘，最后用 down
+  投回原维度：$\mathrm{SwiGLU}(x)=(\mathrm{SiLU}(xW_g)\odot xW_u)W_d$。Llama 用三个无 bias
+  线性层，中间维取 $\tfrac{8}{3}D$ 后向上对齐，使参数量与旧 $4D$ FFN 大致相同。
 tags:
   - 完整编程练习
   - Coding
@@ -14,16 +17,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: GLU Variants Improve Transformer
-    url: https://arxiv.org/abs/2002.05202
+    url: 'https://arxiv.org/abs/2002.05202'
     type: primary
   - title: LLaMA — Open and Efficient Foundation Language Models
-    url: https://arxiv.org/abs/2302.13971
+    url: 'https://arxiv.org/abs/2302.13971'
     type: primary
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
 ---
 
@@ -54,7 +57,7 @@ SwiGLU(4, hidden=6) 所有权重设为 0；输入任意形状 [2,3,4] 的有限�
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 上用小维度验证，不分配真实的 4096 维模型。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 上用小维度验证，不分配真实的 4096 维模型。
 
 ### 题面、接口与约束
 
@@ -113,7 +116,7 @@ class SwiGLU(nn.Module):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -157,9 +160,9 @@ assert not torch.allclose(y, wrong)
 
 ## 题怎么来的
 
-Shazeer 提出的几种 GLU 变体里，Llama 选了 SwiGLU。Meta 手写 Transformer 时会要求写 MLP 这一块：它不是 `Linear-ReLU-Linear`，而是门控乘上投影，再做下投影。如果把中间宽度写成 $4D$，参数量会超过论文的设定。激活函数本身见 `coding-silu`；前面的归一化是 RMSNorm，见 `coding-rmsnorm`。
+Shazeer 提出的几种 GLU 变体里，Llama 选了 SwiGLU。Meta 手写 Transformer 时会要求写 MLP 这一块：它不是 `Linear-ReLU-Linear`，而是 gating 乘上投影，再做下投影。如果把中间宽度写成 $4D$，参数量会超过论文的设定。激活函数本身见 `coding-silu`；前面的 normalization 是 RMSNorm，见 `coding-rmsnorm`。
 
-## 门控分支怎样连接
+## gating branch 怎样连接
 
 输入 $x$ 的形状是 `[B, T, D]`：
 
@@ -180,7 +183,7 @@ GPT-2 风格是 `gelu(x W_1) W_2`，中间维 $4D$。PaLM 也用 SwiGLU，但中
 ## 追问
 
 **为什么是 $8/3$ 而不是 $4$？**
-门控多了一张 $D\times H$ 的矩阵。取 $H=\tfrac{8}{3}D$，三张矩阵的参数量约等于旧的两张 $4D$ 宽矩阵，目的是匹配参数量。
+gating 多了一张 $D\times H$ 的矩阵。取 $H=\tfrac{8}{3}D$，三张矩阵的参数量约等于旧的两张 $4D$ 宽矩阵，目的是匹配参数量。
 **SiLU 和 Swish 是什么关系？**
 $\mathrm{SiLU}(x)=x\cdot\sigma(x)$，就是 $\beta=1$ 的 Swish。手写数值见 `coding-silu`。
 **gate 和 up 能共用一张权重吗？**

@@ -4,7 +4,9 @@ section: systems
 order: 27
 level: S
 title: LLM RL 面试入门会问哪些「系统向」题？
-quick: "算法岗入门先准备一步 GRPO 的角色、rollout 为什么用 vLLM、为什么重算 logprob，再补组大小 $n$、response mask 和训练曲线。把这条训练循环讲顺后，再进入 HybridEngine、NCCL 或 1F1B 等更深入的系统问题。"
+quick: >-
+  算法岗入门先准备一步 GRPO 的角色、rollout 为什么用 vLLM、为什么重算 logprob，再补组大小 $n$、response mask
+  和训练曲线。把这条训练循环讲顺后，再进入 HybridEngine、NCCL 或 1F1B 等更深入的系统问题。
 tags:
   - LLM RL
   - GRPO
@@ -12,34 +14,34 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: 美团大模型研发二面-日常实习
-    url: https://www.nowcoder.com/feed/main/detail/23e19d8300c54f2eb9ed9933aeaa5129
+    url: 'https://www.nowcoder.com/feed/main/detail/23e19d8300c54f2eb9ed9933aeaa5129'
     type: candidate-first-hand
   - title: 滴滴RL实习生面经
-    url: https://www.nowcoder.com/discuss/813460704786202624
+    url: 'https://www.nowcoder.com/discuss/813460704786202624'
     type: candidate-first-hand
   - title: DeepSeekMath / GRPO
-    url: https://arxiv.org/abs/2402.03300
+    url: 'https://arxiv.org/abs/2402.03300'
     type: primary
 ---
 
-这张卡按准备顺序导航：先讲清一步 GRPO 的角色和时间轴，再补采样吞吐、logprob、mask、组大小和监控。算法岗入门通常先问谁采样、谁打分、谁提供 KL、谁改权重；NCCL、1F1B、ZeRO stage 放到进一步的系统追问。框架选型（veRL / slime / TRL）另看 `sys-llm-rl-framework-index`，下面每条都能跳到对应专题。
+这张卡按准备顺序导航：先讲清一步 GRPO 的角色和时间轴，再补 sampling throughput、logprob、mask、组大小和监控。算法岗入门通常先问谁 sampling、谁打分、谁提供 KL、谁改权重；NCCL、1F1B、ZeRO stage 放到进一步的系统追问。框架选型（veRL / slime / TRL）另看 `sys-llm-rl-framework-index`，下面每条都能跳到对应专题。
 
 ## 先会画的一张图
 
 准备时先在白板上按时间轴画出角色，解释每步的数据从哪里来，再补损失公式。可以按下面的顺序读：
 
 - 一步里 Actor / Ref / Reward / Rollout 各干什么、谁写权重：`sys-rl-grpo-loop-roles`。这张是总图，其它卡都从这里长出来。
-- 为什么 采样轨迹（rollout） 用 vLLM / SGLang，而不是训练图自己 generate：`sys-rl-why-vllm-rollout`。问的是吞吐，不是「引擎 logp 更准」。
+- 为什么 sampling 轨迹（rollout） 用 vLLM / SGLang，而不是训练图自己 generate：`sys-rl-why-vllm-rollout`。问的是 throughput，不是「引擎 logp 更准」。
 - 美团二面：为什么要重新 forward 算 logprob：`meituan-verl-recompute-logprob`。和上一张是一对：一个问快，一个问数。
 - 美团二面：GRPO 哪个阶段最耗时：`meituan-grpo-stage-bottleneck`。先 profile 再改，不要默认 backward 慢。
-- 损失为什么只回传到 response 文本处理单位（token）：`sys-rl-response-mask`。输入提示（prompt） 是观测，不是动作。
+- 损失为什么只回传到 response token：`sys-rl-response-mask`。prompt 是观测，不是动作。
 - 组大小 $n$ 为什么必须 $\gt 1$：`sys-rl-group-n`。$n=1$ 不是方差大一点，是优势未定义。
-- 为什么 强化学习（RL） 之后回答越来越长：`sys-rl-longer-after-rl`。奖励形状和长度偏置，不是「模型更会思考」这么顺。
+- 为什么 RL 之后回答越来越长：`sys-rl-longer-after-rl`。奖励形状和长度偏置，不是「模型更会思考」这么顺。
 
-我会说：采样是推理、更新是训练、KL 看 Ref、分看 Reward。中间差一本账（logprob / 权重版本），不要把引擎打出来的数直接当 $\pi_{\mathrm{old}}$。三个 $\pi$ 必须分开：old 进 ratio，ref 进 KL，$\theta$ 在训练图上更新。漏掉「只训 response」或「组内才有优势」，后面每张专题卡都会穿。
+我会说：sampling 是推理、更新是训练、KL 看 Ref、分看 Reward。中间差一本账（logprob / 权重版本），不要把引擎打出来的数直接当 $\pi_{\mathrm{old}}$。三个 $\pi$ 必须分开：old 进 ratio，ref 进 KL，$\theta$ 在训练图上更新。漏掉「只训 response」或「组内才有优势」，后面每张专题卡都会穿。
 
 ## 接着会被追的
 
@@ -50,7 +52,7 @@ sources:
 - 百度：$\pi_\theta$ / $\pi_{\mathrm{old}}$ / $\pi_{\mathrm{rollout}}$ 是谁：`baidu-grpo-policy-roles-offpolicy`；序列级损失怎么落到 token：`baidu-grpo-loss-agg`
 - 滴滴：veRL 看哪些指标判断训练在走：`didi-verl-metrics`
 - 美团：7B GRPO 显存花在哪：`meituan-grpo-7b-mem`，总账 `sys-rl-memory`；clip 为什么存在：`meituan-grpo-why-clip`
-- 为什么 RL Systems 比 监督微调（SFT） 复杂：`sys-rl-infra`；权重怎么同步到引擎：`infra-rl-weight-sync`
+- 为什么 RL Systems 比 SFT 复杂：`sys-rl-infra`；权重怎么同步到引擎：`infra-rl-weight-sync`
 - HybridEngine 解决什么：`sys-verl-hybridengine`。先讲放置，再讲 reshard，不要一上来背这个词。
 - 2026 社区 35 题（算法 + Infra）对照：`pt-rl-algo-infra-bench-index`
 
@@ -62,11 +64,11 @@ sources:
 
 三种串台最常见：一是被问「讲一下 GRPO」时开始讲 HybridEngine 的 reshard，角色还没画完；二是被问「为什么用 vLLM」时答「因为 logprob 准」，和重算 logp 那张卡直接打架；三是被问 $n$ 时把它说成 global batch。先定位对方问的是哪一圈，再跳对应 id。面试官从美团二面来，优先准备重算 logp 和阶段耗时；从滴滴来，准备指标；从字节来，准备零梯度。
 
-对方拿出 veRL 配置后，再进入 batch 核算和 HybridEngine。吞吐和重算 logprob 要成对准备，分别解释速度和数值对齐；优势相关题围绕组内对照展开；问到「7B 怎么放」时，再展开显存估算。
+对方拿出 veRL 配置后，再进入 batch 核算和 HybridEngine。throughput 和重算 logprob 要成对准备，分别解释速度和数值对齐；优势相关题围绕组内对照展开；问到「7B 怎么放」时，再展开显存估算。
 
 ## 追问
 
-**最低闭环是哪几张？**
+**最低 feedback loop 是哪几张？**
 `sys-rl-grpo-loop-roles` → `sys-rl-why-vllm-rollout` → `meituan-verl-recompute-logprob` → `sys-rl-response-mask` → `sys-rl-group-n`。这五张能撑住大多数算法岗开场。
 **什么时候才提 HybridEngine？**
 角色和时间轴讲顺之后。先放置，再 reshard。先背这个词，面试官会追「那 OpenRLHF 为什么分卡」，见 `sys-verl-hybridengine`。
@@ -75,8 +77,8 @@ sources:
 **算法岗会不会问 ZeRO-3？**
 会问显存花在哪（`meituan-grpo-7b-mem` / `sys-rl-memory`），很少下到 all-gather 细节。显存答完就停，别自己滑到混元那张 72B 估算，除非对方是 Infra / 训练系统岗。
 **开场怎么收？**
-采样推理、更新训练、三个 $\pi$ 分开、只训 response、组内才有优势。中间差一本账：引擎 logp 不能直接当 $\pi_{\mathrm{old}}$。
+sampling 推理、更新训练、三个 $\pi$ 分开、只训 response、组内才有优势。中间差一本账：引擎 logp 不能直接当 $\pi_{\mathrm{old}}$。
 **clip fraction 一直是 0 看哪张？**
-`sys-rl-fw-clip-zero`。那已经不是入门闭环，是训练没在走的诊断。
+`sys-rl-fw-clip-zero`。那已经不是入门 feedback loop，是训练没在走的诊断。
 **被问「讲一下 GRPO」先翻哪张？**
 先 `sys-rl-grpo-loop-roles`，不要先背 loss，也不要先讲 HybridEngine。角色画完再允许被追公式和放置。

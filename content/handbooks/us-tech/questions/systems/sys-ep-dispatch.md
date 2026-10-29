@@ -4,7 +4,9 @@ section: systems
 order: 29
 level: S
 title: 系统：MoE expert parallel 的 token dispatch 负载
-quick: "EP 的 all-to-all 把 token 发到持有对应专家的卡，步时间主要受接收 token 最多的 rank 影响，所以要看负载直方图和 P99。容量限制、expert bias 和 EPLB 热专家复制分别从路由或部署上压低热点；decode 的小消息还需要低延迟核。"
+quick: >-
+  EP 的 all-to-all 把 token 发到持有对应专家的卡，步时间主要受接收 token 最多的 rank 影响，所以要看负载直方图和
+  P99。容量限制、expert bias 和 EPLB 热专家复制分别从路由或部署上压低热点；decode 的小消息还需要低延迟核。
 tags:
   - DeepSeek
   - NVIDIA
@@ -13,19 +15,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
   - title: deepseek-ai/DeepEP
-    url: https://github.com/deepseek-ai/DeepEP
+    url: 'https://github.com/deepseek-ai/DeepEP'
     type: primary
   - title: deepseek-ai/EPLB
-    url: https://github.com/deepseek-ai/EPLB
+    url: 'https://github.com/deepseek-ai/EPLB'
     type: secondary
   - title: Switch Transformers — Scaling to Trillion Parameter Models
-    url: https://arxiv.org/abs/2101.03961
+    url: 'https://arxiv.org/abs/2101.03961'
     type: primary
 ---
 
@@ -36,7 +38,7 @@ EP dispatch 要重点看最热 rank 收到了多少 token，因为这张卡既�
 1. 本卡 router 对每个 token 出 top-$k$ expert id。
 2. **Dispatch all-to-all：** hidden（可已是 FP8）按目的 rank 搬走。消息长度随该 rank 被打中的 token 数变。
 3. 本地 grouped GEMM，见 `nvidia-moe-gemm`、`sys-fp8-gemm`。
-4. **Combine all-to-all：** 输出送回 token 原 rank，按门控加权。
+4. **Combine all-to-all：** 输出送回 token 原 rank，按 gating 加权。
 
 通信量粗算 $2k\cdot T\cdot d$ 量级。均值好看没用：令 $c_r$ 为 rank $r$ 收到的 token 数，
 
@@ -53,7 +55,7 @@ per_rank = counts.view(ep_size, E // ep_size).sum(dim=1)
 hot = int(per_rank.max())
 ```
 
-Decode 时 $T$ 变成在飞 batch 那么点 token，$k \gt 1$，all-to-all 退化成小消息延迟墙。Prefill 的 $T$ 大，走带宽。DeepEP 公开 README 把两条路写死了：高吞吐核给训练和 inference 输入预填充（prefill，即处理输入并建立缓存）；低延迟核给 inference decode；原生 FP8 dispatch；还能控占用多少 SM，好和 GEMM overlap。同一套 NCCL all-to-all 硬套到 decode 上，尾延迟会很难看。这也是「训练拓扑不要原样搬 serving」的具体落点。
+Decode 时 $T$ 变成在飞 batch 那么点 token，$k \gt 1$，all-to-all 退化成小消息延迟墙。Prefill 的 $T$ 大，走带宽。DeepEP 公开 README 把两条路写死了：高 throughput 核给训练和 inference 输入 prefill；低延迟核给 inference decode；原生 FP8 dispatch；还能控占用多少 SM，好和 GEMM overlap。同一套 NCCL all-to-all 硬套到 decode 上，尾延迟会很难看。这也是「训练拓扑不要原样搬 serving」的具体落点。
 
 Router 塌缩：少数 expert 吃掉大部分 token。预训练 aux 再好，推理分布也可能漂（用户话术、工具 JSON、代码）。Serving 可以：
 
@@ -63,13 +65,13 @@ Router 塌缩：少数 expert 吃掉大部分 token。预训练 aux 再好，推
 **Drop：**
 实现简单，shape 每步变，CUDA graph 和 overlap 都痛，见 `sys-expert-parallel`。
 
-和 DP / TP 叠：DP 会把不同 replica 的 token 汇总到同一 expert 持有者，热点可能被放大；TP 切单个 expert 内部矩阵，通信规则，适合 NVLink。EP 的不规则 all-to-all 更常跨节点。节点内 TP$\times$EP、跨节点 DP 是常见公开拓扑。EP 再加能放下更多 expert，但消息更碎；expert GEMM 已经很小、通信占比过半时，再加 EP 吞吐掉。
+和 DP / TP 叠：DP 会把不同 replica 的 token 汇总到同一 expert 持有者，热点可能被放大；TP 切单个 expert 内部矩阵，通信规则，适合 NVLink。EP 的不规则 all-to-all 更常跨节点。节点内 TP$\times$EP、跨节点 DP 是常见公开拓扑。EP 再加能放下更多 expert，但消息更碎；expert GEMM 已经很小、通信占比过半时，再加 EP throughput 掉。
 
 重叠计算和通信时，要先看数据依赖：同批 dispatch 的输出就是该批 GEMM 的输入，同微批叠不上。要切微批或像 DualPipe / DeepEP 那样把通信核占用的 SM 限住，让下一微批的 MMA 还能跑。因此，需要明确重叠的是哪两个微批，才能判断优化是否成立。
 
-错误说法：EP 均衡了所以 all-to-all 和 dense all-reduce 一样齐；decode 继续用 prefill 的大吞吐核；只看平均 tokens/s。体检看直方图、P99 步时、每 expert 的 $c_e$。
+错误说法：EP 均衡了所以 all-to-all 和 dense all-reduce 一样齐；decode 继续用 prefill 的大 throughput 核；只看平均 tokens/s。体检看直方图、P99 步时、每 expert 的 $c_e$。
 
-PD 分离时 prefill / decode 用不同 EP 度是合理的：prefill 吃吞吐 dispatch，decode 复制 expert 换通信。KV 布局和 expert 布局是两件事，见 `sys-prefill-decode-disagg`。
+PD 分离时 prefill / decode 用不同 EP 度是合理的：prefill 吃 throughput dispatch，decode 复制 expert 换通信。KV 布局和 expert 布局是两件事，见 `sys-prefill-decode-disagg`。
 
 ## 追问
 
@@ -77,7 +79,7 @@ PD 分离时 prefill / decode 用不同 EP 度是合理的：prefill 吃吞吐 d
 都可能。先看 $\max c_r$：大且 GEMM SOL 高，是算；大且 NCCL / RDMA SOL 高，是搬。DeepEP 把两条拆开正是因为阶段不同。
 
 **为什么 decode 要单独的低延迟核？**
-每步 token 少，启动和 RTT 主导。吞吐核按大 $T$ 优化，小消息上更亏。
+每步 token 少，启动和 RTT 主导。throughput 核按大 $T$ 优化，小消息上更亏。
 
 **FP8 dispatch 图什么？**
 体积减半，GEMM 直接吃 FP8，少一次 cast。Scale 要和 `sys-fp8-gemm` 的 tile 对齐。

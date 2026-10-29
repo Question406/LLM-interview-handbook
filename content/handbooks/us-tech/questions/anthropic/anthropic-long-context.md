@@ -3,25 +3,36 @@ id: anthropic-long-context
 section: anthropic
 order: 11
 level: A
-title: Anthropic：长上下文评测为什么大海捞针不够，位置偏差怎么测？
-quick: "我会把大海捞针当窗口读取的冒烟测试，再测多针、多文档问答、计数和聚合。位置偏差则固定内容与长度，只移动相关信息的位置，画准确率曲线，看是否两端高、中间低；还要比较不同长度，才能评估 200k 窗口是否可用。"
+title: Anthropic：长上下文评测为什么大海捞针不够，position bias 怎么测？
+quick: >-
+  我会把大海捞针当窗口读取的冒烟测试，再测多针、多文档问答、计数和聚合。position bias
+  则固定内容与长度，只移动相关信息的位置，画准确率曲线，看是否两端高、中间低；还要比较不同长度，才能评估 200k 窗口是否可用。
 tags:
   - Anthropic
   - Long context
   - Evaluation
   - Position bias
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Lost in the Middle — How Language Models Use Long Contexts
-    url: https://arxiv.org/abs/2307.03172
+    url: 'https://arxiv.org/abs/2307.03172'
     type: primary
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
 ---
+
+## 可以这样回答
+
+我会先用 NIAH 检查窗口是否读得到，再用多文档问答、聚合和抗干扰任务检查信息能否用起来。比如在无关文章里找「密码是 X」只需要复制，回答一条时间线却要把散在各处的事实连起来，两者考的是不同能力。
+
+Lost in the Middle（Liu et al. 2023）用多文档问答和键值检索说明：相关文档放在开头或结尾，准确率高；放在中间明显掉，呈 U 形。有的模型中间段甚至不如闭卷乱猜。扩展上下文的模型和短上下文基线，有时在「使用中间信息」上差不多——窗口变长不等于会用。
+
+## 技术备查
 
 我会先用 NIAH 检查窗口是否读得到，再用多文档问答、聚合和抗干扰任务检查信息能否用起来。比如在无关文章里找「密码是 X」只需要复制，回答一条时间线却要把散在各处的事实连起来，两者考的是不同能力。
 
@@ -38,14 +49,14 @@ Lost in the Middle（Liu et al. 2023）用多文档问答和键值检索说明�
 
 所以我会把 NIAH 当冒烟测试：先确认 0/50/100 百分位都能抄到针。过了再上使用性任务。
 
-## 位置偏差怎么测
+## position bias 怎么测
 
 协议要扫位置，不要只报一个随机点。
 
 1. 固定干草堆长度 $L$（token），固定问题。
 2. 把相关信息插到相对位置 $p \in \{0, 0.25, 0.5, 0.75, 1.0\}$，或更细的网格。
-3. 每个 $p$ 重复多个干草堆，报准确率均值和置信区间。
-4. 画准确率对 $p$ 的曲线。U 形就是 primacy + recency；单调下降可能是注意力衰减；平坦且高才是「真的会用全程」。
+3. 每个 $p$ 重复多个干草堆，报准确率均值和 confidence interval。
+4. 画准确率对 $p$ 的曲线。U 形就是 primacy + recency；单调下降可能是 attention 衰减；平坦且高才是「真的会用全程」。
 
 多文档 QA 比针更接近 检索增强生成（RAG）：一份相关文档混在 $k-1$ 份干扰文档里，只打乱顺序，不改内容。这样位置是唯一变量。键值检索（一堆 UUID 映射）把语义干扰降到最低，专门打「找得到吗」。两者都要，一个偏应用，一个偏诊断。
 
@@ -69,8 +80,8 @@ Agent 场景更狠：工具结果和检索文档堆在中间，指令在两头�
 **NIAH 满分了还要测什么？**
 使用性：多跳、聚合、干扰项。NIAH 是上界很松的检索。
 
-**位置偏差是 RoPE 的锅吗？**
-有贡献，但不是唯一。因果掩码、训练短于推理、指令微调都可能强化「看头看尾」。先测曲线，再猜机制。
+**position bias 是 RoPE 的锅吗？**
+有贡献，但不是唯一。因果 mask、训练短于推理、指令微调都可能强化「看头看尾」。先测曲线，再猜机制。
 
 **和 XML 标签的关系？**
 长上下文里用标签切 documents，降低「指令和资料糊在一起」。见 `anthropic-xml-prompt`。标签不消灭 U 形，只减少串角色。

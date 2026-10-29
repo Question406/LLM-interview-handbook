@@ -4,22 +4,34 @@ section: systems
 order: 25
 level: A
 title: 共享 Prefix Cache 如何省钱但不串数据？
-quick: "公共前缀可以共享 KV，但 cache key 要带上 model、adapter、tokenizer、RoPE、system context 和 tenant / security context，确保激活和权限都一致。私有段用 namespace 或每请求 salt 隔离，版本变更时主动失效，同时监控命中速度是否泄露了其他用户的信息。"
+quick: >-
+  公共前缀可以共享 KV，但 cache key 要带上 model、adapter、tokenizer、RoPE、system context 和
+  tenant / security context，确保激活和权限都一致。私有段用 namespace 或每请求 salt
+  隔离，版本变更时主动失效，同时监控命中速度是否泄露了其他用户的信息。
 tags:
   - Prefix Cache
   - Multi-tenant
   - Security
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: vLLM Automatic Prefix Caching
-    url: https://docs.vllm.ai/en/v0.18.1/design/prefix_caching/
+    url: 'https://docs.vllm.ai/en/v0.18.1/design/prefix_caching/'
     type: primary
 ---
 
-共享 Prefix cache 时，我会让公共系统提示复用已经计算好的 K/V，把用户文档和私有检索结果留在各自的安全边界内。这样可以省掉重复的 prefill，也就是处理输入并建立缓存的计算，降低首个 token 的等待时间（TTFT）和成本。比如同一条产品 system prompt 可以共享，但某个租户的 CRM 内容不能给另一个租户复用；即使 token id 一样，LoRA 或 RoPE 不同也会算出不同的 KV。
+## 可以这样回答
+
+共享 Prefix cache 时，我会让公共系统提示复用已经计算好的 K/V，把用户文档和私有检索结果留在各自的 security constraints 内。这样可以省掉重复的 prefill，也就是处理输入并建立缓存的计算，降低TTFT和成本。比如同一条产品 system prompt 可以共享，但某个租户的 CRM 内容不能给另一个租户复用；即使 token id 一样，LoRA 或 RoPE 不同也会算出不同的 KV。
+
+少编一项，就会在「看起来 token 一样」时串数据。RL 里还要加 `policy_version`：同步过的新权不能接着用旧 KV，见 `infra-rl-weight-sync`。vLLM Automatic Prefix Caching 按 token 块做哈希；生产上必须在哈希外包一层业务 namespace，不能假设引擎的 block hash 已经含租户。Tokenizer 升级、加 special token、改 chat template，都会让同一段自然语言对应不同 token id 或不同位置，旧缓存必须整池失效。只改 system prompt 里的一个日期而不换 key，命中的是过期政策。Adapter 热加载更危险：base 权相同、LoRA 不同，block hash 若只看 token，会把 A 租户的 KV 喂给 B 租户的 adapter，输出可能看起来正常，其实串了激活。
+
+## 技术备查
+
+共享 Prefix cache 时，我会让公共系统提示复用已经计算好的 K/V，把用户文档和私有检索结果留在各自的 security constraints 内。这样可以省掉重复的 prefill，也就是处理输入并建立缓存的计算，降低首个 token 的等待时间（TTFT）和成本。比如同一条产品 system prompt 可以共享，但某个租户的 CRM 内容不能给另一个租户复用；即使 token id 一样，LoRA 或 RoPE 不同也会算出不同的 KV。
 
 ## 先保证命中的 KV 确实可复用
 
@@ -32,9 +44,9 @@ sources:
 - system prompt、工具 字段和类型规范（schema）、检索到的私有文档
 - **tenant / security context**（用户、工作区、权限集）
 
-少编一项，就会在「看起来 token 一样」时串数据。强化学习（RL） 里还要加 `policy_version`：同步过的新权不能接着用旧 KV，见 `infra-rl-weight-sync`。vLLM Automatic Prefix Caching 按 token 块做哈希；生产上必须在哈希外包一层业务 namespace，不能假设引擎的 block hash 已经含租户。Tokenizer 升级、加 special token、改 chat template，都会让同一段自然语言对应不同 token id 或不同位置，旧缓存必须整池失效。只改 system 输入提示里的一个日期而不换 key，命中的是过期政策。Adapter 热加载更危险：base 权相同、LoRA 不同，block hash 若只看 token，会把 A 租户的 KV 喂给 B 租户的 adapter，输出可能看起来正常，其实串了激活。
+少编一项，就会在「看起来 token 一样」时串数据。RL 里还要加 `policy_version`：同步过的新权不能接着用旧 KV，见 `infra-rl-weight-sync`。vLLM Automatic Prefix Caching 按 token 块做哈希；生产上必须在哈希外包一层业务 namespace，不能假设引擎的 block hash 已经含租户。Tokenizer 升级、加 special token、改 chat template，都会让同一段自然语言对应不同 token id 或不同位置，旧缓存必须整池失效。只改 system prompt 里的一个日期而不换 key，命中的是过期政策。Adapter 热加载更危险：base 权相同、LoRA 不同，block hash 若只看 token，会把 A 租户的 KV 喂给 B 租户的 adapter，输出可能看起来正常，其实串了激活。
 
-跨安全边界默认 **不共享**。做法：
+跨 security constraints 默认 **不共享**。做法：
 
 - 每租户一个 cache namespace；敏感会话再加 **per-request salt**，彻底禁止跨请求复用。
 - 模型、prompt 模板、权限策略变更时显式失效，不要等 LRU 自然挤掉。
@@ -46,18 +58,18 @@ sources:
 
 Cache 读写不应暴露「别人是不是刚问过同样的话」。命中导致 TTFT 明显变短，攻击者可以用时序判断某前缀是否在缓存里。多租户下这是经典侧信道。缓解：对安全敏感路径关闭共享、加 salt、或把命中延迟填充到与未命中同量级（贵，只用于高敏）。监控错误复用率、跨 tenant 探测、版本失效率，不能只报 hit rate 和 TTFT 节省。
 
-上线时，公共 system prompt 和稳定工具 schema 的命中率按模型版本分别统计，同时看 TTFT 节省、错误复用、版本失效和跨 tenant 探测。后三项检查不过，就还不能确认节省成本的方案是安全的。金融、医疗、内部代码这类高敏感场景默认加 salt，代价是多做一些 prefill。RL 中同一输入提示的 $n$ 条回答可以共享 prompt KV，但跨用户、跨策略版本仍要隔离。
+上线时，公共 system prompt 和稳定工具 schema 的命中率按模型版本分别统计，同时看 TTFT 节省、错误复用、版本失效和跨 tenant 探测。后三项检查不过，就还不能确认节省成本的方案是安全的。金融、医疗、内部代码这类高敏感场景默认加 salt，代价是多做一些 prefill。RL 中同一 prompt 的 $n$ 条回答可以共享 prompt KV，但跨用户、跨策略版本仍要隔离。
 
 ## 追问
 
 **token 相同为什么还不能共享？**
-KV 是模型状态，不是文本。adapter、RoPE、tokenizer、权限上下文、policy version 任一不同，激活就不同，或会把他人上下文续进当前解码。引擎的 block hash 默认不含租户，必须外包 namespace。
+KV 是模型状态，不是文本。adapter、RoPE、tokenizer、权限上下文、policy version 任一不同，激活就不同，或会把他人上下文续进当前 decoding。引擎的 block hash 默认不含租户，必须外包 namespace。
 **salt 会不会把省钱打没？**
 高敏会话本就不该共享。钱省在公共 system prefix 和稳定工具 schema；salt 打在用户私有段。用总 hit rate 当 KPI 会诱使拿掉租户键。
 **和 prompt cache 落盘是一回事吗？**
 磁盘缓存多一次序列化，隔离规则相同：key 仍要带模型与租户，失效策略更要硬。版本变更必须主动失效，不能等 LRU。
-**RL 采样轨迹（rollout） 能不能开 prefix cache？**
-同一输入提示 的 $n$ 条可以共享 prompt KV，这是合法的组内复用。跨用户、跨 `policy_version` 不行，否则旧权的激活会续进新权。
+**RL sampling 轨迹（rollout） 能不能开 prefix cache？**
+同一 prompt 的 $n$ 条可以共享 prompt KV，这是合法的组内复用。跨用户、跨 `policy_version` 不行，否则旧权的激活会续进新权。
 **命中会不会泄露信息？**
 会。TTFT 差一个数量级就能判断某前缀是否在缓存里。高敏行业默认 salt，或把命中延迟垫到与未命中同量级。
 **改 chat template 要不要清缓存？**

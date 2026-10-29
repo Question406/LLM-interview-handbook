@@ -4,26 +4,38 @@ section: systems
 order: 242
 level: A
 title: veRL 的 `use_dynamic_bsz` 和写死 micro-batch 有何不同？
-quick: "固定 micro-batch 限制每卡样本条数，动态 batch 则按每卡 token 预算拼序列。长 CoT 的长度差异大，按 token 切分能减少 padding 和 OOM；actor、ref 和 rollout 重算 logp 的路径要一起配置，并保留 GRPO 的组统计边界。"
+quick: >-
+  固定 micro-batch 限制每卡样本条数，动态 batch 则按每卡 token 预算拼序列。长 CoT 的长度差异大，按 token 切分能减少
+  padding 和 OOM；actor、ref 和 rollout 重算 logp 的路径要一起配置，并保留 GRPO 的 group
+  definitions。
 tags:
   - VeRL
   - Batch
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: 蚂蚁 26 秋招 VeRL batch 面经
-    url: https://www.nowcoder.com/feed/main/detail/e2585943c7874b3081b0878b646b6f01
+    url: 'https://www.nowcoder.com/feed/main/detail/e2585943c7874b3081b0878b646b6f01'
     type: candidate-first-hand
   - title: verl
-    url: https://github.com/verl-project/verl
+    url: 'https://github.com/verl-project/verl'
     type: primary
 ---
 
+## 可以这样回答
+
 设置 `use_dynamic_bsz=True` 后，`ppo_micro_batch_size_per_gpu` 不再单独决定实际条数。`use_dynamic_bsz` 把每卡固定样本数改成每卡 token 预算，实际放几条由序列长度决定。比如一条 8k、三条 512 的回复，固定 $m$ 条时整步按最长的 8k 配显存；把 $m$ 降到 1 虽然能避开长序列 OOM，短序列又吃不满 GPU。预算设为 8k 时，动态模式可以放一条 8k，也可以放四条 2k。
 
-固定 `ppo_micro_batch_size_per_gpu=$m$` 的峰值 $\propto m\times T_{\max}$，适合长度接近的监督微调（SFT）。GRPO 同一组的 $n$ 条回复经常差一个数量级，按 token 拼更接近真实负载。Packing 能提高有效 token 的比例，但样本条数随长度变化，汇报时应给 `tokens / step`、峰值 token 和 drop-last，不能再固定报每卡 4 条。这和 serving continuous batching 都按 token 形状调度，不过这里作用于训练 / 重算 logp 图，并非逐 token 生成（decode）引擎。
+固定 `ppo_micro_batch_size_per_gpu=$m$` 的峰值 $\propto m\times T_{\max}$，适合长度接近的 SFT。GRPO 同一组的 $n$ 条回复经常差一个数量级，按 token 拼更接近真实负载。Packing 能提高有效 token 的比例，但样本条数随长度变化，汇报时应给 `tokens / step`、峰值 token 和 drop-last，不能再固定报每卡 4 条。这和 serving continuous batching 都按 token 形状调度，不过这里作用于训练 / 重算 logp 图，并非decode引擎。
+
+## 技术备查
+
+设置 `use_dynamic_bsz=True` 后，`ppo_micro_batch_size_per_gpu` 不再单独决定实际条数。`use_dynamic_bsz` 把每卡固定样本数改成每卡 token 预算，实际放几条由序列长度决定。比如一条 8k、三条 512 的回复，固定 $m$ 条时整步按最长的 8k 配显存；把 $m$ 降到 1 虽然能避开长序列 OOM，短序列又吃不满 GPU。预算设为 8k 时，动态模式可以放一条 8k，也可以放四条 2k。
+
+固定 `ppo_micro_batch_size_per_gpu=$m$` 的峰值 $\propto m\times T_{\max}$，适合长度接近的 SFT。GRPO 同一组的 $n$ 条回复经常差一个数量级，按 token 拼更接近真实负载。Packing 能提高有效 token 的比例，但样本条数随长度变化，汇报时应给 `tokens / step`、峰值 token 和 drop-last，不能再固定报每卡 4 条。这和 serving continuous batching 都按 token 形状调度，不过这里作用于训练 / 重算 logp 图，并非逐 token 生成（decode）引擎。
 
 ## 配置与组统计怎么对齐
 
@@ -31,9 +43,9 @@ Actor、ref 和 rollout 重算 logp 要一起配置，对应 `actor.ppo_max_toke
 
 有上下文并行时，要按本地切开的长度估预算，例如 `max_response_len / cp_size`，继续按全长 $T$ 算会让某个 rank 先 OOM。预算还需给 all-gather、logits、临时张量和碎片留空间，序列 token 刚到上限就 OOM，通常说明这个余量不足。
 
-GRPO 的 $\hat A$ 来自同一输入提示的 $n$ 条回复，动态拼 batch 时必须让组均值和优势仍在同一统计窗口计算。把组拆到不同 micro-batch / step 后各算各的，会改变估计器，全对全错的零梯度判断也会漂。slime 的 `--balance-data` 文档说明，同一 prompt 的 response 可能被分到不同 step，开启前要确认统计窗口。drop-last 会丢掉尾部不够预算的组，长度过滤、DAPO 动态采样也会改变有效组数；日志要同时记录名义组和有效组，防止有效 $n$ 被悄悄改掉。
+GRPO 的 $\hat A$ 来自同一 prompt 的 $n$ 条回复，动态拼 batch 时必须让组均值和优势仍在同一统计窗口计算。把组拆到不同 micro-batch / step 后各算各的，会改变估计器，全对全错的零梯度判断也会漂。slime 的 `--balance-data` 文档说明，同一 prompt 的 response 可能被分到不同 step，开启前要确认统计窗口。drop-last 会丢掉尾部不够预算的组，长度过滤、DAPO 动态 sampling 也会改变有效组数；日志要同时记录名义组和有效组，防止有效 $n$ 被悄悄改掉。
 
-理解配置时，可以先画输入提示（prompt）$\times n$ → global batch → 每卡 token。动态 batch 按 token 上限拼 micro-batch；动态采样丢掉零方差组再补采；partial rollout 让半截轨迹跨步继续生成。三者都影响一步看见几条，但分别改变显存形状、采样组和生成进度。
+理解配置时，可以先画 prompt$\times n$ → global batch → 每卡 token。动态 batch 按 token 上限拼 micro-batch；动态 sampling 丢掉零方差组再补采；partial rollout 让半截轨迹跨步继续生成。三者都影响一步看见几条，但分别改变显存形状、sampling 组和生成进度。
 
 调试时先对日志：每卡不超过 $T$ token、本步实际 $k$ 条、drop-last 丢掉 $d$ 组。token 数远低于预算且 micro-batch 很多，说明拼得太碎，可能是过滤过狠或长度分布极偏；经常贴着上限 OOM，就查临时张量余量。再看 GRPO 组是否被拆开，优势方差突然异常时先查统计窗口，再调温度或学习率。监控横轴改成 tokens / step，叠加有效组和 drop-last，条数随长度浮动才不会被误读成异常。
 

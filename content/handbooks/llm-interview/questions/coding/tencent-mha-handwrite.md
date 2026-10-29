@@ -5,29 +5,33 @@ order: 212
 level: A
 title: 腾讯混元一面：手写 Multi-Head Attention 要交代哪些形状？
 quick: >-
-  $QKV$ 投影后拆成 $[B,H,T,d_h]$，scores 是 $[B,H,T,T]$，加因果 / padding mask 再 softmax，乘 $V$ 后拼头。混元常把它和括号生成连着问，形状和 `contiguous` 比会调库更关键。
+  $QKV$ 投影后拆成 $[B,H,T,d_h]$，scores 是 $[B,H,T,T]$，加因果 / padding mask 再 softmax，乘
+  $V$ 后拼头。混元常把它和括号生成连着问，形状和 `contiguous` 比会调库更关键。
 tags:
   - Tencent
   - Hunyuan
   - Attention
   - Coding
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-27'
 sources:
   - title: 日常实习 腾讯混元大模型一面 好难
-    url: https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496
+    url: 'https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-实现 PyTorch 模块 `MHA(d,h)`，其 `forward(x,pad=None)` 返回带因果限制的多头自注意力输出。候选人记录只披露手写 MHA，以下类名、参数名和掩码规则为手册重构练习约定。
+实现 PyTorch 模块 `MHA(d,h)`，其 `forward(x,pad=None)` 返回带因果限制的 multi-head self-attention 输出。候选人记录只披露手写 MHA，以下类名、参数名和 mask 规则为手册重构练习约定。
+
+### 接口、输入与输出要求
 
 `d`、`h` 是正整数且 d 能被 h 整除。模块持有 `qkv=nn.Linear(d,3*d,bias=False)` 和 `o=nn.Linear(d,d,bias=False)` 两个投影层，供调用者设置和训练权重。`x` 为浮点张量 `[B,T,d]`，B、T 为正，输入与参数设备和类型相符。
 
-输出形状为 `[B,T,d]`：每头维度为 d/h，注意力为缩放点积注意力，归一化在 key 维进行。位置 t 只能访问位置不大于 t 的 key。可选 `pad` 为 `[B,T]` 布尔张量，**True 表示有效 key**；其余 key 在所有 query 中均不可见。不要求将 padding query 的输出清零。保证每个 query 至少存在一个未屏蔽的历史 key。
+输出形状为 `[B,T,d]`：每头维度为 d/h，attention 为缩放点积 attention，normalization 在 key 维进行。位置 t 只能访问位置不大于 t 的 key。可选 `pad` 为 `[B,T]` 布尔张量，**True 表示有效 key**；其余 key 在所有 query 中均不可见。不要求将 padding query 的输出清零。保证每个 query 至少存在一个未屏蔽的历史 key。
 
 softmax 应以 float32 计算再转换回投影张量类型；不包含偏置或 dropout，支持自动求导。不能直接用封装好的 MHA 替代手写运算。
 
@@ -54,12 +58,13 @@ $$
 \mathrm{Attention}(Q,K,V)=\mathrm{softmax}\Big(\frac{QK^\top}{\sqrt{d_h}}+M\Big)V
 $$
 
-动笔前过一遍：$d_{\mathrm{model}}$ 能被 $H$ 整除，$d_h=D/H$。$Q,K,V$ 投影后 `view(B,T,H,d_h).transpose(1,2)` 得到 $[B,H,T,d_h]$，scores 是 $[B,H,T,T]$。因果 mask 常用上三角 `True` 表示「看不见」，`masked_fill` 成 $-\infty$；padding 如果是 `True=valid`，就对 key 维用 `~mask[:,None,None,:]` broadcast。True/False 和加减别弄反，softmax 之后再置零会破坏归一化。Cross-attn 时 $T_q\neq T_k$，别写死成方阵。拼头时写 `transpose(1,2).contiguous().view(B,T,D)`，少了 `contiguous`，`view` 要么报错，要么发生没被及时发现的错位。fp16 的 softmax 升 fp32 再写回，同时避免一行全 $-\infty$ 出 `NaN`。
+动笔前过一遍：$d_{\mathrm{model}}$ 能被 $H$ 整除，$d_h=D/H$。$Q,K,V$ 投影后 `view(B,T,H,d_h).transpose(1,2)` 得到 $[B,H,T,d_h]$，scores 是 $[B,H,T,T]$。因果 mask 常用上三角 `True` 表示「看不见」，`masked_fill` 成 $-\infty$；padding 如果是 `True=valid`，就对 key 维用 `~mask[:,None,None,:]` broadcast。True/False 和加减别弄反，softmax 之后再置零会破坏 normalization。Cross-attn 时 $T_q\neq T_k$，别写死成方阵。拼头时写 `transpose(1,2).contiguous().view(B,T,D)`，少了 `contiguous`，`view` 要么报错，要么发生没被及时发现的错位。fp16 的 softmax 升 fp32 再写回，同时避免一行全 $-\infty$ 出 `NaN`。
 
 ## 短实现：十分钟主干
 
 ```python
 import math, torch, torch.nn as nn
+
 
 class MHA(nn.Module):
     def __init__(self, d, h):
@@ -74,10 +79,13 @@ class MHA(nn.Module):
         q, k, v = self.qkv(x).view(B, T, 3, self.h, self.dh).unbind(2)
         q, k, v = [t.transpose(1, 2) for t in (q, k, v)]
         s = q @ k.transpose(-1, -2) / math.sqrt(self.dh)
-        s = s.masked_fill(torch.triu(torch.ones(T, T, dtype=torch.bool, device=x.device), 1), float("-inf"))
+        s = s.masked_fill(
+            torch.triu(torch.ones(T, T, dtype=torch.bool, device=x.device), 1),
+            float("-inf"),
+        )
         if pad is not None:
             s = s.masked_fill(~pad[:, None, None, :], float("-inf"))
-        y = (torch.softmax(s.float(), dim=-1).to(q.dtype) @ v)
+        y = torch.softmax(s.float(), dim=-1).to(q.dtype) @ v
         return self.o(y.transpose(1, 2).contiguous().view(B, T, D))
 ```
 
@@ -103,7 +111,7 @@ print("simple tests passed")
 ## 追问
 
 **mask 为什么必须在 softmax 前加？**
-softmax 之后再置零就不归一化了；填 $-\infty$ 才能让被屏蔽位置的概率严格为 0。
+softmax 之后再置零就不 normalization 了；填 $-\infty$ 才能让被屏蔽位置的概率严格为 0。
 
 **`contiguous` 为什么必要？**
 `transpose` 之后内存不连续，`view` 需要连续布局，否则形状对了值是错的。

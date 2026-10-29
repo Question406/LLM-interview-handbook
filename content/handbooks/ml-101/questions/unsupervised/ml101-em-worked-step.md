@@ -4,35 +4,42 @@ section: unsupervised
 order: 11
 level: A
 title: 对一维高斯混合模型，手算并实现一次 EM 更新
-quick: E 步用当前混合权重和高斯密度计算每个样本属于各成分的责任度，M 步把责任度当权重更新混合比例、均值和方差。一次迭代先算完全部责任度，再统一更新参数；稳定实现用 log-sum-exp 归一化，并对方差设置明确下界。EM 通常只找到局部解，需要检查观测数据的似然。
-companies: [google]
-tags: [Machine Learning, EM, Coding]
+quick: >-
+  E 步用当前混合权重和高斯密度计算每个样本属于各成分的责任度，M
+  步把责任度当权重更新混合比例、均值和方差。一次迭代先算完全部责任度，再统一更新参数；稳定实现用 log-sum-exp
+  normalization，并对方差设置明确下界。EM 通常只找到局部解，需要检查观测数据的似然。
+companies:
+  - google
+tags:
+  - Machine Learning
+  - EM
+  - Coding
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
   - title: Google MLE L5 候选人面经：EM 主题
-    url: https://www.1point3acres.com/interview/thread/894226
+    url: 'https://www.1point3acres.com/interview/thread/894226'
     type: secondary
   - title: scikit-learn Gaussian mixture models and EM
-    url: https://scikit-learn.org/stable/modules/mixture.html
+    url: 'https://scikit-learn.org/stable/modules/mixture.html'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 针对一维高斯混合模型，实现概率评分和一次完整 EM 参数更新。混合分量数量固定，不做模型选择。
 
 ### 输入与接口
 
-实现 `gmm_scores`(x,weights,means,variances,*,`var_floor`=1e-6) 与 `gmm_em_step`(...)，后者参数相同。x为N维非空有限观测；其他三个数组均为K维非空有限向量；weights严格为正且和为1；variances≥`var_floor`>0。合法数据保证各分量的数值责任度和为正。
+实现 `gmm_scores`(x,weights,means,variances,*,`var_floor`=1e-6) 与 `gmm_em_step`(...)，后者参数相同。x 为 N 维非空有限观测；其他三个数组均为 K 维非空有限向量；weights 严格为正且和为1；variances≥`var_floor`>0。合法数据保证各分量的数值责任度和为正。
 
 ### 输出与约束
 
-`gmm_scores` 返回 (responsibility,loglik)：前者形状N×K，表示每个观测属于每个分量的后验概率，每行和为1；后者是所有观测在混合密度下的自然对数似然之和。计算须避免直接指数化很小概率引起的下溢。
+`gmm_scores` 返回 (responsibility,loglik)：前者形状 N×K，表示每个观测属于每个分量的 posterior probability，每行和为1；后者是所有观测在混合密度下的自然 log likelihood 之和。计算须避免直接指数化很小概率引起的下溢。
 
 `gmm_em_step` 计算一次基于旧参数的责任度，再用它更新混合权重、均值、方差；方差使用以更新后均值为中心的加权平方偏差，并截到至少 `var_floor`，不做无偏修正。返回字典 weights、means、variances、responsibility、`loglik_before`、`loglik_after`；responsibility 对应更新前参数，after 对应新参数。不修改输入，也不额外迭代至收敛；分量顺序不重排。
 
@@ -73,10 +80,13 @@ import numpy as np
 
 
 def gmm_scores(x, weights, means, variances, *, var_floor=1e-6):
-    x, weights, means, variances = [np.asarray(v, dtype=float)
-                                    for v in (x, weights, means, variances)]
-    if any(v.ndim != 1 or len(v) == 0 or not np.isfinite(v).all()
-           for v in (x, weights, means, variances)):
+    x, weights, means, variances = [
+        np.asarray(v, dtype=float) for v in (x, weights, means, variances)
+    ]
+    if any(
+        v.ndim != 1 or len(v) == 0 or not np.isfinite(v).all()
+        for v in (x, weights, means, variances)
+    ):
         raise ValueError("inputs must be nonempty finite vectors")
     if not (weights.shape == means.shape == variances.shape):
         raise ValueError("component parameter shapes must match")
@@ -88,9 +98,11 @@ def gmm_scores(x, weights, means, variances, *, var_floor=1e-6):
         raise ValueError("initial variances must respect var_floor")
     weights = weights / weights.sum()
     with np.errstate(over="raise", invalid="raise"):
-        log_joint = (np.log(weights)[None, :] - 0.5 *
-                     (np.log(2 * np.pi) + np.log(variances)[None, :] +
-                      (x[:, None] - means[None, :]) ** 2 / variances[None, :]))
+        log_joint = np.log(weights)[None, :] - 0.5 * (
+            np.log(2 * np.pi)
+            + np.log(variances)[None, :]
+            + (x[:, None] - means[None, :]) ** 2 / variances[None, :]
+        )
     maximum = log_joint.max(axis=1, keepdims=True)
     log_total = maximum + np.log(np.exp(log_joint - maximum).sum(axis=1, keepdims=True))
     responsibility = np.exp(log_joint - log_total)
@@ -98,24 +110,31 @@ def gmm_scores(x, weights, means, variances, *, var_floor=1e-6):
 
 
 def gmm_em_step(x, weights, means, variances, *, var_floor=1e-6):
-    responsibility, before = gmm_scores(x, weights, means, variances,
-                                         var_floor=var_floor)
+    responsibility, before = gmm_scores(
+        x, weights, means, variances, var_floor=var_floor
+    )
     x = np.asarray(x, dtype=float)
     effective = responsibility.sum(axis=0)
     if (effective <= 0).any():
         raise ValueError("component has zero numerical responsibility")
     new_weights = effective / len(x)
     new_means = (responsibility * x[:, None]).sum(axis=0) / effective
-    new_variances = (responsibility * (x[:, None] - new_means) ** 2).sum(axis=0) / effective
+    new_variances = (responsibility * (x[:, None] - new_means) ** 2).sum(
+        axis=0
+    ) / effective
     new_variances = np.maximum(new_variances, var_floor)
-    _, after = gmm_scores(x, new_weights, new_means, new_variances,
-                          var_floor=var_floor)
-    return {"weights": new_weights, "means": new_means, "variances": new_variances,
-            "responsibility": responsibility, "loglik_before": before,
-            "loglik_after": after}
+    _, after = gmm_scores(x, new_weights, new_means, new_variances, var_floor=var_floor)
+    return {
+        "weights": new_weights,
+        "means": new_means,
+        "variances": new_variances,
+        "responsibility": responsibility,
+        "loglik_before": before,
+        "loglik_after": after,
+    }
 ```
 
-`gmm_scores` 在 log 域计算联合密度，通过减去行最大值做稳定归一化。方差按练习约定限制在不小于 var_floor 的范围内；这相当于一维方差下界约束，不是给估计式随意加上一个常数。若某成分的数值责任度已经全为零，代码要求调用者重新初始化等明确处理。
+`gmm_scores` 在 log 域计算联合密度，通过减去行最大值做稳定 normalization。方差按练习约定限制在不小于 var_floor 的范围内；这相当于一维方差下界约束，不是给估计式随意加上一个常数。若某成分的数值责任度已经全为零，代码要求调用者重新初始化等明确处理。
 
 对一维 K 成分，E 步和 M 步都需要 $O(nK)$ 时间，责任度矩阵占 $O(nK)$ 空间。可以用分批累积充分统计量减少内存，但不能在一个 E 步内随样本更新参数。
 
@@ -129,14 +148,15 @@ def gmm_em_step(x, weights, means, variances, *, var_floor=1e-6):
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-对称的两个样本与两个高斯分量可以手算 responsibility，且权重保持各 0.5。每行责任度之和应为 1，单步更新后对数似然不下降。
+对称的两个样本与两个高斯分量可以手算 responsibility，且权重保持各 0.5。每行责任度之和应为 1，单步更新后 log likelihood 不下降。
 
 ```python
 import numpy as np
 import math
+
 result = gmm_em_step([0, 2], [0.5, 0.5], [0, 2], [1, 1])
 r = 1 / (1 + math.exp(-2))
-np.testing.assert_allclose(result["responsibility"], [[r, 1-r], [1-r, r]])
+np.testing.assert_allclose(result["responsibility"], [[r, 1 - r], [1 - r, r]])
 np.testing.assert_allclose(result["weights"], [0.5, 0.5])
 assert result["loglik_after"] >= result["loglik_before"] - 1e-10
 print("simple tests passed")

@@ -3,21 +3,22 @@ id: kv-prefix-block-hash
 section: systems
 order: 35
 level: A
-title: "KV Prefix ⑤：链式块哈希、缓存上下文与碰撞防护"
-quick: "块身份包含祖先哈希、当前 token 和完整上下文；同一个后缀块处在不同前缀下不能互相命中，模型、adapter、租户或位置语义改变也必须 miss。"
+title: KV Prefix ⑤：链式块哈希、缓存上下文与碰撞防护
+quick: 块身份包含祖先哈希、当前 token 和完整上下文；同一个后缀块处在不同前缀下不能互相命中，模型、adapter、租户或位置语义改变也必须 miss。
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
   - Coding
   - KV Cache
   - Radix Tree
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "vLLM automatic prefix caching key and cache isolation"
-    url: https://docs.vllm.ai/en/latest/design/prefix_caching/
+  - title: vLLM automatic prefix caching key and cache isolation
+    url: 'https://docs.vllm.ai/en/latest/design/prefix_caching/'
     type: primary
 ---
 
@@ -25,7 +26,9 @@ sources:
 
 实现按完整 token 块复用 KV 页句柄的前缀缓存，隔离上下文并防止哈希碰撞误命中。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Context` 是不可变对象，含字符串字段 model、adapter、tokenizer、`position_and_mask`、tenant、multimodal（默认空串）。`BlockHashCache(block_size=4,hash_fn=None)` 以正整数 `block_size` 为页长；`hash_fn` 可注入用于碰撞测试。
 
@@ -46,7 +49,7 @@ match([3,4],ctx)=(0,())。
 
 ## 完整编程练习（手册原创实现版）
 
-这题用链式块哈希区分「相同 token 块处在不同历史前缀里」的情况，并把模型和租户等计算上下文放入 key。它是手册为理解开源机制写的独立练习，接口、简化条件和测试都由手册定义，并非某家公司已确认原题，也不是 SGLang / vLLM 源码逐字翻译。练习依赖 Python 3 与 NumPy，用 CPU 检查数值和状态语义，不报告 GPU 吞吐。
+这题用链式块哈希区分「相同 token 块处在不同历史前缀里」的情况，并把模型和租户等计算上下文放入 key。它是手册为理解开源机制写的独立练习，接口、简化条件和测试都由手册定义；代码由手册独立编写。练习依赖 Python 3 与 NumPy，用 CPU 检查数值和状态语义，不报告 GPU throughput。
 
 专题入口：[[kv-prefix-implementation-index]]。
 
@@ -92,15 +95,20 @@ class BlockHashCache:
 
     def chain(self, tokens, context):
         tokens = tuple(tokens)
-        if not isinstance(context, Context) or any(type(t) is not int or t < 0 for t in tokens):
+        if not isinstance(context, Context) or any(
+            type(t) is not int or t < 0 for t in tokens
+        ):
             raise ValueError('context or tokens')
         # The complete exact key is retained too: a digest collision is not a hit.
         parent_hash = None
-        for offset in range(0, len(tokens)-self.block_size+1, self.block_size):
-            block = tokens[offset:offset+self.block_size]
+        for offset in range(0, len(tokens) - self.block_size + 1, self.block_size):
+            block = tokens[offset : offset + self.block_size]
             exact = (context, tokens[:offset], block)
-            encoded = json.dumps([asdict(context), self.block_size, parent_hash, block],
-                                 sort_keys=True, separators=(',', ':')).encode()
+            encoded = json.dumps(
+                [asdict(context), self.block_size, parent_hash, block],
+                sort_keys=True,
+                separators=(',', ':'),
+            ).encode()
             digest = self.hash_fn(encoded)
             yield digest, exact
             parent_hash = digest
@@ -128,7 +136,7 @@ class BlockHashCache:
             if entry[0] != exact:
                 raise ValueError('hash collision: refuse to reuse')
             values.append(entry[1])
-        return len(values)*self.block_size, tuple(values)
+        return len(values) * self.block_size, tuple(values)
 ```
 
 ### 简单测试怎么写
@@ -139,7 +147,7 @@ class BlockHashCache:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -148,15 +156,19 @@ class BlockHashCache:
 ```python
 def test():
     from dataclasses import replace
+
     context = Context('weights-v1', 'lora-A', 'tok-v1', 'rope0-causal', 'tenant-A')
     cache = BlockHashCache(2)
     cache.put([1, 2, 3, 4, 5], ['AB', 'CD'], context)
     assert cache.match([1, 2, 3, 4, 9], context) == (4, ('AB', 'CD'))
     assert cache.match([1, 2, 3], context) == (2, ('AB',))
     assert cache.match([9, 2, 3, 4], context) == (0, ())
-    assert cache.match([3, 4], context) == (0, ())  # suffix block needs its full ancestry
+    assert cache.match([3, 4], context) == (
+        0,
+        (),
+    )  # suffix block needs its full ancestry
     for field in asdict(context):
-        other = replace(context, **{field: getattr(context, field)+'-changed'})
+        other = replace(context, **{field: getattr(context, field) + '-changed'})
         assert cache.match([1, 2], other) == (0, ())
     cache.put([1, 2], ['duplicate-handle'], context)
     assert cache.match([1, 2], context)[1] == ('AB',)
@@ -169,15 +181,16 @@ def test():
     else:
         raise AssertionError('collision became a false hit')
 
+
 if __name__ == '__main__':
     test()
 ```
 
 ### 复杂度与追问
 
-摘要输入按块计算，完整祖先校验的tuple前缀副本使本参考实现最坏空间和准备工作达到 $O(T^2/B)$；生产实现通常依赖强哈希并避免保存所有祖先副本。本题故意以空间换可见的碰撞校验，不声称复刻vLLM全部实现。
+摘要输入按块计算，完整祖先校验的 tuple 前缀副本使本参考实现最坏空间和准备工作达到 $O(T^2/B)$；生产实现通常依赖强哈希并避免保存所有祖先副本。本题故意以空间换可见的碰撞校验，不声称复刻 vLLM 全部实现。
 
-多模态prompt即使token IDs相同，图像/音频内容也可能不同；指纹须覆盖有效内容及预处理版本。相同token但不同RoPE起点或非因果mask不可复用；生产系统还有混合attention、滑窗等专门语义。
+多模态 prompt 即使 token IDs 相同，图像/音频内容也可能不同；指纹须覆盖有效内容及预处理版本。相同 token 但不同 RoPE 起点或非因果 mask 不可复用；生产系统还有混合 attention、滑窗等专门语义。
 
 ## 相关题
 

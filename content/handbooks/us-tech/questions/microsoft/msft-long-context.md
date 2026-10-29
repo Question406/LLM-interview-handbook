@@ -4,7 +4,9 @@ section: microsoft
 order: 10
 level: A
 title: Microsoft：长上下文产品（会议纪要、仓库问答）的评测切片
-quick: "长上下文按长度、证据位置、跳数、归因、缺证据拒答和新鲜度切片验收。会议纪要检查行动项、说话人和时间戳，仓库问答检查文件定位与不存在的 API。固定金标比较检索加短窗口与全量输入，needle 用于位置与窗口回归。"
+quick: >-
+  长上下文按长度、证据位置、跳数、归因、缺证据拒答和新鲜度切片验收。会议纪要检查行动项、说话人和时间戳，仓库问答检查文件定位与不存在的
+  API。固定金标比较检索加短窗口与全量输入，needle 用于位置与窗口回归。
 tags:
   - Microsoft
   - Long Context
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Phi-3 Technical Report
-    url: https://arxiv.org/abs/2404.14219
+    url: 'https://arxiv.org/abs/2404.14219'
     type: primary
   - title: Lost in the Middle — How Language Models Use Long Contexts
-    url: https://arxiv.org/abs/2307.03172
+    url: 'https://arxiv.org/abs/2307.03172'
     type: primary
 ---
 
@@ -32,7 +34,7 @@ Lost in the Middle 说明，证据放在序列中间时，模型表现可能低�
 | 切片 | 测什么 | 会议纪要例子 | 仓库问答例子 |
 | --- | --- | --- | --- |
 | 长度桶 | 能力是否随 $T$ 掉 | 15 分钟 vs 2 小时 | 3 个文件 vs 整仓拼接 |
-| 证据位置 | lost-in-the-middle | 决定在录音 40% 处 | 定义在输入提示（prompt）中部 |
+| 证据位置 | lost-in-the-middle | 决定在录音 40% 处 | 定义在 prompt 中部 |
 | 跳数 | 是否要拼多处 | 开头提需求、结尾才定人 | 接口在 A，实现中的问题在 B |
 | 归因 | 能否指回证据 | 时间戳 / 说话人 | 文件路径 + 行 |
 | 拒答 | 证据不在窗口时 | 没开麦的决定 | 仓库里没有的 API |
@@ -44,7 +46,7 @@ Lost in the Middle 说明，证据放在序列中间时，模型表现可能低�
 
 ## 与检索路径做同题比较
 
-默认先检索或分段摘要，再用短窗口生成，长窗口作为对照与兜底。固定同一测试，比较检索+短上下文与全部输入，才能判断提升来自窗口还是证据筛选；例如许多仓库问题 8k 检索可以胜过 128k 全塞。视觉会议白板还要计入 `msft-llava` 中的视觉 token。
+默认先检索或分段摘要，再用短窗口生成，长窗口作为对照与 fallback。固定同一测试，比较检索+短上下文与全部输入，才能判断提升来自窗口还是证据筛选；例如许多仓库问题 8k 检索可以胜过 128k 全塞。视觉会议白板还要计入 `msft-llava` 中的视觉 token。
 
 公开会议与著名仓库可能被预训练记住，内部租户的时间切片、合成的中段决定更适合检查泛化。研究上 Phi-3 长上下文训练与应用验收是相关但不同的问题，needle 能证明某些位置的复制能力，不能替代产品任务。
 
@@ -60,4 +62,4 @@ Lost in the Middle 说明，证据放在序列中间时，模型表现可能低�
 要。检索控制 ACL 和噪声，长窗口处理剩余长依赖，两者配合。
 
 **怎么测编造 API？**
-故意问仓库不存在的符号，正确行为是搜索或说明没有。完整假函数即使能编译，也属于严重幻觉。
+故意问仓库不存在的符号，正确行为是搜索或说明没有。完整假函数即使能编译，也属于严重 hallucination。

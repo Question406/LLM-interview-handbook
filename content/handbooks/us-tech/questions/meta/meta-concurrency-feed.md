@@ -51,7 +51,7 @@ TAO 这类路径写存储后更新或失效缓存。纯 cache-aside 并发写下
 就近读缓存，写主区域再异步传播，自己的写通过 sticky 或主读满足 read-your-writes。
 
 **广告超时呢？**
-广告单独设预算与校准，见 `meta-ads-calibration`，超时可退成纯非广告内容，避免挡住整屏 Feed。
+广告单独设预算与 calibration，见 `meta-ads-calibration`，超时可退成纯非广告内容，避免挡住整屏 Feed。
 
 **排障先看什么？**
 看命中率、热 key QPS、失效延迟、重复扇出，以及 p99 究竟花在缓存还是排序。

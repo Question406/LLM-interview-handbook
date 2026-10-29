@@ -4,20 +4,20 @@ section: linked-list
 order: 6
 level: S
 title: LC 25 · K 个一组翻转链表
-quick: "从哑结点出发，每次先数够 $k$ 个节点，再把这一段反转后接回去；数不够 $k$ 个就保持原序结束。时间 $O(n)$，额外空间 $O(1)$。"
+quick: 从哑结点出发，每次先数够 $k$ 个节点，再把这一段反转后接回去；数不够 $k$ 个就保持原序结束。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 25. K 个一组翻转链表
-    url: https://leetcode.cn/problems/reverse-nodes-in-k-group/
+    url: 'https://leetcode.cn/problems/reverse-nodes-in-k-group/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -136,7 +136,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个节点最多被数一次、反转一次。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $k=1$ 时每组只有一个节点，反转等于没动，原表不变。
 - $n$ 恰好整除 $k$ 时，最后一组也要翻，没有剩余。

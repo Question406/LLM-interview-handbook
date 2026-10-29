@@ -4,7 +4,9 @@ section: coding
 order: 32
 level: A
 title: 白板：对称 INT8 量化，scale、饱和，以及 dequant GEMM 的形状
-quick: "先取 $s=\\max|x|/127$，再按 $q=\\mathrm{clip}(\\mathrm{round}(x/s),-127,127)$ 映射到 INT8，零点为 $0$。GEMM 用 int32 累加，再按输出的行、列乘激活和权重 scale，全零块要给 scale 正下限。"
+quick: >-
+  先取 $s=\max|x|/127$，再按 $q=\mathrm{clip}(\mathrm{round}(x/s),-127,127)$ 映射到
+  INT8，零点为 $0$。GEMM 用 int32 累加，再按输出的行、列乘激活和权重 scale，全零块要给 scale 正下限。
 tags:
   - 完整编程练习
   - Coding
@@ -14,16 +16,17 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: LLM.int8() — 8-bit Matrix Multiplication for Transformers at Scale
-    url: https://arxiv.org/abs/2208.07339
+    url: 'https://arxiv.org/abs/2208.07339'
     type: primary
   - title: bitsandbytes
-    url: https://github.com/bitsandbytes-foundation/bitsandbytes
+    url: 'https://github.com/bitsandbytes-foundation/bitsandbytes'
     type: primary
   - title: TensorRT — Working with Quantized Types
-    url: https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/work-with-quantized-types.html
+    url: >-
+      https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/work-with-quantized-types.html
     type: secondary
 ---
 
@@ -31,7 +34,7 @@ sources:
 
 实现对称 INT8 量化、反量化误差检查和带 scale 的整数线性层，支持整个张量共用 scale 或按指定维度量化。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -54,7 +57,7 @@ int8_linear([[1,2]], [[3,4]], sx=0.5, sw=0.25) -> [[1.375]]
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 上验证数值；没有用到硬件 INT8 GEMM，也没有验证性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 上验证数值；没有用到硬件 INT8 GEMM，也没有验证性能。
 
 ### 题面、接口与约束
 
@@ -124,7 +127,7 @@ def roundtrip_err(x, dim=None):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -189,7 +192,7 @@ q=\mathrm{clip}\bigl(\mathrm{round}(x/s),-127,127\bigr),\qquad
 \hat x=q\cdot s.
 $$
 
-用 $127$ 而不是 $128$，是为了让正负范围对称。有的实现允许取到 $-128$，白板上要说清楚：对称量化不依赖 $-128$ 多出来的那一格。全零块的 $s=0$ 要 clamp 成一个很小的正数，避免除以 $0$。`round` 遇到平局时用银行家舍入还是远离零舍入，要和校准工具保持一致，否则重建结果对不齐。
+用 $127$ 而不是 $128$，是为了让正负范围对称。有的实现允许取到 $-128$，白板上要说清楚：对称量化不依赖 $-128$ 多出来的那一格。全零块的 $s=0$ 要 clamp 成一个很小的正数，避免除以 $0$。`round` 遇到平局时用银行家舍入还是远离零舍入，要和 calibration 工具保持一致，否则重建结果对不齐。
 
 线性层里 $x$ 是 `[M, K]`，PyTorch 的 $W$ 是 `[N, K]`，$y=xW^\top$ 是 `[M, N]`。INT8 路径是
 
@@ -217,7 +220,7 @@ decode 一步的 $M$ 很小（常常就是 batch 大小 $B$），GEMM 的行数�
 ## 追问
 
 **round 和 clip 谁先谁后？**
-裁剪边界 ±127 是整数，所以先 round 再 clip 和先 clip 再 round 得到的结果相同。真正要注意的是 clip 必须在转成 int8 之前：如果先转类型，超出范围的值（比如 128）可能溢出回绕成负数。
+clipping boundaries ±127 是整数，所以先 round 再 clip 和先 clip 再 round 得到的结果相同。真正要注意的是 clip 必须在转成 int8 之前：如果先转类型，超出范围的值（比如 128）可能溢出回绕成负数。
 **非对称比这里多了什么？**
 多一个零点 $z$，让实数 $0$ 落到某个整数上。对称量化强制 $z=0$，实现更简单；激活整体偏向一侧时，量化误差会更大。
 **$Y_{\mathrm{i32}}$ 能原地改成 int8 吗？**
@@ -227,5 +230,5 @@ decode 一步的 $M$ 很小（常常就是 batch 大小 $B$），GEMM 的行数�
 
 ## 相关题
 
-- [[nvidia-int8-quant]]：同一个对称 INT8 公式的口答版，多讲了非对称零点、校准和 INT8 为什么可能反而更慢，不用写代码。
+- [[nvidia-int8-quant]]：同一个对称 INT8 公式的口答版，多讲了非对称零点、calibration 和 INT8 为什么可能反而更慢，不用写代码。
 - [[nvidia-w4a8]]：把视角从单个 INT8 映射拉到部署配方，讲 W4、A8、KV 三套 scale 各自省哪笔带宽。

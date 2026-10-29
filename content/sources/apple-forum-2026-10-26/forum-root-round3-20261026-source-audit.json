@@ -1,0 +1,25 @@
+{
+  "collectedAt": "2026-10-26",
+  "method": "Chrome independent tab 1006832508, visible main post and first-page author replies",
+  "source": "https://www.1point3acres.com/bbs/thread-1084615-1-1.html",
+  "publishedAtVisible": "2024-09-05 14:00:32",
+  "team": "Apple MLE, specific team and AFM membership not established",
+  "visibleScope": "Main post readable; current session says point-restricted content already accessible; no bypass, purchase or interaction",
+  "alreadyCollected": true,
+  "newQuestionIds": [
+    "p3a-apple-photo-ranking",
+    "p3a-apple-video-summary-design"
+  ],
+  "confirmedTopics": [
+    "algorithm to rank Apple album photos",
+    "large video summary system design"
+  ],
+  "notDisclosed": [
+    "ranking objective",
+    "video input/output forms",
+    "scale",
+    "data and model choices",
+    "latency or privacy architecture"
+  ],
+  "notes": "Two additional design questions from an existing source; complete scenarios and answers are handbook extensions. Not two new forum posts."
+}

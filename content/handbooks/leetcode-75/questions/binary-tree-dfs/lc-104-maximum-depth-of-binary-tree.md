@@ -4,8 +4,7 @@ section: binary-tree-dfs
 order: 1
 level: S
 title: LC 104 · 二叉树的最大深度
-quick: >-
-  空树深度 $0$，否则是 $1+\max(\text{左深},\text{右深})$，用 DFS 或层序都行。时间 $O(n)$，额外空间 $O(h)$。
+quick: '空树深度 $0$，否则是 $1+\max(\text{左深},\text{右深})$，用 DFS 或层序都行。时间 $O(n)$，额外空间 $O(h)$。'
 tags:
   - Tree
   - DFS
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 104. Maximum Depth of Binary Tree
-    url: https://leetcode.com/problems/maximum-depth-of-binary-tree/
+    url: 'https://leetcode.com/problems/maximum-depth-of-binary-tree/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -133,7 +132,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个节点一次。额外空间 $O(h)$，$h$ 是树高，最坏链状 $O(n)$。
 
-## 边界
+## Edge Cases
 
 - 空树深度为 $0$。
 - $n=1$ 时只有根，深度为 $1$。
@@ -146,6 +145,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def minDepth(root):
     if root is None:

@@ -4,7 +4,9 @@ section: array-string
 order: 12
 level: A
 title: LC 380 · O(1) 时间插入、删除和获取随机元素
-quick: "数组存元素、哈希表存「值 $\\to$ 下标」：数组负责均匀随机抽样，哈希负责快速找到位置。删除时把末尾元素换到被删位置再 `pop`，避开从中间删除的 $O(n)$。三个操作均摊 $O(1)$。"
+quick: >-
+  数组存元素、哈希表存「值 $\to$ 下标」：数组负责均匀随机抽样，哈希负责快速找到位置。删除时把末尾元素换到被删位置再 `pop`，避开从中间删除的
+  $O(n)$。三个操作均摊 $O(1)$。
 tags:
   - Hash
   - Design
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 380. O(1) 时间插入、删除和获取随机元素
-    url: https://leetcode.cn/problems/insert-delete-getrandom-o1/
+    url: 'https://leetcode.cn/problems/insert-delete-getrandom-o1/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -124,7 +126,7 @@ print("simple tests passed")
 
 `insert` / `remove` / `getRandom` 均摊 $O(1)$ 时间。空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 删除唯一元素时，换尾后数组变空、哈希清空，之后就不能再调 `getRandom`。删除的正好是末尾时，换尾是自身赋值，直接 `pop` 并删哈希就行。插入已存在的值时哈希命中，返回 `false`，数组长度不变。
 
@@ -165,4 +167,4 @@ class RandomizedCollection:
 ```
 
 **要支持并发或持久化呢？**
-现在这版没有锁，线程不安全，三个方法共用同一对数组和哈希。两个线程同时 `insert` 可能写到同一个尾部下标，`remove` 换尾时并发 `getRandom` 可能抽到半删除状态。要并发就给三个方法加同一把互斥锁，均摊时间仍是 $O(1)$，但吞吐受锁限制；读写锁收益不大，因为 `getRandom` 也依赖长度和内容。持久化必须同时快照 `arr` 和 `idx`，只存数组不够，下标会随删除变化。随机性来自 `random.choice`，单测时应该注入 RNG。遍历哈希键当随机既不均匀，也是 $O(n)$，别这么做。
+现在这版没有锁，线程不安全，三个方法共用同一对数组和哈希。两个线程同时 `insert` 可能写到同一个尾部下标，`remove` 换尾时并发 `getRandom` 可能抽到半删除状态。要并发就给三个方法加同一把互斥锁，均摊时间仍是 $O(1)$，但 throughput 受锁限制；读写锁收益不大，因为 `getRandom` 也依赖长度和内容。持久化必须同时快照 `arr` 和 `idx`，只存数组不够，下标会随删除变化。随机性来自 `random.choice`，单测时应该注入 RNG。遍历哈希键当随机既不均匀，也是 $O(n)$，别这么做。

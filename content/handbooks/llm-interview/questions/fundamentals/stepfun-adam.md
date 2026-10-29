@@ -4,7 +4,10 @@ section: fundamentals
 order: 162
 level: A
 title: 阶跃星辰：Adam 的公式是什么，一阶二阶矩怎么更新？
-quick: "Adam 维护两个指数滑动平均（EMA）：一阶矩 $m$ 是梯度的 EMA，二阶矩 $v$ 是梯度平方的 EMA。做完偏差校正后，更新量是 $\\eta\\,\\hat m/(\\sqrt{\\hat v}+\\varepsilon)$，每一维按自己的二阶矩缩放步长。大模型上常用 AdamW，把权重衰减从自适应分母里拆出来。"
+quick: >-
+  Adam 维护两个指数滑动平均（EMA）：一阶矩 $m$ 是梯度的 EMA，二阶矩 $v$ 是梯度平方的 EMA。做完偏差校正后，更新量是
+  $\eta\,\hat m/(\sqrt{\hat v}+\varepsilon)$，每一维按自己的二阶矩缩放步长。大模型上常用 AdamW，把
+  weight decay 从自适应分母里拆出来。
 tags:
   - StepFun
   - Adam
@@ -12,13 +15,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阶跃星辰大模型算法实习面经
-    url: https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3
+    url: 'https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3'
     type: candidate-first-hand
   - title: Adam
-    url: https://arxiv.org/abs/1412.6980
+    url: 'https://arxiv.org/abs/1412.6980'
     type: primary-paper
 ---
 
@@ -29,9 +32,9 @@ sources:
 - 届别 / 流程：实习
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：“Adam的公式是什么？”；“Adam一阶矩、二阶矩和梯度更新是怎么算的？”
+- 原始措辞：“Adam 的公式是什么？”；“Adam 一阶矩、二阶矩和梯度更新是怎么算的？”
 
-Adam 给每个参数维护两个指数滑动平均：一阶矩 $m$ 是梯度的 EMA，二阶矩 $v$ 是梯度平方的 EMA。两者都从 0 起步、早期偏小，要做偏差校正；更新时用 $\hat m$ 除以 $\sqrt{\hat v}$，每一维按自己的梯度大小缩放步长。大模型上要主动补一句 AdamW：权重衰减不进自适应分母。
+Adam 给每个参数维护两个指数滑动平均：一阶矩 $m$ 是梯度的 EMA，二阶矩 $v$ 是梯度平方的 EMA。两者都从 0 起步、早期偏小，要做偏差校正；更新时用 $\hat m$ 除以 $\sqrt{\hat v}$，每一维按自己的梯度大小缩放步长。大模型上要主动补一句 AdamW：weight decay 不进自适应分母。
 
 最常见的丢分是漏写偏差校正，或者嘴上说 $v$ 是「梯度的方差」，写下来却是 $g_t^2$ 的 EMA，还忘了 $m$ 也是有偏的。$g_t$ 是 minibatch 梯度，别和动量 SGD 的单一速度混为一谈。
 
@@ -71,7 +74,7 @@ $\varepsilon$ 防除零，也避免 $v\approx 0$ 时步长爆炸，通常取 $10
 
 ## AdamW 为什么要拆衰减
 
-原始 Adam 把 $\lambda\theta$ 加进 $g_t$，衰减量被 $\sqrt{v}$ 除过，不同维度的衰减强度会随自适应项变化。AdamW 把权重衰减从自适应项里拆出来：$\theta\leftarrow\theta-\eta\hat m/(\sqrt{\hat v}+\varepsilon)-\eta\lambda\theta$，实现上常先做 decay 再走 adam 步。拆开以后，wd 是对 $\theta$ 的各向同性收缩，和「这一维梯度大不大」无关，embedding 和输出头也就不会因为 $v$ 小被衰减得过狠。大模型的预训练和监督微调（SFT）几乎都用 AdamW。
+原始 Adam 把 $\lambda\theta$ 加进 $g_t$，衰减量被 $\sqrt{v}$ 除过，不同维度的衰减强度会随自适应项变化。AdamW 把 weight decay 从自适应项里拆出来：$\theta\leftarrow\theta-\eta\hat m/(\sqrt{\hat v}+\varepsilon)-\eta\lambda\theta$，实现上常先做 decay 再走 adam 步。拆开以后，wd 是对 $\theta$ 的各向同性收缩，和「这一维梯度大不大」无关，embedding 和输出头也就不会因为 $v$ 小被衰减得过狠。大模型的预训练和 SFT 几乎都用 AdamW。
 
 白板上可以顺手和动量 SGD 对比：后者只有一条速度 $v\leftarrow\mu v+g$，没有逐维的二阶缩放，也没有 $1-\beta^t$ 校正。还有两点值得提。一是和 warmup 的搭配，早期校正已经在放大步长，再叠高 lr 容易不稳，所以先 warmup 再进入余弦。二是 Adam 照样有学习率，$\eta$ 一直在，只是每一维再被 $\sqrt{v}$ 缩放一次。
 

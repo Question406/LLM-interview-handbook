@@ -1,0 +1,41 @@
+---
+id: drustz-80dafde3c06b368ac7
+section: openai
+order: 16
+level: A
+title: Recruiter Hr Screen BQ
+quick: locally-saved-research-summary · Recruiter Hr Screen BQ
+companies:
+  - openai
+tags:
+  - DrustZ
+  - locally-saved-research-summary
+  - OpenAI · 题库与复习指南
+realInterview: false
+status: published
+format: markdown
+updatedAt: '2026-10-28'
+sources:
+  - title: DrustZ / Mingrui Zhang · pinned source
+    url: >-
+      https://github.com/DrustZ/ai_interview_prep_2026/blob/04316c111d0e4b75ca2ab8de0e6b42379727946e/1acre3points_crawl/data/questions.json
+    type: primary
+  - title: 作者记录的原始来源
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/recruiter-hr-screen-bq
+    type: secondary
+---
+> DrustZ 整理的复习指南。公司与轮次信息沿用作者的来源记录。
+
+## OpenAI 2026 年中完整面试流程/时间线/信号（1p3a 官方题库 briefing 全文）
+
+流程：1) Recruiter/HR screen ~30min（why OpenAI/why leave/薪资/地点；HR 事后不给轮次反馈是公司政策）。2) Phone screen coding 60min——几乎总是单一 prompt 占满全场、3-5 个递进小问，前 2-3 问需 clean code+边界处理。3) Final loop '4-6 小时、4-6 人、1-2 天'：1-2 轮 coding（RS/RE 另有独立 ML programming 轮）、1 轮 system design 或 ML system design、1 轮 technical deep dive（做 slides 讲最强项目）、1 轮 HM behavioral（最终关卡）。Infra/AI-infra 轨五轮：ML coding 60min + systems coding 75min（偏 concurrency）+ SD 60min + HM + deep dive。时间线：简历审 ~1 周；recruiter→HR call→电面 2-3 周；电面→loop 1-2 周；loop→决定目标 1 周（team match 可拖 1-2 周+）。默认 virtual，可申请去 SF onsite。信号：deep dive+HM BQ 是 gated（技术轮过了才解锁）；面完次日 HR 要内部 reference = 边缘信号；HM 在 BQ 轮不推销角色 = 负信号；loop 后可能插入'15 分钟 HM call'——说是 no prep 实际计分。2026 年中：recruiter 报价 base 上限 ~$327K(L5)/~$385K(L6)；debrief 周二/周五；技术轮全 positive 仍可能被加轮（director match）后以'not enough positive signal for hiring committee'拒；6 月底案例：组满员后 packet 需 1-2 个 'spike/strong-hire' 信号才进 HC。团队匹配 2026 年中普遍很慢（headcount 紧）。
+
+### 来源与内容类型
+
+- Content kind: `locally-saved-research-summary`
+- [原始来源](https://www.1point3acres.com/interview/problems/company/openai/recruiter-hr-screen-bq)
+
+---
+
+来源：[DrustZ / Mingrui Zhang · 1acre3points_crawl/data/questions.json](https://github.com/DrustZ/ai_interview_prep_2026/blob/04316c111d0e4b75ca2ab8de0e6b42379727946e/1acre3points_crawl/data/questions.json)。作者整理资料；许可和第三方来源范围见阅读指南。

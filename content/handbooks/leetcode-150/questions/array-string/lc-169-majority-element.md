@@ -4,7 +4,9 @@ section: array-string
 order: 5
 level: S
 title: LC 169 · 多数元素
-quick: "用 Boyer-Moore 投票：维护一个候选元素和计数，遇到相同元素加一、不同减一，归零就换候选。多数元素严格过半，两两抵消后一定剩下它。时间 $O(n)$，额外空间 $O(1)$；也可以排序或哈希计数。"
+quick: >-
+  用 Boyer-Moore 投票：维护一个候选元素和计数，遇到相同元素加一、不同减一，归零就换候选。多数元素严格过半，两两抵消后一定剩下它。时间
+  $O(n)$，额外空间 $O(1)$；也可以排序或哈希计数。
 tags:
   - Array
   - Boyer-Moore
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 169. 多数元素
-    url: https://leetcode.cn/problems/majority-element/
+    url: 'https://leetcode.cn/problems/majority-element/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -97,7 +99,7 @@ print("simple tests passed")
 
 投票做法时间 $O(n)$，额外空间 $O(1)$。排序做法时间 $O(n\log n)$，哈希计数要 $O(n)$ 空间。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时唯一元素就是多数。多数在开头或结尾，投票照样能对消到它。其他元素种类很多也没关系，只要每种都 $\le \lfloor n/2 \rfloor$，对消后仍会留下多数。
 

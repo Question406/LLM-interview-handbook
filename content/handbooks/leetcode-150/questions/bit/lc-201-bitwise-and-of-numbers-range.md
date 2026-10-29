@@ -4,20 +4,22 @@ section: bit
 order: 6
 level: A
 title: LC 201 · 数字范围按位与
-quick: "区间 $[left,right]$ 所有数的按位与，就是 `left` 和 `right` 的公共二进制前缀后面补零。不断做 `right &= right - 1` 清掉 `right` 最低的 $1$，直到 `right <= left`。时间 $O(\\log right)$。"
+quick: >-
+  区间 $[left,right]$ 所有数的按位与，就是 `left` 和 `right` 的公共二进制前缀后面补零。不断做 `right &= right
+  - 1` 清掉 `right` 最低的 $1$，直到 `right <= left`。时间 $O(\log right)$。
 tags:
   - Bit
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 201. 数字范围按位与
-    url: https://leetcode.cn/problems/bitwise-and-of-numbers-range/
+    url: 'https://leetcode.cn/problems/bitwise-and-of-numbers-range/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -92,7 +94,7 @@ print("simple tests passed")
 
 每次至少清掉一个 $1$，时间 $O(\log right)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 `left == right` 时区间只有一个数，答案就是它，循环不进。`left=0` 时只要 `right\gt 0`，结果就会与到 $0$。区间跨过 $2^k$ 时公共前缀被清空，结果常是 $0$，比如 $[1, 2^{31}-1]$。
 

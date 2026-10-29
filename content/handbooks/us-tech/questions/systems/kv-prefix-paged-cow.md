@@ -3,8 +3,10 @@ id: kv-prefix-paged-cow
 section: systems
 order: 34
 level: S
-title: "KV Prefix ④：共享 KV 页的引用计数与 Copy-on-Write"
-quick: "共享前缀页只复制页表并增加引用计数；追加时若尾页未满且共享，先分配并复制整页，再写新 token。满尾页继续共享，直接另开新页；分配失败则保留原页表、长度与引用数。"
+title: KV Prefix ④：共享 KV 页的引用计数与 Copy-on-Write
+quick: >-
+  共享前缀页只复制页表并增加引用计数；追加时若尾页未满且共享，先分配并复制整页，再写新
+  token。满尾页继续共享，直接另开新页；分配失败则保留原页表、长度与引用数。
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -14,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "vLLM prefix caching allocation and reference counts"
-    url: https://docs.vllm.ai/en/latest/design/prefix_caching/
+  - title: vLLM prefix caching allocation and reference counts
+    url: 'https://docs.vllm.ai/en/latest/design/prefix_caching/'
     type: primary
-  - title: "PagedAttention paper"
-    url: https://arxiv.org/abs/2309.06180
+  - title: PagedAttention paper
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
 ---
 
@@ -28,7 +30,7 @@ sources:
 
 实现可共享 prefix 的分页 KV 存储，支持序列分叉、追加、读取与释放，并确保不同分支写入互不影响。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -62,7 +64,7 @@ pool.read(b) -> [[[[[1],[2],[9]]], [[[1],[2],[9]]]]]
 
 ## 完整编程练习（手册原创实现版）
 
-> 这是为理解开源机制而写的独立练习，不是某家公司的已确认原题，也不是 SGLang / vLLM 源码的逐字翻译。接口、简化条件和测试由手册定义。Python 3 + NumPy，在 CPU 上测试数值和状态语义，不报告 GPU 吞吐。
+> 这是为理解开源机制而写的独立练习，代码为手册独立实现。接口、简化条件和测试由手册定义。Python 3 + NumPy，在 CPU 上测试数值和状态语义，不报告 GPU throughput。
 
 专题入口：[[kv-prefix-implementation-index]]。
 
@@ -119,7 +121,9 @@ class PagePool:
         if min(blocks, layers, heads, block_size, dim) < 1:
             raise ValueError("all pool dimensions must be positive")
         self.block_size = block_size
-        self.storage = np.zeros((blocks, layers, 2, heads, block_size, dim))  # [P, L, 2, H_kv, B, d]
+        self.storage = np.zeros(
+            (blocks, layers, 2, heads, block_size, dim)
+        )  # [P, L, 2, H_kv, B, d]
         self.refs = [0] * blocks
         self.free = list(range(blocks))
 
@@ -154,7 +158,9 @@ class PagePool:
         token_kv = np.asarray(token_kv, dtype=float)
         expected = self.storage.shape[1:4] + self.storage.shape[-1:]
         if token_kv.shape != expected:
-            raise ValueError(f"token_kv must have shape {expected}, got {token_kv.shape}")
+            raise ValueError(
+                f"token_kv must have shape {expected}, got {token_kv.shape}"
+            )
         if not np.isfinite(token_kv).all():
             raise ValueError("token_kv contains non-finite values")
 
@@ -180,7 +186,7 @@ class PagePool:
         if not parts:
             shape = self.storage.shape[1:4] + (0, self.storage.shape[-1])
             return np.empty(shape)
-        return np.concatenate(parts, axis=3)[:, :, :, :seq.length, :].copy()
+        return np.concatenate(parts, axis=3)[:, :, :, : seq.length, :].copy()
 
     def release(self, seq):
         """每页引用数减 1，减到 0 才回到空闲列表。"""
@@ -198,13 +204,17 @@ class PagePool:
         for seq in live_sequences:
             self.check(seq)
             pages_needed = (seq.length + self.block_size - 1) // self.block_size
-            assert len(seq.pages) == pages_needed, "page table length does not match sequence length"
+            assert len(seq.pages) == pages_needed, (
+                "page table length does not match sequence length"
+            )
             for block in seq.pages:
                 expected[block] += 1
         assert expected == self.refs, f"refcounts {self.refs} != expected {expected}"
         assert len(set(self.free)) == len(self.free), "free list has duplicates"
         unreferenced = {block for block, refs in enumerate(self.refs) if refs == 0}
-        assert set(self.free) == unreferenced, "free list does not match unreferenced blocks"
+        assert set(self.free) == unreferenced, (
+            "free list does not match unreferenced blocks"
+        )
 ```
 
 ### 简单测试怎么写
@@ -215,7 +225,7 @@ class PagePool:
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

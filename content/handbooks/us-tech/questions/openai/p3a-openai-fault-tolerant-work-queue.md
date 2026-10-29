@@ -3,8 +3,10 @@ id: p3a-openai-fault-tolerant-work-queue
 section: openai
 order: 613
 level: A
-title: "OpenAI：可靠任务队列：租约、重试、死信与依赖"
-quick: "任务用 pending、running、done、dead 状态机，每次领取发新租约 token，上报只接受当前有效 token。超时按剩余次数重试或进死信，全部依赖 done 才能领取；至少一次交付仍需要业务幂等。"
+title: OpenAI：可靠任务队列：租约、重试、死信与依赖
+quick: >-
+  任务用 pending、running、done、dead 状态机，每次领取发新租约 token，上报只接受当前有效
+  token。超时按剩余次数重试或进死信，全部依赖 done 才能领取；至少一次交付仍需要业务幂等。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · fault-tolerant-work-queue"
-    url: https://www.1point3acres.com/interview/problems/company/openai/fault-tolerant-work-queue
+  - title: 1Point3Acres · OpenAI · fault-tolerant-work-queue
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/fault-tolerant-work-queue
     type: secondary
 ---
 
@@ -58,7 +61,7 @@ reserve(now=6, lease=2)          -> ("b", 3)  # a 已 done，b 解锁
 
 实现一个容错的任务队列，支持入队、worker 领取任务（reserve）、上报成功和上报失败。在此基础上加入租约超时、重试次数上限、死信队列，以及任务之间的 DAG 依赖。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 关键在于防止「僵尸 worker」：一个 worker 卡住、租约过期，任务被另一个 worker 重新领走，之后第一个 worker 才回来上报完成。解决办法是每次领取都发一个新的唯一 token，上报时必须带上这个 token，只有当前租约的 token 才被接受。
 
@@ -116,8 +119,8 @@ class Job:
     max_attempts: int
     depends_on: tuple
     state: str = "pending"  # pending / running / done / dead
-    attempts: int = 0       # 含首次执行
-    token: int = None       # 当前租约的 token，每次 reserve 都换新
+    attempts: int = 0  # 含首次执行
+    token: int = None  # 当前租约的 token，每次 reserve 都换新
     lease_end: float = None
 
 
@@ -202,7 +205,7 @@ class Queue:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -214,13 +217,14 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
 
+
 # 租约在 now >= lease_end 时失效，旧 token 永远不能完成新租约
 queue = Queue()
 queue.enqueue("a", 2)
 queue.enqueue("b", 1, ["a"])
 job_id, first_token = queue.reserve(0, 5)
 assert job_id == "a"
-assert not queue.complete("a", first_token, 5)   # 恰好到期，已经失效
+assert not queue.complete("a", first_token, 5)  # 恰好到期，已经失效
 _, second_token = queue.reserve(5, 5)
 assert not queue.complete("a", first_token, 6)
 assert queue.complete("a", second_token, 6)
@@ -245,7 +249,7 @@ assert queue.reserve(2, 10)[0] == "y"
 # 非法输入
 expect_value_error(queue.enqueue, "z", 1, ["missing"])
 expect_value_error(queue.enqueue, "y", 1)
-expect_value_error(queue.reserve, 1, 5)          # 时间倒退
+expect_value_error(queue.reserve, 1, 5)  # 时间倒退
 ```
 
 ### 复杂度与追问

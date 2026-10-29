@@ -21,20 +21,21 @@ sources:
 
 序列级 GRPO 的优势是一条回答一个数，先 detach，再广播到这条回答里由模型生成的 token。Prompt、pad 和环境返回原文都不参与这部分损失，否则梯度会去拟合模型没有控制的内容。
 
-这题按 GRPO 的序列级奖励整理，组内标准化先算每条回答的标量优势，再处理 token 维度。Logprob 对齐见 `sys-rollout-logprob`。
+这题按 GRPO 的序列级奖励整理，组内 standardization 先算每条回答的标量优势，再处理 token 维度。Logprob 对齐见 `sys-rollout-logprob`。
 
 奖励形状是 `[B]`，同一 prompt 的 $G$ 条回答先完成组内优势计算，结果仍为 `[B]`。再扩成 `[B, 1]`，与 `[B, T]` 的 token logprob 相乘。Prompt 和 pad 的 mask 是 0，模型生成位置是 1，长度不同也能用同一套计算。
 
-工具调用若把环境返回的文本拼回序列，那段不是策略采样的，mask 也是 0。只对模型写出的工具名和参数做损失。环境文字进了 loss，梯度会去拟合一个模型控制不了的字符串。
+工具调用若把环境返回的文本拼回序列，那段不是策略 sampling 的，mask 也是 0。只对模型写出的工具名和参数做损失。环境文字进了 loss，梯度会去拟合一个模型控制不了的字符串。
 
 求和时除以 mask 的总和，不要除以填充后的 $T$。否则短回答的每个 token 权重被 pad 稀释，长回答占便宜。
 
-这批样本的优势在策略更新里应当视为固定目标，不对 $\pi_\theta$ 求导。若把优势计算也接入图，会额外引入推导之外的梯度，让奖励模型或测试分数的数值噪声流入参数。
+这批样本的优势 on-policy 更新里应当视为固定目标，不对 $\pi_\theta$ 求导。若把优势计算也接入图，会额外引入推导之外的梯度，让 reward model 或测试分数的数值噪声流入参数。
 
 ## 代码
 
 ```python
 import torch
+
 
 def token_loss(new_logp, old_logp, adv, response_mask, eps=0.2):
     adv = adv.detach()[:, None]
@@ -53,8 +54,8 @@ def token_loss(new_logp, old_logp, adv, response_mask, eps=0.2):
 ## 相关题
 
 - [[sys-eos-mask]]：同一条 mask 的另一端，专问 EOS 本身和 EOS 之后的 token 进不进 loss。
-- [[coding-rloo-advantage]]：本题广播之前那一步，按 leave-one-out 算出每条回答的标量优势，并和 GRPO 的组内标准化对比。
+- [[coding-rloo-advantage]]：本题广播之前那一步，按 leave-one-out 算出每条回答的标量优势，并和 GRPO 的组内 standardization 对比。
 - [[p3a-openai-masked-cross-entropy-loss]]：SFT 版的 masked loss，同样要除以有效 token 数而不是填充后的长度。
 - [[align-grpo]]：口述 GRPO 的组内 baseline 为什么不要 critic，这张是它的优势落到 token 上的那一步。
-- [[p3a-anthropic-rl-fundamentals-grpo-debug]]：Anthropic 调试题里 response mask 也是一个检查点，那里还要找采样和零方差组的 bug。
+- [[p3a-anthropic-rl-fundamentals-grpo-debug]]：Anthropic 调试题里 response mask 也是一个检查点，那里还要找 sampling 和零方差组的 bug。
 - [[coding-grpo-loss-agg]]：优势乘到 token 之后，token loss 怎么聚合成一个数，三种写法的长度偏置。

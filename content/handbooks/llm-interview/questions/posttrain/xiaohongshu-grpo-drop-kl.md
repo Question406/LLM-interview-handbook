@@ -39,17 +39,17 @@ sources:
 
 ## GRPO 原理：组相对优势也是一种基线
 
-对同一个输入提示采样一组输出，用组内标准化后的优势做 clipped policy gradient，这样就弱化了对 value model 的依赖。组相对 baseline 提供的是局部对比信号，这是它和 PPO+critic 的主要差别。clip 还在，ratio 过大照样会被裁。没有 critic 也不等于没有约束：reward 噪声大的时候，组内排序本身就会漂。公式和方差问题见 `pt-grpo`、`pt-grpo-variance`。
+对同一个 prompt sampling 一组输出，用组内 standardization 后的优势做 clipped policy gradient，这样就弱化了对 value model 的依赖。组相对 baseline 提供的是局部对比信号，这是它和 PPO+critic 的主要差别。clip 还在，ratio 过大照样会被裁。没有 critic 也不等于没有约束：reward 噪声大的时候，组内排序本身就会漂。公式和方差问题见 `pt-grpo`、`pt-grpo-variance`。
 
 ## 「去 KL」是取舍，探索不是白来的
 
-KL 把 $\pi_\theta$ 锚在监督微调（SFT）/ $\pi_{\mathrm{ref}}$ 上，抑制偏离和格式崩。如果任务奖励非常可靠，比如有可执行的验证器（verifier），而你更在意探索更长的推理链，那固定 $\beta$ 的 token 级 KL 就会拖慢、甚至压扁有用的探索。DAPO 等后续工作也讨论过减弱显式 KL，改用采样和 clip 来管更新。
+KL 把 $\pi_\theta$ 锚在 SFT/ $\pi_{\mathrm{ref}}$ 上，抑制偏离和格式崩。如果任务奖励非常可靠，比如有可执行的验证器（verifier），而你更在意探索更长的推理链，那固定 $\beta$ 的 token 级 KL 就会拖慢、甚至压扁有用的探索。DAPO 等后续工作也讨论过减弱显式 KL，改用 sampling 和 clip 来管更新。
 
 风险要同时讲清楚。比如训一个数学模型，去掉 KL 后训练 reward 一路涨，可抽几条看，推理段开始中英混杂、反复写同一句话，最后的答案格式倒是对的。这就是钻奖励规则空子、重复、乱码、语言漂移。实际常用的办法是动态 $\beta$、阶段性关闭，或者只在格式和安全这几维保留硬约束，再看熵、崩坏率和 holdout 成功率决定要不要加回来。相关卡：`gaode-dapo-no-kl`、`ant-grpo-kl-vs-ppo`。
 
 ## Reward 要能复核，过程分别看「像不像 CoT」
 
-优先用规则和环境反馈：最终任务成功、格式能解析、安全不变量。过程分只覆盖能观测到的里程碑，比如编译过了、单测由红变绿、工具返回合法，不可验证的思维链（CoT）文本不能直接当正确过程来奖励。credit assignment 要能解释到关键的错误步，再用反例集检查 hacking，比如空实现、恒真断言、把拒绝说成成功。主信号必须能程序化复核，LLM-as-judge 最多当辅助。去掉 KL 之后，奖励定义一松，熵和语言马上就会漂。
+优先用规则和环境反馈：最终任务成功、格式能解析、安全不变量。过程分只覆盖能观测到的里程碑，比如编译过了、单测由红变绿、工具返回合法，不可验证的 chain of thought（CoT）文本不能直接当正确过程来奖励。credit assignment 要能解释到关键的错误步，再用反例集检查 hacking，比如空实现、恒真断言、把拒绝说成成功。主信号必须能程序化复核，LLM-as-judge 最多当辅助。去掉 KL 之后，奖励定义一松，熵和语言马上就会漂。
 
 ## 追问
 

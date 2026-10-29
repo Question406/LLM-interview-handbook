@@ -29,7 +29,7 @@ $$
 \min\big(\rho_t A_t,\;\mathrm{clip}(\rho_t,1-\varepsilon,1+\varepsilon)A_t\big).
 $$
 
-$\rho_t$ 一旦越出区间、而且处在「有利方向」，这一项对 $\theta$ 的梯度就是 0，这个 token 本轮不贡献梯度。比如一条长推理里有个低概率的关键转折词，策略刚开始学会它，$\rho$ 很快冲过 $1+\varepsilon$，它就被 clip 掉，不再被强化。长 思维链（CoT，即分步推理过程）、多轮 off-policy reuse 时，这类 token 更容易被丢掉，熵和探索会跟着塌。
+$\rho_t$ 一旦越出区间、而且处在「有利方向」，这一项对 $\theta$ 的梯度就是 0，这个 token 本轮不贡献梯度。比如一条长推理里有个低概率的关键转折词，策略刚开始学会它，$\rho$ 很快冲过 $1+\varepsilon$，它就被 clip 掉，不再被强化。长 chain of thought（CoT，即分步推理过程）、多轮 off-policy reuse 时，这类 token 更容易被丢掉，熵和探索会跟着塌。
 
 ## CISPO 怎么改
 
@@ -53,7 +53,7 @@ $\mathrm{sg}(\cdot)$ 让 $\hat r$ 当常数处理，所以所有 token 都有梯
 | GSPO | sequence likelihood ratio | 序列 | 局部 token 噪声被几何平均压掉 |
 | CISPO | IS 权重 $\rho$，且 detach | token | 只封顶系数，梯度仍在 |
 
-GSPO 改的是 ratio 的计算粒度，CISPO 改的是 clip 的对象。slime 里 `--advantage-estimator cispo` 只是同一套 采样轨迹（rollout） 换了 loss，采样方式没变。
+GSPO 改的是 ratio 的计算粒度，CISPO 改的是 clip 的对象。slime 里 `--advantage-estimator cispo` 只是同一套 sampling 轨迹（rollout） 换了 loss，sampling 方式没变。
 
 ## 追问
 

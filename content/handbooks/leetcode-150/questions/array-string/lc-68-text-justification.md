@@ -4,7 +4,9 @@ section: array-string
 order: 24
 level: A
 title: LC 68 · 文本左右对齐
-quick: "贪心地每行尽量多装词，装不下就封行。中间行把多余空格均匀分进词缝，除不尽的余数从左到右每缝多给一格；最后一行和只有一个词的行左对齐、右侧补空格。时间 $O(n)$。"
+quick: >-
+  贪心地每行尽量多装词，装不下就封行。中间行把多余空格均匀分进词缝，除不尽的余数从左到右每缝多给一格；最后一行和只有一个词的行左对齐、右侧补空格。时间
+  $O(n)$。
 tags:
   - String
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 68. 文本左右对齐
-    url: https://leetcode.cn/problems/text-justification/
+    url: 'https://leetcode.cn/problems/text-justification/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -111,9 +113,7 @@ if __name__ == "__main__":
         "example  of text",
         "justification.  ",
     ]
-    assert fullJustify(
-        ["What", "must", "be", "acknowledgment", "shall", "be"], 16
-    ) == [
+    assert fullJustify(["What", "must", "be", "acknowledgment", "shall", "be"], 16) == [
         "What   must   be",
         "acknowledgment  ",
         "shall be        ",
@@ -159,49 +159,47 @@ if __name__ == "__main__":
 
 ```python
 assert fullJustify(
-        ["This", "is", "an", "example", "of", "text", "justification."], 16
-    ) == [
-        "This    is    an",
-        "example  of text",
-        "justification.  ",
-    ]
+    ["This", "is", "an", "example", "of", "text", "justification."], 16
+) == [
+    "This    is    an",
+    "example  of text",
+    "justification.  ",
+]
+assert fullJustify(["What", "must", "be", "acknowledgment", "shall", "be"], 16) == [
+    "What   must   be",
+    "acknowledgment  ",
+    "shall be        ",
+]
 assert fullJustify(
-        ["What", "must", "be", "acknowledgment", "shall", "be"], 16
-    ) == [
-        "What   must   be",
-        "acknowledgment  ",
-        "shall be        ",
-    ]
-assert fullJustify(
-        [
-            "Science",
-            "is",
-            "what",
-            "we",
-            "understand",
-            "well",
-            "enough",
-            "to",
-            "explain",
-            "to",
-            "a",
-            "computer.",
-            "Art",
-            "is",
-            "everything",
-            "else",
-            "we",
-            "do",
-        ],
-        20,
-    ) == [
-        "Science  is  what we",
-        "understand      well",
-        "enough to explain to",
-        "a  computer.  Art is",
-        "everything  else  we",
-        "do                  ",
-    ]
+    [
+        "Science",
+        "is",
+        "what",
+        "we",
+        "understand",
+        "well",
+        "enough",
+        "to",
+        "explain",
+        "to",
+        "a",
+        "computer.",
+        "Art",
+        "is",
+        "everything",
+        "else",
+        "we",
+        "do",
+    ],
+    20,
+) == [
+    "Science  is  what we",
+    "understand      well",
+    "enough to explain to",
+    "a  computer.  Art is",
+    "everything  else  we",
+    "do                  ",
+]
 print("simple tests passed")
 ```
 
@@ -211,7 +209,7 @@ print("simple tests passed")
 
 时间 $O(n)$，$n$ 为所有单词字符数（每个词进出一行一次）。额外空间 $O(\texttt{maxWidth})$ 级（当前行）。
 
-## 边界
+## Edge Cases
 
 一行只装得下一个词、且这个词长度正好等于 `maxWidth` 时，没有词缝，右边也不补，整行就是这个词。最后一行有多个词时，词间只留一个空格、右侧补空，不能两端拉齐。多余空格不能被词缝整除时，左边若干个缝会多一格，右边的缝少一格。
 

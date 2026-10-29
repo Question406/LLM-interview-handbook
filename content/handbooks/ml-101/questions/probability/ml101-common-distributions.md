@@ -33,7 +33,7 @@ $$
 
 泊松变量 $K\sim\operatorname{Poisson}(\lambda)$ 取非负整数，$P(K=k)=e^{-\lambda}\lambda^k/k!$，均值和方差都是 $\lambda$。例如用它描述一段固定时间的独立到达计数，要检查强度是否近似稳定；若来自齐次泊松过程，不相交时间段的计数独立。二项分布在 n 大、p 小且 np 接近固定值时可以近似为泊松。
 
-正态变量 $X\sim N(\mu,\sigma^2)$ 取连续实数，$\mu$ 是中心，$\sigma>0$ 控制宽度；标准化后 $(X-\mu)/\sigma\sim N(0,1)$。例如平均测量误差可在适当条件下用正态近似，但非负计数不能直接当精确正态模型。SciPy 的[正态分布文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html)里，`loc` 对应均值，`scale` 对应标准差。
+正态变量 $X\sim N(\mu,\sigma^2)$ 取连续实数，$\mu$ 是中心，$\sigma>0$ 控制宽度；standardization 后 $(X-\mu)/\sigma\sim N(0,1)$。例如平均测量误差可在适当条件下用正态近似，但非负计数不能直接当精确正态模型。SciPy 的[正态分布文档](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.norm.html)里，`loc` 对应均值，`scale` 对应标准差。
 
 ## 追问
 
@@ -44,4 +44,4 @@ $$
 不一定。同一用户的反应可能相关，各用户的点击概率也可能不同，这会破坏独立同分布伯努利的前提。
 
 **样本多了，原始数据就会变正态吗？**
-不会。中心极限定理讨论的是标准化样本和或均值的分布，原始的二元结果仍然只有 0 和 1。
+不会。中心极限定理讨论的是 standardization 样本和或均值的分布，原始的二元结果仍然只有 0 和 1。

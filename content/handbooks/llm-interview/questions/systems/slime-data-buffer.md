@@ -36,7 +36,7 @@ Data Buffer 负责把生成端的数据交给训练端：提供 prompt，保存�
 
 ## Agent 改哪一层
 
-按改动范围从小到大，可以依次考虑：`--custom-rm-path` → 单条 `--custom-generate-function-path` → 整段 `--rollout-function-path` → `--advantage-estimator` → Megatron 并行。和 veRL「先改 Reward Manager」同一精神，只是 slime 把生成函数当成一等接口。多轮必须在 Sample 上填对 `tokens`、`response_length`、观测结果（observation） 的 mask=0。不要为了 Agent 换 `--colocate` 或 TP，放置和数据面正交。fully-async 的 in-flight 池仍然写入同一 Buffer，只是交组不再等整个 `rollout_id`；stale 靠 version / TIS / mask，Buffer 必须留下版本字段。
+按改动范围从小到大，可以依次考虑：`--custom-rm-path` → 单条 `--custom-generate-function-path` → 整段 `--rollout-function-path` → `--advantage-estimator` → Megatron 并行。和 veRL「先改 Reward Manager」同一精神，只是 slime 把生成函数当成一等接口。多轮必须在 Sample 上填对 `tokens`、`response_length`、observation 的 mask=0。不要为了 Agent 换 `--colocate` 或 TP，放置和数据面正交。fully-async 的 in-flight 池仍然写入同一 Buffer，只是交组不再等整个 `rollout_id`；stale 靠 version / TIS / mask，Buffer 必须留下版本字段。
 
 
 
@@ -47,10 +47,10 @@ veRL 没有叫 Data Buffer 的同名模块，数据面散在 rollout worker 输�
 **Buffer 是 replay 吗？**
 默认不是 off-policy experience replay。它是本步（以及 partial 跨步）的交接面。若当 replay 用，必须自己管 freshness 和 `policy_version`，否则旧轨迹会当 on-policy 进 损失（loss）。
 **为什么不要改 Megatron 做工具？**
-会丢掉 SGLang 的连续 batch、前缀缓存和页式 KV，训练核还会被环境 RTT 堵住。Agent 是数据生成，换 generate / 奖励模型（RM） 函数，不 fork 训练核。
+会丢掉 SGLang 的连续 batch、前缀缓存和页式 KV，训练核还会被环境 RTT 堵住。Agent 是数据生成，换 generate / reward model（RM） 函数，不 fork 训练核。
 **partial 的半截存在哪？**
 Buffer。`--partial-rollout` 写入，`--buffer-filter-path` 默认 FIFO 弹出。前半段是旧权，必须 `--mask-offpolicy-in-partial-rollout` 或 `--use-tis`。两边都关是数学错误。
 **和 veRL 一句话对？**
 Buffer ≈ rollout worker 输出到 actor 输入的显式队列。魔改精神仍是 Reward Manager + Env，不是改 HybridEngine 或 Megatron kernel。模块名不同，分层相同。
 **FIFO 有什么坑？**
-没写完的往往是最长最难的题，`pop_first` 把它们优先送回，下一步长尾更尖。可换 `--buffer-filter-path`，但要声明 freshness 变了。这和动态采样提高有效组是相反的压力。
+没写完的往往是最长最难的题，`pop_first` 把它们优先送回，下一步长尾更尖。可换 `--buffer-filter-path`，但要声明 freshness 变了。这和动态 sampling 提高有效组是相反的压力。

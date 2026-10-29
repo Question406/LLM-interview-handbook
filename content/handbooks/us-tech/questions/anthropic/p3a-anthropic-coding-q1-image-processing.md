@@ -3,8 +3,10 @@ id: p3a-anthropic-coding-q1-image-processing
 section: anthropic
 order: 601
 level: A
-title: "Anthropic：图片流水线：批量变换与并行性能"
-quick: "我会先写顺序版本，定清变换顺序和输出尺寸，再测解码、变换和写盘各花多少时间。找到瓶颈后再选线程或多进程，并按内存和磁盘吞吐限制并发数。"
+title: Anthropic：图片流水线：批量变换与并行性能
+quick: >-
+  我会先写顺序版本，定清变换顺序和输出尺寸，再测 decoding、变换和写盘各花多少时间。找到瓶颈后再选线程或多进程，并按内存和磁盘 throughput
+  限制并发数。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · coding-q1-image-processing"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/coding-q1-image-processing
+  - title: 1Point3Acres · Anthropic · coding-q1-image-processing
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/coding-q1-image-processing
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现一套图片批处理接口：一张图片可以按指定顺序完成灰度化、镜像、缩放和旋转，多张图片可以并发处理并保存为 PNG。返回值的顺序必须对应输入顺序，处理不能覆盖或改写源文件。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -55,17 +58,17 @@ process_image("red.png",steps) -> L模式，大小4×2，每个像素值为76
 
 对一个目录里的图片批量做变换，比如灰度、翻转、缩放、模糊或旋转，先写出能用的版本，再优化整体耗时。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
-我会先用顺序版本把结果做对，再根据测量结果并行化。比如先缩放再旋转和先旋转再缩放，输出尺寸可能不同，所以变换顺序和尺寸要先固定。之后分别测解码、变换和写盘的耗时，才能知道优化哪一步有用。
+我会先用顺序版本把结果做对，再根据测量结果并行化。比如先缩放再旋转和先旋转再缩放，输出尺寸可能不同，所以变换顺序和尺寸要先固定。之后分别测 decoding、变换和写盘的耗时，才能知道优化哪一步有用。
 
 并行化时要按瓶颈选工具：
 
 - 线程适合 I/O，以及 Pillow 里会释放 GIL 的 C 实现操作。纯 Python 的逐像素循环用线程不会变快。
 - 多进程适合 CPU 密集的步骤，但图片要在进程间传递，序列化和拷贝有成本。
-- 并发数要受内存和磁盘吞吐限制。每个 worker 同时持有一张解码后的大图，开太多会把内存撑爆；磁盘写满带宽后再加线程只会更慢。
+- 并发数要受内存和磁盘 throughput 限制。每个 worker 同时持有一张 decoding 后的大图，开太多会把内存撑爆；磁盘写满带宽后再加线程只会更慢。
 
 还要处理好工程细节：输出文件名冲突时开工前就报错，不能覆盖源文件，读完图片及时关闭文件句柄。
 
@@ -164,12 +167,13 @@ def pipeline(paths, outdir, steps, workers=4):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 import tempfile
+
 
 def expect_value_error(fn, *args):
     try:
@@ -177,6 +181,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 with tempfile.TemporaryDirectory() as tmp:
     root = Path(tmp)
@@ -197,15 +202,21 @@ with tempfile.TemporaryDirectory() as tmp:
     image = Image.new("RGB", (2, 1), (0, 0, 0))
     image.putpixel((0, 0), (255, 255, 255))
     image.save(striped)
-    results = pipeline([red, striped], root / "out2", [("flip", None), ("rotate", 90)], 2)
+    results = pipeline(
+        [red, striped], root / "out2", [("flip", None), ("rotate", 90)], 2
+    )
     assert [Path(path).name for path in results] == ["a.png", "b.png"]
     with Image.open(results[1]) as output:
         assert output.size == (1, 2)
-        assert output.getpixel((0, 0)) == (255, 255, 255)   # 镜像后白点在右，逆时针转 90 度到上方
+        assert output.getpixel((0, 0)) == (
+            255,
+            255,
+            255,
+        )  # 镜像后白点在右，逆时针转 90 度到上方
 
     # 非法输入
     expect_value_error(pipeline, [red, root / "x" / "a.png"], root / "out3", [])
-    expect_value_error(pipeline, [red], root, [])           # 会覆盖源文件
+    expect_value_error(pipeline, [red], root, [])  # 会覆盖源文件
     expect_value_error(process_image, red, [("blur", 2)])
 ```
 

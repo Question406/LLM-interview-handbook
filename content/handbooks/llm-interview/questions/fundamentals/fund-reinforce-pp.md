@@ -23,9 +23,9 @@ sources:
     type: secondary
 ---
 
-REINFORCE++ 降方差靠的是全局 batch 标准化：不用 critic，把 advantage 在整个 batch 上减均值、除标准差。它和 PPO、GRPO 的差别在 baseline 的作用域，以及还要不要组。PPO 用学出来的 $V$ 加 GAE，有 bootstrap 偏差，见 `fund-optimal-baseline`；GRPO / RLOO 拿同一输入提示的 $G$ 条回答当 $b(s)$，小 $G$ 时再除 $\sigma$ 有题目级偏差，见 `fund-finite-sample-baseline`、`pt-drgrpo`；REINFORCE++ 认为输入提示（prompt）级的局部标准化有偏、还容易过拟合单题，改成全局 batch 标准化，batch 大时接近无偏。所以把它说成「PPO 去掉 critic」或「GRPO 换个名字」都不准确。
+REINFORCE++ 降方差靠的是全局 batch standardization：不用 critic，把 advantage 在整个 batch 上减均值、除标准差。它和 PPO、GRPO 的差别在 baseline 的作用域，以及还要不要组。PPO 用学出来的 $V$ 加 GAE，有 bootstrap 偏差，见 `fund-optimal-baseline`；GRPO / RLOO 拿同一 prompt 的 $G$ 条回答当 $b(s)$，小 $G$ 时再除 $\sigma$ 有题目级偏差，见 `fund-finite-sample-baseline`、`pt-drgrpo`；REINFORCE++ 认为 prompt 级的局部 standardization 有偏、还容易 overfitting 单题，改成全局 batch standardization，batch 大时接近无偏。所以把它说成「PPO 去掉 critic」或「GRPO 换个名字」都不准确。
 
-## 全局标准化怎么做
+## 全局 standardization 怎么做
 
 实现骨架仍是带 clip 的 REINFORCE / PPO surrogate，没有 value 网络。奖励一侧常把 token 级 KL 写进 $r$（类似 PPO 把 $k_1$ 写入 reward，stop-gradient），然后
 
@@ -45,9 +45,9 @@ $$
 \tilde r_i=r_i-\frac1k\sum_{j=1}^k r_j,
 $$
 
-再对 $\tilde r$ 做全局标准化。组内减均值提供 prompt 内的 control variate（均值含自身，所以仍有 $1/k$ 的收缩）；全局 $\sigma$ 避开了小 $G$ 的噪声尺度。全对的组减完还是 0，这一步一样没信号，动态采样照样要做，见 `pt-grpo-variance`。所以别说「上了 REINFORCE++ 就不用管零方差组」。
+再对 $\tilde r$ 做全局 standardization。组内减均值提供 prompt 内的 control variate（均值含自身，所以仍有 $1/k$ 的收缩）；全局 $\sigma$ 避开了小 $G$ 的噪声尺度。全对的组减完还是 0，这一步一样没信号，动态 sampling 照样要做，见 `pt-grpo-variance`。所以别说「上了 REINFORCE++ 就不用管零方差组」。
 
-和 RLOO 比，RLOO 强调 leave-one-out，通常不除 $\sigma$，用的是原始 reward 的尺度；REINFORCE++ 更强调全局 whitening 和 PPO 的工程组件（clip、token KL）。现场按任务选：一般的基于人类反馈的强化学习（RLHF）要的是 prompt 覆盖，$k=1$ 加全局标准化能省生成；数学推理需要组内有正有负，就用 baseline 变体或 GRPO，同时想清楚要不要除组内 $\sigma$。
+和 RLOO 比，RLOO 强调 leave-one-out，通常不除 $\sigma$，用的是原始 reward 的尺度；REINFORCE++ 更强调全局 whitening 和 PPO 的工程组件（clip、token KL）。现场按任务选：一般的 RLHF 要的是 prompt 覆盖，$k=1$ 加全局 standardization 能省生成；数学推理需要组内有正有负，就用 baseline 变体或 GRPO，同时想清楚要不要除组内 $\sigma$。
 
 ## 追问
 

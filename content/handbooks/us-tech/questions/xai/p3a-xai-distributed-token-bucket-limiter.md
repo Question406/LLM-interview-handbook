@@ -3,8 +3,10 @@ id: p3a-xai-distributed-token-bucket-limiter
 section: xai
 order: 603
 level: A
-title: "xAI：共享 token bucket：惰性补充与并发原子性"
-quick: "我会按经过的时间惰性补令牌，封顶到 capacity，再检查并扣减；这三步必须在共享存储中原子完成。否则两台服务都读到剩 1 个令牌，就可能各放行一次；时钟尽量用存储端时间，本地锁只用于单进程模拟。"
+title: xAI：共享 token bucket：惰性补充与并发原子性
+quick: >-
+  我会按经过的时间惰性补令牌，封顶到 capacity，再检查并扣减；这三步必须在共享存储中原子完成。否则两台服务都读到剩 1
+  个令牌，就可能各放行一次；时钟尽量用存储端时间，本地锁只用于单进程模拟。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · distributed-token-bucket-limiter"
-    url: https://www.1point3acres.com/interview/problems/company/xai/distributed-token-bucket-limiter
+  - title: 1Point3Acres · xAI · distributed-token-bucket-limiter
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/distributed-token-bucket-limiter
     type: secondary
 ---
 
@@ -47,13 +50,13 @@ store.allow("u", 2, 1) -> True     # 1 秒后补回 2 个
 
 ## 解题思路与参考答案
 
-我会把「补充、检查、扣减」放进共享存储的一次原子操作，按用户隔离桶。例如两台服务器同时读到还剩 1 个令牌，分开判断和写回就可能都通过，合计超发。下面先用共享 Store 和线程模拟这道边界。
+我会把「补充、检查、扣减」放进共享存储的一次原子操作，按用户隔离桶。例如两台服务器同时读到还剩 1 个令牌，分开判断和写回就可能都通过，合计超发。下面先用共享 Store 和线程模拟这里需要的 atomicity。
 
 ## 题目
 
 实现一个按用户限流的令牌桶，多个服务实例共同执行同一个限额。重点是令牌怎么按时间补充，以及多个实例同时扣令牌时怎么保证不超发。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -100,8 +103,8 @@ class Store:
         if capacity <= 0 or rate <= 0:
             raise ValueError("capacity and rate must be positive")
         self.capacity = capacity
-        self.rate = rate          # 每秒补充的令牌数
-        self.buckets = {}         # user -> (剩余令牌, 上次更新时刻)
+        self.rate = rate  # 每秒补充的令牌数
+        self.buckets = {}  # user -> (剩余令牌, 上次更新时刻)
         self.lock = Lock()
 
     def allow(self, user, cost, now):
@@ -132,12 +135,13 @@ class Store:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
+
 
 def expect_value_error(fn, *args):
     try:
@@ -145,6 +149,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 满桶 5 个，一次用完；同一时刻再要 1 个被拒；1 秒后补回 2 个
 store = Store(5, 2)
@@ -173,7 +178,7 @@ assert sum(results) == 10
 
 如果追问单锁的瓶颈：一把锁会让所有用户的请求串行。不同用户之间互不影响，可以按用户哈希分片，每片一把锁；在 Redis 里同一用户的 key 落在同一个分片上，天然只锁这一个 key。
 
-如果追问和固定窗口限流的区别：令牌桶按时间连续补充，允许短时间突发到 `capacity`；固定窗口只在窗口边界清零，窗口交界处可能放过两倍的请求。这份实现要求时间单调，不适合重放乱序的历史请求。
+如果追问和固定窗口限流的区别：令牌桶按时间连续补充，允许短时间突发到 `capacity`；固定窗口只在 window boundaries 清零，窗口交界处可能放过两倍的请求。这份实现要求时间单调，不适合重放乱序的历史请求。
 
 ## 相关题
 

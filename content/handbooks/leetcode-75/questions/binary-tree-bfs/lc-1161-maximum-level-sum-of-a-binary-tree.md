@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 1161 · 最大层内元素和
 quick: >-
-  层序 BFS 逐层求和，严格大于当前最优才更新层号，这样并列时保留最小层号。最优初值用 $-\infty$，因为节点值可以为负。时间 $O(n)$，额外空间 $O(w)$。
+  层序 BFS 逐层求和，严格大于当前最优才更新层号，这样并列时保留最小层号。最优初值用 $-\infty$，因为节点值可以为负。时间 $O(n)$，额外空间
+  $O(w)$。
 tags:
   - Tree
   - BFS
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1161. Maximum Level Sum of a Binary Tree
-    url: https://leetcode.com/problems/maximum-level-sum-of-a-binary-tree/
+    url: 'https://leetcode.com/problems/maximum-level-sum-of-a-binary-tree/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -124,7 +125,12 @@ def maxLevelSum(root: Optional[TreeNode]) -> int:
 
 if __name__ == "__main__":
     assert maxLevelSum(build_tree([1, 7, 0, 7, -8, None, None])) == 2
-    assert maxLevelSum(build_tree([989, None, 10250, 98693, -89388, None, None, None, -32127])) == 2
+    assert (
+        maxLevelSum(
+            build_tree([989, None, 10250, 98693, -89388, None, None, None, -32127])
+        )
+        == 2
+    )
     assert maxLevelSum(build_tree([5])) == 1
     assert maxLevelSum(build_tree([-5, -1, -2])) == 2
     assert maxLevelSum(build_tree([1, 1, 0])) == 1
@@ -139,7 +145,10 @@ if __name__ == "__main__":
 
 ```python
 assert maxLevelSum(build_tree([1, 7, 0, 7, -8, None, None])) == 2
-assert maxLevelSum(build_tree([989, None, 10250, 98693, -89388, None, None, None, -32127])) == 2
+assert (
+    maxLevelSum(build_tree([989, None, 10250, 98693, -89388, None, None, None, -32127]))
+    == 2
+)
 assert maxLevelSum(build_tree([5])) == 1
 print("simple tests passed")
 ```
@@ -150,7 +159,7 @@ print("simple tests passed")
 
 时间 $O(n)$。额外空间 $O(w)$，$w$ 是最宽一层。
 
-## 边界
+## Edge Cases
 
 - 只有根时返回 $1$。
 - 全负数时 `best` 初值必须是 $-\infty$，否则判断失效。

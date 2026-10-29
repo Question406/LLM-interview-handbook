@@ -4,7 +4,9 @@ section: agent
 order: 214
 level: A
 title: 多 Agent 通信协议应包含哪些字段，才能支持追责与重放？
-quick: "每条消息至少带 id、发送者角色、任务 id、因果父消息、speech-act 类型、符合 schema 的 payload、权限范围和截止时间。自由文本只当注释，执行只认 typed 字段，出了事才能顺着因果边查清谁建议、谁批准、谁执行。"
+quick: >-
+  每条消息至少带 id、发送者角色、任务 id、因果父消息、speech-act 类型、符合 schema 的
+  payload、权限范围和截止时间。自由文本只当注释，执行只认 typed 字段，出了事才能顺着因果边查清谁建议、谁批准、谁执行。
 tags:
   - Multi-Agent
   - Protocol
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: AutoGen — Multi-Agent Conversation Framework
-    url: https://arxiv.org/abs/2308.08155
+    url: 'https://arxiv.org/abs/2308.08155'
     type: primary
 ---
 
@@ -43,7 +45,7 @@ payload 里的业务字段契约走 `agent-schema-contract`，单位、副作用
 ## 追问
 
 **为什么不能就用自然语言？**
-自然语言没法强制 schema，没法让过期消息作废，也没法把建议和执行分开，事故复盘会变成读聊天记录猜意图。自由文本注释可以留给人读，但不能当执行条件，闸门只认 typed 字段。
+自然语言没法强制 schema，没法让过期消息作废，也没法把建议和执行分开，事故复盘会变成读聊天记录猜意图。自由文本注释可以留给人读，但不能当执行条件，acceptance checks 只认 typed 字段。
 
 **工人要不要看到全部对话？**
 不要。按 `tool_caps` 和当前子目标喂信息，能减少注入面和串话。工人看到别人的原始 Thought，等于扩大注入面，credit 也更难分清。
@@ -54,5 +56,5 @@ payload 里的业务字段契约走 `agent-schema-contract`，单位、副作用
 **环路怎么发现？**
 同一个 `task_id` 下 `message_id` 图出现环，或者 hop $\gt H$ 还没有 `commit`，就由仲裁者终止并升级给人审。
 
-**协议和多 Agent 的信用分配有关系吗？**
-有间接关系。信用分配见 `arl-multi-credit`，协议不负责算谁贡献了 $+1$；但没有 typed `commit`，事后做差分奖励时也找不到可以干预的动作边界。
+**协议和多 Agent 的 credit assignment 有关系吗？**
+有间接关系。credit assignment 见 `arl-multi-credit`，协议不负责算谁贡献了 $+1$；但没有 typed `commit`，事后做差分奖励时也找不到可以干预的 action boundaries。

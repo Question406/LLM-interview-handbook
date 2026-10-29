@@ -1,0 +1,242 @@
+[
+  {
+    "id": "meta-maze-keys-direction-state",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta AI Coding：修复 maze solver，支持 keys、doors 与方向格",
+    "file": "content/handbooks/us-tech/questions/meta/meta-maze-keys-direction-state.md",
+    "realInterview": true,
+    "sources": [
+      "https://www.1point3acres.com/interview/problems/company/meta/ai-coding-maze-solver"
+    ]
+  },
+  {
+    "id": "meta-word-selection-letter-coverage",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta AI Coding：选择互不共用字母的 words，最大化 letter coverage",
+    "file": "content/handbooks/us-tech/questions/meta/meta-word-selection-letter-coverage.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/companies/meta"
+    ]
+  },
+  {
+    "id": "meta-card-triples-exact-selection",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta AI Coding：sum-to-15 card game 的最优 disjoint triples",
+    "file": "content/handbooks/us-tech/questions/meta/meta-card-triples-exact-selection.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/ai-coding"
+    ]
+  },
+  {
+    "id": "meta-mutual-friends-topk",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta AI Coding：按 mutual friends 生成 top-K recommendations",
+    "file": "content/handbooks/us-tech/questions/meta/meta-mutual-friends-topk.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/ai-coding"
+    ]
+  },
+  {
+    "id": "meta-streaming-kmp-search",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta AI Coding 扩展：将 brute-force substring search 改成 streaming KMP",
+    "file": "content/handbooks/us-tech/questions/meta/meta-streaming-kmp-search.md",
+    "realInterview": false,
+    "sources": [
+      "https://aceoffer.app/interviews/ai-coding"
+    ]
+  },
+  {
+    "id": "meta-shortest-unique-prefix-trie",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta：用 trie 找每个 word 的 shortest unique prefix",
+    "file": "content/handbooks/us-tech/questions/meta/meta-shortest-unique-prefix-trie.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/companies/meta"
+    ]
+  },
+  {
+    "id": "meta-expand-signed-expression",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta：去掉 plus/minus expression 的 parentheses，合并变量 coefficients",
+    "file": "content/handbooks/us-tech/questions/meta/meta-expand-signed-expression.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/companies/meta"
+    ]
+  },
+  {
+    "id": "meta-parallel-build-bottlenecks",
+    "book": "us-tech",
+    "section": "meta",
+    "company": "meta",
+    "title": "Meta：找出 parallel build 中独占一个 time step 的 targets",
+    "file": "content/handbooks/us-tech/questions/meta/meta-parallel-build-bottlenecks.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/questions/find-bottleneck-dependencies-in-a-parallel-build"
+    ]
+  },
+  {
+    "id": "openai-tree-route-required-tasks",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI：从 start 到 end，访问 tree 中所有 task nodes 的最短 route",
+    "file": "content/handbooks/us-tech/questions/openai/openai-tree-route-required-tasks.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/oai_shortest_path_in_tree_network_visiting_all_task_nodes"
+    ]
+  },
+  {
+    "id": "openai-grid-visit-targets-mask",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI：Grid 上访问全部 target cells 的最少步数",
+    "file": "content/handbooks/us-tech/questions/openai/openai-grid-visit-targets-mask.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/oai_shortest_path_to_visit_all_points_on_a_grid"
+    ]
+  },
+  {
+    "id": "openai-modular-addition-bfs",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI OA：通过 modular additions 到达 target 的最少操作数",
+    "file": "content/handbooks/us-tech/questions/openai/openai-modular-addition-bfs.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/oai_minimum_steps_to_target_number_via_modular_addition"
+    ]
+  },
+  {
+    "id": "openai-file-content-dedup-collisions",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI 文件题扩展：content deduplication 与 hash collision 校验",
+    "file": "content/handbooks/us-tech/questions/openai/openai-file-content-dedup-collisions.md",
+    "realInterview": false,
+    "sources": [
+      "https://aceoffer.app/interviews/oai_file_folder_deduplication_and_navigation"
+    ]
+  },
+  {
+    "id": "openai-largest-subgrid-histogram-extension",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI 题型扩展：最大 all-ones sub-rectangle 与 histogram stack",
+    "file": "content/handbooks/us-tech/questions/openai/openai-largest-subgrid-histogram-extension.md",
+    "realInterview": false,
+    "sources": [
+      "https://aceoffer.app/interviews/oai_largest_sub_grid_in_2d_array"
+    ]
+  },
+  {
+    "id": "openai-beat-notation-parser-extension",
+    "book": "us-tech",
+    "section": "openai",
+    "company": "openai",
+    "title": "OpenAI 题型扩展：解析 beat notation，用 Fraction 校验 bar duration",
+    "file": "content/handbooks/us-tech/questions/openai/openai-beat-notation-parser-extension.md",
+    "realInterview": false,
+    "sources": [
+      "https://aceoffer.app/interviews/oai_staff_beat_notation_conversion"
+    ]
+  },
+  {
+    "id": "xai-atomic-hierarchical-sliding-limiter",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI：user / team / company 的 atomic sliding-window rate limiter",
+    "file": "content/handbooks/us-tech/questions/xai/xai-atomic-hierarchical-sliding-limiter.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/questions/pluggable-hierarchical-rate-limiter"
+    ]
+  },
+  {
+    "id": "xai-single-pass-document-cleaning",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI Data Coding：single-pass web-document cleaning 与 audit counters",
+    "file": "content/handbooks/us-tech/questions/xai/xai-single-pass-document-cleaning.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/companies/xai"
+    ]
+  },
+  {
+    "id": "xai-courier-pay-event-sweep",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI：从 ACCEPT / FULFILL events 计算 courier pay",
+    "file": "content/handbooks/us-tech/questions/xai/xai-courier-pay-event-sweep.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/questions/courier-pay-from-order-events"
+    ]
+  },
+  {
+    "id": "xai-nested-json-safe-viewer-core",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI UI 题型扩展：nested JSON viewer 的安全 HTML renderer",
+    "file": "content/handbooks/us-tech/questions/xai/xai-nested-json-safe-viewer-core.md",
+    "realInterview": false,
+    "sources": [
+      "https://landthelab.com/companies/xai"
+    ]
+  },
+  {
+    "id": "xai-double-base-palindrome-enumeration",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI：判断 decimal / binary palindrome，并按序生成前 K 个",
+    "file": "content/handbooks/us-tech/questions/xai/xai-double-base-palindrome-enumeration.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/xai_palindromes_decimal_binary"
+    ]
+  },
+  {
+    "id": "xai-async-dag-task-scheduler",
+    "book": "us-tech",
+    "section": "xai",
+    "company": "xai",
+    "title": "xAI：实现 bounded-concurrency DAG task scheduler 与失败传播",
+    "file": "content/handbooks/us-tech/questions/xai/xai-async-dag-task-scheduler.md",
+    "realInterview": true,
+    "sources": [
+      "https://aceoffer.app/interviews/xai/coding-questions"
+    ]
+  }
+]

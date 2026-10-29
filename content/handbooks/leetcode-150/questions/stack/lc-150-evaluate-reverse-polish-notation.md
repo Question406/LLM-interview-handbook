@@ -4,20 +4,22 @@ section: stack
 order: 4
 level: A
 title: LC 150 · 逆波兰表达式求值
-quick: "用栈：数字入栈，遇到运算符先弹右操作数、再弹左操作数，算完把结果压回，减法和除法的顺序不能弄反。题目要求除法向零截断，Python 的 // 是向负无穷取整，所以示例用 int(a / b)。"
+quick: >-
+  用栈：数字入栈，遇到运算符先弹右操作数、再弹左操作数，算完把结果压回，减法和除法的顺序不能弄反。题目要求除法向零截断，Python 的 //
+  是向负无穷取整，所以示例用 int(a / b)。
 tags:
   - Stack
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 150. 逆波兰表达式求值
-    url: https://leetcode.cn/problems/evaluate-reverse-polish-notation/
+    url: 'https://leetcode.cn/problems/evaluate-reverse-polish-notation/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -87,7 +89,10 @@ def evalRPN(tokens: List[str]) -> int:
 if __name__ == "__main__":
     assert evalRPN(["2", "1", "+", "3", "*"]) == 9
     assert evalRPN(["4", "13", "5", "/", "+"]) == 6
-    assert evalRPN(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"]) == 22
+    assert (
+        evalRPN(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"])
+        == 22
+    )
     assert evalRPN(["4", "-2", "/", "2", "+"]) == 0
     print("ok")
 ```
@@ -101,7 +106,9 @@ if __name__ == "__main__":
 ```python
 assert evalRPN(["2", "1", "+", "3", "*"]) == 9
 assert evalRPN(["4", "13", "5", "/", "+"]) == 6
-assert evalRPN(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"]) == 22
+assert (
+    evalRPN(["10", "6", "9", "3", "+", "-11", "*", "/", "*", "17", "+", "5", "+"]) == 22
+)
 print("simple tests passed")
 ```
 
@@ -111,7 +118,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。每个 token 处理一次。
 
-## 边界
+## Edge Cases
 
 只有一个数字时不进运算符分支，栈里就剩它。
 
@@ -160,7 +167,7 @@ def evalRPNChecked(tokens):
             b, a = st.pop(), st.pop()
             if t == "/" and b == 0:
                 raise ValueError("div0")
-            st.append({"+" : a + b, "-": a - b, "*": a * b, "/": int(a / b)}[t])
+            st.append({"+": a + b, "-": a - b, "*": a * b, "/": int(a / b)}[t])
         else:
             st.append(int(t))
     if len(st) != 1:

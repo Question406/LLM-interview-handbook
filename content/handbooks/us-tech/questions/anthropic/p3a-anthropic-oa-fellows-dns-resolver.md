@@ -3,8 +3,10 @@ id: p3a-anthropic-oa-fellows-dns-resolver
 section: anthropic
 order: 615
 level: A
-title: "Anthropic：Fellows DNS：别名、回退、环与缓存"
-quick: "我会沿 CNAME 链解析，用访问集合检测别名环，并缓存最终 IP。缓存 TTL 取链上的最小值；这份练习不缓存失败，避免把一次临时故障长时间当成域名不存在。"
+title: Anthropic：Fellows DNS：别名、回退、环与缓存
+quick: >-
+  我会沿 CNAME 链解析，用访问集合检测别名环，并缓存最终 IP。缓存 TTL
+  取链上的最小值；这份练习不缓存失败，避免把一次临时故障长时间当成域名不存在。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · oa-fellows-dns-resolver"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-fellows-dns-resolver
+  - title: 1Point3Acres · Anthropic · oa-fellows-dns-resolver
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-fellows-dns-resolver
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现内存中的简化 DNS 解析器，支持 A 记录、CNAME 别名、按 TTL 过期的成功结果缓存，以及本地记录缺失时的查询回退。不进行真实网络解析；域名不存在属于正常业务结果，不能作为成功结果写入缓存。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -53,7 +56,7 @@ r.resolve("a", 5) -> "5.6.7.8"
 
 在一个固定的测试框架里，分步骤实现一个简化的 DNS 解析器：先查直接的地址记录，再支持沿别名（CNAME）继续解析，然后加上缓存和本地查不到时的回退查询。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -179,7 +182,7 @@ class Resolver:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -190,6 +193,7 @@ def expect_error(error, fn, *args):
     except error:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise {error.__name__}")
+
 
 # 缓存 TTL 取整条链的最小值：CNAME 的 5，而不是 A 记录的 10
 resolver = Resolver({"a": ("CNAME", "b", 5), "b": ("A", "1.2.3.4", 10)})

@@ -4,18 +4,22 @@ section: rl-coding
 order: 4
 level: A
 title: 手写 PPO clipped surrogate，并解释 $A$ 的符号
-quick: "$L=\\min(\\rho A,\\mathrm{clip}(\\rho,1-\\varepsilon,1+\\varepsilon)A)$。Clip 不会把真实的 $\\rho$ 拉回区间，只是让越界且「有利」那一侧的梯度变成 0：$A\\gt 0$ 时上限 $1+\\varepsilon$ 生效，$A\\lt 0$ 时下限 $1-\\varepsilon$ 生效。"
+quick: >-
+  $L=\min(\rho A,\mathrm{clip}(\rho,1-\varepsilon,1+\varepsilon)A)$。Clip 不会把真实的
+  $\rho$ 拉回区间，只是让越界且「有利」那一侧的梯度变成 0：$A\gt 0$ 时上限 $1+\varepsilon$ 生效，$A\lt 0$ 时下限
+  $1-\varepsilon$ 生效。
 tags:
   - PPO
   - Clip
   - Coding
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-27'
 sources:
   - title: Proximal Policy Optimization
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: primary
 ---
 
@@ -23,9 +27,11 @@ sources:
 
 实现 `ppo_clip_loss(logp,old_logp,adv,eps=0.2)`，返回用于最小化的 PPO clipped policy loss。
 
+### 接口、输入与输出要求
+
 `logp`、`old_logp` 和 `adv` 是同形有限浮点 PyTorch 张量，可以是一维样本向量或二维 token 矩阵；本练习所有元素均有效，不使用 padding mask。旧策略 logprob 和优势作为已固定的输入；`0 < eps < 1`。
 
-逐元素定义概率比 `rho=exp(logp-old_logp)`，目标为 `min(rho*adv,clamp(rho,1-eps,1+eps)*adv)`。返回此目标对全部元素算术平均后的负值，结果是可对 logp 反向传播的标量张量。输入差值保证指数在所用类型中有限。本题没有 value loss、熵正则、KL 项或优势标准化。
+逐元素定义概率比 `rho=exp(logp-old_logp)`，目标为 `min(rho*adv,clamp(rho,1-eps,1+eps)*adv)`。返回此目标对全部元素算术平均后的负值，结果是可对 logp backpropagation 的标量张量。输入差值保证指数在所用类型中有限。本题没有 value loss、entropy regularization、KL 项或优势 standardization。
 
 ### 示例
 
@@ -60,6 +66,7 @@ CISPO 不一样，它 clip 的是 IS 权重并且 detach，梯度仍然走 $\log
 ```python
 import torch
 
+
 def ppo_clip_loss(logp, old_logp, adv, eps=0.2):
     rho = (logp - old_logp).exp()
     unclipped = rho * adv
@@ -76,8 +83,8 @@ def ppo_clip_loss(logp, old_logp, adv, eps=0.2):
 
 ```python
 old = torch.zeros(1)
-positive = ppo_clip_loss(torch.tensor([1.5]).log(), old, torch.tensor([1.]))
-negative = ppo_clip_loss(torch.tensor([0.5]).log(), old, torch.tensor([-1.]))
+positive = ppo_clip_loss(torch.tensor([1.5]).log(), old, torch.tensor([1.0]))
+negative = ppo_clip_loss(torch.tensor([0.5]).log(), old, torch.tensor([-1.0]))
 torch.testing.assert_close(positive, torch.tensor(-1.2))
 torch.testing.assert_close(negative, torch.tensor(0.8))
 print("simple tests passed")
@@ -88,8 +95,8 @@ print("simple tests passed")
 **$\rho$ 真的被夹住了吗？**
 没有。网络照样可以把 $\rho$ 推到 10，只是这些 token 本轮不提供更新。
 
-**要不要对 $A$ 做标准化？**
-组内或 batch 标准化会改变哪些样本被 clip，这和 GRPO 的组相对优势是同一类设计。
+**要不要对 $A$ 做 standardization？**
+组内或 batch standardization 会改变哪些样本被 clip，这和 GRPO 的组相对优势是同一类设计。
 
 **和 value clip 是什么关系？**
 PPO 还有一项 value function clip，那是另一回事，这题只写 policy surrogate。

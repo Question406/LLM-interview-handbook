@@ -4,30 +4,42 @@ section: systems
 order: 21
 level: A
 title: 系统：异步 checkpoint，一致性和占用
-quick: "先在同一 iteration 边界，把训练状态复制成不再被更新的快照，再由后台写盘。训练只等 staging，代价主要是额外 CPU 内存；权重、优化器、RNG 和 dataloader 必须属于同一步，写完后才发布为可恢复 checkpoint。"
+quick: >-
+  先在同一 iteration boundaries，把训练状态复制成不再被更新的快照，再由后台写盘。训练只等 staging，代价主要是额外 CPU
+  内存；权重、优化器、RNG 和 dataloader 必须属于同一步，写完后才发布为可恢复 checkpoint。
 tags:
   - NVIDIA
   - PyTorch
   - Checkpointing
   - Megatron
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: PyTorch Distributed Checkpoint
-    url: https://pytorch.org/docs/stable/distributed.checkpoint.html
+    url: 'https://pytorch.org/docs/stable/distributed.checkpoint.html'
     type: secondary
   - title: dist_checkpointing — Megatron Core
-    url: https://docs.nvidia.com/megatron-core/developer-guide/latest/api-guide/core/dist_checkpointing.html
+    url: >-
+      https://docs.nvidia.com/megatron-core/developer-guide/latest/api-guide/core/dist_checkpointing.html
     type: secondary
-  - title: "CheckFreq: Frequent, Fine-Grained DNN Checkpointing"
-    url: https://www.usenix.org/conference/atc20/presentation/mohan
+  - title: 'CheckFreq: Frequent, Fine-Grained DNN Checkpointing'
+    url: 'https://www.usenix.org/conference/atc20/presentation/mohan'
     type: primary
   - title: Megatron-LM
-    url: https://arxiv.org/abs/1909.08053
+    url: 'https://arxiv.org/abs/1909.08053'
     type: primary
 ---
+
+## 可以这样回答
+
+异步 checkpoint 要先取得一致且独立的快照，再让后台写盘，训练才能安全继续。比如 CPU 缓冲已经拿到同一步的状态后，GPU 可以执行下一步更新；如果 DMA 时 Adam 还在改同一块显存，磁盘上就会混入两步状态。
+
+NVIDIA Megatron / NeMo 和 PyTorch DCP 的 `async_save` 都在减少落盘对训练的阻塞。它处理容错快照；`sys-act-checkpoint` 则用重算减少 step 内激活 HBM，二者的目标不同。
+
+## 技术备查
 
 异步 checkpoint 要先取得一致且独立的快照，再让后台写盘，训练才能安全继续。比如 CPU 缓冲已经拿到同一步的状态后，GPU 可以执行下一步更新；如果 DMA 时 Adam 还在改同一块显存，磁盘上就会混入两步状态。
 
@@ -37,7 +49,7 @@ NVIDIA Megatron / NeMo 和 PyTorch DCP 的 `async_save` 都在减少落盘对训
 
 异步把它拆开：
 
-1. **Stage：** 在 step 边界 barrier 之后，把当前 state_dict 从 GPU 拷到 CPU 可写缓冲（或 pinned / CUDA IPC）。拷完这份缓冲视为冻结。
+1. **Stage：** 在 step boundaries barrier 之后，把当前 state_dict 从 GPU 拷到 CPU 可写缓冲（或 pinned / CUDA IPC）。拷完这份缓冲视为冻结。
 2. **Persist：** 后台线程/进程把冻结缓冲写到分布式文件系统。训练用 GPU 上的原张量继续下一步。
 
 PyTorch DCP 的 `async_save`、Megatron 的 async / NVRx 策略都是这个形状。CheckFreq 更早把「频繁、细粒度」和后台写盘写进训练循环。Stage 期间要确保源张量不被 Adam 原地修改，可以双缓冲，或暂时停止更新。
@@ -50,7 +62,7 @@ Barrier 放在 stage 前，不是放在写盘结束。写盘结束再 barrier �
 
 稳态多出来的是 **一份 CPU 侧拷贝**，大小约等于 GPU 上那份分片状态，不是再复制一份完整模型到每张卡。优化器矩是大头：Adam FP32 约 8-12 字节/参数加 master。CPU DRAM 不够时 stage 会 OOM，异步开不起来。GPU 侧若用双缓冲再占一份 HBM，长序列本来就紧，往往不可接受，所以 stage 目标是尽快离 GPU。
 
-频率：太勤，stage 带宽和后台 IO 打满，训练被隐式拖住；太疏，故障窗口大。对着 MTBF 和一次 stage 的毫秒数选。频率最终要在 staging 成本、后台吞吐与故障后的重算量之间取舍，不能直接与训练步内的 activation checkpoint 比显存。
+频率：太勤，stage 带宽和后台 IO 打满，训练被隐式拖住；太疏，故障窗口大。对着 MTBF 和一次 stage 的毫秒数选。频率最终要在 staging 成本、后台 throughput 与故障后的重算量之间取舍，不能直接与训练步内的 activation checkpoint 比显存。
 
 ## 追问
 

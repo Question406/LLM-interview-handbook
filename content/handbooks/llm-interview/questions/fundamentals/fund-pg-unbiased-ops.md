@@ -3,8 +3,11 @@ id: fund-pg-unbiased-ops
 section: fundamentals
 order: 146
 level: S
-title: 策略梯度里哪些操作仍无偏？哪些会引入偏差？
-quick: "以 $\\nabla J=\\mathbb{E}_{\\pi}[\\nabla\\log\\pi\\cdot G]$ 为准，reward-to-go、只依赖 $s$ 的 baseline、普通 IS 仍然无偏。用 $V$ bootstrap、clip 或截断权重、除组标准差、自归一化 IS、拿当前样本给自己当 baseline，都会引入偏差。无偏但方差炸掉，工程上并不更好。"
+title: policy gradient 里哪些操作仍无偏？哪些会引入偏差？
+quick: >-
+  以 $\nabla J=\mathbb{E}_{\pi}[\nabla\log\pi\cdot G]$ 为准，reward-to-go、只依赖 $s$ 的
+  baseline、普通 IS 仍然无偏。用 $V$ bootstrap、clip 或截断权重、除组标准差、self-normalized
+  IS、拿当前样本给自己当 baseline，都会引入偏差。无偏但方差炸掉，工程上并不更好。
 tags:
   - RL
   - Policy Gradient
@@ -12,20 +15,25 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
-  - title: Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning (REINFORCE)
-    url: https://link.springer.com/article/10.1007/BF00992696
+  - title: >-
+      Simple Statistical Gradient-Following Algorithms for Connectionist
+      Reinforcement Learning (REINFORCE)
+    url: 'https://link.springer.com/article/10.1007/BF00992696'
     type: primary
-  - title: Policy Gradient Methods for Reinforcement Learning with Function Approximation
-    url: https://proceedings.neurips.cc/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html
+  - title: >-
+      Policy Gradient Methods for Reinforcement Learning with Function
+      Approximation
+    url: >-
+      https://proceedings.neurips.cc/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html
     type: primary
   - title: High-Dimensional Continuous Control Using Generalized Advantage Estimation
-    url: https://arxiv.org/abs/1506.02438
+    url: 'https://arxiv.org/abs/1506.02438'
     type: primary
 ---
 
-仍然无偏的只有三类：reward-to-go、只依赖状态的 baseline、普通重要性采样，它们只改方差；用 $V$ bootstrap、各种 clip 和截断、改样本权重，都会引入偏差。这里的无偏是相对 on-policy 策略梯度说的：
+仍然无偏的只有三类：reward-to-go、只依赖状态的 baseline、普通 importance sampling，它们只改方差；用 $V$ bootstrap、各种 clip 和截断、改样本权重，都会引入偏差。这里的无偏是相对 on-policy policy gradient 说的：
 
 $$
 \nabla_\theta J(\theta)=\mathbb{E}_{\tau\sim\pi_\theta}\Big[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t\Big],
@@ -37,9 +45,9 @@ $$
 
 Reward-to-go 把整段 $R$ 换成从 $t$ 起的 $G_t$。$t$ 之前的奖励不依赖 $a_t$，乘进去也无偏，只是多乘了一截噪声，去掉它只影响方差。
 
-只依赖 state（或常数）的 baseline 也一样。$\mathbb{E}_{a\sim\pi}[\nabla\log\pi(a\mid s)b(s)]=0$，所以 $G_t-b(s_t)$ 不改期望。$V$ 再不准，只要它不是当前采样动作的函数，也不拿去替换未来回报，MC 优势 $G_t-V(s_t)$ 就仍然无偏，见 `fund-pg-baseline`、`fund-optimal-baseline`。
+只依赖 state（或常数）的 baseline 也一样。$\mathbb{E}_{a\sim\pi}[\nabla\log\pi(a\mid s)b(s)]=0$，所以 $G_t-b(s_t)$ 不改期望。$V$ 再不准，只要它不是当前 sampling 动作的函数，也不拿去替换未来回报，MC 优势 $G_t-V(s_t)$ 就仍然无偏，见 `fund-pg-baseline`、`fund-optimal-baseline`。
 
-普通重要性采样的数据来自 $\mu$，乘上 $\rho=\pi/\mu$，在 support 覆盖时 $\mathbb{E}_\mu[\rho f]=\mathbb{E}_\pi[f]$，所以无偏，代价是方差随 $\rho$ 的尾部爆炸，见 `fund-is`。
+普通 importance sampling 的数据来自 $\mu$，乘上 $\rho=\pi/\mu$，在 support 覆盖时 $\mathbb{E}_\mu[\rho f]=\mathbb{E}_\pi[f]$，所以无偏，代价是方差随 $\rho$ 的尾部爆炸，见 `fund-is`。
 
 这三步就是「先会无偏梯度，再谈降方差」的全部合法手段。现场最好能当场写出 baseline 那条期望为什么是 0，光说「减个均值更稳」不够。
 
@@ -61,7 +69,7 @@ GAE 的偏差来自 bootstrap，减 $V$ 本身不带来偏差。把 $G_t-V$ 和 
 
 ## 面试时怎么收
 
-先写出目标 $\nabla J$，再对着自己的训练配方说：哪几步还在无偏族里，哪几步已经换了目标。比如可验证的短答案任务，可以靠无偏那一侧走（MC、大 $\lambda$、少 clip）；开放生成且奖励模型（RM）噪声较大时，就得往有偏那一侧走，再用金标看模型有没有在优化长度或套话。别声称某一个 $\lambda$ 或 $\varepsilon$ 普遍最优。
+先写出目标 $\nabla J$，再对着自己的训练配方说：哪几步还在无偏族里，哪几步已经换了目标。比如可验证的短答案任务，可以靠无偏那一侧走（MC、大 $\lambda$、少 clip）；开放生成且 reward model（RM）噪声较大时，就得往有偏那一侧走，再用金标看模型有没有在优化长度或套话。别声称某一个 $\lambda$ 或 $\varepsilon$ 普遍最优。
 
 ## 追问
 

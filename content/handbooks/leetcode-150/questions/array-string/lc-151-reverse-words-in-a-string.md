@@ -4,20 +4,22 @@ section: array-string
 order: 21
 level: A
 title: LC 151 · 反转字符串中的单词
-quick: "Python 里用 `split` 按空白拆出单词，反转后用一个空格拼回去，多余空格会自动压掉，结果首尾没有空格。时间 $O(n)$。要求原地的话就整体反转、逐词反转、再压缩空格。"
+quick: >-
+  Python 里用 `split` 按空白拆出单词，反转后用一个空格拼回去，多余空格会自动压掉，结果首尾没有空格。时间
+  $O(n)$。要求原地的话就整体反转、逐词反转、再压缩空格。
 tags:
   - String
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 151. 反转字符串中的单词
-    url: https://leetcode.cn/problems/reverse-words-in-a-string/
+    url: 'https://leetcode.cn/problems/reverse-words-in-a-string/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -88,7 +90,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$（单词列表）。原地字符数组做法额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 单个单词去掉首尾空格后原样返回。全是空格夹一个词时，`split` 后只剩这个词。多个连续空格会被 `split()` 当空段丢掉，`join` 后单词之间只留一个空格。
 

@@ -4,7 +4,9 @@ section: coding
 order: 21
 level: A
 title: 白板：RoPE 的 cos/sin cache，decode 时怎么 index
-quick: "先预计算 `[max_seq, D/2]` 的 $\\cos,\\sin$ 表，再用每个 token 的绝对 `position_ids` 查表。Decode 新 token 的位置是 `cache_len`，只旋转当前 $q,k$；历史 K 已经旋转过，不能再做一遍。"
+quick: >-
+  先预计算 `[max_seq, D/2]` 的 $\cos,\sin$ 表，再用每个 token 的绝对 `position_ids` 查表。Decode
+  新 token 的位置是 `cache_len`，只旋转当前 $q,k$；历史 K 已经旋转过，不能再做一遍。
 tags:
   - 完整编程练习
   - Coding
@@ -14,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: RoFormer — Enhanced Transformer with Rotary Position Embedding
-    url: https://arxiv.org/abs/2104.09864
+    url: 'https://arxiv.org/abs/2104.09864'
     type: primary
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
 ---
 
@@ -28,7 +30,7 @@ sources:
 
 实现可复用的 RoPE 三角函数表与旋转接口，同时支持 prefill 和带缓存的 decode 绝对位置编号。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -53,7 +55,7 @@ apply_rope([[[[1,2,3,4]]]],cos,sin) -> [[[[1,2,3,4]]]]
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -92,7 +94,7 @@ class RopeCache(nn.Module):
             raise ValueError(f"RoPE dim must be even, got {dim}")
         inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))  # [D/2]
         positions = torch.arange(max_seq).float()
-        freqs = torch.outer(positions, inv_freq)                              # [max_seq, D/2]
+        freqs = torch.outer(positions, inv_freq)  # [max_seq, D/2]
         self.register_buffer("cos", freqs.cos(), persistent=False)
         self.register_buffer("sin", freqs.sin(), persistent=False)
 
@@ -116,7 +118,7 @@ def apply_rope(x, cos, sin):
         cos = cos[None, None, :, :]  # [1, 1, T, D/2]
         sin = sin[None, None, :, :]
     elif cos.dim() == 3:
-        cos = cos[:, None, :, :]     # [B, 1, T, D/2]
+        cos = cos[:, None, :, :]  # [B, 1, T, D/2]
         sin = sin[:, None, :, :]
     x_even = x[..., 0::2]
     x_odd = x[..., 1::2]
@@ -133,7 +135,7 @@ def apply_rope(x, cos, sin):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -161,7 +163,9 @@ cos, sin = rope.at(positions)
 rotated = apply_rope(x, cos, sin)
 for b in range(2):
     cos_row, sin_row = rope.at(positions[b])
-    assert torch.allclose(rotated[b:b + 1], apply_rope(x[b:b + 1], cos_row, sin_row))
+    assert torch.allclose(
+        rotated[b : b + 1], apply_rope(x[b : b + 1], cos_row, sin_row)
+    )
 
 # 位置 0 不旋转；旋转保持范数
 cos0, sin0 = rope.at(torch.tensor([0, 0]))

@@ -4,7 +4,10 @@ section: anthropic
 order: 21
 level: A
 title: Anthropic：Batch API 和在线 serving 的调度差在哪，适合什么负载？
-quick: "Batch 用独立队列处理可延迟的独立请求，公开价格约为在线一半，多数一小时内完成，处理窗口到 24 小时。它不占 Messages RPM，也不提供流式，适合评测、蒸馏和离线抽取。结果按 custom_id 对账，只重试失败项，依赖 tool 结果的在线 agent 仍留在 Messages。"
+quick: >-
+  Batch 用独立队列处理可延迟的独立请求，公开价格约为在线一半，多数一小时内完成，处理窗口到 24 小时。它不占 Messages
+  RPM，也不提供流式，适合评测、distillation 和离线抽取。结果按 custom_id 对账，只重试失败项，依赖 tool 结果的在线 agent
+  仍留在 Messages。
 tags:
   - Anthropic
   - Batch API
@@ -13,19 +16,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Batch processing (Claude Docs)
-    url: https://platform.claude.com/docs/en/build-with-claude/batch-processing
+    url: 'https://platform.claude.com/docs/en/build-with-claude/batch-processing'
     type: primary
   - title: Message Batches API reference
-    url: https://platform.claude.com/docs/en/api/messages/batches
+    url: 'https://platform.claude.com/docs/en/api/messages/batches'
     type: primary
 ---
 
 Batch 适合可以等、彼此独立的离线工作，在线 Messages 适合用户正在等待的流式回复和工具循环。比如一批评测问题可以隔天收结果，agent 下一步却依赖当前 tool 返回，就不适合每轮丢进 Batch。
 
-公开 API 给 Batch 约 50% 折扣，多数批次一小时内结束，但处理窗口为 24 小时，未完成条目会过期。这是吞吐与成本的选择，平均一小时不能当尾延迟 SLO。
+公开 API 给 Batch 约 50% 折扣，多数批次一小时内结束，但处理窗口为 24 小时，未完成条目会过期。这是 throughput 与成本的选择，平均一小时不能当尾延迟 SLO。
 
 ## 提交与结果都按独立请求管理
 
@@ -37,9 +40,9 @@ Batch 不支持 `stream: true`、Fast mode、Threads 或 `max_tokens: 0` 缓存�
 
 ## 调度目标决定负载选择
 
-在线路径优化 P50/P95 TTFT、decode 平滑和用户公平，Batch 允许把请求延后，填入加速器空闲时段。排队设计上，在线用截止时间和优先级控制，Batch 是尽力而为的吞吐队列；混部时 Batch 可以被抢占或降速，24 小时是处理窗口。
+在线路径优化 P50/P95 TTFT、decode 平滑和用户公平，Batch 允许把请求延后，填入加速器空闲时段。排队设计上，在线用截止时间和优先级控制，Batch 是尽力而为的 throughput 队列；混部时 Batch 可以被抢占或降速，24 小时是处理窗口。
 
-离线评测、红队和诚实性测试可用 Batch，相关集见 `anthropic-eval-honesty`、`anthropic-needle`。蒸馏、合成数据、CAI 批评改写、分类、审核、长文档抽取、带 citations 的证据问答，以及大 thinking 预算任务也适合，见 `anthropic-extended-thinking`。
+离线评测、红队和诚实性测试可用 Batch，相关集见 `anthropic-eval-honesty`、`anthropic-needle`。distillation、合成数据、CAI 批评改写、分类、审核、长文档抽取、带 citations 的证据问答，以及大 thinking 预算任务也适合，见 `anthropic-extended-thinking`。
 
 聊天和宿主多轮 tool 循环仍走在线。文档允许 Batch 请求带 tool use，可以处理单请求内的服务端检索等工具，但同批请求仍彼此独立，不保证按依赖顺序执行。
 

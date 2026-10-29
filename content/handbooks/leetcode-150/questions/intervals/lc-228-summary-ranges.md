@@ -4,21 +4,20 @@ section: intervals
 order: 1
 level: A
 title: LC 228 · 汇总区间
-quick: >-
-  在有序无重复的数组上扫一遍，找出每一段连续的数。单点写成 `"a"`，一段写成 `"a->b"`，时间 $O(n)$。
+quick: 在有序无重复的数组上扫一遍，找出每一段连续的数。单点写成 `"a"`，一段写成 `"a->b"`，时间 $O(n)$。
 tags:
   - Intervals
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 228. 汇总区间
-    url: https://leetcode.cn/problems/summary-ranges/
+    url: 'https://leetcode.cn/problems/summary-ranges/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -105,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$（不计答案）。每个下标进外层、内层各一次。
 
-## 边界
+## Edge Cases
 
 空数组时外层循环不进，返回 `[]`。单个元素时延伸条件不成立，输出 `"a"`。整段连续时外层只跑一轮，得到一条 `"start->end"`。完全不连续时每个数都是单点串。有负数也没关系，数组仍然有序，`+1` 的判断不受符号影响。
 

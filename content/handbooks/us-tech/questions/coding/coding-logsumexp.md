@@ -4,7 +4,9 @@ section: coding
 order: 20
 level: S
 title: 白板：log-sum-exp trick，和 cross entropy 的关系
-quick: "先减最大值，再用 $\\mathrm{logsumexp}(z)=m+\\log\\sum e^{z-m}$（$m=\\max z$）求 softmax 分母的对数。交叉熵直接取 $\\mathrm{logsumexp}(z)-z_y$，不用先算概率；整行 `-inf` 要单独处理。"
+quick: >-
+  先减最大值，再用 $\mathrm{logsumexp}(z)=m+\log\sum e^{z-m}$（$m=\max z$）求 softmax
+  分母的对数。cross entropy 直接取 $\mathrm{logsumexp}(z)-z_y$，不用先算概率；整行 `-inf` 要单独处理。
 tags:
   - 完整编程练习
   - Coding
@@ -14,30 +16,32 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.logsumexp
-    url: https://pytorch.org/docs/stable/generated/torch.logsumexp.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.logsumexp.html'
     type: primary
   - title: torch.nn.functional.cross_entropy
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
     type: primary
   - title: torch.nn.functional.log_softmax
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.log_softmax.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.log_softmax.html
     type: primary
 ---
 
 ## 题目描述
 
-实现可在大幅值输入上正常工作的 logsumexp、log-softmax 与逐样本负对数似然接口。
+实现可在大幅值输入上正常工作的 logsumexp、log-softmax 与逐样本 negative log likelihood 接口。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `logsumexp(z, dim=-1, keepdim=False)`：数值稳定地计算 $\log\sum_j e^{z_j}$，`dim` 是约简轴，`keepdim=True` 保留该轴且长度为 1，否则去掉该轴。整行都是 `-inf` 时返回 `-inf`；约简轴长度为正。
 - `log_softmax(z, dim=-1)`：返回 $z-\mathrm{logsumexp}(z)$。每行至少要有一个有限 logit，因此 log-softmax 的输入不含全屏蔽行。
-- `nll_from_logits(logits, target)`：`logits` 是 `[N, V]`，`target` 是 `[N]` 的类别下标，返回每个样本的交叉熵 `[N]`。保证 `0 <= target[i] < V`。
+- `nll_from_logits(logits, target)`：`logits` 是 `[N, V]`，`target` 是 `[N]` 的类别下标，返回每个样本的 cross entropy `[N]`。保证 `0 <= target[i] < V`。
 - 除了全屏蔽行，输入 logits 都是有限值。fp16 / bf16 输入先升到 float32 计算，float64 保持 float64。
 
 ### 输入输出示例
@@ -55,13 +59,13 @@ nll_from_logits([[1000, 1001]], [1])  -> [0.3133]
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，CPU 上验证；没有验证 GPU 或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证；没有验证 GPU 或性能。
 
 ### 题面、接口与约束
 
 - `logsumexp(z, dim=-1, keepdim=False)`：数值稳定地计算 $\log\sum_j e^{z_j}$，参数含义和 `torch.logsumexp` 一样。整行都是 `-inf` 时返回 `-inf`；在长度为 0 的维度上约简时抛 `ValueError`。
 - `log_softmax(z, dim=-1)`：返回 $z-\mathrm{logsumexp}(z)$。每行至少要有一个有限 logit，全屏蔽行没有概率定义，抛 `ValueError`。
-- `nll_from_logits(logits, target)`：`logits` 是 `[N, V]`，`target` 是 `[N]` 的类别下标，返回每个样本的交叉熵 `[N]`。下标越界时抛 `ValueError`。
+- `nll_from_logits(logits, target)`：`logits` 是 `[N, V]`，`target` 是 `[N]` 的类别下标，返回每个样本的 cross entropy `[N]`。下标越界时抛 `ValueError`。
 - 除了全屏蔽行，输入 logits 都是有限值。fp16 / bf16 输入先升到 float32 计算，float64 保持 float64。
 
 ### 输入输出示例
@@ -77,7 +81,7 @@ nll_from_logits([[1000, 1001]], [1])  -> [0.3133]
 
 整行都是 `-inf` 时 $m=-\infty$，直接相减会出现 $-\infty-(-\infty)=\text{NaN}$。所以把这种行的平移量换成 0：此时每一项 $e^{-\infty}=0$，求和为 0，取 log 得到 `-inf`，正是数学上的结果。
 
-交叉熵不先算概率再取 log，而是直接在 log 空间里用 `gather` 取出目标类别那一列。这样即使目标类别的概率小到下溢，结果仍是有限值。
+cross entropy 不先算概率再取 log，而是直接在 log 空间里用 `gather` 取出目标类别那一列。这样即使目标类别的概率小到下溢，结果仍是有限值。
 
 ### 完整参考实现（Python 3）
 
@@ -114,12 +118,14 @@ def log_softmax(z, dim=-1):
 
 
 def nll_from_logits(logits, target):
-    """每个样本的交叉熵 -log softmax(logits)[target]。logits: [N, V]，target: [N]。"""
+    """每个样本的 cross entropy -log softmax(logits)[target]。logits: [N, V]，target: [N]。"""
     num_classes = logits.shape[-1]
     if target.min() < 0 or target.max() >= num_classes:
-        raise ValueError(f"target must be in [0, {num_classes}), "
-                         f"got range [{target.min()}, {target.max()}]")
-    log_probs = log_softmax(logits, dim=-1)                       # [N, V]
+        raise ValueError(
+            f"target must be in [0, {num_classes}), "
+            f"got range [{target.min()}, {target.max()}]"
+        )
+    log_probs = log_softmax(logits, dim=-1)  # [N, V]
     return -log_probs.gather(1, target.unsqueeze(1)).squeeze(1)  # [N]
 ```
 
@@ -131,7 +137,7 @@ def nll_from_logits(logits, target):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -168,7 +174,7 @@ assert logsumexp(logits, dim=-1, keepdim=True).shape == (2, 1)
 # float64 不被降成 float32
 assert logsumexp(logits.double()).dtype == torch.float64
 
-# 交叉熵：在 log 空间按 target 取值，和 F.cross_entropy 一致
+# cross entropy：在 log 空间按 target 取值，和 F.cross_entropy 一致
 target = torch.tensor([1, 0])
 expected = F.cross_entropy(logits, target, reduction="none")
 assert torch.allclose(nll_from_logits(logits, target), expected)
@@ -187,11 +193,11 @@ expect_value_error(logsumexp, torch.empty(3, 0))
 
 ## 题怎么来的
 
-OpenAI 的数值题和交叉熵损失（CE）白板考的是同一项基本功。面试官让你写 `logsumexp`，再问「交叉熵还要不要先过 softmax」。答案是不要：CE 本身就是在 log 空间里用这条归约算出来的。稳定 softmax 见 `coding-softmax-stable`，完整 CE 见 `coding-cross-entropy`。PaLM 的 z-loss 直接对 $z=\mathrm{logsumexp}$ 做正则，见 `coding-z-loss`。
+OpenAI 的数值题和 cross entropy loss（CE）白板考的是同一项基本功。面试官让你写 `logsumexp`，再问「cross entropy 还要不要先过 softmax」。答案是不要：CE 本身就是在 log 空间里用这条归约算出来的。稳定 softmax 见 `coding-softmax-stable`，完整 CE 见 `coding-cross-entropy`。PaLM 的 z-loss 直接对 $z=\mathrm{logsumexp}$ 做正则，见 `coding-z-loss`。
 
 ## Trick：先减 max
 
-对向量 $z$（分类时是最后一维，长度为词表大小 $V$）：
+对向量 $z$（分类时是最后一维，长度为 vocabulary 大小 $V$）：
 
 $$
 \mathrm{logsumexp}(z)=\log\sum_j e^{z_j}=m+\log\sum_j e^{z_j-m},\quad m=\max_j z_j.
@@ -206,7 +212,7 @@ $$
 \mathrm{softmax}(z)_i=\exp(\log\mathrm{softmax}(z)_i).
 $$
 
-one-hot 标签 $y$ 的交叉熵可以直接写成
+one-hot 标签 $y$ 的 cross entropy 可以直接写成
 
 $$
 \ell=-z_y+\mathrm{logsumexp}(z)=-\log\mathrm{softmax}(z)_y.
@@ -223,7 +229,7 @@ softmax 在 $z\leftarrow z+c$ 下不变，但 $\mathrm{logsumexp}(z+c)=\mathrm{l
 ## 追问
 
 **`log(sum(exp(z)))` 什么时候看起来还能用？**
-logits 很小，或者用 fp64 的时候。词表上的 CE 和注意力 scores 不要冒这个险。
+logits 很小，或者用 fp64 的时候。vocabulary 上的 CE 和 attention scores 不要冒这个险。
 **和 `log_softmax` 谁先谁后？**
 先算 logsumexp（或者直接用融合的 log-softmax），CE 再 gather 出目标那一列。不要先 softmax 再取 log。
 **整行都是 $-\infty$ 怎么办？**
@@ -235,6 +241,6 @@ logits 很小，或者用 fp64 的时候。词表上的 CE 和注意力 scores �
 
 - [[coding-softmax-stable]]：同一个减 max 技巧用在 softmax 上，重点是轴怎么选，不涉及 log 域。
 - [[coding-cross-entropy]]：把这里的恒等式落到带 ignore 下标和有效 token 分母的 CE 实现上。
-- [[p3a-openai-masked-cross-entropy-loss]]：OpenAI 的 NumPy 交叉熵题，用 logsumexp 算 log-softmax，再加 mask、label smoothing 和手写梯度。
+- [[p3a-openai-masked-cross-entropy-loss]]：OpenAI 的 NumPy cross entropy 题，用 logsumexp 算 log-softmax，再加 mask、label smoothing 和手写梯度。
 - [[coding-z-loss]]：z-loss 罚的 $\log Z$ 就是这里的 logsumexp，那张讲它为什么会漂、系数取多少。
-- [[coding-fused-ce]]：把 logsumexp 沿词表分块、用 running $(m,\ell)$ 攒起来，避免物化整份 logits。
+- [[coding-fused-ce]]：把 logsumexp 沿 vocabulary 分块、用 running $(m,\ell)$ 攒起来，避免物化整份 logits。

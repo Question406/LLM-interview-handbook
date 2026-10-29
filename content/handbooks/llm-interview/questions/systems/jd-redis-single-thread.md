@@ -37,7 +37,7 @@ Redis 能高并发，主要是因为数据在内存里，短命令执行很快�
 
 比如一个大 value 或慢 Lua 占住了事件循环，其他连接即使只做 GET 也得排队。向量检索比 GET 重得多，所以这道题还要接着回答：搜索使用什么算法，以及重查询会不会拖慢同一个实例里的缓存请求。
 
-## 高吞吐依赖短命令
+## 高 throughput 依赖短命令
 
 网络收发、AOF rewrite、RDB fork、过期清理可以在旁路线程；命令执行仍是一条事件循环。好处：没有细粒度锁、没有命令交叉导致的中间态，pipeline 和多路复用能把微秒级 GET 堆到十万 QPS 量级（纯内存、小 key）。这和 LLM serving 的 continuous batching 不是一回事：Redis 是串行很快的短命令，serving 是 GPU 上交错长请求。
 

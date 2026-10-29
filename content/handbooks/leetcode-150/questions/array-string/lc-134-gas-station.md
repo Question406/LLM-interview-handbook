@@ -4,7 +4,9 @@ section: array-string
 order: 14
 level: A
 title: LC 134 · 加油站
-quick: "先比总油量和总油耗，总油不够就无解，够的话一定有解。再扫每站净增油量，累计油箱一变负就把起点挪到下一站并清零，这等价于找前缀和最低点的下一站。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  先比总油量和总油耗，总油不够就无解，够的话一定有解。再扫每站净增油量，累计油箱一变负就把起点挪到下一站并清零，这等价于找前缀和最低点的下一站。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 134. 加油站
-    url: https://leetcode.cn/problems/gas-station/
+    url: 'https://leetcode.cn/problems/gas-station/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。`sum` 和主循环各一遍。
 
-## 边界
+## Edge Cases
 
 只有一站时，`gas[0] >= cost[0]` 起点就是 $0$，否则返回 $-1$。起点是 $0$ 的话全程 `tank` 不变负，`start` 不会被改掉。唯一可行站在末尾时，前面每一段都会把 `tank` 打成负，最后 `start = n - 1`。
 

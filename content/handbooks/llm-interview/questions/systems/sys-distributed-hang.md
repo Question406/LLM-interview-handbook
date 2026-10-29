@@ -4,16 +4,19 @@ section: systems
 order: 20
 level: S
 title: 分布式训练卡住没有报错，怎样判断是 NCCL 问题还是代码路径不一致？
-quick: "我会先对齐各 rank 的日志，找出最早没有参加同一次 collective 的进程。Collective 要求参与者按相同顺序、相同 shape 进入，数据耗尽、异常被吞或条件分支都可能让其他 rank 卡在 NCCL。确认调用一致后，再查 communicator、网卡和拓扑。"
+quick: >-
+  我会先对齐各 rank 的日志，找出最早没有参加同一次 collective 的进程。Collective 要求参与者按相同顺序、相同 shape
+  进入，数据耗尽、异常被吞或条件分支都可能让其他 rank 卡在 NCCL。确认调用一致后，再查 communicator、网卡和拓扑。
 tags:
   - NCCL
   - Distributed Training
   - Debugging
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: NCCL communicator guide
     url: >-
@@ -21,11 +24,19 @@ sources:
     type: legacy-reference
 ---
 
+## 可以这样回答
+
 我会先对齐各 rank 的日志，找最早没有参加同一次 collective 的进程，再查网络。比如一个 rank 的 dataloader 先耗尽，其他 rank 仍进入 `ncclAllReduce` 等它，超时栈就会停在 NCCL。栈说明等待发生在哪里，还不能说明根因是网卡。
 
 Collective 的约定是同一个 communicator 里的进程按相同顺序、相同 shape 调用 `AllReduce` / `AllGather` / `Broadcast` / `Barrier`。数据步数不一、OOM 或 Python 异常被吞掉、`if rank == 0` 里夹了通信，都可能让某个 rank 缺席。Gradient accumulation 步数、unused parameter、checkpoint 恢复后的参数集合不一致也要查；没有设置超时时，等待可能持续下去。
 
-FSDP / ZeRO 每层 all-gather，Megatron TP 每层 `all_reduce`，通信点密集，分叉可能到很深的一层才显现。比如某个 DP 的 micro-batch 为空，或 packing 后 token 数为 0，实现用 `if has_data:` 跳过 `all_reduce`，其他 rank 就会一直等。RL 还可能有组内 $n$ 条轨迹长度不同、某个 DP 先耗尽 buffer、部分 worker 动态采样 abort 或随机 filter 的情况。参与同一通信组的控制流要一致，可以改变 tensor 内容，不能各自决定是否参加本次通信。
+## 技术备查
+
+我会先对齐各 rank 的日志，找最早没有参加同一次 collective 的进程，再查网络。比如一个 rank 的 dataloader 先耗尽，其他 rank 仍进入 `ncclAllReduce` 等它，超时栈就会停在 NCCL。栈说明等待发生在哪里，还不能说明根因是网卡。
+
+Collective 的约定是同一个 communicator 里的进程按相同顺序、相同 shape 调用 `AllReduce` / `AllGather` / `Broadcast` / `Barrier`。数据步数不一、OOM 或 Python 异常被吞掉、`if rank == 0` 里夹了通信，都可能让某个 rank 缺席。Gradient accumulation 步数、unused parameter、checkpoint 恢复后的参数集合不一致也要查；没有设置超时时，等待可能持续下去。
+
+FSDP / ZeRO 每层 all-gather，Megatron TP 每层 `all_reduce`，通信点密集，分叉可能到很深的一层才显现。比如某个 DP 的 micro-batch 为空，或 packing 后 token 数为 0，实现用 `if has_data:` 跳过 `all_reduce`，其他 rank 就会一直等。RL 还可能有组内 $n$ 条轨迹长度不同、某个 DP 先耗尽 buffer、部分 worker 动态 sampling abort 或随机 filter 的情况。参与同一通信组的控制流要一致，可以改变 tensor 内容，不能各自决定是否参加本次通信。
 
 ## 先定位最早的分歧
 

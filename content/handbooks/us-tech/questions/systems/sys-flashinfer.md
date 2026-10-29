@@ -4,34 +4,47 @@ section: systems
 order: 24
 level: S
 title: 系统：FlashInfer 推理核库，append、sampling、调度器接口
-quick: "FlashInfer 提供 attention、append 和 sampling 核，调度器负责请求状态、batch 和页表。调用 append 前要先分配空间并更新 `indptr`、`indices`、`last_page_len`，核才知道写到哪里。动态 batch 配合 CUDA graph 时，可以固定元数据形状、用有效长度控制本步请求。"
+quick: >-
+  FlashInfer 提供 attention、append 和 sampling 核，调度器负责请求状态、batch 和页表。调用 append
+  前要先分配空间并更新 `indptr`、`indices`、`last_page_len`，核才知道写到哪里。动态 batch 配合 CUDA graph
+  时，可以固定元数据形状、用有效长度控制本步请求。
 tags:
   - NVIDIA
   - vLLM
   - SGLang
   - Serving
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Accelerating Self-Attentions for LLM Serving with FlashInfer
-    url: https://flashinfer.ai/2024/02/02/introduce-flashinfer.html
+    url: 'https://flashinfer.ai/2024/02/02/introduce-flashinfer.html'
     type: primary
   - title: flashinfer.page.append_paged_kv_cache
-    url: https://docs.flashinfer.ai/generated/flashinfer.page.append_paged_kv_cache.html
+    url: >-
+      https://docs.flashinfer.ai/generated/flashinfer.page.append_paged_kv_cache.html
     type: primary
   - title: Sorting-Free GPU Kernels for LLM Sampling — FlashInfer
-    url: https://flashinfer.ai/2025/03/10/sampling.html
+    url: 'https://flashinfer.ai/2025/03/10/sampling.html'
     type: secondary
   - title: flashinfer-ai/flashinfer
-    url: https://github.com/flashinfer-ai/flashinfer
+    url: 'https://github.com/flashinfer-ai/flashinfer'
     type: primary
 ---
 
+## 可以这样回答
+
 FlashInfer 负责执行 attention、append 和 sampling 等 GPU 核，哪些请求进出 batch、哪些页分给谁，由调度器决定。比如新 token 要写入 KV 时，调度器先扩页表，再把元数据交给 append 核，核不会自动分配空间。FlashInfer 的公开博客把 self-attention 分为 prefill、decode、append 三阶段；分页语义见 `sys-paged-attn`，调度见 `sys-cont-batch`、`sys-decode-batch`。
 
-先明确两边持有的状态：调度器持有请求状态（哪些序列在飞、每条的 block table、本步是 prefill 块还是 decode、采样参数）。核库拿到的是已经摊平的 GPU 张量。
+先明确两边持有的状态：调度器持有请求状态（哪些序列在飞、每条的 block table、本步是 prefill 块还是 decode、sampling 参数）。核库拿到的是已经摊平的 GPU 张量。
+
+## 技术备查
+
+FlashInfer 负责执行 attention、append 和 sampling 等 GPU 核，哪些请求进出 batch、哪些页分给谁，由调度器决定。比如新 token 要写入 KV 时，调度器先扩页表，再把元数据交给 append 核，核不会自动分配空间。FlashInfer 的公开博客把 self-attention 分为 prefill、decode、append 三阶段；分页语义见 `sys-paged-attn`，调度见 `sys-cont-batch`、`sys-decode-batch`。
+
+先明确两边持有的状态：调度器持有请求状态（哪些序列在飞、每条的 block table、本步是 prefill 块还是 decode、sampling 参数）。核库拿到的是已经摊平的 GPU 张量。
 
 **Attention：**
 $Q$ 加上 paged $K/V$。Decode 是 $T_q=1$ 的 memory-bound；prefill 是长 $T_q$ 的 compute-bound；append（已有前缀再吃一段新 token，chunked prefill 或多轮续写）介于两者之间。
@@ -40,18 +53,26 @@ $Q$ 加上 paged $K/V$。Decode 是 $T_q=1$ 的 memory-bound；prefill 是长 $T
 **Append：**
 新 $K/V$ 写入已经分配好的页。文档写明：调用前 `kv_indices` / `indptr` / `last_page_len` 必须已经包含新 token 的坑。核不会帮你 malloc。
 **Sampling：**
-另一组核。logits `[B, V]` 上 fused temperature、top-$k$、top-$p$，拒绝采样、尽量不全局 sort。和注意力不是一个 launch。
+另一组核。logits `[B, V]` 上 fused temperature、top-$k$、top-$p$，rejection sampling、尽量不全局 sort。和 attention 不是一个 launch。
 
 因此，调度器决定策略，核根据已经准备好的张量执行计算。谁该抢占、prefix 是否命中、agent 等工具时要不要把序列摘出 batch，核一律不知情。
 
 ```python
 # 调度器先扩页表，再让核写 K/V。坑必须已经在 indices 里。
 flashinfer.append_paged_kv_cache(
-    k_append, v_append, batch_indices, positions,
-    paged_kv_cache, kv_indices, kv_indptr, kv_last_page_len,
+    k_append,
+    v_append,
+    batch_indices,
+    positions,
+    paged_kv_cache,
+    kv_indices,
+    kv_indptr,
+    kv_last_page_len,
 )
 next_ids = flashinfer.sampling.top_k_top_p_sampling_from_logits(
-    logits, top_k, top_p,
+    logits,
+    top_k,
+    top_p,
 )
 ```
 
@@ -60,13 +81,13 @@ next_ids = flashinfer.sampling.top_k_top_p_sampling_from_logits(
 Iteration-level 调度每步 $B$ 在变，结束序列腾页、新请求插入，见 `sys-decode-batch`。核希望本步元数据已经在 GPU 上、形状对得上捕获图：
 
 **CUDA graph：**
-捕获的是固定 shape 的 launch。`B`、`kv_indptr` 长度、workspace 都要 pad 到捕获时的上限。实际活着的序列数 $B_{\mathrm{live}}\lt B_{\mathrm{graph}}$ 时，用 mask / 有效长度，不要每步重新捕获。seed、`top_k` 若走 graph，要用 GPU 上的 tensor 而不是 Python 标量，FlashInfer 采样 API 为此留了 tensor `seed`。图捕获本身见 `nvidia-cuda-graph`。
+捕获的是固定 shape 的 launch。`B`、`kv_indptr` 长度、workspace 都要 pad 到捕获时的上限。实际活着的序列数 $B_{\mathrm{live}}\lt B_{\mathrm{graph}}$ 时，用 mask / 有效长度，不要每步重新捕获。seed、`top_k` 若走 graph，要用 GPU 上的 tensor 而不是 Python 标量，FlashInfer sampling API 为此留了 tensor `seed`。图捕获本身见 `nvidia-cuda-graph`。
 **POD / 混合步：**
 公开核可以把 prefill 块和 decode 打进同一次 attention，对应 chunked prefill 混部，见 `sys-chunked-prefill`。调度器决定本步 token 预算，核只看见 packed $Q$ 和各自的 KV 区间。
 **Cascade / 共享前缀：**
 公共 KV 和私有 KV 分两段 attention 再合并，给 radix / prefix 共享少读一遍公共页，见 `sys-radix-tree`。
 
-错误说法：FlashInfer 等于 vLLM；append 会自己向 CPU malloc；采样必须先对词表排序；把调度逻辑写进 CUDA 才能快。前三个是接口错；最后一个把不该进核的策略塞进核，graph 和调试都会坏。
+错误说法：FlashInfer 等于 vLLM；append 会自己向 CPU malloc；sampling 必须先对 vocabulary 排序；把调度逻辑写进 CUDA 才能快。前三个是接口错；最后一个把不该进核的策略塞进核，graph 和调试都会坏。
 
 NVIDIA 岗可能追 Nsight：decode 步是 HBM SOL 还是 launch 太碎。可以检查 attention 和 sampling 是否分别融合、Python 往返是否过多；SGLang 的 overlap scheduler 在 GPU 跑本步时 CPU 组下一步的 indptr，正是为了填这条缝。
 
@@ -81,7 +102,7 @@ $T_q$ 和 KV 长度差一个数量级，tile 和流水不同。一套核要么�
 分配是调度器和页池的事，可能还要抢占、卸到 CPU。核只写字节。
 
 **Sampling 为什么尽量不 sort？**
-$V$ 十万级，逐步 decode 每步全排序比 GEMM 还贵。拒绝采样在核内多轮，blog 有公开推导。
+$V$ 十万级，逐步 decode 每步全排序比 GEMM 还贵。rejection sampling 在核内多轮，blog 有公开推导。
 
 **和调度器谁拥有 block table？**
 调度器。核拿的是拷到 GPU 的视图。树结构（radix）在 CPU，见 `sys-radix-tree`。

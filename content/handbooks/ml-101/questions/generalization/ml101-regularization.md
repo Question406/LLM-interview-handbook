@@ -3,22 +3,26 @@ id: ml101-regularization
 section: generalization
 order: 10
 level: S
-title: "正则化为什么能改善泛化？"
-quick: "正则化把对模型复杂度的偏好加入训练目标，减少模型为了贴合少量噪声而大幅调整参数。它通常用一点训练拟合能力换取更稳定的预测，强度要通过验证集选择，过强也会欠拟合。"
+title: regularization 为什么能改善泛化？
+quick: >-
+  regularization
+  把对模型复杂度的偏好加入训练目标，减少模型为了贴合少量噪声而大幅调整参数。它通常用一点训练拟合能力换取更稳定的预测，强度要通过验证集选择，过强也会
+  underfitting。
 tags:
   - Machine Learning
   - generalization
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Google ML Crash Course: L2 regularization"
-    url: https://developers.google.com/machine-learning/crash-course/overfitting/regularization
+  - title: 'Google ML Crash Course: L2 regularization'
+    url: >-
+      https://developers.google.com/machine-learning/crash-course/overfitting/regularization
     type: primary
 ---
 
-正则化限制模型过于灵活的解，让它对样本噪声没那么敏感。在线性模型里，常用惩罚较大系数的办法：同样能解释训练数据时，更偏向参数较小的解。
+regularization 限制模型过于灵活的解，让它对样本噪声没那么敏感。在线性模型里，常用惩罚较大系数的办法：同样能解释训练数据时，更偏向参数较小的解。
 
 以平方损失加 L2 正则为例，训练目标可以写成：
 
@@ -30,8 +34,8 @@ $n$ 是训练样本数，$w$ 是特征系数，$b$ 是截距，$\lambda$ 控制�
 
 ## 面试追问
 
-**正则化一定会降低测试误差吗？**
-不会。模型本来就太简单，或数据量充足且无明显过拟合时，进一步约束可能增加偏差。应该比较验证表现。
+**regularization 一定会降低测试误差吗？**
+不会。模型本来就太简单，或数据量充足且无明显 overfitting 时，进一步约束可能增加偏差。应该比较验证表现。
 
-**早停也算正则化吗？**
+**早停也算 regularization 吗？**
 可以。训练太久可能逐渐拟合噪声，按独立验证表现停止能限制这种拟合；停止轮数也属于开发阶段选择，测试集不能参与。

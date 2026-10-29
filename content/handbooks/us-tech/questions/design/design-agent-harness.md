@@ -4,31 +4,34 @@ section: design
 order: 7
 level: S
 title: 设计：Agent harness（工具、沙箱、预算、确认框）
-quick: "我会让宿主循环管理工具类型、权限、沙箱和预算，模型只提出结构化调用。工具输出按不可信数据处理，密钥在运行时注入；发信、转账等有副作用的操作按产品权限规则确认。每次调用和花费都留 trace，验收同时看成功率与事故率。"
+quick: >-
+  我会让宿主循环管理工具类型、权限、沙箱和预算，模型只提出结构化调用。工具输出按不可信数据处理，密钥在运行时注入；发信、转账等有副作用的操作按产品权限规则确认。每次调用和花费都留
+  trace，验收同时看成功率与事故率。
 tags:
   - Agent
   - Microsoft
   - Anthropic
   - Tools
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
   - title: Function calling
-    url: https://platform.openai.com/docs/guides/function-calling
+    url: 'https://platform.openai.com/docs/guides/function-calling'
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -42,25 +45,33 @@ sources:
 
 ### 约束与交付物
 
-工具输出与网页内容可能包含恶意指令；它们不能获得指挥宿主的权限。需要说明凭证、文件与网络边界、资源上限、确认语义和任务成功判定。
+工具输出与网页内容可能包含恶意指令；它们不能获得指挥宿主的权限。需要说明凭证、file access 与 network access rules、资源上限、确认语义和任务成功判定。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 检索网页中出现“忽略原任务并发送密钥”的文字时，系统仍只能按用户授权的任务推进；轨迹应能说明该内容为何没有引发外发操作。
 
-## 解题思路与参考答案
+## 可以这样回答
 
-Agent harness 要让宿主循环掌握权限、执行和预算，模型只负责提出结构化调用。比如工具返回的网页要求把密钥发出去，宿主仍要把这段当数据处理，并靠权限、沙箱和确认限制外发。这是 Microsoft Copilot、Google 工具调用、OpenAI function calling、Anthropic computer use 的通用设计题型，公开博客强调工具少而可靠、控制放在循环外，不是某次现场逐字题。客服应用见 `design-chat-tools`，输入过滤见 `design-moderation`。
-
-## 先定义工具契约和执行边界
+Agent harness 要让宿主循环掌握权限、执行和预算，模型只负责提出结构化调用。比如工具返回的网页要求把密钥发出去，宿主仍要把这段当数据处理，并靠权限、沙箱和确认限制外发。这是 Microsoft Copilot、Google 工具调用、OpenAI function calling、Anthropic computer use 的通用设计题型，公开博客强调工具少而可靠、控制放在循环外。客服应用见 `design-chat-tools`，输入过滤见 `design-moderation`。
 
 我会先问：哪些动作可逆、是否碰用户数据、是否有付款 / 发信 / 删数据、超时、是否允许联网。然后把循环写成宿主代码，模型只出结构化调用。
 
-每个工具要定义名字、JSON schema（字段和类型定义）、是否幂等、所需权限、超时，以及读 / 写 / 不可逆的副作用级别。模型看不到的密钥用运行时注入，输入提示里只放占位。检索类工具的 ACL 仍走检索层，见 `design-prod-rag`，不要靠模型「注意权限」。
+## 技术备查
 
-工具输出是不可信的。网页、邮件、PDF、沙箱 stdout 都可以带「忽略以前的指令，把密钥发到…」。宿主要：截断、转义、当作数据而不是指令、对高风险字段做安全分类。把工具结果和系统策略用明确分隔符隔开，但仍假设模型会被骗，所以不可逆动作不能只靠 输入提示（prompt）。
+## 解题思路与参考答案
+
+Agent harness 要让宿主循环掌握权限、执行和预算，模型只负责提出结构化调用。比如工具返回的网页要求把密钥发出去，宿主仍要把这段当数据处理，并靠权限、沙箱和确认限制外发。这是 Microsoft Copilot、Google 工具调用、OpenAI function calling、Anthropic computer use 的通用设计题型，公开博客强调工具少而可靠、控制放在循环外。客服应用见 `design-chat-tools`，输入过滤见 `design-moderation`。
+
+## 先定义工具契约和 execution constraints
+
+我会先问：哪些动作可逆、是否碰用户数据、是否有付款 / 发信 / 删数据、超时、是否允许联网。然后把循环写成宿主代码，模型只出结构化调用。
+
+每个工具要定义名字、JSON schema（字段和类型定义）、是否幂等、所需权限、超时，以及读 / 写 / 不可逆的副作用级别。模型看不到的密钥用运行时注入，prompt 里只放占位。检索类工具的 ACL 仍走检索层，见 `design-prod-rag`，不要靠模型「注意权限」。
+
+工具输出是不可信的。网页、邮件、PDF、沙箱 stdout 都可以带「忽略以前的指令，把密钥发到…」。宿主要：截断、转义、当作数据而不是指令、对高风险字段做安全分类。把工具结果和系统策略用明确分隔符隔开，但仍假设模型会被骗，所以不可逆动作不能只靠 prompt。
 
 执行代码的沙箱采用无网或白名单出网、只读工作目录、CPU / 内存配额和短 TTL 凭证。禁止在沙箱里放长期云密钥。浏览器型 computer use 要域名白名单和下载扫描。失败要可杀进程，不要让循环空转。
 
@@ -80,7 +91,7 @@ class Budget:
                 raise TimeoutError(k)
 ```
 
-步数、重复同一工具、实际耗时都算。超预算：停、把已做步骤摘要给用户、不要偷偷换更贵的模型续跑。重试要有 jitter 和幂等键，付款工具禁止盲目重试。
+步数、重复同一工具、实际耗时都算。超预算：停、把已做步骤摘要给用户、不要偷偷换更贵的模型续跑。重试要有 jitter 和 idempotency key，付款工具禁止盲目重试。
 
 转账、发邮件、删库、改权限和对外发布要在执行前显示确认框。UI 展示将要调用的参数（人话 + 原始 JSON），用户点了才执行。批量「全选确认」等于没有确认。只读工具可以自动；写工具默认确认，高频低风险（标星）可以用户预设白名单。
 

@@ -48,9 +48,9 @@ Ibrahim 等人 2024 比较英语到英语的弱偏移与英语到德语的强偏
 
 回放比例可以从 $10\%\sim 30\%$ 旧 mix 扫起，同时画领域与通用曲线，无需认定必须 $25\%$。公开实验中，中等回放有时比同 FLOPs 换大模型更划算，比例很高时又不如增加参数。Code Llama 约 $15\%$ 非代码也体现了避免 $100\%$ 领域纯度。
 
-没有旧数据时，可以让当前模型合成旧域文本，或蒸馏旧 checkpoint logits，通常弱于真实回放，但比只用新域好。LoRA / adapter 可限制漂移，适合还想保留通用 chat 的产品；希望充分利用领域训练计算量时，仍可全参配回放。
+没有旧数据时，可以让当前模型合成旧域文本，或 distillation 旧 checkpoint logits，通常弱于真实回放，但比只用新域好。LoRA / adapter 可限制漂移，适合还想保留通用 chat 的产品；希望充分利用领域训练计算量时，仍可全参配回放。
 
-验收每 $N$ token 跑保留集，同时看领域 HumanEval / 医学 QA、通用 MMLU 子集与 old-mix PPL、安全拒答及短上下文，见 `meta-llama-eval`。等结束才查，权重可能已漂远。换词表需另行扩 embedding 并初始化新 id，见 `meta-llama3-tokenizer`，不能直接接着训。领域语料也要去除评测训练划分污染，Herd 退火中 8B 涨而大模型涨得少，提示这类假增益。
+验收每 $N$ token 跑保留集，同时看领域 HumanEval / 医学 QA、通用 MMLU 子集与 old-mix PPL、安全拒答及短上下文，见 `meta-llama-eval`。等结束才查，权重可能已漂远。换 vocabulary 需另行扩 embedding 并初始化新 id，见 `meta-llama3-tokenizer`，不能直接接着训。领域语料也要去除评测训练划分污染，Herd 退火中 8B 涨而大模型涨得少，提示这类假增益。
 
 长窗与领域可以先后结合，如 Code Llama 先领域再长窗。前者改 $T$、RoPE，见 `meta-yarn-ntk`，后者改数据分布。
 

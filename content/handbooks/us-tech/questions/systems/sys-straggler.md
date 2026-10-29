@@ -4,7 +4,9 @@ section: systems
 order: 12
 level: A
 title: 系统：训练 straggler、弹性、跳过坏 batch，和 NCCL 超时
-quick: "同步训练受最慢 rank 限制，先区分数据或计算变慢、链路异常，以及某个 rank 没进入 collective。坏 batch 必须所有 rank 一起决定跳过，弹性恢复要在通信结束后按逻辑 ID 重新分片；NCCL 超时只是发现卡住的看门狗。"
+quick: >-
+  同步训练受最慢 rank 限制，先区分数据或计算变慢、链路异常，以及某个 rank 没进入 collective。坏 batch 必须所有 rank
+  一起决定跳过，弹性恢复要在通信结束后按逻辑 ID 重新分片；NCCL 超时只是发现卡住的看门狗。
 tags:
   - NVIDIA
   - NCCL
@@ -13,19 +15,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: PyTorch Distributed Elastic
-    url: https://pytorch.org/docs/stable/elastic/run.html
+    url: 'https://pytorch.org/docs/stable/elastic/run.html'
     type: secondary
   - title: NCCL Environment Variables
-    url: https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html
+    url: 'https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html'
     type: secondary
-  - title: Megatron-LM — Training Multi-Billion Parameter Language Models Using Model Parallelism
-    url: https://arxiv.org/abs/1909.08053
+  - title: >-
+      Megatron-LM — Training Multi-Billion Parameter Language Models Using Model
+      Parallelism
+    url: 'https://arxiv.org/abs/1909.08053'
     type: primary
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
 ---
 
@@ -39,7 +45,7 @@ DDP、ZeRO、TP 在层间有同步依赖。先看 step 时间直方图，再用 
 
 ## 恢复与跳过必须保持一致
 
-弹性恢复需要先在 step 边界完成或终止在途通信，再按逻辑参数 ID 写齐 checkpoint $\to$ 按新 world size reshard $\to$ 重建通信组。DP 度变化最常见也较容易验证；TP 度要能整除 head；EP 度要重排 expert。优化器状态与权重必须使用同一分片计划。RNG 可有种子差异，但损失（loss）应连续。PyTorch Elastic 管进程生命周期，DCP 按 FQN 读写，两者需要配合。
+弹性恢复需要先在 step boundaries 完成或终止在途通信，再按逻辑参数 ID 写齐 checkpoint $\to$ 按新 world size reshard $\to$ 重建通信组。DP 度变化最常见也较容易验证；TP 度要能整除 head；EP 度要重排 expert。优化器状态与权重必须使用同一分片计划。RNG 可有种子差异，但损失（loss）应连续。PyTorch Elastic 管进程生命周期，DCP 按 FQN 读写，两者需要配合。
 
 NaN、损坏样本或偶发 inf 需要跳过时，先用小 all-reduce 或广播统一 skip 标志，所有 rank 一起跳。本地 `continue` 或静默 `except: pass` 会让进程活着却缺席通信，制造新的 hang。偶发损坏可跳，比例高说明数据或数值有问题，应该停下来排查。
 
@@ -51,7 +57,7 @@ Heartbeat、`TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC`、较新的 `NCCL_TIMEOUT` 是看
 它可能一直在正确等待，根因是最早停止前进、没参加通信的 peer。
 
 **能热加卡接着 all-reduce 吗？**
-不能。在途 collective 不认识新成员，分片边界也改变，要先处理当前通信再重新分片。
+不能。在途 collective 不认识新成员，shard boundaries 也改变，要先处理当前通信再重新分片。
 
 **为什么 skip 也得集体决定？**
 各 rank 必须以一致顺序调用 collective，不能让某个 rank 自己省掉一次通信。

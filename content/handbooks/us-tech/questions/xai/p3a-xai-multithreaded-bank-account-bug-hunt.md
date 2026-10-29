@@ -3,8 +3,10 @@ id: p3a-xai-multithreaded-bank-account-bug-hunt
 section: xai
 order: 615
 level: A
-title: "xAI：BankAccount 并发调试与包装修复"
-quick: "我会用同一把锁覆盖所有余额方法的完整检查、读取和更新，deposit、withdraw 和 balance 都不能绕开它。不改原类时用包装类，并避免暴露内部对象；GIL 不能代替业务临界区，多进程或多机要换相应同步方式。"
+title: xAI：BankAccount 并发调试与包装修复
+quick: >-
+  我会用同一把锁覆盖所有余额方法的完整检查、读取和更新，deposit、withdraw 和 balance
+  都不能绕开它。不改原类时用包装类，并避免暴露内部对象；GIL 不能代替业务临界区，多进程或多机要换相应同步方式。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · multithreaded-bank-account-bug-hunt"
-    url: https://www.1point3acres.com/interview/problems/company/xai/multithreaded-bank-account-bug-hunt
+  - title: 1Point3Acres · xAI · multithreaded-bank-account-bug-hunt
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/multithreaded-bank-account-bug-hunt
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 给一个没有同步措施的账户类编写线程安全包装，使并发存取款不会丢失更新或造成透支。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -56,7 +59,7 @@ account.withdraw(1000) -> True，余额变为 0
 
 短筛题：一个 `BankAccount` 类的 `deposit` 在多线程下会丢更新，要求找出竞态并修复。追问是如果不允许改原类，怎样通过继承或包装来修。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -148,12 +151,13 @@ class Account:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
+
 
 def expect_value_error(fn, *args):
     try:
@@ -161,6 +165,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 8 个线程并发存 1000 次，结果不能丢更新
 account = Account(UnsafeAccount())

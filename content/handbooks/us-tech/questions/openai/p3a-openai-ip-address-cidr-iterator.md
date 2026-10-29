@@ -3,8 +3,10 @@ id: p3a-openai-ip-address-cidr-iterator
 section: openai
 order: 615
 level: A
-title: "OpenAI：IPv4 / CIDR：解析、范围和双向迭代"
-quick: "把 IPv4 转成 32 位整数，CIDR 用网络起点和地址数表示，无需展开地址列表。游标保存下一个返回的偏移，next 返回再加一、prev 先减一再返回，范围检查同样在整数区间上做。"
+title: OpenAI：IPv4 / CIDR：解析、范围和双向迭代
+quick: >-
+  把 IPv4 转成 32 位整数，CIDR 用网络起点和地址数表示，无需展开地址列表。游标保存下一个返回的偏移，next 返回再加一、prev
+  先减一再返回，范围检查同样在整数区间上做。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · ip-address-cidr-iterator"
-    url: https://www.1point3acres.com/interview/problems/company/openai/ip-address-cidr-iterator
+  - title: 1Point3Acres · OpenAI · ip-address-cidr-iterator
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/ip-address-cidr-iterator
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现 IPv4 地址与整数的互转，以及可前进、后退、保存状态的 CIDR 地址迭代器。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -59,9 +62,9 @@ cidr.contains("10.0.0.4")     -> False
 
 分阶段实现 IPv4 地址和 CIDR 范围的相关操作：地址和整数互相转换，解析 CIDR 得到地址范围，判断地址是否在范围内，再在范围上实现一个可以前进、后退并能保存和恢复状态的迭代器。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
-要校验的边界：
+要校验的 edge cases：
 
 - 每段必须是 0 到 255 的十进制数，四段齐全，不能有前导 0；
 - 前缀长度 0 和 32 都合法，`/32` 只有一个地址，`/0` 覆盖全部地址；
@@ -122,7 +125,9 @@ class CIDR:
     """
 
     def __init__(self, text):
-        network = ipaddress.IPv4Network(text, strict=False)  # 主机位清零，规范化成网络地址
+        network = ipaddress.IPv4Network(
+            text, strict=False
+        )  # 主机位清零，规范化成网络地址
         self.start = int(network.network_address)
         self.size = network.num_addresses  # 2 ** (32 - prefix)，/0 也只存一个整数
         self.pos = 0
@@ -160,7 +165,7 @@ class CIDR:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -172,9 +177,10 @@ def expect_error(error, fn, *args):
         return
     raise AssertionError(f"{fn.__name__} should raise {error.__name__}")
 
+
 # 地址与整数互转
-assert ip_to_int("10.0.0.1") == 10 * 2 ** 24 + 1
-assert int_to_ip(2 ** 32 - 1) == "255.255.255.255"
+assert ip_to_int("10.0.0.1") == 10 * 2**24 + 1
+assert int_to_ip(2**32 - 1) == "255.255.255.255"
 expect_error(ValueError, ip_to_int, "256.0.0.1")
 expect_error(ValueError, ip_to_int, "01.2.3.4")
 

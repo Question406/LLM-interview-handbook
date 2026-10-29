@@ -4,24 +4,36 @@ section: anthropic
 order: 16
 level: A
 title: Anthropic：prompt caching 为什么要求前缀稳定，breakpoint 该打在哪？
-quick: "我会把 breakpoint 放在跨请求不变的最后一块，工具、system 和文档在前，每轮问题和时间戳在后。缓存按 tools → system → messages 的字节前缀匹配，改动会让后续点失效；5 分钟写入约 1.25 倍输入价、1 小时约 2 倍，读取约 0.1 倍，是否命中要看 usage。"
+quick: >-
+  我会把 breakpoint 放在跨请求不变的最后一块，工具、system 和文档在前，每轮问题和时间戳在后。缓存按 tools → system →
+  messages 的字节前缀匹配，改动会让后续点失效；5 分钟写入约 1.25 倍输入价、1 小时约 2 倍，读取约 0.1 倍，是否命中要看 usage。
 tags:
   - Anthropic
   - Prompt caching
   - Serving
   - Latency
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Prompt caching (Claude Docs)
-    url: https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+    url: 'https://platform.claude.com/docs/en/build-with-claude/prompt-caching'
     type: primary
   - title: Lessons from building Claude Code — Prompt caching is everything
-    url: https://claude.com/blog/lessons-from-building-claude-code-prompt-caching-is-everything
+    url: >-
+      https://claude.com/blog/lessons-from-building-claude-code-prompt-caching-is-everything
     type: primary
 ---
+
+## 可以这样回答
+
+我会先把请求排成稳定前缀和可变后缀，再把 breakpoint 打在稳定部分的末尾。比如工具定义和仓库摘要反复使用，当前问题和时间戳每轮变化，就把后两者放到点后面。同一前缀再次进模型时可以复用 KV，Claude Code 的工程文章也强调了前缀稳定性。
+
+请求渲染顺序是 `tools` → `system` → `messages`。Cache key 是到某个 `cache_control` breakpoint 为止的整段前缀哈希。位置 $N$ 改一个字节（工具列表重排、JSON 键顺序、时间戳、thinking / effort 配置），$N$ 及之后的 breakpoint 全部作废。
+
+## 技术备查
 
 我会先把请求排成稳定前缀和可变后缀，再把 breakpoint 打在稳定部分的末尾。比如工具定义和仓库摘要反复使用，当前问题和时间戳每轮变化，就把后两者放到点后面。同一前缀再次进模型时可以复用 KV，Claude Code 的工程文章也强调了前缀稳定性。
 
@@ -54,7 +66,7 @@ system = [
 
 公开倍率：5 分钟写缓存约 $1.25\times$ 基线输入，1 小时写约 $2\times$，读约 $0.1\times$。输出价不变。同一前缀要被读很多次才划算；只打一次、立刻换前缀，等于付溢价预填。和 Batch 折扣可以叠，见 `anthropic-batch-api`。
 
-延迟上，命中省的是 输入预填充（prefill，即处理输入并建立缓存），不是 逐 token 生成（decode）。长系统提示 + 工具 字段和类型规范（schema） + 仓库摘要这类输入主导的请求，首个 token 的等待时间（TTFT） 掉得最明显。输出很长、输入很短，缓存帮不上。
+延迟上，命中省的是 输入 prefill，不是 逐 token 生成（decode）。长系统提示 + 工具 字段和类型规范（schema） + 仓库摘要这类输入主导的请求，首个 token 的等待时间（TTFT） 掉得最明显。输出很长、输入很短，缓存帮不上。
 
 预热时可以对共享前缀发一次 `max_tokens: 0` 请求，但 breakpoint 必须和后续真实请求落在同一块。自动缓存会把点打在占位 user 消息上，预热条目永远对不上线流量。Thinking 配置也要一致，它会编进前缀，见 `anthropic-extended-thinking`。
 

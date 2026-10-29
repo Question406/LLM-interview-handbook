@@ -4,7 +4,9 @@ section: coding
 order: 210
 level: A
 title: 字节实习一面：合并两个有序数组（原地 / 双指针）
-quick: "从尾部用双指针往前填：nums1 后面预留了 n 个空位，谁大就把谁放到最后，这样不会覆盖还没读的元素。nums2 用完就可以停，nums1 先用完就把 nums2 剩下的拷过去。时间 O(m+n)，额外空间 O(1)。"
+quick: >-
+  从尾部用双指针往前填：nums1 后面预留了 n 个空位，谁大就把谁放到最后，这样不会覆盖还没读的元素。nums2 用完就可以停，nums1 先用完就把
+  nums2 剩下的拷过去。时间 O(m+n)，额外空间 O(1)。
 tags:
   - ByteDance
   - Coding
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 字节实习 agent开发一面
-    url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
+    url: 'https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604'
     type: candidate-first-hand
 ---
 
@@ -92,15 +94,15 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 
 时间 $O(m+n)$，额外空间 $O(1)$。从前往后加一个新数组也是 $O(m+n)$ 的时间，但多花 $O(m+n)$ 空间。
 
-## 边界与追问
+## Edge Cases 与追问
 
-**要测哪些边界？**
+**要覆盖哪些 edge cases？**
 `n=0` 时原数组不动；`m=0` 时整段拷 `nums2`；还有一侧整体比另一侧小或者大的情况。
 
 **换成链表版（21）呢？**

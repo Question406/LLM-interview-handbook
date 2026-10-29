@@ -4,7 +4,9 @@ section: systems
 order: 191
 level: B
 title: 京东 Agent 二面：JMeter 压测参数具体怎么设？
-quick: "我会先明确压测哪一层、目标 QPS 和成功标准，再设线程数、ramp-up、持续时间和断言。线程数可以用目标 QPS 乘平均整轮时延估算；Agent 还要分别记录首 token、整轮和工具耗时，并统计错误、限流与超时。"
+quick: >-
+  我会先明确压测哪一层、目标 QPS 和成功标准，再设线程数、ramp-up、持续时间和断言。线程数可以用目标 QPS 乘平均整轮时延估算；Agent
+  还要分别记录首 token、整轮和工具耗时，并统计错误、限流与超时。
 tags:
   - JD
   - JMeter
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 27暑期实习-京东Agent开发二面分享
-    url: https://www.nowcoder.com/feed/main/detail/6af1c8611e434bbe8ba9cfa2bd0eaf18
+    url: 'https://www.nowcoder.com/feed/main/detail/6af1c8611e434bbe8ba9cfa2bd0eaf18'
     type: candidate-first-hand
   - title: Apache JMeter User Manual
-    url: https://jmeter.apache.org/usermanual/test_plan.html
+    url: 'https://jmeter.apache.org/usermanual/test_plan.html'
     type: primary
 ---
 
@@ -44,13 +46,13 @@ Agent 的一次请求可能先流式返回 token，再等待工具，最后才�
 
 HTTP 200 不够：要 JSON 业务码、必填字段、工具是否超时。流式接口分别打时间戳：首 token、工具往返、最终包。Sampler 超时必须大于工具 SLA，否则 JMeter 自己掐断，模型侧还在跑，错误率被测歪。
 
-流量要切片：只压检索、只压模型、整条 Agent 分开报。混在一起优化会指错组件。参数化用 CSV 多样化 query，避免同一输入提示 把 prefix cache 打满、QPS 虚高。连接：HTTP Keep-Alive、连接池大小和网关限流对齐；压测机本身不要先成为瓶颈（单机线程过多、带宽不够就加 slave）。
+流量要切片：只压检索、只压模型、整条 Agent 分开报。混在一起优化会指错组件。参数化用 CSV 多样化 query，避免同一 prompt 把 prefix cache 打满、QPS 虚高。连接：HTTP Keep-Alive、连接池大小和网关限流对齐；压测机本身不要先成为瓶颈（单机线程过多、带宽不够就加 slave）。
 
-限流触发率要单独报：被 429 的比例不是「成功」，也不是纯粹失败，是容量边界。和线上一致的超时 / 熔断配置才有意义；压测环境把 timeout 开到 60 s，线上 8 s 掐断，数字不可比。
+限流触发率要单独报：被 429 的比例不是「成功」，也不是纯粹失败，是 capacity limit。和线上一致的超时 / 熔断配置才有意义；压测环境把 timeout 开到 60 s，线上 8 s 掐断，数字不可比。
 
 
 
-报告里要有 QPS、错误率、p50/p95/p99、首 token、整轮、限流比和超时比，才能看清吞吐与长尾。Agent 还要报工具失败是否被编排吞掉（看起来 200、其实没调成）。对比优化前后必须同脚本、同数据、同预热。说清压的是哪一层：网关、编排、vLLM/SGLang、还是 Redis。工具用录制回放、模型走真实 serving，避免使下游过载又测不到超时。本手册超时空返回卡负责「失败怎么对用户说」，本题负责「参数怎么设才测得到那个失败」。
+报告里要有 QPS、错误率、p50/p95/p99、首 token、整轮、限流比和超时比，才能看清 throughput 与长尾。Agent 还要报工具失败是否被编排吞掉（看起来 200、其实没调成）。对比优化前后必须同脚本、同数据、同预热。说清压的是哪一层：网关、编排、vLLM/SGLang、还是 Redis。工具用录制回放、模型走真实 serving，避免使下游过载又测不到超时。本手册超时空返回卡负责「失败怎么对用户说」，本题负责「参数怎么设才测得到那个失败」。
 
 ## 追问
 

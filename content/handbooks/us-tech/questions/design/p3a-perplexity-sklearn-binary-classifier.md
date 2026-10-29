@@ -3,8 +3,10 @@ id: p3a-perplexity-sklearn-binary-classifier
 section: design
 order: 605
 level: S
-title: "Perplexity：二分类实战：基线、调参与指标改进"
-quick: "先固定数据切分，用 Pipeline 把预处理和模型放在一起，避免验证数据泄漏。跑简单模型作基线，再按错误分布决定调特征、阈值还是超参数，最终用没参与调参的数据评估。"
+title: Perplexity：二分类实战：基线、调参与指标改进
+quick: >-
+  先固定数据切分，用 Pipeline
+  把预处理和模型放在一起，避免验证数据泄漏。跑简单模型作基线，再按错误分布决定调特征、阈值还是超参数，最终用没参与调参的数据评估。
 companies:
   - ai-labs
 tags:
@@ -16,27 +18,28 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · sklearn-binary-classifier"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/sklearn-binary-classifier
+  - title: 1Point3Acres · Perplexity · sklearn-binary-classifier
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/sklearn-binary-classifier
     type: secondary
 ---
 
 ## 题目描述
 
-给定二分类训练数据与独立的可信标注校准集，实现逻辑回归、预测与指标评估，并筛选质量达标的标注员。
+给定二分类训练数据与独立的可信标注 calibration 集，实现逻辑回归、预测与指标评估，并筛选质量达标的标注员。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
 - `fit(x,y,steps=1000,lr=0.1,l2=0.01)`，x 是 [N,D] 有限数值矩阵，y 是 [N] 的0/1标签；1<=N<=5000、1<=D<=100，steps>=0、lr>0、l2>=0。
-- 返回 (mean,std,weights)，mean/std 为 [D]，std 使用总体标准差（ddof=0），常数列 std 替换成1。对 x 用训练 mean/std 标准化，最后附加值为1的 bias 列；weights 为 [D+1]，最后一项是 bias。
-- 训练模型为 sigmoid(标准化特征与权重的内积)。目标为平均二元交叉熵加 `(l2/2)*sum(weights[:-1]²)`，bias 不正则化。所有权重初始0，执行 steps 次学习率 lr 的全批量梯度下降；不要求使用 sklearn。
+- 返回 (mean,std,weights)，mean/std 为 [D]，std 使用总体标准差（ddof=0），常数列 std 替换成1。对 x 用训练 mean/std standardization，最后附加值为1的 bias 列；weights 为 [D+1]，最后一项是 bias。
+- 训练模型为 sigmoid(standardization 特征与权重的内积)。目标为平均 binary cross entropy 加 `(l2/2)*sum(weights[:-1]²)`，bias 不 regularization。所有权重初始0，执行 steps 次学习率 lr 的全批量梯度下降；不要求使用 sklearn。
 - `predict(model,x) -> [M]` 复用训练统计量，概率>=0.5 输出1，否则0；不得用测试集重新估计统计量。
 - `metrics(y_true,y_pred)` 返回字典 accuracy、precision、recall、f1，均为标量；两数组同长度且非空，正类是1，任何指标分母为0记0。
-- `select_annotators(votes,trusted,min_accuracy=0.7)`，votes 为 [Nc,A] 的0/1投票，trusted 为 [Nc] 的可信标签，Nc>=1。返回在此独立校准集上准确率>=阈值的标注员下标，按升序；不能使用测试集筛选。
+- `select_annotators(votes,trusted,min_accuracy=0.7)`，votes 为 [Nc,A] 的0/1投票，trusted 为 [Nc] 的可信标签，Nc>=1。返回在此独立 calibration 集上准确率>=阈值的标注员下标，按升序；不能使用测试集筛选。
 - `vote(votes,selected) -> [N]` 对已选的非空标注员集合做逐行多数投票，平票输出0。输入无缺失值，类别特征已在上游数值编码。
 
 ### 输入输出示例
@@ -48,7 +51,7 @@ select_annotators([[0, 1], [0, 1], [1, 0], [1, 0]], [0, 0, 1, 1]) -> [0]
 vote([[1, 0]], [0, 1])                                        -> [0]
 ```
 
-第二个标注员在校准集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
+第二个标注员在 calibration 集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
 
 ## 解题思路与参考答案
 
@@ -56,24 +59,24 @@ vote([[1, 0]], [0, 1])                                        -> [0]
 
 给一份玩具数据，用 scikit-learn 训练一个二分类模型，然后想办法把指标提上去。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
-我会先固定训练与验证切分，用简单模型跑出基线，再看错误分布决定怎么改。标准化等预处理与模型放进同一个 `Pipeline`，只在训练集拟合，防止验证集信息泄漏。
+我会先固定训练与验证切分，用简单模型跑出基线，再看错误分布决定怎么改。standardization 等预处理与模型放进同一个 `Pipeline`，只在训练集拟合，防止验证集信息泄漏。
 
 例如某一类总被漏掉，就检查类别不平衡和阈值；特征不足再考虑加特征，模型拟合不合适再调超参数。类别不平衡时同时看 precision、recall 等指标。最终结果用没参与调参的数据评估，避免把调参带来的乐观偏差算成进步。
 
 ## 完整编程练习（手册重构版）
 
-这份练习把题目落到一个可以手写、可以测试的二分类基线上：NumPy 逻辑回归、评估指标，以及用可信校准集筛选标注员。
+这份练习把题目落到一个可以手写、可以测试的二分类基线上：NumPy 逻辑回归、评估指标，以及用可信 calibration 集筛选标注员。
 
 ### 题面、接口与约束
 
 - `fit(x, y, steps=1000, lr=0.1, l2=0.01)`：`x` 是 $N \times D$ 的有限数值矩阵，`y` 是 0/1 标签。返回训练集的均值、标准差和权重 `(mean, std, weights)`。
-- `predict(model, x)`：只能用 `fit` 返回的统计量做标准化，预测概率不低于 0.5 判为 1。
+- `predict(model, x)`：只能用 `fit` 返回的统计量做 standardization，预测概率不低于 0.5 判为 1。
 - `metrics(y_true, y_pred)`：返回 accuracy、precision、recall、F1，分母为 0 时记为 0。
-- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信校准集，返回准确率不低于阈值的标注员下标。
+- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信 calibration 集，返回准确率不低于阈值的标注员下标。
 - `vote(votes, selected)`：只用选中的标注员做多数票，生成训练标签，平票取 0；没有可用标注员时抛 `ValueError`。
 - 输入不含缺失值，类别特征要在上游编码好。测试集不能用来筛选标注员。$N \le 5000$，$D \le 100$。
 
@@ -86,11 +89,11 @@ select_annotators([[0, 1], [0, 1], [1, 0], [1, 0]], [0, 0, 1, 1]) -> [0]
 vote([[1, 0]], [0, 1])                                        -> [0]
 ```
 
-第二个标注员在校准集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
+第二个标注员在 calibration 集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
 
 ### 解题思路与正确性
 
-`fit` 先用训练集的均值和标准差把特征标准化，标准差为 0 的常数列不缩放。然后拼一列 1 作为偏置，用全批量梯度下降最小化平均逻辑损失加 L2 正则。逻辑损失对权重的梯度是 $X^\top(\sigma(Xw) - y) / N$，L2 只加在非偏置的维度上。`predict` 复用训练时的统计量，测试数据的分布信息就不会漏进模型。
+`fit` 先用训练集的均值和标准差把特征 standardization，标准差为 0 的常数列不缩放。然后拼一列 1 作为偏置，用全批量梯度下降最小化平均逻辑损失加 L2 正则。逻辑损失对权重的梯度是 $X^\top(\sigma(Xw) - y) / N$，L2 只加在非偏置的维度上。`predict` 复用训练时的统计量，测试数据的分布信息就不会漏进模型。
 
 sigmoid 写成 `exp(-logaddexp(0, -z))`，数学上等于 $1 / (1 + e^{-z})$，但 $z$ 很大或很小时都不会溢出。
 
@@ -145,7 +148,7 @@ def fit(x, y, steps=1000, lr=0.1, l2=0.01):
 
 
 def predict(model, x):
-    """用训练时的 mean/std 标准化，概率 >= 0.5 判为 1。"""
+    """用训练时的 mean/std standardization，概率 >= 0.5 判为 1。"""
     mean, std, weights = model
     x = np.asarray(x, dtype=float)
     design = add_bias((x - mean) / std)
@@ -177,7 +180,7 @@ def metrics(y_true, y_pred):
 
 
 def select_annotators(votes, trusted, min_accuracy=0.7):
-    """votes 形状 (N, A)，trusted 形状 (N,)：返回在可信校准集上准确率达标的标注员下标。"""
+    """votes 形状 (N, A)，trusted 形状 (N,)：返回在可信 calibration 集上准确率达标的标注员下标。"""
     votes = np.asarray(votes)
     trusted = np.asarray(trusted)
     if votes.ndim != 2 or len(votes) != len(trusted) or len(votes) == 0:
@@ -202,7 +205,7 @@ def vote(votes, selected):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -213,6 +216,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 一维可分数据：训练后全部预测正确
 x = np.array([[-2.0], [-1.0], [1.0], [2.0]])

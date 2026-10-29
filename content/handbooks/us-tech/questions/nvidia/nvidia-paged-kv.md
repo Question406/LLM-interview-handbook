@@ -40,13 +40,13 @@ $$
 
 ## Block table
 
-把 KV 切成固定 $B$ 个 token 一块（常见 16 或 32）。一块的物理形状大约 $[B, H_{\mathrm{kv}}, d_h]$（再乘层数或每层单独一池）。每条序列一张 block table：逻辑块下标 $i$ 映到物理页号。Attention kernel 不要假设 K/V 在 HBM 上连续，读的时候按 table 做 gather。PagedAttention 保持原来的注意力计算，这里用 $QK^{\top}V$ 示意，改变的是读取 K/V 时要经过映射表。
+把 KV 切成固定 $B$ 个 token 一块（常见 16 或 32）。一块的物理形状大约 $[B, H_{\mathrm{kv}}, d_h]$（再乘层数或每层单独一池）。每条序列一张 block table：逻辑块下标 $i$ 映到物理页号。Attention kernel 不要假设 K/V 在 HBM 上连续，读的时候按 table 做 gather。PagedAttention 保持原来的 attention 计算，这里用 $QK^{\top}V$ 示意，改变的是读取 K/V 时要经过映射表。
 
 新 token 先写到当前逻辑块下一个空位；块满后从 free list 取一页，在 table 追加映射。请求结束时减少 refcount，减到 0 才把页还回池。调度器就能按空页数量决定是否接收请求，不必找到一整条 max_len 的连续空间。
 
 空间浪费主要剩最后一个块，平均空 $B/2$ 个 token。$B=16$ 时较小，$B=256$ 时短请求的浪费就明显了。所有页同样大，也基本消除了原来长短缓冲留下的外部碎片。
 
-块大小还影响 kernel：$B$ 太小会让 gather 更零散、Tensor Core tile 不饱，太大又增加内部浪费。16-64 是常见折中，最终用 Nsight 测注意力核的 HBM 吞吐来选。
+块大小还影响 kernel：$B$ 太小会让 gather 更零散、Tensor Core tile 不饱，太大又增加内部浪费。16-64 是常见折中，最终用 Nsight 测 attention 核的 HBM throughput 来选。
 
 FlashAttention 在 paged 布局上仍能做，只是 $K/V$ tile 要从非连续页装进 SRAM，实现更烦，IO 分析见 `nvidia-flash-attn`。Decode 依旧是读 KV 的带宽墙。
 
@@ -54,7 +54,7 @@ FlashAttention 在 paged 布局上仍能做，只是 $K/V$ tile 要从非连续�
 
 系统提示、同一份 检索增强生成（RAG） 前缀、beam 的公共前缀：逻辑上前面若干块的内容相同。物理上可以让多条序列的 table 指向同一组页，refcount 大于 1。新 token 要写、而该页还被别人指着，就 copy-on-write：拷一页再写，避免污染共享前缀。
 
-前缀多一个空格、换了 system prompt，或从中间插入，原有共享就可能失效。共享省的是 HBM 容量和第一次 输入预填充（prefill，即处理输入并建立缓存） 的写；逐 token 生成（decode） 时各请求的新 KV 仍然分叉，带宽按各自 $T$ 走。不要承诺「共享 prefix 之后 decode 也快一倍」。
+前缀多一个空格、换了 system prompt，或从中间插入，原有共享就可能失效。共享省的是 HBM 容量和第一次 输入 prefill 的写；逐 token 生成（decode） 时各请求的新 KV 仍然分叉，带宽按各自 $T$ 走。不要承诺「共享 prefix 之后 decode 也快一倍」。
 
 和 GQA 叠加：页里 $H_{\mathrm{kv}}$ 已经比较小，分页管的是变长和并发，GQA 管的是每 token 字节，两者正交。head 怎么选见 `google-gqa-mqa`。
 
@@ -65,7 +65,7 @@ block size 为 1 时碎片最小，但 kernel 会变成完全随机 gather，dec
 **和 CUDA 虚拟内存 API 是一回事吗？**
 想法同源，这里的「页」是应用层 KV 块，不是 `cuMemMap` 的 GPU 页。TensorRT-LLM 可以在底下再用 CUDA 虚拟内存，面试先把 block table 讲清。
 **抢页失败？**
-可以抢占最长或最低优先级请求，暂停后把 KV swap 到 CPU，或终止请求并回收页。这是调度器在分配失败时的处置，注意力公式不用改变。
+可以抢占最长或最低优先级请求，暂停后把 KV swap 到 CPU，或终止请求并回收页。这是调度器在分配失败时的处置，attention 公式不用改变。
 **多 LoRA 的 KV 能共享 prefix 吗？**
 权重不同，同一段 token 的 K/V 一般不同，不能因为字符串相同就共享。Adapter 见 `nvidia-lora-serve`。
 

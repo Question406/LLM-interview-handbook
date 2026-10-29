@@ -4,36 +4,41 @@ section: neural-networks
 order: 12
 level: A
 title: 不用 autograd，实现二维卷积的 forward 和 backward
-quick: 前向在输入局部窗口与卷积核之间做内积；反向把每个输出的上游梯度分给对应窗口和卷积核。重叠窗口对同一个输入、共享核的多次使用，都必须累加梯度。参考实现支持 NCHW、多输入输出通道、整数 stride 和对称零填充，采用深度学习中常见的不翻核互相关约定。
-tags: [ML Fundamentals, Backpropagation, Coding]
+quick: >-
+  前向在输入局部窗口与卷积核之间做内积；反向把每个输出的上游梯度分给对应窗口和卷积核。重叠窗口对同一个输入、共享核的多次使用，都必须累加梯度。参考实现支持
+  NCHW、多输入输出通道、整数 stride 和对称零填充，采用深度学习中常见的不翻核互相关约定。
+tags:
+  - ML Fundamentals
+  - Backpropagation
+  - Coding
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-23
+updatedAt: 2026-10-23T00:00:00.000Z
 sources:
-  - title: Stanford CS231n, Convolutional networks
-    url: https://cs231n.github.io/convolutional-networks/
+  - title: 'Stanford CS231n, Convolutional networks'
+    url: 'https://cs231n.github.io/convolutional-networks/'
     type: primary
-  - title: PyTorch Conv2d, cross-correlation and output shape
-    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+  - title: 'PyTorch Conv2d, cross-correlation and output shape'
+    url: 'https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 不用 autograd 实现二维卷积的前向与反向，支持多个样本和多个输入、输出通道。
 
 ### 输入与接口
 
-实现 `conv2d_forward`(X,kernels,bias,*,stride=1,padding=0) 与 `conv2d_backward`(upstream,cache)。X 为 N×Cin×H×W，kernels 为 Cout×Cin×Kh×Kw，bias 为 Cout 维；维度均为正，元素有限。stride=s为正整数，padding=p为非负整数；零填充后的输入须至少容纳一个核窗口。
+实现 `conv2d_forward`(X,kernels,bias,*,stride=1,padding=0) 与 `conv2d_backward`(upstream,cache)。X 为 N×Cin×H×W，kernels 为 Cout×Cin×Kh×Kw，bias 为 Cout 维；维度均为正，元素有限。stride=s 为正整数，padding=p 为非负整数；零填充后的输入须至少容纳一个核窗口。
 
 ### 输出与约束
 
 前向采用深度学习常用的不翻核互相关：每个输出是对应窗口与该输出通道核的元素乘积之和，再加该通道偏置。输出高 floor((H+2p-Kh)/s)+1，宽同理，边缘不能容纳完整窗口的部分舍弃。不支持 dilation 或 groups。
 
-forward 返回 (output,cache)，output 为 N×Cout×Hout×Wout；backward 接收同形上游梯度，返回 (dx,dkernels,dbias)，分别与原输入、核、偏置同形。共享核、多个通道及重叠窗口的梯度贡献都须累加；padding 的梯度裁剪后只返回原输入范围。不修改原参数或输入。
+forward 返回 (output,cache)，output 为 N×Cout×Hout×Wout；backward 接收同形上游梯度，返回 (dx,dkernels,dbias)，分别与原输入、核、偏置同形。共享核、多个通道及重叠窗口的梯度贡献都须累加；padding 的 gradient clipping 后只返回原输入范围。不修改原参数或输入。
 
 ### 示例
 
@@ -81,7 +86,7 @@ def conv2d_forward(X, kernels, bias, *, stride=1, padding=0):
             for i in range(oh):
                 for j in range(ow):
                     r, c = i * stride, j * stride
-                    patch = padded[sample, :, r:r+kh, c:c+kw]
+                    patch = padded[sample, :, r : r + kh, c : c + kw]
                     output[sample, f, i, j] = np.sum(patch * kernels[f]) + bias[f]
     cache = (X.shape, padded, kernels.copy(), stride, padding, output.shape)
     return output, cache
@@ -103,11 +108,11 @@ def conv2d_backward(upstream, cache):
                 for j in range(ow):
                     r, c = i * stride, j * stride
                     value = g[sample, f, i, j]
-                    patch = padded[sample, :, r:r+kh, c:c+kw]
+                    patch = padded[sample, :, r : r + kh, c : c + kw]
                     dk[f] += value * patch
-                    dx_padded[sample, :, r:r+kh, c:c+kw] += value * kernels[f]
+                    dx_padded[sample, :, r : r + kh, c : c + kw] += value * kernels[f]
     h, w = shape[2:]
-    dx = dx_padded[:, :, padding:padding+h, padding:padding+w]
+    dx = dx_padded[:, :, padding : padding + h, padding : padding + w]
     return dx, dk, db
 ```
 
@@ -128,12 +133,13 @@ def conv2d_backward(upstream, cache):
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-3×3 输入与对角差分核的每个输出都是 -4。反传全 1 时，核梯度是对应窗口求和；输入梯度重叠位置必须累加。
+3×3 输入与对角差分核的每个输出都是 -4。backpropagation 全 1 时，核梯度是对应窗口求和；输入梯度重叠位置必须累加。
 
 ```python
 import numpy as np
+
 X = np.arange(1, 10, dtype=float).reshape(1, 1, 3, 3)
-K = np.array([[[[1., 0.], [0., -1.]]]])
+K = np.array([[[[1.0, 0.0], [0.0, -1.0]]]])
 out, cache = conv2d_forward(X, K, [0])
 np.testing.assert_allclose(out, -4)
 dx, dk, db = conv2d_backward(np.ones_like(out), cache)

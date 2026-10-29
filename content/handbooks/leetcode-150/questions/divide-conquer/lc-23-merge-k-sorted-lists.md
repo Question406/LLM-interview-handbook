@@ -4,7 +4,9 @@ section: divide-conquer
 order: 4
 level: S
 title: LC 23 · 合并 K 个升序链表
-quick: "用小根堆存每条链表当前的头结点，每次弹出最小的接到结果上，再把它的后继推进堆，时间 $O(N\\log k)$，$N$ 为总结点数。分治两两归并也是 $O(N\\log k)$；一条条顺序合并会退化成 $O(Nk)$。"
+quick: >-
+  用小根堆存每条链表当前的头结点，每次弹出最小的接到结果上，再把它的后继推进堆，时间 $O(N\log k)$，$N$ 为总结点数。分治两两归并也是
+  $O(N\log k)$；一条条顺序合并会退化成 $O(Nk)$。
 tags:
   - Heap
   - Linked List
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 23. 合并 K 个升序链表
-    url: https://leetcode.cn/problems/merge-k-sorted-lists/
+    url: 'https://leetcode.cn/problems/merge-k-sorted-lists/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -87,6 +89,7 @@ def mergeKLists(lists: List[Optional[ListNode]]) -> Optional[ListNode]:
 
 
 if __name__ == "__main__":
+
     def from_list(vals):
         dummy = ListNode()
         cur = dummy
@@ -117,18 +120,22 @@ if __name__ == "__main__":
 
 ```python
 def from_list(vals):
-        dummy = ListNode()
-        cur = dummy
-        for v in vals:
-            cur.next = ListNode(v)
-            cur = cur.next
-        return dummy.next
+    dummy = ListNode()
+    cur = dummy
+    for v in vals:
+        cur.next = ListNode(v)
+        cur = cur.next
+    return dummy.next
+
+
 def to_list(head):
-        out = []
-        while head:
-            out.append(head.val)
-            head = head.next
-        return out
+    out = []
+    while head:
+        out.append(head.val)
+        head = head.next
+    return out
+
+
 ans = mergeKLists([from_list([1, 4, 5]), from_list([1, 3, 4]), from_list([2, 6])])
 assert to_list(ans) == [1, 1, 2, 3, 4, 4, 5, 6]
 assert mergeKLists([]) is None
@@ -142,7 +149,7 @@ print("simple tests passed")
 
 堆的大小至多 $k$，每个结点进出堆各一次，时间 $O(N\log k)$，额外空间 $O(k)$。分治的递归栈是 $O(\log k)$。
 
-## 边界
+## Edge Cases
 
 $k=0$ 或 `lists` 为空时堆是空的，返回 `None`；全是空表时入堆循环全部跳过，同样返回 `None`。只有一条时堆里只有一个头，一路弹出接上就行。某条特别长也没关系，它的结点陆续入堆，堆大小始终 $\le k$，不会退化成 $O(Nk)$。
 

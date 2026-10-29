@@ -5,20 +5,21 @@ order: 4
 level: S
 title: LC 875 · 爱吃香蕉的珂珂
 quick: >-
-  对速度 $k$ 二分答案，范围 $[1, \max(piles)]$。速度越快用时越少，判定「$\sum \lceil p/k\rceil \le h$」是单调的，找最小的可行 $k$。时间 $O(n\log M)$，额外空间 $O(1)$。
+  对速度 $k$ 二分答案，范围 $[1, \max(piles)]$。速度越快用时越少，判定「$\sum \lceil p/k\rceil \le
+  h$」是单调的，找最小的可行 $k$。时间 $O(n\log M)$，额外空间 $O(1)$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 875. Koko Eating Bananas
-    url: https://leetcode.com/problems/koko-eating-bananas/
+    url: 'https://leetcode.com/problems/koko-eating-bananas/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -113,7 +114,7 @@ print("simple tests passed")
 
 时间 $O(n\log M)$，$M=\max(piles)$，每次判定扫一遍数组。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $h=n$ 时每堆必须一小时吃完，答案是 $\max(piles)$。
 - $h$ 远大于总数时答案是 $1$，下界不能从 $0$ 开始，否则会除零。

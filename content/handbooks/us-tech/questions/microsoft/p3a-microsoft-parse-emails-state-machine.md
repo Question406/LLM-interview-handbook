@@ -3,8 +3,9 @@ id: p3a-microsoft-parse-emails-state-machine
 section: microsoft
 order: 605
 level: A
-title: "Microsoft AI / Copilot：日志邮箱解析：显示名、注释与去重"
-quick: "我会用状态机逐字符扫描，只在引号和括号注释之外用分号结束记录，同时保留转义状态。记录取出地址后再校验，按完整地址忽略大小写去重、保留首次写法；流结束时状态未闭合就报错。"
+title: Microsoft AI / Copilot：日志邮箱解析：显示名、注释与去重
+quick: >-
+  我会用状态机逐字符扫描，只在引号和括号注释之外用分号结束记录，同时保留转义状态。记录取出地址后再校验，按完整地址忽略大小写去重、保留首次写法；流结束时状态未闭合就报错。
 companies:
   - microsoft
 tags:
@@ -13,13 +14,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Microsoft AI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · parse-emails-state-machine"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/parse-emails-state-machine
+  - title: 1Point3Acres · Microsoft AI / Copilot · parse-emails-state-machine
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/parse-emails-state-machine
     type: secondary
 ---
 
@@ -27,7 +30,9 @@ sources:
 
 从含显示名、注释和分隔符的邮件地址列表中提取地址，保留出现顺序并去重。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `emails(text)` 返回邮箱字符串列表。顶层分号分隔记录；双引号显示名中允许反斜杠转义，圆括号注释允许嵌套，二者内部的分号不分隔记录。输入的引号、注释和转义结构平衡。
 
@@ -44,13 +49,13 @@ emails(text) = ["a@x.com"]
 
 ## 解题思路与参考答案
 
-我会用状态机识别真正的记录边界，再提取、校验和去重邮箱。比如 `"A;B" <a@x.com>` 的分号属于显示名，`C(c;d)` 的分号属于注释，两处都不能切开。
+我会用状态机识别真正的 record boundaries，再提取、校验和去重邮箱。比如 `"A;B" <a@x.com>` 的分号属于显示名，`C(c;d)` 的分号属于注释，两处都不能切开。
 
 ## 题目
 
 从日志文本里提取邮箱地址。记录之间用分号分隔，每条记录可能带显示名（可以加引号）和括号注释。要求单次扫描完成解析，并对地址去重。
 
-> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。这是公司层面的通用题，不能因为相邻题卡就归到 LLM 团队。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。这是公司层面的通用题，不能因为相邻题卡就归到 LLM 团队。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -161,7 +166,7 @@ def emails(text):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

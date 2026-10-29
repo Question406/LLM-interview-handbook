@@ -4,7 +4,7 @@ section: math
 order: 2
 level: A
 title: LC 66 · 加一
-quick: "从最低位往高位走，不到 $9$ 就加一返回，是 $9$ 就置 $0$ 继续进位；全是 $9$ 时在最前面补一个 $1$。时间 $O(n)$。"
+quick: 从最低位往高位走，不到 $9$ 就加一返回，是 $9$ 就置 $0$ 继续进位；全是 $9$ 时在最前面补一个 $1$。时间 $O(n)$。
 tags:
   - Array
   - Math
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 66. 加一
-    url: https://leetcode.cn/problems/plus-one/
+    url: 'https://leetcode.cn/problems/plus-one/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间最坏 $O(n)$（全 $9$ 时新开数组）。没有进位到头时，额外空间是 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - `[0]` 得到 `[1]`。
 - `[9,9,9]` 一路进位，返回 `[1,0,0,0]`。
@@ -118,12 +118,14 @@ print("simple tests passed")
 ```python
 def plusOneList(head):
     dummy = ListNode(0, head)
+
     def rec(node):
         if not node:
             return 1
         s = node.val + rec(node.next)
         node.val = s % 10
         return s // 10
+
     rec(dummy)
     return dummy if dummy.val else dummy.next
 ```

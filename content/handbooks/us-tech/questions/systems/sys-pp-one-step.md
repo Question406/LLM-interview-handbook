@@ -45,11 +45,11 @@ def one_f1b(forward, backward, opt, num_micro, num_stages, stage):
     opt.step()  # after the pipeline is drained
 ```
 
-这道题按 GPipe 和 Megatron 调度拟成，并非某次逐字面经。气泡本身见 `nvidia-pipeline-bubble`。
+这道题按 GPipe 和 Megatron 调度拟成。气泡本身见 `nvidia-pipeline-bubble`。
 
 ## 追问
 
-**再加梯度累积，step 几次？**
+**再加 gradient accumulation，step 几次？**
 每个 global step 仍只更新一次。流水线的 $M$ 和累积的 $K$ 都在增加进入这份梯度的 microbatch 数量。
 
 **最后一级先算完损失（loss），能先更新吗？**

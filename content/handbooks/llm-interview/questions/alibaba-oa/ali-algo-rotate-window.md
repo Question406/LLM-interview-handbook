@@ -13,13 +13,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 搜索旋转排序数组
-    url: https://leetcode.cn/problems/search-in-rotated-sorted-array/
+    url: 'https://leetcode.cn/problems/search-in-rotated-sorted-array/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -27,7 +27,7 @@ sources:
 
 本卡分别要求实现旋转有序数组查找与固定窗口最大值，两者是独立接口。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -108,11 +108,11 @@ if __name__ == "__main__":
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
-**33 要测哪些边界？**
+**33 要覆盖哪些 edge cases？**
 没旋转、单元素、目标不存在、旋转点在两端。
 
 **239 呢？**

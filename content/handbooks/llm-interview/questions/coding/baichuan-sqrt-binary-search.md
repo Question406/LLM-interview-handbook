@@ -3,8 +3,11 @@ id: baichuan-sqrt-binary-search
 section: coding
 order: 183
 level: B
-title: 百川智能：求根号下的数，二分怎么写、边界怎么收？
-quick: "在一个保证套住根的区间上二分，比较 $\\mathrm{mid}^2$ 和 $x$：整数版在 $[1,x/2]$ 上找 floor，用 `mid <= x // mid` 比较防溢出，$x=0,1$ 直接返回；浮点版区间取 $[0,\\max(1,x)]$，因为 $x<1$ 时根比 $x$ 大，按绝对或相对误差停。"
+title: 百川智能：求根号下的数，二分怎么写、bounds 怎么收？
+quick: >-
+  在一个保证套住根的区间上二分，比较 $\mathrm{mid}^2$ 和 $x$：整数版在 $[1,x/2]$ 上找 floor，用 `mid <= x
+  // mid` 比较防溢出，$x=0,1$ 直接返回；浮点版区间取 $[0,\max(1,x)]$，因为 $x<1$ 时根比 $x$
+  大，按绝对或相对误差停。
 tags:
   - Baichuan
   - Binary Search
@@ -12,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 百川智能大模型实习一面 压力好大
-    url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
+    url: 'https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530'
     type: candidate-first-hand
 ---
 
@@ -23,7 +26,7 @@ sources:
 
 在不调用现成平方根函数的前提下，分别实现非负整数的平方根下取整，以及非负实数的近似平方根。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -97,6 +100,7 @@ def my_sqrt(x: float, eps: float = 1e-9) -> float:
 
 ```python
 import math
+
 assert my_sqrt_int(0) == 0
 assert my_sqrt_int(9) == 3
 assert my_sqrt_int(8) == 2

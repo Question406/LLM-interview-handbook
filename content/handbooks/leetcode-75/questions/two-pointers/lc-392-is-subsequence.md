@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 392 · 判断子序列
 quick: >-
-  用双指针在 `t` 里按顺序匹配 `s` 的每个字符，每个字符都取最早出现的位置。`s` 的指针走完就是子序列。时间 $O(|t|)$，额外空间 $O(1)$。
+  用双指针在 `t` 里按顺序匹配 `s` 的每个字符，每个字符都取最早出现的位置。`s` 的指针走完就是子序列。时间 $O(|t|)$，额外空间
+  $O(1)$。
 tags:
   - String
   - Two Pointers
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 392. Is Subsequence
-    url: https://leetcode.com/problems/is-subsequence/
+    url: 'https://leetcode.com/problems/is-subsequence/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -96,7 +97,7 @@ print("simple tests passed")
 
 时间 $O(|t|)$，额外空间 $O(1)$。`s` 的指针只前进、不回头。
 
-## 边界
+## Edge Cases
 
 `s` 为空时返回真，空串是任何串的子序列。
 
@@ -117,6 +118,7 @@ def preprocess(t):
         nxt[i] = nxt[i + 1][:]
         nxt[i][ord(t[i]) - 97] = i
     return nxt
+
 
 def isSubsequence(s, nxt, n):
     pos = 0

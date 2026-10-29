@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 452 · 用最少数量的箭引爆气球
 quick: >-
-  按气球右端点排序贪心，每支箭钉在当前组第一个气球的终点，这是能射到它的最右位置。下一个起点仍 $\le$ 该终点就用同一支箭，否则再射一支。时间 $O(n\log n)$，额外空间 $O(1)$（不计排序）。
+  按气球右端点排序贪心，每支箭钉在当前组第一个气球的终点，这是能射到它的最右位置。下一个起点仍 $\le$ 该终点就用同一支箭，否则再射一支。时间
+  $O(n\log n)$，额外空间 $O(1)$（不计排序）。
 tags:
   - Greedy
   - Intervals
@@ -14,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 452. Minimum Number of Arrows to Burst Balloons
-    url: https://leetcode.com/problems/minimum-number-of-arrows-to-burst-balloons/
+    url: 'https://leetcode.com/problems/minimum-number-of-arrows-to-burst-balloons/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     assert findMinArrowShots([[1, 2], [3, 4], [5, 6], [7, 8]]) == 4
     assert findMinArrowShots([[1, 2], [2, 3], [3, 4], [4, 5]]) == 2
     assert findMinArrowShots([[1, 5]]) == 1
-    assert findMinArrowShots([[-2**31, 2**31 - 1], [0, 0]]) == 1
+    assert findMinArrowShots([[-(2**31), 2**31 - 1], [0, 0]]) == 1
     print("ok")
 ```
 
@@ -105,7 +106,7 @@ print("simple tests passed")
 
 时间 $O(n\log n)$，额外空间 $O(1)$（不计排序）。贪心扫描线性。
 
-## 边界
+## Edge Cases
 
 只有一个气球时直接返回 $1$。
 

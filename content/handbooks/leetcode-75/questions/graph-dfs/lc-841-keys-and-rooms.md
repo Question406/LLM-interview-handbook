@@ -4,7 +4,7 @@ section: graph-dfs
 order: 1
 level: S
 title: LC 841 · 钥匙和房间
-quick: "房间是点，钥匙是有向边。从 $0$ 号房 DFS，能到的都标记，最后看是否全部访问过。时间 $O(n+k)$（$k$ 是钥匙总数），额外空间 $O(n)$。"
+quick: 房间是点，钥匙是有向边。从 $0$ 号房 DFS，能到的都标记，最后看是否全部访问过。时间 $O(n+k)$（$k$ 是钥匙总数），额外空间 $O(n)$。
 tags:
   - Graph
   - DFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 841. Keys and Rooms
-    url: https://leetcode.com/problems/keys-and-rooms/
+    url: 'https://leetcode.com/problems/keys-and-rooms/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -109,7 +109,7 @@ print("simple tests passed")
 
 时间 $O(n+k)$，$k$ 是所有钥匙的总数，每个房间出栈一次、每把钥匙看一次。额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 只有一个房间，`[[]]`，直接为真。
 

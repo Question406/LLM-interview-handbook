@@ -4,20 +4,20 @@ section: backtracking
 order: 3
 level: S
 title: LC 46 · 全排列
-quick: "用回溯加 `used` 数组（或原地交换）。每一层从没用过的数里选一个，路径长度到 $n$ 就收一份。时间 $O(n\\cdot n!)$。"
+quick: 用回溯加 `used` 数组（或原地交换）。每一层从没用过的数里选一个，路径长度到 $n$ 就收一份。时间 $O(n\cdot n!)$。
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 46. 全排列
-    url: https://leetcode.cn/problems/permutations/
+    url: 'https://leetcode.cn/problems/permutations/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -105,13 +105,13 @@ if __name__ == "__main__":
 
 ```python
 assert permute([1, 2, 3]) == [
-        [1, 2, 3],
-        [1, 3, 2],
-        [2, 1, 3],
-        [2, 3, 1],
-        [3, 1, 2],
-        [3, 2, 1],
-    ]
+    [1, 2, 3],
+    [1, 3, 2],
+    [2, 1, 3],
+    [2, 3, 1],
+    [3, 1, 2],
+    [3, 2, 1],
+]
 assert permute([0, 1]) == [[0, 1], [1, 0]]
 assert permute([1]) == [[1]]
 print("simple tests passed")
@@ -123,7 +123,7 @@ print("simple tests passed")
 
 时间 $O(n\cdot n!)$，每个排列要拷贝 $n$ 个数；额外空间 $O(n)$，是 `used` 加递归栈。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时答案就是 `[[nums[0]]]`。含负数或 $0$ 也没关系，值不参与运算，当普通元素处理。$n$ 较大（如 $n \gt 10$）时 $n!$ 会爆炸，白板上只会问复杂度 $O(n\cdot n!)$，不用硬去优化爆搜。和顺序无关的组合是 LC 77，独立卡 `lc-77-combinations`。
 
@@ -162,6 +162,7 @@ def permuteUnique(nums):
 
 ```python
 from math import factorial
+
 
 def getPermutation(n, k):
     nums = list(range(1, n + 1))

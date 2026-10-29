@@ -3,8 +3,10 @@ id: p3a-openai-monster-battle-system
 section: openai
 order: 608
 level: A
-title: "OpenAI：怪兽战斗：基础规则、属性克制与目标策略"
-quick: "把伤害计算、目标选择和轮次主循环分别写成函数，分阶段加规则时只改对应部分。每次攻击记录双方、伤害和剩余血量，便于逐回合核对；smart 只选择当前伤害最大的目标，是贪心策略，不能保证整场最优。"
+title: OpenAI：怪兽战斗：基础规则、属性克制与目标策略
+quick: >-
+  把伤害计算、目标选择和轮次主循环分别写成函数，分阶段加规则时只改对应部分。每次攻击记录双方、伤害和剩余血量，便于逐回合核对；smart
+  只选择当前伤害最大的目标，是贪心策略，不能保证整场最优。
 companies:
   - openai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · OpenAI · monster-battle-system"
-    url: https://www.1point3acres.com/interview/problems/company/openai/monster-battle-system
+  - title: 1Point3Acres · OpenAI · monster-battle-system
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/monster-battle-system
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现一个确定性的回合制怪物战斗模拟器，返回胜者与完整攻击日志。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `battle(team0,team1,effect=None,smart=False)` 返回 `(winner,logs)`，不修改输入。每个怪物为含 name、hp、attack、element 的字典，初始 hp、attack 为正。队伍 0 先攻，双方交替，每回合由己方列表中首个存活怪物攻击一次。
 
@@ -49,7 +55,7 @@ team1=[{name:"B",hp:2,attack:1,element:"water"}]，effect 缺省。
 
 实现一个回合制的双队怪兽战斗模拟，分阶段加需求：先是基础的轮流攻击，再加入属性克制，最后加入「智能选目标」的规则。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -90,7 +96,7 @@ battle(team0, team1) -> (0, [("A", "B", 2, 0)])     # A 先手，一击打死 B
 
 `compute_damage`、`choose_target` 和主循环互相独立。加新的克制规则或新的选目标策略时，不需要改轮次和日志的逻辑。
 
-每次攻击至少造成 1 点伤害，没有复活，所以总攻击次数不会超过两队初始血量之和，循环一定结束。开头做了深拷贝，同一组输入可以反复用不同策略跑，结果可以复现。
+每次攻击至少造成 1 点伤害，没有复活，所以总攻击次数不会超过两队初始血量之和，循环一定结束。开头做了深拷贝，同一组输入可以反复用不 on-policy 跑，结果可以复现。
 
 ### 完整参考实现（Python 3）
 
@@ -108,7 +114,9 @@ def choose_target(attacker, targets, effect, smart):
     """普通模式打第一个存活的敌人；smart 模式打这一下伤害最高的，并列取靠前的。"""
     if not smart:
         return targets[0]
-    return max(targets, key=lambda target: compute_damage(attacker, target, effect))  # max 并列时返回第一个
+    return max(
+        targets, key=lambda target: compute_damage(attacker, target, effect)
+    )  # max 并列时返回第一个
 
 
 def alive(team):
@@ -155,13 +163,14 @@ def battle(team0, team1, effect=None, smart=False):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 def monster(name, hp, attack, element):
     return {"name": name, "hp": hp, "attack": attack, "element": element}
+
 
 # 先手一击打死对方，输入不被修改
 team_a = [monster("A", 3, 2, "fire")]

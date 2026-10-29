@@ -4,7 +4,10 @@ section: swe-agent
 order: 3
 level: A
 title: 为什么静态 SWE 集很容易发生训练污染，如何构建并报告一个 contamination-resistant 的持续 benchmark？
-quick: "静态 SWE 集的 issue、PR 和测试大多公开，模型可能直接记住了答案。持续 benchmark 要用时间截断、近期或未见过的仓库、冻结提交和隐藏测试，声明训练 cutoff，并把 frozen leaderboard 和持续 live eval 分开报。"
+quick: >-
+  静态 SWE 集的 issue、PR 和测试大多公开，模型可能直接记住了答案。持续 benchmark
+  要用时间截断、近期或未见过的仓库、冻结提交和隐藏测试，声明训练 cutoff，并把 frozen leaderboard 和持续 live eval
+  分开报。
 tags:
   - SWE Agent
   - Contamination
@@ -12,28 +15,28 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: SWE-bench Multimodal
-    url: https://arxiv.org/abs/2505.23419
+    url: 'https://arxiv.org/abs/2505.23419'
     type: primary
 ---
 
-静态 SWE 集容易被污染，是因为 GitHub issue、最终 PR、CI 测试，甚至讨论里给出的正确改法，大多是公开的，可能早就进了预训练或监督微调（SFT）。所以要做一个抗污染的持续 benchmark，关键在评测协议：冻结哪些版本、cutoff 怎么声明、live 和 frozen 两套数字怎么分开报。面试时光说「我们跑了 SWE-bench」，说明不了有评测能力，用公开集上的高分去暗示线上修 bug 的能力也站不住。
+静态 SWE 集容易被污染，是因为 GitHub issue、最终 PR、CI 测试，甚至讨论里给出的正确改法，大多是公开的，可能早就进了预训练或 SFT。所以要做一个抗污染的持续 benchmark，关键在评测协议：冻结哪些版本、cutoff 怎么声明、live 和 frozen 两套数字怎么分开报。面试时光说「我们跑了 SWE-bench」，说明不了有评测能力，用公开集上的高分去暗示线上修 bug 的能力也站不住。
 
 举个例子：模型吐出来的 diff 和 gold patch 几乎一模一样，连变量名都对得上。这可能是它在仓库里诊断出来的，也可能只是背下了那个 PR。没有冻结版本和审计记录，两种情况根本分不开。
 
 ## 污染从哪些地方漏进来
 
-公开任务至少有四条泄漏路径：issue 原文和标题；gold PR 的文件级 diff；`FAIL_TO_PASS` 的测试名和断言；第三方 blog、复现教程和合成蒸馏把同一批任务反复写进语料。
+公开任务至少有四条泄漏路径：issue 原文和标题；gold PR 的文件级 diff；`FAIL_TO_PASS` 的测试名和断言；第三方 blog、复现教程和合成 distillation 把同一批任务反复写进语料。
 
-harness 也会泄漏。要是把测试文件、隐藏断言或者「应该改哪些文件」塞进输入提示（prompt），等于当场开卷。检索增强同样危险，评测时允许上网，模型就能把 gold PR 搜回来再「生成」一遍。时间截断只挡得住 cutoff 之后创建的 issue，那些 cutoff 前就已公开、后来才被收进 bench 的仓库它挡不住。所以污染要在训练、评测、harness 三边一起管，光洗语料不够。
+harness 也会泄漏。要是把测试文件、隐藏断言或者「应该改哪些文件」塞进 prompt，等于当场开卷。检索增强同样危险，评测时允许上网，模型就能把 gold PR 搜回来再「生成」一遍。时间截断只挡得住 cutoff 之后创建的 issue，那些 cutoff 前就已公开、后来才被收进 bench 的仓库它挡不住。所以污染要在训练、评测、harness 三边一起管，光洗语料不够。
 
 ## 评测协议要固定哪些版本
 
 每个任务版本都要固定下来并写进报告：issue 的 `created_at`、repo 的 base SHA、评测用的 test commit、容器和依赖的 digest、harness 和 oracle 的版本。模型这边声明训练 cutoff，并记下评测当天是否允许联网检索、是否允许读测试目录。每次 attempt 至少还要记：task 版本、issue 创建时间、base SHA、test commit、harness digest、模型 cutoff、是否联网，以及生成的 patch 和 gold 的检索相似度。这些字段当时没记，污染审计事后补不回来。
 
-持续的 live 集只收 cutoff 之后、来自没见过的组织或仓库的 issue。hidden test 不进公开镜像，失败 case 不能回流到 SFT。Live 采集管道要和训练数据管道物理隔离，否则「持续评测」几周之内就会变成第二套训练集。
+持续的 live 集只收 cutoff 之后、来自没见过的组织或仓库的 issue。hidden test 不进公开镜像，失败 case 不能重新加入 SFT。Live 采集管道要和训练数据管道物理隔离，否则「持续评测」几周之内就会变成第二套训练集。
 
 审计用字符串、AST、embedding 和 patch hunk 检索。命中了就标高风险，没命中也证明不了干净。去重粒度至少要到 hunk 和测试名，文件级 hash 会漏掉 fork 和 cherry-pick。
 
@@ -51,7 +54,7 @@ harness 也会泄漏。要是把测试文件、隐藏断言或者「应该改哪
 文件级 hash 不够，要看 patch hunk 和测试名。同一个 issue 换到 fork 仓库里，仍然算污染。
 
 **用私有的 hidden eval 就安全了吗？**
-也不安全。人员、日志、失败 case 回流训练，都会造成二次污染，需要独立的 ACL 和禁止用于训练的条款。
+也不安全。人员、日志、失败 case 加入 training data，都会造成二次污染，需要独立的 ACL 和禁止用于训练的条款。
 
 **和语料泄漏检测怎么区分？**
 那题偏 n-gram 和检索重合；这题偏 SWE 任务合同，看的是冻结提交、时间窗、分开报告，以及 harness 有没有开卷。

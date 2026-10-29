@@ -3,9 +3,11 @@ id: code-moe-permute-combine
 section: coding
 order: 18
 level: S
-title: 手写 MoE permute / combine：按专家聚 token，算完再按门控加回
+title: 手写 MoE permute / combine：按专家聚 token，算完再按 gating 加回
 quick: >-
-  把 $[T,k]$ 的 expert id 展平，按专家排序后 gather hidden，每个专家拿到一段连续的 $X_i$；MLP 算完用同一套顺序逆回去，按 gates 加权 `index_add` 回 $[T,d]$。循环放在专家维，别按 token 一个个调专家，combine 前也别漏乘门控。
+  把 $[T,k]$ 的 expert id 展平，按专家排序后 gather hidden，每个专家拿到一段连续的 $X_i$；MLP
+  算完用同一套顺序逆回去，按 gates 加权 `index_add` 回 $[T,d]$。循环放在专家维，别按 token 一个个调专家，combine
+  前也别漏乘 gating。
 tags:
   - MoE
   - Permute
@@ -13,19 +15,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Switch Transformers
-    url: https://arxiv.org/abs/2101.03961
+    url: 'https://arxiv.org/abs/2101.03961'
     type: primary
   - title: Mixtral of Experts
-    url: https://arxiv.org/abs/2401.04088
+    url: 'https://arxiv.org/abs/2401.04088'
     type: primary
 ---
 
 ## 题目描述
 
-给定已经决定好的专家路由和门控权重，执行一层稀疏 MoE 的专家计算，并把输出还原到原 token 顺序。本题不计算 router logits 或 top-k 选择。
+给定已经决定好的专家路由和 gating weights，执行一层稀疏 MoE 的专家计算，并把输出还原到原 token 顺序。本题不计算 router logits 或 top-k 选择。
 
 ### 接口与形状
 
@@ -65,12 +67,13 @@ Top-$k$ 不可导，梯度只走 `gates` 和被选中专家的 MLP。没被选�
 ```python
 import torch
 
+
 def moe_permute_combine(x, expert_idx, gates, n_experts, expert_fn):
     # x: [T, d], expert_idx: [T, k], gates: [T, k]
     T, k = expert_idx.shape
     tok = torch.arange(T, device=x.device).unsqueeze(1).expand(T, k).reshape(-1)
     eid = expert_idx.reshape(-1)
-    hidden = x[tok]              # [T*k, d]
+    hidden = x[tok]  # [T*k, d]
     g = gates.reshape(-1)
 
     order = torch.argsort(eid, stable=True)
@@ -83,7 +86,7 @@ def moe_permute_combine(x, expert_idx, gates, n_experts, expert_fn):
         n_i = int(counts[i].item())
         if n_i == 0:
             continue
-        out_s[offset:offset + n_i] = expert_fn(i, hidden_s[offset:offset + n_i])
+        out_s[offset : offset + n_i] = expert_fn(i, hidden_s[offset : offset + n_i])
         offset += n_i
 
     y = x.new_zeros(T, x.shape[-1])
@@ -95,7 +98,7 @@ def moe_permute_combine(x, expert_idx, gates, n_experts, expert_fn):
 
 `stable=True` 让同一个专家内部的 token 顺序确定，方便对照数值。`bincount` 给出每个专家分到的长度，空专家要跳过，别喂 $0$ 行的 GEMM。
 
-最容易写错的是 combine。用 `scatter` 代替 `index_add` 的话，$k\gt 1$ 时同一个 token 有多条记录，`scatter` 会覆盖，只留下最后一个专家的输出。门控也要先乘再加，`out * g` 之后再累加；漏乘就等于每个选中专家的权重都是 $1$，和 router 算出来的权重无关。如果不做 permute，直接用 `x` 的原始顺序去切专家，就只能每次 `x[mask]` 拷一块出来，相当于 $N$ 次随机 gather，带宽更差。
+最容易写错的是 combine。用 `scatter` 代替 `index_add` 的话，$k\gt 1$ 时同一个 token 有多条记录，`scatter` 会覆盖，只留下最后一个专家的输出。gating 也要先乘再加，`out * g` 之后再累加；漏乘就等于每个选中专家的权重都是 $1$，和 router 算出来的权重无关。如果不做 permute，直接用 `x` 的原始顺序去切专家，就只能每次 `x[mask]` 拷一块出来，相当于 $N$ 次随机 gather，带宽更差。
 
 真正带 capacity 和 drop 的时候，在排序之后对每个专家只保留前 $C$ 条，被丢掉的记录既不进 `expert_fn`，也不进 `index_add`，见 `sys-moe-capacity-token-drop`。本题默认 dropless。
 
@@ -106,11 +109,11 @@ def moe_permute_combine(x, expert_idx, gates, n_experts, expert_fn):
 两个 token 都路由到两个专家，专家 0 乘 1、专家 1 乘 2。用不同 gates 手算得到 [1.75,3.5] 和 [4.5,6]；留一个空专家，覆盖零负载分支。
 
 ```python
-x = torch.tensor([[1., 2.], [3., 4.]])
+x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
 idx = torch.tensor([[0, 1], [1, 0]])
 gates = torch.tensor([[0.25, 0.75], [0.5, 0.5]])
 out = moe_permute_combine(x, idx, gates, 3, lambda expert, rows: (expert + 1) * rows)
-torch.testing.assert_close(out, torch.tensor([[1.75, 3.5], [4.5, 6.]]))
+torch.testing.assert_close(out, torch.tensor([[1.75, 3.5], [4.5, 6.0]]))
 print("simple tests passed")
 ```
 

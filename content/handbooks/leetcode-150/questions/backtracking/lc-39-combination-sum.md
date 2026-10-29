@@ -4,20 +4,22 @@ section: backtracking
 order: 4
 level: A
 title: LC 39 · 组合总和
-quick: "回溯时带着剩余目标和与起始下标。选了 `candidates[i]` 后下一层仍从 $i$ 开始，所以同一个数能重复用；不回到更小的下标，就不会把不同排列重复算成组合。先排序，超过剩余量就 break。"
+quick: >-
+  回溯时带着剩余目标和与起始下标。选了 `candidates[i]` 后下一层仍从 $i$
+  开始，所以同一个数能重复用；不回到更小的下标，就不会把不同排列重复算成组合。先排序，超过剩余量就 break。
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 39. 组合总和
-    url: https://leetcode.cn/problems/combination-sum/
+    url: 'https://leetcode.cn/problems/combination-sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -111,7 +113,7 @@ print("simple tests passed")
 
 设目标 $T$、最小候选 $m$，递归深度约 $T/m$。时间是指数级，约 $O(n^{T/m})$；空间 $O(T/m)$ 加输出。
 
-## 边界
+## Edge Cases
 
 凑不出来时，`dfs` 全部 `break` 或走完，`ans` 为空。单个元素等于 `target` 时直接收 `[x]`；大于 `target` 的元素，排序后它和后面的都会跳过。最小候选已经大于 `target`，第一层立刻 `break`，返回 `[]`。只选下标、没有目标和的组合题是 LC 77，独立卡 `lc-77-combinations`。
 

@@ -4,20 +4,22 @@ section: bit
 order: 2
 level: A
 title: LC 190 · 颠倒二进制位
-quick: "固定做 $32$ 轮：每轮 `ans` 左移一位，接上 `n` 的最低位，再把 `n` 右移。不按有效位数提前停，高位的 $0$ 也要占位。时间 $O(1)$。"
+quick: >-
+  固定做 $32$ 轮：每轮 `ans` 左移一位，接上 `n` 的最低位，再把 `n` 右移。不按有效位数提前停，高位的 $0$ 也要占位。时间
+  $O(1)$。
 tags:
   - Bit
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 190. 颠倒二进制位
-    url: https://leetcode.cn/problems/reverse-bits/
+    url: 'https://leetcode.cn/problems/reverse-bits/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -94,7 +96,7 @@ print("simple tests passed")
 
 固定 $32$ 次循环，时间 $O(1)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=0$ 固定做完 $32$ 轮后仍是 $0$。最高位已经是 $1$ 时，它会翻到最低位；不要按有符号数提前停，高位的 $0$ 也要占位。
 
@@ -119,6 +121,7 @@ def reverseBitsVar(n, width=None):
 
 ```python
 TABLE = [int(f"{i:08b}"[::-1], 2) for i in range(256)]
+
 
 def reverseBitsBytes(n):
     b0 = TABLE[n & 255]

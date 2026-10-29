@@ -4,7 +4,7 @@ section: graph
 order: 3
 level: A
 title: LC 133 · 克隆图
-quick: "用哈希表记「旧节点 $\\to$ 新节点」，DFS 或 BFS 克隆邻居，遇到已经建过的节点直接复用。新节点要先登记再递归邻居，这样才能处理环。"
+quick: 用哈希表记「旧节点 $\to$ 新节点」，DFS 或 BFS 克隆邻居，遇到已经建过的节点直接复用。新节点要先登记再递归邻居，这样才能处理环。
 tags:
   - Graph
   - DFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 133. 克隆图
-    url: https://leetcode.cn/problems/clone-graph/
+    url: 'https://leetcode.cn/problems/clone-graph/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -87,6 +87,7 @@ def cloneGraph(node: Optional[Node]) -> Optional[Node]:
 
 
 if __name__ == "__main__":
+
     def build(adj: List[List[int]]) -> Optional[Node]:
         nodes = [Node(i + 1) for i in range(len(adj))]
         for i, nbs in enumerate(adj):
@@ -126,24 +127,28 @@ if __name__ == "__main__":
 
 ```python
 def build(adj: List[List[int]]) -> Optional[Node]:
-        nodes = [Node(i + 1) for i in range(len(adj))]
-        for i, nbs in enumerate(adj):
-            nodes[i].neighbors = [nodes[j - 1] for j in nbs]
-        return nodes[0] if nodes else None
+    nodes = [Node(i + 1) for i in range(len(adj))]
+    for i, nbs in enumerate(adj):
+        nodes[i].neighbors = [nodes[j - 1] for j in nbs]
+    return nodes[0] if nodes else None
+
+
 def to_adj(node: Optional[Node]) -> List[List[int]]:
-        if node is None:
-            return []
-        seen = {}
+    if node is None:
+        return []
+    seen = {}
 
-        def walk(cur: Node) -> None:
-            if cur.val in seen:
-                return
-            seen[cur.val] = [nb.val for nb in cur.neighbors]
-            for nb in cur.neighbors:
-                walk(nb)
+    def walk(cur: Node) -> None:
+        if cur.val in seen:
+            return
+        seen[cur.val] = [nb.val for nb in cur.neighbors]
+        for nb in cur.neighbors:
+            walk(nb)
 
-        walk(node)
-        return [seen[i] for i in range(1, len(seen) + 1)]
+    walk(node)
+    return [seen[i] for i in range(1, len(seen) + 1)]
+
+
 adj = [[2, 4], [1, 3], [2, 4], [1, 3]]
 orig = build(adj)
 cloned = cloneGraph(orig)
@@ -159,17 +164,18 @@ print("simple tests passed")
 
 时间 $O(V+E)$，每个节点和每条边各处理一次；空间 $O(V)$，是哈希表加上递归栈或队列。
 
-## 边界
+## Edge Cases
 
 空节点直接返回 `None`。单节点没有邻居时，新建一个同值节点，`neighbors` 为空。两点互为邻居（最小环）时，必须先把新节点放进哈希表再走邻居，否则 `a.neighbors → b → a` 会无限递归。
 
 ## 追问
 
 **浅拷贝错在哪？**
-`copy.neighbors = cur.neighbors` 只复制了列表引用，邻居还是旧图里的对象。改新图某个邻居的 `val` 或邻接，旧图跟着变；有环时甚至分不清「新图」的边界在哪。深拷贝要求每个旧节点对应唯一一个新节点，边只连在新节点之间。下面附的是 BFS 版写法。链表带随机指针是同一套路，见 LC 138，独立卡 `lc-138-copy-list-with-random-pointer`。
+`copy.neighbors = cur.neighbors` 只复制了列表引用，邻居还是旧图里的对象。改新图某个邻居的 `val` 或邻接，旧图跟着变；有环时甚至分不清 clone graph 的 node set 在哪。深拷贝要求每个旧节点对应唯一一个新节点，边只连在新节点之间。下面附的是 BFS 版写法。链表带随机指针是同一套路，见 LC 138，独立卡 `lc-138-copy-list-with-random-pointer`。
 
 ```python
 from collections import deque
+
 
 def cloneGraphBFS(node):
     if node is None:

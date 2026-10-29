@@ -4,7 +4,9 @@ section: array-string
 order: 2
 level: S
 title: LC 27 · 移除元素
-quick: "用快慢指针：快指针扫全数组，慢指针只写不等于 `val` 的元素，扫完慢指针就是新长度。题目只检查前 $k$ 个位置，后面不用清理。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  用快慢指针：快指针扫全数组，慢指针只写不等于 `val` 的元素，扫完慢指针就是新长度。题目只检查前 $k$ 个位置，后面不用清理。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 27. 移除元素
-    url: https://leetcode.cn/problems/remove-element/
+    url: 'https://leetcode.cn/problems/remove-element/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个元素读一次、最多写一次。
 
-## 边界
+## Edge Cases
 
 全是 `val` 时 `slow` 从不前进，返回 $0$。一个都不是时每个元素都写一遍，返回 $n$，数组原样。空数组循环不进，返回 $0$。
 

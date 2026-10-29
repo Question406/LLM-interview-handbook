@@ -4,24 +4,29 @@ section: optimization
 order: 9
 level: A
 title: 手写 SGD、Momentum 和 Adam，怎样管理状态与偏差校正？
-quick: SGD 直接沿梯度更新；Momentum 保存累计方向；Adam 保存梯度一阶矩和平方梯度二阶矩，并按步数校正从零初始化产生的偏差。状态必须跨 step 保留且与对应参数绑定，全部梯度算好后再更新。练习采用经典 Momentum 累积梯度约定，不含 Nesterov、weight decay 或 AdamW。
-tags: [ML Fundamentals, Optimization, Coding]
+quick: >-
+  SGD 直接沿梯度更新；Momentum 保存累计方向；Adam 保存梯度一阶矩和平方梯度二阶矩，并按步数校正从零初始化产生的偏差。状态必须跨 step
+  保留且与对应参数绑定，全部梯度算好后再更新。练习采用经典 Momentum 累积梯度约定，不含 Nesterov、weight decay 或 AdamW。
+tags:
+  - ML Fundamentals
+  - Optimization
+  - Coding
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-23
+updatedAt: 2026-10-23T00:00:00.000Z
 sources:
-  - title: Adam, A Method for Stochastic Optimization
-    url: https://arxiv.org/abs/1412.6980
+  - title: 'Adam, A Method for Stochastic Optimization'
+    url: 'https://arxiv.org/abs/1412.6980'
     type: primary
-  - title: Stanford CS231n, Parameter updates
-    url: https://cs231n.github.io/neural-networks-3/
+  - title: 'Stanford CS231n, Parameter updates'
+    url: 'https://cs231n.github.io/neural-networks-3/'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 用 NumPy 为一个参数数组实现 SGD、Momentum 和 Adam，并维护跨 step 的优化器状态。
 
@@ -33,7 +38,7 @@ sources:
 
 step 返回新参数数组，不原地修改 parameter 或 gradient；每调用一次计数 t 增加1。初始化状态 m、v 为同形全0。SGD 更新量为当前梯度。Momentum 使用 m=momentum×m+gradient，更新量为 m，不乘 (1-momentum)，不采用 Nesterov。
 
-Adam 使用 m=beta1×m+(1-beta1)×g、v=beta2×v+(1-beta2)×g²；以当前 t 做一阶、二阶偏差修正，更新量为修正后m/(sqrt(修正后v)+eps)。三种模式均执行 parameter-lr×更新量；不加权重衰减。状态保留在优化器实例中，每个参数数组应有独立实例。
+Adam 使用 m=beta1×m+(1-beta1)×g、v=beta2×v+(1-beta2)×g²；以当前 t 做一阶、二阶偏差修正，更新量为修正后 m/(sqrt(修正后 v)+eps)。三种模式均执行 parameter-lr×更新量；不加 weight decay。状态保留在优化器实例中，每个参数数组应有独立实例。
 
 ### 示例
 
@@ -56,15 +61,16 @@ $$
 \theta_t=\theta_{t-1}-\alpha\frac{\hat m_t}{\sqrt{\hat v_t}+\epsilon}.
 $$
 
-每个实例只管理一个参数数组。参数和梯度形状固定、值有限；step 返回新数组，不修改调用者的参数。训练循环负责计算 loss 和梯度。本练习不含权重衰减、梯度裁剪、稀疏状态或混合精度。
+每个实例只管理一个参数数组。参数和梯度形状固定、值有限；step 返回新数组，不修改调用者的参数。训练循环负责计算 loss 和梯度。本练习不含 weight decay、gradient clipping、稀疏状态或混合精度。
 
 ```python
 import numpy as np
 
 
 class ArrayOptimizer:
-    def __init__(self, mode="adam", *, lr=0.01, momentum=0.9,
-                 beta1=0.9, beta2=0.999, eps=1e-8):
+    def __init__(
+        self, mode="adam", *, lr=0.01, momentum=0.9, beta1=0.9, beta2=0.999, eps=1e-8
+    ):
         if mode not in ("sgd", "momentum", "adam"):
             raise ValueError("unknown optimizer")
         if not np.isfinite(lr) or lr <= 0 or not np.isfinite(eps) or eps <= 0:
@@ -76,7 +82,9 @@ class ArrayOptimizer:
         self.t, self.m, self.v = 0, None, None
 
     def step(self, parameter, gradient):
-        parameter, gradient = [np.asarray(v, dtype=float) for v in (parameter, gradient)]
+        parameter, gradient = [
+            np.asarray(v, dtype=float) for v in (parameter, gradient)
+        ]
         if parameter.size == 0 or parameter.shape != gradient.shape:
             raise ValueError("nonempty parameter and gradient shapes must match")
         if not np.isfinite(parameter).all() or not np.isfinite(gradient).all():
@@ -92,10 +100,10 @@ class ArrayOptimizer:
             self.m = self.momentum * self.m + gradient
             update = self.m
         else:
-            self.m = self.beta1 * self.m + (1-self.beta1) * gradient
-            self.v = self.beta2 * self.v + (1-self.beta2) * gradient ** 2
-            corrected_m = self.m / (1-self.beta1 ** self.t)
-            corrected_v = self.v / (1-self.beta2 ** self.t)
+            self.m = self.beta1 * self.m + (1 - self.beta1) * gradient
+            self.v = self.beta2 * self.v + (1 - self.beta2) * gradient**2
+            corrected_m = self.m / (1 - self.beta1**self.t)
+            corrected_v = self.v / (1 - self.beta2**self.t)
             update = corrected_m / (np.sqrt(corrected_v) + self.eps)
         return parameter - self.lr * update
 ```
@@ -118,9 +126,10 @@ class ArrayOptimizer:
 
 ```python
 import numpy as np
+
 for mode, expected in [("sgd", 0.6), ("momentum", 0.42)]:
     optimizer = ArrayOptimizer(mode, lr=0.1, momentum=0.9)
-    value = np.array([1.])
+    value = np.array([1.0])
     for _ in range(2):
         value = optimizer.step(value, [2])
     np.testing.assert_allclose(value, [expected])

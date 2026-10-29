@@ -4,23 +4,34 @@ section: systems
 order: 142
 level: A
 title: 快手：三工具高 QPS 链路延迟高，从哪些维度优化？
-quick: "我会用 trace 先拆清排队、模型计算和每个工具各耗时多少，再优化占比最大的部分。没有依赖的工具并行调用，热点幂等读加缓存，模型侧缩短 schema 和上下文；工具各自设置超时、熔断和重试预算，最后按目标 QPS 压测。"
+quick: >-
+  我会用 trace 先拆清排队、模型计算和每个工具各耗时多少，再优化占比最大的部分。没有依赖的工具并行调用，热点幂等读加缓存，模型侧缩短 schema
+  和上下文；工具各自设置超时、熔断和重试预算，最后按目标 QPS 压测。
 tags:
   - Kuaishou
   - Latency
   - Tool Calling
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: 快手大模型LLM二面分享-日常实习
-    url: https://www.nowcoder.com/feed/main/detail/058475a3d9204493bc145510c72e10f1
+    url: 'https://www.nowcoder.com/feed/main/detail/058475a3d9204493bc145510c72e10f1'
     type: candidate-first-hand
   - title: vLLM 文档：性能与调度
-    url: https://docs.vllm.ai/en/latest/performance/
+    url: 'https://docs.vllm.ai/en/latest/performance/'
     type: primary
 ---
+
+## 可以这样回答
+
+我会先用 trace 把模型 prefill/decode、工具 RTT、串行等待和排队分别计时，再决定改哪一段。比如三个工具没有数据依赖，就可以一次 fan-out 并行请求；如果先搜商品、再查库存、再算券，就得保留依赖，只缓存能复用的第一跳结果。
+
+高 QPS 下还要拆出 p50/p95，看是 vLLM/SGLang 队列、工具线程池还是下游限流先满了。这样才能判断该减少等待、控制入口流量，还是增加副本。失败怎么向用户解释可以另谈，这里先把超时发生的原因找出来。
+
+## 技术备查
 
 ## 真题记录
 
@@ -29,7 +40,7 @@ sources:
 - 届别 / 流程：日常实习；二面
 - 面试时间：原帖未披露；帖子发布于 2026-03-31
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“假如Agent推理链路包含3个工具且请求频率极高，导致系统整体延迟较高，你会从哪些维度进行优化？”**
+- 原始措辞：**“假如 Agent 推理链路包含3个工具且请求频率极高，导致系统整体延迟较高，你会从哪些维度进行优化？”**
 
 我会先用 trace 把模型 prefill/decode、工具 RTT、串行等待和排队分别计时，再决定改哪一段。比如三个工具没有数据依赖，就可以一次 fan-out 并行请求；如果先搜商品、再查库存、再算券，就得保留依赖，只缓存能复用的第一跳结果。
 
@@ -43,7 +54,7 @@ sources:
 
 ## 再控制模型和工具的请求成本
 
-缩短工具 JSON schema，只暴露本轮候选工具，不要把 30 个函数描述塞进每次 输入预填充（prefill，即处理输入并建立缓存）。公共 system + schema 走 prefix cache，key 带 schema 版本。简单请求路由小模型或纯检索，复杂再上大模型。投机解码对短工具参数有时有效，对长 思维链（CoT，即分步推理过程） 不一定。KV 占用随并发和上下文涨：限制 max 输入、会话只留近轮。structured decoding 保证参数可解析，减少「调错再重试」的第二轮 LLM。Serving 用 continuous batching 吃高 QPS；静态 batch 会被最长工具参数生成拖死。
+缩短工具 JSON schema，只暴露本轮候选工具，不要把 30 个函数描述塞进每次 输入 prefill。公共 system + schema 走 prefix cache，key 带 schema 版本。简单请求路由小模型或纯检索，复杂再上大模型。speculative decoding 对短工具参数有时有效，对长 chain of thought（CoT，即分步推理过程） 不一定。KV 占用随并发和上下文涨：限制 max 输入、会话只留近轮。structured decoding 保证参数可解析，减少「调错再重试」的第二轮 LLM。Serving 用 continuous batching 吃高 QPS；静态 batch 会被最长工具参数生成拖死。
 
 
 

@@ -26,13 +26,13 @@ sources:
     type: primary
 ---
 
-Unsloth 适合单机少卡上的原型、消融和小模型训练。比如想用一张或几张消费级 / 数据中心卡，当晚把 7B 数学 GRPO 跑出曲线，可以先选它；多机 rollout 的调度能力则要另外考虑。
+Unsloth 适合单机少卡上的原型、ablation 和小模型训练。比如想用一张或几张消费级 / 数据中心卡，当晚把 7B 数学 GRPO 跑出曲线，可以先选它；多机 rollout 的调度能力则要另外考虑。
 
 它针对 Hugging Face 模型和 LoRA 优化反向显存、融合部分 kernel、使用梯度检查点，也能接 TRL 的 GRPO trainer。量化、长上下文优化和单机 FSDP 还可以继续节省资源。TRL 提供 HF 的 RL API，Unsloth 主要负责让这台机器训练得更快、放得下模型。
 
-规模扩大后，问题会变成组不齐、最长思维链（CoT）拖住整个 batch、权重如何同步到推理引擎，以及 partial abort、MoE EP 和跨机 PD 传 KV。Unsloth 几乎没有多机 rollout 控制面，这些工作分别需要 veRL HybridEngine、slime Data Buffer、AReaL async worker 一类组件。单卡训练步快，并不能推出它可以线性扩到 128 卡 MoE。
+规模扩大后，问题会变成组不齐、最长 chain of thought（CoT）拖住整个 batch、权重如何同步到推理引擎，以及 partial abort、MoE EP 和跨机 PD 传 KV。Unsloth 几乎没有多机 rollout 控制面，这些工作分别需要 veRL HybridEngine、slime Data Buffer、AReaL async worker 一类组件。单卡训练步快，并不能推出它可以线性扩到 128 卡 MoE。
 
-选型时，原型 / 消融 / 小模型可以用 Unsloth 或 TRL；要 FSDP + vLLM 并复现 DAPO，可以选 veRL；要 Megatron + SGLang 透传，可以选 slime；同步训练被长尾拖住，需要 fully async 时再看 AReaL。Ray 在这里负责调度，不是另一个强化学习（RL）算法。
+选型时，原型 / ablation / 小模型可以用 Unsloth 或 TRL；要 FSDP + vLLM 并复现 DAPO，可以选 veRL；要 Megatron + SGLang 透传，可以选 slime；同步训练被长尾拖住，需要 fully async 时再看 AReaL。Ray 在这里负责调度，不是另一个 RL 算法。
 
 Unsloth 和 veRL 的 GRPO 损失（loss）可以写成同一公式，主要差别在数据怎么流动。Unsloth 的 generate 和 train 往往更近，甚至同进程，省掉调度成本；veRL 把 rollout 当服务，更方便处理 continuous batching 的版本记录和引擎量化。
 

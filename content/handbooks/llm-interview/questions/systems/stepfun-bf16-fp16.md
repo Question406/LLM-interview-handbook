@@ -4,17 +4,19 @@ section: systems
 order: 144
 level: A
 title: 阶跃星辰：BF16 和 FP16 有什么区别？
-quick: "BF16 和 FP16 都占 16 bit，也就是 2 字节。FP16 的 5 位指数、10 位尾数带来更高精度和更窄范围；BF16 的 8 位指数、7 位尾数扩大范围，大模型训练中更不容易溢出，但敏感累加仍常用 FP32。"
+quick: >-
+  BF16 和 FP16 都占 16 bit，也就是 2 字节。FP16 的 5 位指数、10 位尾数带来更高精度和更窄范围；BF16 的 8 位指数、7
+  位尾数扩大范围，大模型训练中更不容易溢出，但敏感累加仍常用 FP32。
 tags:
   - StepFun
   - Mixed Precision
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阶跃星辰大模型算法实习面经
-    url: https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3
+    url: 'https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3'
     type: candidate-first-hand
 ---
 
@@ -25,7 +27,7 @@ sources:
 - 届别 / 流程：实习
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“BF16和FP16的区别？”**
+- 原始措辞：**“BF16和 FP16的区别？”**
 
 BF16 和 FP16 的区别在于指数与尾数怎么分配：BF16 范围更大，FP16 在可表示范围内精度更高。它们都占 2 字节；原帖还问了 bit 与 byte，换算是 8 bit = 1 byte，所以 $N$ 个 BF16 参数约占 $2N$ 字节。
 

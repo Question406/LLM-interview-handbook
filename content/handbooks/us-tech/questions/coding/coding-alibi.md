@@ -4,7 +4,10 @@ section: coding
 order: 28
 level: A
 title: 白板：ALiBi 斜率加到 scores 上，decode 用 cache 长度当 query 位
-quick: "ALiBi 在 softmax 前给每个 head 的 scores 加 $m_h(j-i)$，远处历史得到更负的偏置，未来位置另加因果 mask。decode 时新 query 的位置就是旧 cache 长度，偏置形状 `[1, H, 1, S]`；与 prefill 最后一行对照就能检查偏移。"
+quick: >-
+  ALiBi 在 softmax 前给每个 head 的 scores 加 $m_h(j-i)$，远处历史得到更负的偏置，未来位置另加因果
+  mask。decode 时新 query 的位置就是旧 cache 长度，偏置形状 `[1, H, 1, S]`；与 prefill
+  最后一行对照就能检查偏移。
 tags:
   - 完整编程练习
   - Coding
@@ -14,16 +17,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: Train Short, Test Long — Attention with Linear Biases Enables Input Length Extrapolation
-    url: https://arxiv.org/abs/2108.12409
+  - title: >-
+      Train Short, Test Long — Attention with Linear Biases Enables Input Length
+      Extrapolation
+    url: 'https://arxiv.org/abs/2108.12409'
     type: primary
   - title: BLOOM — A 176B-Parameter Open-Access Multilingual Language Model
-    url: https://arxiv.org/abs/2211.05100
+    url: 'https://arxiv.org/abs/2211.05100'
     type: secondary
   - title: Hugging Face ALiBi implementation notes
-    url: https://huggingface.co/docs/transformers/en/model_doc/bloom
+    url: 'https://huggingface.co/docs/transformers/en/model_doc/bloom'
     type: secondary
 ---
 
@@ -55,7 +60,7 @@ alibi_score_bias(q_pos=[0], s_len=2, slopes=[0.5]) -> [[[[0.0, -inf]]]]
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
@@ -92,8 +97,8 @@ def alibi_slopes(n_heads):
         raise ValueError(f"n_heads must be a positive int, got {n_heads!r}")
 
     def power_of_two_slopes(n):
-        start = 2 ** (-2 ** -(math.log2(n) - 3))  # = 2^(-8/n)
-        return [start ** i for i in range(1, n + 1)]
+        start = 2 ** (-(2 ** -(math.log2(n) - 3)))  # = 2^(-8/n)
+        return [start**i for i in range(1, n + 1)]
 
     floor = 2 ** int(math.floor(math.log2(n_heads)))
     values = power_of_two_slopes(floor)
@@ -106,8 +111,8 @@ def alibi_score_bias(q_pos, s_len, slopes):
     """q_pos: [T]，slopes: [H] -> bias [1, H, T, S]；未来位置为 -inf。"""
     k_pos = torch.arange(s_len)
     distance = (k_pos[None, :] - q_pos[:, None]).float()  # [T, S]，j - i
-    causal = k_pos[None, :] <= q_pos[:, None]             # [T, S]
-    bias = slopes[:, None, None] * distance[None, :, :]   # [H, T, S]
+    causal = k_pos[None, :] <= q_pos[:, None]  # [T, S]
+    bias = slopes[:, None, None] * distance[None, :, :]  # [H, T, S]
     bias = bias.masked_fill(~causal[None, :, :], float("-inf"))
     return bias.unsqueeze(0)
 
@@ -126,7 +131,7 @@ def decode_alibi(cache_len, slopes):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -177,7 +182,7 @@ expect_value_error(alibi_slopes, 2.0)
 
 ## 题怎么来的
 
-Press et al. 提出的 ALiBi 是 BLOOM、MPT 这类模型的位置方案：既没有位置 embedding，也没有 RoPE，而是把线性偏置直接加在注意力 logits 上。HuggingFace 实现岗和「手写 MHA」的 follow-up 会问斜率怎么来、逐 token 生成（decode）时距离怎么算。Llama 默认用 RoPE，见 `coding-rope`。除非面试官明确给了混合架构，不要在同一套 $q,k$ 上叠两种位置编码。
+Press et al. 提出的 ALiBi 是 BLOOM、MPT 这类模型的位置方案：既没有位置 embedding，也没有 RoPE，而是把线性偏置直接加在 attention logits 上。HuggingFace 实现岗和「手写 MHA」的 follow-up 会问斜率怎么来、逐 token 生成（decode）时距离怎么算。Llama 默认用 RoPE，见 `coding-rope`。除非面试官明确给了混合架构，不要在同一套 $q,k$ 上叠两种位置编码。
 
 ## 斜率乘相对距离
 

@@ -3,8 +3,10 @@ id: p3a-xai-in-memory-database-ttl-backup
 section: xai
 order: 616
 level: A
-title: "xAI：多级数据库：字段操作、scan、TTL 与备份"
-quick: "我会把历史版本查找和过期判断集中到一个函数，get、scan、backup 都复用它，scan 再按字段名排序。备份只深复制当时有效的值并保存剩余 TTL；恢复时追加删除和写回记录，从当前时间重算过期，保留更早历史。"
+title: xAI：多级数据库：字段操作、scan、TTL 与备份
+quick: >-
+  我会把历史版本查找和过期判断集中到一个函数，get、scan、backup 都复用它，scan 再按字段名排序。备份只深复制当时有效的值并保存剩余
+  TTL；恢复时追加删除和写回记录，从当前时间重算过期，保留更早历史。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · in-memory-database-ttl-backup"
-    url: https://www.1point3acres.com/interview/problems/company/xai/in-memory-database-ttl-backup
+  - title: 1Point3Acres · xAI · in-memory-database-ttl-backup
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/in-memory-database-ttl-backup
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现支持历史读取、字段 TTL 和备份恢复的内存数据库，明确恢复操作对剩余有效期和历史记录的影响。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -61,7 +64,7 @@ get(1, "a", "x")   -> 7       # restore 不改写更早的历史
 
 逐级实现一个内存数据库：先是字段级的 `set`、`get`、`delete` 和 `scan`，再加 TTL，最后加快照备份和恢复。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -120,7 +123,7 @@ class DB:
     """
 
     def __init__(self):
-        self.times = {}     # (key, field) -> [写入时间, ...]，单调不减，供二分查找
+        self.times = {}  # (key, field) -> [写入时间, ...]，单调不减，供二分查找
         self.versions = {}  # (key, field) -> [(value, expires_at), ...]，与 times 一一对应
         self.clock = float("-inf")  # 最近一次写入的时间
         self.backups = []
@@ -208,7 +211,7 @@ class DB:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -219,6 +222,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # TTL 有效期是左闭右开区间 [0, 5)
 db = DB()
@@ -258,11 +262,11 @@ db.set(21, "u", "obj", payload)
 payload["n"] = 2
 assert db.get(21, "u", "obj") == {"n": 1}
 
-expect_value_error(db.set, 19, "a", "x", 1)      # 写入时间倒退
-expect_value_error(db.set, 22, "a", "x", 1, 0)   # ttl 必须为正
-expect_value_error(db.set, 22, "a", "x", None)   # None 留给删除标记
-expect_value_error(db.restore, 22, 99)           # 不存在的备份 id
-expect_value_error(db.restore, 22, -1)           # 负数 id 不能当成「最后一个」
+expect_value_error(db.set, 19, "a", "x", 1)  # 写入时间倒退
+expect_value_error(db.set, 22, "a", "x", 1, 0)  # ttl 必须为正
+expect_value_error(db.set, 22, "a", "x", None)  # None 留给删除标记
+expect_value_error(db.restore, 22, 99)  # 不存在的备份 id
+expect_value_error(db.restore, 22, -1)  # 负数 id 不能当成「最后一个」
 ```
 
 ### 复杂度与追问

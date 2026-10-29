@@ -3,8 +3,10 @@ id: p3a-anthropic-agents-coding-llm-tool-use
 section: anthropic
 order: 604
 level: S
-title: "Anthropic：用 LLM 构造多步工具 Agent"
-quick: "我会写一个由程序控制的工具循环：模型每步给出结构化动作，程序校验后执行白名单工具，再把结果回填。call id 用来避免重复执行，步数上限用来保证循环能结束，完整轨迹则留给调试和评估。"
+title: Anthropic：用 LLM 构造多步工具 Agent
+quick: >-
+  我会写一个由程序控制的工具循环：模型每步给出结构化动作，程序校验后执行白名单工具，再把结果回填。call id
+  用来避免重复执行，步数上限用来保证循环能结束，完整轨迹则留给调试和评估。
 companies:
   - anthropic
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - ML
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Anthropic · agents-coding-llm-tool-use"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/agents-coding-llm-tool-use
+  - title: 1Point3Acres · Anthropic · agents-coding-llm-tool-use
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/agents-coding-llm-tool-use
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现一个可在本地用模拟模型和工具测试的代理执行器，支持工具调用、重试观测和明确的执行预算。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `run_agent(model, tools, goal, budget=8)` 返回 `(answer, messages)`。tools 是工具名称到可调用函数的白名单映射，model 接收当前 messages，返回工具动作 `{"type":"tool","name":名称,"args":参数字典,"id":非空字符串}`，或最终动作 `{"type":"final","answer":字符串}`。messages 以包含 goal 的 user 消息开始，保留每次 assistant 动作、对应 tool 观测以及最终动作。
 
@@ -49,11 +55,11 @@ run_agent 返回 answer="5"；add 实际执行 1 次，两条工具观测都包�
 
 在 Colab 里用给定的 LLM API 写一个会调用工具的 agent：把 prompt 发给模型，解析模型想调用的工具，执行后把结果放回上下文，直到模型给出最终答案。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
-我会让程序控制整个循环，模型每步只提出一个结构化动作：调用工具，或者给出最终答案。程序把完整对话交给模型，收到动作后先校验，再执行工具，把结果作为新消息追加回对话。这样执行边界和每一步发生了什么都能看清楚。
+我会让程序控制整个循环，模型每步只提出一个结构化动作：调用工具，或者给出最终答案。程序把完整对话交给模型，收到动作后先校验，再执行工具，把结果作为新消息追加回对话。这样 execution constraints 和每一步发生了什么都能看清楚。
 
 几个容易被问到的点：
 
@@ -62,7 +68,7 @@ run_agent 返回 answer="5"；add 实际执行 1 次，两条工具观测都包�
 - 必须有步数上限，否则模型反复调用同一个工具时循环永远不会结束。
 - 记录完整轨迹，方便重放、调试和评分。
 
-先让最小闭环跑通一个简单任务，再加重试和错误恢复。具体的 API 形式、可用工具和任务内容以面试时给的说明为准。
+先让最小 feedback loop 跑通一个简单任务，再加重试和错误恢复。具体的 API 形式、可用工具和任务内容以面试时给的说明为准。
 
 相关题：[[p3a-anthropic-prompting-engineering-with-llms]]（同一份代码里的 `evaluate` 部分，重点是用固定案例集评估 prompt）。
 
@@ -187,7 +193,7 @@ def evaluate(cases, predict):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -196,12 +202,15 @@ def scripted_model(actions):
     remaining = iter(actions)
     return lambda messages: next(remaining)
 
+
 # 同一个 id 请求两次，工具只执行一次
 calls = []
+
 
 def add(a, b):
     calls.append((a, b))
     return a + b
+
 
 add_call = {"type": "tool", "name": "add", "args": {"a": 2, "b": 3}, "id": "x"}
 model = scripted_model([add_call, add_call, {"type": "final", "answer": "5"}])
@@ -218,9 +227,11 @@ answer, trace = run_agent(model, {"add": add}, "2+3")
 assert trace[4]["content"]["ok"] is False
 assert "conflicting" in trace[4]["content"]["error"]
 
+
 # 工具抛异常也变成失败结果，循环继续
 def broken():
     raise KeyError("missing")
+
 
 broken_call = {"type": "tool", "name": "broken", "args": {}, "id": "b"}
 model = scripted_model([broken_call, {"type": "final", "answer": "gave up"}])
@@ -248,5 +259,5 @@ assert report["failures"] == [(1, "x", "B")]
 
 设步数上限为 B。循环最多调用 B 次模型和至多 B 次工具，总耗时基本由模型和工具本身决定；消息历史和缓存都是 O(B)。
 
-- 进程崩溃后还能保证每个工具只执行一次吗？不能。`results_by_id` 只在内存里，重启后就丢了。生产版要把调用状态持久化，执行有副作用的工具前先落一条「准备执行」记录，执行完再写结果，或者让工具本身接受幂等键。
+- 进程崩溃后还能保证每个工具只执行一次吗？不能。`results_by_id` 只在内存里，重启后就丢了。生产版要把调用状态持久化，执行有副作用的工具前先落一条「准备执行」记录，执行完再写结果，或者让工具本身接受 idempotency key。
 - 消息越来越长怎么办？可以只保留最近几轮完整消息，把更早的工具结果压缩成摘要；大块结果存外部，消息里只放引用。

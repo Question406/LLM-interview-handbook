@@ -4,31 +4,39 @@ section: rl-coding
 order: 5
 level: S
 title: 手写 GAE：terminal 和 truncation 怎么处理？
-quick: "GAE 从后往前递推：$\\delta_t=r_t+\\gamma V_{t+1}\\cdot\\text{bootstrap\\_mask}-V_t$，$\\mathrm{GAE}_t=\\delta_t+\\gamma\\lambda\\cdot\\text{trace\\_mask}\\cdot\\mathrm{GAE}_{t+1}$。任务真正结束时 next value 当成 0；只是撞到时间上限被截断时，还要从 $V(s_T)$ bootstrap，这两种 done 要分开处理。"
+quick: >-
+  GAE 从后往前递推：$\delta_t=r_t+\gamma
+  V_{t+1}\cdot\text{bootstrap\_mask}-V_t$，$\mathrm{GAE}_t=\delta_t+\gamma\lambda\cdot\text{trace\_mask}\cdot\mathrm{GAE}_{t+1}$。任务真正结束时
+  next value 当成 0；只是撞到时间上限被截断时，还要从 $V(s_T)$ bootstrap，这两种 done 要分开处理。
 tags:
   - RL
   - GAE
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: legacy-html
 provenance: legacy-handbook-v2
-updatedAt: '2026-08-21'
+updatedAt: '2026-10-27'
 sources: []
 ---
 
 ## 题目描述
 
-根据一段轨迹计算广义优势估计GAE和对应value训练目标，区分真正终止与时间截断：真正终止后没有未来奖励，时间截断仍可使用下一状态价值。
+根据一段轨迹计算 generalized advantage estimation GAE 和对应 value 训练目标，区分真正终止与时间截断：真正终止后没有未来奖励，时间截断仍可使用下一状态价值。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `gae(rewards,values,terminated,gamma=0.99,lam=0.95)`。rewards为[T]浮点奖励，values为[T+1]价值估计，terminated为[T]布尔值，表示动作t之后是否真正终止；T≥1，gamma/lam在[0,1]。截断位置使用False。
+实现 `gae(rewards,values,terminated,gamma=0.99,lam=0.95)`。rewards 为[T]浮点奖励，values 为[T+1]价值估计，terminated 为[T]布尔值，表示动作 t 之后是否真正终止；T≥1，gamma/lam 在[0,1]。截断位置使用 False。
 
 ### 输出与约束
 
-返回 `(adv,returns)`，均为[T]。令`b_t`为非终止的0/1指示，TD残差为`r_t`+gamma*`b_t`*V_(t+1)-`V_t`；`adv_t`是从t开始按gamma*lam加权的残差和，遇真正终止即截断；`returns_t`=`adv_t`+`V_t`。这是无whitening的单轨迹接口。
+返回 `(adv,returns)`，均为[T]。令`b_t`为非终止的0/1指示，TD 残差为`r_t`+gamma*`b_t`*V_(t+1)-`V_t`；`adv_t`是从 t 开始按 gamma*lam 加权的残差和，遇真正终止即截断；`returns_t`=`adv_t`+`V_t`。这是无 whitening 的单轨迹接口。
+
+### 时间截断的限制
+
+这段 buffer 表示一条连续 trajectory，可以在最后一个 transition 处结束或 time-limit truncate；不包含“截断后 reset，再接入下一 episode”的内部拼接。真正终止时禁止 bootstrap；最后一步若只是时间截断，`values[T]` 是该截断状态的价值，仍可 bootstrap。本接口没有独立的 reset mask，不能据此假装支持跨 episode 拼接。
 
 ### 示例
 
@@ -50,22 +58,32 @@ adv=[3,2], returns=[3,2]
     running = 0.0
     for t in reversed(range(T)):
         bootstrap = 0.0 if terminated[t] else 1.0
-        delta = rewards[t] + gamma * values[t+1] * bootstrap - values[t]
+        delta = rewards[t] + gamma * values[t + 1] * bootstrap - values[t]
         running = delta + gamma * lam * bootstrap * running
         adv[t] = running
     returns = adv + values[:-1]
-    return adv, returns</code></pre><p>两种 done 的处理不一样。如果只是撞到时间上限被截断，环境并没有真正进入 absorbing terminal，通常还应该从 $V(s_T)$ bootstrap；如果是任务自然结束，next value 就该当成 0。比如一个回合因为步数上限被停下，状态本身还能继续往下走，把它当成终局，等于告诉 critic 这里之后再也没有回报。很多强化学习（RL）实现的 bug，就出在把这两件事混成了一个 done。递推本身是一次从后往前的扫描，时间和空间都是 $O(T)$。</p></div>
+    return adv, returns</code></pre><p>两种 done 的处理不一样。如果只是撞到时间上限被截断，环境并没有真正进入 absorbing terminal，通常还应该从 $V(s_T)$ bootstrap；如果是任务自然结束，next value 就该当成 0。比如一个回合因为步数上限被停下，状态本身还能继续往下走，把它当成终局，等于告诉 critic 这里之后再也没有回报。很多 RL 实现的 bug，就出在把这两件事混成了一个 done。递推本身是一次从后往前的扫描，时间和空间都是 $O(T)$。</p></div>
           <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>为什么 returns=adv+V？</summary><div class="follow-answer"><p>因为 advantage 的定义是 $A=Q-V$，把估出来的 $\hat{A}$ 加回 baseline $V$，得到的就是 value target，也就是 return 的估计。</p></div></details></div>
 
 <h2>简单测试怎么写</h2>
 <p>把上面的实现保存为 solution.py，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 python3 solution.py，成功时输出 simple tests passed，失败时按断言报错行定位。不要加 -O，它会跳过 assert。旧参考片段省略的 import 要放到文件开头，再放参考实现和下方断言。</p>
 <p>终止的一步不应 bootstrap，即使 next value 很大也无影响；非终止的一步要保留 next value。另用两步轨迹检查优势向前递推。</p>
 <pre><code class="language-python">import torch
-adv, returns = gae(torch.tensor([1.]), torch.tensor([0., 99.]), torch.tensor([True]), gamma=1, lam=1)
-torch.testing.assert_close(adv, torch.tensor([1.]))
-adv, _ = gae(torch.tensor([1.]), torch.tensor([0., 2.]), torch.tensor([False]), gamma=1, lam=1)
-torch.testing.assert_close(adv, torch.tensor([3.]))
-adv, _ = gae(torch.tensor([1., 2.]), torch.zeros(3), torch.tensor([False, True]), gamma=1, lam=1)
-torch.testing.assert_close(adv, torch.tensor([3., 2.]))
-print(&quot;simple tests passed&quot;)
-</code></pre>
+
+adv, returns = gae(
+    torch.tensor([1.0]), torch.tensor([0.0, 99.0]), torch.tensor([True]), gamma=1, lam=1
+)
+torch.testing.assert_close(adv, torch.tensor([1.0]))
+adv, _ = gae(
+    torch.tensor([1.0]), torch.tensor([0.0, 2.0]), torch.tensor([False]), gamma=1, lam=1
+)
+torch.testing.assert_close(adv, torch.tensor([3.0]))
+adv, _ = gae(
+    torch.tensor([1.0, 2.0]),
+    torch.zeros(3),
+    torch.tensor([False, True]),
+    gamma=1,
+    lam=1,
+)
+torch.testing.assert_close(adv, torch.tensor([3.0, 2.0]))
+print("simple tests passed")</code></pre>

@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 1456 · 定长子串中元音的最大数目
 quick: >-
-  定长滑窗计元音数，右边进来一个元音就加一，左边出去一个元音就减一，维护最大值；计数达到 $k$ 已是上限，可以提前返回。时间 $O(n)$，额外空间 $O(1)$。
+  定长滑窗计元音数，右边进来一个元音就加一，左边出去一个元音就减一，维护最大值；计数达到 $k$ 已是上限，可以提前返回。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - String
   - Sliding Window
@@ -13,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1456. Maximum Number of Vowels in a Substring of Given Length
-    url: https://leetcode.com/problems/maximum-number-of-vowels-in-a-substring-of-given-length/
+    url: >-
+      https://leetcode.com/problems/maximum-number-of-vowels-in-a-substring-of-given-length/
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -103,7 +105,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$（元音集合大小固定）。
 
-## 边界
+## Edge Cases
 
 没有元音时答案 $0$。
 

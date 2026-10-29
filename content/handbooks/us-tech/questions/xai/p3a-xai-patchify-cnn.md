@@ -3,8 +3,10 @@ id: p3a-xai-patchify-cnn
 section: xai
 order: 750
 level: S
-title: "xAI：图像 Patchify 与 CNN 输入轴转置"
-quick: "先 reshape 拆出 patch 网格，再 transpose 把通道放到每个 patch 的高宽前，最后合并成 CNN 输入。检查具体像素和逆变换，才能发现形状正确但内容错位的情况；原帖未披露具体形状，这里的 NHWC 是练习约定。"
+title: xAI：图像 Patchify 与 CNN 输入轴转置
+quick: >-
+  先 reshape 拆出 patch 网格，再 transpose 把通道放到每个 patch 的高宽前，最后合并成 CNN
+  输入。检查具体像素和逆变换，才能发现形状正确但内容错位的情况；原帖未披露具体形状，这里的 NHWC 是练习约定。
 companies:
   - xai
 tags:
@@ -12,13 +14,14 @@ tags:
   - Coding
   - Frontier-2026-10
   - 完整编程练习
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: 1Point3Acres xAI source
-    url: https://www.1point3acres.com/interview/thread/1171574
+    url: 'https://www.1point3acres.com/interview/thread/1171574'
     type: candidate-first-hand
 ---
 
@@ -26,7 +29,9 @@ sources:
 
 实现图像 patch 拆分、还原和每个 patch 上的 1×1 卷积，保持明确的维度顺序。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `patchify(images,ph,pw)` 接收 NumPy images `[B,H,W,C]`，返回 `[P,C,ph,pw]`，其中 P=B*(H/ph)*(W/pw)。ph、pw 为正整数并分别整除 H、W；patch 排序依次按 batch、patch 行、patch 列，patch 内保留原空间顺序。
 
@@ -99,8 +104,10 @@ def patchify(images, ph, pw):
     B, H, W, C = images.shape
     if H % ph or W % pw:
         raise ValueError(f"image {H}x{W} is not divisible by patch {ph}x{pw}")
-    grid = images.reshape(B, H // ph, ph, W // pw, pw, C)  # 拆出 patch 网格轴和 patch 内轴
-    grid = grid.transpose(0, 1, 3, 5, 2, 4)                # [B, 行, 列, C, ph, pw]
+    grid = images.reshape(
+        B, H // ph, ph, W // pw, pw, C
+    )  # 拆出 patch 网格轴和 patch 内轴
+    grid = grid.transpose(0, 1, 3, 5, 2, 4)  # [B, 行, 列, C, ph, pw]
     return grid.reshape(-1, C, ph, pw)
 
 
@@ -140,7 +147,7 @@ def conv1x1(patches, weight, bias):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -151,6 +158,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 单张 4x4 单通道图，2x2 patch：首个 patch 是左上角
 image = np.arange(16).reshape(1, 4, 4, 1)

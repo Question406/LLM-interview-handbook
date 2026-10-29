@@ -4,20 +4,43 @@ section: systems
 order: 7
 level: S
 title: Prefill 为什么更 Compute-Bound，Decode 为什么更 Memory-Bound？
-quick: "Prefill 一次处理很多 tokens，GEMM 大、算术强度高。Decode 每步每条序列只新增 1 个 token，却要读大量模型权重和历史 KV，矩阵瘦、算术强度低，所以常被显存带宽卡住。"
+quick: >-
+  假设用户输入一篇长文档，再让模型逐 token 回答。处理输入时，很多 tokens 可以一起参与矩阵计算；生成时，每一步通常只推进少量新
+  tokens，却仍需读取大量权重和历史 KV。
 tags:
   - Serving
   - Inference
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
-  - title: 'DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving'
-    url: https://arxiv.org/abs/2401.09670
+  - title: >-
+      DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large
+      Language Model Serving
+    url: 'https://arxiv.org/abs/2401.09670'
     type: primary
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设用户输入一篇长文档，再让模型逐 token 回答。
+>
+> **做法与原因：** 因此 prefill 与 decode 往往受不同瓶颈影响：前者更容易充分利用计算，后者更容易受 memory access 限制。
+>
+> **检查与取舍：** 优化时我会分别看首个 token 等待时间和后续 token 的间隔。
+
+## 可以这样回答
+
+假设用户输入一篇长文档，再让模型逐 token 回答。处理输入时，很多 tokens 可以一起参与矩阵计算；生成时，每一步通常只推进少量新 tokens，却仍需读取大量权重和历史 KV。
+
+因此 prefill 与 decode 往往受不同瓶颈影响：前者更容易充分利用计算，后者更容易受 memory access 限制。这是常见情况，需要结合 batch size、模型与硬件测量。
+
+优化时我会分别看首个 token 等待时间和后续 token 的间隔。不能只提高总 throughput，就默认用户看到的两段 latency 都改善了。
+
+## 技术备查
 
 Prefill 能把同一份权重用于整段输入，计算量相对读取量更大，所以通常受算力限制。Decode 每条序列每步只生成一个 token，却仍要读取权重和历史 KV，所以通常受带宽限制。用 Roofline 分析时，比较的是算术强度，也就是 FLOPs / 字节。下面把两种阶段的矩阵形状写出来，就能看到差别。
 
@@ -34,14 +57,14 @@ Attention 同理。Prefill 的 $QK^\top$ 是 $[T,d]\times[d,T]$，有 $T^2$ 项�
 
 这条判断主要适用于长上下文、中小 batch 的 serving。极大 `batch`、极短 context 或极低 bit 的权重量化，都可能让 decode 转而被算力或调度卡住。
 
-同一 GPU 上混跑时，一条 $T=8\mathrm{k}$ 的 输入预填充（prefill，即处理输入并建立缓存） 会占满 SM 几十毫秒到数百毫秒，正在进行的 decode batch 被打断，TPOT 出现尖刺。这里的原因是 prefill 占用了计算资源，打断了 decode 原本连续的带宽流水。
+同一 GPU 上混跑时，一条 $T=8\mathrm{k}$ 的 输入 prefill 会占满 SM 几十毫秒到数百毫秒，正在进行的 decode batch 被打断，TPOT 出现尖刺。这里的原因是 prefill 占用了计算资源，打断了 decode 原本连续的带宽流水。
 
 ## 调度时怎样利用这个差别
 
 - **Continuous batching：** decode 步之间插入已结束序列的空位，提高 $B$，抬 GEMM 效率。
 - **Chunked prefill：** 把超长 prompt 切块，避免一条 prefill 独占、饿死 decode。
 - **KV 压缩 / 量化 / paging：** 专打 decode 的 KV 流量与碎片。
-- **Prefill/decode 分离（DistServe）：** 两类算子的有效吞吐（goodput）曲线不同。混部时，算力型 prefill 会打断带宽型 decode 的流水，首个 token 的等待时间（TTFT） 与 TPOT 互相伤害。拆到不同池，才能各自扩容：prefill 池堆算力，decode 池堆带宽与 KV 容量。
+- **Prefill/decode 分离（DistServe）：** 两类算子的有效 throughput（goodput）曲线不同。混部时，算力型 prefill 会打断带宽型 decode 的流水，首个 token 的等待时间（TTFT） 与 TPOT 互相伤害。拆到不同池，才能各自扩容：prefill 池堆算力，decode 池堆带宽与 KV 容量。
 
 ## 追问
 

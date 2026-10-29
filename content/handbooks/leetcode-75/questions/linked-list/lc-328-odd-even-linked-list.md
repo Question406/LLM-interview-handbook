@@ -5,20 +5,21 @@ order: 2
 level: A
 title: LC 328 · 奇偶链表
 quick: >-
-  题目要 $O(1)$ 额外空间，所以原地拆成两条链交替挂：`odd` 接奇数位，`even` 接偶数位，记住偶链头，最后把奇链尾接到偶链头。时间 $O(n)$，额外空间 $O(1)$。
+  题目要 $O(1)$ 额外空间，所以原地拆成两条链交替挂：`odd` 接奇数位，`even` 接偶数位，记住偶链头，最后把奇链尾接到偶链头。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 328. Odd Even Linked List
-    url: https://leetcode.com/problems/odd-even-linked-list/
+    url: 'https://leetcode.com/problems/odd-even-linked-list/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -108,7 +109,15 @@ def oddEvenList(head: Optional[ListNode]) -> Optional[ListNode]:
 
 if __name__ == "__main__":
     assert to_list(oddEvenList(from_list([1, 2, 3, 4, 5]))) == [1, 3, 5, 2, 4]
-    assert to_list(oddEvenList(from_list([2, 1, 3, 5, 6, 4, 7]))) == [2, 3, 6, 7, 1, 5, 4]
+    assert to_list(oddEvenList(from_list([2, 1, 3, 5, 6, 4, 7]))) == [
+        2,
+        3,
+        6,
+        7,
+        1,
+        5,
+        4,
+    ]
     assert to_list(oddEvenList(from_list([]))) == []
     assert to_list(oddEvenList(from_list([1]))) == [1]
     assert to_list(oddEvenList(from_list([1, 2]))) == [1, 2]
@@ -134,7 +143,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 空链表或单节点直接返回。
 

@@ -4,30 +4,41 @@ section: microsoft
 order: 11
 level: S
 title: Microsoft：Phi「教科书数据」质量 vs 规模，污染和评测切片
-quick: "Phi 把过滤、合成和课程作为数据质量的操作手段，并与规模一起扩展。高质量过滤不等于去污，还要查直接重叠、教师泄漏与改写近邻。验收同时保留公开榜、去污切片、新鲜私有题和同计算数据对照，才能判断收益来自哪里。"
+quick: >-
+  Phi
+  把过滤、合成和课程作为数据质量的操作手段，并与规模一起扩展。高质量过滤不等于去污，还要查直接重叠、教师泄漏与改写近邻。验收同时保留公开榜、去污切片、新鲜私有题和同计算数据对照，才能判断收益来自哪里。
 tags:
   - Microsoft
   - Phi
   - Data Quality
   - Contamination
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Textbooks Are All You Need
-    url: https://arxiv.org/abs/2306.11644
+    url: 'https://arxiv.org/abs/2306.11644'
     type: primary
   - title: Textbooks Are All You Need II
-    url: https://arxiv.org/abs/2309.05463
+    url: 'https://arxiv.org/abs/2309.05463'
     type: primary
   - title: Phi-3 Technical Report
-    url: https://arxiv.org/abs/2404.14219
+    url: 'https://arxiv.org/abs/2404.14219'
     type: primary
   - title: Phi-4 Technical Report
-    url: https://arxiv.org/abs/2412.08905
+    url: 'https://arxiv.org/abs/2412.08905'
     type: primary
 ---
+
+## 可以这样回答
+
+Phi 的数据路线是提高每个 token 的有效信息，再与规模一起扩展。过滤、合成和课程要分别做对照，公开榜提升还要检查是否来自泄漏。例如教师见过 HumanEval，生成一份改写题，学生即使没直接复制题面也可能获得不公平收益。
+
+Phi-1 约 $1.3\mathrm{B}$，使用约 $7\mathrm{B}$ 高质量代码 token，包括过滤 The Stack / StackOverflow 的 CodeTextbook 与 GPT-3.5 合成教材，再用约 $180\mathrm{M}$ CodeExercises 做习题微调，HumanEval 胜过使用更大、较脏语料的代码模型。网页中的模板、重复和错误会让有效 $N$ 低于总计数，高质量并不意味着越少越好。
+
+## 技术备查
 
 Phi 的数据路线是提高每个 token 的有效信息，再与规模一起扩展。过滤、合成和课程要分别做对照，公开榜提升还要检查是否来自泄漏。例如教师见过 HumanEval，生成一份改写题，学生即使没直接复制题面也可能获得不公平收益。
 
@@ -39,7 +50,7 @@ Phi-1 约 $1.3\mathrm{B}$，使用约 $7\mathrm{B}$ 高质量代码 token，包�
 
 Phi-3 将过滤网文扩到约 $3.3\mathrm{T}$ token，mini 先用有教育价值的网文学习知识语言，再用更严过滤子集与合成补推理。Phi-4 将合成扩到预训练主料之一，不能继续把配方说成仅用 7B token。
 
-过滤可以让分类器打教育价值、代码正确性，清掉模板、重复、有害内容，同时保留未过滤对照检查风格偏差。合成用大模型编章节、习题、步骤证明，补长尾也会带入幻觉与测试题。课程从基础到难题，借鉴 Orca 的轨迹学习，相关见 `msft-phi-slm`。
+过滤可以让分类器打教育价值、代码正确性，清掉模板、重复、有害内容，同时保留未过滤对照检查风格偏差。合成用大模型编章节、习题、步骤证明，补长尾也会带入 hallucination 与测试题。课程从基础到难题，借鉴 Orca 的轨迹学习，相关见 `msft-phi-slm`。
 
 Chinchilla 讨论计算、参数与 token 数量，Phi 强调信息密度，两者可以同时改进。同样数据用于 70B 往往也会更好，3.8B 部署限制并不表示数据只对小模型有效。采集过滤和教师合成各自需要计算预算。
 
@@ -61,7 +72,7 @@ Phi-1 曾按 embedding 与 AST 编辑距离删去大量相似 CodeExercises，�
 
 ## 追问
 
-**合成算蒸馏吗？**
+**合成算 distillation 吗？**
 属于手段之一，Phi-1 也有人类代码。Phi-4 若要在部分 STEM 超过教师，需要执行代码、符号推导等可校验数据和新鲜题证明。
 
 **内部评测就不会污染吗？**

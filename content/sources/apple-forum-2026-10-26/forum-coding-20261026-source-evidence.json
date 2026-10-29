@@ -1,0 +1,62 @@
+[
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1170085-1-1.html",
+    "postedAtDisplayed": "2026-03-24 20:41:21",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "主楼及第一页作者回复均可见；作者确认Siri response generation",
+    "reportedTopics": [
+      "一句话一次编辑的布尔判定",
+      "numpy/PyTorch向量化kmeans",
+      "LLM/SFT/DPO从数据到评测",
+      "Siri回复事实性及口播长度"
+    ],
+    "addedQuestion": "dt-p3a-sentence-one-edit",
+    "duplicateTopicsSkipped": [
+      "kmeans已有apple-kmeans",
+      "Siri设计已有apple-siri-grounded"
+    ],
+    "identityScope": "Siri MLE，不当作已确认AFM data面经"
+  },
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1180339-1-1.html",
+    "postedAtDisplayed": "2026-06-15 18:46:32",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "主楼及回复可见",
+    "reportedTopics": [
+      "手写multi head attention"
+    ],
+    "addedQuestion": null,
+    "skipReason": "已有apple-mha-code；未披露额外接口，不重复建题",
+    "identityScope": "Vision MLE，不当作AFM data面经"
+  },
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1170122-1-1.html",
+    "postedAtDisplayed": "2026-03-25 01:00:17",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "主楼及作者回复可见；作者确认IS&T",
+    "reportedTopics": [
+      "cache TTL定义与删除时机",
+      "sentiment/topic modeling设计及emerging topic",
+      "ML基础与项目深挖"
+    ],
+    "addedQuestion": "dt-p3a-ttl-cache-contract",
+    "identityScope": "IS&T Sr MLE，不当作AFM data面经"
+  },
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1145559-1-1.html",
+    "postedAtDisplayed": "2025-09-13 22:37:42",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "主楼可见；积分段明确显示当前会话已经可以浏览，未绕过限制",
+    "reportedTopics": [
+      "RAG项目/减少幻觉/评测",
+      "小数时间且类似“漆傘贰”的编程题"
+    ],
+    "addedQuestion": "dt-p3a-decimal-calendar",
+    "identityScope": "作者明确Foundation Model team；data子团队未披露",
+    "inference": "将“漆傘贰”解释为LC732，并明确接口、Decimal输入和解法为手册扩展"
+  }
+]

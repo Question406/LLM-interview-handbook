@@ -4,7 +4,10 @@ section: systems
 order: 243
 level: A
 title: AI Infra 实习：Megatron TP 切 MLP 时，两个矩阵怎么切、通信是什么？
-quick: "第一层（up/gate）列切，每张卡算一部分隐层，中间不用 all-gather；第二层（down）行切，局部乘完再 all-reduce（或 reduce-scatter）得到完整输出。一套 MLP 前向通常只有一次跨 TP 通信，Attention 的 $QKV$ 列切、$O$ 行切也是同一个套路。"
+quick: >-
+  第一层（up/gate）列切，每张卡算一部分隐层，中间不用 all-gather；第二层（down）行切，局部乘完再 all-reduce（或
+  reduce-scatter）得到完整输出。一套 MLP 前向通常只有一次跨 TP 通信，Attention 的 $QKV$ 列切、$O$
+  行切也是同一个套路。
 tags:
   - Megatron
   - Tensor Parallel
@@ -12,13 +15,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: AI infra实习面经（小厂）
-    url: https://www.nowcoder.com/feed/main/detail/166e576d5afa4a298cf9492ed51bed04
+    url: 'https://www.nowcoder.com/feed/main/detail/166e576d5afa4a298cf9492ed51bed04'
     type: candidate-first-hand
   - title: Megatron-LM
-    url: https://arxiv.org/abs/1909.08053
+    url: 'https://arxiv.org/abs/1909.08053'
     type: primary
 ---
 
@@ -26,7 +29,7 @@ sources:
 
 - 岗位：AI Infra 实习
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“Megatron，tp是怎么切分的，mlp中第一个矩阵和第二个矩阵分别是行切还是列切，通信分别是什么算子”**
+- 原始措辞：**“Megatron，tp 是怎么切分的，mlp 中第一个矩阵和第二个矩阵分别是行切还是列切，通信分别是什么算子”**
 
 第一个矩阵列切，第二个矩阵行切，中间的激活沿隐层维度切开，两层之间不用 gather 完整的 $h'$；最后对输出做一次 all-reduce（序列并行时常是 reduce-scatter）。所以一套 MLP 前向通常只有一次跨 TP 的归约。最容易错的是把行切列切说反，或者每层都报一次 all-gather。
 

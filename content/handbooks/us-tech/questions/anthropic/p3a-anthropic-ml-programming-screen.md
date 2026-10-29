@@ -3,8 +3,10 @@ id: p3a-anthropic-ml-programming-screen
 section: anthropic
 order: 618
 level: S
-title: "Anthropic：ML Programming：QKV Attention 与 einsum"
-quick: "我会先写清 batch、head、序列和特征维度，再依次算 QK 转置、缩放、mask、沿 key 轴 softmax，最后乘 V。全屏蔽行要单独处理，避免负无穷相减产生 NaN，再用小例子核对向量化结果。"
+title: Anthropic：ML Programming：QKV Attention 与 einsum
+quick: >-
+  我会先写清 batch、head、序列和特征维度，再依次算 QK 转置、缩放、mask、沿 key 轴 softmax，最后乘
+  V。全屏蔽行要单独处理，避免负无穷相减产生 NaN，再用小例子核对向量化结果。
 companies:
   - anthropic
 tags:
@@ -13,23 +15,27 @@ tags:
   - Frontier-2026-10
   - ML
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Anthropic · ml-programming-screen"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/ml-programming-screen
+  - title: 1Point3Acres · Anthropic · ml-programming-screen
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/ml-programming-screen
     type: secondary
 ---
 
 ## 题目描述
 
-实现一个 NumPy 版本的多头缩放点积注意力，正确处理广播 mask 和因果可见性。
+实现一个 NumPy 版本的多头缩放点积 attention，正确处理广播 mask 和因果可见性。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
 
-`attention(q, k, v, mask=None, causal=False)` 接收 float64 数组：q 为 `[B,H,T,D]`，k 为 `[B,H,S,D]`，v 为 `[B,H,S,Dv]`；返回 `[B,H,T,Dv]`。每个 query 对 key 的分数为内积除以 `sqrt(D)`，在可见 key 上按 `exp(score)/sum(exp(score))` 归一化为 softmax 概率，再对 v 加权求和。
+### 接口、输入与输出要求
+
+`attention(q, k, v, mask=None, causal=False)` 接收 float64 数组：q 为 `[B,H,T,D]`，k 为 `[B,H,S,D]`，v 为 `[B,H,S,Dv]`；返回 `[B,H,T,Dv]`。每个 query 对 key 的分数为内积除以 `sqrt(D)`，在可见 key 上按 `exp(score)/sum(exp(score))` normalization 为 softmax 概率，再对 v 加权求和。
 
 mask 是可广播到 `[B,H,T,S]` 的布尔数组，True 表示可见。causal=True 时 T=S，位置 i 只能看到 j<=i；该约束与 mask 同时生效。某一 query 没有可见 key 时，其输出为全零且不含 NaN。B、H 不超过 4，T、S 不超过 128，各特征维均为正。
 
@@ -46,9 +52,9 @@ v = [[[[2],[4]]]], causal = True
 
 ## 题目
 
-面试官给出数学公式，要求照着实现一个序列模型组件，典型就是缩放点积注意力。考察点是能不能把公式里的下标准确翻译成张量维度和 `einsum`，以及 mask、数值稳定这些细节有没有想到。
+面试官给出数学公式，要求照着实现一个序列模型组件，典型就是缩放点积 attention。考察点是能不能把公式里的下标准确翻译成张量维度和 `einsum`，以及 mask、数值稳定这些细节有没有想到。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -56,7 +62,7 @@ v = [[[[2],[4]]]], causal = True
 
 写完后重点自查两处：
 
-- softmax 是沿 key 轴（最后一维）归一化，每个 query 的权重和应该是 1；
+- softmax 是沿 key 轴（最后一维）normalization，每个 query 的权重和应该是 1；
 - 一行 key 全被屏蔽时会不会出 NaN，以及你打算让它输出什么。
 
 最后拿一个极小的例子，用两层 for 循环直接按公式算一遍，和向量化版本对照。值得问面试官的是 mask 的语义（`True` 是可见还是屏蔽）和全屏蔽行的期望输出。
@@ -65,7 +71,7 @@ v = [[[[2],[4]]]], causal = True
 
 ### 题面、接口与约束
 
-- `attention(q, k, v, mask=None, causal=False)`：用 NumPy 实现缩放点积注意力。`q` 形状 `[B, H, T, D]`，`k` 形状 `[B, H, S, D]`，`v` 形状 `[B, H, S, Dv]`，返回 `[B, H, T, Dv]`。
+- `attention(q, k, v, mask=None, causal=False)`：用 NumPy 实现缩放点积 attention。`q` 形状 `[B, H, T, D]`，`k` 形状 `[B, H, S, D]`，`v` 形状 `[B, H, S, Dv]`，返回 `[B, H, T, Dv]`。
 - `mask` 是 bool 数组，可广播到 `[B, H, T, S]`，`True` 表示这个 key 可见。
 - `causal=True` 只允许 $T = S$，第 $i$ 个 query 只能看 $j \le i$ 的 key。
 - 某一行 key 全被屏蔽时，这一行输出全 0。形状不匹配、key 长度为 0 或特征维为 0 时抛 `ValueError`。
@@ -84,7 +90,7 @@ attention(q, k, v, mask=zeros((2, 2), dtype=bool))  -> [[[[0], [0]]]]
 
 ### 解题思路与正确性
 
-先算 $QK^\top / \sqrt{D}$ 得到 `[B, H, T, S]` 的分数，再把不可见位置设成 $-\infty$，然后沿最后一维（key 轴）做 softmax，最后乘 `v`。顺序必须是先屏蔽再归一化，这样被屏蔽的位置权重恰好是 0，剩下的权重和仍为 1。
+先算 $QK^\top / \sqrt{D}$ 得到 `[B, H, T, S]` 的分数，再把不可见位置设成 $-\infty$，然后沿最后一维（key 轴）做 softmax，最后乘 `v`。顺序必须是先屏蔽再 normalization，这样被屏蔽的位置权重恰好是 0，剩下的权重和仍为 1。
 
 softmax 前减去每行最大值，防止 `exp` 溢出。全屏蔽行的最大值是 $-\infty$，直接相减会得到 `-inf - (-inf) = NaN`，所以把这种行的最大值换成 0，分母为 0 的行再用 `np.divide(..., where=denom > 0)` 输出 0。
 
@@ -113,7 +119,7 @@ def check_shapes(q, k, v):
 
 
 def attention(q, k, v, mask=None, causal=False):
-    """缩放点积注意力。mask 可广播到 [B, H, T, S]，True 表示可见；返回 [B, H, T, Dv]。
+    """缩放点积 attention。mask 可广播到 [B, H, T, S]，True 表示可见；返回 [B, H, T, Dv]。
 
     被全部屏蔽的 query 行输出全 0。
     """
@@ -150,7 +156,7 @@ def attention(q, k, v, mask=None, causal=False):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -162,12 +168,14 @@ def reference_row(q_row, keys, values):
     weights /= weights.sum()
     return weights @ values
 
+
 def expect_value_error(fn, *args, **kwargs):
     try:
         fn(*args, **kwargs)
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 因果 mask：第 0 个位置只看自己，第 1 个位置平均两个 value
 q = np.ones((1, 1, 2, 1))
@@ -187,17 +195,19 @@ out = attention(q, k, v)
 for b in range(2):
     for h in range(2):
         for t in range(3):
-            assert np.allclose(out[b, h, t], reference_row(q[b, h, t], k[b, h], v[b, h]))
+            assert np.allclose(
+                out[b, h, t], reference_row(q[b, h, t], k[b, h], v[b, h])
+            )
 
 # 非法输入
-expect_value_error(attention, q, k, v, causal=True)          # T != S 不能用 causal
-expect_value_error(attention, q, k[:, :, :, :3], v)          # D 不一致
-expect_value_error(attention, q, k[:, :, :0], v[:, :, :0])   # 空 key
+expect_value_error(attention, q, k, v, causal=True)  # T != S 不能用 causal
+expect_value_error(attention, q, k[:, :, :, :3], v)  # D 不一致
+expect_value_error(attention, q, k[:, :, :0], v[:, :, :0])  # 空 key
 ```
 
 ### 复杂度与追问
 
-设 batch 为 $B$、head 数为 $H$、query 长度 $T$、key 长度 $S$、特征维 $D$、value 维 $D_v$。时间是 $O(BHTS(D + D_v))$，注意力权重矩阵占 $O(BHTS)$ 空间，序列一长这部分就是瓶颈。
+设 batch 为 $B$、head 数为 $H$、query 长度 $T$、key 长度 $S$、特征维 $D$、value 维 $D_v$。时间是 $O(BHTS(D + D_v))$，attention 权重矩阵占 $O(BHTS)$ 空间，序列一长这部分就是瓶颈。
 
-- FlashAttention：把 Q、K、V 分块读进片上 SRAM，用在线 softmax（边走边维护每行的最大值和分母）累积输出，不把 $T \times S$ 的权重矩阵写回 HBM。它算出来的仍是精确的标准注意力，省的是显存读写，不是 FLOPs。
-- Linear attention：把 softmax 换成核函数特征映射 $\phi(q)^\top \phi(k)$，利用结合律先算 $\phi(K)^\top V$，复杂度变成对序列长度线性。但输出和 softmax 注意力不同，属于换了一个模型，不能说成同一个函数的等价优化。
+- FlashAttention：把 Q、K、V 分块读进片上 SRAM，用在线 softmax（边走边维护每行的最大值和分母）累积输出，不把 $T \times S$ 的权重矩阵写回 HBM。它算出来的仍是精确的标准 attention，省的是显存读写，不是 FLOPs。
+- Linear attention：把 softmax 换成核函数特征映射 $\phi(q)^\top \phi(k)$，利用结合律先算 $\phi(K)^\top V$，复杂度变成对序列长度线性。但输出和 softmax attention 不同，属于换了一个模型，不能说成同一个函数的等价优化。

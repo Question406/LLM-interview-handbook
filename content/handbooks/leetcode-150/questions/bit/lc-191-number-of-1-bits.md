@@ -4,20 +4,20 @@ section: bit
 order: 3
 level: S
 title: LC 191 · 位1的个数
-quick: "反复做 `n & (n - 1)`，每次清掉最低的那个 $1$，直到 $n=0$，循环次数就是汉明重量。时间与 $1$ 的个数成正比。"
+quick: 反复做 `n & (n - 1)`，每次清掉最低的那个 $1$，直到 $n=0$，循环次数就是汉明重量。时间与 $1$ 的个数成正比。
 tags:
   - Bit
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 191. 位1的个数
-    url: https://leetcode.cn/problems/number-of-1-bits/
+    url: 'https://leetcode.cn/problems/number-of-1-bits/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -94,7 +94,7 @@ print("simple tests passed")
 
 时间 $O(k)$，$k$ 是 $1$ 的个数，最坏 $O(32)$。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=0$ 时循环不进，答案 $0$。只有最高位是 $1$ 时，`n & (n-1)` 一次就清掉，答案 $1$。全是 $1$（$2^{32}-1$）时要循环 $32$ 次。
 

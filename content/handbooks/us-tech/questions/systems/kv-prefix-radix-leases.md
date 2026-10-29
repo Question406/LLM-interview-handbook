@@ -3,8 +3,10 @@ id: kv-prefix-radix-leases
 section: systems
 order: 33
 level: S
-title: "KV Prefix ③：Radix Cache 的 pin/unpin、活跃分裂与叶子 LRU"
-quick: "每个活跃请求用 lease 锁住命中点及整条祖先路径，释放时从稳定的终点 Node 沿当前 parent 链回退。边分裂时让新父节点继承锁计数，淘汰只挑未锁定的叶子，就能保护仍在使用的前缀。"
+title: KV Prefix ③：Radix Cache 的 pin/unpin、活跃分裂与叶子 LRU
+quick: >-
+  每个活跃请求用 lease 锁住命中点及整条祖先路径，释放时从稳定的终点 Node 沿当前 parent
+  链回退。边分裂时让新父节点继承锁计数，淘汰只挑未锁定的叶子，就能保护仍在使用的前缀。
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -14,10 +16,11 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "SGLang split-node, lock references and eviction"
-    url: https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/mem_cache/radix_cache.py
+  - title: 'SGLang split-node, lock references and eviction'
+    url: >-
+      https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/mem_cache/radix_cache.py
     type: primary
 ---
 
@@ -25,7 +28,7 @@ sources:
 
 实现带租约保护的压缩 token 前缀缓存。活跃请求命中的 KV 句柄不得被回收，而未被任何请求使用的路径可按最近使用顺序淘汰。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -55,7 +58,7 @@ evict(100) -> 返回恰好含 "a","b","c","d" 的 tuple（顺序取决于整边�
 
 ## 完整编程练习（手册原创实现版）
 
-> 本题是为理解开源机制写的独立练习，不是某家公司确认过的原题，也不是 SGLang/vLLM 源码的逐字翻译。接口、简化条件和测试由手册定义。Python 3 标准库，在 CPU 上验证状态语义，不报告 GPU 吞吐。
+> 本题是为理解开源机制写的独立练习；代码由手册独立编写。接口、简化条件和测试由手册定义。Python 3 标准库，在 CPU 上验证状态语义，不报告 GPU throughput。
 
 专题入口：[[kv-prefix-implementation-index]]。
 
@@ -93,12 +96,12 @@ evict(100)  -> {a, b, c, d}
 ```python
 class Node:
     def __init__(self, edge=(), values=(), parent=None):
-        self.edge = tuple(edge)      # 这条边上的 token
+        self.edge = tuple(edge)  # 这条边上的 token
         self.values = tuple(values)  # 每个 token 一个 KV 句柄
         self.parent = parent
-        self.children = {}           # 子边首 token -> Node
-        self.locks = 0               # 经过该节点的活跃 lease 数
-        self.used = 0                # 最近访问的逻辑时钟
+        self.children = {}  # 子边首 token -> Node
+        self.locks = 0  # 经过该节点的活跃 lease 数
+        self.used = 0  # 最近访问的逻辑时钟
 
 
 class RadixCache:
@@ -119,7 +122,9 @@ class RadixCache:
     def split(child, length):
         """把 child 的边在 length 处拆成 mid -> child，返回新的中间节点 mid。"""
         if not 0 < length < len(child.edge):
-            raise ValueError(f"split point {length} must be inside an edge of length {len(child.edge)}")
+            raise ValueError(
+                f"split point {length} must be inside an edge of length {len(child.edge)}"
+            )
         parent = child.parent
         mid = Node(child.edge[:length], child.values[:length], parent)
         # 现存 lease 的终点对象不变、释放时会经过 mid，所以 mid 继承 child 的锁计数
@@ -146,8 +151,11 @@ class RadixCache:
             if child is None:
                 break
             count = 0
-            while (count < len(child.edge) and offset + count < len(tokens)
-                   and child.edge[count] == tokens[offset + count]):
+            while (
+                count < len(child.edge)
+                and offset + count < len(tokens)
+                and child.edge[count] == tokens[offset + count]
+            ):
                 count += 1
             values.extend(child.values[:count])
             offset += count
@@ -167,7 +175,9 @@ class RadixCache:
         tokens = tuple(tokens)
         values = tuple(values)
         if len(tokens) != len(values):
-            raise ValueError(f"need one KV handle per token, got {len(tokens)} tokens and {len(values)} handles")
+            raise ValueError(
+                f"need one KV handle per token, got {len(tokens)} tokens and {len(values)} handles"
+            )
         node = self.root(namespace)
         offset = 0
         while offset < len(tokens):
@@ -178,8 +188,11 @@ class RadixCache:
                 self.touch(child)
                 return offset
             count = 0
-            while (count < len(child.edge) and offset + count < len(tokens)
-                   and child.edge[count] == tokens[offset + count]):
+            while (
+                count < len(child.edge)
+                and offset + count < len(tokens)
+                and child.edge[count] == tokens[offset + count]
+            ):
                 count += 1
             if count < len(child.edge):
                 child = self.split(child, count)
@@ -238,7 +251,9 @@ class PinnedRadix(RadixCache):
     def evict(self, target_tokens):
         """按 LRU 移走未锁定的叶子，直到释放至少 target_tokens 个句柄或没有候选。"""
         if target_tokens < 0:
-            raise ValueError(f"eviction target must be non-negative, got {target_tokens}")
+            raise ValueError(
+                f"eviction target must be non-negative, got {target_tokens}"
+            )
         freed = []
         while len(freed) < target_tokens:
             candidates = []
@@ -267,7 +282,7 @@ class PinnedRadix(RadixCache):
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

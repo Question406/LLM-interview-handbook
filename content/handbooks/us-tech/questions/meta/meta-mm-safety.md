@@ -4,7 +4,9 @@ section: meta
 order: 32
 level: A
 title: Meta：视觉+文本安全——Llama Guard 多模态和截图越狱
-quick: "Guard 3 Vision 用于图文对话的输入或回复安全分类，基于 Llama 3.2 11B。图片里的指令能绕过纯文本检查，所以带图请求要走视觉审核，输出也要检查；它的公开范围以英语、单图为主，不能承诺对抗越狱为零。"
+quick: >-
+  Guard 3 Vision 用于图文对话的输入或回复安全分类，基于 Llama 3.2
+  11B。图片里的指令能绕过纯文本检查，所以带图请求要走视觉审核，输出也要检查；它的公开范围以英语、单图为主，不能承诺对抗越狱为零。
 tags:
   - Meta
   - Llama Guard
@@ -13,19 +15,25 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
-  - title: Llama Guard 3 Vision — Safeguarding Human-AI Image Understanding Conversations
-    url: https://arxiv.org/abs/2411.10414
+  - title: >-
+      Llama Guard 3 Vision — Safeguarding Human-AI Image Understanding
+      Conversations
+    url: 'https://arxiv.org/abs/2411.10414'
     type: primary
   - title: Llama Guard 3 11B-Vision model card
-    url: https://github.com/meta-llama/PurpleLlama/blob/main/Llama-Guard3/11B-vision/MODEL_CARD.md
+    url: >-
+      https://github.com/meta-llama/PurpleLlama/blob/main/Llama-Guard3/11B-vision/MODEL_CARD.md
     type: primary
   - title: Llama 3.2 — vision and edge models
-    url: https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/
+    url: >-
+      https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/
     type: primary
-  - title: FigStep — Jailbreaking Large Vision-Language Models via Typographic Visual Prompts
-    url: https://arxiv.org/abs/2311.05608
+  - title: >-
+      FigStep — Jailbreaking Large Vision-Language Models via Typographic Visual
+      Prompts
+    url: 'https://arxiv.org/abs/2311.05608'
     type: secondary
 ---
 
@@ -33,7 +41,7 @@ sources:
 
 ## Guard 3 Vision 在判什么
 
-它是 3.2-Vision 上微调的分类 LM，不是另接 $[D,2]$ 头。输入：策略文本 + **一张图** + 用户文字（输入提示（prompt） 分类），或再加模型回复（response 分类）。输出仍先 `safe` / `unsafe`，再跟类别。分数读首个 token 的概率。卡片的适用范围是英语、每请求一张图；多轮时，image 占位符要放在图片出现的那一轮。它不保证单图无字时的图像安全分类，纯文本应改用 Guard 3 8B / 1B。图像沿用 3.2 切块，约 $4$ 块 $560\times 560$，分辨率或长宽比变化也会影响分类。
+它是 3.2-Vision 上微调的分类 LM，不是另接 $[D,2]$ 头。输入：策略文本 + **一张图** + 用户文字（prompt 分类），或再加模型回复（response 分类）。输出仍先 `safe` / `unsafe`，再跟类别。分数读首个 token 的概率。卡片的适用范围是英语、每请求一张图；多轮时，image 占位符要放在图片出现的那一轮。它不保证单图无字时的图像安全分类，纯文本应改用 Guard 3 8B / 1B。图像沿用 3.2 切块，约 $4$ 块 $560\times 560$，分辨率或长宽比变化也会影响分类。
 
 训练是混合人标和合成：人写的图文对、用越狱手法从内部 Llama 引出违规回复、再用 405B 或人打标。taxonomy 对齐 MLCommons，并强调 **认人 / 从照片反查真实身份** 这类视觉特有风险。Herd 对文本 Guard 的警告同样适用：系统安全上升，误拒也可能上升。因此要同时报告 FPR，检查安全收益有没有伴随误拒上涨。
 
@@ -47,7 +55,7 @@ sources:
 
 我会把检查放在三处：
 
-1. **输入。** 带图请求走 Vision Guard；纯文本走文本 Guard。OCR 可作辅助信号，不能当唯一闸门。
+1. **输入。** 带图请求走 Vision Guard；纯文本走文本 Guard。OCR 可作辅助信号，不能当唯一 acceptance checks。
 2. **主模型。** 3.2 后训练里有安全数据，见 `meta-llama-vision`，行为对齐不是分类器。
 3. **输出。** 回复再跑 response 分类；工具 / 检索片段要一并送进，否则「引用了有害段落」会漏。
 
@@ -68,4 +76,4 @@ OCR 漏艺术字、手写、低分辨率；真视觉危害没有字。OCR 可作
 **要不要复述越狱步骤？**
 不要。面试停在威胁类型：排版字、无害指令、切片绕 OCR。防御讲 Guard 覆盖视觉通道 + 不单靠 OCR。
 
-部署上把 Vision Guard 和主模型当成两个 checkpoint、两套模板、两次 prefill。图尺寸、切块数、聊天头必须和 3.2 / Guard 训练时一致，否则首 token 的 `safe`/`unsafe` 分布会偏，阈值全部失效。和文本 Guard 一样，策略写在 输入提示里可以换 taxonomy，但换了要在自己的政策集上重画 PR，不能只声称它能零样本适应。
+部署上把 Vision Guard 和主模型当成两个 checkpoint、两套模板、两次 prefill。图尺寸、切块数、聊天头必须和 3.2 / Guard 训练时一致，否则首 token 的 `safe`/`unsafe` 分布会偏，阈值全部失效。和文本 Guard 一样，策略写在 prompt 里可以换 taxonomy，但换了要在自己的政策集上重画 PR，不能只声称它能零样本适应。

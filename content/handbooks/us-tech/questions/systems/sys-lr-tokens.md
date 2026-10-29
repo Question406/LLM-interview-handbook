@@ -3,8 +3,11 @@ id: sys-lr-tokens
 section: systems
 order: 66
 level: B
-title: 系统：改了梯度累积，学习率 warmup 按 token 还是按 step？
-quick: "我会按累计处理的有效 token 数设置 warmup 和衰减，这样改卡数或梯度累积后，调度仍对应同样的数据量。每次优化器更新都统计 global batch 内的真实 token，去掉 pad。若 global batch 本身改变，学习率是否随之缩放要单独决定。"
+title: 系统：改了 gradient accumulation，学习率 warmup 按 token 还是按 step？
+quick: >-
+  我会按累计处理的有效 token 数设置 warmup 和衰减，这样改卡数或 gradient accumulation
+  后，调度仍对应同样的数据量。每次优化器更新都统计 global batch 内的真实 token，去掉 pad。若 global batch
+  本身改变，学习率是否随之缩放要单独决定。
 tags:
   - Pretrain
   - LR Schedule
@@ -12,14 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-24
+updatedAt: 2026-09-24T00:00:00.000Z
 sources:
   - title: Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
 ---
 
-改变梯度累积或并行度时，我会按累计有效 token 数推进学习率调度，先保持 warmup 和衰减覆盖的数据量不变。比如一次 optimizer step 包含更多 microbatch 后，同样一次 step 就代表更多训练 token，不能直接拿 step 数比较进度。batch 定义见 `sys-grad-accum`。
+改变 gradient accumulation 或并行度时，我会按累计有效 token 数推进学习率调度，先保持 warmup 和衰减覆盖的数据量不变。比如一次 optimizer step 包含更多 microbatch 后，同样一次 step 就代表更多训练 token，不能直接拿 step 数比较进度。batch 定义见 `sys-grad-accum`。
 
 一次 `optimizer.step` 处理的 token 数是 global batch 乘序列长度，再去掉 pad。warmup 设成「前 $T$ 个 token」，则累积次数变了、卡数变了，热身覆盖的数据量不变。设成「前 2000 个 step」，累积乘 8 之后，热身只覆盖原来八分之一的数据。
 
@@ -31,6 +34,7 @@ global batch 放大，有人把学习率按比例放大。这是另一条规则�
 
 ```python
 import math
+
 
 def lr_at(tokens_seen, warmup_tokens, total_tokens, base_lr):
     if tokens_seen < warmup_tokens:

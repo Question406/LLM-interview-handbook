@@ -4,20 +4,22 @@ section: array-string
 order: 22
 level: A
 title: LC 6 · Z 字形变换
-quick: "按行模拟：每行一个缓冲区，字符依次落进当前行，走到第 $0$ 行或第 `numRows-1` 行就折返方向，最后把各行拼起来，不用建二维网格。时间 $O(n)$。"
+quick: >-
+  按行模拟：每行一个缓冲区，字符依次落进当前行，走到第 $0$ 行或第 `numRows-1` 行就折返方向，最后把各行拼起来，不用建二维网格。时间
+  $O(n)$。
 tags:
   - String
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 6. Z 字形变换
-    url: https://leetcode.cn/problems/zigzag-conversion/
+    url: 'https://leetcode.cn/problems/zigzag-conversion/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$（各行字符）。
 
-## 边界
+## Edge Cases
 
 `numRows=1` 时没有折返，原样返回。`numRows \ge len(s)` 时竖着一列就写完了，读出来仍是原串。两行时周期为 $2$，奇偶下标分别落在第 $0$、$1$ 行。
 

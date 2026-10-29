@@ -32,14 +32,14 @@ OpenAI / Apple 常见给一份能跑的小 Transformer 或 attention，里面有
 
 ## Onsite 技术轮怎么拆
 
-1. **ML coding：** 实现采样、tokenizer、layernorm、一个小训练 step。评委看数值稳定和接口，不看你能不能背 PyTorch 文档。见 `coding-softmax-stable`、`coding-layernorm`。
-2. **ML 基础 / 论文：** GQA 为什么省显存、PPO clip 在干什么、直接偏好优化（DPO） 的 隐式奖励。研究岗会深挖你简历上的工作。
+1. **ML coding：** 实现 sampling、tokenizer、layernorm、一个小训练 step。评委看数值稳定和接口，不看你能不能背 PyTorch 文档。见 `coding-softmax-stable`、`coding-layernorm`。
+2. **ML 基础 / 论文：** GQA 为什么省显存、PPO clip 在干什么、DPO 的 隐式奖励。研究岗会深挖你简历上的工作。
 3. **System / ML design：** 万亿训练怎么切并行、检索增强生成（RAG） 的 p95、推荐双塔。NVIDIA 更偏 GPU；Amazon / Apple 更偏产品约束。
 4. **Behavioral：** Meta / Amazon 会认真评估。STAR 要落到「你做的权衡」，不要背领导力原则原文。
 
 xAI 有时把系统题收成「带事务的 KV + 找 race」，时间紧，正确性比完整引擎重要，见 `xai-kv-txn`。
 
-Research Engineer 和 Research Scientist 都可能有 paper deep dive，但 RE 更常被追问到「这段代码你怎么写进训练栈」。Scientist 会被问到「这个实验如果结果反了你信哪条假设」。准备时把论文的 negative result 和消融先想一遍。
+Research Engineer 和 Research Scientist 都可能有 paper deep dive，但 RE 更常被追问到「这段代码你怎么写进训练栈」。Scientist 会被问到「这个实验如果结果反了你信哪条假设」。准备时把论文的 negative result 和 ablation 先想一遍。
 
 ## 追问
 

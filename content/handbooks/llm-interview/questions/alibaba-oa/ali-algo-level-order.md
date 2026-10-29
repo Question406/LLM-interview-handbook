@@ -4,20 +4,20 @@ section: alibaba-oa
 order: 35
 level: B
 title: 阿里手撕：二叉树层序及变形要准备哪些？
-quick: "用队列 BFS，每轮先记下 `size=q.size()`，只弹出这么多个，正好是一层。锯齿、右侧视图、层均值都是同一骨架，只换收集方式。"
+quick: 用队列 BFS，每轮先记下 `size=q.size()`，只弹出这么多个，正好是一层。锯齿、右侧视图、层均值都是同一骨架，只换收集方式。
 tags:
   - Alibaba
   - BFS
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 二叉树的层序遍历
-    url: https://leetcode.cn/problems/binary-tree-level-order-traversal/
+    url: 'https://leetcode.cn/problems/binary-tree-level-order-traversal/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -43,7 +43,7 @@ right_side_view(root)    -> [3,20,7]
 level_order(None)        -> []
 ```
 
-这是根据相关算法考点整理的手册练习接口，不是某一场面试的逐字题干。
+这是根据相关算法考点整理的手册练习接口。
 
 ## 解题思路与参考答案
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-**哪些边界容易写错？**
+**哪些 edge cases 容易写错？**
 空树、只有左链、完全二叉树最底层最宽。切层要用当轮的 `size`，不要用 `while q` 一次掏光。
 
 **换成图或多叉树呢？**

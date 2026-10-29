@@ -4,7 +4,9 @@ section: tech-screen
 order: 17
 level: A
 title: CoderPad：语言识别怎么写，文档级和段落级差在哪？
-quick: "现场写一个字符 3-gram 朴素贝叶斯来识别语言。先剥掉代码块，再按段落分别识别，否则英语页里的中文段会被一起标成英语。分数低于阈值时输出 `und`，表示判断不了，别硬猜。"
+quick: >-
+  现场写一个字符 3-gram 朴素贝叶斯来识别语言。先剥掉代码块，再按段落分别识别，否则英语页里的中文段会被一起标成英语。分数低于阈值时输出
+  `und`，表示判断不了，别硬猜。
 companies:
   - apple
 tags:
@@ -15,22 +17,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
-  - title: "Bag of Tricks for Efficient Text Classification (fastText)"
-    url: https://arxiv.org/abs/1607.01759
+  - title: Bag of Tricks for Efficient Text Classification (fastText)
+    url: 'https://arxiv.org/abs/1607.01759'
     type: primary
-  - title: "fastText language identification"
-    url: https://fasttext.cc/docs/en/language-identification.html
+  - title: fastText language identification
+    url: 'https://fasttext.cc/docs/en/language-identification.html'
     type: primary
   - title: Apple Intelligence Foundation Language Models Tech Report 2025
-    url: https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
+    url: >-
+      https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 实现一个用于数据分桶的简化语言识别器，接受带语言标签的训练文本，预测新文本的语言；证据不足时允许输出 `und`，而不是强行指定一种语言。
 
@@ -61,7 +64,7 @@ lid.predict("the cat")[0] -> "en"
 
 比如一篇论文，英文摘要加中文正文，整页只打一个 `en`，中文那几段就跟着进了英语桶。维基的中英对照、英语题面加代码的 Stack Overflow 也是一样，所以混排页要拆开，每段各打各的标签。
 
-用字符 n-gram，是因为词表 LID 在低资源语言和拼写噪声上会失效。fastText 也用字符 n-gram，公开的 lid.176 是生产里常见的组件。现场写 3-gram 加对数计数：
+用字符 n-gram，是因为 vocabulary LID 在 low-resource 语言和拼写噪声上会失效。fastText 也用字符 n-gram，公开的 lid.176 是生产里常见的组件。现场写 3-gram 加对数计数：
 
 ```python
 import math
@@ -75,11 +78,11 @@ def char_ngrams(text, n=3):
     s = " ".join(text.lower().split())
     if len(s) < n:
         return [s] if s else []
-    return [s[i:i + n] for i in range(len(s) - n + 1)]
+    return [s[i : i + n] for i in range(len(s) - n + 1)]
 
 
 class Lid:
-    """字符 3-gram 朴素贝叶斯语言识别。分数是每个 gram 的平均对数概率。"""
+    """字符 3-gram 朴素贝叶斯语言识别。分数是每个 gram 的平均 log probability。"""
 
     def __init__(self):
         self.gram_counts = defaultdict(Counter)  # lang -> gram -> 次数
@@ -104,7 +107,9 @@ class Lid:
             log_score = math.log(total + 1)  # 粗略的语言先验
             denominator = total + 1e6  # 平滑，未见 gram 也有小概率
             for gram in grams:
-                log_score += math.log(self.gram_counts[lang][gram] + 0.1) - math.log(denominator)
+                log_score += math.log(self.gram_counts[lang][gram] + 0.1) - math.log(
+                    denominator
+                )
             scores[lang] = log_score / len(grams)
         best = max(scores, key=scores.get)
         if min_log is not None and scores[best] < min_log:
@@ -116,12 +121,17 @@ class Lid:
 
 ```python
 lid = Lid()
-lid.fit([
-    ("en", "the quick brown fox jumps over the lazy dog and the cat sat on the mat"),
-    ("en", "this is an english sentence about language identification and data"),
-    ("zh", "今天天气很好，我们一起去公园散步吧。语言识别是数据处理的第一步。"),
-    ("zh", "这是一个中文句子，用来训练字符级的语言识别模型。"),
-])
+lid.fit(
+    [
+        (
+            "en",
+            "the quick brown fox jumps over the lazy dog and the cat sat on the mat",
+        ),
+        ("en", "this is an english sentence about language identification and data"),
+        ("zh", "今天天气很好，我们一起去公园散步吧。语言识别是数据处理的第一步。"),
+        ("zh", "这是一个中文句子，用来训练字符级的语言识别模型。"),
+    ]
+)
 
 # 训练过的两种语言各自识别正确
 assert lid.predict("the dog and the cat")[0] == "en"
@@ -147,23 +157,23 @@ except ValueError:
     pass
 ```
 
-预测时每个语言扫一遍 gram，成本是 gram 数乘语言数。`und` 是合法输出，把它硬塞进 `en`，会污染英语的质量分类器。
+预测时每个语言扫一遍 gram，成本是 gram 数乘语言数。`und` 是合法输出，把它硬塞进 `en`，会 contamination 英语的质量分类器。
 
 ## 先切块，再识别
 
 先剥掉代码块（`CODE.sub(" ", text)`），代码走代码桶，不用网页 LID。剩下的按空行切段，段长超过 40 字符才打标签。文档的主语言是覆盖 token 最多的那个语言，少数语言的段落进对应的语言桶，或者进 `und`。AFM 2025 报告也是按语言挑选训练文档和标签的。
 
-n 取多少也有讲究。中日韩这类文字 3-gram 就够用；拉丁语族之间要用 4-gram 或词特征，不然西语和葡语会混。生产上仍然蒸馏 fastText，现场这份代码的作用是把输入输出的约定写清楚。
+n 取多少也有讲究。中日韩这类文字 3-gram 就够用；拉丁语族之间要用 4-gram 或词特征，不然西语和葡语会混。生产上仍然 distillation fastText，现场这份代码的作用是把输入输出的约定写清楚。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert lid.predict("the dog and the cat")[0] == "en"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert lid.predict("the dog and the cat")[0] == "en"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 

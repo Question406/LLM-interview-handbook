@@ -1,22 +1,26 @@
 ---
-id: "ml101-backprop"
-section: "neural-networks"
+id: ml101-backprop
+section: neural-networks
 order: 2
-level: "A"
-title: "反向传播怎样用链式法则计算梯度？"
-quick: "反向传播从损失往回走，把上游梯度乘当前运算的局部导数；一个变量影响多条路径时，把各路径贡献相加。前向保存必要中间值，反向复用它们算所有参数的梯度，优化器随后才更新参数。"
-tags: ["ML101", "neural-networks"]
+level: A
+title: backpropagation 怎样用链式法则计算梯度？
+quick: >-
+  backpropagation
+  从损失往回走，把上游梯度乘当前运算的局部导数；一个变量影响多条路径时，把各路径贡献相加。前向保存必要中间值，反向复用它们算所有参数的梯度，优化器随后才更新参数。
+tags:
+  - ML101
+  - neural-networks
 realInterview: false
 status: published
-format: "markdown"
-updatedAt: "2026-10-22"
+format: markdown
+updatedAt: '2026-10-22'
 sources:
-  - title: "Dive into Deep Learning: Forward and Backward Propagation"
-    url: https://d2l.ai/chapter_multilayer-perceptrons/backprop.html
+  - title: 'Dive into Deep Learning: Forward and Backward Propagation'
+    url: 'https://d2l.ai/chapter_multilayer-perceptrons/backprop.html'
     type: primary
 ---
 
-反向传播用链式法则，从标量损失倒着计算每个参数的梯度。每个节点接收“损失对自己输出的导数”，再乘本节点的局部导数，传给输入；同一变量有多条下游路径时，要把贡献相加。 [Dive into Deep Learning: Forward and Backward Propagation](https://d2l.ai/chapter_multilayer-perceptrons/backprop.html)
+backpropagation 用链式法则，从标量损失倒着计算每个参数的梯度。每个节点接收“损失对自己输出的导数”，再乘本节点的局部导数，传给输入；同一变量有多条下游路径时，要把贡献相加。 [Dive into Deep Learning: Forward and Backward Propagation](https://d2l.ai/chapter_multilayer-perceptrons/backprop.html)
 
 例如 $z=wx+b$，$a=\mathrm{ReLU}(z)$，$L=(a-y)^2/2$。先有 $\partial L/\partial a=a-y$，在 $z>0$ 时，传到 $z$ 的梯度仍是 $a-y$，于是 $\partial L/\partial w=(a-y)x$、$\partial L/\partial b=a-y$。
 

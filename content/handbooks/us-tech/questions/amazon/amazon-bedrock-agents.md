@@ -4,7 +4,9 @@ section: amazon
 order: 12
 level: A
 title: Amazon：Bedrock Agents 的工具、记忆、护栏，和自建 harness 怎么选？
-quick: "Bedrock Agents 可以托管工具选择、检索和会话编排，权限、确认、预算和沙箱仍由应用负责。工具少且流程稳定时用托管；涉及事务、补偿或精细重试时自建 harness，也可以只把写操作交回自己的服务。"
+quick: >-
+  Bedrock Agents 可以托管工具选择、检索和会话编排，权限、确认、预算和沙箱仍由应用负责。工具少且流程稳定时用托管；涉及事务、补偿或精细重试时自建
+  harness，也可以只把写操作交回自己的服务。
 tags:
   - Amazon
   - Bedrock
@@ -13,19 +15,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Automate tasks in your application using AI agents
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html'
     type: primary
   - title: How Amazon Bedrock Agents work
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/agents-how.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/agents-how.html'
     type: primary
   - title: Retain conversational context across sessions using memory
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/agents-memory.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/agents-memory.html'
     type: primary
   - title: Detect and filter harmful content with Amazon Bedrock Guardrails
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html'
     type: primary
 ---
 
@@ -35,7 +37,7 @@ sources:
 
 Classic Agents 编排 FM、数据源和会话。Action Group 用 OpenAPI 或 function schema（函数参数的字段和类型定义）描述工具，可以接 Lambda，也可以 return control。一次 `InvokeAgent` 会理解用户、选 action 或 KB、填参执行、观察结果，再决定继续还是结束。预处理、编排、KB 和后处理提示模板都可以调整，trace 则展示各步 rationale。
 
-应用还要自己处理下面这些边界：
+应用还要自己实现下面这些 safeguards：
 
 - **工具权限和副作用。** Schema 能描述参数，不能描述「退款超过限额要人工」。不可逆动作要确认框或 return control，让应用层拍板，不要让模型直接打生产 Lambda。
 - **预算。** 调用步数、token 数、实际耗时和重试次数。托管循环会转，直到模型说结束或你超时。没有明确上限就会在工具抖动时空转。
@@ -44,7 +46,7 @@ Classic Agents 编排 FM、数据源和会话。Action Group 用 OpenAPI 或 fun
 
 Knowledge Base 提供检索增强生成（RAG），agent 决定何时检索；引用、过期条款处理和混合检索仍要单独设计，不能假设用了 KB 就一定有证据支持。
 
-Guardrails 分别检查输入和输出，前者拦越狱和拒答主题，后者拦幻觉 / PII。Contextual grounding 只对输出有意义，流式输出还要处理检查时机与首 token 延迟的冲突。
+Guardrails 分别检查输入和输出，前者拦越狱和拒答主题，后者拦 hallucination / PII。Contextual grounding 只对输出有意义，流式输出还要处理检查时机与首 token 延迟的冲突。
 
 ## 何时用托管，何时自建
 
@@ -58,7 +60,7 @@ Guardrails 分别检查输入和输出，前者拦越狱和拒答主题，后者
 
 OpenAPI 只描述接口，不能替代权限检查；记忆也要限制长期保留的字段。Automated Reasoning 或业务规则这类政策引擎仍应在工具层执行。
 
-上线门禁写清楚：哪些 action 只读、哪些要人工、记忆里禁止出现的字段、trace 保留多久。换 Nova 档位时这套契约不动，见 `amazon-nova`。延迟按整段编排报 p99，才能反映用户等到任务完成的时间。
+release criteria 写清楚：哪些 action 只读、哪些要人工、记忆里禁止出现的字段、trace 保留多久。换 Nova 档位时这套契约不动，见 `amazon-nova`。延迟按整段编排报 p99，才能反映用户等到任务完成的时间。
 
 相关：`amazon-guardrails`、`design-agent-harness`、`amazon-bedrock-rag`、`amazon-kendra-hybrid`、`amazon-p99-stream`、`amazon-titan-eval`。
 
@@ -68,7 +70,7 @@ OpenAPI 只描述接口，不能替代权限检查；记忆也要限制长期保
 无副作用或已幂等的只读，Lambda 快。写库、付款、需要应用事务的，return control，让已有服务做一次完整提交。
 **记忆和 session 属性差在哪？**
 Session 是这一轮的短状态；memory 是跨会话摘要。摘要不是原文日志，不能当审计源。审计看 CloudWatch / 你自己的事件表。
-**提示注入怎么办？**
+**prompt injection 怎么办？**
 工具结果当数据；不可逆动作不只靠 prompt；KB 块不要和系统策略糊成一段。Guardrails 是一层，不是全部。
 **为什么还要自建？**
 托管省编排，不省责任。Bar Raiser 问的是发生失败后由谁负责，不是你会不会点控制台。

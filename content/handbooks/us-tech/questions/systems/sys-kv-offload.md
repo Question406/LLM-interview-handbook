@@ -4,30 +4,43 @@ section: systems
 order: 23
 level: A
 title: 系统：KV 分层存储，HBM / CPU / 盘和命中率
-quick: "正在 decode 的 KV 要留在 HBM，已完成或暂停的前缀可以卸到 CPU，再把更冷的块放到盘上，命中时整块提升回来。这样把慢介质的成本放在首 token 等待里，避免每步生成都等换页。命中率要按 GPU、CPU 和盘分别报，还要检查 CPU 池是否真的扩大了缓存容量。"
+quick: >-
+  正在 decode 的 KV 要留在 HBM，已完成或暂停的前缀可以卸到 CPU，再把更冷的块放到盘上，命中时整块提升回来。这样把慢介质的成本放在首
+  token 等待里，避免每步生成都等换页。命中率要按 GPU、CPU 和盘分别报，还要检查 CPU 池是否真的扩大了缓存容量。
 tags:
   - vLLM
   - Serving
   - KV Cache
   - DistServe
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: KV Offloading Usage Guide — vLLM
-    url: https://docs.vllm.ai/en/latest/features/kv_offloading_usage/
+    url: 'https://docs.vllm.ai/en/latest/features/kv_offloading_usage/'
     type: primary
   - title: Example — Offload KV cache to CPU — LMCache
-    url: https://docs.lmcache.ai/getting_started/quickstart/offload_kv_cache.html
+    url: 'https://docs.lmcache.ai/getting_started/quickstart/offload_kv_cache.html'
     type: secondary
-  - title: "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized LLM Serving"
-    url: https://arxiv.org/abs/2401.09670
+  - title: >-
+      DistServe: Disaggregating Prefill and Decoding for Goodput-optimized LLM
+      Serving
+    url: 'https://arxiv.org/abs/2401.09670'
     type: primary
-  - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
-    url: https://arxiv.org/abs/2309.06180
+  - title: >-
+      Efficient Memory Management for Large Language Model Serving with
+      PagedAttention
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
 ---
+
+## 可以这样回答
+
+KV 分层存储适合把暂时不用、以后可能命中的前缀卸到 CPU 或盘，正在 decode 的页仍留在 HBM。比如同一份长文档下一轮还会被问到，可以命中后整块提升回来，少算一次 prefill；每生成一个 token 都从盘读历史，则会把延迟拉长。vLLM OffloadingConnector 和 LMCache 提供了公开实现，分页见 `sys-paged-attn`，前缀复用见 `sys-prefix-cache`。DistServe 的跨池传 KV 也需要计算搬运成本。
+
+## 技术备查
 
 KV 分层存储适合把暂时不用、以后可能命中的前缀卸到 CPU 或盘，正在 decode 的页仍留在 HBM。比如同一份长文档下一轮还会被问到，可以命中后整块提升回来，少算一次 prefill；每生成一个 token 都从盘读历史，则会把延迟拉长。vLLM OffloadingConnector 和 LMCache 提供了公开实现，分页见 `sys-paged-attn`，前缀复用见 `sys-prefix-cache`。DistServe 的跨池传 KV 也需要计算搬运成本。
 
@@ -59,7 +72,7 @@ KV 分层存储适合把暂时不用、以后可能命中的前缀卸到 CPU 或
 **Miss：**
 全量 prefill。
 
-错命中比 miss 贵：token ID、模型版本、LoRA、位置语义都要进 key，和 `sys-prefix-cache` 同一套。租户边界也要进 key。
+错命中比 miss 贵：token ID、模型版本、LoRA、位置语义都要进 key，和 `sys-prefix-cache` 同一套。tenant isolation 也要进 key。
 
 PD 分离时，prefill 池算完的 KV 本身就要搬到 decode 池，见 `sys-prefill-decode-disagg`。分层是时间上的复用，分离是空间上的搬家，可以叠：prefill 侧命中 CPU 前缀，少算一遍再传。网络体积仍跟 $T\cdot b$ 走，FP8 KV（见 `sys-kv-quant`）对搬运和 offload 都划算。
 
@@ -70,7 +83,7 @@ PD 分离时，prefill 池算完的 KV 本身就要搬到 decode 池，见 `sys-
 ## 追问
 
 **Decode 能不能逐步从 CPU 读 KV？**
-不能当默认。PCIe 喂不饱 memory-bound 的逐步注意力。CPU 层用于整块前缀提升或抢占，不是缺页。
+不能当默认。PCIe 喂不饱 memory-bound 的逐步 attention。CPU 层用于整块前缀提升或抢占，不是缺页。
 
 **CPU 池要多大？**
 单层至少大于聚合 GPU KV，否则只是镜子。给主机其它进程留余量。

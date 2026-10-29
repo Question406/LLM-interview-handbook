@@ -4,7 +4,10 @@ section: meta
 order: 4
 level: S
 title: Meta：FSDP / FSDP2 切什么、通信何时发生、和 ZeRO-3 的关系
-quick: "FSDP 的 FULL_SHARD 将参数、梯度和优化器状态分给数据并行 ranks，计算某个 unit 前 all-gather 参数，反向后 reduce-scatter 梯度，优化器在本地分片更新。它与 ZeRO-3 的状态分片语义相近，FSDP2 改用逐参数 DTensor，峰值还需算完整 unit 缓冲与激活。"
+quick: >-
+  FSDP 的 FULL_SHARD 将参数、梯度和优化器状态分给数据并行 ranks，计算某个 unit 前 all-gather 参数，反向后
+  reduce-scatter 梯度，优化器在本地分片更新。它与 ZeRO-3 的状态分片语义相近，FSDP2 改用逐参数 DTensor，峰值还需算完整
+  unit 缓冲与激活。
 tags:
   - Meta
   - FSDP
@@ -13,19 +16,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: FullyShardedDataParallel — PyTorch docs
-    url: https://pytorch.org/docs/stable/fsdp.html
+    url: 'https://pytorch.org/docs/stable/fsdp.html'
     type: primary
   - title: fully_shard (FSDP2) — PyTorch docs
-    url: https://docs.pytorch.org/docs/stable/distributed.fsdp.fully_shard.html
+    url: 'https://docs.pytorch.org/docs/stable/distributed.fsdp.fully_shard.html'
     type: primary
   - title: PyTorch FSDP — Experiences on Scaling Fully Sharded Data Parallel
-    url: https://arxiv.org/abs/2304.11277
+    url: 'https://arxiv.org/abs/2304.11277'
     type: primary
   - title: ZeRO — Memory Optimizations Toward Training Trillion Parameter Models
-    url: https://arxiv.org/abs/1910.02054
+    url: 'https://arxiv.org/abs/1910.02054'
     type: primary
 ---
 
@@ -39,7 +42,7 @@ FSDP 在数据并行这一轴上分摊模型状态，计算时临时拼出所需
 
 对一个 `fully_shard` module，forward 前 all-gather 本地参数分片，形成完整 unit 做 GEMM；forward 后默认 reshard，留下参数分片和 backward 所需激活。Backward 前再 all-gather，除非策略选择继续缓存完整权重；backward 后 reduce-scatter 梯度，各卡只保留自己的 $G$。最后 optimizer step 在本地分片执行，不会再拼回全部 $P$ 或 Adam；全局 grad norm 可对分片另做一次归约。
 
-DDP 是参数常驻、整网梯度 all-reduce，FSDP 则把通信放到 unit 边界，便于 prefetch：计算第 $\ell$ 层时异步 gather 第 $\ell+1$ 层。每个 unit 的 AG / RS 都是 $O(\mathrm{numel})$ 量级，与 ZeRO-3 类似，过碎会被启动延迟拖慢，过厚则增加缓冲与难以重叠的气泡，所以 wrap 粒度要测。
+DDP 是参数常驻、整网梯度 all-reduce，FSDP 则把通信放到 unit boundaries，便于 prefetch：计算第 $\ell$ 层时异步 gather 第 $\ell+1$ 层。每个 unit 的 AG / RS 都是 $O(\mathrm{numel})$ 量级，与 ZeRO-3 类似，过碎会被启动延迟拖慢，过厚则增加缓冲与难以重叠的气泡，所以 wrap 粒度要测。
 
 FSDP1 将参数 flatten、拼接、padding 为 `FlatParameter` 再均分，通信形状整齐，但部分参数冻结、混合精度、state dict 与 TP 组合更麻烦。FSDP2 的 `torch.distributed.fsdp.fully_shard` 在每个参数 dim-0 上形成 `DTensor`，module 仍决定通信组，一组做 collective，却不用真的拼成单根 1D 参数。
 

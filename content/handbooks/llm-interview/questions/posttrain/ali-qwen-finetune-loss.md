@@ -4,7 +4,9 @@ section: posttrain
 order: 18
 level: A
 title: 微调 Qwen 时，训练阶段和 Loss 如何选择？
-quick: "先定训练目标：学指令遵循和工具协议用监督微调（SFT），只对助手回复和动作 token 算损失；学偏好用直接偏好优化（DPO）；优化可验证目标用 GRPO。阶段别跳，数据和 mask 要和部署时的协议对齐。"
+quick: >-
+  先定训练目标：学指令遵循和工具协议用 SFT，只对助手回复和动作 token 算损失；学偏好用 DPO；优化可验证目标用 GRPO。阶段别跳，数据和
+  mask 要和部署时的协议对齐。
 tags:
   - Alibaba
   - Qwen
@@ -13,7 +15,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: ↗ 淘天大模型 Agent 校招面经
     url: 'https://www.nowcoder.com/discuss/911218249889480704'
@@ -23,9 +25,9 @@ sources:
     type: legacy-reference
 ---
 
-先定训练目标，再选阶段和 loss：要学指令遵循和工具协议，用监督微调（SFT），只对 assistant / action token 计算损失；要学偏好，用直接偏好优化（DPO）；要优化可验证的目标，用 GRPO / GSPO。阶段别跳，数据和 mask 必须和部署时的 chat template、tool 字段和类型规范（schema）一致。
+先定训练目标，再选阶段和 loss：要学指令遵循和工具协议，用 SFT，只对 assistant / action token 计算损失；要学偏好，用 DPO；要优化可验证的目标，用 GRPO / GSPO。阶段别跳，数据和 mask 必须和部署时的 chat template、tool 字段和类型规范（schema）一致。
 
-先 SFT 再对齐，是因为模型得先学会格式、角色和工具调用协议，偏好和成功率才有优化的基础。跳过 SFT，偏好对里混着格式错误，DPO 会把「会说话」和「格式对」缠在一起学。可验证任务，比如工具成功、数学，再上 on-policy 强化学习（RL）。目标和 loss 要对上：模仿示范用 token 级的交叉熵损失（CE），成对的更好 / 更差用 DPO，组内可比较的标量奖励用 GRPO。别用 SFT 硬学「更有用」，那会把偏好噪声写进最大似然。阶段分工见 `ali-sft-then-posttrain`，对齐算法的对比见 `ali-ppo-dpo-grpo-ask`。
+先 SFT 再对齐，是因为模型得先学会格式、角色和工具调用协议，偏好和成功率才有优化的基础。跳过 SFT，偏好对里混着格式错误，DPO 会把「会说话」和「格式对」缠在一起学。可验证任务，比如工具成功、数学，再上 on-policy RL。目标和 loss 要对上：模仿示范用 token 级的 cross entropy loss（CE），成对的更好 / 更差用 DPO，组内可比较的标量奖励用 GRPO。别用 SFT 硬学「更有用」，那会把偏好噪声写进 maximum likelihood。阶段分工见 `ali-sft-then-posttrain`，对齐算法的对比见 `ali-ppo-dpo-grpo-ask`。
 
 Qwen 系列官方 post-train 里还有 GSPO 这类序列级稳定化。面试提到这个名字，要能说出它针对的是 token 级重要性比的噪声，把优化放到序列 / 组的相对尺度上，光会背缩写不够。
 

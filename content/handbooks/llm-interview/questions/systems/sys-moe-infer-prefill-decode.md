@@ -27,9 +27,9 @@ Prefill 和 decode 的每专家输入规模不同，所以通常要换不同算�
 
 ## Prefill 先看每专家的 token 数
 
-一段长 输入提示（prompt），$T$ 大。Router → dispatch → 本地专家 MLP → combine，和训练前向同一条数据路径。$n_i$ 上百时 grouped GEMM 吃得饱，见 `sys-moe-grouped-gemm`。EP 的 all-to-all 按 $2k\cdot T\cdot d$ 摊，消息够长。这时 MoE 相对同激活 Dense 的优势看得见：总参数更大，但激活 FFN 只有 $k$（加 shared）路。
+一段长 prompt，$T$ 大。Router → dispatch → 本地专家 MLP → combine，和训练前向同一条数据路径。$n_i$ 上百时 grouped GEMM 吃得饱，见 `sys-moe-grouped-gemm`。EP 的 all-to-all 按 $2k\cdot T\cdot d$ 摊，消息够长。这时 MoE 相对同激活 Dense 的优势看得见：总参数更大，但激活 FFN 只有 $k$（加 shared）路。
 
-batch 里各序列长度不同，再加上 **chunked 输入预填充（prefill，即处理输入并建立缓存）**：微批一切，专家直方图跟着变，capacity / drop 若和训练不一致，首字质量会漂，见 `sys-moe-train-infer-routing-mismatch`。Prefill 仍建议 dropless 或 CF 与训练同档，不要为了吞吐在 prompt 阶段丢 token。
+batch 里各序列长度不同，再加上 **chunked 输入 prefill**：微批一切，专家直方图跟着变，capacity / drop 若和训练不一致，首字质量会漂，见 `sys-moe-train-infer-routing-mismatch`。Prefill 仍建议 dropless 或 CF 与训练同档，不要为了 throughput 在 prompt 阶段丢 token。
 
 ## Decode 先看读权重与启动开销
 

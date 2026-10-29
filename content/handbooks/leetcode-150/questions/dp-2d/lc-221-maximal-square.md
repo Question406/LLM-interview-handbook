@@ -4,26 +4,29 @@ section: dp-2d
 order: 9
 level: A
 title: LC 221 · 最大正方形
-quick: "$dp[i][j]$ 记以 $(i,j)$ 为右下角的最大正方形边长：格子为 $1$ 时 $dp[i][j]=\\min(\\text{上},\\text{左},\\text{左上})+1$，否则为 $0$。边长受三个方向里最短的那个限制，最后返回最大边长的平方，时间 $O(mn)$。"
+quick: >-
+  $dp[i][j]$ 记以 $(i,j)$ 为右下角的最大正方形边长：格子为 $1$ 时
+  $dp[i][j]=\min(\text{上},\text{左},\text{左上})+1$，否则为
+  $0$。边长受三个方向里最短的那个限制，最后返回最大边长的平方，时间 $O(mn)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 221. 最大正方形
-    url: https://leetcode.cn/problems/maximal-square/
+    url: 'https://leetcode.cn/problems/maximal-square/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
 ## 题目描述
 
-给定只含字符 0 和 1 的矩形矩阵，寻找其中完全由 1 构成、边与矩阵边界平行的最大正方形。正方形必须由连续的行和连续的列组成。
+给定只含字符 0 和 1 的矩形矩阵，寻找其中完全由 1 构成、边与 matrix boundaries 平行的最大正方形。正方形必须由连续的行和连续的列组成。
 
 ### 输入与输出
 
@@ -102,16 +105,16 @@ if __name__ == "__main__":
 
 ```python
 assert (
-        maximalSquare(
-            [
-                ["1", "0", "1", "0", "0"],
-                ["1", "0", "1", "1", "1"],
-                ["1", "1", "1", "1", "1"],
-                ["1", "0", "0", "1", "0"],
-            ]
-        )
-        == 4
+    maximalSquare(
+        [
+            ["1", "0", "1", "0", "0"],
+            ["1", "0", "1", "1", "1"],
+            ["1", "1", "1", "1", "1"],
+            ["1", "0", "0", "1", "0"],
+        ]
     )
+    == 4
+)
 assert maximalSquare([["0", "1"], ["1", "0"]]) == 1
 assert maximalSquare([["0"]]) == 0
 print("simple tests passed")
@@ -123,7 +126,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(mn)$，可以滚成一维 $O(n)$。
 
-## 边界
+## Edge Cases
 
 全 $0$ 时 `side` 保持 $0$，面积 $0$。单格 `"1"` 的三个邻居都是哨兵 $0$，$\min+1=1$，面积 $1$。最大正方形贴着边时，多开一圈空边后第一行、第一列按普通格子转移，不用特判。
 

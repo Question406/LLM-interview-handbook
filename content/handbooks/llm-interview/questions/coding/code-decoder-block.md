@@ -25,16 +25,16 @@ sources:
 
 ## 题目描述
 
-构建一个能进行前向与反向传播的小型自回归 Transformer。以下架构与接口属于手册重构练习约定，不是要求复刻某个公司完整模型。
+构建一个能进行前向与 backpropagation 的小型 autoregressive Transformer。以下架构与接口属于手册重构练习约定，不是要求复刻某个公司完整模型。
 
 ### 模块与输入输出
 
-- `Block(d,n_head,d_ff)` 接受 `[B,T,d]` 的浮点输入和 RoPE 的 cos/sin。模块采用两次预归一化：RMSNorm 后进行多头因果自注意力并加残差，再经 RMSNorm、SwiGLU 前馈层并加残差。线性层均不带 bias，注意力不含 dropout。
+- `Block(d,n_head,d_ff)` 接受 `[B,T,d]` 的浮点输入和 RoPE 的 cos/sin。模块采用两次预 normalization：RMSNorm 后进行多头因果 self-attention 并加残差，再经 RMSNorm、SwiGLU 前馈层并加残差。线性层均不带 bias，attention 不含 dropout。
 - `rope_cache(T,dh)` 返回 rotate-half 布局的 cos/sin，各为 `[T,dh]`；每头维度 dh 为偶数。
-- `TinyGPT(vocab,d,n_head,n_layer,d_ff,max_T,tie)` 接受整数 token ID `[B,T]`，满足 `T <= max_T`，返回 `[B,T,vocab]` 的未归一化 logits。包含 embedding、指定层数的 Block、末尾 RMSNorm 和词表投影。tie=True 时 embedding 与词表投影引用同一份权重。
-- `next_token_loss(logits,idx)` 用前 T-1 个位置预测输入中后 T-1 个 token，返回所有预测位置的平均交叉熵；T 至少为 2。
+- `TinyGPT(vocab,d,n_head,n_layer,d_ff,max_T,tie)` 接受整数 token ID `[B,T]`，满足 `T <= max_T`，返回 `[B,T,vocab]` 的未 normalization logits。包含 embedding、指定层数的 Block、末尾 RMSNorm 和 vocabulary 投影。tie=True 时 embedding 与 vocabulary 投影引用同一份权重。
+- `next_token_loss(logits,idx)` 用前 T-1 个位置预测输入中后 T-1 个 token，返回所有预测位置的平均 cross entropy；T 至少为 2。
 
-模型必须满足因果性：只改变未来 token，不能改变更早位置的 logits；损失能反传到模型参数。
+模型必须满足因果性：只改变未来 token，不能改变更早位置的 logits；损失能 backpropagation 到模型参数。
 
 ### 示例
 
@@ -44,7 +44,7 @@ logits -> [[[0,0],[0,0]]]
 next_token_loss(logits,idx) -> log(2)，约0.693147
 ```
 
-输入 token 在词表内，d 可被 `n_head` 整除，不要求校验非法配置。
+输入 token 在 vocabulary 内，d 可被 `n_head` 整除，不要求校验非法配置。
 
 ## 解题思路与参考答案
 
@@ -60,22 +60,27 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class RMSNorm(nn.Module):
     def __init__(self, d, eps=1e-6):
         super().__init__()
         self.eps, self.w = eps, nn.Parameter(torch.ones(d))
+
     def forward(self, x):
         return self.w * x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
 
+
 def rope_cache(T, dh, base=10000.0):
-    inv = 1.0 / base ** (torch.arange(0, dh, 2).float() / dh)     # [dh/2]
-    f = torch.outer(torch.arange(T).float(), inv)                 # [T,dh/2]
-    emb = torch.cat([f, f], -1)                                   # [T,dh], rotate_half layout
+    inv = 1.0 / base ** (torch.arange(0, dh, 2).float() / dh)  # [dh/2]
+    f = torch.outer(torch.arange(T).float(), inv)  # [T,dh/2]
+    emb = torch.cat([f, f], -1)  # [T,dh], rotate_half layout
     return emb.cos(), emb.sin()
+
 
 def apply_rope(x, cos, sin):
     x1, x2 = x.chunk(2, -1)
     return x * cos + torch.cat([-x2, x1], -1) * sin
+
 
 class Block(nn.Module):
     def __init__(self, d, n_head, d_ff):
@@ -84,15 +89,17 @@ class Block(nn.Module):
         self.n1, self.n2 = RMSNorm(d), RMSNorm(d)
         self.qkv = nn.Linear(d, 3 * d, bias=False)
         self.o = nn.Linear(d, d, bias=False)
-        self.w1 = nn.Linear(d, d_ff, bias=False)                  # gate
-        self.w3 = nn.Linear(d, d_ff, bias=False)                  # up
-        self.w2 = nn.Linear(d_ff, d, bias=False)                  # down
+        self.w1 = nn.Linear(d, d_ff, bias=False)  # gate
+        self.w3 = nn.Linear(d, d_ff, bias=False)  # up
+        self.w2 = nn.Linear(d_ff, d, bias=False)  # down
 
     def attn(self, x, cos, sin):
         B, T, d = x.shape
-        q, k, v = self.qkv(x).view(B, T, 3, self.h, self.dh).permute(2, 0, 3, 1, 4)  # [B,H,T,Dh] each
+        q, k, v = (
+            self.qkv(x).view(B, T, 3, self.h, self.dh).permute(2, 0, 3, 1, 4)
+        )  # [B,H,T,Dh] each
         q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
-        s = q @ k.transpose(-2, -1) / math.sqrt(self.dh)          # [B,H,T,T]
+        s = q @ k.transpose(-2, -1) / math.sqrt(self.dh)  # [B,H,T,T]
         future = torch.ones(T, T, dtype=torch.bool, device=x.device).triu(1)
         y = s.masked_fill(future, float("-inf")).softmax(-1) @ v  # [B,H,T,Dh]
         return self.o(y.transpose(1, 2).reshape(B, T, d))
@@ -101,6 +108,7 @@ class Block(nn.Module):
         x = x + self.attn(self.n1(x), cos, sin)
         h = self.n2(x)
         return x + self.w2(F.silu(self.w1(h)) * self.w3(h))
+
 
 class TinyGPT(nn.Module):
     def __init__(self, vocab, d=64, n_head=4, n_layer=2, d_ff=172, max_T=128, tie=True):
@@ -116,11 +124,12 @@ class TinyGPT(nn.Module):
         self.register_buffer("sin", sin, persistent=False)
 
     def forward(self, idx):
-        T = idx.shape[1]                                          # idx: [B,T]
-        x = self.emb(idx)                                         # [B,T,d]
+        T = idx.shape[1]  # idx: [B,T]
+        x = self.emb(idx)  # [B,T,d]
         for blk in self.blocks:
             x = blk(x, self.cos[:T], self.sin[:T])
-        return self.lm_head(self.norm(x))                         # [B,T,V]
+        return self.lm_head(self.norm(x))  # [B,T,V]
+
 
 def next_token_loss(logits, idx):
     V = logits.size(-1)
@@ -133,13 +142,13 @@ RoPE 这里用的是 rotate_half 排布，前一半和后一半配对；`code-ro
 
 先说为什么 Pre-Norm 好训。Post-Norm（原始 Transformer）是 $x\leftarrow\mathrm{Norm}(x+F(x))$，每层输出都要过一次 norm，梯度传回浅层时每层都要乘一次 norm 的雅可比。Xiong et al. 分析过，Post-Norm 在初始化时靠近输出层的梯度很大，所以离不开 learning rate warmup；Pre-Norm $x\leftarrow x+F(\mathrm{Norm}(x))$ 的梯度更平稳，可以少用甚至不用 warmup。
 
-换个角度看，Pre-Norm 下从 embedding 到 final norm 有一条不经过任何 norm 的恒等通路，这就是残差流：每个子层读 $\mathrm{Norm}(x)$，把自己的输出加回 $x$。残差流本身从来没被归一化过，所以最后必须补一个 final norm 再进 lm_head，漏掉的话 logits 的尺度会随层数变。Pre-Norm 的代价是残差流的范数随层数增长，越靠后的子层加上去的那一份占比越小。
+换个角度看，Pre-Norm 下从 embedding 到 final norm 有一条不经过任何 norm 的恒等通路，这就是残差流：每个子层读 $\mathrm{Norm}(x)$，把自己的输出加回 $x$。残差流本身从来没被 normalization 过，所以最后必须补一个 final norm 再进 lm_head，漏掉的话 logits 的尺度会随层数变。Pre-Norm 的代价是残差流的范数随层数增长，越靠后的子层加上去的那一份占比越小。
 
 ## 简单测试怎么写
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-建立只有一层的小模型并固定种子。除了形状，改变最后一个 token 后，前两个位置的 logits 必须不变；最后反向传播检查损失有限且梯度能到达 embedding。
+建立只有一层的小模型并固定种子。除了形状，改变最后一个 token 后，前两个位置的 logits 必须不变；最后 backpropagation 检查损失有限且梯度能到达 embedding。
 
 ```python
 torch.manual_seed(7)

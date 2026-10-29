@@ -5,7 +5,9 @@ order: 2
 level: A
 title: LC 1268 · 搜索推荐系统
 quick: >-
-  先把 `products` 排序，前缀相同的词会连成一段，每输入一个字符就用二分找第一个 $\ge$ 前缀的位置，往后取最多 $3$ 个以前缀开头的词。前缀只会变长，下界单调右移，可以接着上次的位置二分。时间 $O(n \log n \cdot L + m \log n \cdot L)$。
+  先把 `products` 排序，前缀相同的词会连成一段，每输入一个字符就用二分找第一个 $\ge$ 前缀的位置，往后取最多 $3$
+  个以前缀开头的词。前缀只会变长，下界单调右移，可以接着上次的位置二分。时间 $O(n \log n \cdot L + m \log n \cdot
+  L)$。
 tags:
   - Trie
   - Binary Search
@@ -14,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1268. Search Suggestions System
-    url: https://leetcode.com/problems/search-suggestions-system/
+    url: 'https://leetcode.com/problems/search-suggestions-system/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -76,7 +78,7 @@ def suggestedProducts(products: List[str], searchWord: str) -> List[List[str]]:
     for ch in searchWord:
         prefix += ch
         lo = bisect_left(products, prefix, lo)
-        ans.append([w for w in products[lo:lo + 3] if w.startswith(prefix)])
+        ans.append([w for w in products[lo : lo + 3] if w.startswith(prefix)])
     return ans
 
 
@@ -90,14 +92,21 @@ if __name__ == "__main__":
         ["mouse", "mousepad"],
     ]
     assert suggestedProducts(["havana"], "havana") == [["havana"]] * 6
-    assert suggestedProducts(["bags", "baggage", "banner", "box", "cloths"], "bags") == [
+    assert suggestedProducts(
+        ["bags", "baggage", "banner", "box", "cloths"], "bags"
+    ) == [
         ["baggage", "bags", "banner"],
         ["baggage", "bags", "banner"],
         ["baggage", "bags"],
         ["bags"],
     ]
     assert suggestedProducts(["havana"], "tatiana") == [[]] * 7
-    assert suggestedProducts(["abc", "ab"], "abcd") == [["ab", "abc"], ["ab", "abc"], ["abc"], []]
+    assert suggestedProducts(["abc", "ab"], "abcd") == [
+        ["ab", "abc"],
+        ["ab", "abc"],
+        ["abc"],
+        [],
+    ]
     print("ok")
 ```
 
@@ -110,19 +119,19 @@ if __name__ == "__main__":
 ```python
 products = ["mobile", "mouse", "moneypot", "monitor", "mousepad"]
 assert suggestedProducts(products, "mouse") == [
-        ["mobile", "moneypot", "monitor"],
-        ["mobile", "moneypot", "monitor"],
-        ["mouse", "mousepad"],
-        ["mouse", "mousepad"],
-        ["mouse", "mousepad"],
-    ]
+    ["mobile", "moneypot", "monitor"],
+    ["mobile", "moneypot", "monitor"],
+    ["mouse", "mousepad"],
+    ["mouse", "mousepad"],
+    ["mouse", "mousepad"],
+]
 assert suggestedProducts(["havana"], "havana") == [["havana"]] * 6
 assert suggestedProducts(["bags", "baggage", "banner", "box", "cloths"], "bags") == [
-        ["baggage", "bags", "banner"],
-        ["baggage", "bags", "banner"],
-        ["baggage", "bags"],
-        ["bags"],
-    ]
+    ["baggage", "bags", "banner"],
+    ["baggage", "bags", "banner"],
+    ["baggage", "bags"],
+    ["bags"],
+]
 print("simple tests passed")
 ```
 
@@ -132,7 +141,7 @@ print("simple tests passed")
 
 设产品数 $n$，词长上限 $L$，`searchWord` 长 $m$。排序 $O(n \log n \cdot L)$；每个前缀二分 $O(\log n \cdot L)$，再检查至多 $3$ 个词。额外空间 $O(n)$ 用于排序副本，不计答案。
 
-## 边界
+## Edge Cases
 
 某个前缀已经没有匹配时，之后所有前缀都返回空列表；二分落在段外，`startswith` 会过滤掉。
 

@@ -4,24 +4,36 @@ section: meta
 order: 13
 level: A
 title: Meta：SAM 作为「提示分割」系统，数据和评测怎么设计
-quick: "SAM 根据点、框或 mask 提示输出分割结果，合理答案有歧义时会给多张候选 mask。数据靠辅助人工、半自动和全自动三阶段积累成 SA-1B；验收要固定提示协议，在新域测 mIoU、交互次数和零样本转移。"
+quick: >-
+  SAM 根据点、框或 mask 提示输出分割结果，合理答案有歧义时会给多张候选 mask。数据靠辅助人工、半自动和全自动三阶段积累成
+  SA-1B；验收要固定提示协议，在新域测 mIoU、交互次数和零样本转移。
 tags:
   - Meta
   - SAM
   - Segmentation
   - Evaluation
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Segment Anything
-    url: https://arxiv.org/abs/2304.02643
+    url: 'https://arxiv.org/abs/2304.02643'
     type: primary
   - title: Segment Anything — foundation model for image segmentation
-    url: https://ai.meta.com/blog/segment-anything-foundation-model-image-segmentation/
+    url: >-
+      https://ai.meta.com/blog/segment-anything-foundation-model-image-segmentation/
     type: primary
 ---
+
+## 可以这样回答
+
+SAM 是按提示分割的系统：用户给点、框或粗 mask，模型圈出对应区域，不要求先认出固定类别。比如点在衬衫上，用户可能想圈衬衫、整个人或 logo，所以还要输出多个合理 mask。2023 年论文和博客围绕这项任务设计了模型、数据引擎和零样本评测。
+
+输入一张图 + 提示（前景点、背景点、框、粗 mask；文本是后续工作）。输出是**有效的分割 mask**，不要求说出「这是猫」。这和 COCO 实例分割不同：COCO 有固定类表；SAM 要在新图、新对象上，按用户点一下就圈出来。
+
+## 技术备查
 
 SAM 是按提示分割的系统：用户给点、框或粗 mask，模型圈出对应区域，不要求先认出固定类别。比如点在衬衫上，用户可能想圈衬衫、整个人或 logo，所以还要输出多个合理 mask。2023 年论文和博客围绕这项任务设计了模型、数据引擎和零样本评测。
 
@@ -41,7 +53,7 @@ SAM 是按提示分割的系统：用户给点、框或粗 mask，模型圈出�
 
 产物是 SA-1B：约 $1100$ 万张图、约 $10$ 亿张 mask。数据质量和覆盖依赖当前模型能力，因此引擎要持续迭代。博客还说明图像来自公开来源、做了人脸模糊等处理；约 10 亿 mask 同样需要过滤、许可检查和来源追踪。
 
-训练目标：提示随机从 GT mask 采样（点、框），预测 mask，损失是 Focal + Dice 一类分割损失，加上 IoU 头的回归。为了歧义，训练时对多个合理 mask 做匹配。全自动阶段仍以自己的模型为教师，会有确认偏差，因此过滤很重要，不能把整个过程当成纯无监督。
+训练目标：提示随机从 GT mask sampling（点、框），预测 mask，损失是 Focal + Dice 一类分割损失，加上 IoU 头的回归。为了歧义，训练时对多个合理 mask 做匹配。全自动阶段仍以自己的模型为教师，会有确认偏差，因此过滤很重要，不能把整个过程当成纯无监督。
 
 ## 零样本和交互效果怎么测
 
@@ -66,6 +78,6 @@ SAM 是按提示分割的系统：用户给点、框或粗 mask，模型圈出�
 **和 Llama 3.2 视觉是同一套吗？**
 不是。SAM 是提示分割系统；Llama 3.2 视觉是多模态语言模型。可以组合（用 SAM 出 mask 再问 LM），不要说成同一个 checkpoint。
 **评测被「中心点」刷高？**
-中心点往往在物体内部，比边界点容易。要报随机点和边界点，否则数字偏乐观。
+中心点往往在物体内部，比 boundary points 容易。要报随机点和 boundary points，否则数字偏乐观。
 **SA-1B 能当下游训练集吗？**
-可以当预训练/蒸馏数据，但下游指标仍要在该域的人类标注上测。用 SA-1B 自己训自己测，测的是引擎过滤，不是零样本。
+可以当预训练/distillation 数据，但下游指标仍要在该域的人类标注上测。用 SA-1B 自己训自己测，测的是引擎过滤，不是零样本。

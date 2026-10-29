@@ -5,28 +5,32 @@ order: 180
 level: A
 title: 拼多多应用开发：手写 Attention 时要写出哪些形状和 Mask？
 quick: >-
-  投影 $Q,K,V$，reshape 成 $[B,H,T,d_h]$，算 $QK^\top/\sqrt{d_h}$，softmax 前加因果 / padding mask，再乘 $V$ 拼头。边写边口述 broadcast 形状，调一个 `nn.MultiheadAttention` 交差是不够的。
+  投影 $Q,K,V$，reshape 成 $[B,H,T,d_h]$，算 $QK^\top/\sqrt{d_h}$，softmax 前加因果 /
+  padding mask，再乘 $V$ 拼头。边写边口述 broadcast 形状，调一个 `nn.MultiheadAttention` 交差是不够的。
 tags:
   - PDD
   - Attention
   - Coding
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-27'
 sources:
   - title: 拼多多大模型应用开发一面凉经
-    url: https://www.nowcoder.com/feed/main/detail/f87fcee060ea404ba99a20245f746e60
+    url: 'https://www.nowcoder.com/feed/main/detail/f87fcee060ea404ba99a20245f746e60'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-手写一个多头自注意力函数 `mha(x,wq,wk,wv,wo,n_heads,mask=None)`，返回注意力输出，不直接调用封装好的多头注意力模块。面经只披露“手写attention”，以下完整接口为手册重构练习约定。
+手写一个 multi-head self-attention 函数 `mha(x,wq,wk,wv,wo,n_heads,mask=None)`，返回 attention 输出，不直接调用封装好的 multi-head attention 模块。面经只披露“手写 attention”，以下完整接口为手册重构练习约定。
+
+### 接口、输入与输出要求
 
 输入均为同设备、同浮点类型的 PyTorch 张量：`x` 为 `[B,T,C]`，四个无偏置投影矩阵均为 `[C,C]`，按 `x @ w` 的方向使用。`n_heads=H` 是正整数且整除 C，每头维度 `dh=C/H`。B、T、C 均为正。
 
-每个头应返回缩放点积注意力：查询、键、值来自对应投影；注意力分数为查询与键点积除以 `sqrt(dh)`；概率在 key 维归一化。各头按原顺序拼接后应用输出投影。输出形状为 `[B,T,C]`。
+每个头应返回缩放点积 attention：查询、键、值来自对应投影；attention 分数为查询与键点积除以 `sqrt(dh)`；概率在 key 维 normalization。各头按原顺序拼接后应用输出投影。输出形状为 `[B,T,C]`。
 
 可选布尔 `mask` 能广播到 `[B,H,T,T]`，**True 表示禁止访问该 key**。本函数不自动加因果 mask，需要时由调用者提供。每个 query 至少能访问一个 key。softmax 使用 float32 计算后转回输入类型；不含 dropout。实现应保留自动求导。
 
@@ -45,7 +49,7 @@ n_heads=1，mask=[[False,True],[False,False]]
 
 手写 attention 的顺序是投影、拆头、算缩放点积、softmax 前加 mask、乘 $V$、拼头、输出投影，边写边把每一步的形状和 mask 的 broadcast 说出来。
 
-这是拼多多大模型应用开发一面的题，来自牛客候选人原帖，可信度 A。面试时间原帖没写，帖子发布于 2026-03-29，原话就是**“手写attention”**。常见翻车是调 `nn.MultiheadAttention` 交差，或者因果 / padding 的 True-False 弄反。同一面可能接着写交叉熵，见 `pdd-ce-handwrite`，两题都要能独立写完。形状和 `deepseek-mha-handwrite` 一样，拼多多这边要的是口述 broadcast。
+这是拼多多大模型应用开发一面的题，来自牛客候选人原帖，可信度 A。面试时间原帖没写，帖子发布于 2026-03-29，原话就是**“手写 attention”**。常见翻车是调 `nn.MultiheadAttention` 交差，或者因果 / padding 的 True-False 弄反。同一面可能接着写 cross entropy，见 `pdd-ce-handwrite`，两题都要能独立写完。形状和 `deepseek-mha-handwrite` 一样，拼多多这边要的是口述 broadcast。
 
 ## 白板顺序与形状
 
@@ -57,6 +61,7 @@ $$
 
 ```python
 import torch
+
 
 def mha(x, wq, wk, wv, wo, n_heads, mask=None):
     b, t, c = x.shape
@@ -73,9 +78,9 @@ def mha(x, wq, wk, wv, wo, n_heads, mask=None):
 
 `view` 之前要 `contiguous`。GQA 只改 $K,V$ 的头数，公式骨架不变。
 
-## 易错点与同面的交叉熵损失（CE）
+## 易错点与同面的 cross entropy loss（CE）
 
-bool mask 的 `True` 是「盖住」还是「可见」，要说清楚，并且和 `masked_fill` 的用法一致。整行全被 mask 时 softmax 会出 NaN。应用岗也要能讲 KV cache：逐 token 生成（decode）时每步 $T_q=1$，$K,V$ 沿 $T$ 增长。dropout 不是重点。交叉熵要用 logsumexp，别先 softmax 再 log，见 `pdd-ce-handwrite`。
+bool mask 的 `True` 是「盖住」还是「可见」，要说清楚，并且和 `masked_fill` 的用法一致。整行全被 mask 时 softmax 会出 NaN。应用岗也要能讲 KV cache：逐 token 生成（decode）时每步 $T_q=1$，$K,V$ 沿 $T$ 增长。dropout 不是重点。cross entropy 要用 logsumexp，别先 softmax 再 log，见 `pdd-ce-handwrite`。
 
 ## 简单测试怎么写
 
@@ -87,7 +92,7 @@ bool mask 的 `True` 是「盖住」还是「可见」，要说清楚，并且�
 x = torch.zeros(1, 2, 4)
 w = torch.eye(4)
 torch.testing.assert_close(mha(x, w, w, w, w, 2), x)
-x = torch.tensor([[[1., 0., 1., 0.], [0., 1., 0., 1.]]])
+x = torch.tensor([[[1.0, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 1.0]]])
 mask = torch.ones(2, 2, dtype=torch.bool).triu(1)
 a = mha(x, w, w, w, w, 2, mask)
 changed = x.clone()

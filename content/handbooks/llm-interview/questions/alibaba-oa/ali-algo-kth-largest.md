@@ -4,7 +4,9 @@ section: alibaba-oa
 order: 33
 level: A
 title: 阿里手撕：第 K 大用堆还是快选？线上 Top-K 怎么说？
-quick: "我会用大小为 $k$ 的小顶堆，时间 $O(n\\log k)$，适合流式；快选平均 $O(n)$、最坏 $O(n^2)$，主元一定要随机。线上 Top-K 我更倾向堆加过期，分片各取 $k$ 再合并，不会对全量快排。"
+quick: >-
+  我会用大小为 $k$ 的小顶堆，时间 $O(n\log k)$，适合流式；快选平均 $O(n)$、最坏 $O(n^2)$，主元一定要随机。线上 Top-K
+  我更倾向堆加过期，分片各取 $k$ 再合并，不会对全量快排。
 tags:
   - Alibaba
   - 堆
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 数组中的第K个最大元素
-    url: https://leetcode.cn/problems/kth-largest-element-in-an-array/
+    url: 'https://leetcode.cn/problems/kth-largest-element-in-an-array/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -26,7 +28,7 @@ sources:
 
 给定一个整数数组与整数 k，返回数组中按从大到小排序后位于第 k 位的元素。重复值按出现次数参与排名，不是求第 k 个不同的数。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -129,7 +131,7 @@ if __name__ == "__main__":
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 
@@ -137,7 +139,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-**要测哪些边界？**
+**要覆盖哪些 edge cases？**
 $k=1$、全相同、含负数，堆和快选都要过。快选会改原数组，需要保序就先拷贝。
 
 **只要前 $k$ 大、不要求有序呢？**

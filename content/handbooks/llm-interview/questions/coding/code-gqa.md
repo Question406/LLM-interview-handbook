@@ -21,12 +21,12 @@ sources:
 
 ## 题目描述
 
-实现分组查询注意力 GQA，使一组 query head 共享同一个 key/value head。这里不使用因果 mask、padding mask 或 KV cache。
+实现分组查询 attention GQA，使一组 query head 共享同一个 key/value head。这里不使用因果 mask、padding mask 或 KV cache。
 
 ### 接口与约定
 
 - `repeat_kv(x,n_rep)`：x 为 `[B,Hkv,S,D]`。将每一个 KV head 连续重复 `n_rep` 次，输出 `[B,Hkv*n_rep,S,D]`；不能把整个 head 序列循环拼接成另一种顺序。
-- `gqa_attn(q,k,v)`：q 为 `[B,Hq,S,D]`，k、v 为 `[B,Hkv,S,D]`，Hq 是 Hkv 的正整数倍。第 i 个 query head 使用第 `i // (Hq/Hkv)` 个 KV head；按每头维度平方根缩放分数，沿全部 key 位置归一化。返回 `[B,Hq,S,D]`。
+- `gqa_attn(q,k,v)`：q 为 `[B,Hq,S,D]`，k、v 为 `[B,Hkv,S,D]`，Hq 是 Hkv 的正整数倍。第 i 个 query head 使用第 `i // (Hq/Hkv)` 个 KV head；按每头维度平方根缩放分数，沿全部 key 位置 normalization。返回 `[B,Hq,S,D]`。
 
 输入维度保证合法。该接口是手册的小型实现约定，默认测试比较结果和共享分组语义，不要求物理复制 KV 数据。
 
@@ -41,7 +41,7 @@ repeat_kv(V,1) -> 与V数值和形状相同
 
 ## 解题思路与参考答案
 
-GQA 的写法是让每 $g$ 个 Q head 共享一个 KV head：$K,V$ 只有 $H_{\mathrm{kv}}$ 个头，用 `repeat_kv` 把每个 KV head 复制 $g$ 次对齐到 $H_q$，后面就是普通的多头注意力。它介于两个极端之间：MHA 是 $H_q=H_{\mathrm{kv}}$，MQA 是 $H_{\mathrm{kv}}=1$。GQA 的质量接近 MHA，cache 接近 MQA。
+GQA 的写法是让每 $g$ 个 Q head 共享一个 KV head：$K,V$ 只有 $H_{\mathrm{kv}}$ 个头，用 `repeat_kv` 把每个 KV head 复制 $g$ 次对齐到 $H_q$，后面就是普通的 multi-head attention。它介于两个极端之间：MHA 是 $H_q=H_{\mathrm{kv}}$，MQA 是 $H_{\mathrm{kv}}=1$。GQA 的质量接近 MHA，cache 接近 MQA。
 
 拿 Llama-3 8B 来说，它是 32 个 Q head、8 个 KV head，$g=4$，KV cache 按 8 个头算，只有 MHA 的四分之一。
 
@@ -59,16 +59,14 @@ $$
 import torch
 import torch.nn.functional as F
 
+
 def repeat_kv(x, n_rep):
     # x: [B, H_kv, S, D]
     if n_rep == 1:
         return x
     b, h, s, d = x.shape
-    return (
-        x[:, :, None, :, :]
-        .expand(b, h, n_rep, s, d)
-        .reshape(b, h * n_rep, s, d)
-    )
+    return x[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
+
 
 def gqa_attn(q, k, v):
     # q: [B, H_q, S, D], k,v: [B, H_kv, S, D]
@@ -84,13 +82,13 @@ def gqa_attn(q, k, v):
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-Q、K 全零时注意力权重均匀，把两个 KV head 的 V 分别设成 2 和 7，就应得到 [2,2,7,7]，能直接发现 repeat 的顺序错误。
+Q、K 全零时 attention 权重均匀，把两个 KV head 的 V 分别设成 2 和 7，就应得到 [2,2,7,7]，能直接发现 repeat 的顺序错误。
 
 ```python
 k = torch.zeros(1, 2, 2, 1)
 q = torch.zeros(1, 4, 2, 1)
-v = torch.tensor([[[[2.], [2.]], [[7.], [7.]]]])
-expected = torch.tensor([2., 2., 7., 7.]).view(1, 4, 1, 1).expand(1, 4, 2, 1)
+v = torch.tensor([[[[2.0], [2.0]], [[7.0], [7.0]]]])
+expected = torch.tensor([2.0, 2.0, 7.0, 7.0]).view(1, 4, 1, 1).expand(1, 4, 2, 1)
 torch.testing.assert_close(gqa_attn(q, k, v), expected)
 torch.testing.assert_close(repeat_kv(v, 1), v)
 print("simple tests passed")

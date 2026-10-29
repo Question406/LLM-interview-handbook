@@ -1,0 +1,1971 @@
+{
+  "files": 748,
+  "changedFiles": 482,
+  "blocks": 2597,
+  "changedBlocks": 731,
+  "languages": {
+    "json": {
+      "blocks": 8,
+      "changed": 7
+    },
+    "text": {
+      "blocks": 834,
+      "changed": 0
+    },
+    "python": {
+      "blocks": 1748,
+      "changed": 719
+    },
+    "bash": {
+      "blocks": 2,
+      "changed": 0
+    },
+    "yaml": {
+      "blocks": 1,
+      "changed": 1
+    },
+    "javascript": {
+      "blocks": 4,
+      "changed": 4
+    }
+  },
+  "changes": [
+    {
+      "file": "content/handbooks/apple-interview/AFM-DATA-PIPELINE-EXAMPLES.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/alignment/afm-rm-bias-audit-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/alignment/afm-rm-soft-target-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/alignment/afm-rm-train-pipeline-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/decoding/apple-batched-beam-search.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/decoding/apple-batched-generation.md",
+      "changedBlocks": 4
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/decoding/apple-batched-token-selection.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/mock/afm-mock-screen-a.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/projects/afm-pipeline-code-verifier.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/projects/afm-pipeline-mm-tool-use.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/projects/afm-pipeline-skill-harness.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/tensor/afm-web-attention-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/tensor/apple-mask-pack-unpack.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/apple-interview/questions/tensor/apple-mask-position-ids.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/labs/dt-weighted-batcher.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-boilerplate-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-buffer-shuffle-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-cluster-bootstrap-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-countmin-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-distill-forward-kl-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-dpo-batch-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-hash-split-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-kappa-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-length-bucket-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-lid-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-minhash-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-ngram-contam-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-p3a-batchnorm-state.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-p3a-paper-gated-layer.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-p3a-tabular-full-pipeline.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-p3a-ttl-cache-contract.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-packed-attention-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-packed-sft-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-passk-estimator-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pii-luhn-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pipeline-talk.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-ppl-filter-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pref-pair-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-pretrain-pack-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-reservoir-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-response-logprob-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-rm-weighted-loss-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-sft-collate-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-simhash-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-substr-dedup-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-token-accum-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-token-budget-batch-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-url-canon-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/dt-winnow-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/p3a-apple-cvml-circular-padding.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/p3a-apple-cvml-knn-pipeline.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/p3a-apple-json-clean-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/data-team-interview/questions/tech-screen/p3a-apple-task-dag-code.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-13-roman-to-integer.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/array-string/lc-68-text-justification.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-17-letter-combinations-of-a-phone-number.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-22-generate-parentheses.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-46-permutations.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/backtracking/lc-79-word-search.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-34-find-first-and-last-position-of-element-in-sorted-array.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-search/lc-4-median-of-two-sorted-arrays.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-100-same-tree.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-101-symmetric-tree.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-104-maximum-depth-of-binary-tree.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-112-path-sum.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-114-flatten-binary-tree-to-linked-list.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-222-count-complete-tree-nodes.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree/lc-226-invert-binary-tree.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-102-binary-tree-level-order-traversal.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-103-binary-tree-zigzag-level-order-traversal.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-199-binary-tree-right-side-view.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/binary-tree-bfs/lc-637-average-of-levels-in-binary-tree.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-190-reverse-bits.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/bit/lc-67-add-binary.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-108-convert-sorted-array-to-binary-search-tree.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-148-sort-list.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-23-merge-k-sorted-lists.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/divide-conquer/lc-427-construct-quad-tree.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-139-word-break.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-198-house-robber.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-1d/lc-322-coin-change.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-188-best-time-to-buy-and-sell-stock-iv.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/dp-2d/lc-221-maximal-square.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-130-surrounded-regions.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-133-clone-graph.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-200-number-of-islands.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-207-course-schedule.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-210-course-schedule-ii.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph/lc-399-evaluate-division.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph-bfs/lc-127-word-ladder.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph-bfs/lc-433-minimum-genetic-mutation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/graph-bfs/lc-909-snakes-and-ladders.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-242-valid-anagram.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-290-word-pattern.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-383-ransom-note.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/hashmap/lc-49-group-anagrams.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/heap/lc-295-find-median-from-data-stream.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/intervals/lc-57-insert-interval.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/kadane/lc-918-maximum-sum-circular-subarray.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-138-copy-list-with-random-pointer.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-2-add-two-numbers.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-21-merge-two-sorted-lists.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/linked-list/lc-92-reverse-linked-list-ii.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-172-factorial-trailing-zeroes.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-50-powx-n.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/math/lc-66-plus-one.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-289-game-of-life.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-36-valid-sudoku.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/matrix/lc-54-spiral-matrix.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-209-minimum-size-subarray-sum.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-3-longest-substring-without-repeating-characters.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-30-substring-with-concatenation-of-all-words.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/sliding-window/lc-76-minimum-window-substring.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-150-evaluate-reverse-polish-notation.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-155-min-stack.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/stack/lc-224-basic-calculator.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/trie/lc-212-word-search-ii.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-150/questions/two-pointers/lc-392-is-subsequence.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/array-string/lc-605-can-place-flowers.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/backtracking/lc-17-letter-combinations-of-a-phone-number.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-bfs/lc-1161-maximum-level-sum-of-a-binary-tree.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-bfs/lc-199-binary-tree-right-side-view.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-104-maximum-depth-of-binary-tree.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-437-path-sum-iii.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/binary-tree-dfs/lc-872-leaf-similar-trees.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/bst/lc-450-delete-node-in-a-bst.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-bfs/lc-1926-nearest-exit-from-entrance-in-maze.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-bfs/lc-994-rotting-oranges.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/graph-dfs/lc-399-evaluate-division.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-1207-unique-number-of-occurrences.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-1657-determine-if-two-strings-are-close.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/hashmap/lc-2215-find-the-difference-of-two-arrays.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/heap/lc-215-kth-largest-element-in-an-array.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/intervals/lc-452-minimum-number-of-arrows-to-burst-balloons.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/linked-list/lc-206-reverse-linked-list.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/linked-list/lc-328-odd-even-linked-list.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/monotonic-stack/lc-739-daily-temperatures.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/queue/lc-649-dota2-senate.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/queue/lc-933-number-of-recent-calls.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/sliding-window/lc-1004-max-consecutive-ones-iii.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/trie/lc-1268-search-suggestions-system.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/two-pointers/lc-283-move-zeroes.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/leetcode-75/questions/two-pointers/lc-392-is-subsequence.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-candy.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-color-ops.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-gems.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-jam.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-k-repeat-substr.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-k-residue.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-max-common-subseq.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-nonadj-even.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-perm-subseq.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-picky-eater.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-reverse-seq.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/alibaba-oa/ali-oa-ring-lights.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/ant-beam-search-pytorch-tree.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/baichuan-mha-handwrite.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/baichuan-sqrt-binary-search.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-adamw.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-alibi.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-attention.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-attn-sink.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-beam-search.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-chunked-prefill.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-cross-attn.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-decoder-block.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-flash-attn-fwd.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-flash-decode.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-fused-ce.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-gqa.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-grad-accum-amp.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-grad-clip.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-int8-gemm.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-kv-cache-step.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-layernorm.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-linear-attn.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-lora.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-lr-schedule.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-mla-cache.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-moe-permute-combine.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-moe-router-aux-loss.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-moe-sparse-forward.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-mtp.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-packed-mask.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-paged-kv-cow.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-qk-norm.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-retry.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-rmsnorm.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-rope.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-sampling.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-sharded-checkpoint-io.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-softcap.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-softmax-stable.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-spec-decode.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-state-machine.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-stream-parser.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-swa-mask.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-swiglu.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-tool-schema-validator.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-tp-linear.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-weight-tying.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/code-yarn.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/deepseek-mha-handwrite.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/jd-inorder-iterative.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/pdd-attention-handwrite.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/pdd-bpe-handwrite.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/pdd-ce-handwrite.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/coding/tencent-mha-handwrite.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/baidu-qwen2-sft-implementation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-dpo.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-fw-miles.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-fw-verl.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-gae.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-grpo.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-logprob-gather.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-ppo-clip.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/code-ppo-grpo-gspo.md",
+      "changedBlocks": 9
+    },
+    {
+      "file": "content/handbooks/llm-interview/questions/rl-coding/stepfun-grpo-loss-handwrite.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-safety-data-pipeline.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/ensemble/ml101-decision-stump-implementation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-batchnorm-backward.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-conv-backward.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-mlp-backprop-implementation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/neural-networks/ml101-softmax-backward.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/optimization/ml101-optimizer-implementation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/probability/ml101-bigram-prediction.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/probability/ml101-ngram-generation.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/unsupervised/ml101-em-worked-step.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/unsupervised/ml101-kmeans-implementation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/ml-101/questions/unsupervised/ml101-pca-implementation.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/humansand/humansand-top-p-live-debug.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/notion/notion-product-coding.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/stripe/stripe-csv-validate.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/stripe/stripe-shipping-cost.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/thinking-machines/tml-batch-invariant-rmsnorm-reference.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-startup/questions/thinking-machines/tml-lora-linear-forward-gradients.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/alignment/align-agent-rl.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/amazon/amazon-converse-tool.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/amazon/amazon-titan-embed.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/amazon/amazon-two-tower.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bank-oa.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-bpe-tokenizer.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-computer-rl.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-computer-use.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-grpo-debug.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-inmemory-db.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-perf-takehome.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-rate-limit.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-streaming-tools.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-tool-roundtrip.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/anthropic-xml-prompt.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-agents-coding-llm-tool-use.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-bootloader.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-design-data-batcher.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q1-image-processing.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q1-web-crawler.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q2-file-deduplication.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q2-lru-cache-durability.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q3-stack-trace.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-coding-q6-tokenizer.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-mech-interp-take-home.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-configuration-system.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-programming-screen.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-ml-take-home-research.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-bank-system.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-fellows-dns-resolver.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-file-systems.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-in-memory-database.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-recipe-manager.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-task-management.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-oa-worker-management.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-performance-engineer-modeling.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-performance-engineer-take-home.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-prompting-engineering-with-llms.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/anthropic/p3a-anthropic-rl-fundamentals-grpo-debug.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-kmeans.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-mha-code.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-rank-adapter.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/apple/apple-topk-sample.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-adamw.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-alibi.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-attn-mask.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-beam-search.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-bpe-merge.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-cispo.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-cross-entropy.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-decode-step.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-dpo-weighted.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-flash-decode.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-fused-ce.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gae.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gqa-repeat.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-grad-clip.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-grpo-loss-agg.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-gspo-seq-ratio.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-layernorm.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-logsumexp.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-loss-atlas.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-mq-attn.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-online-softmax.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-packed-lm.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-paged-table.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-qk-norm.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rloo-advantage.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rmsnorm.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rope-cache.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-rope.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-silu.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-spec-accept.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-swa-mask.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-tis-mismatch.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-token-logprob.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-topk-nucleus.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-weight-tying.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/coding-z-loss.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/fireworks-grpo-sft-loss.md",
+      "changedBlocks": 3
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/p3a-cursor-speculative-decoding-acceptance.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/coding/p3a-cursor-streaming-markdown-code-parser.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/design-agent-budget.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-beam-search-decoder.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-byte-tokenizer-and-token-count-estimator.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-credit-tracker-with-expiring-credits.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-embedding-model-batching-service.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-frontend-discover-infinite-scroll.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-in-memory-file-system.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-kv-store-with-timestamps-and-restore.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-map-reduce-and-blockwise-attention.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-premium-zone-escape-path.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-sklearn-binary-classifier.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stop-sequences-before-first-match.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-stream-deduplication-with-near-duplicate-detection.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/design/p3a-perplexity-todo-list-for-ai.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/google-jax-pjit.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/google-vit-patch.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-array-threshold-filter.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/google/p3a-google-deepmind-graph-dfs.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-anyres.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-card-triples-exact-selection.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-conv2d-from-scratch.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-expand-signed-expression.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-gqa-kernel.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-llama-vision.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-longest-valid-parentheses.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-maze-keys-direction-state.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-mutual-friends-topk.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-parallel-build-bottlenecks.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-shortest-unique-prefix-trie.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-streaming-kmp-search.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-tree-diameter-node-count.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/meta-word-selection-letter-coverage.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/meta/p3a-meta-attention-implementation-and-follow-ups.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-beam-search-decoder.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-dna-shotgun-sequencing.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-employee-attrition-prediction.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-in-memory-sql-engine.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-kv-store-with-snapshot.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-max-number-occurrences-in-suffix.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-memory-allocator.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-streaming-stop-token-detection.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-top-k-largest-retain.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-transformer-roofline-fp-precision.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flash-decode.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/nvidia/nvidia-fused-moe.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/nvidia/nvidia-tensor-parallel.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-allgather-noise.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-async-tree-count-idempotency.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-beat-notation-parser-extension.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-entropy-l1.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-file-content-dedup-collisions.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-flash-decode.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-function-calling.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-gpu-credits.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-grid-visit-targets-mask.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-kv-cache-impl.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-largest-subgrid-histogram-extension.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-long-ctx-train.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-lora-sft.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-modular-addition-bfs.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-resumable-iter.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-rope-offset.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-softmax-bug.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-transformer-debug.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/openai-tree-route-required-tasks.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-autograd-hillis-steele-scan.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-chat-bot-system-refactoring.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-classifier-noisy-annotators.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-code-reading-pytorch-refactor.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-data-labeling-task-scheduler.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-distributed-cluster-count-topology.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-durable-kv-store-serialization.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-fault-tolerant-work-queue.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-gpu-credits.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-implement-cd-command.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-in-memory-database-sql.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-infection-spread-cellular-automata.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-ip-address-cidr-iterator.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-masked-cross-entropy-loss.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-math-reasoning-stopping-time.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-maximum-score-grid-path-limited-jumps.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-memory-allocator.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-modal-lock-fair-modal-lock.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-monster-battle-system.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-numpy-1nn-wx-b.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-opensheet-spreadsheet.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-poker-simulation.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-resumable-iterator.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-shard-rebalance.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-sharded-matmul-backprop-debugging.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-streaming-entropy.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-time-based-kv-store.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-toy-language-type-inference.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/openai/p3a-openai-transformer-bug-hunt.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-delete-digit-five.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-numpy-top-k-sampling.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-cohere-terminal-game-llm-agent.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-daily-gpu-remaining.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-gpu-k-switches.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/overview/p3a-mistral-gpu-unlimited-switches.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-block-hash.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-engine.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-paged-cow.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-radix-leases.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-radix.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-reuse-plan.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-segmented-attention.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/kv-prefix-transformer.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-adv-bcast.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-async-stale.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-clip-global.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-ddp-bucket.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-deterministic.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-eos-mask.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-flashinfer.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-grad-accum.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-group-size.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-host-stall.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-init-same.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-kl-place.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-lr-tokens.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-ref-model.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-replay.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-rollout-logprob.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-sandbox-nproc.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-sandbox-secret.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-sandbox.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-tokenizer-same.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/systems/sys-weight-remap.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-agentic-one-hour-movie-generation.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-checkers-backend-design.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-common-ngrams.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distinct-integers-after-offset.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distributed-matmul-dp-fsdp.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-distributed-token-bucket-limiter.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-durable-kv-cache.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-fixed-window-tokens.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-flatten-unflatten-nested-structure.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-in-memory-database-ttl-backup.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-input-field-review.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-kth-element-streaming-window.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-mock-llm-dynamic-batching.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-multithreaded-bank-account-bug-hunt.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-parallel-integer-sort.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-patchify-cnn.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-pipeline-critical-path.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-process-vs-thread-verbal.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-radix-cache.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-resumable-iterator-design.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-speculative-edits.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-transactional-key-value-store.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-twitter-insight-platform-take-home.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-twitter-spaces-active-hours.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/p3a-xai-weighted-lru-cache.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-async-dag-task-scheduler.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-atomic-hierarchical-sliding-limiter.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-courier-pay-event-sweep.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-double-base-palindrome-enumeration.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-kv-txn.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-lru-cache.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-nested-json-safe-viewer-core.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-offline-autocomplete-trie.md",
+      "changedBlocks": 2
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-rate-limiter.md",
+      "changedBlocks": 1
+    },
+    {
+      "file": "content/handbooks/us-tech/questions/xai/xai-single-pass-document-cleaning.md",
+      "changedBlocks": 2
+    }
+  ],
+  "validation": {
+    "pythonASTEquivalentBlocks": 1748,
+    "javascriptASTEquivalentBlocks": 4,
+    "jsonEquivalentBlocks": 8,
+    "yamlEquivalentBlocks": 1,
+    "preservedTextBlocks": 834,
+    "nodeTestsPassed": 68,
+    "practiceIntegrationTestsPassed": 22
+  }
+}

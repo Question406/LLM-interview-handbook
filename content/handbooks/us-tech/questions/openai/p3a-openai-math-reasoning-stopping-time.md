@@ -3,8 +3,10 @@ id: p3a-openai-math-reasoning-stopping-time
 section: openai
 order: 619
 level: S
-title: "OpenAI：随机求解时间：LLM 推理重启策略"
-quick: "固定阈值下，期望总时间是单次尝试的期望耗时除以成功概率，离散分布只需枚举支持点找最优阈值。每次重启必须有独立新随机性，并把预热成本计入 overhead；未知分布需另谈通用重启序列。"
+title: OpenAI：随机求解时间：LLM 推理重启策略
+quick: >-
+  固定阈值下，期望总时间是单次尝试的期望耗时除以成功概率，离散分布只需枚举支持点找最优阈值。每次重启必须有独立新随机性，并把预热成本计入
+  overhead；未知分布需另谈通用重启序列。
 companies:
   - openai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - ML
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · OpenAI · math-reasoning-stopping-time"
-    url: https://www.1point3acres.com/interview/problems/company/openai/math-reasoning-stopping-time
+  - title: 1Point3Acres · OpenAI · math-reasoning-stopping-time
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/math-reasoning-stopping-time
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 计算超时重启策略的期望完成时间，并寻找最佳超时阈值。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `expected_restart(times,probs,tau,overhead=0)` 返回浮点期望总耗时。每次独立尝试的自然完成时间 T 取 times 中的正值，概率为对应 probs，概率非负且和为 1。每次尝试先花 overhead，然后若 T<=tau 则再花 T 并成功；否则花 tau 后重新开始一次独立尝试。tau>0、overhead>=0；成功概率为 0 时返回正无穷。
 
@@ -50,7 +56,7 @@ times=[2],probs=[1],tau=1 时返回 inf。
 
 一个随机求解器（例如用 LLM 做数学推理）每次运行的耗时服从已知分布，有时很快解出，有时会跑很久。设计一个重启策略：跑到一定时间还没解出就放弃，从头独立重来，使得到解所需的期望总时间最小。还要讨论最坏情况。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 $$E = c + (1 - s)E,$$
 
@@ -122,7 +128,9 @@ def expected_restart(times, probs, tau, overhead=0.0):
 def best_threshold(times, probs, overhead=0.0):
     """在所有支持点里找期望耗时最小的阈值，返回 (期望耗时, tau)，并列取较小的 tau。"""
     candidates = sorted(set(times))  # 最大的支持点等价于「不重启」
-    return min((expected_restart(times, probs, tau, overhead), tau) for tau in candidates)
+    return min(
+        (expected_restart(times, probs, tau, overhead), tau) for tau in candidates
+    )
 ```
 
 ### 简单测试怎么写
@@ -133,7 +141,7 @@ def best_threshold(times, probs, overhead=0.0):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -144,6 +152,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 一半概率 1 秒解出，一半 100 秒：tau = 1 时期望 2，不重启是 50.5
 assert expected_restart([1, 100], [0.5, 0.5], 1) == 2

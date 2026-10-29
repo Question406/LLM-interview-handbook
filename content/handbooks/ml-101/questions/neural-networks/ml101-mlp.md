@@ -1,18 +1,22 @@
 ---
-id: "ml101-mlp"
-section: "neural-networks"
+id: ml101-mlp
+section: neural-networks
 order: 1
-level: "A"
-title: "多层感知机为什么需要非线性激活函数？"
-quick: "多个线性层连起来仍然等价于一个线性变换，非线性激活才让 MLP 能表示弯曲边界和特征交互。比如 XOR 的正例在两个对角，单条直线分不开，加隐藏单元和非线性后可以组合出这样的区域。"
-tags: ["ML101", "neural-networks"]
+level: A
+title: 多层感知机为什么需要非线性激活函数？
+quick: >-
+  多个线性层连起来仍然等价于一个线性变换，非线性激活才让 MLP 能表示 nonlinear decision boundary 和特征交互。比如 XOR
+  的正例在两个对角，单条直线分不开，加隐藏单元和非线性后可以组合出这样的区域。
+tags:
+  - ML101
+  - neural-networks
 realInterview: false
 status: published
-format: "markdown"
-updatedAt: "2026-10-22"
+format: markdown
+updatedAt: '2026-10-22'
 sources:
-  - title: "Dive into Deep Learning: Multilayer Perceptrons"
-    url: https://d2l.ai/chapter_multilayer-perceptrons/mlp.html
+  - title: 'Dive into Deep Learning: Multilayer Perceptrons'
+    url: 'https://d2l.ai/chapter_multilayer-perceptrons/mlp.html'
     type: primary
 ---
 
@@ -31,4 +35,4 @@ MLP（多层感知机）需要非线性激活，才能通过多层组合表达�
 隐藏层同组单元会得到相同输出和梯度，难以学到不同功能，通常用随机权重打破对称性。
 
 **网络越深就一定越好吗？**
-不一定。深度增加表达方式，也增加优化和过拟合风险，要用验证结果与成本判断。
+不一定。深度增加表达方式，也增加优化和 overfitting 风险，要用验证结果与成本判断。

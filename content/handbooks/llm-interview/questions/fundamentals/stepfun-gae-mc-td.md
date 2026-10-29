@@ -3,8 +3,10 @@ id: stepfun-gae-mc-td
 section: fundamentals
 order: 142
 level: S
-title: 阶跃星辰：GAE 是什么？蒙特卡洛和 TD 有何差别？
-quick: "MC 用整段回报，无偏但方差大；TD 用 $r+\\gamma V(s')-V(s)$，方差小但 $V$ 不准就有偏。GAE 用 $\\lambda$ 对多步 TD 残差做指数加权，在两者之间插值，PPO 里几乎是标配。"
+title: 阶跃星辰：GAE 是什么？Monte Carlo 和 TD 有何差别？
+quick: >-
+  MC 用整段回报，无偏但方差大；TD 用 $r+\gamma V(s')-V(s)$，方差小但 $V$ 不准就有偏。GAE 用 $\lambda$ 对多步
+  TD 残差做指数加权，在两者之间插值，PPO 里几乎是标配。
 tags:
   - StepFun
   - GAE
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阶跃星辰大模型算法实习面经
-    url: https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3
+    url: 'https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3'
     type: candidate-first-hand
   - title: GAE
-    url: https://arxiv.org/abs/1506.02438
+    url: 'https://arxiv.org/abs/1506.02438'
     type: primary-paper
 ---
 
@@ -29,9 +31,9 @@ sources:
 - 届别 / 流程：实习；轮次未披露
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：“GAE是什么？”；“蒙特卡洛模拟和时序差分估计的区别？”；“偏差和方差是什么？”
+- 原始措辞：“GAE 是什么？”；“Monte Carlo 模拟和时序差分估计的区别？”；“偏差和方差是什么？”
 
-GAE 是一种优势估计器：它用 $\lambda$ 对多步 TD 残差做指数加权，在蒙特卡洛和 TD 之间插值。蒙特卡洛用整段回报，无偏但方差大；TD 只看一步再用 $V$ bootstrap，方差小，但 $V$ 不准就有偏。这里的偏差是估计的期望相对真值的偏移，方差是估计本身的波动。
+GAE 是一种 advantage estimation 器：它用 $\lambda$ 对多步 TD 残差做指数加权，在 Monte Carlo 和 TD 之间插值。Monte Carlo 用整段回报，无偏但方差大；TD 只看一步再用 $V$ bootstrap，方差小，但 $V$ 不准就有偏。这里的偏差是估计的期望相对真值的偏移，方差是估计本身的波动。
 
 把 GAE 说成「就是 advantage」，或者不写 $\lambda$ 怎么插值，是这题最常见的丢分。
 
@@ -67,13 +69,13 @@ $$
 
 第二个等号来自交换求和：把 $\hat A_t^{(n)}=\delta_t+\gamma\delta_{t+1}+\cdots+\gamma^{n-1}\delta_{t+n-1}$ 代入 $(1-\lambda)\sum_n\lambda^{n-1}\hat A_t^{(n)}$，固定某个 $\delta_{t+l}$，它的系数是 $(1-\lambda)\lambda^l\sum_{k=0}^{\infty}(\gamma\lambda)^k$，整理后就是 $(\gamma\lambda)^l$。$\lambda=0$ 只剩 $\delta_t$，接近 TD；$\lambda=1$ 变成 $\sum\gamma^l\delta_{t+l}$，在 $V$ 一致时接近 MC。
 
-实现上从尾部往前递推：最后一步 $\hat A_{T-1}=\delta_{T-1}$，再往前 $\hat A_t=\delta_t+\gamma\lambda\hat A_{t+1}$。这和「先算完整的 $G_t$ 再减 $V$」不一样，中途就能写完一段的优势，适合截断的采样轨迹（rollout）。PPO 几乎标配这套 $\hat A$，然后再做标准化。
+实现上从尾部往前递推：最后一步 $\hat A_{T-1}=\delta_{T-1}$，再往前 $\hat A_t=\delta_t+\gamma\lambda\hat A_{t+1}$。这和「先算完整的 $G_t$ 再减 $V$」不一样，中途就能写完一段的优势，适合截断的 sampling 轨迹（rollout）。PPO 几乎标配这套 $\hat A$，然后再做 standardization。
 
 被问「偏差方差是什么」，别答成机器学习课本里的 U 形曲线，要落到这条估计器上。偏差是 $\mathbb{E}[\hat A]-A^\pi$，来自错误的 $V$ 或过早 bootstrap；方差是 $\mathrm{Var}(\hat A)$，来自轨迹噪声。
 
 ## 放到 LLM 上
 
-LLM 里把一个 token 当一步，$r$ 常常只在句末非零。比如只有 $r_T$ 非零、$V$ 还没学会终局时，$\delta$ 主要集中在最后几步，GAE 再按 $(\gamma\lambda)^l$ 把它们传回前面的 token。$\lambda$ 太小，前面的思考 token 几乎分不到优势，模型只学最后几个字；$\lambda$ 太大，一整段噪声都灌进早期 token。$\gamma$ 接近 1 时，主要靠 $\lambda$ 控方差。PPO 再对 $\hat A$ 做 batch 标准化，那是另一层方差控制，也会再引入「相对本 batch」的偏差。这和 `fund-biasvariance` 是同一根轴：稳是用偏差换来的。
+LLM 里把一个 token 当一步，$r$ 常常只在句末非零。比如只有 $r_T$ 非零、$V$ 还没学会终局时，$\delta$ 主要集中在最后几步，GAE 再按 $(\gamma\lambda)^l$ 把它们传回前面的 token。$\lambda$ 太小，前面的思考 token 几乎分不到优势，模型只学最后几个字；$\lambda$ 太大，一整段噪声都灌进早期 token。$\gamma$ 接近 1 时，主要靠 $\lambda$ 控方差。PPO 再对 $\hat A$ 做 batch standardization，那是另一层方差控制，也会再引入「相对本 batch」的偏差。这和 `fund-biasvariance` 是同一根轴：稳是用偏差换来的。
 
 GRPO 不用 learned $V$，用组内相对分数代替 advantage，偏差方差的问题以组大小 $n$ 的形式回来：组太小，基线噪声大；组变大要更多算力，但能降低基线方差。
 
@@ -92,4 +94,4 @@ $\gamma$ 是环境折扣，改的是任务目标；$\lambda$ 是估计器的偏�
 不必。$\lambda=1$ 的方差往往不可接受，0.95 到 0.99 更常见。先保证 $V$ 能拟合终局，再降 $\lambda$。
 
 **GRPO 还要 GAE 吗？**
-通常不要 learned $V$。组内减均值是另一条降方差的路，它的 bias 是抹掉了输入提示（prompt）之间的绝对难度。
+通常不要 learned $V$。组内减均值是另一条降方差的路，它的 bias 是抹掉了 prompt 之间的绝对难度。

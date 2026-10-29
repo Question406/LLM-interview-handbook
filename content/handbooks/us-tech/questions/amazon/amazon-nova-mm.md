@@ -4,7 +4,9 @@ section: amazon
 order: 15
 level: A
 title: Amazon：Nova 多模态（公开）和 Bedrock 路由怎么接？
-quick: "先按模态选模型，再判断任务难度：Micro 接文本，Lite / Pro / Premier 接图像、视频和文档。带图请求在应用层排除 Micro，并按文档字段、截图定位和视频理解分别评测路由后悔率。嵌入与聊天模型各自管理版本。"
+quick: >-
+  先按模态选模型，再判断任务难度：Micro 接文本，Lite / Pro / Premier 接图像、视频和文档。带图请求在应用层排除
+  Micro，并按文档字段、截图定位和视频理解分别评测路由后悔率。嵌入与聊天模型各自管理版本。
 tags:
   - Amazon
   - Nova
@@ -13,19 +15,20 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: What is Amazon Nova
-    url: https://docs.aws.amazon.com/nova/latest/userguide/what-is-nova.html
+    url: 'https://docs.aws.amazon.com/nova/latest/userguide/what-is-nova.html'
     type: primary
   - title: Amazon Nova
-    url: https://aws.amazon.com/ai/generative-ai/nova/
+    url: 'https://aws.amazon.com/ai/generative-ai/nova/'
     type: primary
   - title: Intelligent prompt routing in Amazon Bedrock
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html'
     type: primary
   - title: Amazon Nova vision understanding prompting
-    url: https://docs.aws.amazon.com/nova/latest/userguide/prompting-video-understanding.html
+    url: >-
+      https://docs.aws.amazon.com/nova/latest/userguide/prompting-video-understanding.html
     type: primary
 ---
 
@@ -33,7 +36,7 @@ sources:
 
 ## 先确定输入能力，再优化档位
 
-应用在调用前检查 content block，有 `image` / `video` / `document` 就禁止 Micro。纯文本短分类和抽槽可用 Micro 或 Lite；图、截图、PDF 页和短视频从 Lite 起。多图对照、长视频和密表再考虑 Pro / Premier。视频有采样上限，长片 FPS 下降会丢高运动细节，可以先抽关键帧或切段，不能承诺 1 GB 内容直接进 Converse。
+应用在调用前检查 content block，有 `image` / `video` / `document` 就禁止 Micro。纯文本短分类和抽槽可用 Micro 或 Lite；图、截图、PDF 页和短视频从 Lite 起。多图对照、长视频和密表再考虑 Pro / Premier。视频有 sampling 上限，长片 FPS 下降会丢高运动细节，可以先抽关键帧或切段，不能承诺 1 GB 内容直接进 Converse。
 
 Bedrock Intelligent Prompt Routing 在同族中预测质量再 fallback。多模态的质量差阈值要单独标定，文本上小模型够用，并不说明发票 OCR 也够用。按模态分别报 `amazon-nova` 中的后悔率和升级率。跨厂比较 Claude / GPT 时要用同一应用集，Bedrock 的智能路由不负责跨族路由。
 
@@ -43,7 +46,7 @@ Bedrock Intelligent Prompt Routing 在同族中预测质量再 fallback。多模
 
 ## 验收看实际视觉任务
 
-沿用 `amazon-titan-eval` 的门禁，再加视觉切片：文档看字段准确率，金额和日期单独计；截图 UI 看是否读对按钮、指到正确控件；视频看时间戳定位与事件正确性。MMLU、Arena 或 VQA 总分只能提供背景，不能替代这些应用验收。
+沿用 `amazon-titan-eval` 的 acceptance checks，再加视觉切片：文档看字段准确率，金额和日期单独计；截图 UI 看是否读对按钮、指到正确控件；视频看时间戳定位与事件正确性。MMLU、Arena 或 VQA 总分只能提供背景，不能替代这些应用验收。
 
 安全也要核对模态覆盖。公开表中部分 Nova 档的 Guardrails 标为 text only，因此不能假设图上的违规内容和截图 PII 已被输入侧看过。可以 OCR 后检查文字，或增加下游策略，见 `amazon-guardrails`。PDF 同时当纯文本 RAG 又整页当图，会重复计费并增加出错机会；图文检索分工见 `amazon-mm-rag`。
 

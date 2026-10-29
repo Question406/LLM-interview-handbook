@@ -3,8 +3,10 @@ id: p3a-openai-streaming-entropy
 section: openai
 order: 617
 level: S
-title: "OpenAI：流式熵：logits 在线累积与数值稳定"
-quick: "流式状态保存当前最大 logit、相对它的指数和，以及指数加权的 logit 偏移和。更大 logit 到来时，把后两项换算到同一最大值，再累加；最后用 log 配分函数减 logit 期望求熵。两个分块也按同样方式合并，因此不用保存全部历史。"
+title: OpenAI：流式熵：logits 在线累积与数值稳定
+quick: >-
+  流式状态保存当前最大 logit、相对它的指数和，以及指数加权的 logit 偏移和。更大 logit 到来时，把后两项换算到同一最大值，再累加；最后用
+  log 配分函数减 logit 期望求熵。两个分块也按同样方式合并，因此不用保存全部历史。
 companies:
   - openai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - ML
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · OpenAI · streaming-entropy"
-    url: https://www.1point3acres.com/interview/problems/company/openai/streaming-entropy
+  - title: 1Point3Acres · OpenAI · streaming-entropy
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/streaming-entropy
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现可合并的流式 softmax 熵统计，不能保存全部 logits。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Entropy()` 构造空状态。`add(logit)` 加入一个有限浮点 logit 并返回自身；`merge(other)` 将另一状态代表的全部样本合并到当前状态并返回自身；`value()` 返回非空状态中所有 logits 的 softmax 概率熵。
 
@@ -47,7 +53,7 @@ Entropy().add(1000).add(1000).value()≈0.6931471805599453。
 
 给一组 logits，先计算 softmax 分布的熵；再改成流式版本，logits 逐个到达，不能保存全部历史；最后支持把两个分块的结果合并。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -125,7 +131,9 @@ class Entropy:
         own_r = self._rescaled_r(self.max_logit, self.z, self.r, new_max)
         incoming_r = self._rescaled_r(max_logit, z, r, new_max)
         self.r = own_r + incoming_r
-        self.z = self.z * math.exp(self.max_logit - new_max) + z * math.exp(max_logit - new_max)
+        self.z = self.z * math.exp(self.max_logit - new_max) + z * math.exp(
+            max_logit - new_max
+        )
         self.max_logit = new_max
         return self
 
@@ -159,12 +167,13 @@ class Entropy:
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 import numpy as np
+
 
 def expect_value_error(fn, *args):
     try:
@@ -173,10 +182,12 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
 
+
 def reference_entropy(logits):
     probs = np.exp(np.array(logits) - max(logits))
     probs /= probs.sum()
     return -sum(p * math.log(p) for p in probs if p > 0)
+
 
 logits = [1000.0, 999.0, -1000.0, 1001.0]
 expected = reference_entropy(logits)

@@ -4,20 +4,32 @@ section: systems
 order: 271
 level: A
 title: DualPipe 如何压 PP bubble？和 1F1B 差在哪？
-quick: "DualPipe 从流水线两端同时灌入 microbatch，用另一方向的工作填掉部分 warmup / cooldown 空档，再让 PP 通信和 EP all-to-all 与 GEMM 重叠。1F1B 主要缩短激活保存时间，头尾仍会空等。DualPipe 能进一步压气泡，但在途激活更多，也消不掉专家负载不均造成的尾部等待。"
+quick: >-
+  DualPipe 从流水线两端同时灌入 microbatch，用另一方向的工作填掉部分 warmup / cooldown 空档，再让 PP 通信和 EP
+  all-to-all 与 GEMM 重叠。1F1B 主要缩短激活保存时间，头尾仍会空等。DualPipe
+  能进一步压气泡，但在途激活更多，也消不掉专家负载不均造成的尾部等待。
 tags:
   - Pipeline Parallelism
   - DualPipe
   - DeepSeek
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
 ---
+
+## 可以这样回答
+
+DualPipe 通过对向流水和通信重叠，进一步减少 1F1B 留下的空等。比如流水线前端已经进入 cooldown，另一方向的 microbatch 仍能给它安排计算；同一时间，还可以用一条流水线的 GEMM 覆盖另一条的通信。要说明它为什么有效，先看 PP 的前向和反向依赖，`sys-parallel` 里提到的加 microbatch 和 1F1B 都是在处理这条依赖。
+
+$P$ 个 stage 把层切开。前向激活必须 $0\to 1\to\cdots\to P-1$，反向梯度必须 $P-1\to\cdots\to 0$。一张卡只有拿到上游结果才能算，算完才能发给下游。
+
+## 技术备查
 
 DualPipe 通过对向流水和通信重叠，进一步减少 1F1B 留下的空等。比如流水线前端已经进入 cooldown，另一方向的 microbatch 仍能给它安排计算；同一时间，还可以用一条流水线的 GEMM 覆盖另一条的通信。要说明它为什么有效，先看 PP 的前向和反向依赖，`sys-parallel` 里提到的加 microbatch 和 1F1B 都是在处理这条依赖。
 

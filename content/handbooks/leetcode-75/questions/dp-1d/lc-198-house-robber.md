@@ -4,20 +4,20 @@ section: dp-1d
 order: 3
 level: S
 title: LC 198 · 打家劫舍
-quick: "每家只有抢和不抢两种选择：不抢就保留此前的最大金额，抢就接上前前一家为止的最大金额，两者取大。只要存前两个状态，时间 $O(n)$，额外空间 $O(1)$。"
+quick: 每家只有抢和不抢两种选择：不抢就保留此前的最大金额，抢就接上前前一家为止的最大金额，两者取大。只要存前两个状态，时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 198. House Robber
-    url: https://leetcode.com/problems/house-robber/
+    url: 'https://leetcode.com/problems/house-robber/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -103,7 +103,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 只有 $1$ 间时，答案就是这间的金额。
 

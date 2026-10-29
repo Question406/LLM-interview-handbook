@@ -4,7 +4,9 @@ section: systems
 order: 12
 level: A
 title: GPTQ、AWQ、SmoothQuant、QAT 大概怎么区分？
-quick: "GPTQ 用二阶近似降低训练后权重量化的误差，AWQ 用 activation 统计保护或缩放重要权重通道；SmoothQuant 把 activation outlier 的难度迁到 weights，常用于 W8A8。QAT 则在训练中模拟量化误差，让权重适应。是否加速还取决于 kernel 和反量化开销。"
+quick: >-
+  GPTQ 用二阶近似降低训练后权重量化的误差，AWQ 用 activation 统计保护或缩放重要权重通道；SmoothQuant 把 activation
+  outlier 的难度迁到 weights，常用于 W8A8。QAT 则在训练中模拟量化误差，让权重适应。是否加速还取决于 kernel 和反量化开销。
 tags:
   - Quantization
   - Inference
@@ -12,16 +14,16 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: GPTQ
-    url: https://arxiv.org/abs/2210.17323
+    url: 'https://arxiv.org/abs/2210.17323'
     type: primary
   - title: AWQ
-    url: https://arxiv.org/abs/2306.00978
+    url: 'https://arxiv.org/abs/2306.00978'
     type: primary
   - title: SmoothQuant
-    url: https://arxiv.org/abs/2211.10438
+    url: 'https://arxiv.org/abs/2211.10438'
     type: primary
 ---
 
@@ -40,23 +42,23 @@ GPTQ / AWQ 常用于 INT4 权、激活仍 16 位，省的是权带宽。SmoothQu
 
 ## 何时更快、何时只是更小
 
-权重量化在 逐 token 生成（decode）（memory-bound、反复读权）上收益大；输入预填充（prefill，即处理输入并建立缓存） 大 GEMM 已 compute-bound，降 bit 不一定涨速。没有对应 Tensor Core / INT kernel，就要 dequant 回 BF16 再算，等于多一次读写。batch / 头数不友好时同样。我会说「先看是不是读权瓶颈，再看有没有 kernel」。模型本来就小、batch 已经很大时，量化常常只缩小磁盘，不缩短 TPOT。
+权重量化在 逐 token 生成（decode）（memory-bound、反复读权）上收益大；输入 prefill 大 GEMM 已 compute-bound，降 bit 不一定涨速。没有对应 Tensor Core / INT kernel，就要 dequant 回 BF16 再算，等于多一次读写。batch / 头数不友好时同样。我会说「先看是不是读权瓶颈，再看有没有 kernel」。模型本来就小、batch 已经很大时，量化常常只缩小磁盘，不缩短 TPOT。
 
 KV 量化是另一条线（存 cache 不是存权），不要和 GPTQ 混，见 `sys-precision`、`sys-pagedattention`。
 
-## 和训练精度的边界
+## 与 training precision 的区别
 
-训练用 BF16/FP8 是为了稳定收敛；推理量化是在已收敛权上压部署成本。QAT 是中间地带：训练时看见量化噪声。强化学习（RL） 采样轨迹（rollout） 若对采样用 FP8 / INT4，训练图仍 BF16，必须重算 logp，见 `slime-sglang-native`。
+训练用 BF16/FP8 是为了稳定收敛；推理量化是在已收敛权上压部署成本。QAT 是中间地带：训练时看见量化噪声。RL sampling 轨迹（rollout） 若对 sampling 用 FP8 / INT4，训练图仍 BF16，必须重算 logp，见 `slime-sglang-native`。
 
 ## 追问
 
 **AWQ 和 GPTQ 谁更准？**
-取决于模型和校准数据。AWQ 强调保护激活敏感通道；GPTQ 强调逐层二阶重构。不要背「谁绝对更好」。
+取决于模型和 calibration 数据。AWQ 强调保护激活敏感通道；GPTQ 强调逐层二阶重构。不要背「谁绝对更好」。
 **SmoothQuant 为什么能做 W8A8？**
 激活 outlier 被 scale 挪到权上，两边动态范围都收敛到 INT8 可表示区间。
 **QAT 一定优于 PTQ？**
 不一定。数据少、训练不稳时 QAT 更差；先 PTQ，精度不够再 QAT。
 **量化后 perplexity 差不多就一定能上线吗？**
-不够。还要看长尾任务、安全拒绝和 decode 吞吐。PPL 对部署误差不敏感。
+不够。还要看长尾任务、安全拒绝和 decode throughput。PPL 对部署误差不敏感。
 **W4A16 和 W8A8 怎么选？**
 只缺权带宽、激活还好：W4A16（GPTQ/AWQ）。激活也有 outlier、硬件吃 INT8 GEMM：W8A8 + SmoothQuant。先看瓶颈再选配方。

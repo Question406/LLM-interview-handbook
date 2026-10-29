@@ -31,6 +31,7 @@ dropout 和数据 shuffle 的种子不同，差的是样本，不是数值库。
 ```python
 import torch
 
+
 def param_checksum(model):
     total = torch.zeros((), device="cpu")
     for p in model.parameters():

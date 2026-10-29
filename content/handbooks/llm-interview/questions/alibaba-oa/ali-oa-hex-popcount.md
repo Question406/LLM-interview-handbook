@@ -5,7 +5,8 @@ order: 19
 level: B
 title: 阿里 2022.03.14 研发：十六进制 popcount 要注意什么？
 quick: >-
-  每个十六进制位正好对应 $4$ 个二进制位，所以逐字符查 $0$ 到 $F$ 的二进制 $1$ 个数再累加就行，不用先转成可能溢出的整数。空串、前导零、大小写要先约定好。
+  每个十六进制位正好对应 $4$ 个二进制位，所以逐字符查 $0$ 到 $F$ 的二进制 $1$
+  个数再累加就行，不用先转成可能溢出的整数。空串、前导零、大小写要先约定好。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -24,7 +25,7 @@ sources:
 
 给定一个十六进制数字的字符串表示，返回它对应的二进制表示中有多少个 1。输入可能很长，不限定在某种固定宽度的机器整数内。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -128,7 +129,7 @@ print("simple tests passed")
 
 时间 $O(|s|)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 `0`、`00` 答案都是 $0$；`F` 是 $4$；`10` 是 $1$。代码允许前缀 `0x`，空输入输出 $0$。
 

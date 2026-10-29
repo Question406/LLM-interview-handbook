@@ -3,8 +3,10 @@ id: p3a-anthropic-coding-bootloader
 section: anthropic
 order: 613
 level: A
-title: "Anthropic：指令模拟：检测死循环并修复单条指令"
-quick: "用访问过的 pc 集合判断死循环，累加器单独记录。修复时可以枚举每条 next/jump 互换后重跑，时间是 O(n²)；若要降到 O(n)，就先反向找出能到终点的位置，再检查原执行路径上的修改。"
+title: Anthropic：指令模拟：检测死循环并修复单条指令
+quick: >-
+  用访问过的 pc 集合判断死循环，累加器单独记录。修复时可以枚举每条 next/jump 互换后重跑，时间是 O(n²)；若要降到
+  O(n)，就先反向找出能到终点的位置，再检查原执行路径上的修改。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · coding-bootloader"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/coding-bootloader
+  - title: 1Point3Acres · Anthropic · coding-bootloader
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/coding-bootloader
     type: secondary
 ---
 
@@ -51,7 +54,7 @@ run([("jump", 3)])                               -> (False, 0)   # 跳出范围�
 
 模拟一段只有三种指令的程序：累加（题卡里叫 plus）、顺序执行下一条（next）、相对跳转（jump）。先判断程序会不会陷入死循环，再找出那条出错的指令：把它在 next 和 jump 之间互换一次，让程序能正常结束。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题，累加指令在练习里写作 `acc`。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定，累加指令在练习里写作 `acc`。
 
 ## 思路
 
@@ -141,7 +144,7 @@ def repair(program):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -152,6 +155,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 最小死循环：把下标 1 的 jump 改成 next 就能结束
 looping = [("acc", 1), ("jump", -1)]

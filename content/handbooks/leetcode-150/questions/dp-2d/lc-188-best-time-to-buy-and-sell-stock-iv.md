@@ -4,20 +4,22 @@ section: dp-2d
 order: 8
 level: A
 title: LC 188 · 买卖股票的最佳时机 IV
-quick: "这是 LC 123 的推广：`buy[t]` / `sell[t]` 记第 $t$ 笔买入后的净成本和卖出后的利润，每个价格从 $t=1$ 到 $k$ 更新一遍，时间 $O(nk)$。若 $k\\ge n/2$，限制失效，退化为无限次交易，把所有上涨段加起来。"
+quick: >-
+  这是 LC 123 的推广：`buy[t]` / `sell[t]` 记第 $t$ 笔买入后的净成本和卖出后的利润，每个价格从 $t=1$ 到 $k$
+  更新一遍，时间 $O(nk)$。若 $k\ge n/2$，限制失效，退化为无限次交易，把所有上涨段加起来。
 tags:
   - DP
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 188. 买卖股票的最佳时机 IV
-    url: https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iv/
+    url: 'https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iv/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -103,7 +105,7 @@ print("simple tests passed")
 
 时间 $O(nk)$，额外空间 $O(k)$；$k\ge n/2$ 时时间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 $k=0$ 或 $n \lt 2$ 时一笔都做不成，直接返回 $0$。单调下跌时所有 `sell[t]` 停在 $0$。$k=1$ 时只更新一对 `buy/sell`，退化为「最低买入、最高卖出」，也就是 LC 121，独立卡见 `lc-121-best-time-to-buy-and-sell-stock`。
 
@@ -122,7 +124,7 @@ def maxProfit_unlimited(prices):
 
 ```python
 def maxProfit_cooldown(prices):
-    hold, sold, rest = -10**18, 0, 0
+    hold, sold, rest = -(10**18), 0, 0
     for p in prices:
         hold, sold, rest = max(hold, rest - p), hold + p, max(rest, sold)
     return max(sold, rest)
@@ -133,7 +135,7 @@ def maxProfit_cooldown(prices):
 
 ```python
 def maxProfit_fee(prices, fee):
-    hold, cash = -10**18, 0
+    hold, cash = -(10**18), 0
     for p in prices:
         hold = max(hold, cash - p)
         cash = max(cash, hold + p - fee)

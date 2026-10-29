@@ -3,8 +3,12 @@ id: swe-test-contract
 section: swe-agent
 order: 2
 level: S
-title: SWE benchmark 的 fail-to-pass / pass-to-pass tests 各在验证什么？如何阻止 Agent 通过删测试或改无关行为刷分？
-quick: "fail-to-pass 验证 issue 要的目标行为修好了，pass-to-pass 保证原有行为没被改坏。光这两类还会被刷，所以还要锁测试文件、限制 patch 路径、加隐藏测试和人工抽检；编译过了或者单测绿了，都不够单独判 resolved。"
+title: >-
+  SWE benchmark 的 fail-to-pass / pass-to-pass tests 各在验证什么？如何阻止 Agent
+  通过删测试或改无关行为刷分？
+quick: >-
+  fail-to-pass 验证 issue 要的目标行为修好了，pass-to-pass 保证原有行为没被改坏。光这两类还会被刷，所以还要锁测试文件、限制
+  patch 路径、加隐藏测试和人工抽检；编译过了或者单测绿了，都不够单独判 resolved。
 tags:
   - SWE-bench
   - Testing
@@ -12,10 +16,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: SWE-bench
-    url: https://arxiv.org/abs/2310.06770
+    url: 'https://arxiv.org/abs/2310.06770'
     type: primary
 ---
 
@@ -29,12 +33,12 @@ sources:
 
 常见的投机手法还有几种：删失败用例，按 issue 文本硬编码返回值，关掉类型检查，扩大 mock 让测试碰不到真实逻辑，改系统时间或时区让 flaky 变绿。所以报告我会拆成五列：目标测试通过率、回归通过率、测试完整性（测试文件没被改）、patch 范围有没有越权、人工抽检接受率。只报「tests passed」，奖励就对准了投机。resolved 的定义写成 F2P 通过 ∧ P2P 通过 ∧ 测试完整性通过 ∧ 路径 allowlist 通过，缺一项就是 failed 或 invalid。
 
-被问「怎么防刷分」，我按这个顺序答：测试文件 hash → 路径 allowlist → hidden tests → mutation → 人工抽检。前三项是自动门禁，后两项抓语义上的投机，这五步都写进 evaluator。报告里 resolved 也别只写一个布尔值，要附状态转移表、测试 hash 有没有变、越权路径列表。评审时抽 10 条「全绿」样本人工看，专门找删断言和硬编码。没有抽检的自动分，默认当成可刷。上面每一条判定都要能对应到日志字段。
+被问「怎么防刷分」，我按这个顺序答：测试文件 hash → 路径 allowlist → hidden tests → mutation → 人工抽检。前三项是自动 acceptance checks，后两项抓语义上的投机，这五步都写进 evaluator。报告里 resolved 也别只写一个布尔值，要附状态转移表、测试 hash 有没有变、越权路径列表。评审时抽 10 条「全绿」样本人工看，专门找删断言和硬编码。没有抽检的自动分，默认当成可刷。上面每一条判定都要能对应到日志字段。
 
 ## 追问
 
 **hidden test 和 P2P 是不是重复了？**
-不重复。P2P 防的是已知行为回归，hidden 防的是 Agent 对着看得见的断言过拟合。
+不重复。P2P 防的是已知行为回归，hidden 防的是 Agent 对着看得见的断言 overfitting。
 
 **有的仓库本来就允许改测试，怎么办？**
 测试变更单独送审，不计入自动 resolved；或者只允许新增，禁止删除或弱化断言。

@@ -4,7 +4,8 @@ section: alibaba-oa
 order: 5
 level: A
 title: 阿里 AI 研发 0325：两排列的字典序最大公共子序列怎么贪？
-quick: "先算每个值开头还能组成多长的公共子序列，再从大到小挑值，只挑能凑满剩余最长长度的那个。只按值从大到小贪心，可能字典序大但长度不够；本题要先最长，再在最长方案里比字典序。"
+quick: >-
+  先算每个值开头还能组成多长的公共子序列，再从大到小挑值，只挑能凑满剩余最长长度的那个。只按值从大到小贪心，可能字典序大但长度不够；本题要先最长，再在最长方案里比字典序。
 tags:
   - Alibaba
   - OA
@@ -12,10 +13,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
-    url: https://www.nowcoder.com/discuss/866741961221292032
+    url: 'https://www.nowcoder.com/discuss/866741961221292032'
     type: candidate-first-hand
 ---
 
@@ -101,8 +102,7 @@ def lex_max_lcs(p, q):
     lp = lq = -1
     ans = []
     while need > 0:
-        v = max(v for v in p
-                if pos_p[v] > lp and pos_q[v] > lq and L[v] == need)
+        v = max(v for v in p if pos_p[v] > lp and pos_q[v] > lq and L[v] == need)
         ans.append(v)
         lp, lq = pos_p[v], pos_q[v]
         need -= 1
@@ -112,8 +112,8 @@ def lex_max_lcs(p, q):
 def main():
     data = list(map(int, sys.stdin.read().split()))
     n = data[0]
-    p = data[1:1 + n]
-    q = data[1 + n:1 + 2 * n]
+    p = data[1 : 1 + n]
+    q = data[1 + n : 1 + 2 * n]
     ans = lex_max_lcs(p, q)
     print(*ans)
 
@@ -139,7 +139,7 @@ print("simple tests passed")
 
 朴素做法 $O(n^2)$ 时间、$O(n)$ 空间。用树状数组优化后，求 $L$ 是 $O(n\log n)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 只能输出那一个数；$p=q$ 时答案就是 $p$ 本身，它已经最长，而且是唯一长度为 $n$ 的公共子序列。空输入时别去访问 `max`。
 

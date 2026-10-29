@@ -4,29 +4,43 @@ section: nvidia
 order: 11
 level: S
 title: NVIDIA：CUDA occupancy、register 压力，Nsight 上看什么
-quick: "Occupancy 是一个 SM 上活跃 warp 数占硬件上限的比例，反映能用多少并行工作隐藏延迟。寄存器或共享内存用得多，能同时驻留的 warp 就少，还可能出现寄存器 spill；诊断时先用 Nsight Systems 看 GPU 是否空闲，再用 Nsight Compute 看吞吐、资源限制和等待原因。提高 occupancy 是否有收益，要看原来的瓶颈。"
+quick: >-
+  Occupancy 是一个 SM 上活跃 warp 数占硬件上限的比例，反映能用多少并行工作隐藏延迟。寄存器或共享内存用得多，能同时驻留的 warp
+  就少，还可能出现寄存器 spill；诊断时先用 Nsight Systems 看 GPU 是否空闲，再用 Nsight Compute 看
+  throughput、资源限制和等待原因。提高 occupancy 是否有收益，要看原来的瓶颈。
 tags:
   - NVIDIA
   - CUDA
   - Occupancy
   - Nsight
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: CUDA C++ Programming Guide — Occupancy
-    url: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#occupancy
+    url: 'https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#occupancy'
     type: primary
   - title: Nsight Compute Profiling Guide
-    url: https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html
+    url: 'https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html'
     type: primary
-  - title: FlashAttention — Fast and Memory-Efficient Exact Attention with IO-Awareness
-    url: https://arxiv.org/abs/2205.14135
+  - title: >-
+      FlashAttention — Fast and Memory-Efficient Exact Attention with
+      IO-Awareness
+    url: 'https://arxiv.org/abs/2205.14135'
     type: primary
 ---
 
-Occupancy 决定一个 SM 上能同时保留多少个活跃 warp，能帮助隐藏延迟，但实际速度还取决于计算和访存。比如把每线程寄存器从 64 增到 128，能驻留的 warp 会变少；如果多用寄存器因此省了很多 HBM 访问，整体仍可能更快。判断时我会先看 GPU 有没有工作，再进 kernel 查资源和吞吐。
+## 可以这样回答
+
+Occupancy 决定一个 SM 上能同时保留多少个活跃 warp，能帮助隐藏延迟，但实际速度还取决于计算和访存。比如把每线程寄存器从 64 增到 128，能驻留的 warp 会变少；如果多用寄存器因此省了很多 HBM 访问，整体仍可能更快。判断时我会先看 GPU 有没有工作，再进 kernel 查资源和 throughput。
+
+训练和推理里也会碰到这个问题：FlashAttention 的 occupancy 可能不高，TP 之后的小 kernel 也可能填不满 GPU。集合通信造成的空转见 `nvidia-nccl-allreduce`，这题关注 kernel 内部的执行。
+
+## 技术备查
+
+Occupancy 决定一个 SM 上能同时保留多少个活跃 warp，能帮助隐藏延迟，但实际速度还取决于计算和访存。比如把每线程寄存器从 64 增到 128，能驻留的 warp 会变少；如果多用寄存器因此省了很多 HBM 访问，整体仍可能更快。判断时我会先看 GPU 有没有工作，再进 kernel 查资源和 throughput。
 
 训练和推理里也会碰到这个问题：FlashAttention 的 occupancy 可能不高，TP 之后的小 kernel 也可能填不满 GPU。集合通信造成的空转见 `nvidia-nccl-allreduce`，这题关注 kernel 内部的执行。
 
@@ -50,20 +64,20 @@ Occupancy 决定一个 SM 上能同时保留多少个活跃 warp，能帮助隐�
 
 进入 kernel 后，我会按下面的顺序核对：
 
-1. 先看 Speed of Light 里的 SM 与 Memory 吞吐。哪边先到 70% 以上，就先查那边的瓶颈；两边都低时，再查 occupancy、指令调度，或是否根本没用上 Tensor Core。
+1. 先看 Speed of Light 里的 SM 与 Memory throughput。哪边先到 70% 以上，就先查那边的瓶颈；两边都低时，再查 occupancy、指令调度，或是否根本没用上 Tensor Core。
 2. 再比较 Theoretical 和 Achieved Occupancy。理论值低，先查寄存器和 shared memory 预算；实测明显低于理论值，再查 barrier 等待、block 数不足，或 decode 单步 grid 太小。
-3. 检查 Registers Per Thread、Local Memory 和 Spill Stores。有 spill 就先尝试降低寄存器压力，再测是否改善等待和吞吐。
+3. 检查 Registers Per Thread、Local Memory 和 Spill Stores。有 spill 就先尝试降低寄存器压力，再测是否改善等待和 throughput。
 4. 用 Warp Stall Reason 区分 long scoreboard 的内存等待、short scoreboard 的管道等待，以及 MIO、barrier、not selected。decode 读 KV 常主要等内存，这时优先比较 GQA 和 cache 量化。
 5. 最后看 Tensor Core 利用率和 L1/L2 hit。MMA 没发出来时查 tile 形状、dtype、alignment，单调 occupancy 不能修复这些问题。
 
-用 Roofline 或 SOL 分析时，都要先确认主要受计算还是内存限制，再调整资源。比如 occupancy 从 40% 提到 70%，还要检查吞吐是否提高，才能说明这次调整有用。
+用 Roofline 或 SOL 分析时，都要先确认主要受计算还是内存限制，再调整资源。比如 occupancy 从 40% 提到 70%，还要检查 throughput 是否提高，才能说明这次调整有用。
 
 Grid 太小是 serving decode 的常见坑：batch 小、query 长度 1，活跃 warp 填不满 GPU。FlashDecoding 沿 KV 切开，就是在造 occupancy。这与训练或 prefill 的大 GEMM 不同，调优时应分别测量。
 
 ## 追问
 
 **Occupancy 100% 一定最快？**
-不一定。少用寄存器可能减少缓存、增加指令。有的核 occupancy 只有 30%，SOL 内存吞吐却已达 85%，此时主要受带宽限制。
+不一定。少用寄存器可能减少缓存、增加指令。有的核 occupancy 只有 30%，SOL 内存 throughput 却已达 85%，此时主要受带宽限制。
 **Shared memory 加大为什么变慢？**
 因为每个 block 占用更多 SRAM，同一 SM 能驻留的 block 就变少，occupancy 随之下降。但像 FA 那样用更大 tile 减少访存，仍可能获得净收益，要结合 SOL 看。
 **和 CUDA graph / 启动开销？**

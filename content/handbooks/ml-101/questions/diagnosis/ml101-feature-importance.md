@@ -3,18 +3,20 @@ id: ml101-feature-importance
 section: diagnosis
 order: 2
 level: A
-title: "树的特征重要性和置换重要性有什么区别？"
-quick: "树的不纯度重要性累加训练时各特征带来的分裂收益，速度快，但偏爱可选切分多的特征，也可能反映过拟合。置换重要性打乱某列再测指标下降，能在独立数据上衡量当前模型对它的依赖；相关特征会让解释更复杂，两者都不证明因果。"
+title: 树的特征重要性和置换重要性有什么区别？
+quick: >-
+  树的不纯度重要性累加训练时各特征带来的分裂收益，速度快，但偏爱可选切分多的特征，也可能反映
+  overfitting。置换重要性打乱某列再测指标下降，能在独立数据上衡量当前模型对它的依赖；相关特征会让解释更复杂，两者都不证明因果。
 tags:
   - Machine Learning
   - diagnosis
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Permutation feature importance"
-    url: https://scikit-learn.org/stable/modules/permutation_importance.html
+  - title: 'scikit-learn: Permutation feature importance'
+    url: 'https://scikit-learn.org/stable/modules/permutation_importance.html'
     type: primary
 ---
 
@@ -24,7 +26,7 @@ sources:
 
 置换时先记录原始指标，再多次随机打乱一列，保持模型不变，比较平均下降及波动。选择的指标也会影响重要性，针对少数类任务可以用相应指标。
 
-若收入与资产高度相关，打乱其中一列时模型仍能从另一列取得类似信息，单列重要性可能偏低。可以结合特征组置换和重新训练消融理解，但这些回答的仍是模型和当前数据上的依赖关系。
+若收入与资产高度相关，打乱其中一列时模型仍能从另一列取得类似信息，单列重要性可能偏低。可以结合特征组置换和重新训练 ablation 理解，但这些回答的仍是模型和当前数据上的依赖关系。
 
 ## 面试追问
 

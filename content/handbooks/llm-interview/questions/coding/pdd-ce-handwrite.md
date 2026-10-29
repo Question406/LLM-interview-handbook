@@ -3,29 +3,34 @@ id: pdd-ce-handwrite
 section: coding
 order: 181
 level: A
-title: 拼多多应用开发：如何手写交叉熵，数值上要防什么？
-quick: "对 logits 做 log-softmax，再按目标 token gather 取负。先 softmax 再 $\\log$ 会下溢，所以用 `logsumexp` 或 `log_softmax`；padding 位置 mask 掉，再按有效 token 平均。"
+title: 拼多多应用开发：如何手写 cross entropy，数值上要防什么？
+quick: >-
+  对 logits 做 log-softmax，再按目标 token gather 取负。先 softmax 再 $\log$ 会下溢，所以用
+  `logsumexp` 或 `log_softmax`；padding 位置 mask 掉，再按有效 token 平均。
 tags:
   - PDD
   - Cross Entropy
   - Coding
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-27'
 sources:
   - title: 拼多多大模型应用开发一面凉经
-    url: https://www.nowcoder.com/feed/main/detail/f87fcee060ea404ba99a20245f746e60
+    url: 'https://www.nowcoder.com/feed/main/detail/f87fcee060ea404ba99a20245f746e60'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-实现 `cross_entropy(logits,target,ignore_index=-100)`，计算多分类任务的平均交叉熵，不直接调用封装好的交叉熵损失。面经只披露“手写交叉熵”，以下接口为手册重构练习约定。
+实现 `cross_entropy(logits,target,ignore_index=-100)`，计算多分类任务的平均 cross entropy，不直接调用封装好的 cross entropy loss。面经只披露“手写 cross entropy”，以下接口为手册重构练习约定。
+
+### 接口、输入与输出要求
 
 `logits` 是有限浮点 PyTorch 张量 `[N,V]`，`target` 是同设备的整数张量 `[N]`。N、V 为正；非忽略标签在 `[0,V)`，本练习的 `ignore_index` 是负整数，默认 -100。至少存在一条非忽略样本。
 
-对每条非忽略样本 i，损失定义为 `-log(softmax(logits[i])[target[i]])`；返回这些损失的算术平均值，结果为可反向传播的标量张量。忽略样本不计入分子或分母。本接口的标签已经对齐，不做语言模型的时间移位。要求较大绝对值的有限 logits 下仍得到数值稳定的结果。
+对每条非忽略样本 i，损失定义为 `-log(softmax(logits[i])[target[i]])`；返回这些损失的算术平均值，结果为可 backpropagation 的标量张量。忽略样本不计入分子或分母。本接口的标签已经对齐，不做语言模型的时间移位。要求较大绝对值的有限 logits 下仍得到数值稳定的结果。
 
 ### 示例
 
@@ -39,9 +44,9 @@ sources:
 
 ## 解题思路与参考答案
 
-交叉熵要在 log 域里算：每行 logits 先减最大值，再算 `logsumexp`，loss 就是 $-z_y+\mathrm{logsumexp}(z)$，pad 位置 mask 掉之后按有效 token 平均。
+cross entropy 要在 log 域里算：每行 logits 先减最大值，再算 `logsumexp`，loss 就是 $-z_y+\mathrm{logsumexp}(z)$，pad 位置 mask 掉之后按有效 token 平均。
 
-这是拼多多大模型应用开发一面的题，来自牛客候选人原帖，可信度 A，面试时间原帖没写，原话是**“手写交叉熵”**。最常见的错是先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。所以一定要在 log 域里做，减行最大值再 `logsumexp`。同一面的 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
+这是拼多多大模型应用开发一面的题，来自牛客候选人原帖，可信度 A，面试时间原帖没写，原话是**“手写 cross entropy”**。最常见的错是先 `softmax` 再 `log`：概率下溢成 0，$log0\to-\infty$。所以一定要在 log 域里做，减行最大值再 `logsumexp`。同一面的 Attention 见 `pdd-attention-handwrite`。序列任务还要用 `ignore_index` 丢掉 pad，见 `baidu-qwen2-sft-implementation`。
 
 ## 公式：NLL = $-z_y + \mathrm{logsumexp}(z)$
 
@@ -52,10 +57,11 @@ $$
 \mathrm{logsumexp}(z)=\max_j z_j+\log\sum_j e^{z_j-\max z}.
 $$
 
-减 max 不改变 softmax，但能让指数落在 $(0,1]$。label smoothing 时目标不再是 one-hot，变成对平滑分布的交叉熵。均匀初始化时 $\ell\approx\log V$，十万词表约 $11.5$，可以拿来判断初始 loss 离不离谱。
+减 max 不改变 softmax，但能让指数落在 $(0,1]$。label smoothing 时目标不再是 one-hot，变成对平滑分布的 cross entropy。均匀初始化时 $\ell\approx\log V$，十万 vocabulary 约 $11.5$，可以拿来判断初始 loss 离不离谱。
 
 ```python
 import torch
+
 
 def cross_entropy(logits, target, ignore_index=-100):
     # logits: [N, V], target: [N]
@@ -79,21 +85,24 @@ fp16 下 `exp` 仍可能溢出，减过 max 之后通常安全，极端值可以
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-两类 logits 全零时，单样本交叉熵应是 log(2)。把被忽略样本设成强烈偏向错误类别，仍不应影响 loss；全被忽略的输入需要另行约定返回值，当前 mean 会得到 NaN。
+两类 logits 全零时，单样本 cross entropy 应是 log(2)。把被忽略样本设成强烈偏向错误类别，仍不应影响 loss；全被忽略的输入需要另行约定返回值，当前 mean 会得到 NaN。
 
 ```python
 import math
-logits = torch.tensor([[0., 0.], [100., -100.]])
+
+logits = torch.tensor([[0.0, 0.0], [100.0, -100.0]])
 target = torch.tensor([0, -100])
 torch.testing.assert_close(cross_entropy(logits, target), torch.tensor(math.log(2)))
-torch.testing.assert_close(cross_entropy(logits[:1] + 1000, target[:1]), torch.tensor(math.log(2)))
+torch.testing.assert_close(
+    cross_entropy(logits[:1] + 1000, target[:1]), torch.tensor(math.log(2))
+)
 print("simple tests passed")
 ```
 
 ## 追问
 
 **起步 loss 多少算正常？**
-均匀分布约 $\log V$，7 万词表 $\approx 11.2$。如果一开始就是 0.1，多半是 label 全是 ignore，或者 logits 泄漏了答案。
+均匀分布约 $\log V$，7 万 vocabulary $\approx 11.2$。如果一开始就是 0.1，多半是 label 全是 ignore，或者 logits 泄漏了答案。
 
 **为什么要 clamp target？**
 ignore 的下标不能进 `gather`；clamp 之后再靠 mask 把这些 NLL 丢掉。
@@ -102,7 +111,7 @@ ignore 的下标不能进 `gather`；clamp 之后再靠 mask 把这些 NLL 丢�
 $q=(1-\varepsilon)e_y+\varepsilon/V$，loss 是 $-q\cdot\log\pi$，要对整个分布求和，只取 $y$ 那一列就错了。
 
 **和 KL 什么关系？**
-对 one-hot 的交叉熵损失（CE）等于相对均匀基线的 KL 差一个常数。平滑之后就是对 $q$ 的 CE。
+对 one-hot 的 cross entropy loss（CE）等于相对均匀基线的 KL 差一个常数。平滑之后就是对 $q$ 的 CE。
 
 **分母用 batch 还是有效 token？**
 有效 token。用 batch 的话，pad 多的 batch，loss 会被人为缩小。

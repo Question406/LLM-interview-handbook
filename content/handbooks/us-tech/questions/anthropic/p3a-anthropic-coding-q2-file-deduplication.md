@@ -3,8 +3,8 @@ id: p3a-anthropic-coding-q2-file-deduplication
 section: anthropic
 order: 600
 level: A
-title: "Anthropic：文件去重：分层筛选、I/O 与分布式扩展"
-quick: "我会先按文件大小筛一遍，再对同大小的候选流式计算内容哈希，最后逐字节确认哈希相同的文件。这样大小唯一的文件不用读内容，也能排除哈希碰撞造成的误判。"
+title: Anthropic：文件去重：分层筛选、I/O 与分布式扩展
+quick: 我会先按文件大小筛一遍，再对同大小的候选流式计算内容哈希，最后逐字节确认哈希相同的文件。这样大小唯一的文件不用读内容，也能排除哈希碰撞造成的误判。
 companies:
   - anthropic
 tags:
@@ -16,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · coding-q2-file-deduplication"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/coding-q2-file-deduplication
+  - title: 1Point3Acres · Anthropic · coding-q2-file-deduplication
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/coding-q2-file-deduplication
     type: secondary
 ---
 
@@ -49,7 +50,7 @@ duplicates(root)   -> [[".../a", ".../b"], [".../d", ".../e"]]
 
 遍历一个目录树，找出所有内容完全相同的文件，按组返回。写完之后面试官会追问哈希怎么选、I/O 怎么省、文件量很大时怎么扩展到多机。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -63,7 +64,7 @@ duplicates(root)   -> [[".../a", ".../b"], [".../d", ".../e"]]
 
 性能上要分清瓶颈：小文件多时，开销主要在打开文件和读元数据；大文件多时，瓶颈是磁盘读带宽。所以并行度不能无限加，超过磁盘能承受的并发后只会更慢。
 
-动手前要和面试官确认这些边界：
+动手前要和面试官确认这些 edge cases：
 
 - 符号链接跟不跟随（这份练习不跟随，避免目录环和同一文件被数两次）；
 - 硬链接指向同一个 inode，算不算重复（这份练习会把它们报成重复；要排除可以按 `(st_dev, st_ino)` 去重）；
@@ -131,7 +132,9 @@ def group_by_size(root):
     """递归收集普通文件，按字节数分组；不跟随符号链接（目录和文件都跳过）。"""
     by_size = defaultdict(list)
     for directory, subdirs, files in os.walk(root, followlinks=False):
-        subdirs[:] = [name for name in subdirs if not (Path(directory) / name).is_symlink()]
+        subdirs[:] = [
+            name for name in subdirs if not (Path(directory) / name).is_symlink()
+        ]
         for name in files:
             path = Path(directory) / name
             if path.is_file() and not path.is_symlink():
@@ -162,7 +165,9 @@ def duplicates(root):
         for path in paths:
             by_hash[sha256_of(path)].append(path)
         for candidates in by_hash.values():
-            result.extend(group for group in split_by_bytes(candidates) if len(group) > 1)
+            result.extend(
+                group for group in split_by_bytes(candidates) if len(group) > 1
+            )
     return sorted(result)
 ```
 
@@ -174,7 +179,7 @@ def duplicates(root):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -200,7 +205,9 @@ with tempfile.TemporaryDirectory() as directory:
     (root / "sub").mkdir()
     (root / "sub" / "f").write_bytes(b"xyz")
     (root / "sub_link").symlink_to(root / "sub")
-    names = sorted(sorted(Path(path).name for path in group) for group in duplicates(directory))
+    names = sorted(
+        sorted(Path(path).name for path in group) for group in duplicates(directory)
+    )
     assert names == [["a", "b"], ["c", "f"], ["d", "e"]]
 
 # 逐块比较：差异落在第二块里也能发现

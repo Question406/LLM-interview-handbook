@@ -4,20 +4,22 @@ section: sliding-window
 order: 4
 level: S
 title: LC 76 · 最小覆盖子串
-quick: "滑动窗口加计数：`need` 记 `t` 里每个字符要几次，右端扩到 `valid` 达到 `required`，说明所有字符都够了，再尽量收缩左端并记录最短窗口。每个字符只进出窗口一次，时间 $O(|s|+|t|)$。"
+quick: >-
+  滑动窗口加计数：`need` 记 `t` 里每个字符要几次，右端扩到 `valid` 达到
+  `required`，说明所有字符都够了，再尽量收缩左端并记录最短窗口。每个字符只进出窗口一次，时间 $O(|s|+|t|)$。
 tags:
   - Sliding Window
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 76. 最小覆盖子串
-    url: https://leetcode.cn/problems/minimum-window-substring/
+    url: 'https://leetcode.cn/problems/minimum-window-substring/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -113,7 +115,7 @@ print("simple tests passed")
 
 时间 $O(|s|+|t|)$，左右指针各走一遍。空间 $O(\Sigma)$。
 
-## 边界
+## Edge Cases
 
 `t` 比 `s` 长，不可能覆盖，返回空串。
 
@@ -128,6 +130,7 @@ print("simple tests passed")
 
 ```python
 from collections import Counter
+
 
 def anyWindow(s, t):
     need, window = Counter(t), Counter()
@@ -146,6 +149,7 @@ def anyWindow(s, t):
 
 ```python
 from collections import Counter
+
 
 def countCovering(s, t):
     need, window = Counter(t), Counter()

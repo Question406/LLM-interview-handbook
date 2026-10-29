@@ -4,7 +4,9 @@ section: graph-dfs
 order: 3
 level: A
 title: LC 1466 · 重新规划路线
-quick: "把有向边当无向边建树，原方向记成本 $1$、反向记成本 $0$。从城市 $0$ 往外遍历，走到的每条成本为 $1$ 的边都背离 $0$，必须反转，累加起来就是答案。时间 $O(n)$，额外空间 $O(n)$。"
+quick: >-
+  把有向边当无向边建树，原方向记成本 $1$、反向记成本 $0$。从城市 $0$ 往外遍历，走到的每条成本为 $1$ 的边都背离
+  $0$，必须反转，累加起来就是答案。时间 $O(n)$，额外空间 $O(n)$。
 tags:
   - Graph
   - DFS
@@ -12,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1466. Reorder Routes to Make All Paths Lead to the City Zero
-    url: https://leetcode.com/problems/reorder-routes-to-make-all-paths-lead-to-the-city-zero/
+    url: >-
+      https://leetcode.com/problems/reorder-routes-to-make-all-paths-lead-to-the-city-zero/
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -109,7 +112,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每条边两个方向各看一次。额外空间 $O(n)$，存邻接表和栈。
 
-## 边界
+## Edge Cases
 
 所有边本来就指向 $0$ 时，答案是 $0$。
 

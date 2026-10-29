@@ -3,23 +3,25 @@ id: ml101-iid
 section: generalization
 order: 5
 level: A
-title: "独立同分布假设是什么？实际数据哪里会违反？"
-quick: "独立同分布假设要求样本彼此独立，并来自同一个分布。用户重复记录、相邻时间点和同一设备会打破独立性；季节、产品或采样方式改变会打破同分布。切分与评测必须模拟上线真正遇到的数据。"
+title: 独立同分布假设是什么？实际数据哪里会违反？
+quick: >-
+  独立同分布假设要求样本彼此独立，并来自同一个分布。用户重复记录、相邻时间点和同一设备会打破独立性；季节、产品或 sampling
+  方式改变会打破同分布。切分与评测必须模拟上线真正遇到的数据。
 tags:
   - ML101
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Cross-validation"
-    url: https://scikit-learn.org/stable/modules/cross_validation.html
+  - title: 'scikit-learn: Cross-validation'
+    url: 'https://scikit-learn.org/stable/modules/cross_validation.html'
     type: primary
 ---
 
 独立同分布，也就是 i.i.d.，是说样本之间没有额外依赖，而且都来自同一数据分布。很多训练与评估方法靠这个前提理解平均误差，但实际数据经常带时间和群组结构。scikit-learn 建议已知存在时间依赖时用时间切分，有个体群组时用分组切分。[scikit-learn: Cross-validation](https://scikit-learn.org/stable/modules/cross_validation.html)。
 
-独立性关注样本之间的关系：同一用户的连续行为可能共享偏好，同一台设备的多个读数可能共享状态。同分布关注采样机制是否一致：冬季和夏季的购买模式、新旧版本的产品入口，都可能产生不同的输入或标签分布。把数据打乱，只改变排列，不会消除这些关系。
+独立性关注样本之间的关系：同一用户的连续行为可能共享偏好，同一台设备的多个读数可能共享状态。同分布关注 sampling 机制是否一致：冬季和夏季的购买模式、新旧版本的产品入口，都可能产生不同的输入或标签分布。把数据打乱，只改变排列，不会消除这些关系。
 
 比如要预测新用户是否流失，随机按行切分会让同一用户出现在训练和测试两边。模型可能认出了用户，测试分数就无法代表新用户表现。应该按用户分组，让测试用户完全没有进入训练；如果目标是预测已有用户下个月的行为，还要用符合时间顺序的切分，并确认所有特征当时可得。
 

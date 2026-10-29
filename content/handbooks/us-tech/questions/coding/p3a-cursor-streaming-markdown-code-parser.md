@@ -3,8 +3,10 @@ id: p3a-cursor-streaming-markdown-code-parser
 section: coding
 order: 809
 level: A
-title: "Cursor：跨 chunk 的 Markdown Code Parser"
-quick: "用普通文本、行内代码和代码块三种状态解析，并把跨 chunk 的反引号先攒起来，等连续长度确定后再决定如何切换。这样分隔符切在哪都不影响结果。正文统一 HTML 转义，流结束时调用 finish，确定末尾反引号并闭合代码标签。"
+title: Cursor：跨 chunk 的 Markdown Code Parser
+quick: >-
+  用普通文本、行内代码和代码块三种状态解析，并把跨 chunk 的反引号先攒起来，等连续长度确定后再决定如何切换。这样分隔符切在哪都不影响结果。正文统一
+  HTML 转义，流结束时调用 finish，确定末尾反引号并闭合代码标签。
 companies:
   - ai-labs
 tags:
@@ -15,16 +17,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Cursor：跨 chunk 的 Markdown Code Parser"
-    url: https://www.1point3acres.com/interview/problems/34db21b4-effb-505b-8bc3-d02502828352
+  - title: 1Point3Acres · Cursor：跨 chunk 的 Markdown Code Parser
+    url: >-
+      https://www.1point3acres.com/interview/problems/34db21b4-effb-505b-8bc3-d02502828352
     type: secondary
 ---
 
 ## 题目描述
 
-实现一个分块输入的简化 Markdown 解析器，将行内代码和代码块转换为 HTML。反引号序列可能在任意 chunk 边界被拆开，因此分块方式不能改变最终输出；普通文本必须安全转义。
+实现一个分块输入的简化 Markdown 解析器，将行内代码和代码块转换为 HTML。反引号序列可能在任意 chunk boundaries 被拆开，因此分块方式不能改变最终输出；普通文本必须安全转义。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
@@ -49,7 +52,7 @@ feed("`unclosed") + finish()   -> "<code>unclosed</code>"
 
 我会用状态机做增量解析，并暂存末尾尚未确定长度的反引号。LLM 输出逐块到达，单反引号的行内代码和三反引号的代码块都可能跨 chunk；每次只输出已经确定的 HTML，才能保证切块方式不影响结果。
 
-> 来源：一亩三分地题目详情页（2026-10-18 读取），题面是网站从面经整理的，没有逐条核对原帖；网站收录不等于公司官方确认。下面的接口、约束和测试是手册补的练习约定。
+> 来源：一亩三分地题目详情页（2026-10-18 读取），题面是网站从面经整理的；网站收录不等于公司官方确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 为什么分隔符要延迟解释
 
@@ -161,7 +164,7 @@ class Markdown:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -169,6 +172,7 @@ class Markdown:
 def parse(chunks):
     parser = Markdown()
     return "".join(parser.feed(chunk) for chunk in chunks) + parser.finish()
+
 
 # 行内代码：在每个位置切成两块，结果都一样
 text = "a`<x>`b"

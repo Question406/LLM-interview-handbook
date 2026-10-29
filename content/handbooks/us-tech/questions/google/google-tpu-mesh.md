@@ -4,27 +4,39 @@ section: google
 order: 7
 level: S
 title: Google：TPU mesh / 把 batch 和模型维切到芯片上，和 GPU 三维并行怎么类比
-quick: "JAX mesh 给芯片定义逻辑轴，再用 PartitionSpec 声明数组怎样切：batch 可沿 data 轴，头或隐层维可沿 model 轴。编译器根据切分安排集合通信，物理连接则由 ICI 提供。它和 GPU 的 TP$\\times$PP$\\times$DP 都是在切参数、激活和状态，轴宽应按实际拓扑选择。"
+quick: >-
+  JAX mesh 给芯片定义逻辑轴，再用 PartitionSpec 声明数组怎样切：batch 可沿 data 轴，头或隐层维可沿 model
+  轴。编译器根据切分安排集合通信，物理连接则由 ICI 提供。它和 GPU 的 TP$\times$PP$\times$DP
+  都是在切参数、激活和状态，轴宽应按实际拓扑选择。
 tags:
   - Google
   - TPU
   - Mesh
   - Parallelism
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: PaLM — Scaling Language Modeling with Pathways
-    url: https://arxiv.org/abs/2204.02311
+    url: 'https://arxiv.org/abs/2204.02311'
     type: primary
   - title: GSPMD — General and Scalable Parallelization for ML Computation Graphs
-    url: https://arxiv.org/abs/2105.04663
+    url: 'https://arxiv.org/abs/2105.04663'
     type: primary
   - title: Cloud TPU System Architecture
-    url: https://cloud.google.com/tpu/docs/system-architecture-tpu-vm
+    url: 'https://cloud.google.com/tpu/docs/system-architecture-tpu-vm'
     type: secondary
 ---
+
+## 可以这样回答
+
+我会先用 mesh 把芯片排成逻辑轴，再把 batch、模型宽度等张量维映射到这些轴，并让频繁通信的轴对齐更好的物理互连。比如 batch 沿 data 切、权重输出通道沿 model 切，前者分摊样本，后者分摊一层的参数和计算。PaLM 跨 Pod 的做法见 `google-palm-pathways`，这里先讨论单 Pod。
+
+TPU Pod 里芯片用高速互连连成环面（v3/v4 常见 2D，更新代有 3D）。和 GPU 集群「盒内 NVLink、盒间 InfiniBand」那种两级带宽不同，Pod 内部更接近一张比较匀的网。所以 Google 代码里先 `Mesh(devices, axis_names)`，再给数组贴 `PartitionSpec`。
+
+## 技术备查
 
 我会先用 mesh 把芯片排成逻辑轴，再把 batch、模型宽度等张量维映射到这些轴，并让频繁通信的轴对齐更好的物理互连。比如 batch 沿 data 切、权重输出通道沿 model 切，前者分摊样本，后者分摊一层的参数和计算。PaLM 跨 Pod 的做法见 `google-palm-pathways`，这里先讨论单 Pod。
 
@@ -39,7 +51,7 @@ mesh = Mesh(devices.reshape(D, M), ("data", "model"))
 ```
 
 - **data 轴**：切 batch。每张芯片一份微批，反向对梯度 all-reduce（或 reduce-scatter）。对应 GPU 的 **DP / FSDP 的样本维**。
-- **model 轴**：切层内矩阵的列或行、以及注意力 head。对应 GPU 的 **张量并行 (TP)**。每层要在 model 轴上做 all-gather / all-reduce，延迟敏感，必须映射到 ICI 跳数少的方向。
+- **model 轴**：切层内矩阵的列或行、以及 attention head。对应 GPU 的 **张量并行 (TP)**。每层要在 model 轴上做 all-gather / all-reduce，延迟敏感，必须映射到 ICI 跳数少的方向。
 
 第三轴常见两种：再切一层 FSDP（参数分片、激活仍按 data），或把 **流水线** 做成 `pp` 轴（层分成 stage）。TPU 上不一定先上 PP：单 Pod 芯片数够、ICI 够匀时，2D 的 data$\times$model 往往更干净。PaLM 是 Pod 内 data+model，跨两个 Pod 再加一路 DP，而不是 Megatron 式很深的 PP。
 

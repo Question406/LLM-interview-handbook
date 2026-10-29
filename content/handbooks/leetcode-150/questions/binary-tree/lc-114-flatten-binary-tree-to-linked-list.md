@@ -4,7 +4,9 @@ section: binary-tree
 order: 8
 level: A
 title: LC 114 · 二叉树展开为链表
-quick: "按前序把树原地摊成一条右链，所有 `left` 置空。后序递归：先摊平左右子树，把左链接到根的右边，再把原来的右链接到左链尾部。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  按前序把树原地摊成一条右链，所有 `left` 置空。后序递归：先摊平左右子树，把左链接到根的右边，再把原来的右链接到左链尾部。时间 $O(n)$，额外空间
+  $O(h)$。
 tags:
   - Tree
   - Linked List
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 114. 二叉树展开为链表
-    url: https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/
+    url: 'https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -122,10 +124,10 @@ if __name__ == "__main__":
 
 ```python
 root = TreeNode(
-        1,
-        TreeNode(2, TreeNode(3), TreeNode(4)),
-        TreeNode(5, None, TreeNode(6)),
-    )
+    1,
+    TreeNode(2, TreeNode(3), TreeNode(4)),
+    TreeNode(5, None, TreeNode(6)),
+)
 flatten(root)
 assert right_chain(root) == [1, 2, 3, 4, 5, 6]
 empty = None
@@ -140,7 +142,7 @@ print("simple tests passed")
 
 时间 $O(n)$。递归版找左链尾会重复走一些节点，但每条边只走常数次，最坏仍是 $O(n)$。额外空间是递归栈 $O(h)$；Morris 可以做到 $O(1)$。
 
-## 边界
+## Edge Cases
 
 空树直接返回。只有右链的树本来就是答案，左指针全空。只有左链的树，整段旋到 `right` 上，`left` 清空。
 

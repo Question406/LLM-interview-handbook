@@ -4,20 +4,22 @@ section: linked-list
 order: 8
 level: A
 title: LC 82 · 删除排序链表中的重复元素 II
-quick: "用一个从哑结点出发的前驱，看它后面两个节点是否同值，同值就把这个值的整段节点都跳过，不同就前驱前进一步。重复的值一个不留，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  用一个从哑结点出发的前驱，看它后面两个节点是否同值，同值就把这个值的整段节点都跳过，不同就前驱前进一步。重复的值一个不留，时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Linked List
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 82. 删除排序链表中的重复元素 II
-    url: https://leetcode.cn/problems/remove-duplicates-from-sorted-list-ii/
+    url: 'https://leetcode.cn/problems/remove-duplicates-from-sorted-list-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -126,7 +128,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个节点检查一次、最多摘一次。
 
-## 边界
+## Edge Cases
 
 - 全部重复时整段跳过，返回空。
 - 头或尾是重复段时，哑结点保证能删头；尾段删完，`pred.next` 一路接到 `None`。

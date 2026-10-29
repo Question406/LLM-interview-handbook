@@ -3,8 +3,10 @@ id: p3a-anthropic-oa-bank-system
 section: anthropic
 order: 610
 level: A
-title: "Anthropic：银行 OA：转账冻结、接收与账号合并"
-quick: "我会在发起转账时冻结资金，并让每笔转账只能结算一次。账户内部用独立实例 id 识别，避免同名重建接走旧转账；合并时先取消并退回涉及被合并账户的待接收转账，再合并余额。"
+title: Anthropic：银行 OA：转账冻结、接收与账号合并
+quick: >-
+  我会在发起转账时冻结资金，并让每笔转账只能结算一次。账户内部用独立实例 id
+  识别，避免同名重建接走旧转账；合并时先取消并退回涉及被合并账户的待接收转账，再合并余额。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · oa-bank-system"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-bank-system
+  - title: 1Point3Acres · Anthropic · oa-bank-system
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-bank-system
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现带账户合并、待接受转账和超时退款的银行系统。每次操作都必须遵守下述账户身份和资金规则。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -36,7 +39,7 @@ sources:
 - `deposit(name, amount, now)`、`withdraw(name, amount, now) -> bool`：金额是非负整数；余额不足时取款返回 `False`，不改动余额。
 - `transfer(source, target, amount, now, ttl) -> int | None`：立即从发起方冻结 `amount`，返回转账 id；余额不足返回 `None`。`ttl` 必须为正，到 `now + ttl` 时还没被接收就退回。
 - `accept(target, transfer_id, now) -> bool`：只有转账指向的那个账户实例能接收，且转账必须还在 pending；恰好到期的时刻已经退回，接收失败。
-- `merge(target, source, now)`：先取消并退回所有涉及 `source` 的 pending 转账，再把 `source` 的余额并入 `target`，删除 `source` 这个名字。这是练习自己定的规则，不是在猜原题的合并语义。
+- `merge(target, source, now)`：先取消并退回所有涉及 `source` 的 pending 转账，再把 `source` 的余额并入 `target`，删除 `source` 这个名字。这是练习自己定的规则。
 - 余额始终是非负整数，操作数不超过 $10^4$。
 
 ### 输入输出示例
@@ -56,7 +59,7 @@ accept("b", 2, 6)                    -> False  # 新的 b 不是转账 2 的接�
 
 实现一个银行系统：开户、存款、取款，然后加入两步转账（发起方先发起，接收方在期限内接收），最后加入账户合并，并处理合并后同名账户被重新创建的情况。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -75,7 +78,7 @@ accept("b", 2, 6)                    -> False  # 新的 b 不是转账 2 的接�
 - `deposit(name, amount, now)`、`withdraw(name, amount, now) -> bool`：金额是非负整数；余额不足时取款返回 `False`，不改动余额。
 - `transfer(source, target, amount, now, ttl) -> int | None`：立即从发起方冻结 `amount`，返回转账 id；余额不足返回 `None`。`ttl` 必须为正，到 `now + ttl` 时还没被接收就退回。
 - `accept(target, transfer_id, now) -> bool`：只有转账指向的那个账户实例能接收，且转账必须还在 pending；恰好到期的时刻已经退回，接收失败。
-- `merge(target, source, now)`：先取消并退回所有涉及 `source` 的 pending 转账，再把 `source` 的余额并入 `target`，删除 `source` 这个名字。这是练习自己定的规则，不是在猜原题的合并语义。
+- `merge(target, source, now)`：先取消并退回所有涉及 `source` 的 pending 转账，再把 `source` 的余额并入 `target`，删除 `source` 这个名字。这是练习自己定的规则。
 - 余额始终是非负整数，操作数不超过 $10^4$。
 
 ### 输入输出示例
@@ -105,7 +108,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Transfer:
-    source: int       # 账户实例 id，不是账户名
+    source: int  # 账户实例 id，不是账户名
     target: int
     amount: int
     expires_at: int
@@ -121,8 +124,8 @@ class Bank:
 
     def __init__(self):
         self.account_ids = {}  # 账户名 -> 当前实例 id
-        self.balances = {}     # 实例 id -> 可用余额（不含冻结中的转账）
-        self.transfers = {}    # 转账 id -> Transfer
+        self.balances = {}  # 实例 id -> 可用余额（不含冻结中的转账）
+        self.transfers = {}  # 转账 id -> Transfer
         self.next_account_id = 0
         self.next_transfer_id = 0
         self.time = float("-inf")
@@ -182,7 +185,9 @@ class Bank:
             return None
         self.balances[source_id] -= amount
         self.next_transfer_id += 1
-        self.transfers[self.next_transfer_id] = Transfer(source_id, target_id, amount, now + ttl)
+        self.transfers[self.next_transfer_id] = Transfer(
+            source_id, target_id, amount, now + ttl
+        )
         return self.next_transfer_id
 
     def accept(self, target, transfer_id, now):
@@ -205,7 +210,10 @@ class Bank:
         target_id = self.account_ids[target]
         source_id = self.account_ids[source]
         for transfer in self.transfers.values():
-            if transfer.state == "pending" and source_id in (transfer.source, transfer.target):
+            if transfer.state == "pending" and source_id in (
+                transfer.source,
+                transfer.target,
+            ):
                 self._refund(transfer, "cancelled")
         # 退款先回到 source，再随余额一起并入 target，冻结款不会丢也不会退两次
         self.balances[target_id] += self.balances[source_id]
@@ -221,13 +229,14 @@ class Bank:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 def balance(bank, name):
     return bank.balances[bank.account_ids[name]]
+
 
 bank = Bank()
 for name in ("a", "b", "c"):

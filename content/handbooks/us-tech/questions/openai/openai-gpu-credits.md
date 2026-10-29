@@ -4,25 +4,29 @@ section: openai
 order: 40
 level: S
 title: OpenAI：GPU credit，调用乱序也要按时间重放
-quick: "调用乱序时，我会只追加事件日志，查询再按时间戳重放，扣款优先花最早到期的额度。这样后来到达的早期事件也能影响历史查询；先确认区间端点和欠款规则，再实现对应版本。"
+quick: >-
+  调用乱序时，我会只追加事件日志，查询再按时间戳重放，扣款优先花最早到期的额度。这样后来到达的早期事件也能影响历史查询；先确认区间端点和欠款规则，再实现对应版本。
 tags:
   - 完整编程练习
   - OpenAI
   - Coding
   - Intervals
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: Targeting OpenAI SWE Roles, r/leetcode
-    url: https://www.reddit.com/r/leetcode/comments/1qlzflr/targeting_openai_swe_roles_insights_on_what_to/
+  - title: 'Targeting OpenAI SWE Roles, r/leetcode'
+    url: >-
+      https://www.reddit.com/r/leetcode/comments/1qlzflr/targeting_openai_swe_roles_insights_on_what_to/
     type: candidate-first-hand
-  - title: "Openai Tech Phone Screen: GPU Credit Calculator"
-    url: https://www.1point3acres.com/interview/thread/1098314
+  - title: 'Openai Tech Phone Screen: GPU Credit Calculator'
+    url: 'https://www.1point3acres.com/interview/thread/1098314'
     type: candidate-first-hand
-  - title: "FAANG-Coding-Interview-Questions, OpenAI bank"
-    url: https://github.com/ombharatiya/FAANG-Coding-Interview-Questions/blob/main/FAANG-Recent-Questions.md
+  - title: 'FAANG-Coding-Interview-Questions, OpenAI bank'
+    url: >-
+      https://github.com/ombharatiya/FAANG-Coding-Interview-Questions/blob/main/FAANG-Recent-Questions.md
     type: secondary
 ---
 
@@ -30,7 +34,9 @@ sources:
 
 实现带有效期的额度账本，支持乱序录入、按事件时间查询和透支债务。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Credits.add(credit_id,amount,start,duration)` 注册唯一编号的额度，有效期为闭区间 `[start,start+duration]`。`subtract(amount,timestamp)` 在该时刻消费，优先使用到期较早的有效额度，到期相同按 `credit_id` 字典序；不足部分形成债务，后续生效的新额度优先偿还债务。
 
@@ -50,7 +56,7 @@ balance(19)=None；balance(40)=5；balance(41)=4。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试。公开转述没给全的接口和边界由手册补齐。Python 3 标准库即可运行。
+> 下面的接口、约束和测试是手册补的练习约定。公开转述没给全的接口和 decision boundary 由手册补齐。Python 3 标准库即可运行。
 
 ### 题面、接口与约束
 
@@ -103,8 +109,9 @@ class Credits:
         if credit_id in self.credit_ids:
             raise ValueError(f"duplicate credit id {credit_id!r}")
         if amount < 0 or duration < 0:
-            raise ValueError("amount and duration must be non-negative, "
-                             f"got {amount} and {duration}")
+            raise ValueError(
+                f"amount and duration must be non-negative, got {amount} and {duration}"
+            )
         self._record(start, ("add", credit_id, amount, start + duration))
         self.credit_ids.add(credit_id)
 
@@ -155,7 +162,7 @@ class Credits:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -249,8 +256,7 @@ RANK = {"expire": 0, "add": 1, "use": 2}  # 同一时刻：先过期，再生效
 def replay(events, t):
     """events: (kind, timestamp, *payload)。返回时刻 t 的余额；某次扣款不够时返回 None。"""
     active = []  # [end, remaining, credit_id]
-    chosen = sorted((e for e in events if e[1] <= t),
-                    key=lambda e: (e[1], RANK[e[0]]))
+    chosen = sorted((e for e in events if e[1] <= t), key=lambda e: (e[1], RANK[e[0]]))
     for kind, _timestamp, *payload in chosen:
         if kind == "expire":
             credit_id = payload[0]

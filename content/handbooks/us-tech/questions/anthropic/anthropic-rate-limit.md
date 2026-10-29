@@ -4,7 +4,9 @@ section: anthropic
 order: 13
 level: A
 title: Anthropic：怎么给 API 设计 rate limiter（token 桶 / 滑动窗）？
-quick: "我会分别限制请求数和输入、输出 token：令牌桶允许短时突发，滑动窗口能避免整分边界的双倍突发，但状态更多。输出先预扣、结束再结算；分布式检查与扣减放进同一段 Redis 原子操作，存储故障时拒绝或按机器数缩额降级。"
+quick: >-
+  我会分别限制请求数和输入、输出 token：令牌桶允许短时突发，滑动窗口能避免 fixed-window endpoints
+  的双倍突发，但状态更多。输出先预扣、结束再结算；分布式检查与扣减放进同一段 Redis 原子操作，存储故障时拒绝或按机器数缩额降级。
 tags:
   - 完整编程练习
   - Anthropic
@@ -14,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Anthropic interview questions (IGotAnOffer)
-    url: https://igotanoffer.com/en/advice/anthropic-interview-questions
+    url: 'https://igotanoffer.com/en/advice/anthropic-interview-questions'
     type: secondary
   - title: Rate limits (Claude API)
-    url: https://docs.anthropic.com/en/api/rate-limits
+    url: 'https://docs.anthropic.com/en/api/rate-limits'
     type: primary
 ---
 
@@ -28,7 +30,7 @@ sources:
 
 实现一个同时受用户配额和平台总配额约束的 API 限流器。每个请求带用户、token 花费和时间，系统必须原子地决定是否放行，拒绝的请求不能消耗任意一方配额。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -54,7 +56,7 @@ allow("b", 1, 1) -> True
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试原题或官方测试，和 `xai-rate-limiter` 共用同一份程序。Python 3，只用标准库。
+> 下面的接口、约束和测试是手册补的练习约定，和 `xai-rate-limiter` 共用同一份程序。Python 3，只用标准库。
 
 ### 题面、接口与约束
 
@@ -96,14 +98,16 @@ class Limiter:
     def __init__(self, user_capacity, user_rate, global_capacity, global_rate):
         params = (user_capacity, user_rate, global_capacity, global_rate)
         if any(not math.isfinite(value) or value <= 0 for value in params):
-            raise ValueError(f"capacities and rates must be positive and finite, got {params}")
+            raise ValueError(
+                f"capacities and rates must be positive and finite, got {params}"
+            )
         self.user_capacity = user_capacity
         self.user_rate = user_rate
         self.global_capacity = global_capacity
         self.global_rate = global_rate
-        self.user_buckets = {}         # user -> (tokens, last_refill_time)
+        self.user_buckets = {}  # user -> (tokens, last_refill_time)
         self.global_tokens = global_capacity
-        self.last_time = None          # 上一次调用的 now，整个 limiter 共用
+        self.last_time = None  # 上一次调用的 now，整个 limiter 共用
         self.lock = Lock()
 
     def allow(self, user, cost, now):
@@ -117,11 +121,15 @@ class Limiter:
                 if now < self.last_time:
                     raise ValueError(f"time went backwards: {now} < {self.last_time}")
                 elapsed = now - self.last_time
-                self.global_tokens = min(self.global_capacity,
-                                         self.global_tokens + elapsed * self.global_rate)
+                self.global_tokens = min(
+                    self.global_capacity,
+                    self.global_tokens + elapsed * self.global_rate,
+                )
             self.last_time = now
             tokens, last_refill = self.user_buckets.get(user, (self.user_capacity, now))
-            tokens = min(self.user_capacity, tokens + (now - last_refill) * self.user_rate)
+            tokens = min(
+                self.user_capacity, tokens + (now - last_refill) * self.user_rate
+            )
             accepted = tokens >= cost and self.global_tokens >= cost
             if accepted:
                 tokens -= cost
@@ -138,7 +146,7 @@ class Limiter:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

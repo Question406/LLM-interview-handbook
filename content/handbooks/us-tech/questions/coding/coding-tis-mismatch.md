@@ -4,7 +4,10 @@ section: coding
 order: 40
 level: A
 title: 白板：推理引擎的 logprob 和训练端对不上，截断重要性权重怎么加
-quick: "PPO 的 $\\pi_{\\mathrm{old}}$ 用训练端在旧权重上重算的 logprob，再用固定的截断权重 $\\min(\\pi_{\\mathrm{old}}/\\mu, C)$ 修正推理引擎分布 $\\mu$ 的差异。权重必须 detach，单独乘在 PPO 目标上，避免把实现差异也混进 PPO clip。"
+quick: >-
+  PPO 的 $\pi_{\mathrm{old}}$ 用训练端在旧权重上重算的 logprob，再用固定的截断权重
+  $\min(\pi_{\mathrm{old}}/\mu, C)$ 修正推理引擎分布 $\mu$ 的差异。权重必须 detach，单独乘在 PPO
+  目标上，避免把实现差异也混进 PPO clip。
 tags:
   - 完整编程练习
   - Coding
@@ -13,13 +16,15 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures (V-trace)"
-    url: https://arxiv.org/abs/1802.01561
+  - title: >-
+      IMPALA: Scalable Distributed Deep-RL with Importance Weighted
+      Actor-Learner Architectures (V-trace)
+    url: 'https://arxiv.org/abs/1802.01561'
     type: primary
   - title: Proximal Policy Optimization Algorithms
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: primary
 ---
 
@@ -27,16 +32,16 @@ sources:
 
 实现带 truncated importance sampling 的 PPO token loss，区分当前策略、重计算旧策略和 rollout 时记录的策略概率。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `ppo_loss_tis(policy_logprobs, old_logprobs, rollout_logprobs, advantages, mask, eps=0.2, C=2.0) -> 标量`：所有输入形状 `[B, T]`。
   - `policy_logprobs`：当前策略 $\pi_\theta$ 的 token logprob，带梯度。
   - `old_logprobs`：训练端在 $\theta_{\mathrm{old}}$ 上重算的 logprob，固定。
-  - `rollout_logprobs`：推理引擎采样时记录的 logprob（分布 $\mu$），固定。
+  - `rollout_logprobs`：推理引擎 sampling 时记录的 logprob（分布 $\mu$），固定。
 - PPO ratio 是 $\exp(\text{policy} - \text{old})$，照常 clip 到 $[1-\epsilon, 1+\epsilon]$。截断重要性权重是 $\min(\exp(\text{old} - \text{rollout}), C)$，并且 detach。
-- 每个 token 的目标为 `min(ratio * advantage, clip(ratio) * advantage)`；loss 是此目标乘截断权重后的负值。`mask` 仅含 0/1，`eps >= 0`、`C > 0`。loss 在有效 token（`mask` 为 1）上取平均；mask 全为 0 时返回可反传的 0。
+- 每个 token 的目标为 `min(ratio * advantage, clip(ratio) * advantage)`；loss 是此目标乘截断权重后的负值。`mask` 仅含 0/1，`eps >= 0`、`C > 0`。loss 在有效 token（`mask` 为 1）上取平均；mask 全为 0 时返回可 backpropagation 的 0。
 
 ### 输入输出示例
 
@@ -55,16 +60,16 @@ ppo_loss_tis(...) -> -1
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
 - `ppo_loss_tis(policy_logprobs, old_logprobs, rollout_logprobs, advantages, mask, eps=0.2, C=2.0) -> 标量`：所有输入形状 `[B, T]`。
   - `policy_logprobs`：当前策略 $\pi_\theta$ 的 token logprob，带梯度。
   - `old_logprobs`：训练端在 $\theta_{\mathrm{old}}$ 上重算的 logprob，固定。
-  - `rollout_logprobs`：推理引擎采样时记录的 logprob（分布 $\mu$），固定。
+  - `rollout_logprobs`：推理引擎 sampling 时记录的 logprob（分布 $\mu$），固定。
 - PPO ratio 是 $\exp(\text{policy} - \text{old})$，照常 clip 到 $[1-\epsilon, 1+\epsilon]$。截断重要性权重是 $\min(\exp(\text{old} - \text{rollout}), C)$，并且 detach。
-- loss 在有效 token（`mask` 为 1）上取平均；mask 全为 0 时返回可反传的 0。
+- loss 在有效 token（`mask` 为 1）上取平均；mask 全为 0 时返回可 backpropagation 的 0。
 
 ### 输入输出示例
 
@@ -78,7 +83,7 @@ old - rollout = 1       -> exp(1) ≈ 2.72，被截断到 C = 2
 
 PPO 的 ratio 只衡量这一步策略变了多少，所以分母必须是训练端自己算的 $\pi_{\mathrm{old}}$。推理引擎和训练端的数值差是另一件事，用单独的权重 $\pi_{\mathrm{old}}/\mu$ 修正。
 
-这个权重里不能出现当前的 $\pi_\theta$：它是采样分布不一致的校正，和这一步怎么优化无关。权重乘在 PPO 的逐 token 目标上，detach 后它只缩放梯度，不额外贡献梯度。截断上界 $C$ 防止个别 token 的权重过大。
+这个权重里不能出现当前的 $\pi_\theta$：它是 sampling 分布不一致的校正，和这一步怎么优化无关。权重乘在 PPO 的逐 token 目标上，detach 后它只缩放梯度，不额外贡献梯度。截断上界 $C$ 防止个别 token 的权重过大。
 
 ### 完整参考实现（Python 3）
 
@@ -86,8 +91,9 @@ PPO 的 ratio 只衡量这一步策略变了多少，所以分母必须是训练
 import torch
 
 
-def ppo_loss_tis(policy_logprobs, old_logprobs, rollout_logprobs, advantages, mask,
-                 eps=0.2, C=2.0):
+def ppo_loss_tis(
+    policy_logprobs, old_logprobs, rollout_logprobs, advantages, mask, eps=0.2, C=2.0
+):
     """PPO clip loss 加截断重要性权重 min(π_old / μ, C)。所有输入 [B, T]，返回有效 token 平均。"""
     # old_logprobs 由训练端在 θ_old 上重算；rollout_logprobs 来自推理引擎
     ratio = torch.exp(policy_logprobs - old_logprobs)
@@ -105,7 +111,7 @@ def ppo_loss_tis(policy_logprobs, old_logprobs, rollout_logprobs, advantages, ma
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -122,15 +128,19 @@ mask = torch.ones_like(policy)
 loss = ppo_loss_tis(policy, old, rollout, advantages, mask)
 ratio = (policy - old).exp()
 weight = (old - rollout).exp().clamp(max=2.0)
-reference = -(weight * torch.minimum(ratio * advantages, ratio.clamp(0.8, 1.2) * advantages)).mean()
+reference = -(
+    weight * torch.minimum(ratio * advantages, ratio.clamp(0.8, 1.2) * advantages)
+).mean()
 assert torch.allclose(loss, reference)
-grad_loss, = torch.autograd.grad(loss, policy)
-grad_ref, = torch.autograd.grad(reference, policy)
+(grad_loss,) = torch.autograd.grad(loss, policy)
+(grad_ref,) = torch.autograd.grad(reference, policy)
 assert torch.allclose(grad_loss, grad_ref)
 
 # old == rollout 时权重为 1，等于普通 PPO
 plain = ppo_loss_tis(policy, old, old, advantages, mask)
-plain_ref = -torch.minimum(ratio * advantages, ratio.clamp(0.8, 1.2) * advantages).mean()
+plain_ref = -torch.minimum(
+    ratio * advantages, ratio.clamp(0.8, 1.2) * advantages
+).mean()
 assert torch.allclose(plain, plain_ref)
 
 # 权重被截断到 C
@@ -150,7 +160,7 @@ assert ppo_loss_tis(policy, old, rollout, advantages, torch.zeros_like(mask)) ==
 
 ## 题怎么来的
 
-采样轨迹（rollout）用 vLLM / SGLang 这类推理引擎生成，训练则用 FSDP / Megatron 做前向。权重相同，但 kernel、精度和 batch 形状都不同，同一个 token 的 logprob 就会有差异。名义上是 on-policy，实际上采样分布 $\mu$ 和训练端的 $\pi_{\mathrm{old}}$ 并不是同一个分布。怎么排查这种差异见 `sys-rollout-logprob`，这道题只讨论 loss 里怎么修正。面试官给的起始代码见下一节。
+sampling 轨迹（rollout）用 vLLM / SGLang 这类推理引擎生成，训练则用 FSDP / Megatron 做前向。权重相同，但 kernel、精度和 batch 形状都不同，同一个 token 的 logprob 就会有差异。名义上是 on-policy，实际 upsampling 分布 $\mu$ 和训练端的 $\pi_{\mathrm{old}}$ 并不是同一个分布。怎么排查这种差异见 `sys-rollout-logprob`，这道题只讨论 loss 里怎么修正。面试官给的起始代码见下一节。
 
 ## 故意错误的起始片段（用于找 bug）
 

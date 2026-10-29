@@ -4,17 +4,19 @@ section: agent
 order: 183
 level: A
 title: 蚂蚁：没做过意图识别的话，可以怎么实现？
-quick: "先定意图表和每类要确认的槽位，明确的情况用规则，其余交给小分类器或 LLM，低置信就向用户澄清。按意图分别统计精确率和召回率，单独评估误进高风险流程的代价，一开始别让端到端 Agent 自行决定所有动作。"
+quick: >-
+  先定意图表和每类要确认的槽位，明确的情况用规则，其余交给小分类器或
+  LLM，低置信就向用户澄清。按意图分别统计精确率和召回率，单独评估误进高风险流程的代价，一开始别让端到端 Agent 自行决定所有动作。
 tags:
   - Ant Group
   - Intent
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 蚂蚁大模型面经
-    url: https://www.nowcoder.com/feed/main/detail/2b27dfe1f1ab4efa87eb0aea70ffdc20
+    url: 'https://www.nowcoder.com/feed/main/detail/2b27dfe1f1ab4efa87eb0aea70ffdc20'
     type: candidate-first-hand
 ---
 
@@ -43,7 +45,7 @@ sources:
 拆成主意图加次意图，或者先问「这次先处理哪件」。合并成一个超级意图，槽位和权限都会爆炸。
 
 **用小模型还是 LLM？**
-高频、闭环、标签稳定的用小模型；长尾、口语化、需要解释的用 LLM，低置信时再升级。
+高频、feedback loop、标签稳定的用小模型；长尾、口语化、需要解释的用 LLM，低置信时再升级。
 
 **没有标注怎么冷启动？**
 先用规则加少量种子数据，再从日志做主动学习；先保证高风险类的精确率，再铺长尾召回。

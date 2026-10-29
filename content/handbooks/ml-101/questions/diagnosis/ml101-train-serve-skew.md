@@ -19,7 +19,7 @@ sources:
     type: primary
 ---
 
-训练与服务特征不一致，要用同一条请求做对照，沿着特征生成过程找到最早的差异。先比较原始字段，再比清洗、默认值、编码、归一化和特征顺序，最后确认模型与预处理版本一致。 [Google ML Crash Course: Monitoring pipelines](https://developers.google.com/machine-learning/crash-course/production-ml-systems/monitoring)
+训练与服务特征不一致，要用同一条请求做对照，沿着特征生成过程找到最早的差异。先比较原始字段，再比清洗、默认值、编码、normalization 和特征顺序，最后确认模型与预处理版本一致。 [Google ML Crash Course: Monitoring pipelines](https://developers.google.com/machine-learning/crash-course/production-ml-systems/monitoring)
 
 Google 的工程建议包括记录实际服务时使用的特征，再拿来检查训练与服务差异。这样可以发现离线重算看不见的问题，例如训练端用完整一天的统计量，在线却只能看到请求发生前的数据，或两端对缺失值用了不同默认值。 [Google: Rules of Machine Learning](https://developers.google.com/machine-learning/guides/rules-of-ml)
 

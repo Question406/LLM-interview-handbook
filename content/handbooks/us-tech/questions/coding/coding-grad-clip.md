@@ -4,7 +4,9 @@ section: coding
 order: 10
 level: A
 title: 白板：global norm clip， inf/nan 怎么处理
-quick: "先算所有梯度拼成一个向量后的 $L_2$ 范数 $g$，有限且超阈值时才统一缩放。NaN/Inf 时按约定报错或跳过 step，不能边检查边改梯度；混合精度先 unscale，再 clip。"
+quick: >-
+  先算所有梯度拼成一个向量后的 $L_2$ 范数 $g$，有限且超阈值时才统一缩放。NaN/Inf 时按约定报错或跳过
+  step，不能边检查边改梯度；混合精度先 unscale，再 clip。
 tags:
   - 完整编程练习
   - Coding
@@ -14,13 +16,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.nn.utils.clip_grad_norm_
-    url: https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
     type: primary
   - title: On the difficulty of training Recurrent Neural Networks
-    url: https://arxiv.org/abs/1211.5065
+    url: 'https://arxiv.org/abs/1211.5065'
     type: primary
 ---
 
@@ -28,7 +31,7 @@ sources:
 
 训练中多个参数共享一个梯度范数上限。实现全局范数计算与原位裁剪，保持各参数梯度的相对比例，并允许部分参数没有梯度。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -49,7 +52,7 @@ grad = [3, 4], max_norm = 10   -> grad 不变，返回 5.0
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -106,7 +109,9 @@ def clip_grad_norm_(params, max_norm, eps=1e-6, error_if_nonfinite=True):
     norm = total_grad_norm(params)
     if not math.isfinite(norm):
         if error_if_nonfinite:
-            raise RuntimeError("gradient norm is non-finite, no gradients were modified")
+            raise RuntimeError(
+                "gradient norm is non-finite, no gradients were modified"
+            )
         return norm
     scale = max_norm / (norm + eps)
     if scale < 1.0:
@@ -123,7 +128,7 @@ def clip_grad_norm_(params, max_norm, eps=1e-6, error_if_nonfinite=True):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -229,7 +234,7 @@ NVIDIA 还会问：clip 改变的是梯度向量的长度，不改变各坐标�
 ## 追问
 
 **为什么用全局范数而不是逐层？**
-全局 clip 保持层与层之间的相对尺度；逐层 clip 相当于每层各自做一次归一化，深层和浅层的步长被强行拉到一样。
+全局 clip 保持层与层之间的相对尺度；逐层 clip 相当于每层各自做一次 normalization，深层和浅层的步长被强行拉到一样。
 **$g=0$ 是什么情况？**
 所有参数都没有梯度，比如忘了 backward，或者 loss 全被 mask 掉了。这时不要 step。$\varepsilon$ 只是除零保护。
 **和 grad scaler 的顺序？**

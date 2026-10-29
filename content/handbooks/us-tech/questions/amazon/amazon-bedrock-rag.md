@@ -4,7 +4,9 @@ section: amazon
 order: 1
 level: A
 title: Amazon：Seller Support 上 500 万份政策 PDF，p95 2 秒的 RAG 怎么做？
-quick: "500 万政策 PDF 的 RAG，我会先按条款和表格切块，再用市场、类目和生效日期过滤检索。日更文档靠元数据明确作废旧版本，生成逐句带引用；p95 2 秒则分别给检索、生成和安全检查留预算。"
+quick: >-
+  500 万政策 PDF 的 RAG，我会先按条款和表格切块，再用市场、类目和生效日期过滤检索。日更文档靠元数据明确作废旧版本，生成逐句带引用；p95 2
+  秒则分别给检索、生成和安全检查留预算。
 tags:
   - Amazon
   - Bedrock
@@ -13,13 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Amazon AI Engineer Interview Guide (2026)
-    url: https://www.datainterview.com/blog/amazon-ai-engineer-interview
+    url: 'https://www.datainterview.com/blog/amazon-ai-engineer-interview'
     type: secondary
   - title: Amazon AI Engineer Interview Questions (public compilation)
-    url: https://github.com/ombharatiya/AI-Engineer-Interview-Questions/blob/main/14-company-interview-questions/amazon.md
+    url: >-
+      https://github.com/ombharatiya/AI-Engineer-Interview-Questions/blob/main/14-company-interview-questions/amazon.md
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 ## 切块和索引
 
-先按标题和条款边界切，表格尽量整表保留，再对块做 embedding。每块记录 marketplace、商品类目、语言、生效日期、作废日期和源 URI，后面才能检查适用范围与版本。
+先按标题和 section boundaries 切，表格尽量整表保留，再对块做 embedding。每块记录 marketplace、商品类目、语言、生效日期、作废日期和源 URI，后面才能检查适用范围与版本。
 
 500 万文档不是 500 万块。一块文档可能 10–50 块，索引是千万级。OpenSearch Serverless / 自建向量库都可以，检索时在 ANN 前过滤或用 hybrid，先按 metadata 缩小范围再做向量匹配。只靠余弦、把 marketplace 混在一起，会检出别国政策。
 

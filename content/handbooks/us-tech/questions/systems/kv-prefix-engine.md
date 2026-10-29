@@ -3,8 +3,10 @@ id: kv-prefix-engine
 section: systems
 order: 38
 level: S
-title: "KV Prefix ⑧：把 Radix Tree 接进 Transformer——可运行 Prefix Engine"
-quick: "用 radix tree 找到公共前缀，恢复每层 KV 后只算后缀，再 greedy decode，并把生成后的 KV 插回树。用 cold run 对照生成 token、每层 KV 和实际少算的 token，才能验证真正复用了计算。"
+title: KV Prefix ⑧：把 Radix Tree 接进 Transformer——可运行 Prefix Engine
+quick: >-
+  用 radix tree 找到公共前缀，恢复每层 KV 后只算后缀，再 greedy decode，并把生成后的 KV 插回树。用 cold run
+  对照生成 token、每层 KV 和实际少算的 token，才能验证真正复用了计算。
 tags:
   - 完整编程练习
   - KV Prefix 实现专题
@@ -14,13 +16,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "SGLang prefix matching and insertion lifecycle"
-    url: https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/mem_cache/radix_cache.py
+  - title: SGLang prefix matching and insertion lifecycle
+    url: >-
+      https://github.com/sgl-project/sglang/blob/main/python/sglang/srt/mem_cache/radix_cache.py
     type: primary
-  - title: "Transformer architecture"
-    url: https://arxiv.org/abs/1706.03762
+  - title: Transformer architecture
+    url: 'https://arxiv.org/abs/1706.03762'
     type: primary
 ---
 
@@ -32,7 +35,7 @@ sources:
 
 ### 接口、输入与输出
 
-- `TinyTransformer(seed=0, layers=2, vocab=19, width=8, heads=2, kv_heads=1)`：冻结权重的单请求因果模型，包含 RMSNorm、RoPE、GQA 和门控 MLP。`forward(token_ids, cache=None) -> (logits, new_cache)`，`cache` 是每层一个 `(K, V)`，形状 `[kv_heads, 已缓存长度, head_dim]`。模型的 `fingerprint` 是配置和全部权重的哈希，`computed_tokens` 累计送进 forward 的 token 数。
+- `TinyTransformer(seed=0, layers=2, vocab=19, width=8, heads=2, kv_heads=1)`：冻结权重的单请求因果模型，包含 RMSNorm、RoPE、GQA 和 gating MLP。`forward(token_ids, cache=None) -> (logits, new_cache)`，`cache` 是每层一个 `(K, V)`，形状 `[kv_heads, 已缓存长度, head_dim]`。模型的 `fingerprint` 是配置和全部权重的哈希，`computed_tokens` 累计送进 forward 的 token 数。
 - `RadixCache`：按 token 粒度压缩边的前缀树，每个 token 对应一个不可变的 KV 句柄。`match(tokens, namespace) -> (命中长度, 句柄序列)`，`insert(tokens, values, namespace) -> 已存在的前缀长度`；重复前缀沿用树里已有的句柄。
 - `plan_reuse(prompt_length, matched_tokens, page_size, chunk_budget, need_last_logits) -> (可复用长度, chunks)`：返回不超过命中长度的最大完整页前缀；`need_last_logits=True` 时复用长度必须小于 prompt 长度，因为 cache 只存 KV。后缀覆盖 `[复用长度,prompt_length)`，按预算返回连续半开区间，无重叠无缺口。
 - `PrefixEngine(model).generate(prompt, new_tokens, scope="default", chunk_budget=1024) -> (生成的 token, 统计)`：namespace 是 `(模型指纹, scope)`。查命中后恢复各层 KV，按 chunk 只 forward 未复用的后缀，再 greedy 生成 `new_tokens` 个 token（$\ge 0$，没有 EOS 提前停止）。每个生成的 token 也送进一次 forward，这样插回树的 cache 覆盖 prompt 加全部生成文本。
@@ -61,13 +64,13 @@ generate([1, 2], 2)
 
 ## 完整编程练习（手册原创实现版）
 
-> 这是为理解开源机制写的独立练习，不是某家公司确认过的原题，也不是 SGLang / vLLM 源码的逐字翻译；接口、简化条件和测试由手册定义。Python 3 + NumPy，CPU 上验证数值和状态语义，不报告 GPU 吞吐。
+> 这是为理解开源机制写的独立练习，代码为手册独立实现；接口、简化条件和测试由手册定义。Python 3 + NumPy，CPU 上验证数值和状态语义，不报告 GPU throughput。
 
 专题入口：[[kv-prefix-implementation-index]]。
 
 ### 题面、接口与约束
 
-- `TinyTransformer(seed, layers, vocab, width, heads, kv_heads)`：冻结权重的单请求因果模型，包含 RMSNorm、RoPE、GQA 和门控 MLP。`forward(token_ids, cache=None) -> (logits, new_cache)`，`cache` 是每层一个 `(K, V)`，形状 `[kv_heads, 已缓存长度, head_dim]`。模型的 `fingerprint` 是配置和全部权重的哈希，`computed_tokens` 累计送进 forward 的 token 数。
+- `TinyTransformer(seed, layers, vocab, width, heads, kv_heads)`：冻结权重的单请求因果模型，包含 RMSNorm、RoPE、GQA 和 gating MLP。`forward(token_ids, cache=None) -> (logits, new_cache)`，`cache` 是每层一个 `(K, V)`，形状 `[kv_heads, 已缓存长度, head_dim]`。模型的 `fingerprint` 是配置和全部权重的哈希，`computed_tokens` 累计送进 forward 的 token 数。
 - `RadixCache`：按 token 粒度压缩边的前缀树，每个 token 对应一个不可变的 KV 句柄。`match(tokens, namespace) -> (命中长度, 句柄)`，`insert(tokens, values, namespace) -> 已存在的前缀长度`；重复前缀沿用树里已有的句柄。
 - `plan_reuse(prompt_length, matched_tokens, page_size, chunk_budget, need_last_logits) -> (可复用长度, chunks)`：按页对齐命中长度；完全命中时退回最后一个 token，因为只有 KV 算不出最后一个位置的 logits。剩下的后缀按 `chunk_budget` 切块。
 - `PrefixEngine(model).generate(prompt, new_tokens, scope="default", chunk_budget=1024) -> (生成的 token, 统计)`：namespace 是 `(模型指纹, scope)`。查命中后恢复各层 KV，按 chunk 只 forward 未复用的后缀，再 greedy 生成 `new_tokens` 个 token（$\ge 0$，没有 EOS 提前停止）。每个生成的 token 也送进一次 forward，这样插回树的 cache 覆盖 prompt 加全部生成文本。
@@ -104,12 +107,13 @@ import numpy as np
 
 
 class TinyTransformer:
-    """CPU 参考模型：RMSNorm、RoPE、GQA 和门控 MLP，层数 >= 1，权重冻结。"""
+    """CPU reference model：RMSNorm、RoPE、GQA 和门控 MLP，层数 >= 1，权重冻结。"""
 
     def __init__(self, seed=0, layers=2, vocab=19, width=8, heads=2, kv_heads=1):
         if layers < 1 or width % heads or heads % kv_heads or (width // heads) % 2:
             raise ValueError(
-                f"bad head geometry: layers={layers}, width={width}, heads={heads}, kv_heads={kv_heads}")
+                f"bad head geometry: layers={layers}, width={width}, heads={heads}, kv_heads={kv_heads}"
+            )
         self.layers = layers
         self.heads = heads
         self.kv_heads = kv_heads
@@ -125,15 +129,17 @@ class TinyTransformer:
         self.output = weight(width, vocab)
         self.weights = []
         for _ in range(layers):
-            self.weights.append({
-                "q": weight(width, width),
-                "k": weight(width, kv_width),
-                "v": weight(width, kv_width),
-                "o": weight(width, width),
-                "gate": weight(width, 2 * width),
-                "up": weight(width, 2 * width),
-                "down": weight(2 * width, width),
-            })
+            self.weights.append(
+                {
+                    "q": weight(width, width),
+                    "k": weight(width, kv_width),
+                    "v": weight(width, kv_width),
+                    "o": weight(width, width),
+                    "gate": weight(width, 2 * width),
+                    "up": weight(width, 2 * width),
+                    "down": weight(2 * width, width),
+                }
+            )
         # 冻结的配置和权重决定 cache 的 namespace
         arrays = [self.embed, self.output]
         arrays += [layer[name] for layer in self.weights for name in sorted(layer)]
@@ -153,7 +159,9 @@ class TinyTransformer:
         """对 [heads, T, head_dim] 做 RoPE，位置从 start 开始。"""
         head_dim = x.shape[-1]
         positions = np.arange(start, start + x.shape[1])[:, None]
-        angle = positions * 10000.0 ** (-np.arange(0, head_dim, 2) / head_dim)  # [T, head_dim/2]
+        angle = positions * 10000.0 ** (
+            -np.arange(0, head_dim, 2) / head_dim
+        )  # [T, head_dim/2]
         even = x[..., 0::2]
         odd = x[..., 1::2]
         out = np.empty_like(x)
@@ -163,11 +171,17 @@ class TinyTransformer:
 
     def _cached_length(self, cache):
         if len(cache) != self.layers:
-            raise ValueError(f"expected one KV pair per layer ({self.layers}), got {len(cache)}")
+            raise ValueError(
+                f"expected one KV pair per layer ({self.layers}), got {len(cache)}"
+            )
         lengths = set()
         for k, v in cache:
-            if (k.ndim != 3 or k.shape != v.shape or k.shape[0] != self.kv_heads
-                    or k.shape[-1] != self.head_dim):
+            if (
+                k.ndim != 3
+                or k.shape != v.shape
+                or k.shape[0] != self.kv_heads
+                or k.shape[-1] != self.head_dim
+            ):
                 raise ValueError(f"bad cache shape: K {k.shape}, V {v.shape}")
             lengths.add(k.shape[1])
         if len(lengths) != 1:
@@ -192,18 +206,34 @@ class TinyTransformer:
         new_cache = []
         for layer, w in enumerate(self.weights):
             z = self.norm(x)
-            q = (z @ w["q"]).reshape(num_new, self.heads, self.head_dim).transpose(1, 0, 2)
-            k = (z @ w["k"]).reshape(num_new, self.kv_heads, self.head_dim).transpose(1, 0, 2)
-            v = (z @ w["v"]).reshape(num_new, self.kv_heads, self.head_dim).transpose(1, 0, 2)
+            q = (
+                (z @ w["q"])
+                .reshape(num_new, self.heads, self.head_dim)
+                .transpose(1, 0, 2)
+            )
+            k = (
+                (z @ w["k"])
+                .reshape(num_new, self.kv_heads, self.head_dim)
+                .transpose(1, 0, 2)
+            )
+            v = (
+                (z @ w["v"])
+                .reshape(num_new, self.kv_heads, self.head_dim)
+                .transpose(1, 0, 2)
+            )
             q = self.rotate(q, old)
             k = self.rotate(k, old)
             if cache is not None:
-                k = np.concatenate((cache[layer][0], k), axis=1)  # [kv_heads, total, head_dim]
+                k = np.concatenate(
+                    (cache[layer][0], k), axis=1
+                )  # [kv_heads, total, head_dim]
                 v = np.concatenate((cache[layer][1], v), axis=1)
             new_cache.append((k, v))
             k_rep = np.repeat(k, group, axis=0)  # [heads, total, head_dim]
             v_rep = np.repeat(v, group, axis=0)
-            scores = (q @ k_rep.swapaxes(-1, -2)) / np.sqrt(self.head_dim)  # [heads, T, total]
+            scores = (q @ k_rep.swapaxes(-1, -2)) / np.sqrt(
+                self.head_dim
+            )  # [heads, T, total]
             allowed = np.arange(total)[None, :] <= (old + np.arange(num_new))[:, None]
             scores = np.where(allowed[None], scores, -np.inf)
             probs = np.exp(scores - scores.max(axis=-1, keepdims=True))
@@ -214,7 +244,9 @@ class TinyTransformer:
             gate = z @ w["gate"]
             # 数值稳定的 sigmoid，只用于 SiLU 门控
             exp_neg_abs = np.exp(-np.abs(gate))
-            sigmoid = np.where(gate < 0, exp_neg_abs / (1 + exp_neg_abs), 1 / (1 + exp_neg_abs))
+            sigmoid = np.where(
+                gate < 0, exp_neg_abs / (1 + exp_neg_abs), 1 / (1 + exp_neg_abs)
+            )
             x += (gate * sigmoid * (z @ w["up"])) @ w["down"]
         self.computed_tokens += num_new
         return self.norm(x) @ self.output, tuple(new_cache)
@@ -229,10 +261,10 @@ def slice_cache(cache, length):
 
 class Node:
     def __init__(self, edge=(), values=(), parent=None):
-        self.edge = tuple(edge)      # 这条边上的 token
+        self.edge = tuple(edge)  # 这条边上的 token
         self.values = tuple(values)  # 每个 token 一个 KV 句柄
         self.parent = parent
-        self.children = {}           # 首 token -> 子节点
+        self.children = {}  # 首 token -> 子节点
         self.locks = 0
         self.used = 0
 
@@ -255,7 +287,9 @@ class RadixCache:
     def split(child, length):
         """把 child 的边在 length 处切开，返回新的中间节点。"""
         if not 0 < length < len(child.edge):
-            raise ValueError(f"split point {length} must be inside an edge of length {len(child.edge)}")
+            raise ValueError(
+                f"split point {length} must be inside an edge of length {len(child.edge)}"
+            )
         parent = child.parent
         mid = Node(child.edge[:length], child.values[:length], parent)
         # 正在使用的 lease 仍挂在原节点对象上，通过父节点链释放
@@ -271,8 +305,11 @@ class RadixCache:
     @staticmethod
     def _common_length(edge, tokens, offset):
         count = 0
-        while (count < len(edge) and offset + count < len(tokens)
-               and edge[count] == tokens[offset + count]):
+        while (
+            count < len(edge)
+            and offset + count < len(tokens)
+            and edge[count] == tokens[offset + count]
+        ):
             count += 1
         return count
 
@@ -305,7 +342,9 @@ class RadixCache:
         tokens = tuple(tokens)
         values = tuple(values)
         if len(tokens) != len(values):
-            raise ValueError(f"need one KV handle per token: {len(tokens)} tokens, {len(values)} handles")
+            raise ValueError(
+                f"need one KV handle per token: {len(tokens)} tokens, {len(values)} handles"
+            )
         node = self.root(namespace)
         offset = 0
         while offset < len(tokens):
@@ -342,16 +381,21 @@ class RadixCache:
         return count
 
 
-def plan_reuse(prompt_length, matched_tokens, page_size=1, chunk_budget=4,
-               need_last_logits=True):
+def plan_reuse(
+    prompt_length, matched_tokens, page_size=1, chunk_budget=4, need_last_logits=True
+):
     """返回 (可复用长度, 待计算的 [start, end) chunks)。完全命中时退回最后一个 token。"""
     params = (prompt_length, matched_tokens, page_size, chunk_budget)
     if any(type(value) is not int for value in params):
         raise ValueError(f"integer parameters required, got {params}")
     if prompt_length < 1 or not 0 <= matched_tokens <= prompt_length:
-        raise ValueError(f"bad lengths: prompt={prompt_length}, matched={matched_tokens}")
+        raise ValueError(
+            f"bad lengths: prompt={prompt_length}, matched={matched_tokens}"
+        )
     if min(page_size, chunk_budget) < 1:
-        raise ValueError(f"page_size and chunk_budget must be >= 1, got {page_size}, {chunk_budget}")
+        raise ValueError(
+            f"page_size and chunk_budget must be >= 1, got {page_size}, {chunk_budget}"
+        )
     reusable = matched_tokens // page_size * page_size
     if need_last_logits and reusable == prompt_length:
         # 只有 KV 得不到最后的 hidden state / logits，至少重放最后一个 token
@@ -391,8 +435,10 @@ class PrefixEngine:
             return None
         num_layers = len(values[0])
         return tuple(
-            (np.stack([token[layer][0] for token in values], axis=1),
-             np.stack([token[layer][1] for token in values], axis=1))
+            (
+                np.stack([token[layer][0] for token in values], axis=1),
+                np.stack([token[layer][1] for token in values], axis=1),
+            )
             for layer in range(num_layers)
         )
 
@@ -400,10 +446,16 @@ class PrefixEngine:
         """复用前缀 KV 后 greedy 生成 new_tokens 个 token，返回 (token 列表, 统计)。"""
         prompt = tuple(prompt)
         vocab = len(self.model.embed)
-        if not prompt or any(type(token) is not int or not 0 <= token < vocab for token in prompt):
-            raise ValueError(f"prompt must be a nonempty sequence of token ids in [0, {vocab})")
+        if not prompt or any(
+            type(token) is not int or not 0 <= token < vocab for token in prompt
+        ):
+            raise ValueError(
+                f"prompt must be a nonempty sequence of token ids in [0, {vocab})"
+            )
         if type(new_tokens) is not int or new_tokens < 0:
-            raise ValueError(f"new_tokens must be a non-negative int, got {new_tokens!r}")
+            raise ValueError(
+                f"new_tokens must be a non-negative int, got {new_tokens!r}"
+            )
         namespace = (self.model.fingerprint, scope)
         hit, values = self.index.match(prompt, namespace)
         reused, chunks = plan_reuse(len(prompt), hit, 1, chunk_budget, True)
@@ -436,7 +488,7 @@ class PrefixEngine:
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -489,10 +541,12 @@ assert plan_reuse(8, 8, page_size=4, chunk_budget=8) == (4, ((4, 8),))
 assert plan_reuse(8, 8, need_last_logits=False) == (8, ())
 
 # 非法输入
-for bad_call in (lambda: engine.generate([], 1),
-                 lambda: engine.generate([1, 99], 1),
-                 lambda: engine.generate([1], -1),
-                 lambda: plan_reuse(3, 4)):
+for bad_call in (
+    lambda: engine.generate([], 1),
+    lambda: engine.generate([1, 99], 1),
+    lambda: engine.generate([1], -1),
+    lambda: plan_reuse(3, 4),
+):
     try:
         bad_call()
     except ValueError:
@@ -506,7 +560,7 @@ assert engine.index.validate() > 0
 
 ### 复杂度与追问
 
-设 prompt 长度为 $P$、命中长度为 $h$、生成长度为 $G$、层数为 $L$。radix 查找是 $O(P)$；恢复连续 KV 要复制命中的 $h$ 个位置，拆成句柄存进树也会复制数组，所以这是数值和控制流的参考，不是零拷贝的生产引擎。省下来的是前缀那 $h$ 个 token 在各层的投影、注意力和 MLP 计算，测试里直接断言了实际的计算计数。物理页的 COW 和分段读取分别在第④、⑥题里给出。
+设 prompt 长度为 $P$、命中长度为 $h$、生成长度为 $G$、层数为 $L$。radix 查找是 $O(P)$；恢复连续 KV 要复制命中的 $h$ 个位置，拆成句柄存进树也会复制数组，所以这是数值和控制流的参考，不是零拷贝的生产引擎。省下来的是前缀那 $h$ 个 token 在各层的投影、attention 和 MLP 计算，测试里直接断言了实际的计算计数。物理页的 COW 和分段读取分别在第④、⑥题里给出。
 
 - 追问「还缺什么」：模型并发读写、多请求调度、GPU 分页 kernel、异步淘汰都不在这个单线程参考里。
 - 追问「怎么扩展」：用第④题的页池替换 `restore`，结合第⑥题按页 / 按段读取，再用第③题的 lease 保护运行中的请求。每改一步都必须重新验证和完整重算等价。

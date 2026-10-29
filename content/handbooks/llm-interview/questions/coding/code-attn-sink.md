@@ -4,7 +4,9 @@ section: coding
 order: 50
 level: A
 title: 手写 Attention Sink：固定留下开头几个 token，再加滑动窗口
-quick: "在因果 mask 的基础上，只保留开头 $s$ 个 sink token 和最近 $w$ 个 token。开头几个 token 吸走了大量注意力，纯滑窗把它们丢掉，注意力分布就乱了，所以 decode 时 sink 的 K/V 一直留在 cache 里。"
+quick: >-
+  在因果 mask 的基础上，只保留开头 $s$ 个 sink token 和最近 $w$ 个 token。开头几个 token 吸走了大量
+  attention，纯滑窗把它们丢掉，attention 分布就乱了，所以 decode 时 sink 的 K/V 一直留在 cache 里。
 tags:
   - AttentionSink
   - StreamingLLM
@@ -13,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
   - title: Efficient Streaming Language Models with Attention Sinks
-    url: https://arxiv.org/abs/2309.17453
+    url: 'https://arxiv.org/abs/2309.17453'
     type: primary
 ---
 
@@ -42,7 +44,7 @@ T=5, sink=1, window=2
 
 ## 解题思路与参考答案
 
-Attention Sink 的写法是在因果 mask 上再加一个条件：只保留开头 $s$ 个 token（sink）和最近 $w$ 个 token，中间的全部丢掉。这么做是因为很多头会把大量注意力放在开头那几个位置上；纯 SWA（`code-swa-mask`）把位置 0 切掉之后，这些头没了原来的高权重位置，注意力就挤到窗口左沿去了。StreamingLLM 把最初的 $s$ 个 token（常见 $s=4$）当成 sink，和窗口一起保留。
+Attention Sink 的写法是在因果 mask 上再加一个条件：只保留开头 $s$ 个 token（sink）和最近 $w$ 个 token，中间的全部丢掉。这么做是因为很多头会把大量 attention 放在开头那几个位置上；纯 SWA（`code-swa-mask`）把位置 0 切掉之后，这些头没了原来的高权重位置，attention 就挤到窗口左沿去了。StreamingLLM 把最初的 $s$ 个 token（常见 $s=4$）当成 sink，和窗口一起保留。
 
 ## keep 条件
 
@@ -54,6 +56,7 @@ $$
 
 ```python
 import torch
+
 
 def sink_window_keep(T, sink, window, device=None):
     q = torch.arange(T, device=device)[:, None]
@@ -86,7 +89,7 @@ print("simple tests passed")
 不一定。论文观察到的是最初几个位置，不要求是特殊 token。有的实现会学一个专门的 sink 占位。
 
 **模型本来就用 SWA 训练的呢？**
-Mistral 训练时就是窗口注意力，推理时再加 sink 算是打补丁。从零训的话可以显式加 sink。
+Mistral 训练时就是窗口 attention，推理时再加 sink 算是打补丁。从零训的话可以显式加 sink。
 
 **显存能省多少？**
 cache 从 $O(S)$ 收到 $O(s+w)$。$s$ 很小，省下来的主要取决于 $w$。

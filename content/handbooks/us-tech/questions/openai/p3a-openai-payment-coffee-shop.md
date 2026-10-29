@@ -3,8 +3,10 @@ id: p3a-openai-payment-coffee-shop
 section: openai
 order: 631
 level: A
-title: "OpenAI：咖啡点单与支付系统设计"
-quick: "订单、库存和支付各自维护状态，用业务 id 关联。下单用幂等键，支付回调按事件 id 去重，订单和 Outbox 同事务写入；支付超时先查提供方状态，再决定推进或补偿。后台扫描和每日对账兜住回调丢失及资金与订单不一致。"
+title: OpenAI：咖啡点单与支付系统设计
+quick: >-
+  订单、库存和支付各自维护状态，用业务 id 关联。下单用 idempotency key，支付回调按事件 id 去重，订单和 Outbox
+  同事务写入；支付超时先查提供方状态，再决定推进或补偿。后台扫描和每日对账兜住回调丢失及资金与订单不一致。
 companies:
   - openai
 tags:
@@ -16,16 +18,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · payment-coffee-shop"
-    url: https://www.1point3acres.com/interview/problems/company/openai/payment-coffee-shop
+  - title: 1Point3Acres · OpenAI · payment-coffee-shop
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/payment-coffee-shop
     type: secondary
 ---
 
 ## 题目描述
 
-公开来源只确认咖啡点单与支付这一设计题型；下面规模和故障场景是手册补充的练习约定，不是公司官方题面。
+公开来源只确认咖啡点单与支付这一设计题型；下面规模和故障场景是手册补充的练习约定。
 
 ### 场景与目标
 
@@ -39,9 +42,9 @@ sources:
 
 ### 约束与交付物
 
-手册练习假设 100 家门店、每天 100 万单、峰值 500 单/秒。需要定义订单、库存和资金的正确性要求，以及外部支付失败、回调丢失和对账异常的处理边界。
+手册练习假设 100 家门店、每天 100 万单、峰值 500 单/秒。需要定义订单、库存和资金的正确性要求，以及外部支付失败、回调丢失和对账异常的 handling rules。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
@@ -49,19 +52,19 @@ sources:
 
 ## 解题思路与参考答案
 
-我会把订单、库存和支付拆成各自的状态机，再用幂等键、Outbox、回调去重和对账把它们接起来。支付超时尤其要按“结果未知”处理，先查提供方状态，避免顾客已经扣款，系统又发起一次支付。
+我会把订单、库存和支付拆成各自的状态机，再用 idempotency key、Outbox、回调去重和对账把它们接起来。支付超时尤其要按“结果未知”处理，先查提供方状态，避免顾客已经扣款，系统又发起一次支付。
 
 题目覆盖咖啡店的下单、付款、制作、取消和退款。练习假设 100 家店、每天 100 万单、峰值 500 单/秒，每张订单只属于一家门店。开始先复述这些范围，确认用户类型、规模、一致性和失败语义；一家或一百家店的需求，先把状态走对就够了。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；收录为面经题型不代表公司官方确认。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。规模数字、SLO 和故障情景是手册补的练习约定。
 
 客户端把订单交给订单 API，订单服务在同一事务里写订单和 Outbox 事件。Outbox 驱动支付适配器扣款，付款成功后再把制作任务投给门店。资金交易由支付提供方负责，本地保留业务状态和对账标识。
 
 核心数据是 `order(id, store, user, items, total, status, version)`、`payment(id, order, provider_id, status)` 和 `event(id, order, type)`。订单从 `pending_payment` 到 paid、making、ready、completed。取消发生在付款前或制作前；退款表示已经扣钱，需要反向资金操作，不能和取消共用一个含糊状态。
 
-比如顾客点拿铁，客户端带幂等键下单，订单先记为 `pending_payment`。支付适配器带订单 id 调用提供方，保存 `provider_id`；成功回调到达后，用 `version` 条件更新到 paid，并在同一事务写“开始制作”事件。门店屏幕收到后推进 making、ready，取餐后为 completed。顾客在 paid 时就看到已付款，制作进度随后异步更新。
+比如顾客点拿铁，客户端带 idempotency key 下单，订单先记为 `pending_payment`。支付适配器带订单 id 调用提供方，保存 `provider_id`；成功回调到达后，用 `version` 条件更新到 paid，并在同一事务写“开始制作”事件。门店屏幕收到后推进 making、ready，取餐后为 completed。顾客在 paid 时就看到已付款，制作进度随后异步更新。
 
-重复下单按“用户 + 请求内容”绑定的幂等键返回同一订单。回调按提供方事件 id 去重，Outbox 重投也只创建一个制作任务。支付请求超时先查询外部状态，不能直接再扣一次。
+重复下单按“用户 + 请求内容”绑定的 idempotency key 返回同一订单。回调按提供方事件 id 去重，Outbox 重投也只创建一个制作任务。支付请求超时先查询外部状态，不能直接再扣一次。
 
 每天 100 万单约为平均 11.6 单/秒，峰值约是平均的 43 倍，容量按 500 单/秒设计。监控重点是付款成功但订单未推进的积压、退款完成时长和各门店制作队列。
 

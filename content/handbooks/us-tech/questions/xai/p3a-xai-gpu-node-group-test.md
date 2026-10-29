@@ -3,8 +3,10 @@ id: p3a-xai-gpu-node-group-test
 section: xai
 order: 613
 level: A
-title: "xAI：GPU 节点组测：识别坏节点与并行调度"
-quick: "我会先测出一对好节点，再用其中一个作搭档逐个判断其他节点。所有二人组都失败时，好节点不足两个，测试无法区分「全坏」和「只有一个好」，返回 None；要缩短轮数，可以让多个已知好节点各带一个待测节点并行。"
+title: xAI：GPU 节点组测：识别坏节点与并行调度
+quick: >-
+  我会先测出一对好节点，再用其中一个作搭档逐个判断其他节点。所有二人组都失败时，好节点不足两个，测试无法区分「全坏」和「只有一个好」，返回
+  None；要缩短轮数，可以让多个已知好节点各带一个待测节点并行。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · gpu-node-group-test"
-    url: https://www.1point3acres.com/interview/problems/company/xai/gpu-node-group-test
+  - title: 1Point3Acres · xAI · gpu-node-group-test
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/gpu-node-group-test
     type: secondary
 ---
 
@@ -52,7 +55,7 @@ n = 2, 坏节点 {1}       -> None    # 唯一的测试失败，分不清是哪�
 
 有 n 个 GPU 节点，其中一些是坏的。唯一的检测手段是对一组节点做集合测试：组里至少要有两个节点，当且仅当组内全部是好节点时测试才通过。要求找出所有坏节点；并行安排测试时，同一个节点不能同时参加两组测试。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -130,7 +133,7 @@ def bad_nodes(n, test):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

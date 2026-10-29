@@ -23,12 +23,12 @@ PCA（主成分分析）保留多少维，要由用途决定：做压缩可以�
 
 若协方差特征值是 $\lambda_1\ge\lambda_2\ge\cdots$，前 $k$ 维累计解释方差是 $\sum_{i=1}^k\lambda_i/\sum_i\lambda_i$。例如第一维是波动很大的测量噪声，第二维波动很小却恰好区分正负类，只保留第一维会留下大量方差、丢掉分类线索。
 
-我会比较几个维度及不做 PCA 的基线，把标准化、PCA 和预测器放在同一条交叉验证流水线中。每折只在训练部分拟合，再变换验证部分；维度更低但验证分数相近时，才考虑计算与存储收益。 [scikit-learn: Pipelines and composite estimators](https://scikit-learn.org/stable/modules/compose.html#pipeline)
+我会比较几个维度及不做 PCA 的基线，把 standardization、PCA 和预测器放在同一条交叉验证流水线中。每折只在训练部分拟合，再变换验证部分；维度更低但验证分数相近时，才考虑计算与存储收益。 [scikit-learn: Pipelines and composite estimators](https://scikit-learn.org/stable/modules/compose.html#pipeline)
 
 ## 追问
 
-**PCA 会自动标准化吗？**
-常见 sklearn PCA 会中心化，但不自动把各特征缩到单位方差。单位不同且不希望量纲主导时，要先考虑标准化。
+**PCA 会自动 standardization 吗？**
+常见 sklearn PCA 会中心化，但不自动把各特征缩到单位方差。单位不同且不希望量纲主导时，要先考虑 standardization。
 
 **解释方差留到 95% 就够吗？**
 这是候选标准，不能普遍保证效果。图像重建、异常检测和预测任务可能需要不同维度。

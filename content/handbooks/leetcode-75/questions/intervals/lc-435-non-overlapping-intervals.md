@@ -5,7 +5,8 @@ order: 1
 level: S
 title: LC 435 · 无重叠区间
 quick: >-
-  最少删除等于 $n$ 减去最多能保留的互不重叠区间数。按右端点升序贪心，起点不早于当前结束位置就保留并更新结束位置，答案是 $n-\textit{keep}$。时间 $O(n\log n)$，额外空间 $O(1)$（不计排序）。
+  最少删除等于 $n$ 减去最多能保留的互不重叠区间数。按右端点升序贪心，起点不早于当前结束位置就保留并更新结束位置，答案是
+  $n-\textit{keep}$。时间 $O(n\log n)$，额外空间 $O(1)$（不计排序）。
 tags:
   - Greedy
   - Intervals
@@ -14,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 435. Non-overlapping Intervals
-    url: https://leetcode.com/problems/non-overlapping-intervals/
+    url: 'https://leetcode.com/problems/non-overlapping-intervals/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -107,7 +108,7 @@ print("simple tests passed")
 
 时间 $O(n\log n)$，排序为主，扫描线性。额外空间 $O(1)$，不计排序。
 
-## 边界
+## Edge Cases
 
 端点相接用 $s\ge end$ 判断，`[1,2]`、`[2,3]` 都保留；写成 $s\gt end$ 会多删。
 

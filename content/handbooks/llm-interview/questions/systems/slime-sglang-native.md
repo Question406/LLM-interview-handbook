@@ -4,7 +4,10 @@ section: systems
 order: 254
 level: A
 title: slime 为什么死磕 SGLang？`--sglang-` 前缀和 BF16 训 + FP8 rollout 怎么讲？
-quick: "slime 专用 SGLang 后端，让 cache-aware router、PD 分离、原生 weight-sync 和 FP8 KV 都能直接配置。SGLang 的 flag 加 `--sglang-` 前缀透传；大 MoE 常用 Megatron BF16 训练、SGLang FP8 采样，长上下文再考虑 `--sglang-kv-cache-dtype fp8_e4m3`。"
+quick: >-
+  slime 专用 SGLang 后端，让 cache-aware router、PD 分离、原生 weight-sync 和 FP8 KV
+  都能直接配置。SGLang 的 flag 加 `--sglang-` 前缀透传；大 MoE 常用 Megatron BF16 训练、SGLang FP8
+  sampling，长上下文再考虑 `--sglang-kv-cache-dtype fp8_e4m3`。
 tags:
   - slime
   - SGLang
@@ -12,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: slime 文档
-    url: https://thudm.github.io/slime/zh/index.html
+    url: 'https://thudm.github.io/slime/zh/index.html'
     type: primary
 ---
 
@@ -29,15 +32,15 @@ SGLang 的 flag 加 `--sglang-` 前缀，例如 `--mem-fraction-static` 写成 `
 
 没文档的 SGLang 开关，先确认 slime 是否透传；不要假设「能传给 SGLang 的都能当 slime CLI」。
 
-大规模 MoE 常见：Megatron BF16 训练态稳，SGLang FP8 采样抬吞吐和 KV 容量；长上下文再 `--sglang-kv-cache-dtype fp8_e4m3`。代价是 rollout 分布与训练图不一致，必须 Megatron 侧重算 logp，并监控量化前后 奖励分数（reward） / KL。这和 Infra「rollout 量化」是同一句话，slime 做成默认 MoE recipe。FP8 KV 改变的是存储精度，公式仍是 exact attention，只是 $K/V$ 的表示更粗。
+大规模 MoE 常见：Megatron BF16 训练态稳，SGLang FP8 sampling 抬 throughput 和 KV 容量；长上下文再 `--sglang-kv-cache-dtype fp8_e4m3`。代价是 rollout 分布与训练图不一致，必须 Megatron 侧重算 logp，并监控量化前后 奖励分数（reward） / KL。这和 Infra「rollout 量化」是同一句话，slime 做成默认 MoE recipe。FP8 KV 改变的是存储精度，公式仍是 exact attention，只是 $K/V$ 的表示更粗。
 
 ## 追问
 
 **为什么不用 vLLM？**
 不是 vLLM 慢，是公共层吃不到 router / PD / 原生 sync。已有 vLLM 集群用 veRL 或 slime external 更合适。
 **BF16+FP8 要不要重算 logp？**
-要。采样分布和训练图数值不同，ratio 必须基于训练图的 $\log\pi$。
+要。sampling 分布和训练图数值不同，ratio 必须基于训练图的 $\log\pi$。
 **`--sglang-tp-size` 能当世界大小吗？**
 不能。世界卡数用 `--rollout-num-gpus-per-engine`。
 **FP8 KV 会改生成分布吗？**
-会有数值差，尤其长上下文。要对照 BF16 KV 的 reward / KL，不能只看吞吐。
+会有数值差，尤其长上下文。要对照 BF16 KV 的 reward / KL，不能只看 throughput。

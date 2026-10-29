@@ -3,8 +3,10 @@ id: p3a-openai-sharded-matmul-backprop-debugging
 section: openai
 order: 626
 level: S
-title: "OpenAI：分片矩阵乘法与多设备反向调试"
-quick: "先标出每个 rank 的切分轴和全局 shape：切分维保留在输出里就拼接，切在被求和的 K 维上就归约部分和。反向用 dA = G Bᵀ、dB = Aᵀ G，再据同样的分片推通信。用单卡结果、有限差分和空分片测试，分别验证前向、梯度与边界。"
+title: OpenAI：分片矩阵乘法与多设备反向调试
+quick: >-
+  先标出每个 rank 的切分轴和全局 shape：切分维保留在输出里就拼接，切在被求和的 K 维上就归约部分和。反向用 dA = G Bᵀ、dB = Aᵀ
+  G，再据同样的分片推通信。用单卡结果、有限差分和空分片测试，分别验证 forward、gradients 与 edge cases。
 companies:
   - openai
 tags:
@@ -16,18 +18,19 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · sharded-matmul-backprop-debugging"
-    url: https://www.1point3acres.com/interview/problems/company/openai/sharded-matmul-backprop-debugging
+  - title: 1Point3Acres · OpenAI · sharded-matmul-backprop-debugging
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/sharded-matmul-backprop-debugging
     type: secondary
 ---
 
 ## 题目描述
 
-在小矩阵上模拟数据并行和参数分片的矩阵乘法，并实现矩阵乘法反向传播；分片数可以超过某一维长度。
+在小矩阵上模拟数据并行和参数分片的矩阵乘法，并实现矩阵乘法 backpropagation；分片数可以超过某一维长度。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -50,7 +53,7 @@ fsdp_matmul(a, b, 2) -> [[17], [39]]
 
 推导矩阵乘法 $Y = AB$ 在多设备分片后的前向和反向计算，并找出、修复给定代码里的缺陷。核心是弄清每个设备持有张量的哪一块，以及前向和反向分别需要什么通信。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。题卡没有给出原始缺陷代码；下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。题卡没有给出原始缺陷代码；下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -140,7 +143,7 @@ def fsdp_matmul(a, b, world_size):
         owner, shard = rank, col_shards[rank]
         for step in range(world_size):
             # 消息里带着 owner，才知道这块结果该写到哪几列
-            out[:, col_offsets[owner]:col_offsets[owner + 1]] = rows @ shard
+            out[:, col_offsets[owner] : col_offsets[owner + 1]] = rows @ shard
             if step + 1 < world_size:
                 # 所有 rank 都先发后收，环上每一轮都有消息可取，不会互相等死
                 inboxes[(rank + 1) % world_size].put((owner, shard))
@@ -160,7 +163,9 @@ def backward(a, b, grad_out):
     if a.ndim != 2 or b.ndim != 2 or a.shape[1] != b.shape[0]:
         raise ValueError(f"bad matmul shapes: {a.shape} @ {b.shape}")
     if grad_out.shape != (a.shape[0], b.shape[1]):
-        raise ValueError(f"grad_out shape {grad_out.shape} != {(a.shape[0], b.shape[1])}")
+        raise ValueError(
+            f"grad_out shape {grad_out.shape} != {(a.shape[0], b.shape[1])}"
+        )
     return grad_out @ b.T, a.T @ grad_out
 ```
 
@@ -172,7 +177,7 @@ def backward(a, b, grad_out):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -184,12 +189,14 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
 
+
 def numeric_grad(loss, x, index, h=1e-5):
     plus = x.copy()
     minus = x.copy()
     plus[index] += h
     minus[index] -= h
     return (loss(plus) - loss(minus)) / (2 * h)
+
 
 # 手算的小例子
 a = [[1, 2], [3, 4]]

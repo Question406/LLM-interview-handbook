@@ -3,89 +3,100 @@ id: design-offline-eval
 section: design
 order: 12
 level: S
-title: 设计：LLM 离线评测平台（切片、人评、污染、回归门禁）
-quick: "离线集先版本化并按风险切片，人评用明确指南和金标检查质量，污染检查同时报告污染率与去污后分数。回归门禁预先规定哪些切片不能掉点，以生产 checkpoint 和 SFT 基线为对照；在线 A/B 还要单独做。"
+title: 设计：LLM 离线评测平台（切片、人评、污染、regression checks）
+quick: >-
+  离线集先版本化并按风险切片，人评用明确指南和金标检查质量，污染检查同时报告污染率与去污后分数。regression checks
+  预先规定哪些切片不能掉点，以生产 checkpoint 和 SFT 基线为对照；在线 A/B 还要单独做。
 tags:
   - Evals
   - OpenAI
   - Google
   - Contamination
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Holistic Evaluation of Language Models
-    url: https://arxiv.org/abs/2211.09110
+    url: 'https://arxiv.org/abs/2211.09110'
     type: primary
   - title: openai/simple-evals
-    url: https://github.com/openai/simple-evals
+    url: 'https://github.com/openai/simple-evals'
     type: secondary
   - title: Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena
-    url: https://arxiv.org/abs/2306.05685
+    url: 'https://arxiv.org/abs/2306.05685'
     type: primary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
-设计一个针对 LLM 版本的离线评测平台，重点是可复现的数据与执行协议、按能力/风险拆分的报告，以及模型发布前的回归门禁。
+设计一个针对 LLM 版本的离线评测平台，重点是可复现的数据与执行协议、按能力/风险拆分的报告，以及模型发布前的 regression checks。
 
 ### 需要满足的功能
 
 - 接收候选版本及评测配置，运行指定数据版本与评分器版本。
 - 管理程序评分和人工评分，报告总体、切片及不确定性。
-- 对失败案例进行定位复现，并根据预设门槛判定是否允许进入下一发布阶段。
+- 对失败案例进行定位复现，并根据预设 threshold 判定是否允许进入下一发布阶段。
 
 ### 约束与交付物
 
-原题、参考答案和许可需受访问控制；训练数据不能污染门禁集。需要定义缺失结果、超时、评分器变化和随机波动的处理，不得只挑一次最好的运行作为结论。
+原题、参考答案和许可需受访问控制；训练数据不能污染 held-out evaluation set。需要定义缺失结果、超时、评分器变化和随机波动的处理，不得只挑一次最好的运行作为结论。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
-候选模型总体平均不变，但某关键产品切片显著变差时，报告应明确指出该退化；换评分器版本后也不能把结果直接冒充同口径改进。
+候选模型总体平均不变，但某关键产品切片显著变差时，报告应明确指出该退化；换评分器版本后也不能把结果直接冒充同定义改进。
+
+## 可以这样回答
+
+离线评测平台要固定数据和执行协议，按能力与风险切片评分，再用人工抽查、污染检查和 regression checks 决定是否放行。比如总体分持平，医疗切片却明显下降，仍然应阻止发布。Google HELM、OpenAI simple-evals、LMSYS MT-Bench 都强调可比较的协议。在线 A/B、护栏和 peek 见 `design-eval-platform`；内部 harness 见 `openai-eval-harness`；污染手法见 `align-eval-contam`。
+
+我会先问：评什么能力、谁能看原题、失败谁负责、是否和线上同一系统提示。然后把离线集当数据产品：每条 case 有 id、许可、标签、创建时间、提示模板版本。报告明确固定下来 `eval_set@sha` + `prompt@sha` + decoding + 工具模拟器版本。口头「MMLU 高了」没有复现性。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
-离线评测平台要固定数据和执行协议，按能力与风险切片评分，再用人工抽查、污染检查和回归门禁决定是否放行。比如总体分持平，医疗切片却明显下降，仍然应阻止发布。Google HELM、OpenAI simple-evals、LMSYS MT-Bench 都强调可比较的协议。在线 A/B、护栏和 peek 见 `design-eval-platform`；内部 harness 见 `openai-eval-harness`；污染手法见 `align-eval-contam`。
+离线评测平台要固定数据和执行协议，按能力与风险切片评分，再用人工抽查、污染检查和 regression checks 决定是否放行。比如总体分持平，医疗切片却明显下降，仍然应阻止发布。Google HELM、OpenAI simple-evals、LMSYS MT-Bench 都强调可比较的协议。在线 A/B、护栏和 peek 见 `design-eval-platform`；内部 harness 见 `openai-eval-harness`；污染手法见 `align-eval-contam`。
 
 ## 固定协议并按风险切片
 
-我会先问：评什么能力、谁能看原题、失败谁负责、是否和线上同一系统提示。然后把离线集当数据产品：每条 case 有 id、许可、标签、创建时间、提示模板版本。报告明确固定下来 `eval_set@sha` + `prompt@sha` + 解码 + 工具模拟器版本。口头「MMLU 高了」没有复现性。
+我会先问：评什么能力、谁能看原题、失败谁负责、是否和线上同一系统提示。然后把离线集当数据产品：每条 case 有 id、许可、标签、创建时间、提示模板版本。报告明确固定下来 `eval_set@sha` + `prompt@sha` + decoding + 工具模拟器版本。口头「MMLU 高了」没有复现性。
 
 切片至少：
 
-- **能力。** 事实、推理、代码、工具、长上下文、多语言。公开集只作参考，私有轮换集才进门禁。
-- **安全。** 攻击、过度拒绝，见 `align-over-refuse`、`align-red-team`、`align-safety-tax`。
+- **能力。** 事实、推理、代码、工具、长上下文、多语言。公开集只作参考，私有轮换集才进 acceptance checks。
+- **安全。** 攻击、over-refusal，见 `align-over-refuse`、`align-red-team`、`align-safety-tax`。
 - **产品。** 有实际证据支持、引用、延迟预算。检索增强生成（RAG） 题冻语料版本，见 `design-prod-rag`。
 - **回归敏感。** 上次事故、已知脆弱模板、金标陷阱。
 
 切分按文档 / 用户 / 时间，不要随机切对话把同一用户放进训练和测试。工具题环境冻结，否则成功率是模拟器漂移。
 
-LLM-as-judge 做筛子，不做唯金标。位置交换、换家族验收，见 `align-llm-judge`。长度当协变量，见 `align-length-bias`。Arena 活榜不进离线门禁，见 `align-arena`。
+LLM-as-judge 做筛子，不做唯金标。位置交换、换家族验收，见 `align-llm-judge`。长度当协变量，见 `align-length-bias`。Arena 活榜不进 offline evaluation criteria，见 `align-arena`。
 
 ## 检查人评、污染和回归
 
-人评：指南写成可打的维度（正确、有实际证据支持、有害、过度拒绝），不是「好不好」。抽样按风险分层，不是随机 50 条。塞金标陷阱测标注员；不一致高的类别先改指南。人评队列有 SLA，积压时不要拿裁判分顶替门禁。
+人评：指南写成可打的维度（正确、有实际证据支持、有害、over-refusal），不是「好不好」。抽样按风险分层，不是随机 50 条。塞金标陷阱测标注员；不一致高的类别先改指南。人评队列有 SLA，积压时不要拿裁判分顶替 acceptance checks。
 
-污染：n-gram、近邻、答案指纹、搜索查重，见 `align-eval-contam`。发现重叠要报污染率和去污后分数，不是删一条继续吹。Canary 埋进预发布语料，模型能复述就是泄漏。评测日志回流训练前必须换新 held-out。
+污染：n-gram、近邻、答案指纹、搜索查重，见 `align-eval-contam`。发现重叠要报污染率和去污后分数，不是删一条继续吹。Canary 埋进预发布语料，模型能复述就是泄漏。评测日志加入 training data 前必须换新 held-out。
 
-跑分：同一 runner、超时、解码。种子固定或报告均值方差。长生成截断要当失败，不要当「部分正确」混进总分。
+跑分：同一 runner、超时、decoding。种子固定或报告均值方差。长生成截断要当失败，不要当「部分正确」混进总分。
 
 一张表，硬闸和软闸分开：
 
-- **硬闸。** 安全攻击成功率、过度拒绝、污染未报、私有核心集掉点超过阈值、工具误操作。破了不能发。
+- **硬闸。** 安全攻击成功率、over-refusal、污染未报、私有核心集掉点超过阈值、工具误操作。破了不能发。
 - **软闸。** 公开集、文风、长度、成本。掉了要解释和切片，不自动红灯。
 - **不变式。** 有 cache vs 无 cache 的 greedy 对齐；提示版本变更必须重跑全套，见 `design-prompt-mgmt`。
 
-门禁对着 切片 不是对着一个平均分。平均持平、医疗切片崩，仍是红灯。对比对象是上一个生产 checkpoint 和 监督微调（SFT） 基线，不是「历史上最好的内部实验」。
+acceptance checks 对着 切片 不是对着一个平均分。平均持平、医疗切片崩，仍是红灯。对比对象是上一个生产 checkpoint 和 SFT 基线，不是「历史上最好的内部实验」。
 
-失败模式：刷公开集提示词；用训练 奖励模型（RM） 当验收；人评疲劳全标「还可以」；门禁只看总分；把评测 输入提示（prompt） 写进系统提示过拟合考题。
+失败模式：刷公开集 prompt；用训练 reward model（RM） 当验收；人评疲劳全标「还可以」；acceptance checks 只看总分；把评测 prompt 写进系统提示 overfitting 考题。
 
 平台自己的 SLO：队列积压、重跑幂等、结果不可被训练任务误读。权限：原题 ACL，防止评测集进博客和预训练。
 
@@ -96,6 +107,6 @@ LLM-as-judge 做筛子，不做唯金标。位置交换、换家族验收，见 
 **公开基准全砍掉？**
 留作沟通，不进硬闸。私有集轮换。
 **人评太慢怎么办？**
-裁判筛 + 人看分歧和安全切片。完全取消人工门禁会增加过拟合裁判的风险。
+裁判筛 + 人看分歧和安全切片。完全取消人工 acceptance checks 会增加 overfitting 裁判的风险。
 **回归阈值怎么定？**
 用历史噪声和标注一致率定带宽，不要拍 1%。安全切片带宽更窄。

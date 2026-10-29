@@ -3,8 +3,10 @@ id: p3a-xai-process-vs-thread-verbal
 section: xai
 order: 623
 level: A
-title: "xAI：进程与线程：内存、调度与共享风险"
-quick: "线程共享同一进程的堆、全局变量和文件，各自保留栈与寄存器；进程默认隔离地址空间，通过 IPC 协作。线程传数据方便，但读改写等业务操作仍要加锁，避免竞态和死锁。"
+title: xAI：进程与线程：内存、调度与共享风险
+quick: >-
+  线程共享同一进程的堆、全局变量和文件，各自保留栈与寄存器；进程默认隔离地址空间，通过 IPC
+  协作。线程传数据方便，但读改写等业务操作仍要加锁，避免竞态和死锁。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · process-vs-thread-verbal"
-    url: https://www.1point3acres.com/interview/problems/company/xai/process-vs-thread-verbal
+  - title: 1Point3Acres · xAI · process-vs-thread-verbal
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/process-vs-thread-verbal
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 本题先口头说明进程与线程的内存隔离、共享状态及并发访问风险；编程部分使用下面的共享账户包装练习，验证多个线程操作同一余额时的行为。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -56,7 +59,7 @@ account.withdraw(1000) -> True，余额变为 0
 
 短筛中的口述题，考操作系统基础：进程和线程有什么区别，各自的内存模型、调度方式和共享数据的风险是什么。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。原题是口述题，下面的代码练习只是手册补的共享内存竞态演示，不代表原帖要求写代码。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。原题是口述题，下面的代码练习只是手册补的共享内存竞态演示，不代表原帖要求写代码。
 
 - 同一进程里的线程共享地址空间，也就是共享堆、全局变量和打开的文件，但每个线程有自己的栈和寄存器状态。
 - 不同进程默认各有独立的地址空间，一个进程崩溃一般不会破坏另一个进程的内存；要交换数据得用管道、socket、共享内存等 IPC 机制。
@@ -149,12 +152,13 @@ class Account:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 from concurrent.futures import ThreadPoolExecutor
+
 
 def expect_value_error(fn, *args):
     try:
@@ -162,6 +166,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 8 个线程并发存 1000 次，结果不能丢更新
 account = Account(UnsafeAccount())

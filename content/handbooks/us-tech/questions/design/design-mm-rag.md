@@ -4,31 +4,34 @@ section: design
 order: 21
 level: A
 title: 设计：多模态 RAG——图向量、文本与 ACL
-quick: "文本块和图像 / 页级视觉内容分路索引，查询按模态选择编码塔，再融合检索结果。所有路径都先按 ACL、生效状态等元数据过滤，引用指回文档、页和区域；更新时同步作废旧向量，查询图默认不进入共享索引。"
+quick: >-
+  文本块和图像 / 页级视觉内容分路索引，查询按模态选择编码塔，再融合检索结果。所有路径都先按
+  ACL、生效状态等元数据过滤，引用指回文档、页和区域；更新时同步作废旧向量，查询图默认不进入共享索引。
 tags:
   - RAG
   - Multimodal
   - Google
   - Amazon
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Learning Transferable Visual Models From Natural Language Supervision
-    url: https://arxiv.org/abs/2103.00020
+    url: 'https://arxiv.org/abs/2103.00020'
     type: primary
   - title: ColPali — Efficient Document Retrieval with Vision Language Models
-    url: https://arxiv.org/abs/2407.01449
+    url: 'https://arxiv.org/abs/2407.01449'
     type: primary
   - title: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
-    url: https://arxiv.org/abs/2005.11401
+    url: 'https://arxiv.org/abs/2005.11401'
     type: primary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -44,11 +47,19 @@ sources:
 
 所有模态都遵守同一套权限和有效期要求，不能因图像相似而跨租户取证。需要明确召回质量、引用准确性、视觉 token、延迟和成本的评测约束。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 用户查“合同里带红色标识的那页”，结果应指出其有权查看的文档与页码；另一个租户的相似页面即使命中，也不能作为可见结果或答案证据。
+
+## 可以这样回答
+
+我会把文本检索和图像 / 页级视觉检索分路建索引，查询时先做 ACL 和作废过滤，再融合结果。比如用户找「红色 logo 的那页」，图像向量能补文字检索；但相似的另一租户合同即使命中，也不能进入上下文。CLIP 提供图文对齐空间，ColPali 一类方法支持页级视觉文档检索。
+
+Google 企业搜、Amazon Bedrock 知识库、Meta 工作问答接入截屏和 PDF 扫描件时，都需要从 `design-prod-rag` 扩展到这层设计。生成侧的引用框见 `design-mm-assistant`。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
@@ -66,7 +77,7 @@ Google 企业搜、Amazon Bedrock 知识库、Meta 工作问答接入截屏和 P
 2. **图级 CLIP / SigLIP。** 查询是「红色 logo 的那页」时，文字塔对不上。
 3. **页级视觉检索（ColPali 一类）。** 版式、印章、手写，OCR 丢的信号在这里。
 
-过滤必须在 ANN 之前或走支持预过滤的引擎：`acl ∩ 未作废 ∩ 语言`，再向量。把无权限页的像素打进上下文，再靠 输入提示（prompt）「请忽略」，等于已经泄漏。缩略图、缓存 CDN、日志里的图 URL 都要过同一 ACL。
+过滤必须在 ANN 之前或走支持预过滤的引擎：`acl ∩ 未作废 ∩ 语言`，再向量。把无权限页的像素打进上下文，再靠 prompt「请忽略」，等于已经泄漏。缩略图、缓存 CDN、日志里的图 URL 都要过同一 ACL。
 
 ```python
 def mm_retrieve(q, user, q_image=None):

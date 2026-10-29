@@ -48,7 +48,7 @@ sources:
 
 ## 系统侧压每 token 成本
 
-GQA / MQA 让 KV head 少于 Q head，cache 体积近似按 $n_{\mathrm{kv}}/n_q$ 降。KV 量化（INT8/FP8）再降一档带宽，要盯质量。Prefix cache 复用系统提示和固定政策模板；key 带文档版本，政策一改不能复用旧 KV。Continuous batching + PagedAttention 让不同长度共存，避免按最大窗口 padding。限制 `max_prefill_tokens`：超了切块或拒。投机解码对长 prefill 帮助有限，别当长上下文银弹。训练侧长序列几乎必开 activation checkpoint；那是训练显存，和推理 KV 是两本账。
+GQA / MQA 让 KV head 少于 Q head，cache 体积近似按 $n_{\mathrm{kv}}/n_q$ 降。KV 量化（INT8/FP8）再降一档带宽，要盯质量。Prefix cache 复用系统提示和固定政策模板；key 带文档版本，政策一改不能复用旧 KV。Continuous batching + PagedAttention 让不同长度共存，避免按最大窗口 padding。限制 `max_prefill_tokens`：超了切块或拒。speculative decoding 对长 prefill 帮助有限，别当长上下文银弹。训练侧长序列几乎必开 activation checkpoint；那是训练显存，和推理 KV 是两本账。
 
 Serving 预算按任务：客服工单给 8k 有效 token，整店目录不允许。成本按 billed token × 单价，塞满窗口就是烧钱。
 
@@ -61,7 +61,7 @@ Serving 预算按任务：客服工单给 8k 有效 token，整店目录不允�
 **128K 模型是不是就不贵了？**
 不是。prefill FLOPs 和 KV 仍随实际填入的 $N$ 涨。宣称长度是能力上限，账单和延迟按真正塞进窗口的 token 算。默默填满就是烧钱。
 **GQA 省什么？**
-省 KV 体积和 逐 token 生成（decode） 带宽，系数是 $n_{\mathrm{kv}}/n_q$。不省 Q 侧计算，也不代替检索。和 FlashAttention 正交：一个减 cache 体积，一个减注意力 I/O 形状。
+省 KV 体积和 逐 token 生成（decode） 带宽，系数是 $n_{\mathrm{kv}}/n_q$。不省 Q 侧计算，也不代替检索。和 FlashAttention 正交：一个减 cache 体积，一个减 attention I/O 形状。
 **为什么针-in-haystack 不够？**
 它只证明某个位置还找得着。业务要的是多 SKU 对比是否引用对 id、长规则是否漏除外条款、单次费用是否在预算内。找得着不等于看得对。
 **静默截断为什么不行？**

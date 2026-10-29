@@ -4,27 +4,40 @@ section: meta
 order: 6
 level: A
 title: Meta：News Feed 排序，多目标（停留、互动、违规）怎么权衡
-quick: "Feed 先用级联缩小候选，再多任务预测互动、停留和负反馈，按 $V=\\sum_k w_k \\hat{p}_k$ 合成排序。违规内容还要独立过滤或强约束；权重由线上实验和安全护栏一起决定，点赞等事件不互斥，不能做成一个多类 softmax。"
+quick: >-
+  Feed 先用级联缩小候选，再多任务预测互动、停留和负反馈，按 $V=\sum_k w_k \hat{p}_k$
+  合成排序。违规内容还要独立过滤或强约束；权重由线上实验和安全护栏一起决定，点赞等事件不互斥，不能做成一个多类 softmax。
 tags:
   - Meta
   - News Feed
   - Ranking
   - Multi-objective
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: News Feed ranking, powered by machine learning
-    url: https://engineering.fb.com/2021/01/26/ml-applications/news-feed-ranking/
+  - title: 'News Feed ranking, powered by machine learning'
+    url: 'https://engineering.fb.com/2021/01/26/ml-applications/news-feed-ranking/'
     type: primary
   - title: Scaling the Instagram Explore recommendations system
-    url: https://engineering.fb.com/2023/08/09/ml-applications/scaling-the-instagram-explore-recommendations-system/
+    url: >-
+      https://engineering.fb.com/2023/08/09/ml-applications/scaling-the-instagram-explore-recommendations-system/
     type: primary
   - title: Client-side ranking to more efficiently show people stories in feed
-    url: https://engineering.fb.com/2016/10/20/networking-traffic/client-side-ranking-to-more-efficiently-show-people-stories-in-feed/
+    url: >-
+      https://engineering.fb.com/2016/10/20/networking-traffic/client-side-ranking-to-more-efficiently-show-people-stories-in-feed/
     type: secondary
 ---
+
+## 可以这样回答
+
+Feed 排序先分级筛候选，再对互动、停留和负反馈分别预测，最后合成价值并做列表调整。比如同一条视频可以既被看完又被点赞，这些目标不互斥，适合多任务头，不能塞进一个多类 softmax。2021 年工程博客公开的流程是库存、多任务预测、加权合成和多 pass。
+
+Instagram Explore 公开流程也先把海量库检索到几百个候选，再精排。设计时先明确这层规模变化，再选每阶段的模型和预算。
+
+## 技术备查
 
 Feed 排序先分级筛候选，再对互动、停留和负反馈分别预测，最后合成价值并做列表调整。比如同一条视频可以既被看完又被点赞，这些目标不互斥，适合多任务头，不能塞进一个多类 softmax。2021 年工程博客公开的流程是库存、多任务预测、加权合成和多 pass。
 
@@ -41,7 +54,7 @@ Instagram Explore 公开流程也先把海量库检索到几百个候选，再�
 
 ## 多个预测怎样合成和调权重
 
-主模型是多任务：对同一条 $(user, item)$ 预测很多 $Y_k$：点赞、评论、分享、点击、停留、隐藏、举报、完播，等等。共享底层表示，头可以是独立 tower。损失通常是各头 logloss / 回归的加权和，校准见 `meta-ranking-logloss`。
+主模型是多任务：对同一条 $(user, item)$ 预测很多 $Y_k$：点赞、评论、分享、点击、停留、隐藏、举报、完播，等等。共享底层表示，头可以是独立 tower。损失通常是各头 logloss / 回归的加权和，calibration 见 `meta-ranking-logloss`。
 
 合成公开写成线性：
 
@@ -62,11 +75,11 @@ $w_k$ 不是离线网格搜索的终点。它们改的是产品，要用 A/B（`
 
 前面的视频例子还可能同时被别人举报，所以要用多标签或多头，并提供负反馈标签和独立内容安全检查。只用点赞训练，模型无法自动学到没有被监督的安全目标。
 
-延迟上，Pass 1 对几百条并行打分，特征和 embedding 尽量缓存；2016 年博客还介绍了客户端对已下载故事再排序的方式，见 `meta-concurrency-feed`。广告插入走单独校准和竞价，见 `meta-ads-calibration`，不要把 pCTR 和 like 概率当同一个 $w$ 能直接加的量。
+延迟上，Pass 1 对几百条并行打分，特征和 embedding 尽量缓存；2016 年博客还介绍了客户端对已下载故事再排序的方式，见 `meta-concurrency-feed`。广告插入走单独 calibration 和竞价，见 `meta-ads-calibration`，不要把 pCTR 和 like 概率当同一个 $w$ 能直接加的量。
 
 ## 追问
 
-**权重会不会过拟合实验平台？**
+**权重会不会 overfitting 实验平台？**
 会。一次只动少量 $w_k$，看护栏指标（内容安全、时长、投诉）而不是只看主指标。
 **探索怎么做？**
 纯贪心 $V$ 会让新作者和新话题难以获得曝光。用随机探索、Thompson、或单独的 exploration 槽，并和完整性过滤同时存在。

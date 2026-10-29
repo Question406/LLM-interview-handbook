@@ -4,27 +4,43 @@ section: nvidia
 order: 1
 level: S
 title: NVIDIA：万亿参数 LLM 怎么分布式训练？并行切在哪？
-quick: "先分别估算参数、优化器状态和激活的显存，再组合张量、流水线和数据并行及状态分片。张量并行拆层内矩阵，流水线并行拆层，FSDP/ZeRO 等分片状态；再用重计算、FlashAttention 和通信重叠控制内存与空转，最后按 GPU 时间线判断瓶颈。"
+quick: >-
+  先分别估算参数、优化器状态和激活的显存，再组合张量、流水线和数据并行及状态分片。张量并行拆层内矩阵，流水线并行拆层，FSDP/ZeRO
+  等分片状态；再用重计算、FlashAttention 和通信重叠控制内存与空转，最后按 GPU 时间线判断瓶颈。
 tags:
   - NVIDIA
   - Distributed Training
   - Megatron
   - Parallelism
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: NVIDIA Senior SWE (LLM Applications) Interview Experience (2025)
-    url: https://www.tryexponent.com/experiences/nvidia-senior-software-engineer-interview-5768ad
+    url: >-
+      https://www.tryexponent.com/experiences/nvidia-senior-software-engineer-interview-5768ad
     type: candidate-first-hand
-  - title: Megatron-LM — Training Multi-Billion Parameter Language Models Using Model Parallelism
-    url: https://arxiv.org/abs/1909.08053
+  - title: >-
+      Megatron-LM — Training Multi-Billion Parameter Language Models Using Model
+      Parallelism
+    url: 'https://arxiv.org/abs/1909.08053'
     type: primary
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
 ---
+
+## 可以这样回答
+
+我会先算清参数、优化器状态和激活各占多少显存，再组合张量并行、流水线并行和数据并行。万亿参数既有总状态放不下的问题，也有单层计算和跨卡通信的问题，所以配置要说明每个轴解决什么、代价是什么。比如 Adam 的状态已经达到 TB 量级，继续复制整份优化器状态就行不通。
+
+粗算 bf16 参数 $2$ 字节，Adam 还要 fp32 副本 + 一阶二阶矩，优化器状态大约 $12$ 字节/参数量级。$10^{12}$ 参数光优化器就是数 TB，单机甚至单节点放不下。激活还跟 $B\cdot T\cdot L\cdot d$ 走。因此需要同时处理模型状态和激活，复制完整模型的 DDP 会先碰到容量上限。
+
+## 技术备查
 
 ## 真题记录
 
@@ -50,7 +66,7 @@ sources:
 
 万亿常见是 TP × PP × DP。TP 取 $8$ 或 $4$（一台 8 卡），PP 把层铺到多机，剩下的卡数给 DP。上下文很长时再加序列并行 / 上下文并行，否则激活先爆。
 
-重计算（activation checkpointing）通过多算一次前向减少激活存储，FlashAttention 则减少注意力激活，两者在万亿规模通常都会考虑。
+重计算（activation checkpointing）通过多算一次前向减少激活存储，FlashAttention 则减少 attention 激活，两者在万亿规模通常都会考虑。
 
 ## 利用率：面试要能诊断空转
 
@@ -67,4 +83,4 @@ sources:
 **MoE 万亿呢？**
 MoE 还要加入专家并行这个第四轴，路由带来 all-to-all 通信瓶颈，需要在 dense 的并行图上另加这一层。
 **为什么不用流水线就完事？**
-纯 PP 在万亿深度下仍有气泡和在途激活内存问题，词表以及第一层、最后一层的大矩阵也要单独安排，单靠按层切分解决不了这些负担。
+纯 PP 在万亿深度下仍有气泡和在途激活内存问题，vocabulary 以及第一层、最后一层的大矩阵也要单独安排，单靠按层切分解决不了这些负担。

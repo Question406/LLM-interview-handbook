@@ -4,20 +4,22 @@ section: dp-2d
 order: 6
 level: S
 title: LC 72 · 编辑距离
-quick: "$dp[i][j]$ 是 `word1` 前 $i$ 个字符变成 `word2` 前 $j$ 个字符的最少操作数。末字符相同就抄左上；不同就在替换（左上）、删除（上）、插入（左）里取最小再加一，时间 $O(mn)$。"
+quick: >-
+  $dp[i][j]$ 是 `word1` 前 $i$ 个字符变成 `word2` 前 $j$
+  个字符的最少操作数。末字符相同就抄左上；不同就在替换（左上）、删除（上）、插入（左）里取最小再加一，时间 $O(mn)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 72. 编辑距离
-    url: https://leetcode.cn/problems/edit-distance/
+    url: 'https://leetcode.cn/problems/edit-distance/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -53,7 +55,7 @@ horse 可以用三次允许的编辑变成 ros；不要求输出这三次编辑�
 
 ## 思路
 
-我会用二维 DP 比较两个前缀。$dp[i][j]$ 表示把 `word1[:i]` 变成 `word2[:j]` 的最少操作数。边界是 $dp[i][0]=i$（全删）、$dp[0][j]=j$（全插）。
+我会用二维 DP 比较两个前缀。$dp[i][j]$ 表示把 `word1[:i]` 变成 `word2[:j]` 的最少操作数。base cases 是 $dp[i][0]=i$（全删）、$dp[0][j]=j$（全插）。
 
 末字符相同时不用动，`dp[i][j] = dp[i-1][j-1]`。不同时有三种做法：替换来自左上，删除来自上方（丢掉 `word1` 的当前字符），插入来自左方（补上 `word2` 的当前字符），取 $\min$ 再加一。拿 `horse` 变 `ros` 来说，答案是 $3$：`h` 换成 `r`，删掉 `r`，再删掉 `e`。
 
@@ -106,9 +108,9 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(mn)$，滚动后 $O(\min(m,n))$。
 
-## 边界
+## Edge Cases
 
-一串为空时，按边界 $dp[i][0]=i$、$dp[0][j]=j$，答案就是另一串的长度。两串相等时每步都抄对角，答案 $0$。单字符互异时替换一次，或者删一次再插一次，最少是 $1$。
+一串为空时，按 base cases $dp[i][0]=i$、$dp[0][j]=j$，答案就是另一串的长度。两串相等时每步都抄对角，答案 $0$。单字符互异时替换一次，或者删一次再插一次，最少是 $1$。
 
 ## 追问
 

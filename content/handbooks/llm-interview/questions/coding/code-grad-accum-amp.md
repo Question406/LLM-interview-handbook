@@ -3,8 +3,10 @@ id: code-grad-accum-amp
 section: coding
 order: 31
 level: A
-title: 手写梯度累积 + fp16 动态 loss scaling：unscale、查 inf、clip 的顺序
-quick: "每个 micro-batch 的 loss 先除以 accum_steps、再乘 scale 反传；累积完先 unscale，再查 inf/nan，溢出就跳过这一步、scale 减半。没溢出才 clip 和 step，连续很多步没溢出再把 scale 翻倍。"
+title: 手写 gradient accumulation + fp16 动态 loss scaling：unscale、查 inf、clip 的顺序
+quick: >-
+  每个 micro-batch 的 loss 先除以 accum_steps、再乘 scale backpropagation；累积完先 unscale，再查
+  inf/nan，溢出就跳过这一步、scale 减半。没溢出才 clip 和 step，连续很多步没溢出再把 scale 翻倍。
 tags:
   - Mixed Precision
   - Loss Scaling
@@ -13,18 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
   - title: Mixed Precision Training
-    url: https://arxiv.org/abs/1710.03740
+    url: 'https://arxiv.org/abs/1710.03740'
     type: primary
 ---
 
 ## 题目描述
 
-实现带梯度累积、动态 loss scaling 和全局梯度裁剪的单次训练更新；同一组 micro-batch 只触发一次优化器更新。
+实现带 gradient accumulation、动态 loss scaling 和全局 gradient clipping 的单次训练更新；同一组 micro-batch 只触发一次优化器更新。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -63,8 +65,9 @@ scaler初始 scale=4, growth_interval=2, min_scale=2
 ```python
 import torch
 
+
 class DynamicLossScaler:
-    def __init__(self, init_scale=2.0 ** 16, growth_interval=2000, min_scale=1.0):
+    def __init__(self, init_scale=2.0**16, growth_interval=2000, min_scale=1.0):
         self.scale = init_scale
         self.growth_interval = growth_interval
         self.min_scale = min_scale
@@ -78,6 +81,7 @@ class DynamicLossScaler:
             self.good_steps += 1
             if self.good_steps % self.growth_interval == 0:
                 self.scale *= 2
+
 
 def train_step(model, opt, micro_batches, loss_fn, scaler, max_norm=1.0):
     k = len(micro_batches)
@@ -146,10 +150,10 @@ clip 阈值是按真实梯度范数定的。unscale 之前的范数是真实值�
 两者数学上等价。除 loss 更省事，也能避免累加过程中 fp16 梯度变大溢出。前提是各个 micro-batch 的有效 token 数相同，否则要按 token 加权才和大 batch 等价。
 
 **跳步会影响 lr schedule 吗？**
-跳过的那一步没有 `opt.step()`，按 `code-lr-schedule` 的口径，scheduler 也不该前进。训练初期 scale 从 $2^{16}$ 往下找的那几次跳步通常可以忽略。
+跳过的那一步没有 `opt.step()`，按 `code-lr-schedule` 的定义，scheduler 也不该前进。训练初期 scale 从 $2^{16}$ 往下找的那几次跳步通常可以忽略。
 
 **scale 一直在减半怎么办？**
-说明梯度本身出了 inf/nan，和数值范围无关了。去查 loss 是不是 nan、有没有除零或 log(0)、attention 的 softmax 是不是在 fp16 里算的。`min_scale` 用来兜底，免得 scale 一路减半逼近 0，乘完之后梯度全部下溢成 0。
+说明梯度本身出了 inf/nan，和数值范围无关了。去查 loss 是不是 nan、有没有除零或 log(0)、attention 的 softmax 是不是在 fp16 里算的。`min_scale` 用来限制 scale 的最小值，避免 scale 一路减半逼近 0，乘完之后梯度全部下溢成 0。
 
 **为什么查 inf 要看所有参数？**
 只要有一个参数的梯度溢出，global norm 就是 inf，clip 会把所有梯度乘成 0 或者 nan。所以必须整体判断、整体跳过。

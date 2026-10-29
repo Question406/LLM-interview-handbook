@@ -4,30 +4,48 @@ section: nvidia
 order: 16
 level: A
 title: NVIDIA：CUDA Graph 在 decode 上的收益和动态 shape 限制
-quick: "CUDA Graph 把 decode 的短核和依赖录成一次提交，replay 时减少 CPU launch 间隙，小 batch、低延迟请求收益更明显。我会按真实 batch 分布捕获几档图，匹配不上就 padding 或 eager；同时预分配 KV 和 workspace，避免地址、形状变化让图失效。"
+quick: >-
+  CUDA Graph 把 decode 的短核和依赖录成一次提交，replay 时减少 CPU launch 间隙，小
+  batch、低延迟请求收益更明显。我会按真实 batch 分布捕获几档图，匹配不上就 padding 或 eager；同时预分配 KV 和
+  workspace，避免地址、形状变化让图失效。
 tags:
   - NVIDIA
   - CUDA Graph
   - Decode
   - TensorRT-LLM
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: CUDA C++ Programming Guide — CUDA Graphs
-    url: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cuda-graphs
+    url: >-
+      https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cuda-graphs
     type: primary
   - title: Tuning CUDA Graph Batch Sizes for Higher Output Throughput — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/latest/blogs/tech_blog/blog20_Tuning_CUDA_Graph_Batch_Sizes_for_Higher_Output_Throughput.html
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/latest/blogs/tech_blog/blog20_Tuning_CUDA_Graph_Batch_Sizes_for_Higher_Output_Throughput.html
     type: secondary
   - title: Torch Compile and Piecewise CUDA Graph — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/latest/features/torch_compile_and_piecewise_cuda_graph.html
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/latest/features/torch_compile_and_piecewise_cuda_graph.html
     type: primary
-  - title: NVIDIA TensorRT-LLM Supercharges Large Language Model Inference on NVIDIA H100 GPUs
-    url: https://developer.nvidia.com/blog/nvidia-tensorrt-llm-supercharges-large-language-model-inference-on-nvidia-h100-gpus/
+  - title: >-
+      NVIDIA TensorRT-LLM Supercharges Large Language Model Inference on NVIDIA
+      H100 GPUs
+    url: >-
+      https://developer.nvidia.com/blog/nvidia-tensorrt-llm-supercharges-large-language-model-inference-on-nvidia-h100-gpus/
     type: secondary
 ---
+
+## 可以这样回答
+
+CUDA Graph 能把 decode 的一串短核合成一次提交，减少 CPU launch 造成的空隙。例如一步有 40 个核、每次 launch 用 $5\,\mu\mathrm{s}$，host 开销就有 $0.2\,\mathrm{ms}$。它适合形状和地址稳定的路径；TensorRT-LLM 文档中主要给 decode 建图，prefill 的形状依赖输入长度，很难用一张图覆盖。
+
+Prefill：$T$ 大，一次 GEMM / FMHA 就能把 GPU 喂饱，launch 几个微秒可以忽略。
+
+## 技术备查
 
 CUDA Graph 能把 decode 的一串短核合成一次提交，减少 CPU launch 造成的空隙。例如一步有 40 个核、每次 launch 用 $5\,\mu\mathrm{s}$，host 开销就有 $0.2\,\mathrm{ms}$。它适合形状和地址稳定的路径；TensorRT-LLM 文档中主要给 decode 建图，prefill 的形状依赖输入长度，很难用一张图覆盖。
 
@@ -50,7 +68,7 @@ CUDA Graph 捕获的是：核的 launch 配置、固定（或更新受限）的�
 
 TensorRT-LLM 会在运行前按一组 `batch_sizes` 分别捕获 decode 图（文档提醒每张图可能到一两百 MB 额外显存）。padding 打开时，真实 $B$ pad 到下一个已捕获尺寸，空槽浪费算力。默认若按 2 的幂跳，高并发区间相邻尺寸能差到几百，padding 的浪费很大；官方后来把默认间隔收紧。因此图只能覆盖离散的 batch 档位，IFB 的 $B$ 对不上时就 pad 或退回 eager。
 
-Prefill / 混合步：token 数随 输入提示（prompt） 变，一张图罩不住。Piecewise CUDA Graph 把 attention 留在 eager（变长、paged、MLA 分支），前后 GEMM 分段捕获；attention 写成 in-place，输出缓冲由 graph 段预分配，指针才稳。动态维只放行 `num_tokens`。这承认了动态部分的限制，并非整模型都能进入图。Chunked prefill 的混合步更是如此，见 `nvidia-chunked-prefill`。
+Prefill / 混合步：token 数随 prompt 变，一张图罩不住。Piecewise CUDA Graph 把 attention 留在 eager（变长、paged、MLA 分支），前后 GEMM 分段捕获；attention 写成 in-place，输出缓冲由 graph 段预分配，指针才稳。动态维只放行 `num_tokens`。这承认了动态部分的限制，并非整模型都能进入图。Chunked prefill 的混合步更是如此，见 `nvidia-chunked-prefill`。
 
 形状变化后切换档位或回到 eager，不要每步 recapture。捕获要先跑一遍路径，成本远高于 replay。
 
@@ -61,8 +79,8 @@ Graph 也可以在 replay 前更新 kernel 参数和部分指针，但 launch �
 **Padding 到 `max_batch_size` 一张图行不行？**
 行，捕获简单，空槽在小流量时把带宽和算力都浪费掉。要用真实 $B$ 分布选桶。
 
-**采样 / 停词能进图吗？**
-数据相关分支（EOS、ragged 写出）常把图打断。很多实现 graph 打到 logits 为止，采样留 host 或单独核。
+**sampling / 停词能进图吗？**
+数据相关分支（EOS、ragged 写出）常把图打断。很多实现 graph 打到 logits 为止，sampling 留 host 或单独核。
 
 **和 `torch.compile` 一起？**
 TRT-LLM 的引擎路径不要外包一层 compile。PyTorch 运行时那条才用 piecewise + compile。两条编译器叠在一起会抢图。

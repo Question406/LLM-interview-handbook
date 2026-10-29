@@ -3,8 +3,10 @@ id: p3a-anthropic-rl-fundamentals-grpo-debug
 section: anthropic
 order: 617
 level: S
-title: "Anthropic：GRPO 调试与重要性采样比追问"
-quick: "我会按采样、组内优势、重要性采样比和 response mask 的顺序排查 GRPO。得分全同的组优势设为 0，ratio 用固定 old logprob 与 new 的差取 exp，损失只平均有效回答 token；这些都可以用小输入单独核对。"
+title: Anthropic：GRPO 调试与 importance sampling 比追问
+quick: >-
+  我会按 sampling、组内优势、importance sampling 比和 response mask 的顺序排查 GRPO。得分全同的组优势设为
+  0，ratio 用固定 old logprob 与 new 的差取 exp，损失只平均有效回答 token；这些都可以用小输入单独核对。
 companies:
   - anthropic
 tags:
@@ -13,25 +15,29 @@ tags:
   - Frontier-2026-10
   - ML
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Anthropic · rl-fundamentals-grpo-debug"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/rl-fundamentals-grpo-debug
+  - title: 1Point3Acres · Anthropic · rl-fundamentals-grpo-debug
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/rl-fundamentals-grpo-debug
     type: secondary
 ---
 
 ## 题目描述
 
-实现组内奖励归一化和带裁剪的策略损失，用于检查一个小型 GRPO 训练步骤。
+实现组内奖励 normalization 和带裁剪的策略损失，用于检查一个小型 GRPO 训练步骤。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `advantages(rewards)` 接收 NumPy 浮点数组 `[P,G]`，每行是一道 prompt 的 G 个奖励，返回同形数组：每组减去本组均值，再除以该行组内总体标准差（ddof=0）；标准差小于 `1e-8` 的组全部返回 0。
 
-`loss_grad(new, old, adv, mask, eps=0.2)` 返回 `(loss, grad)`。`new`、`old` 是 `[P*G,T]` 的采样 token 对数概率，`adv` 是 `[P*G]`，`mask` 是同形布尔数组，True 表示计入损失；`0 < eps < 1`。令 `r=exp(new-old)`，每个有效 token 的损失定义为 `-min(r*A, clip(r,1-eps,1+eps)*A)`，其中 A 是该序列的优势。`loss` 是有效 token 的均值，`grad` 是对 new 的导数，形状与 new 一致。old、adv 是常量；不加入额外参考模型 KL 项。全部 token 被屏蔽时返回 0 和全零梯度。
+`loss_grad(new, old, adv, mask, eps=0.2)` 返回 `(loss, grad)`。`new`、`old` 是 `[P*G,T]` 的 sampling token log probability，`adv` 是 `[P*G]`，`mask` 是同形布尔数组，True 表示计入损失；`0 < eps < 1`。令 `r=exp(new-old)`，每个有效 token 的损失定义为 `-min(r*A, clip(r,1-eps,1+eps)*A)`，其中 A 是该序列的优势。`loss` 是有效 token 的均值，`grad` 是对 new 的导数，形状与 new 一致。old、adv 是常量；不加入额外 reference model KL 项。全部 token 被屏蔽时返回 0 和全零梯度。
 
 ### 示例
 
@@ -45,25 +51,25 @@ loss = 0, grad = [[-0.5],[0.5]]
 
 ## 题目
 
-给一份植入了若干 bug 的 GRPO 训练脚本，找出并修复这些错误；之后面试官会追问 clip 的作用、组内优势归一化，以及 on-policy 和 off-policy 的区别（重要性采样比为什么会偏离 1）。
+给一份植入了若干 bug 的 GRPO 训练脚本，找出并修复这些错误；之后面试官会追问 clip 的作用、组内优势 normalization，以及 on-policy 和 off-policy 的区别（importance sampling 比为什么会偏离 1）。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。具体植入了哪几行 bug 以现场脚本为准，摘要不足以确认第三个 bug。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。具体植入了哪几行 bug 以现场脚本为准，摘要不足以确认第三个 bug。下面的接口、约束和测试是手册补的练习约定。
 
 我会沿数据流排查，每层用一个小输入验证，再看总损失。比如同一 prompt 的 G 个回答得分全一样，减均值后全是 0，标准差也是 0；直接相除就变成 NaN，这组没有相对学习信号，应把优势设为 0。
 
-采样前先把 logits 经 softmax 变成非负、和为 1 的概率。组内优势按同一个 prompt 分组，减均值、除组内标准差，并处理上面这个零方差边界。
+sampling 前先把 logits 经 softmax 变成非负、和为 1 的概率。组内优势按同一个 prompt 分组，减均值、除组内标准差，并处理上面这个 zero-variance edge case。
 
-再看重要性采样比：$r = \exp(\log \pi_\text{new} - \log \pi_\text{old})$。logprob 之差还要取 exp，`old` 则在采样时固定，不参与求导。损失的 response mask 只放回答 token，排除 prompt 和 padding，分母也用有效 token 数。
+再看 importance sampling 比：$r = \exp(\log \pi_\text{new} - \log \pi_\text{old})$。logprob 之差还要取 exp，`old` 则在 sampling 时固定，不参与求导。损失的 response mask 只放回答 token，排除 prompt 和 padding，分母也用有效 token 数。
 
-下面练习设置了 logits 直接采样、零方差除零和漏 exp 三类错误；已有面经转述只有前两类的具体线索，第三类是练习约定，现场仍以给出的脚本为准。
+下面练习设置了 logits 直接 sampling、零方差除零和漏 exp 三类错误；已有面经转述只有前两类的具体线索，第三类是练习约定，现场仍以给出的脚本为准。
 
 ## 完整编程练习（手册重构版）
 
 ### 题面、接口与约束
 
-- `advantages(rewards)`：`rewards` 形状 $(P, G)$，P 个 prompt、每个 G 个回答。每组用总体标准差归一化；标准差小于 $10^{-8}$ 的组优势全为 0。
-- `loss_grad(new_logp, old_logp, adv, mask, eps=0.2) -> (loss, grad)`：`new_logp`、`old_logp` 形状 $(P \cdot G, T)$，是被采样 token 的 log 概率；`adv` 形状 $(P \cdot G,)$；`mask` 与 logprob 同形状的 bool。返回 PPO 式 clipped surrogate 取负后在有效 token 上的均值，以及它对 `new_logp` 的梯度。
-- `old_logp` 和 `adv` 视为常量；不加参考模型 KL；`mask` 全为 False 时返回损失 0 和全零梯度。形状不符或 `eps` 不在 $(0, 1)$ 内抛 `ValueError`。
+- `advantages(rewards)`：`rewards` 形状 $(P, G)$，P 个 prompt、每个 G 个回答。每组用总体标准差 normalization；标准差小于 $10^{-8}$ 的组优势全为 0。
+- `loss_grad(new_logp, old_logp, adv, mask, eps=0.2) -> (loss, grad)`：`new_logp`、`old_logp` 形状 $(P \cdot G, T)$，是被 sampling token 的 log 概率；`adv` 形状 $(P \cdot G,)$；`mask` 与 logprob 同形状的 bool。返回 PPO 式 clipped surrogate 取负后在有效 token 上的均值，以及它对 `new_logp` 的梯度。
+- `old_logp` 和 `adv` 视为常量；不加 reference model KL；`mask` 全为 False 时返回损失 0 和全零梯度。形状不符或 `eps` 不在 $(0, 1)$ 内抛 `ValueError`。
 
 ### 输入输出示例
 
@@ -89,13 +95,15 @@ STD_FLOOR = 1e-8
 
 
 def advantages(rewards):
-    """组内归一化优势。rewards: (P, G)，每行是同一个 prompt 的 G 个回答的得分。
+    """组内 normalization 优势。rewards: (P, G)，每行是同一个 prompt 的 G 个回答的得分。
 
     每组减去组均值、除以组内总体标准差；一组得分全相同（std < 1e-8）时优势全为 0，不除零。
     """
     rewards = np.asarray(rewards, dtype=float)
     if rewards.ndim != 2 or rewards.shape[1] == 0:
-        raise ValueError(f"rewards must have shape (P, G) with G >= 1, got {rewards.shape}")
+        raise ValueError(
+            f"rewards must have shape (P, G) with G >= 1, got {rewards.shape}"
+        )
     centered = rewards - rewards.mean(axis=1, keepdims=True)
     std = rewards.std(axis=1, keepdims=True)
     return np.divide(centered, std, out=np.zeros_like(centered), where=std >= STD_FLOOR)
@@ -115,8 +123,8 @@ def _check_loss_inputs(new_logp, old_logp, adv, mask, eps):
 def loss_grad(new_logp, old_logp, adv, mask, eps=0.2):
     """PPO 式 clipped surrogate 的损失（取负，用于最小化）和它对 new_logp 的梯度。
 
-    new_logp, old_logp, mask: (B, T)，B = P * G，是被采样 token 的 log 概率；adv: (B,)。
-    old_logp 和 adv 视为常量；损失对 mask 内的有效 token 求平均；不含参考模型 KL。
+    new_logp, old_logp, mask: (B, T)，B = P * G，是被 sampling token 的 log 概率；adv: (B,)。
+    old_logp 和 adv 视为常量；损失对 mask 内的有效 token 求平均；不含 reference model KL。
     """
     new_logp = np.asarray(new_logp, dtype=float)
     old_logp = np.asarray(old_logp, dtype=float)
@@ -129,7 +137,7 @@ def loss_grad(new_logp, old_logp, adv, mask, eps=0.2):
         return 0.0, np.zeros_like(new_logp)
 
     adv = adv[:, None]  # (B, 1)，广播到每个 token
-    ratio = np.exp(new_logp - old_logp)  # 重要性采样比 π_new / π_old
+    ratio = np.exp(new_logp - old_logp)  # importance sampling 比 π_new / π_old
     unclipped = ratio * adv
     clipped = np.clip(ratio, 1 - eps, 1 + eps) * adv
     loss = float((-np.minimum(unclipped, clipped) * mask).sum() / num_tokens)
@@ -149,7 +157,7 @@ def loss_grad(new_logp, old_logp, adv, mask, eps=0.2):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -161,7 +169,8 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
 
-# 第一组得分相同，优势全 0；第二组标准化为 -1 和 1
+
+# 第一组得分相同，优势全 0；第二组 standardization 为 -1 和 1
 assert np.allclose(advantages([[1, 1], [0, 2]]), [[0, 0], [-1, 1]])
 
 # 解析梯度和中心差分对照；第二行的两个 token 分别落在 clip 平坦区和非平坦区
@@ -199,13 +208,13 @@ expect_value_error(loss_grad, new_logp, old_logp, adv, mask, 1.5)
 
 设 P 个 prompt、每组 G 个回答、序列长 T。`advantages` 是 O(PG)，`loss_grad` 的时间和空间都是 O(PGT)。
 
-- 采样那一步：要先对 logits 做 softmax（可以先除以 temperature），再按概率采样；把 logits 直接当权重会遇到负数，分布也不对。
+- sampling 那一步：要先对 logits 做 softmax（可以先除以 temperature），再按概率 sampling；把 logits 直接当权重会遇到负数，分布也不对。
 - mask 的范围：只覆盖 response token。把 prompt token 算进去会让模型在它没生成的 token 上受到梯度。
-- 加 KL 惩罚：要先说明 reference 策略是谁（通常是 SFT 模型）、KL 用哪种估计、按 token 还是按序列平均。old 策略的 ratio 是为了做重要性采样修正，reference KL 是为了防止策略漂离初始模型，两者不能合成一项。
+- 加 KL 惩罚：要先说明 reference 策略是谁（通常是 SFT 模型）、KL 用哪种估计、按 token 还是按序列平均。old 策略的 ratio 是为了做 importance sampling 修正，reference KL 是为了防止策略漂离初始模型，两者不能合成一项。
 
 ## 相关题
 
 - [[anthropic-grpo-debug]]：手册已有的同类题，两边题面契约不完全一样，练习时分别对照，不要混用；那张多了真题记录和修完后的追问。
-- [[sys-rollout-logprob]]：展开「重要性采样比为什么会偏离 1」，按 micro batch、温度、权重版本逐项排查。
+- [[sys-rollout-logprob]]：展开「importance sampling 比为什么会偏离 1」，按 micro batch、温度、权重版本逐项排查。
 - [[sys-adv-bcast]]：这里说 mask 只覆盖 response token，那张讲序列级优势铺到 token 时 prompt、pad、工具返回为什么必须是 0。
 - [[sys-kl-place]]：这里提到 ref KL 和 old ratio 不能合成一项，那张讲 KL 写进奖励还是写进 loss。

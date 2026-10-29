@@ -3,8 +3,9 @@ id: dt-case-web-grounding
 section: cases
 order: 5
 level: S
-title: "案例 4/4：网页里的数字是模型编的，怎么设计 hallucination penalty？"
-quick: "让模型写每个数字时带上它在数据里的地址，再按地址回查，对不上就扣分，扣多少按错的类型定。只罚错的话模型会少写数字，所以另加一项覆盖率。最理想是数字直接由渲染器按地址填，当时工程上没做成。"
+title: 案例 4/4：网页里的数字是模型编的，怎么设计 hallucination penalty？
+quick: >-
+  让模型写每个数字时带上它在数据里的地址，再按地址回查，对不上就扣分，扣多少按错的类型定。只罚错的话模型会少写数字，所以另加一项覆盖率。最理想是数字直接由渲染器按地址填，当时工程上没做成。
 companies:
   - apple
 tags:
@@ -17,22 +18,24 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Why Language Models Hallucinate (Kalai, Nachum, Vempala, Zhang)"
-    url: https://arxiv.org/abs/2509.04664
+  - title: 'Why Language Models Hallucinate (Kalai, Nachum, Vempala, Zhang)'
+    url: 'https://arxiv.org/abs/2509.04664'
     type: primary
-  - title: "Enabling Large Language Models to Generate Text with Citations (ALCE)"
-    url: https://arxiv.org/abs/2305.14627
+  - title: Enabling Large Language Models to Generate Text with Citations (ALCE)
+    url: 'https://arxiv.org/abs/2305.14627'
     type: primary
-  - title: "Learning to Reason for Factuality (Chen et al., Meta)"
-    url: https://arxiv.org/abs/2508.05618
+  - title: 'Learning to Reason for Factuality (Chen et al., Meta)'
+    url: 'https://arxiv.org/abs/2508.05618'
     type: primary
-  - title: "Fine-Grained Human Feedback Gives Better Rewards for Language Model Training"
-    url: https://arxiv.org/abs/2306.01693
+  - title: >-
+      Fine-Grained Human Feedback Gives Better Rewards for Language Model
+      Training
+    url: 'https://arxiv.org/abs/2306.01693'
     type: primary
-  - title: "Anthropic: Introducing Citations on the API"
-    url: https://www.anthropic.com/news/introducing-citations-api
+  - title: 'Anthropic: Introducing Citations on the API'
+    url: 'https://www.anthropic.com/news/introducing-citations-api'
     type: secondary
 ---
 
@@ -44,7 +47,7 @@ sources:
 
 扣分是按错的类型分开的。编出来的数、编出来的地址扣得最重，地址对了但数抄错也算重；数是对的、标签写错了，比如把 Q2 的值标成 Q3，扣得轻一些。数据里本来就没有的项，模型写「未提供」，不扣。后来又加了一项覆盖率，〔填：是不是因为看到模型开始少放数字〕，该展示的字段没展示也扣分。
 
-这个检查我们在 rejection sampling、偏好对和 RL 奖励里都用上了，〔填：效果〕。回头看，如果工程上允许，我还是会先把渲染器直接填数这条路打通。现在这套是在输出之后补救，模型写错 reference 的情况还是要靠检查去抓。
+这个检查我们在 rejection sampling、preference pairs 和 RL 奖励里都用上了，〔填：效果〕。回头看，如果工程上允许，我还是会先把渲染器直接填数这条路打通。现在这套是在输出之后补救，模型写错 reference 的情况还是要靠检查去抓。
 
 ## 追问
 

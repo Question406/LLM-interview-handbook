@@ -4,7 +4,9 @@ section: agentrl
 order: 193
 level: A
 title: 失败轨迹如何重标注后还能用于训练？
-quick: "能用。可以用 Hindsight 把实际达到的状态设成新目标，也可以标出正确前缀和首次出错的动作分开训练。工具超时等环境故障要和模型错误分开，重标后保留失败类型，新标签要用终态断言校验通过才入库。"
+quick: >-
+  能用。可以用 Hindsight
+  把实际达到的状态设成新目标，也可以标出正确前缀和首次出错的动作分开训练。工具超时等环境故障要和模型错误分开，重标后保留失败类型，新标签要用终态断言校验通过才入库。
 tags:
   - Relabeling
   - HER
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Hindsight Experience Replay
-    url: https://arxiv.org/abs/1707.01495
+    url: 'https://arxiv.org/abs/1707.01495'
     type: primary
 ---
 
@@ -23,7 +25,7 @@ sources:
 
 比如一个修 bug 的 Agent 没能让目标测试变绿，却让另一个测试从红变绿了。以「让那个测试变绿」为目标，这就是一条成功轨迹。另一条轨迹前几步都对，某一步工具参数填错，后面一路错下去，那前面几步可以留作正上下文，出错那一步当 rejected。
 
-常见的误区有两种：把整条失败轨迹当监督微调（SFT）的负例，或者把工具超时、权限变更当成模型选错了。失败轨迹是有结构的，有可修复的前缀、first-error 和不可恢复的外因。它和 `arl-hindsight` 的区别在于，那题事后重估中间步的贡献，这题改的是目标标签和错误切片。`arl-trajectories` 解释了为什么需要 near-miss，这题讲怎么标，以及哪些失败压根不该算到模型头上。
+常见的误区有两种：把整条失败轨迹当 SFT 的负例，或者把工具超时、权限变更当成模型选错了。失败轨迹是有结构的，有可修复的前缀、first-error 和不可恢复的外因。它和 `arl-hindsight` 的区别在于，那题事后重估中间步的贡献，这题改的是目标标签和错误切片。`arl-trajectories` 解释了为什么需要 near-miss，这题讲怎么标，以及哪些失败压根不该算到模型头上。
 
 ## 两种 relabel，外因样本不算模型的错
 
@@ -41,7 +43,7 @@ $g'$ 要来自可执行的 $\phi(s)$，不能让 LLM judge 随口说「这也算
 
 ## 报告什么，以及和探索题怎么接
 
-要报 relabel 比例、校验通过率，以及对真实原任务 $g$ 的迁移增益。只在 $g'$ 上变好、原任务不动，说明在刷假目标。稀疏奖励下 HER 是探索工具箱里的一块，见 `arl-sparse-reward-exploration`，它能加密信号，但替代不了课程和可验证的子目标。失败轨迹进训练前还要过质量门，没有 first-error 标签的整条失败，优先丢掉，别硬标。和 `arl-trajectories` 放在一起看：只用成功轨迹会缺恢复能力，乱 relabel 会发明出错误的成功。
+要报 relabel 比例、校验通过率，以及对真实原任务 $g$ 的迁移增益。只在 $g'$ 上变好、原任务不动，说明在刷假目标。稀疏奖励下 HER 是探索工具箱里的一块，见 `arl-sparse-reward-exploration`，它能加密信号，但替代不了课程和可验证的子目标。失败轨迹进训练前还要过 data quality checks，没有 first-error 标签的整条失败，优先丢掉，别硬标。和 `arl-trajectories` 放在一起看：只用成功轨迹会缺恢复能力，乱 relabel 会发明出错误的成功。
 
 ## 追问
 

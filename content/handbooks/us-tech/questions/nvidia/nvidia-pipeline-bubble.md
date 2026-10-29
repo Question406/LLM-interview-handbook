@@ -4,27 +4,42 @@ section: nvidia
 order: 4
 level: S
 title: NVIDIA：流水线气泡从哪来，1F1B / interleaved 怎么减
-quick: "流水线启动和排空时，有些 stage 要等激活或梯度，因此会空转。$P$ 个 stage、$M$ 个 microbatch 时，$M$ 足够大才可把气泡比例近似成 $(P-1)/M$；1F1B 主要降低在途激活内存，interleaved 则用每卡 $v$ 个虚 stage 把气泡近似再除以 $v$。"
+quick: >-
+  流水线启动和排空时，有些 stage 要等激活或梯度，因此会空转。$P$ 个 stage、$M$ 个 microbatch 时，$M$
+  足够大才可把气泡比例近似成 $(P-1)/M$；1F1B 主要降低在途激活内存，interleaved 则用每卡 $v$ 个虚 stage 把气泡近似再除以
+  $v$。
 tags:
   - NVIDIA
   - Pipeline Parallel
   - Megatron
   - 1F1B
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
   - title: Scaling Language Model Training to a Trillion Parameters Using Megatron
-    url: https://developer.nvidia.com/blog/scaling-language-model-training-to-a-trillion-parameters-using-megatron/
+    url: >-
+      https://developer.nvidia.com/blog/scaling-language-model-training-to-a-trillion-parameters-using-megatron/
     type: secondary
   - title: NVIDIA Megatron-LM
-    url: https://github.com/NVIDIA/Megatron-LM
+    url: 'https://github.com/NVIDIA/Megatron-LM'
     type: primary
 ---
+
+## 可以这样回答
+
+流水线气泡就是某个 stage 没有可算的工作，只能等上游的激活或下游的梯度。比如第一批刚进入流水线时，后面的卡还收不到激活；最后一批向后传播时，前面的卡又会先空下来。增加 microbatch 可以摊薄这段空转，1F1B 主要节省激活内存，interleaved 则进一步改变调度、减少气泡。
+
+万亿参数训练的整体切分见 `nvidia-trillion-train`。这里用 $P$ 个 stage、$M$ 个 microbatch 和每卡 $v$ 个虚 stage，把这些调度分别算清楚。
+
+## 技术备查
 
 流水线气泡就是某个 stage 没有可算的工作，只能等上游的激活或下游的梯度。比如第一批刚进入流水线时，后面的卡还收不到激活；最后一批向后传播时，前面的卡又会先空下来。增加 microbatch 可以摊薄这段空转，1F1B 主要节省激活内存，interleaved 则进一步改变调度、减少气泡。
 
@@ -60,7 +75,7 @@ $$
 
 $v=2$ 是 Megatron 万亿博客里的常用值：泡泡减半，实现复杂度可接受。
 
-虚 stage 增多也会增加边界和 P2P 次数，microbatch 数还要满足更细的调度整除约束。切得太碎会产生许多小 kernel，像 TP 过大一样降低 MFU，所以 $v$ 需要实测选择。
+虚 stage 增多也会增加 stage transitions 和 P2P 次数，microbatch 数还要满足更细的调度整除约束。切得太碎会产生许多小 kernel，像 TP 过大一样降低 MFU，所以 $v$ 需要实测选择。
 
 和张量并行的配合：节点内 TP、节点间 PP。PP 的 P2P 是点对点传激活 $[B_{\mathrm{micro}}, T, D]$，体积通常小于 TP 的 all-reduce，但延迟不能藏在 NVLink 里。气泡诊断优先看「是不是 $M$ 不够、stage 算力不均」，再看 NCCL。层内集合通信见 `nvidia-tensor-parallel`，两者不要混成一次 all-reduce。
 
@@ -69,7 +84,7 @@ $v=2$ 是 Megatron 万亿博客里的常用值：泡泡减半，实现复杂度�
 **把 $M$ 开到极大？**
 气泡比例会下降，但还要核对全局 batch、microbatch 大小和梯度累加步数怎么配，它们会影响优化器看到的噪声。GPipe 要保留更多激活，可能先超出显存；1F1B 下仍需计入累计梯度和 optimizer 状态，并保证 $M$ 满足调度的整除要求。
 **stage 切不均怎么办？**
-最后一层加词表 softmax 往往最重，前几层 embedding 也不轻。可以按 FLOPs 和激活字节分配 stage，单按层数均分容易失衡；实在不均就让重的 stage 少挂几层。
+最后一层加 vocabulary softmax 往往最重，前几层 embedding 也不轻。可以按 FLOPs 和激活字节分配 stage，单按层数均分容易失衡；实在不均就让重的 stage 少挂几层。
 **Zero-bubble / DualPipe？**
 这类方法会进一步拆开 backward，例如把权重梯度计算 W 与 forward F 重叠，或拆分参数梯度通信，尝试填补剩余空槽。可以说明这个方向，未实际运行过的细节就明确说明。
 **和数据并行的 bubble 有何不同？**

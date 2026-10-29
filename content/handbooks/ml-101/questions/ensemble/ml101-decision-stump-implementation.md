@@ -4,33 +4,37 @@ section: ensemble
 order: 12
 level: A
 title: 实现决策树的一次最佳分裂，比较 Gini 与信息增益
-quick: 对每个数值特征枚举相邻不同值之间的阈值，计算父节点不纯度减去左右子节点按样本数加权的不纯度，选择增益最大的合法分裂。先明确最小叶子样本数和平票规则；纯节点、常量特征或无正增益时保留为叶子。参考实现只构造一层分类树，不处理缺失、类别特征或样本权重。
-tags: [ML Fundamentals, Trees, Coding]
+quick: >-
+  对每个数值特征枚举相邻不同值之间的阈值，计算父节点不纯度减去左右子节点按样本数加权的不纯度，选择增益最大的合法分裂。先明确最小叶子样本数和平票规则；纯节点、常量特征或无正增益时保留为叶子。参考实现只构造一层分类树，不处理缺失、类别特征或样本权重。
+tags:
+  - ML Fundamentals
+  - Trees
+  - Coding
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-23
+updatedAt: 2026-10-23T00:00:00.000Z
 sources:
-  - title: scikit-learn Decision Trees, mathematical formulation
-    url: https://scikit-learn.org/stable/modules/tree.html
+  - title: 'scikit-learn Decision Trees, mathematical formulation'
+    url: 'https://scikit-learn.org/stable/modules/tree.html'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 训练一个只允许分裂一次的分类决策树，并用得到的模型预测新样本。支持 Gini 和以2为底的熵两种不纯度。
 
 ### 输入与接口
 
-实现 `best_stump`(X,y,*,criterion="gini",`min_leaf`=1) 和 `stump_predict`(X,model)。训练 X 为 n×d 非空有限数值矩阵；y 为长度n的整数类别向量。criterion 为 gini 或 entropy；`min_leaf` 为正整数。预测 X 为 m×d 有限矩阵。
+实现 `best_stump`(X,y,*,criterion="gini",`min_leaf`=1) 和 `stump_predict`(X,model)。训练 X 为 n×d 非空有限数值矩阵；y 为长度 n 的整数类别向量。criterion 为 gini 或 entropy；`min_leaf` 为正整数。预测 X 为 m×d 有限矩阵。
 
 ### 输出与约束
 
 候选阈值取某特征相邻不同训练值的中点，左侧条件为值≤阈值；浮点中点不能区分两值时用较小值。候选分裂的两侧都至少 `min_leaf` 个样本。比较父节点不纯度减去按两侧样本数加权的不纯度。
 
-`best_stump` 返回字典：叶子模型含 feature=None、label、gain=0、`n_features`；分裂模型含 feature、threshold、gain、`left_label`、`right_label`、`n_features`。没有超过1e-12的正增益时保留叶子。增益在1e-12内视为平票，优先特征编号小、阈值小者；叶子多数票平票选择较小标签。predict 返回长度m的整数标签数组。
+`best_stump` 返回字典：叶子模型含 feature=None、label、gain=0、`n_features`；分裂模型含 feature、threshold、gain、`left_label`、`right_label`、`n_features`。没有超过1e-12的正增益时保留叶子。增益在1e-12内视为平票，优先特征编号小、阈值小者；叶子多数票平票选择较小标签。predict 返回长度 m 的整数标签数组。
 
 ### 示例
 
@@ -59,7 +63,11 @@ def best_stump(X, y, *, criterion="gini", min_leaf=1):
         raise ValueError("X must be a nonempty finite matrix")
     if y.shape != (len(X),) or not np.issubdtype(y.dtype, np.integer):
         raise ValueError("y must be an integer vector matching X")
-    if criterion not in ("gini", "entropy") or type(min_leaf) is not int or min_leaf < 1:
+    if (
+        criterion not in ("gini", "entropy")
+        or type(min_leaf) is not int
+        or min_leaf < 1
+    ):
         raise ValueError("invalid criterion or min_leaf")
     classes, encoded = np.unique(y, return_inverse=True)
     n, d = X.shape
@@ -67,7 +75,7 @@ def best_stump(X, y, *, criterion="gini", min_leaf=1):
     def impurity(labels):
         counts = np.bincount(labels, minlength=len(classes))
         p = counts[counts > 0] / len(labels)
-        return 1 - np.sum(p ** 2) if criterion == "gini" else -np.sum(p * np.log2(p))
+        return 1 - np.sum(p**2) if criterion == "gini" else -np.sum(p * np.log2(p))
 
     def majority(labels):
         return int(classes[np.bincount(labels, minlength=len(classes)).argmax()])
@@ -84,12 +92,20 @@ def best_stump(X, y, *, criterion="gini", min_leaf=1):
             nl = int(left.sum())
             if nl < min_leaf or n - nl < min_leaf:
                 continue
-            gain = parent - (nl * impurity(encoded[left]) +
-                             (n-nl) * impurity(encoded[~left])) / n
+            gain = (
+                parent
+                - (nl * impurity(encoded[left]) + (n - nl) * impurity(encoded[~left]))
+                / n
+            )
             if gain > best["gain"] + 1e-12:
-                best = {"feature": feature, "threshold": float(threshold), "gain": float(gain),
-                        "left_label": majority(encoded[left]),
-                        "right_label": majority(encoded[~left]), "n_features": d}
+                best = {
+                    "feature": feature,
+                    "threshold": float(threshold),
+                    "gain": float(gain),
+                    "left_label": majority(encoded[left]),
+                    "right_label": majority(encoded[~left]),
+                    "n_features": d,
+                }
     return best
 
 
@@ -113,7 +129,7 @@ def stump_predict(X, model):
 当前增益只衡量这一层的目标，后续可用的分裂会受到它限制。贪心选择可能错过需要先做低增益分裂才能显现的关系，例如 XOR；本题无正增益就停，因此也不会自动发现这类结构。
 
 **预测阶段还需要训练标签吗？**
-不需要。单层模型保存特征、阈值和两侧输出标签即可；无分裂时保存一个叶子标签。若要输出概率，应额外保留各叶子的类别计数，并考虑叶子样本量与校准。
+不需要。单层模型保存特征、阈值和两侧输出标签即可；无分裂时保存一个叶子标签。若要输出概率，应额外保留各叶子的类别计数，并考虑叶子样本量与 calibration。
 
 ## 简单测试怎么写
 
@@ -123,6 +139,7 @@ def stump_predict(X, model):
 
 ```python
 import numpy as np
+
 X, y = [[0], [1], [2], [3]], [0, 0, 1, 1]
 model = best_stump(X, y)
 assert model["feature"] == 0 and model["threshold"] == 1.5

@@ -4,7 +4,10 @@ section: coding
 order: 42
 level: S
 title: 白板：从 logits 取 response 的 token logprob，shift、temperature 和显存
-quick: "位置 $t$ 的 logits 预测第 $t+1$ 个 token，先把 `logits[:, :-1]` 与 `ids[:, 1:]` 对齐，再除以采样温度 $T$。用目标 logit 减 `logsumexp` 得到 token logprob，response mask 也同样左移；显存紧张时沿序列切块计算。"
+quick: >-
+  位置 $t$ 的 logits 预测第 $t+1$ 个 token，先把 `logits[:, :-1]` 与 `ids[:, 1:]` 对齐，再除以
+  sampling 温度 $T$。用目标 logit 减 `logsumexp` 得到 token logprob，response mask
+  也同样左移；显存紧张时沿序列切块计算。
 tags:
   - 完整编程练习
   - Coding
@@ -13,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.gather
-    url: https://pytorch.org/docs/stable/generated/torch.gather.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.gather.html'
     type: primary
   - title: torch.logsumexp
-    url: https://pytorch.org/docs/stable/generated/torch.logsumexp.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.logsumexp.html'
     type: primary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 从语言模型 logits 中提取真实下一个 token 的 log-prob，并提供限制临时 float32 张量大小的分块版本。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -36,7 +39,7 @@ sources:
 - 要求 `temperature > 0`、`chunk >= 1`，且 `logits` 的前两维和 `input_ids` 形状一致。
 - `L <= 1` 时没有可预测的下一个 token，返回形状 `[B, 0]` 的空张量。
 - 函数不处理 response mask。调用方要把 mask 也左移一位（`mask[:, 1:]`）再和结果对齐。
-- 精确定义：先对 logits[:, :-1, :]/temperature 在词表轴计算 log-softmax，再取目标 `input_ids`[:,1:] 对应的值。token id 均在 [0,V)，输入有限。
+- 精确定义：先对 logits[:, :-1, :]/temperature 在 vocabulary 轴计算 log-softmax，再取目标 `input_ids`[:,1:] 对应的值。token id 均在 [0,V)，输入有限。
 
 ### 输入输出示例
 
@@ -48,12 +51,12 @@ logits=zeros([1,1,4]), input_ids=[[2]] -> [[]]，形状 [1,0]
 
 ## 解题思路与参考答案
 
-我会先 shift 一位，再按采样时相同的温度缩放 logits，用 gather 取目标 token 的 logit，减去这一行的 logsumexp。比如输出的第 0 列对应输入第 1 个下标的 token，mask 也必须按同一规则对齐。词表很大时再沿序列切块，限制 float32 临时副本。
+我会先 shift 一位，再按 sampling 时相同的温度缩放 logits，用 gather 取目标 token 的 logit，减去这一行的 logsumexp。比如输出的第 0 列对应输入第 1 个下标的 token，mask 也必须按同一规则对齐。vocabulary 很大时再沿序列切块，限制 float32 临时副本。
 
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -75,7 +78,7 @@ L = 1                  -> 形状 [B, 0] 的空张量
 
 causal LM 在位置 $t$ 的输出是 $p(x_{t+1}\mid x_{\le t})$，所以在时间维上 shift 一次：`logits[:, :-1]` 和 `input_ids[:, 1:]` 一一对应。
 
-温度作用在 logits 上：采样分布是 $\mathrm{softmax}(z/T)$，训练端除以同一个 $T$，算出的 logprob 才和 rollout 时存下的一致。
+温度作用在 logits 上：sampling 分布是 $\mathrm{softmax}(z/T)$，训练端除以同一个 $T$，算出的 logprob 才和 rollout 时存下的一致。
 
 单个 token 的 log 概率是 $\log p(y)=z_y-\log\sum_v e^{z_v}$。`gather` 取出目标位置的 logit，再减去 `logsumexp`；`logsumexp` 内部会先减最大值，数值稳定，而且不需要物化完整的 `log_softmax`。
 
@@ -102,7 +105,7 @@ def token_logprobs(logits, input_ids, temperature=1.0):
     """logits [B, L, V]、input_ids [B, L] -> [B, L-1]；第 t 列是 input_ids[:, t+1] 的 logprob。"""
     _check_inputs(logits, input_ids, temperature)
     scaled = logits[:, :-1].float() / temperature  # [B, L-1, V]，位置 t 预测 t+1
-    targets = input_ids[:, 1:]                       # [B, L-1]
+    targets = input_ids[:, 1:]  # [B, L-1]
     picked = scaled.gather(-1, targets.unsqueeze(-1)).squeeze(-1)
     return picked - torch.logsumexp(scaled, dim=-1)
 
@@ -135,7 +138,7 @@ def token_logprobs_chunked(logits, input_ids, temperature=1.0, chunk=1024):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -154,14 +157,18 @@ def expect_value_error(action):
 torch.manual_seed(2)
 logits = torch.randn(2, 6, 7)
 ids = torch.randint(0, 7, (2, 6))
-reference = F.log_softmax(logits[:, :-1] / 0.7, -1).gather(-1, ids[:, 1:, None]).squeeze(-1)
+reference = (
+    F.log_softmax(logits[:, :-1] / 0.7, -1).gather(-1, ids[:, 1:, None]).squeeze(-1)
+)
 
 # 和 log_softmax + gather 的参考结果一致（含 shift 和温度）
 assert torch.allclose(token_logprobs(logits, ids, 0.7), reference, atol=1e-6)
 
 # 分块大小不整除、等于 1、大于长度时都和不分块一致
 for chunk in (1, 2, 4, 20):
-    assert torch.allclose(token_logprobs_chunked(logits, ids, 0.7, chunk), reference, atol=1e-6)
+    assert torch.allclose(
+        token_logprobs_chunked(logits, ids, 0.7, chunk), reference, atol=1e-6
+    )
 
 # L = 1：没有可预测的 token，返回 [B, 0]
 assert token_logprobs_chunked(logits[:, :1], ids[:, :1]).shape == (2, 0)
@@ -182,13 +189,13 @@ expect_value_error(lambda: token_logprobs(logits, ids[:, :5]))
 
 ### 复杂度与追问
 
-设 batch 为 B、序列长 L、词表 V、分块大小为 C。时间 O(B·L·V)。分块版本每块的 float32 中间量是 O(B·C·V)；但输入的 logits 本身已经占了 O(B·L·V)，分块只能省掉它的 float32 副本。
+设 batch 为 B、序列长 L、vocabulary V、分块大小为 C。时间 O(B·L·V)。分块版本每块的 float32 中间量是 O(B·C·V)；但输入的 logits 本身已经占了 O(B·L·V)，分块只能省掉它的 float32 副本。
 
 - 追问「连 logits 都放不下」：不物化完整的 logits，把 lm_head 和这一步融合起来分块计算，见 `coding-fused-ce`。
 
 ## 题怎么来的
 
-所有强化学习（RL）损失（loss）的输入都是 `policy_logprobs`，它就是从这一步算出来的。这几行错了，后面的 ratio、KL、clip 全是错的，而且 loss 看起来照样在下降。这道题常和 `coding-tis-mismatch`、`sys-rollout-logprob` 一起问。面试给你的代码是下面这段。
+所有 RL 损失（loss）的输入都是 `policy_logprobs`，它就是从这一步算出来的。这几行错了，后面的 ratio、KL、clip 全是错的，而且 loss 看起来照样在下降。这道题常和 `coding-tis-mismatch`、`sys-rollout-logprob` 一起问。面试给你的代码是下面这段。
 
 ## 故意错误的起始片段（用于找 bug）
 
@@ -205,7 +212,7 @@ def token_logprobs(logits, input_ids, temperature):
 
 先看位置对齐。 causal LM 在位置 $t$ 输出的是 $p(x_{t+1}\mid x_{\le t})$。这段代码在位置 $t$ 的分布上取的是 $x_t$ 的概率，每个 token 都错开了一位。
 
-再看温度。 采样时的分布是 $\mathrm{softmax}(z/T)$，采样轨迹（rollout）里存下的 logprob 也是这个分布下的。训练端用 $\mathrm{softmax}(z)$ 重算，即使权重完全一样，第一步的 ratio 也不是 1，clip 会被无意义地触发。$T$ 必须和采样时完全一致。
+再看温度。 sampling 时的分布是 $\mathrm{softmax}(z/T)$，sampling 轨迹（rollout）里存下的 logprob 也是这个分布下的。训练端用 $\mathrm{softmax}(z)$ 重算，即使权重完全一样，第一步的 ratio 也不是 1，clip 会被无意义地触发。$T$ 必须和 sampling 时完全一致。
 
 最后核对精度与显存。 logits 往往是 bf16，直接做 `log_softmax` 精度不够；先 `.float()` 又会复制一份 `[B, L, V]`。$V$ 在 15 万左右、$L$ 一万时，一条序列的 fp32 logits 就有 6 GB，batch 稍大就是几十 GB。
 
@@ -217,9 +224,9 @@ def token_logprobs(logits, input_ids, temperature):
 
 ## 追问
 
-**采样时还用了 top-p / top-k 呢？** 采样分布是截断后重新归一化的，训练端用完整 softmax 算出的 logprob 和它对不上。要么让推理引擎返回完整分布下的 logprob，要么两端用同一套截断规则。先确认你的推理引擎返回的是哪一种。
+**sampling 时还用了 top-p / top-k 呢？** sampling 分布是截断后 renormalization 的，训练端用完整 softmax 算出的 logprob 和它对不上。要么让推理引擎返回完整分布下的 logprob，要么两端用同一套截断规则。先确认你的推理引擎返回的是哪一种。
 
-**只要 response 的 logprob，输入提示（prompt）部分能不能不算？** lm_head 和 logsumexp 都可以只在 response 的位置上做，prompt 很长时能省很多。不过前向的 hidden state 仍然要对整条序列计算。
+**只要 response 的 logprob，prompt 部分能不能不算？** lm_head 和 logsumexp 都可以只在 response 的位置上做，prompt 很长时能省很多。不过前向的 hidden state 仍然要对整条序列计算。
 
 **熵要不要顺便算？** 用同一份 `z`，$H = \mathrm{logsumexp}(z) - \sum_v \mathrm{softmax}(z)_v z_v$。这又需要一次 softmax，显存上和前面一样要切块，见 `openai-entropy-l1`。
 
@@ -228,6 +235,6 @@ def token_logprobs(logits, input_ids, temperature):
 - [[sys-rollout-logprob]]：这里的 shift 和温度写错时，现象就是那张说的 rollout 与训练 logprob 对不上、ratio 不为 1。
 - [[coding-tis-mismatch]]：logprob 本身算对之后，推理引擎和训练端仍有数值差，那张讲用截断重要性权重修正。
 - [[openai-entropy-l1]]：同一份 logits 上算熵，OpenAI 真题还追问把损失换成 L1 时怎么求梯度。
-- [[coding-fused-ce]]：同样的 `[B, T, V]` 显存问题，那张沿词表分块攒 logsumexp，不物化整份 logits。
-- [[openai-logprob]]：口述题，讲 API 返回的 logprob 什么时候能当置信度，以及采样温度和校准温度为什么是两颗旋钮。
-- [[coding-topk-nucleus]]：采样端怎么用温度；训练端算 logprob 时要用同一个 $T$。
+- [[coding-fused-ce]]：同样的 `[B, T, V]` 显存问题，那张沿 vocabulary 分块攒 logsumexp，不物化整份 logits。
+- [[openai-logprob]]：口述题，讲 API 返回的 logprob 什么时候能当置信度，以及 sampling 温度和 calibration 温度为什么是两颗旋钮。
+- [[coding-topk-nucleus]]：sampling 端怎么用温度；训练端算 logprob 时要用同一个 $T$。

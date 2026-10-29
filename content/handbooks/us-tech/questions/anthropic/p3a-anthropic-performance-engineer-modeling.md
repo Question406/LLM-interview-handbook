@@ -3,8 +3,10 @@ id: p3a-anthropic-performance-engineer-modeling
 section: anthropic
 order: 633
 level: S
-title: "Anthropic：性能建模：matmul 算术强度与并行布局"
-quick: "我会先分别估算 matmul 的计算和访存时间，取较大值作为 roofline 下界。再算流水气泡和张量并行通信，说明实际时延为什么更高；硬件峰值和并行布局都要先讲清楚。"
+title: Anthropic：性能建模：matmul 算术强度与并行布局
+quick: >-
+  我会先分别估算 matmul 的计算和访存时间，取较大值作为 roofline
+  下界。再算流水气泡和张量并行通信，说明实际时延为什么更高；硬件峰值和并行布局都要先讲清楚。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · performance-engineer-modeling"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/performance-engineer-modeling
+  - title: 1Point3Acres · Anthropic · performance-engineer-modeling
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/performance-engineer-modeling
     type: secondary
 ---
 
@@ -52,7 +55,7 @@ gemm_blocked([[1, 2]], [[3], [4]], block=4) -> [[11]]
 
 估算一次矩阵乘在 A100 上大概要多久，再把估算扩展到多层流水并行和 FFN 的张量并行分片。考察的是能不能从 FLOPs、访存和通信量推出一个有依据的时延，并说清楚哪些是理论下界、哪些是实际能做到的。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 我会先算计算和访存各要多久，取较大者作为 matmul 的理想下界，再补并行和 kernel 开销。计算量是 $2mkn$ FLOPs，最少访存是 $(mk + kn + mn) \times$ 每元素字节数，分别除以计算峰值和有效带宽即可。
 
@@ -131,8 +134,8 @@ def gemm_blocked(a, b, block=32):
         for j in range(0, cols, block):
             # 同一个输出块要把 K 方向所有分块的乘积累加起来
             for p in range(0, inner, block):
-                out[i:i + block, j:j + block] += (
-                    a[i:i + block, p:p + block] @ b[p:p + block, j:j + block]
+                out[i : i + block, j : j + block] += (
+                    a[i : i + block, p : p + block] @ b[p : p + block, j : j + block]
                 )
     return out
 ```
@@ -145,7 +148,7 @@ def gemm_blocked(a, b, block=32):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -156,6 +159,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 2x2x2：16 FLOPs、24 字节，带宽受限，下界 24 ns
 estimate = roofline(2, 2, 2, 1e9, 1e9)

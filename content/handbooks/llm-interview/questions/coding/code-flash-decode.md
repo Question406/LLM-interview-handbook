@@ -22,11 +22,11 @@ sources:
 
 ## 题目描述
 
-实现单个新 query 对较长历史 K/V 的 attention，并支持把 key/value 序列拆成若干片独立处理后合成结果。分片个数不能改变数学上的注意力输出。
+实现单个新 query 对较长历史 K/V 的 attention，并支持把 key/value 序列拆成若干片独立处理后合成结果。分片个数不能改变数学上的 attention 输出。
 
 ### 接口与张量
 
-- `splitk_attn(q,k,v,n_split)`：q 为 `[B,H,1,D]`，k、v 为 `[B,H,S,D]`，S 与 `n_split` 均为正整数；返回 `[B,H,1,D]`。输出定义为按 `QK^T/sqrt(D)` 在全部 S 个 key 上归一化后，对 V 的加权结果，不额外加入 mask。
+- `splitk_attn(q,k,v,n_split)`：q 为 `[B,H,1,D]`，k、v 为 `[B,H,S,D]`，S 与 `n_split` 均为正整数；返回 `[B,H,1,D]`。输出定义为按 `QK^T/sqrt(D)` 在全部 S 个 key 上 normalization 后，对 V 的加权结果，不额外加入 mask。
 - `online_merge(o1,lse1,o2,lse2)`：输入两组互不重叠 key 分片各自的局部输出 `[B,H,1,D]` 与该组分数的 log-sum-exp `[B,H,1]`，返回两组合并后的输出和 log-sum-exp。
 
 分片大小不整除 S，以及 `n_split` 大于 S 都是合法情况；没有数据的片不能改变结果。本卡仅需 CPU 数值正确性，不要求编写实际 Flash-Decoding GPU kernel。
@@ -44,13 +44,13 @@ splitk_attn(q,k,v,8) -> 序列输出[3]
 
 ## 解题思路与参考答案
 
-FlashDecoding 的 split-K 是把长 KV cache 沿序列维 $S$ 切成几片，每片各自算一个局部 softmax 的输出 $O_g$ 和它的 $\mathrm{lse}_g$，最后按 $e^{\mathrm{lse}_g}$ 加权合并。之所以要切，是因为 decode 时只有一个 query：普通 decode 每步拿 $q$ 和整段 cache 算注意力（见 `code-kv-cache-step`），$S$ 很大时一个 query 吃不满 GPU，$S$ 这一维又没有并行。切开之后多个 CTA 各算一片，再做一次归约。训练用的 tiled FA 见 `code-flash-attn-fwd`，这张卡只写 decode 的合并。
+FlashDecoding 的 split-K 是把长 KV cache 沿序列维 $S$ 切成几片，每片各自算一个局部 softmax 的输出 $O_g$ 和它的 $\mathrm{lse}_g$，最后按 $e^{\mathrm{lse}_g}$ 加权合并。之所以要切，是因为 decode 时只有一个 query：普通 decode 每步拿 $q$ 和整段 cache 算 attention（见 `code-kv-cache-step`），$S$ 很大时一个 query 吃不满 GPU，$S$ 这一维又没有并行。切开之后多个 CTA 各算一片，再做一次归约。训练用的 tiled FA 见 `code-flash-attn-fwd`，这张卡只写 decode 的合并。
 
 比如一片的 key 恰好都和 query 很相关，另一片几乎无关。直接把两片的 $O_g$ 平均，无关那片会拿到一半的权重；按 $e^{\mathrm{lse}_g}$ 加权，它的贡献就接近 0，和一次性算完整个 $S$ 的结果一致。
 
 ## 两片怎么合并
 
-片 $g$ 已经得到归一化的输出 $O_g$ 和 $\mathrm{lse}_g=\log\sum_j e^{s_{gj}}$。
+片 $g$ 已经得到 normalization 的输出 $O_g$ 和 $\mathrm{lse}_g=\log\sum_j e^{s_{gj}}$。
 
 $$
 m=\max(\mathrm{lse}_1,\mathrm{lse}_2),\quad
@@ -67,16 +67,19 @@ $$
 import math
 import torch
 
+
 def softmax_stable(x, dim=-1):
     z = x.float() - x.float().amax(dim=dim, keepdim=True)
     p = torch.exp(z)
     return (p / p.sum(dim=dim, keepdim=True)).to(x.dtype)
+
 
 def online_merge(o1, lse1, o2, lse2):
     m = torch.maximum(lse1, lse2)
     a1, a2 = (lse1 - m).exp(), (lse2 - m).exp()
     o = (o1 * a1.unsqueeze(-1) + o2 * a2.unsqueeze(-1)) / (a1 + a2).unsqueeze(-1)
     return o, m + (a1 + a2).log()
+
 
 def splitk_attn(q, k, v, n_split):
     # q: [B,H,1,D]；沿 S 切开
@@ -90,7 +93,11 @@ def splitk_attn(q, k, v, n_split):
         scores = (q @ k[:, :, sl].transpose(-1, -2)) * scale
         block_lse = torch.logsumexp(scores.float(), dim=-1)
         block_o = softmax_stable(scores, dim=-1) @ v[:, :, sl]
-        o, lse = (block_o, block_lse) if o is None else online_merge(o, lse, block_o, block_lse)
+        o, lse = (
+            (block_o, block_lse)
+            if o is None
+            else online_merge(o, lse, block_o, block_lse)
+        )
     return o
 ```
 
@@ -105,9 +112,9 @@ Q/K 全零时输出就是 V 的均值。历史长度 5 分成 1、2、8 份，�
 ```python
 q = torch.zeros(1, 1, 1, 1)
 k = torch.zeros(1, 1, 5, 1)
-v = torch.arange(1., 6.).view(1, 1, 5, 1)
+v = torch.arange(1.0, 6.0).view(1, 1, 5, 1)
 for splits in (1, 2, 8):
-    torch.testing.assert_close(splitk_attn(q, k, v, splits), torch.tensor([[[[3.]]]]))
+    torch.testing.assert_close(splitk_attn(q, k, v, splits), torch.tensor([[[[3.0]]]]))
 print("simple tests passed")
 ```
 

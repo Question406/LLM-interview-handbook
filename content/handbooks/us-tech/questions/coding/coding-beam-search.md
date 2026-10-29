@@ -3,8 +3,11 @@ id: coding-beam-search
 section: coding
 order: 12
 level: A
-title: 白板：beam search vs greedy vs sampling，长度惩罚
-quick: "Greedy 每步取 $\\arg\\max$，beam 保留 $k$ 条前缀按累计 log-prob 扩展，$k=1$ 就退化为 greedy，sampling 则从分布中抽样。beam 要让 EOS 后停止扩展、按 parent 重排 KV，并用长度惩罚缓解短句分数偏高；最后重排与搜索中使用惩罚也要分清。"
+title: 白板：beam search vs greedy vs sampling，length penalty
+quick: >-
+  Greedy 每步取 $\arg\max$，beam 保留 $k$ 条前缀按累计 log-prob 扩展，$k=1$ 就退化为
+  greedy，sampling 则按指定分布随机选 token。beam 要让 EOS 后停止扩展、按 parent 重排 KV，并用 length
+  penalty 缓解短句分数偏高；最后重排与搜索中使用惩罚也要分清。
 tags:
   - 完整编程练习
   - Coding
@@ -14,29 +17,29 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-28'
 sources:
   - title: Google's Neural Machine Translation System
-    url: https://arxiv.org/abs/1609.08144
+    url: 'https://arxiv.org/abs/1609.08144'
     type: primary
   - title: Generation strategies (Hugging Face)
-    url: https://huggingface.co/docs/transformers/en/generation_strategies
+    url: 'https://huggingface.co/docs/transformers/en/generation_strategies'
     type: secondary
 ---
 
 ## 题目描述
 
-给定查询下一 token log-prob 的函数和起始 token 序列，生成最多指定数量的候选序列。需要遵守 EOS 停止语义和确定性的分数平票规则，并实现对最终候选的长度惩罚重排接口。
+给定查询下一 token log-prob 的函数和起始 token 序列，生成最多指定数量的候选序列。需要遵守 EOS 停止语义和确定性的分数平票规则，并实现对最终候选的 length penalty 重排接口。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
-- `beam_search(next_logprobs, start, eos, width, max_new) -> list[(tokens, score)]`：`next_logprobs(tokens)` 返回固定词表上每个 token 的 log 概率（$\le 0$，`-inf` 表示禁用）。每轮只扩展还没结束的 beam；生成 EOS 的 beam 不再扩展，但继续和其他 beam 竞争宽度。每轮按累计 log-prob 降序、token 序列字典序升序截断到 `width` 条，结果确定。`max_new = 0` 时直接返回 prompt。
-- `rank_with_length_penalty(beams, prompt_length=0, alpha=0.6)`：对最终候选按 GNMT 长度惩罚重新排序。长度只算新生成的 token，包含 EOS。这只是对结果重排，不等于在搜索过程中使用长度惩罚，也不保证找到全局最优。
+- `beam_search(next_logprobs, start, eos, width, max_new) -> list[(tokens, score)]`：`next_logprobs(tokens)` 返回固定 vocabulary 上每个 token 的 log 概率（$\le 0$，`-inf` 表示禁用）。每轮只扩展还没结束的 beam；生成 EOS 的 beam 不再扩展，但继续和其他 beam 竞争宽度。每轮按累计 log-prob 降序、token 序列字典序升序截断到 `width` 条，结果确定。`max_new = 0` 时直接返回 prompt。
+- `rank_with_length_penalty(beams, prompt_length=0, alpha=0.6)`：对最终候选按 GNMT length penalty 重新排序。长度只算新生成的 token，包含 EOS。这只是对结果重排，不等于在搜索过程中使用 length penalty，也不保证找到全局最优。
 - `width >= 1`，`max_new >= 0`，`alpha >= 0`。
-- 起始 beam 的 score 为0，score 为新生成 token log-prob 之和。start 即使含 EOS 也作为提示词，只有新增 EOS 才结束生成。有限词表，每个活跃前缀至少有一个允许 token。
-- 长度重排的归一化分数是 `score / (((5+L)/6)**alpha)`，L=len(tokens)-`prompt_length`，允许 L=0。按该分数降序、token序列字典序升序排序，返回原 (tokens,score) 对，不改分数值。
+- 起始 beam 的 score 为0，score 为新生成 token log-prob 之和。start 即使含 EOS 也作为 prompt，只有新增 EOS 才结束生成。有限 vocabulary，每个活跃前缀至少有一个允许 token。
+- 长度重排的 normalization 分数是 `score / (((5+L)/6)**alpha)`，L=len(tokens)-`prompt_length`，允许 L=0。按该分数降序、token 序列字典序升序排序，返回原 (tokens,score) 对，不改分数值。
 
 ### 输入输出示例
 
@@ -54,12 +57,12 @@ beam_search(next_logprobs, start=[9], eos=1, width=2, max_new=0)
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 标准库即可运行。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 标准库即可运行。
 
 ### 题面、接口与约束
 
-- `beam_search(next_logprobs, start, eos, width, max_new) -> list[(tokens, score)]`：`next_logprobs(tokens)` 返回固定词表上每个 token 的 log 概率（$\le 0$，`-inf` 表示禁用）。每轮只扩展还没结束的 beam；生成 EOS 的 beam 不再扩展，但继续和其他 beam 竞争宽度。每轮按累计 log-prob 降序、token 序列字典序升序截断到 `width` 条，结果确定。`max_new = 0` 时直接返回 prompt。
-- `rank_with_length_penalty(beams, prompt_length=0, alpha=0.6)`：对最终候选按 GNMT 长度惩罚重新排序。长度只算新生成的 token，包含 EOS。这只是对结果重排，不等于在搜索过程中使用长度惩罚，也不保证找到全局最优。
+- `beam_search(next_logprobs, start, eos, width, max_new) -> list[(tokens, score)]`：`next_logprobs(tokens)` 返回固定 vocabulary 上每个 token 的 log 概率（$\le 0$，`-inf` 表示禁用）。每轮只扩展还没结束的 beam；生成 EOS 的 beam 不再扩展，但继续和其他 beam 竞争宽度。每轮按累计 log-prob 降序、token 序列字典序升序截断到 `width` 条，结果确定。`max_new = 0` 时直接返回 prompt。
+- `rank_with_length_penalty(beams, prompt_length=0, alpha=0.6)`：对最终候选按 GNMT length penalty 重新排序。长度只算新生成的 token，包含 EOS。这只是对结果重排，不等于在搜索过程中使用 length penalty，也不保证找到全局最优。
 - `width >= 1`，`max_new >= 0`，`alpha >= 0`，否则抛 `ValueError`；log 概率为 NaN 或大于 0 时也抛 `ValueError`。
 
 ### 输入输出示例
@@ -99,9 +102,13 @@ def beam_search(next_logprobs, start, eos, width, max_new):
                 continue
             for token, logprob in enumerate(next_logprobs(list(tokens))):
                 if math.isnan(logprob) or logprob > 1e-10:
-                    raise ValueError(f"invalid log probability {logprob} for token {token}")
+                    raise ValueError(
+                        f"invalid log probability {logprob} for token {token}"
+                    )
                 if logprob != -math.inf:
-                    candidates.append((tokens + (token,), score + logprob, token == eos))
+                    candidates.append(
+                        (tokens + (token,), score + logprob, token == eos)
+                    )
         beams = sorted(candidates, key=lambda beam: (-beam[1], beam[0]))[:width]
         if not beams or all(finished for _, _, finished in beams):
             break
@@ -125,11 +132,11 @@ def rank_with_length_penalty(beams, prompt_length=0, alpha=0.6):
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert [tokens for tokens, _ in results] == [[1], [0, 1]]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert [tokens for tokens, _ in results] == [[1], [0, 1]]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -185,7 +192,7 @@ expect_value_error(rank_with_length_penalty, [([0], -1.0)], 0, -0.1)
 
 ### 复杂度与追问
 
-设 $T$ 是 `max_new`，$K$ 是 `width`，$V$ 是词表大小。每轮最多 $KV$ 个候选，排序是 $O(KV\log(KV))$，总时间 $O(T\cdot KV\log(KV))$，不含模型调用本身。保存序列额外需要 $O(KT)$ 空间。
+设 $T$ 是 `max_new`，$K$ 是 `width`，$V$ 是 vocabulary 大小。每轮最多 $KV$ 个候选，排序是 $O(KV\log(KV))$，总时间 $O(T\cdot KV\log(KV))$，不含模型调用本身。保存序列额外需要 $O(KT)$ 空间。
 
 - 追问「能更快吗」：每轮不必全排序，用大小为 $K$ 的堆或 `torch.topk` 取前 $K$ 个即可，降到 $O(KV\log K)$。
 - 追问「beam 一定找到最优吗」：不会。每轮剪掉的路径后面可能更好，beam 只是近似搜索。
@@ -193,7 +200,7 @@ expect_value_error(rank_with_length_penalty, [([0], -1.0)], 0, -0.1)
 
 ## 题怎么来的
 
-解码三件套是 greedy、beam 和 sampling。Anthropic / Apple 的相关题会比较它们的行为和代价，回答时可以结合 `generate` 的参数解释。翻译、代码补全常用 beam；聊天常用温度加 nucleus，见 `coding-topk-nucleus`。长度惩罚来自 GNMT（Wu et al.）：不加惩罚，短句会占满结果。
+decoding 三件套是 greedy、beam 和 sampling。Anthropic / Apple 的相关题会比较它们的行为和代价，回答时可以结合 `generate` 的参数解释。翻译、代码补全常用 beam；聊天常用温度加 nucleus，见 `coding-topk-nucleus`。length penalty 来自 GNMT（Wu et al.）：不加惩罚，短句会占满结果。
 
 ## greedy / beam / sampling
 
@@ -201,7 +208,7 @@ Greedy：每步取当前条件概率最大的 token，也就是 $k=1$ 的 beam�
 
 Sampling：从温度调整后的分布 $\pi_T$ 或 nucleus 里抽。结果多样，但没有任何搜索保证。温度、top-k、top-p 改变的是每一步的分布，不是搜索宽度。
 
-Beam：保留 $k$ 条活跃前缀。每一步把每条前缀扩展到整个词表，累计分数是
+Beam：保留 $k$ 条活跃前缀。每一步把每条前缀扩展到整个 vocabulary，累计分数是
 
 $$
 s(y_{1:t})=s(y_{1:t-1})+\log\pi(y_t\mid y_{1:t-1}),
@@ -209,11 +216,11 @@ $$
 
 然后在 $k\cdot V$ 个候选里取前 $k$ 个。分数必须在 log 域相加，概率连乘会下溢。生成 EOS 的前缀进入已完成集合，不再扩展；没生成 EOS 的留在活跃集合。最后先在已完成的句子里比；只有全部达到 `max_len` 都没有 EOS，才退回到活跃 beam。
 
-生产实现里每个子候选还要记 `parent`，用来复制 token 前缀和重排 KV cache。如果 cache 不按 parent gather，子节点读到的就是别的 beam 的历史。batch 内各样本的 beam 互相独立，pad 位置不要扩展。
+生产实现里每个子候选还要记 `parent`，用来复制 token prefix sum 重排 KV cache。如果 cache 不按 parent gather，子节点读到的就是别的 beam 的历史。batch 内各样本的 beam 互相独立，pad 位置不要扩展。
 
-## 长度惩罚：短句的 log-prob 和更大
+## length penalty：短句的 log-prob 和更大
 
-$\sum\log\pi$ 每多一个 token 就更负一点，所以短句往往分数更高。GNMT 用下面的分数做归一化：
+$\sum\log\pi$ 每多一个 token 就更负一点，所以短句往往分数更高。GNMT 用下面的分数做 normalization：
 
 $$
 \mathrm{score}(y)=\frac{1}{\bigl((5+|y|)/6\bigr)^\alpha}\sum_t\log\pi(y_t\mid y_{1:t-1}),
@@ -221,19 +228,24 @@ $$
 
 $|y|$ 是生成长度，$\alpha$ 常取 $0.6$ 到 $1$，$\alpha=0$ 等于不惩罚。EOS 之后停止扩展，也能避免“再补几个 token 刷分”。重复 n-gram 屏蔽和坏 token mask 要在打分之前加上。
 
-如果 beam 的每一步先做 nucleus 截断，分布就变了，不再是经典 beam search。面试先写标准 beam。产品上聊天很少用 beam，翻译和结构化输出才值得。Apple 端侧场景下 $k>1$ 意味着逐 token 生成（decode）时读 KV 的带宽乘以 $k$，GQA 能把这部分省回来一些，见 `meta-llama-gqa`。
+如果 beam 的每一步先做 nucleus 截断，分布就变了，不再是经典 beam search。面试先写标准 beam。产品上聊天很少用 beam，翻译和结构化输出才值得。Apple on-device 场景下 $k>1$ 意味着逐 token 生成（decode）时读 KV 的带宽乘以 $k$，GQA 能把这部分省回来一些，见 `meta-llama-gqa`。
 
 ## 追问
 
 **为什么不用概率相乘？**
-长序列下概率会下溢成 0。log 域相加数值稳定，也和交叉熵损失（CE）里的 log-softmax 一致。
+长序列下概率会下溢成 0。log 域相加数值稳定，也和 cross-entropy 损失（CE）里的 log-softmax 一致。
 **最终为什么不看活跃集合？**
-没生成 EOS 的前缀和已完成的句子不可比。只有一个完成句都没有时才退回活跃集合。
+没生成 EOS 的 prefix sum 已完成的句子不可比。只有一个完成句都没有时才退回活跃集合。
 **$k$ 越大一定越好吗？**
-不一定。$k$ 大时结果更偏短、更千篇一律，还需要长度惩罚和多样性约束；KV 带宽也随 $k$ 增长。
+不一定。$k$ 大时结果更偏短、更千篇一律，还需要 length penalty 和多样性约束；KV 带宽也随 $k$ 增长。
 
 ## 相关题
 
-- [[p3a-microsoft-beam-search-decoder]]：Microsoft 题面，测试和本卡几乎一样，但契约里没有长度惩罚。
-- [[p3a-perplexity-beam-search-decoder]]：Perplexity 题面是在已有代码上补全，重点是停止条件，同样不含长度惩罚。
-- [[coding-topk-nucleus]]：采样那一支怎么写：温度、top-k、nucleus 的顺序和边界。
+- [[p3a-microsoft-beam-search-decoder]]：Microsoft 题面，测试和本卡几乎一样，但契约里没有 length penalty。
+- [[p3a-perplexity-beam-search-decoder]]：Perplexity 题面是在已有代码上补全，重点是停止条件，同样不含 length penalty。
+- [[coding-topk-nucleus]]：sampling 那一支怎么写：温度、top-k、nucleus 的顺序和 edge cases。
+
+
+## Batch 支持范围与完整生成版本
+
+本题是单 prompt 的完整搜索，width=1 只得到单请求 greedy；不包含 batch KV 推理。完整 `[B,K,V]` 搜索和 cache 重排见[新增 batch 实现](?book=apple-interview&section=decoding&question=apple-batched-beam-search)。

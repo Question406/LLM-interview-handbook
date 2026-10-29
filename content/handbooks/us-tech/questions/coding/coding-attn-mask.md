@@ -3,8 +3,11 @@ id: coding-attn-mask
 section: coding
 order: 34
 level: A
-title: 白板：因果、padding、文档边界合成一张注意力 mask
-quick: "先把因果 $j\\le i$、key 非 pad、query 与 key 同文档三个条件按位与，再生成 `[B, 1, T, S]` 的加性 bias。合法位填 $0$，非法位填 $-\\infty$；比如 packing 后第二篇文档不能读第一篇，一行全屏蔽时还要由 softmax 端处理 NaN。"
+title: 白板：causal、padding、document boundaries 合成一张 attention mask
+quick: >-
+  先把 causal $j\le i$、key 非 pad、query 与 key 同文档三个条件按位与，再生成 `[B, 1, T, S]` 的加性
+  bias。合法位填 $0$，非法位填 $-\infty$；比如 packing 后第二篇文档不能读第一篇，一行全屏蔽时还要由 softmax 端处理
+  NaN。
 tags:
   - 完整编程练习
   - Coding
@@ -14,30 +17,30 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
   - title: FlashAttention (varlen / cu_seqlens API)
-    url: https://github.com/Dao-AILab/flash-attention
+    url: 'https://github.com/Dao-AILab/flash-attention'
     type: primary
   - title: Attention is All You Need
-    url: https://arxiv.org/abs/1706.03762
+    url: 'https://arxiv.org/abs/1706.03762'
     type: primary
 ---
 
 ## 题目描述
 
-为训练和增量解码构造注意力偏置，同时满足因果、padding 与文档隔离三个可见性条件。
+为训练和增量 decoding 构造 attention 偏置，同时满足 causal、padding 与文档隔离三个可见性条件。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
-- `compose_attn_bias(q_pos, k_pos, key_valid, doc_q, doc_k)`：`q_pos` 形状 `[T]`，`k_pos` 形状 `[S]`，`key_valid` 是 `[B, S]` 的布尔张量（True 表示不是 pad），`doc_q` 和 `doc_k` 分别是 `[B, T]` 和 `[B, S]` 的文档 id。返回 `[B, 1, T, S]` 的 float32 加性 bias：因果、key 有效、同一文档三个条件都满足的位置是 $0$，其余是 $-\infty$。
+- `compose_attn_bias(q_pos, k_pos, key_valid, doc_q, doc_k)`：`q_pos` 形状 `[T]`，`k_pos` 形状 `[S]`，`key_valid` 是 `[B, S]` 的布尔 tensor（True 表示不是 pad），`doc_q` 和 `doc_k` 分别是 `[B, T]` 和 `[B, S]` 的文档 id。返回 `[B, 1, T, S]` 的 float32 加性 bias：causal、key 有效、同一文档三个条件都满足的位置是 $0$，其余是 $-\infty$。
 - `decode_attn_bias(s_len, key_valid, doc_ids)`：逐 token 生成时用。`s_len` 已经算上新 token，新 query 就是第 `s_len - 1` 列；`key_valid` 和 `doc_ids` 都是 `[B, s_len]`。返回 `[B, 1, 1, s_len]`。`s_len >= 1`。
-- 输入形状合法、位置是整数。因果条件为 `k_pos[j] <= q_pos[i]`。一行全被屏蔽是允许的，此接口只返回全 `-inf` 的 bias。
+- 输入形状合法、位置是整数。causal 条件为 `k_pos[j] <= q_pos[i]`。一行全被屏蔽是允许的，此接口只返回全 `-inf` 的 bias。
 
 ### 输入输出示例
 
@@ -52,15 +55,15 @@ query 2 (doc 1): [0, 0, 0, 0]   # key 0、1 属于 doc 0；key 2 是 pad；key 3
 
 ## 解题思路与参考答案
 
-我会先分别算因果、key 是否有效和是否同文档，再按位与成 keep，最后转成加性 bias。比如两个文档拼进同一行，即使前一个文档在时间上更早，后一个文档也不能读取它；只加因果 mask 挡不住这种泄漏。
+我会先分别算 causal、key 是否有效和是否同文档，再按位与成 keep，最后转成加性 bias。比如两个文档拼进同一行，即使前一个文档在时间上更早，后一个文档也不能读取它；只加 causal mask 挡不住这种 leakage。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点 tensor 上验证，没有验证 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
-- `compose_attn_bias(q_pos, k_pos, key_valid, doc_q, doc_k)`：`q_pos` 形状 `[T]`，`k_pos` 形状 `[S]`，`key_valid` 是 `[B, S]` 的布尔张量（True 表示不是 pad），`doc_q` 和 `doc_k` 分别是 `[B, T]` 和 `[B, S]` 的文档 id。返回 `[B, 1, T, S]` 的 float32 加性 bias：因果、key 有效、同一文档三个条件都满足的位置是 $0$，其余是 $-\infty$。
+- `compose_attn_bias(q_pos, k_pos, key_valid, doc_q, doc_k)`：`q_pos` 形状 `[T]`，`k_pos` 形状 `[S]`，`key_valid` 是 `[B, S]` 的布尔 tensor（True 表示不是 pad），`doc_q` 和 `doc_k` 分别是 `[B, T]` 和 `[B, S]` 的文档 id。返回 `[B, 1, T, S]` 的 float32 加性 bias：causal、key 有效、同一文档三个条件都满足的位置是 $0$，其余是 $-\infty$。
 - `decode_attn_bias(s_len, key_valid, doc_ids)`：逐 token 生成时用。`s_len` 已经算上新 token，新 query 就是第 `s_len - 1` 列；`key_valid` 和 `doc_ids` 都是 `[B, s_len]`。返回 `[B, 1, 1, s_len]`。`s_len < 1` 时抛 `ValueError`。
 - 输入形状合法、位置是整数。一行全被屏蔽是允许的，这时 softmax 会得到 NaN，由调用方处理（见复杂度与追问）。
 
@@ -77,7 +80,7 @@ query 2 (doc 1): [0, 0, 0, 0]   # key 0、1 属于 doc 0；key 2 是 pad；key 3
 
 ### 解题思路与正确性
 
-三个条件各自算成布尔张量：因果比较只依赖位置，形状 `[T, S]`；padding 只依赖 key，形状 `[B, 1, 1, S]`；同文档比较 query 和 key 的 id，形状 `[B, 1, T, S]`。把它们广播后按位与，得到 `keep`，再把 `~keep` 的位置填成 $-\infty$。batch 维和 head 维要显式留出来，否则加到 `[B, H, T, S]` 的 scores 上时会广播错位。
+三个条件各自算成布尔 tensor：causal 比较只依赖位置，形状 `[T, S]`；padding 只依赖 key，形状 `[B, 1, 1, S]`；同文档比较 query 和 key 的 id，形状 `[B, 1, T, S]`。把它们广播后按位与，得到 `keep`，再把 `~keep` 的位置填成 $-\infty$。batch 维和 head 维要显式留出来，否则加到 `[B, H, T, S]` 的 scores 上时会广播错位。
 
 decode 只是 $T=1$ 的特例：query 的位置是当前绝对位置 `s_len - 1`，文档 id 取那一列，然后复用同一个函数。
 
@@ -93,10 +96,10 @@ def compose_attn_bias(q_pos, k_pos, key_valid, doc_q, doc_k):
     q_pos: [T]，k_pos: [S]，key_valid: [B, S]（True = 非 pad），
     doc_q: [B, T]，doc_k: [B, S]。返回 [B, 1, T, S]，保留位为 0，其余为 -inf。
     """
-    causal = k_pos[None, :] <= q_pos[:, None]                      # [T, S]
-    not_pad = key_valid[:, None, None, :]                          # [B, 1, 1, S]
+    causal = k_pos[None, :] <= q_pos[:, None]  # [T, S]
+    not_pad = key_valid[:, None, None, :]  # [B, 1, 1, S]
     same_doc = doc_q[:, None, :, None] == doc_k[:, None, None, :]  # [B, 1, T, S]
-    keep = causal[None, None] & not_pad & same_doc                 # [B, 1, T, S]
+    keep = causal[None, None] & not_pad & same_doc  # [B, 1, T, S]
     bias = torch.zeros(keep.shape)
     return bias.masked_fill(~keep, float("-inf"))
 
@@ -110,7 +113,7 @@ def decode_attn_bias(s_len, key_valid, doc_ids):
         raise ValueError(f"s_len must be >= 1, got {s_len}")
     q_pos = torch.tensor([s_len - 1])
     k_pos = torch.arange(s_len)
-    doc_q = doc_ids[:, s_len - 1:s_len]  # [B, 1]
+    doc_q = doc_ids[:, s_len - 1 : s_len]  # [B, 1]
     return compose_attn_bias(q_pos, k_pos, key_valid, doc_q, doc_ids)
 ```
 
@@ -118,11 +121,11 @@ def decode_attn_bias(s_len, key_valid, doc_ids):
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert bias.shape == (1, 1, 2, 4)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert bias.shape == (1, 1, 2, 4)` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+数值结果用 `allclose` 一类带容差的 assertion 检查，并同时确认形状；随机输入固定 seed。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -154,7 +157,9 @@ positions = torch.arange(3)
 all_valid = torch.ones(1, 3, dtype=torch.bool)
 one_doc = torch.zeros(1, 3, dtype=torch.long)
 bias = compose_attn_bias(positions, positions, all_valid, one_doc, one_doc)
-assert torch.equal(torch.isfinite(bias[0, 0]), torch.ones(3, 3, dtype=torch.bool).tril())
+assert torch.equal(
+    torch.isfinite(bias[0, 0]), torch.ones(3, 3, dtype=torch.bool).tril()
+)
 
 # decode：新 token 能看到同文档的全部历史
 bias = decode_attn_bias(3, all_valid, one_doc)
@@ -174,17 +179,17 @@ expect_error(ValueError, decode_attn_bias, 0, all_valid, one_doc)
 设 batch 为 $B$、query 长度为 $T$、key 长度为 $S$。时间和输出空间都是 $O(BTS)$；head 维靠广播，不额外占空间。
 
 - 追问「一行全被屏蔽怎么办」：softmax 对全 $-\infty$ 的行会得到 NaN。要么在 softmax 端定义这种行输出 0，要么保证每个有效 query 至少能看到自己（对角线保留），pad 的 query 再在损失端 ignore 掉。
-- 追问「生产上会物化这张表吗」：一般不会。FlashAttention 的 varlen 接口用 `cu_seqlens` 划分序列，因果在 kernel 里按局部下标算，不需要 $T\times S$ 的稠密 mask。
+- 追问「生产上会物化这张表吗」：一般不会。FlashAttention 的 varlen 接口用 `cu_seqlens` 划分序列，causal 在 kernel 里按局部下标算，不需要 $T\times S$ 的稠密 mask。
 
 ## 题怎么来的
 
-OpenAI 的 Transformer debug 题和 Meta 的 packing 训练题都会问：mask 漏了一层会怎样。只写因果时，pad 位置仍然分到注意力概率，后一篇文档也能读到前一篇；只写 padding 时，未来 token 的信息会泄漏。正确做法是把三个条件按位与成一张 `keep`，再变成加性 $-\infty$。
+OpenAI 的 Transformer debug 题和 Meta 的 packing 训练题都会问：mask 漏了一层会怎样。只写 causal 时，pad 位置仍然分到 attention 概率，后一篇文档也能读到前一篇；只写 padding 时，未来 token 的信息会 leakage。正确做法是把三个条件按位与成一张 `keep`，再变成加性 $-\infty$。
 
-文档 packing 的 `cu_seqlens` 写法见 `coding-packed-lm`；滑动窗口是第四个条件，见 `coding-swa-mask`。
+文档 packing 的 `cu_seqlens` 写法见 `coding-packed-lm`；sliding window 是第四个条件，见 `coding-swa-mask`。
 
 ## 三个条件，一张 bias
 
-设 query 位置为 $i$、key 位置为 $j$。$i,j$ 可以是绝对的 `position_ids`，在 packed 的一行里则是列下标。允许注意力当且仅当：
+设 query 位置为 $i$、key 位置为 $j$。$i,j$ 可以是绝对的 `position_ids`，在 packed 的一行里则是列下标。允许 attention 当且仅当：
 
 $$
 (j\le i)\ \wedge\ \mathrm{valid}(j)\ \wedge\ \mathrm{doc}(i)=\mathrm{doc}(j).
@@ -199,7 +204,7 @@ $$
 \text{otherwise.}\end{cases}
 $$
 
-bias 加在 $QK^\top/\sqrt{D}$ 之后、softmax 之前。非法位填 $0$ 等于没有 mask。decode 时 $T=1$，bias 是 `[B, 1, 1, S]`，$i$ 要取当前的绝对位置；如果拿 $0$ 去和 $j$ 比因果，新 token 就只能看到第 0 个位置。
+bias 加在 $QK^\top/\sqrt{D}$ 之后、softmax 之前。非法位填 $0$ 等于没有 mask。decode 时 $T=1$，bias 是 `[B, 1, 1, S]`，$i$ 要取当前的绝对位置；如果拿 $0$ 去和 $j$ 比 causal，新 token 就只能看到第 0 个位置。
 
 ALiBi 是另一张加性表，直接和这张 bias 相加即可：非法位已经是 $-\infty$，再加上斜率项也还是 $-\infty$，见 `coding-alibi`。不要先把两张 mask 用乘法混成 $0/1$，再当 logits 用。
 
@@ -207,13 +212,13 @@ ALiBi 是另一张加性表，直接和这张 bias 相加即可：非法位已�
 
 ## 漏哪一层，现象不一样
 
-- 漏因果：训练 loss 很好看，生成时却像在看未来，或者和 prefix LM 混在一起。
-- 漏 padding：pad 位置的 $k$ 参与归一化，短句的表示被拉向 pad 向量；batch 里长度差越大，偏得越厉害。
-- 漏文档边界：下一篇文档可以抄上一篇的答案。packing 越密，这种数据泄漏越容易被误当成模型能力。
+- 漏 causal：训练 loss 很好看，生成时却像在看未来，或者和 prefix LM 混在一起。
+- 漏 padding：pad 位置的 $k$ 参与 normalization，短句的表示被拉向 pad 向量；batch 里长度差越大，偏得越厉害。
+- 漏 document boundaries：下一篇文档可以抄上一篇的答案。packing 越密，这种 data leakage 越容易被误当成模型能力。
 
-一张 `[B, S]` 的 `attention_mask` 通常只编码 padding，因此还要分别确认因果和文档边界；SDPA 的 `is_causal` 也需单独设置。
+一张 `[B, S]` 的 `attention_mask` 通常只编码 padding，因此还要分别确认 causal 和 document boundaries；SDPA 的 `is_causal` 也需单独设置。
 
-FlashAttention 的稠密 mask 接口接受布尔 mask 或加性 bias；varlen 接口用 `cu_seqlens` 划分样本，因果在 kernel 内按局部下标处理。白板上先写稠密的三条件与，再说明生产路径不会物化 $T\times S$。
+FlashAttention 的稠密 mask 接口接受布尔 mask 或加性 bias；varlen 接口用 `cu_seqlens` 划分样本，causal 在 kernel 内按局部下标处理。白板上先写稠密的三条件与，再说明生产路径不会物化 $T\times S$。
 
 ## 追问
 
@@ -222,15 +227,15 @@ FlashAttention 的稠密 mask 接口接受布尔 mask 或加性 bias；varlen �
 **query 的 pad 要不要进 keep？**
 挡住 key 侧的 pad 是正确性要求。query 行如果全是 $-\infty$，softmax 会出 NaN；pad query 的损失本来就 ignore，可以跳过它的 softmax，或者先保证对角线保留。
 **decode 时还要文档 id 吗？**
-要。生成落在第二篇文档时，不能让 key 扫到第一篇，除非训练时就允许跨文档注意力。
-**和滑动窗口一起用？**
+要。生成落在第二篇文档时，不能让 key 扫到第一篇，除非训练时就允许跨文档 attention。
+**和 sliding window 一起用？**
 在 `keep` 上再与一个 $i-W \lt j$。四个条件仍然合成一张 bias，见 `coding-swa-mask`。
 
 ## 相关题
 
-- [[coding-swa-mask]]：在因果条件上再加滑动窗口，并分开写 prefill 和 decode 两种 bias 形状。
-- [[coding-packed-lm]]：文档边界的另一种做法，不物化 mask，而是用 `cu_seqlens` 走 varlen kernel。
+- [[coding-swa-mask]]：在 causal 条件上再加 sliding window，并分开写 prefill 和 decode 两种 bias 形状。
+- [[coding-packed-lm]]：document boundaries 的另一种做法，不物化 mask，而是用 `cu_seqlens` 走 varlen kernel。
 - [[meta-pack-seq]]：Meta 的口答版，讲 packing 时为什么文档要互相隔离、`position_ids` 要重置，不写代码。
 - [[openai-softmax-bug]]：mask 填 0 而不是 $-\infty$、softmax 轴写错会怎样，以及怎么写单测固定住。
 - [[apple-mha-code]]：完整的手写 MHA，mask 只是其中一步，重点在 shape 和拆 head。
-- [[apple-ondevice-quant]]：端侧量化图里 $-\infty$ 可能失效，要改用 fp16 能表示的大负数。
+- [[apple-ondevice-quant]]：on-device quantization 图里 $-\infty$ 可能失效，要改用 fp16 能表示的大负数。

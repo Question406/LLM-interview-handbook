@@ -7,6 +7,9 @@ import katex from "katex";
 import { marked } from "marked";
 import { companyFacetsForQuestions, loadCompanyRegistry, resolveQuestionCompanies } from "../lib/company-facets.mjs";
 import { splitQuestionStatement, validateCodingStatement } from "../lib/question-statement.mjs";
+import { validateQuestionReferences, collectionQuestionCatalog } from "../lib/handbook-references.mjs";
+import { validateAnswerGuide } from "../lib/answer-guides.mjs";
+import { formatCodeBlock, decodeCodeEntities } from "../lib/code-formatting.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const handbooksRoot = resolve(projectRoot, "content/handbooks");
@@ -61,10 +64,11 @@ function isInternalQuestionHref(href) {
 }
 
 function isAllowedHref(href) {
-  return safeUrl(href) || isInternalQuestionHref(href);
+  return safeUrl(href) || isInternalQuestionHref(href) || /^\/materials\/[a-z0-9-]+\/[a-z0-9-]+\.(?:zip|json|txt)$/.test(href);
 }
 
 function questionHref(question, book) {
+  book = question.book ?? book;
   return book
     ? `?book=${book}&section=${question.sectionId}&question=${question.id}`
     : `?section=${question.sectionId}&question=${question.id}`;
@@ -347,6 +351,7 @@ function inferLanguage(source, lang) {
 }
 
 function highlightFence(source, lang) {
+  source = formatCodeBlock(source, lang);
   const language = inferLanguage(source, lang);
   const highlighted = language
     ? hljs.highlight(source, { language, ignoreIllegals: true }).value
@@ -361,7 +366,7 @@ export function highlightCodeBlocks(html) {
     const lang = attrs.match(/\blanguage-([^\s"']+)/i)?.[1]
       ?? attrs.match(/\bdata-lang=["']?([^\s"'>]+)/i)?.[1]
       ?? "";
-    return highlightFence(decodeEntities(body.replace(/\n$/, "")), lang);
+    return highlightFence(decodeCodeEntities(body.replace(/\n$/, "")), lang);
   });
 }
 
@@ -506,10 +511,40 @@ function renderAnswer(question, catalog, book) {
     // authored first section is Markdown; keep their historical code intact.
     const legacyBody = statement ? statement.rest : question.body;
     const legacyStatement = statement && question.format === "legacy-html" ? renderMarkdown(linkQuestionRefs(`## 题目描述\n\n${statement.markdown}`, catalog, question.id, book)) : "";
-    const answerBody = question.format === "legacy-html"
-      ? legacyStatement + decorateQuestionLinks(linkQuestionIdsInHtml(highlightCodeBlocks(renderMathInHtml(legacyBody)), catalog, question.id, book), catalog)
-      : decorateQuestionLinks(renderMarkdown(linkQuestionRefs(question.body, catalog, question.id, book)), catalog);
-    return `<div class="full-answer"><div class="mini-title">${statement ? "题目与完整答案" : "完整答案"}</div>${answerBody}${sourceHtml(question.sources)}</div>`;
+    const renderPart = (markdown) => decorateQuestionLinks(renderMarkdown(linkQuestionRefs(markdown, catalog, question.id, book)), catalog);
+    // Keep the spoken response visible; a level-two reference heading marks
+    // optional implementation notes. Inspect tokens so code examples cannot
+    // accidentally introduce this boundary. Raw HTML remains disallowed.
+    const tokens = question.format === "markdown" ? marked.lexer(question.body) : [];
+    const referenceIndex = tokens.findIndex((token) => token.type === "heading" && token.depth === 2 && token.text === "技术备查");
+    const oralBody = referenceIndex < 0 ? null
+      : renderPart(tokens.slice(0, referenceIndex).map((token) => token.raw).join(""))
+        + `<details class="design-reference"><summary>展开技术备查：来源、字段、公式与实验细节</summary>${renderPart(tokens.slice(referenceIndex + 1).map((token) => token.raw).join(""))}</details>`;
+    const answerBody = question.collapseAnswer && statement
+      ? renderPart(`## 题目描述\n\n${statement.markdown}`)
+        + `<details class="design-reference"><summary>参考答案与设计讨论 · 完成后展开</summary>${renderPart(statement.rest)}</details>`
+      : question.format === "legacy-html"
+        ? legacyStatement + decorateQuestionLinks(linkQuestionIdsInHtml(highlightCodeBlocks(renderMathInHtml(legacyBody)), catalog, question.id, book), catalog)
+        : oralBody ?? renderPart(question.body);
+    const guide = question.answerGuide;
+    const outlineLabels = guide?.kind === "coding"
+      ? ["输入与约束", "要解决什么", "算法与原因", "正确性检查"]
+      : ["Situation · 背景", "Task · 任务", "Approach · 做法与原因", guide?.kind === "project" ? "Result · 结果与证据" : "Result · 怎样验证"];
+    const roadmap = guide
+      ? `<aside class="answer-roadmap" aria-label="回答思路"><strong>回答思路</strong><dl>${["situation", "task", "approach", "result"].map((key, index) => `<div><dt>${outlineLabels[index]}</dt><dd>${renderPart(guide[key])}</dd></div>`).join("")}</dl></aside>`
+      : "";
+    const technicalBody = guide && referenceIndex >= 0
+      ? renderPart(tokens.slice(referenceIndex + 1).map((token) => token.raw).join(""))
+      : answerBody;
+    const guidedBody = guide
+      ? roadmap + renderPart(guide.body) + (question.hasPractice
+        ? answerBody
+        : `<details class="design-reference"><summary>展开技术备查：来源、字段、公式与实验细节</summary>${technicalBody}</details>`)
+      : answerBody;
+    const origin = question.origin
+      ? `<div class="mini-title">原始手册题目：<a href="${escapeHtml(questionHref({ id: question.id, sectionId: question.origin.sectionId }, question.origin.book))}">${escapeHtml(question.origin.title)}</a></div>`
+      : "";
+    return `<div class="full-answer">${guide ? "" : `<div class="mini-title">${statement ? "题目与完整答案" : "完整答案"}</div>`}${guidedBody}${origin}${sourceHtml(question.sources)}</div>`;
   } catch (error) {
     error.message = `${question.id}: ${error.message}`;
     throw error;
@@ -540,6 +575,10 @@ function parseQuestion(filePath, sectionIds, registry) {
     fail(filePath, "legacy-html is reserved for migrated legacy content");
   }
   if (!body) fail(filePath, "answer body is empty");
+  if (data.collapseAnswer !== undefined && typeof data.collapseAnswer !== "boolean") fail(filePath, "collapseAnswer must be boolean");
+  if (data.collapseAnswer && (data.format !== "markdown" || !splitQuestionStatement(body))) {
+    fail(filePath, "collapseAnswer requires Markdown with a leading ## 题目描述 section");
+  }
 
   const sources = Array.isArray(data.sources) ? data.sources.map((source, index) => {
     if (!source || typeof source !== "object") fail(filePath, `sources[${index}] must be an object`);
@@ -583,6 +622,7 @@ function parseQuestion(filePath, sectionIds, registry) {
     updatedAt: asDate(data.updatedAt, filePath, "updatedAt"),
     sources,
     body,
+    collapseAnswer: data.collapseAnswer === true,
     hasPractice: codingPractice && !!splitQuestionStatement(body),
   };
 }
@@ -673,13 +713,29 @@ function buildHandbook(handbookFile, registry, { write = true } = {}) {
   const handbook = loadHandbook(handbookFile);
   const sectionIds = handbook.sectionIds;
   const files = walkMarkdown(join(handbook.root, "questions"));
-  if (!files.length) throw new Error("No published question files found");
-  const questions = files.map((filePath) => parseQuestion(filePath, sectionIds, registry));
+  const localQuestions = files.map((filePath) => parseQuestion(filePath, sectionIds, registry));
+  const importedQuestions = loadReferencedQuestions(handbook, registry);
+  const questions = [...localQuestions, ...importedQuestions];
+  if (!questions.length) throw new Error("No published question files found");
   const ids = new Set();
   for (const question of questions) {
     if (question.status !== "published") fail(question.filePath, "questions/ may only contain published questions; keep drafts under drafts/");
     if (ids.has(question.id)) fail(question.filePath, `duplicate question id ${question.id}`);
     ids.add(question.id);
+  }
+  if (handbook.answerGuides !== undefined) {
+    if (typeof handbook.answerGuides !== "string" || !/^[a-z0-9-]+$/.test(handbook.answerGuides)) fail(handbook.filePath, "answerGuides must name a directory in the handbook");
+    const directory = join(handbook.root, handbook.answerGuides);
+    const guides = new Map(walkMarkdown(directory).map((filePath) => {
+      const { data, body } = readMarkdown(filePath);
+      if (!ids.has(data.id)) fail(filePath, `unknown answer guide question ${data.id}`);
+      if (filePath !== join(directory, `${data.id}.md`)) fail(filePath, "answer guide filename must match its question ID");
+      return [data.id, validateAnswerGuide(data, body, data.id)];
+    }));
+    for (const question of questions) {
+      if (!guides.has(question.id)) fail(handbook.filePath, `missing answer guide for ${question.id}`);
+      question.answerGuide = guides.get(question.id);
+    }
   }
 
   const answerDirectory = join(publicRoot, handbook.id);
@@ -693,7 +749,11 @@ function buildHandbook(handbookFile, registry, { write = true } = {}) {
     if (!sectionQuestions.length) fail(handbook.filePath, `section ${section.id} has no published questions`);
     const answerPath = `/content/${handbook.id}/${section.id}.json`;
     const cardsPath = `/content/${handbook.id}/${section.id}.cards.json`;
-    answerChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, renderAnswer(question, catalog, handbook.slug)]));
+    answerChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, renderAnswer(
+      question,
+      question.referenceCatalog ? collectionQuestionCatalog(catalog, question.referenceCatalog, question.origin.book) : catalog,
+      handbook.slug,
+    )]));
     cardChunks[section.id] = Object.fromEntries(sectionQuestions.map((question) => [question.id, {
       titleHtml: renderMathInText(question.title),
       quickHtml: renderMathInText(question.quick),
@@ -712,6 +772,7 @@ function buildHandbook(handbookFile, registry, { write = true } = {}) {
         companies: question.companies,
         isRealInterview: question.isRealInterview,
         hasPractice: question.hasPractice,
+        ...(question.collapseAnswer ? { collapseAnswer: true } : {}),
         searchText: `${question.title.replace(/\$/g, "")} ${question.quick.replace(/\$/g, "")} ${question.tags.join(" ")} ${question.companies.join(" ")}`.replace(/\s+/g, " ").trim(),
         answerPath: `/content/${handbook.id}/${section.id}/${question.id}.json`,
       })),
@@ -764,7 +825,44 @@ function buildHandbook(handbookFile, registry, { write = true } = {}) {
     removeStalePublicEntries(answerDirectory, expectedFiles, expectedDirs);
   }
 
-  return { handbook: generated, questionFiles: files, questions };
+  return { handbook: generated, questionFiles: [...new Set(questions.map((question) => question.filePath))], questions };
+}
+
+function loadReferencedQuestions(handbook, registry) {
+  if (handbook.questionRefs === undefined) return [];
+  if (typeof handbook.questionRefs !== "string" || !/^[a-z0-9-]+\.json$/.test(handbook.questionRefs)) {
+    fail(handbook.filePath, "questionRefs must name a JSON file in the handbook directory");
+  }
+  const manifestPath = join(handbook.root, handbook.questionRefs);
+  let references;
+  try {
+    references = validateQuestionReferences(JSON.parse(readFileSync(manifestPath, "utf8")), handbook.sectionIds, handbook.slug);
+  } catch (error) {
+    fail(manifestPath, error.message);
+  }
+  const sources = new Map();
+  return references.map((reference) => {
+    if (!sources.has(reference.book)) {
+      const source = loadHandbook(handbookFileIn(join(handbooksRoot, reference.book)));
+      const questions = walkMarkdown(join(source.root, "questions"))
+        .map((filePath) => parseQuestion(filePath, source.sectionIds, registry));
+      sources.set(reference.book, {
+        handbook: source,
+        questions: new Map(questions.map((question) => [question.id, question])),
+        catalog: questions.map((question) => ({ id: question.id, sectionId: question.sectionId, title: question.title })),
+      });
+    }
+    const source = sources.get(reference.book);
+    const question = source.questions.get(reference.question);
+    if (!question || question.status !== "published") fail(manifestPath, `missing published source ${reference.book}/${reference.question}`);
+    return {
+      ...question,
+      sectionId: reference.section,
+      order: reference.order,
+      origin: { book: source.handbook.slug, sectionId: question.sectionId, title: source.handbook.title },
+      referenceCatalog: source.catalog,
+    };
+  });
 }
 
 function removeStaleIndexes(expected) {

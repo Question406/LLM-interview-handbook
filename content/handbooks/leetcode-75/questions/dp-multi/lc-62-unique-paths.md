@@ -4,7 +4,9 @@ section: dp-multi
 order: 1
 level: S
 title: LC 62 · 不同路径
-quick: "每个格子只能从上方或左侧到达，所以 $dp[i][j]=dp[i-1][j]+dp[i][j-1]$，第一行第一列都是 $1$。只留一行状态，用 `dp[j] += dp[j-1]` 更新，时间 $O(mn)$，额外空间 $O(n)$；也可以直接算组合数 $\\binom{m+n-2}{m-1}$。"
+quick: >-
+  每个格子只能从上方或左侧到达，所以 $dp[i][j]=dp[i-1][j]+dp[i][j-1]$，第一行第一列都是 $1$。只留一行状态，用
+  `dp[j] += dp[j-1]` 更新，时间 $O(mn)$，额外空间 $O(n)$；也可以直接算组合数 $\binom{m+n-2}{m-1}$。
 tags:
   - DP
   - Math
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 62. Unique Paths
-    url: https://leetcode.com/problems/unique-paths/
+    url: 'https://leetcode.com/problems/unique-paths/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -105,7 +107,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(n)$。组合数写法时间 $O(\min(m,n))$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $m=1$ 或 $n=1$ 时只有一条直线路径，答案是 $1$。
 

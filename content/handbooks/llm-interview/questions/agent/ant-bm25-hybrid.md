@@ -4,7 +4,9 @@ section: agent
 order: 182
 level: A
 title: 蚂蚁：BM25 原理是什么，混合召回怎么接 RAG？
-quick: "BM25 按查询词和文档的词项匹配打分，稀有词权重大、词频收益会饱和、长文档做长度归一，适合查专有名词和 ID。混合召回把它和稠密向量检索的候选合并、去重，过滤权限后再 rerank。导入金融知识库时还要处理好切块、权限和版本。"
+quick: >-
+  BM25 按查询词和文档的词项匹配打分，稀有词权重大、词频收益会饱和、长文档做长度归一，适合查专有名词和
+  ID。混合召回把它和稠密向量检索的候选合并、去重，过滤权限后再 rerank。导入金融知识库时还要处理好切块、权限和版本。
 tags:
   - Ant Group
   - BM25
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 蚂蚁大模型面经
-    url: https://www.nowcoder.com/feed/main/detail/2b27dfe1f1ab4efa87eb0aea70ffdc20
+    url: 'https://www.nowcoder.com/feed/main/detail/2b27dfe1f1ab4efa87eb0aea70ffdc20'
     type: candidate-first-hand
   - title: 【面经】5月20日，蚂蚁智能体与大模型应用 一面
-    url: https://www.nowcoder.com/discuss/888874988554448896
+    url: 'https://www.nowcoder.com/discuss/888874988554448896'
     type: candidate-first-hand
 ---
 
@@ -27,7 +29,7 @@ sources:
 - 公司：蚂蚁集团
 - 团队 / 岗位：大模型 / 智能体应用
 - 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：**“讲一下BM25算法原理”**；**“讲讲RAG的混合召回”**
+- 原始措辞：**“讲一下 BM25算法原理”**；**“讲讲 RAG 的混合召回”**
 
 BM25 是按查询词和文档的词项匹配打分：稀有词权重大，同一个词出现多了收益会饱和，长文档会被长度归一压一压。混合召回就是把 BM25 和稠密向量各自的候选并到一起，去重、过滤权限，再交给 rerank。蚂蚁这题常连着问，先能写 BM25，再接到金融知识库的混合召回。金融场景里合同编号、错误码这些专有名词要是漏了，比语义差一点更要命，所以两路都要留。
 

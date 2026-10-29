@@ -3,8 +3,10 @@ id: p3a-xai-twitter-insight-platform-take-home
 section: xai
 order: 600
 level: A
-title: "xAI：Twitter 分析平台：数据校验、Grok worker 与限流"
-quick: "先交付可重跑的端到端流程：校验推文、按 id 去重入库、worker 调模型并持久化成功或失败。入口和出站额度分开，模型调用用 request_id 幂等并有限重试；完整交付再补服务接口和容器化，练习只实现核心逻辑。"
+title: xAI：Twitter 分析平台：数据校验、Grok worker 与限流
+quick: >-
+  先交付可重跑的端到端流程：校验推文、按 id 去重入库、worker 调模型并持久化成功或失败。入口和出站额度分开，模型调用用 request_id
+  幂等并有限重试；完整交付再补服务接口和容器化，练习只实现核心逻辑。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · twitter-insight-platform-take-home"
-    url: https://www.1point3acres.com/interview/problems/company/xai/twitter-insight-platform-take-home
+  - title: 1Point3Acres · xAI · twitter-insight-platform-take-home
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/twitter-insight-platform-take-home
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现一个可重启的 SQLite 文本打分流水线，包含输入去重、固定窗口额度、任务领取、失败重试与状态持久化。模型由调用方注入，不访问真实社交平台。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -60,7 +63,7 @@ run_one(60) -> "b"，b 变成 done，分数0.5
 
 这是一道 take-home：读取一份推文数据集，校验每条记录后入库，再异步调用 Grok 之类的模型给推文打分。还要加上入口和出站两套限流，并把整个服务容器化。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 - 去重：用推文 id 做主键，同一份数据导入两次不会产生重复任务。
 - 任务状态：每条推文有 pending、running、done、failed 几种状态，并记录尝试次数。worker 失败要落库，支持有限次数的重试。
@@ -175,7 +178,9 @@ class Pipeline:
         with self.lock:
             self._ensure_open()
             for record in records:
-                if not is_valid_record(record) or not self._allow("in", now, self.in_limit):
+                if not is_valid_record(record) or not self._allow(
+                    "in", now, self.in_limit
+                ):
                     rejected += 1
                     continue
                 cursor = self.db.execute(
@@ -255,7 +260,7 @@ class Pipeline:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -265,16 +270,23 @@ import tempfile
 
 calls = []
 
+
 def model(text, request_id):
     calls.append(request_id)
     return 0.7
+
 
 with tempfile.TemporaryDirectory() as directory:
     path = os.path.join(directory, "db.sqlite")
     pipeline = Pipeline(path, model, out_limit=1)
 
     # 重复 id 不重复入库；非法记录被拒绝
-    records = [{"id": "a", "text": "hello"}, {"id": "a", "text": "again"}, {"id": "b", "text": "world"}, {}]
+    records = [
+        {"id": "a", "text": "hello"},
+        {"id": "a", "text": "again"},
+        {"id": "b", "text": "world"},
+        {},
+    ]
     assert pipeline.ingest(records, 0) == (2, 1)
 
     # 出站每个窗口只允许 1 次：同窗口第二次返回 None，下一窗口继续
@@ -301,7 +313,9 @@ with tempfile.TemporaryDirectory() as directory:
 
 # 模型返回越界分数记为 failed，最多重试到第 3 次
 with tempfile.TemporaryDirectory() as directory:
-    pipeline = Pipeline(os.path.join(directory, "db.sqlite"), lambda text, request_id: 1.5)
+    pipeline = Pipeline(
+        os.path.join(directory, "db.sqlite"), lambda text, request_id: 1.5
+    )
     pipeline.ingest([{"id": "x", "text": "bad"}], 0)
     for attempt in range(1, MAX_ATTEMPTS + 1):
         assert pipeline.run_one(attempt) == "x"

@@ -4,27 +4,29 @@ section: harvey
 order: 2
 level: A
 title: Harvey：网盘加权限，或一套律所 RAG
-quick: "Harvey 设计轮几乎是两选一，带权限的网盘或者一套律所 RAG。网盘要把元数据和文件块分开，权限做到组织一级，只到个人不够。检索增强生成（RAG）要从爬虫讲起，把规模讲清楚，有人只讲检索和模型、被追问爬虫答不上，挂在了这一轮。"
+quick: 以律所资料为例，律师可以读取本组合同，不代表能检索另一个客户的文件。设计网盘或 RAG，都要先让权限与文件版本贯穿读取过程。
 tags:
   - Harvey
   - System Design
   - RAG
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: '2026-10-28'
 sources:
   - title: Harvey AI interview questions catalog
-    url: https://aceoffer.app/interviews/harvey
+    url: 'https://aceoffer.app/interviews/harvey'
     type: secondary
-  - title: Harvey AI Software Engineer experience, 2025-07-06
-    url: https://www.jointaro.com/interviews/companies/harvey-ai/experiences/software-engineer-united-states-july-6-2025-no-offer-negative-32e463e6/
+  - title: 'Harvey AI Software Engineer experience, 2025-07-06'
+    url: >-
+      https://www.jointaro.com/interviews/companies/harvey-ai/experiences/software-engineer-united-states-july-6-2025-no-offer-negative-32e463e6/
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-公开报告只确认“网盘加权限”和“律所 RAG”等题型；此处是手册补充的独立场景与验收范围，不冒充未披露的原题。
+公开报告只确认“网盘加权限”和“律所 RAG”等题型；此处是手册补充的独立场景与验收范围。
 
 ### 场景与目标
 
@@ -40,11 +42,29 @@ sources:
 
 公开复盘未给出完整 API 或固定容量，应先声明规模、共享规则、撤权生效时间和查询目标。不能把内存文件库当成云文件服务，也不能只设计问答模型而忽略资料获取与更新。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 律所 A 的并购组得到合同读取权限，A 所内其他小组及律所 B 均不能读；权限被收回或文件删除后，下载和问答引用都应按约定及时失效。
+
+## 回答思路
+
+> **问题与场景：** 以律所资料为例，律师可以读取本组合同，不代表能检索另一个客户的文件。
+>
+> **做法与原因：** 网盘把内容存储与 metadata、共享规则分开管理；RAG 还要把导入、更新、检索和引用串起来。
+>
+> **检查与取舍：** 我会用“授权→读取→撤权→再次查询”验证整条流程，再补规模与恢复设计。
+
+## 可以这样回答
+
+以律所资料为例，律师可以读取本组合同，不代表能检索另一个客户的文件。设计网盘或 RAG，都要先让权限与文件版本贯穿读取过程。
+
+网盘把内容存储与 metadata、共享规则分开管理；RAG 还要把导入、更新、检索和引用串起来。权限撤销后，不只下载要失效，索引、缓存与生成上下文也要按约定处理。
+
+我会用“授权→读取→撤权→再次查询”验证整条流程，再补规模与恢复设计。不能只讲向量数据库，就跳过律所资料的实际隔离。
+
+## 技术备查
 
 ## 解题思路与参考答案
 

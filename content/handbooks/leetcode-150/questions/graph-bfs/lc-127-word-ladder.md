@@ -4,26 +4,28 @@ section: graph-bfs
 order: 3
 level: S
 title: LC 127 · 单词接龙
-quick: "把只差一个字母的词连边，BFS 第一次到达 `endWord` 的层数就是最短变换序列长度（含起终点），到不了返回 $0$。邻居靠逐位换 26 个字母、查哈希集合生成，入队即删词；词表大时可以用双向 BFS。"
+quick: >-
+  把只差一个字母的词连边，BFS 第一次到达 `endWord` 的层数就是最短变换序列长度（含起终点），到不了返回 $0$。邻居靠逐位换 26
+  个字母、查哈希集合生成，入队即删词；vocabulary 大时可以用双向 BFS。
 tags:
   - BFS
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 127. 单词接龙
-    url: https://leetcode.cn/problems/word-ladder/
+    url: 'https://leetcode.cn/problems/word-ladder/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
 ## 题目描述
 
-给定起始单词 beginWord、目标单词 endWord 和单词表 wordList，寻找最短的单词变换序列。序列以 beginWord 开始、endWord 结束，每对相邻单词恰好有一个位置的字母不同，起点以外的每个单词都必须出现在 wordList 中。起始单词不必在单词表中。
+给定起始单词 beginWord、目标单词 endWord 和单 vocabulary wordList，寻找最短的单词变换序列。序列以 beginWord 开始、endWord 结束，每对相邻单词恰好有一个位置的字母不同，起点以外的每个单词都必须出现在 wordList 中。起始单词不必在单 vocabulary 中。
 
 ### 输入与输出
 
@@ -53,7 +55,7 @@ sources:
 
 我会用 BFS。把单词看作节点，只差一个字母的词之间连边，每条边代表一次变换、代价都是 $1$，所以 BFS 第一次到达终点时得到的就是最短长度。
 
-建图不用 $O(N^2)$ 两两比较词。对当前词的每个位置换 $26$ 个字母，用哈希集合 $O(1)$ 判断在不在剩余词表里；入队时就把词从集合里删掉，保证每个词只扩展一次。拿 `hit` 到 `cog` 来说，`hit` 只能变成 `hot`，`hot` 再扩出 `dot`、`lot`，下一层是 `dog`、`log`，再下一层到 `cog`，序列 `hit → hot → dot → dog → cog` 长度为 $5$。
+建图不用 $O(N^2)$ 两两比较词。对当前词的每个位置换 $26$ 个字母，用哈希集合 $O(1)$ 判断在不在剩余 vocabulary 里；入队时就把词从集合里删掉，保证每个词只扩展一次。拿 `hit` 到 `cog` 来说，`hit` 只能变成 `hot`，`hot` 再扩出 `dot`、`lot`，下一层是 `dog`、`log`，再下一层到 `cog`，序列 `hit → hot → dot → dog → cog` 长度为 $5$。
 
 终点不在表里直接返回 $0$。双向 BFS 从起点、终点两端交替扩，相遇时就是最短，单词多时更快。白板上我先写单向，再补双向。
 
@@ -85,9 +87,7 @@ def ladderLength(beginWord: str, endWord: str, wordList: List[str]) -> int:
 
 
 if __name__ == "__main__":
-    assert (
-        ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"]) == 5
-    )
+    assert ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"]) == 5
     assert ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log"]) == 0
     print("ok")
 ```
@@ -99,9 +99,7 @@ if __name__ == "__main__":
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
 ```python
-assert (
-        ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"]) == 5
-    )
+assert ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log", "cog"]) == 5
 assert ladderLength("hit", "cog", ["hot", "dot", "dog", "lot", "log"]) == 0
 print("simple tests passed")
 ```
@@ -112,7 +110,7 @@ print("simple tests passed")
 
 时间是 $O(N\cdot L\cdot 26)$ 量级，每次造新串还要花 $O(L)$ 的话再乘一个 $L$；$N$ 为词数，$L$ 为词长。空间 $O(N)$。
 
-## 边界
+## Edge Cases
 
 终点不在 `wordList` 里时，图里就没有终点，直接返回 $0$。起点已经在表里时，入队时 `discard` 掉，避免第一步又扩回自己。只差一步时 BFS 第一层就命中，长度 $2$。字符集更小的缩小版是 LC 433，独立卡 `lc-433-minimum-genetic-mutation`。
 
@@ -123,6 +121,7 @@ print("simple tests passed")
 
 ```python
 from collections import defaultdict, deque
+
 
 def findLadders(beginWord, endWord, wordList):
     word_set = set(wordList)
@@ -166,7 +165,7 @@ def findLadders(beginWord, endWord, wordList):
 ```
 
 **双向 BFS 怎么写？**
-从 `beginWord`、`endWord` 各维护一个集合，每次扩展更小的那一端。新词如果落在对端集合里，说明两端相遇，步数相加就是最短长度。入队即从词表删掉，避免回头。单词多、分叉大时比单向快。要先判断终点在表里，否则对端是空的。
+从 `beginWord`、`endWord` 各维护一个集合，每次扩展更小的那一端。新词如果落在对端集合里，说明两端相遇，步数相加就是最短长度。入队即从 vocabulary 删掉，避免回头。单词多、分叉大时比单向快。要先判断终点在表里，否则对端是空的。
 
 ```python
 def ladderLengthBidirect(beginWord, endWord, wordList):

@@ -3,20 +3,23 @@ id: ml101-ols-assumptions
 section: linear-models
 order: 7
 level: A
-title: "OLS 的哪些假设用于无偏估计，哪些用于统计推断？"
-quick: "普通最小二乘（OLS）无偏的关键是线性模型、设计矩阵满列秩和误差条件均值为零；误差正态不是无偏的必要条件。同方差与不相关误差支撑经典效率和标准误公式，正态假设进一步给出有限样本的精确 t/F 推断。异方差或相关数据下，要使用匹配结构的标准误和推断方法。"
+title: OLS 的哪些假设用于 unbiased estimate，哪些用于统计推断？
+quick: >-
+  普通最小二乘（OLS）无偏的关键是线性模型、设计矩阵满列秩和误差条件均值为零；误差正态不是无偏的必要条件。同方差与不相关误差支撑经典效率和标准误公式，正态假设进一步给出有限样本的精确
+  t/F 推断。异方差或相关数据下，要使用匹配结构的标准误和推断方法。
 tags:
   - ML Fundamentals
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "MIT: Fundamentals of Regression and OLS"
-    url: https://ocw.mit.edu/courses/14-382-econometrics-spring-2017/29d3e55c546c9927eff0035735b35aa9_MIT14_382S17_14381notes.pdf
+  - title: 'MIT: Fundamentals of Regression and OLS'
+    url: >-
+      https://ocw.mit.edu/courses/14-382-econometrics-spring-2017/29d3e55c546c9927eff0035735b35aa9_MIT14_382S17_14381notes.pdf
     type: primary
-  - title: "Berkeley STAT 151A: Test statistics under normality"
-    url: https://stat151a.berkeley.edu/spring-2026/lectures/unit2/ols_normal.html
+  - title: 'Berkeley STAT 151A: Test statistics under normality'
+    url: 'https://stat151a.berkeley.edu/spring-2026/lectures/unit2/ols_normal.html'
     type: primary
 ---
 

@@ -4,20 +4,20 @@ section: backtracking
 order: 1
 level: A
 title: LC 17 · 电话号码的字母组合
-quick: "用回溯，每一层给一个数字挑一个对应字母，处理完所有数字就把这条组合存下来，数字到字母的映射直接写死。空输入要特判返回空列表，否则会收到一条空串。"
+quick: 用回溯，每一层给一个数字挑一个对应字母，处理完所有数字就把这条组合存下来，数字到字母的映射直接写死。空输入要特判返回空列表，否则会收到一条空串。
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 17. 电话号码的字母组合
-    url: https://leetcode.cn/problems/letter-combinations-of-a-phone-number/
+    url: 'https://leetcode.cn/problems/letter-combinations-of-a-phone-number/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -93,7 +93,17 @@ def letterCombinations(digits: str) -> List[str]:
 
 
 if __name__ == "__main__":
-    assert letterCombinations("23") == ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
+    assert letterCombinations("23") == [
+        "ad",
+        "ae",
+        "af",
+        "bd",
+        "be",
+        "bf",
+        "cd",
+        "ce",
+        "cf",
+    ]
     assert letterCombinations("") == []
     assert letterCombinations("2") == ["a", "b", "c"]
     print("ok")
@@ -106,7 +116,17 @@ if __name__ == "__main__":
 如果题目允许答案以任意顺序返回，先排序或转成集合再比较；只有题目保证没有重复结果时才适合直接用集合，否则还要检查重复次数。
 
 ```python
-assert letterCombinations("23") == ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
+assert letterCombinations("23") == [
+    "ad",
+    "ae",
+    "af",
+    "bd",
+    "be",
+    "bf",
+    "cd",
+    "ce",
+    "cf",
+]
 assert letterCombinations("") == []
 assert letterCombinations("2") == ["a", "b", "c"]
 print("simple tests passed")
@@ -118,7 +138,7 @@ print("simple tests passed")
 
 设长度为 $n$，每位最多 $4$ 叉。时间 $O(4^n\cdot n)$，乘 $n$ 是因为收答案时要拷贝；空间是 $O(n)$ 的递归栈，另加输出。
 
-## 边界
+## Edge Cases
 
 空串必须特判返回 `[]`，不判的话 `dfs(0)` 会在 $i=0=n$ 时收一条空串。只有一个数字时，答案就是该键的 $3$ 或 $4$ 个字母，递归一层就停。含 `'7'` 或 `'9'` 时那一位有四个字母，是 $4$ 叉，所以复杂度上界按 $4^n$ 估。
 
@@ -130,10 +150,12 @@ print("simple tests passed")
 ```python
 MP0 = {**MP, "0": " ", "1": ""}
 
+
 def letterCombinationsWith01(digits):
     if not digits:
         return []
     ans, path = [], []
+
     def dfs(i):
         if i == len(digits):
             ans.append("".join(path))
@@ -142,6 +164,7 @@ def letterCombinationsWith01(digits):
             path.append(ch)
             dfs(i + 1)
             path.pop()
+
     dfs(0)
     return ans
 ```

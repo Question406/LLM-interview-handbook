@@ -4,7 +4,9 @@ section: design
 order: 10
 level: A
 title: 设计：带工具的客服聊天，工单、RAG、升级人工
-quick: "查政策走带引用的 RAG，修改订单或退款走有权限检查和用户确认的工具路径，低置信或高风险请求带证据包升级人工。指标要同时看解决率、错误退款、过期条款和 p95，避免为了提高遏制率把用户困在机器人里。"
+quick: >-
+  查政策走带引用的 RAG，修改订单或退款走有权限检查和用户确认的工具路径，低置信或高风险请求带证据包升级人工。指标要同时看解决率、错误退款、过期条款和
+  p95，避免为了提高遏制率把用户困在机器人里。
 tags:
   - Support
   - Amazon
@@ -13,22 +15,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Amazon Bedrock
-    url: https://aws.amazon.com/bedrock/
+    url: 'https://aws.amazon.com/bedrock/'
     type: primary
   - title: Introducing Apple Foundation Models
-    url: https://machinelearning.apple.com/research/introducing-apple-foundation-models
+    url: >-
+      https://machinelearning.apple.com/research/introducing-apple-foundation-models
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -42,9 +45,9 @@ sources:
 
 ### 约束与交付物
 
-区分只读回答与真正的业务写操作；不能跨用户读取资料、重复退款或凭空补写政策。需要说明延迟目标、政策更新、工具失败和人工接手的服务边界。
+区分只读回答与真正的业务写操作；不能跨用户读取资料、重复退款或凭空补写政策。需要说明延迟目标、政策更新、工具失败和人工接手的 service responsibilities。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
@@ -54,7 +57,7 @@ sources:
 
 我会先把客服请求分成政策问答、工具操作和升级人工三条路径。比如查退货政策时给带引用的回答，真正退款时检查权限和政策、让用户确认金额，政策含糊时把证据一起交给人工。这样才能分别控制答错政策、重复退款和人工反复询问的风险。
 
-这是一道归纳题，并非某次现场逐字题，覆盖 Amazon Seller / 买家客服、Google 账户支持、Microsoft Copilot 工单、Apple 支持等方向。Bedrock 提供托管检索和 agent 底座；Apple 强调证据支持和隐私。检索细节见 `design-prod-rag`，工具预算见 `design-agent-harness`。
+这是一道归纳题，覆盖 Amazon Seller / 买家客服、Google 账户支持、Microsoft Copilot 工单、Apple 支持等方向。Bedrock 提供托管检索和 agent 底座；Apple 强调证据支持和隐私。检索细节见 `design-prod-rag`，工具预算见 `design-agent-harness`。
 
 ## 路由：政策、动作、人工
 
@@ -63,7 +66,7 @@ sources:
 三类意图：
 
 1. 只读问答。 保修、政策、操作步骤。检索增强生成（RAG），答案必须带 `chunk_id`，对不上就说「政策没写」并给人工入口。过期条款事故定义同企业 RAG。
-2. 写操作。 查订单、改地址、退款、改密。走工具：先读后写，写前确认框（金额、订单号、用户看到的明文参数）。鉴权：会话里的用户 id 必须等于资源所有者，模型不得把「帮我朋友退款」绕过。幂等键防重复退款。
+2. 写操作。 查订单、改地址、退款、改密。走工具：先读后写，写前确认框（金额、订单号、用户看到的明文参数）。鉴权：会话里的用户 id 必须等于资源所有者，模型不得把「帮我朋友退款」绕过。idempotency key 防重复退款。
 3. 升级人工。 用户明确要求、模型低置信、政策规定必须人审（欺诈、医疗、法律）、情绪升级、工具连续失败。升级是产品路径，不是认输。
 
 路由可用小分类器 + 规则，不必每轮都上大模型。分错的代价：该退款时只贴政策，或该拒答时直接退款。高风险意图默认保守，宁可多一次确认。
@@ -78,13 +81,13 @@ p95 拆：意图分类、RAG 检索、工具 RPC、生成。读路径可以对�
 
 失败模式：政策日更但索引滞后，机器人引用作废条款同意退货；模型把两段政策拼成「可以退款」但其实互斥；确认 UI 和 JSON 不一致；遏制率 KPI 导致系统死活不升级，用户被循环话术；人工队列被当成垃圾桶，升级包是空的。错误退款率、重复工单率是一等指标。
 
-以退款为例，状态流转是：查订单 → 拉政策块 → 算是否满足窗口 → 展示确认（金额、订单号）→ 用户点了才调退款 API。政策含糊或金额超过自动阈值，直接升级并附上这四步的证据。幂等键用 `(user_id, order_id, intent)`，重试不得二次打款。
+以退款为例，状态流转是：查订单 → 拉政策块 → 算是否满足窗口 → 展示确认（金额、订单号）→ 用户点了才调退款 API。政策含糊或金额超过自动阈值，直接升级并附上这四步的证据。idempotency key 用 `(user_id, order_id, intent)`，重试不得二次打款。
 
 线上：遏制率（未升级且用户解决）、CSAT、错误退款 / 错误改密、过期引用、升级精确率（该升的升了）、p95、人工处理时延。遏制率和 CSAT 一起看：遏制很高、CSAT 掉，是在强行自助。离线：政策问答是否由证据支持、工具参数准确（订单号、金额）、升级决策和金标。A/B 护栏是金钱和安全事故，见 `design-eval-platform`。
 
 评测集要含对抗：用户自称是管理员、社会工程套退款、把过期截图当政策。这些是内容安全 + 工具权限，不是 RAG 召回问题。
 
-发布闸门：证据支持与答案准确性、错误退款率、过期引用、p95、人工 SLA。缺一项不发。遏制率单独看会激励系统死活不升级。
+release criteria：证据支持与答案准确性、错误退款率、过期引用、p95、人工 SLA。缺一项不发。遏制率单独看会激励系统死活不升级。
 
 升级包最小字段：对话摘要、引用过的 `chunk_id` 和文档时间、已调用工具及响应码、用户确认/取消、建议动作。人工 SLA 和机器人 p95 分开报。机器人很快但升级包是空的，总时长仍会爆。
 

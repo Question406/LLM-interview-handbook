@@ -23,9 +23,9 @@ sources:
     type: primary
 ---
 
-Chunked prefill 在同一张卡上切块调度，PD 分离则把 prefill 和 decode 放到不同资源池，两者可以叠加。它们都想避免大段输入预填充（prefill，即处理输入并建立缓存）占满 SM，让逐 token 生成（decode）久等。判断收益时要同时看 throughput、首个 token 等待时间（TTFT）、TPOT、KV transfer cost 和利用率，基本机制见 `sys-prefill-decode`。
+Chunked prefill 在同一张卡上切块调度，PD 分离则把 prefill 和 decode 放到不同资源池，两者可以叠加。它们都想避免大段输入 prefill 占满 SM，让逐 token 生成（decode）久等。判断收益时要同时看 throughput、首个 token 等待时间（TTFT）、TPOT、KV transfer cost 和利用率，基本机制见 `sys-prefill-decode`。
 
-把超长 输入提示（prompt） 切成固定 token 块，块与正在进行的 decode step 交错。一条 $8\mathrm{k}$ prefill 不再一次占满几十到数百毫秒，decode 可以按步插入，P99 TPOT 不被单条长 prompt 打穿。**不需要跨机传 KV**，实现成本低，vLLM / SGLang 都有。
+把超长 prompt 切成固定 token 块，块与正在进行的 decode step 交错。一条 $8\mathrm{k}$ prefill 不再一次占满几十到数百毫秒，decode 可以按步插入，P99 TPOT 不被单条长 prompt 打穿。**不需要跨机传 KV**，实现成本低，vLLM / SGLang 都有。
 
 代价是同 GPU 上仍有调度权衡：块太大，decode 仍需等待；块太小，prefill GEMM 变瘦、TTFT 变差。适合单池、长短请求混部、还不想上两套集群。
 
@@ -39,8 +39,8 @@ Prefill 算术强度高、偏 compute；decode 每步读整份权和历史 KV，
 
 **PD 一定更快吗？**
 KV 传输和两套调度是税。短请求、弱网络上可能更慢。用 goodput 和 P99 说话。
-**Chunked 会改变注意力结果吗？**
-正确实现是 exact 的因果注意力，只是把 $QK^\top$ 按块算完。实现 bug 另说。
+**Chunked 会改变 attention 结果吗？**
+正确实现是 exact 的因果 attention，只是把 $QK^\top$ 按块算完。实现 bug 另说。
 **为什么 PD 要 session affinity？**
 KV 在特定 decode 机上，下一轮或下一 token 要回到对应 worker，见 `slime-router-session`。
 **和 PagedAttention 什么关系？**

@@ -3,8 +3,10 @@ id: p3a-anthropic-coding-q4-distributed-mode-median
 section: anthropic
 order: 606
 level: A
-title: "Anthropic：分布式众数与中位数：低带宽通信"
-quick: "众数要汇总每个值的计数，本地众数投票会漏掉全局最多的值。中位数可以在值域上二分，每轮让各 worker 只报不超过 mid 的元素个数，用更多轮扫描和通信换取更少传输量。"
+title: Anthropic：分布式众数与中位数：低带宽通信
+quick: >-
+  众数要汇总每个值的计数，本地众数投票会漏掉全局最多的值。中位数可以在值域上二分，每轮让各 worker 只报不超过 mid
+  的元素个数，用更多轮扫描和通信换取更少传输量。
 companies:
   - anthropic
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Anthropic · coding-q4-distributed-mode-median"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/coding-q4-distributed-mode-median
+  - title: 1Point3Acres · Anthropic · coding-q4-distributed-mode-median
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/coding-q4-distributed-mode-median
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 在多个工作者保存数据分片的条件下，求全体数据的众数和中位数，并报告中位数查询的通信轮数。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `distributed_stats(shards)` 返回 `(mode, median, rounds)`。shards 是整数列表的列表，可以含空分片；总元素数为 1 到 100000，值在 `[-10^9,10^9]`。众数为全局出现次数最多的值，并列时选较小值。中位数是排序后中间值；总数为偶数时取中间两个值的平均，返回浮点数。
 
@@ -48,7 +54,7 @@ rounds 为实现实际执行的阈值查询轮数。
 
 数据分散在多个 worker 上，每个 worker 只持有自己的分片。在读取速度和节点间带宽都受限的条件下，求全局的众数和中位数。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -148,7 +154,7 @@ def distributed_stats(shards):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

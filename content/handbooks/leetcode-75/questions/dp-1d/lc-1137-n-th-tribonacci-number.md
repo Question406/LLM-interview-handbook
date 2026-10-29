@@ -4,7 +4,9 @@ section: dp-1d
 order: 1
 level: A
 title: LC 1137 · 第 N 个泰波那契数
-quick: "按 $T_{i}=T_{i-1}+T_{i-2}+T_{i-3}$ 往前推，初值 $T_0=0, T_1=T_2=1$。每项只依赖前三项，滚三个变量就够，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  按 $T_{i}=T_{i-1}+T_{i-2}+T_{i-3}$ 往前推，初值 $T_0=0,
+  T_1=T_2=1$。每项只依赖前三项，滚三个变量就够，时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
   - Math
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1137. N-th Tribonacci Number
-    url: https://leetcode.com/problems/n-th-tribonacci-number/
+    url: 'https://leetcode.com/problems/n-th-tribonacci-number/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -102,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=0$ 要返回 $0$，别被 $T_1=T_2=1$ 带偏。
 

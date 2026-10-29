@@ -3,8 +3,10 @@ id: p3a-anthropic-oa-recipe-manager
 section: anthropic
 order: 609
 level: A
-title: "Anthropic：菜谱管理：大小写、权限、版本与回滚"
-quick: "我会用 `casefold()` 后的名字查找，原显示名另外保存；更新和回滚共用权限检查。历史版本存成不可变内容，回滚时把旧内容追加为新版本，原来的记录都留着。"
+title: Anthropic：菜谱管理：大小写、权限、版本与回滚
+quick: >-
+  我会用 `casefold()`
+  后的名字查找，原显示名另外保存；更新和回滚共用权限检查。历史版本存成不可变内容，回滚时把旧内容追加为新版本，原来的记录都留着。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · oa-recipe-manager"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-recipe-manager
+  - title: 1Point3Acres · Anthropic · oa-recipe-manager
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-recipe-manager
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现一个有权限控制和版本历史的食谱管理器；用户可以创建、编辑和回滚自己有权限操作的食谱。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -56,7 +59,7 @@ list_recipes()                          -> [("Soup", 1, 2)]
 
 OA 题，分四级逐步实现一个菜谱管理系统：菜谱的增删改查、按配料数量排序列出、用户权限，以及版本历史和回滚。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 我会把名字索引、写权限和版本历史分开处理，这样逐级增加需求时，前面写好的逻辑还能继续用。比如 `SOUP`、`soup` 都按 `casefold()` 查到同一条记录，列出菜谱时仍显示最初的 `Soup`。
 
@@ -151,6 +154,7 @@ class Recipes:
 
     def list_recipes(self):
         """返回 (显示名, 当前配料数, 当前版本号)，按配料数、再按规范名字排序。"""
+
         def sort_key(item):
             key, recipe = item
             return len(recipe["history"][-1]), key
@@ -178,7 +182,7 @@ def normalize_ingredients(ingredients):
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -189,6 +193,7 @@ def expect_error(error_type, fn, *args):
     except error_type:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise {error_type.__name__}")
+
 
 # 名字不区分大小写，授权后 editor 可以更新
 recipes = Recipes()
@@ -208,8 +213,8 @@ assert recipes.list_recipes() == [("apple pie", 1, 0), ("Soup", 1, 2), ("Bread",
 
 # 权限和输入校验
 expect_error(PermissionError, recipes.update, "c", "soup", [])
-expect_error(PermissionError, recipes.grant, "b", "soup", "c")   # editor 不能再授权
-expect_error(ValueError, recipes.create, "a", "SOUP", [])        # 大小写不同也算重名
+expect_error(PermissionError, recipes.grant, "b", "soup", "c")  # editor 不能再授权
+expect_error(ValueError, recipes.create, "a", "SOUP", [])  # 大小写不同也算重名
 expect_error(ValueError, recipes.update, "a", "soup", ["x", "x"])
 expect_error(ValueError, recipes.rollback, "a", "soup", 5)
 expect_error(KeyError, recipes.update, "a", "missing", [])

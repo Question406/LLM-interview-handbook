@@ -5,7 +5,8 @@ order: 2
 level: S
 title: LC 901 · 股票价格跨度
 quick: >-
-  跨度就是今天到上一个严格更高价格之间的天数，用单调栈存 `(价格, 跨度)`，价格从底到顶严格递减。新价格把所有 $\le$ 它的栈顶弹掉，把它们的跨度累加到自己身上，再入栈。`next` 均摊 $O(1)$，空间 $O(n)$。
+  跨度就是今天到上一个严格更高价格之间的天数，用单调栈存 `(价格, 跨度)`，价格从底到顶严格递减。新价格把所有 $\le$
+  它的栈顶弹掉，把它们的跨度累加到自己身上，再入栈。`next` 均摊 $O(1)$，空间 $O(n)$。
 tags:
   - Stack
   - Monotonic Stack
@@ -14,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 901. Online Stock Span
-    url: https://leetcode.com/problems/online-stock-span/
+    url: 'https://leetcode.com/problems/online-stock-span/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -118,7 +119,7 @@ print("simple tests passed")
 
 `next` 均摊 $O(1)$：每个价格入栈、出栈各一次。空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 相等价格要算进跨度，所以弹栈条件是 $\le$，`[5, 5, 5]` 得到 `[1, 2, 3]`。
 

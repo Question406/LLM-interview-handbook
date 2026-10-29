@@ -4,7 +4,9 @@ section: array-string
 order: 8
 level: S
 title: LC 122 · 买卖股票的最佳时机 II
-quick: "能多次买卖、但不能同时持有时，最优就是吃掉每一段上涨：相邻差值 `prices[i]-prices[i-1]` 为正就加进去，这和每个谷买、下一个峰卖等价。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  能多次买卖、但不能同时持有时，最优就是吃掉每一段上涨：相邻差值 `prices[i]-prices[i-1]`
+  为正就加进去，这和每个谷买、下一个峰卖等价。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 122. 买卖股票的最佳时机 II
-    url: https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/
+    url: 'https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 单调上升相当于首日买、末日卖，差值之和正好等于 `prices[-1] - prices[0]`。单调下降时所有差值都 $\le 0$，利润是 $0$。有平价日的话差值为 $0$，不加就行，不用特判。
 

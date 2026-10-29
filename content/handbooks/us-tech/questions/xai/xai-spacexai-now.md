@@ -3,8 +3,11 @@ id: xai-spacexai-now
 section: xai
 order: 0
 level: S
-title: "xAI / SpaceXAI: what they are shipping now (Grok, Cursor, Colossus)"
-quick: "准备「为什么 xAI」时，我会从 Grok tools、Grok Build、Grok Bot 或 Cursor 中选一个方向，讲清一个具体失败模式和自己能做的工作。材料称 xAI 已成为 SpaceX 子公司、公开品牌使用 SpaceXAI；公司背景一句话交代，重点留给搜索、验证、缓存或共享 VM 等团队问题。"
+title: 'xAI / SpaceXAI: what they are shipping now (Grok, Cursor, Colossus)'
+quick: >-
+  准备「为什么 xAI」时，我会从 Grok tools、Grok Build、Grok Bot 或 Cursor
+  中选一个方向，讲清一个具体失败模式和自己能做的工作。材料称 xAI 已成为 SpaceX 子公司、公开品牌使用
+  SpaceXAI；公司背景一句话交代，重点留给搜索、验证、缓存或共享 VM 等团队问题。
 tags:
   - xAI
   - SpaceXAI
@@ -15,43 +18,44 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-29
+updatedAt: 2026-09-29T00:00:00.000Z
 sources:
   - title: xAI joins SpaceX
-    url: https://x.ai/news/xai-joins-spacex
+    url: 'https://x.ai/news/xai-joins-spacex'
     type: primary
   - title: SpaceX acquires xAI (Reuters)
-    url: https://www.reuters.com/business/musks-spacex-merge-with-xai-combined-valuation-125-trillion-bloomberg-news-2026-02-02/
+    url: >-
+      https://www.reuters.com/business/musks-spacex-merge-with-xai-combined-valuation-125-trillion-bloomberg-news-2026-02-02/
     type: secondary
   - title: Introducing Grok Build
-    url: https://x.ai/news/grok-build-cli
+    url: 'https://x.ai/news/grok-build-cli'
     type: primary
   - title: Workflows in Grok Build
-    url: https://x.ai/news/workflows
+    url: 'https://x.ai/news/workflows'
     type: primary
   - title: Designing Grok Bot for a world of persistent agents
-    url: https://x.ai/news/designing-grok-bot
+    url: 'https://x.ai/news/designing-grok-bot'
     type: primary
   - title: Grok Bot overview
-    url: https://docs.x.ai/grok-bot/overview
+    url: 'https://docs.x.ai/grok-bot/overview'
     type: primary
   - title: Grok 4.7
-    url: https://docs.x.ai/developers/grok-4-6
+    url: 'https://docs.x.ai/developers/grok-4-6'
     type: primary
   - title: Context compaction
-    url: https://docs.x.ai/developers/advanced-api-usage/context-compaction
+    url: 'https://docs.x.ai/developers/advanced-api-usage/context-compaction'
     type: primary
   - title: Prompt caching
-    url: https://docs.x.ai/developers/advanced-api-usage/prompt-caching
+    url: 'https://docs.x.ai/developers/advanced-api-usage/prompt-caching'
     type: primary
   - title: Grok 4.20 Multi-Agent
-    url: https://docs.x.ai/developers/models/grok-4.20-multi-agent-0309
+    url: 'https://docs.x.ai/developers/models/grok-4.20-multi-agent-0309'
     type: primary
   - title: Cursor is now a part of SpaceX
-    url: https://cursor.com/blog/joining-spacex
+    url: 'https://cursor.com/blog/joining-spacex'
     type: primary
   - title: xAI tools overview
-    url: https://docs.x.ai/docs/agents/tools
+    url: 'https://docs.x.ai/docs/agents/tools'
     type: primary
 ---
 
@@ -71,13 +75,13 @@ SpaceX 于 2026 年 2 月 2 日收购 xAI，保留其子公司身份，见 [x.ai
 | Grok Build | 终端 coding agent；plan/diff；subagents；AGENTS.md / skills / MCP | Coding-agent 后训练、可执行 verifier、reward hacking | `xai-agent-loop` |
 | Grok Build workflows | 宿主把任务分给多个 child agents，独立检查后汇成一个报告；公开文章称 budget 128、最多 1,024 | 多 agent 的 credit assignment、验证、每个 child 的上下文隔离 | workflows post |
 | Grok 4.20 multi-agent | 文档列出的模型 id，1M 上下文，用于并行研究 | 和 workflows 同类的协作问题，但 serving 约定不同 | model card |
-| Grok Bot | 在用户级云 VM 上运行的命名持久 agent；Bots 共享文件和登录，界面不构成安全边界 | 进程隔离、共享可变状态、computer-use 确认 | Bot docs |
-| Cursor / Composer | IDE 与 agentic coding models；Cursor 称 SpaceXAI 算力合作用于扩展 RL / continued pretrain | 对 diff 的奖励、评测、数据回流 | Cursor post |
+| Grok Bot | 在用户级云 VM 上运行的命名持久 agent；Bots 共享文件和登录，界面不构成 security constraints | 进程隔离、共享可变状态、computer-use 确认 | Bot docs |
+| Cursor / Composer | IDE 与 agentic coding models；Cursor 称 SpaceXAI 算力合作用于扩展 RL / continued pretrain | 对 diff 的奖励、评测、feedback-data incorporation | Cursor post |
 | Colossus | 公开的超级计算基础设施方向 | 故障域和一致 checkpoint；不把集群 GPU 数当成个人经历 | `xai-colossus` |
 
 Serving 中要分开解释缓存和压缩。Prompt cache 复用相同 token 前缀的已算 KV；模板漂移、工具 schema 重排或遗漏 `prompt_cache_key` 都会破坏命中。Compaction 则把冗长历史删减成一个 blob，让下一次调用变短；如果压缩率上升、任务表现下降，就可能删掉了后续工具仍要用的观察。
 
-投机解码隐藏的是 token decode 时间，工具调用推测隐藏的是 tool I/O 等待。两者处理的时间段不同，回答时分别核算。
+speculative decoding 隐藏的是 token decode 时间，工具调用推测隐藏的是 tool I/O 等待。两者处理的时间段不同，回答时分别核算。
 
 ## 选一个团队方向展开
 
@@ -93,7 +97,7 @@ Serving 中要分开解释缓存和压缩。Prompt cache 复用相同 token 前�
 
 只说「我喜欢 Grok」或「最大的集群」，很难让面试官判断你想做什么。更具体的说法是点名上面一行，再解释一个失败模式：wrong tool call、incomplete search set、verifier that cannot execute，或者 compaction drops a future observation。
 
-边界也要说清：内部 router、未公开 MoE recipe、Cursor 内部 reward weights 没有依据就不讲。JD 不属于火箭部门时，不把 SpaceX 火箭当成研究动机；Tesla occupancy / hydra nets 在这一章只作对照，不能当成 Grok 工作。交易金额、公司人数或「我们下个月上 Colossus 训练」也不能说成个人事实。
+已知与未知也要说清：内部 router、未公开 MoE recipe、Cursor 内部 reward weights 没有依据就不讲。JD 不属于火箭部门时，不把 SpaceX 火箭当成研究动机；Tesla occupancy / hydra nets 在这一章只作对照，不能当成 Grok 工作。交易金额、公司人数或「我们下个月上 Colossus 训练」也不能说成个人事实。
 
 ## 追问
 

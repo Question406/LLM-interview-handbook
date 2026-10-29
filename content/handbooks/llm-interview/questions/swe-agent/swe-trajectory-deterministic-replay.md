@@ -4,7 +4,9 @@ section: swe-agent
 order: 194
 level: A
 title: 如何设计 Trajectory 的确定性 Replay（种子、工具 mock、环境快照）？
-quick: "确定性 replay 要固定三样东西：模型采样的 seed、工具响应的录制夹具、仓库快照的 hash。replay 时禁用真网，逐步断言 I/O 对得上。它负责让环境能还原，和在线 trace 调试互相补位。"
+quick: >-
+  确定性 replay 要固定三样东西：模型 sampling 的 seed、工具响应的录制夹具、仓库快照的 hash。replay 时禁用真网，逐步断言
+  I/O 对得上。它负责让环境能还原，和在线 trace 调试互相补位。
 tags:
   - Replay
   - Determinism
@@ -12,21 +14,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: SWE-bench
-    url: https://arxiv.org/abs/2310.06770
+    url: 'https://arxiv.org/abs/2310.06770'
     type: primary
   - title: Playwright Trace Viewer
-    url: https://playwright.dev/docs/trace-viewer
+    url: 'https://playwright.dev/docs/trace-viewer'
     type: primary
 ---
 
-要让 trajectory 能确定性地重放，我会固定三样东西：模型采样的 seed、工具响应的录制夹具、仓库和工作区快照的 hash，replay 时默认断网，然后对每一步的 I/O 做断言。`swe-trace-replay` 回答的是失败时要记哪些字段才能归因；这题回答的是环境要怎样才能让逐步 I/O 对得上。
+要让 trajectory 能确定性地重放，我会固定三样东西：模型 sampling 的 seed、工具响应的录制夹具、仓库和工作区快照的 hash，replay 时默认断网，然后对每一步的 I/O 做断言。`swe-trace-replay` 回答的是失败时要记哪些字段才能归因；这题回答的是环境要怎样才能让逐步 I/O 对得上。
 
 光把 chat 日志重放一遍是不够的。工具一打真网，时钟一跳，沙箱里多一个文件，轨迹马上分叉。比如某个工具的返回里带了当前时间，录制时是下午，重放时是晚上，模型看到的内容变了，下一步就走上了另一条路。所以日志字段再齐，环境也未必能复现。SWE-bench 能比较 patch，是因为容器和测试命令都冻住了；Playwright 这类 trace viewer 能逐步对齐，是因为副作用被录成了夹具。harness 改动之后能做回归，靠的就是这份环境合同，再看一遍模型文案没用。
 
-先说冻什么。一次 attempt 要明确固定：模型 sampling seed（如果允许随机）、工具字段和类型规范（schema）的 hash、仓库 SHA 和工作区快照 hash、镜像 digest、依赖锁、时钟源、环境变量引用。工具响应走录制夹具，同样的请求字节对应同样的响应字节。replay 时禁止访问真网，这和 `swe-sandbox-threat-model` 的默认断网是一回事，既为了确定性，也为了安全。文件系统从快照恢复，别靠「大概在这个 commit」。`uuid`、`Date.now()`、DNS 这类非确定性来源全部注入或冻结。缺任何一个夹具，就只能做条件 replay（重采样模型），不能说逐步一致。
+先说冻什么。一次 attempt 要明确固定：模型 sampling seed（如果允许随机）、工具字段和类型规范（schema）的 hash、仓库 SHA 和工作区快照 hash、镜像 digest、依赖锁、时钟源、环境变量引用。工具响应走录制夹具，同样的请求字节对应同样的响应字节。replay 时禁止访问真网，这和 `swe-sandbox-threat-model` 的默认断网是一回事，既为了确定性，也为了安全。文件系统从快照恢复，别靠「大概在这个 commit」。`uuid`、`Date.now()`、DNS 这类非确定性来源全部注入或冻结。缺任何一个夹具，就只能做条件 replay（resampling 模型），不能说逐步一致。
 
 然后是逐步断言。replay 对每一步检查工具请求、响应、工作区 hash 和测试命令的输出。写成式子就是 $h_t^{\mathrm{replay}}=h_t^{\mathrm{record}}$，第一个让等式不成立的 $t$ 就是分歧点 $t^*$。$t^*\lt T$ 时停下来归因，之后的失败不全算根因。确定性 replay 在 $t^*$ 就失败了，问题在 harness、环境或夹具，不该先怪模型；确定性 replay 能走完、换 seed 的条件 replay 才发散，那才是模型方差。所以现场我会先问「同一套夹具能不能走到同一个 $t^*$」，再决定改模型还是改 harness。
 

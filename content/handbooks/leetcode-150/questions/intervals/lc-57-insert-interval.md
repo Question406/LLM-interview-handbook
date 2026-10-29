@@ -4,21 +4,20 @@ section: intervals
 order: 3
 level: A
 title: LC 57 · 插入区间
-quick: >-
-  原区间已经有序且不重叠，一遍扫描分三段：完全在新区间左边的原样抄，和它重叠的并成一段，完全在右边的再抄上。时间 $O(n)$。
+quick: 原区间已经有序且不重叠，一遍扫描分三段：完全在新区间左边的原样抄，和它重叠的并成一段，完全在右边的再抄上。时间 $O(n)$。
 tags:
   - Intervals
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 57. 插入区间
-    url: https://leetcode.cn/problems/insert-interval/
+    url: 'https://leetcode.cn/problems/insert-interval/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,10 +100,10 @@ if __name__ == "__main__":
 ```python
 assert insert([[1, 3], [6, 9]], [2, 5]) == [[1, 5], [6, 9]]
 assert insert([[1, 2], [3, 5], [6, 7], [8, 10], [12, 16]], [4, 8]) == [
-        [1, 2],
-        [3, 10],
-        [12, 16],
-    ]
+    [1, 2],
+    [3, 10],
+    [12, 16],
+]
 assert insert([], [5, 7]) == [[5, 7]]
 print("simple tests passed")
 ```
@@ -115,7 +114,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$（答案）。每个原区间只访问一次。
 
-## 边界
+## Edge Cases
 
 原列表为空时，答案就是 `[newInterval]`。新区间在最左或最右时，第一段或第三段吃掉全部原区间。和所有段都重叠时，中间循环把 `ns/ne` 扩成并集，只插一次。和任何段都不重叠时，它夹在某两段中间，中间循环零次。新区间被某段完全包含时，`ns/ne` 扩回那一段，答案长度不变。
 
@@ -142,6 +141,7 @@ def insertUnsorted(intervals, newInterval):
 
 ```python
 import bisect
+
 
 def insertOnline(starts, ends, s, e):
     i = bisect.bisect_left(starts, s)

@@ -5,7 +5,8 @@ order: 6
 level: S
 title: 阿里 AI 研发 0325：第 $k$ 个「不含 3 且不被 3 整除」的正整数？
 quick: >-
-  二分答案 $x$，用数位 DP 数出 $\le x$ 的合法数个数。合法数位只有 $9$ 种，按模 $3$ 的余数正好三三分组，也可以用 $9$ 的幂按位计数；别每轮清空数位 DP 的缓存，询问多时会超时。
+  二分答案 $x$，用数位 DP 数出 $\le x$ 的合法数个数。合法数位只有 $9$ 种，按模 $3$ 的余数正好三三分组，也可以用 $9$
+  的幂按位计数；别每轮清空数位 DP 的缓存，询问多时会超时。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
-    url: https://www.nowcoder.com/discuss/866741961221292032
+    url: 'https://www.nowcoder.com/discuss/866741961221292032'
     type: candidate-first-hand
 ---
 
@@ -122,7 +123,7 @@ def main():
     if not data:
         return
     t = int(data[0])
-    ks = list(map(int, data[1:1 + t]))
+    ks = list(map(int, data[1 : 1 + t]))
     for k in ks:
         print(kth_liked(k))
 
@@ -137,7 +138,7 @@ if __name__ == "__main__":
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。原来负责读标准输入的 `if __name__ == "__main__": main()` 入口先注释掉，只保留函数定义，由测试调用函数或模拟输入。
 
-用小范围枚举作独立答案：排除含 3 和能被 3 整除的正整数，同时检查第 k 个数的计数边界。
+用小范围枚举作独立答案：排除含 3 和能被 3 整除的正整数，同时检查第 k 个数的 counting threshold。
 
 ```python
 liked = [x for x in range(1, 100) if "3" not in str(x) and x % 3 != 0]
@@ -152,7 +153,7 @@ print("simple tests passed")
 
 每组询问二分约 $70$ 次，每次数位 DP 的状态是 $O(\mathrm{len}\cdot 3\cdot 2\cdot 2)$、转移 $9$，长度在 $20$ 量级。对 $T$ 组询问，总时间可以接受。空间就是 DP 缓存的规模。
 
-## 边界
+## Edge Cases
 
 $k=1$ 答案是 $1$，不要输出 $0$。Python 整数没有 64 位溢出；其他语言要用大整数或 `__int128`。
 

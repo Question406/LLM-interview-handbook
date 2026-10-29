@@ -3,8 +3,9 @@ id: p3a-anthropic-oa-task-management
 section: anthropic
 order: 612
 level: A
-title: "Anthropic：任务 OA：CRUD、TTL 和历史快照"
-quick: "我会给每个任务保存按时间排列的版本，删除写标记，过期时刻跟着版本存。查历史时二分找到当时最后一次写入，再判断是否删除或过期；这样后来发生的修改不会改掉过去的答案。"
+title: Anthropic：任务 OA：CRUD、TTL 和历史快照
+quick: >-
+  我会给每个任务保存按时间排列的版本，删除写标记，过期时刻跟着版本存。查历史时二分找到当时最后一次写入，再判断是否删除或过期；这样后来发生的修改不会改掉过去的答案。
 companies:
   - anthropic
 tags:
@@ -16,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · oa-task-management"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-task-management
+  - title: 1Point3Acres · Anthropic · oa-task-management
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-task-management
     type: secondary
 ---
 
@@ -27,7 +29,7 @@ sources:
 
 实现一个任务数据存储服务：每个用户下面有多个任务字段，任务内容可以写入、删除、按历史时间查询，还可以设置 TTL、备份和恢复。恢复必须保留更早的历史，并把备份时剩余的有效期重新应用到恢复时刻。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -36,7 +38,7 @@ sources:
 - `scan(t,key,prefix="")` 返回有效字段 [(field,value)]，只含指定前缀并按字段名升序。
 - `backup(t) -> int` 保存 t 时刻所有有效字段与剩余 TTL，返回备份编号；`restore(now,backup_id)` 用指定有效备份覆盖当前全部状态，备份的剩余 TTL 从 now 重新计时，之前的历史查询仍成立。
 - set/delete/restore 的时间在实例上单调不减；get/scan/backup 可查询历史时刻。存入、备份、恢复、取出值须隔离可变对象；不允许调用方修改一个返回值后改变数据库。
-- 总版本数<=10000。用户id作为 key、任务id作为 field、内容作为 value。
+- 总版本数<=10000。用户 id 作为 key、任务 id 作为 field、内容作为 value。
 
 ### 输入输出示例
 
@@ -57,11 +59,11 @@ get(1, "a", "x")   -> 7       # restore 不改写更早的历史
 
 为每个用户维护一张任务表，支持增删改查，然后逐级加入任务自动过期，以及查询任意历史时刻某个用户有哪些任务。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 我会按用户和任务保存版本列表，让查询回到指定时刻，再判断那时任务是否有效。只有当前状态的字典回答不了历史问题：一个任务后来被删，在删除前的查询里仍该出现；在查询前已经过期，即使没人手动删，也该返回不存在。
 
-练习用通用 `DB` 实现，用户 id 当 `key`，任务 id 当 `field`，内容当 `value`；`scan(t, user)` 返回用户在 t 时刻的全部任务。每次写入追加版本，删除也追加标记，TTL 作为该版本的过期时刻。删除和过期都用左闭右开的边界，查询找到版本后再检查是否有效。
+练习用通用 `DB` 实现，用户 id 当 `key`，任务 id 当 `field`，内容当 `value`；`scan(t, user)` 返回用户在 t 时刻的全部任务。每次写入追加版本，删除也追加标记，TTL 作为该版本的过期时刻。删除和过期都用左闭右开的 time intervals，查询找到版本后再检查是否有效。
 
 历史查询或读取快照只读已有记录，不改当前状态。存取值时做深复制，避免调用方改一个对象就连历史一起改掉。下面再把备份的剩余 TTL 和恢复时间对应起来。
 
@@ -115,7 +117,7 @@ class DB:
     """
 
     def __init__(self):
-        self.times = {}     # (key, field) -> [写入时间, ...]，单调不减，供二分查找
+        self.times = {}  # (key, field) -> [写入时间, ...]，单调不减，供二分查找
         self.versions = {}  # (key, field) -> [(value, expires_at), ...]，与 times 一一对应
         self.clock = float("-inf")  # 最近一次写入的时间
         self.backups = []
@@ -203,7 +205,7 @@ class DB:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -214,6 +216,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # TTL 有效期是左闭右开区间 [0, 5)
 db = DB()
@@ -253,11 +256,11 @@ db.set(21, "u", "obj", payload)
 payload["n"] = 2
 assert db.get(21, "u", "obj") == {"n": 1}
 
-expect_value_error(db.set, 19, "a", "x", 1)      # 写入时间倒退
-expect_value_error(db.set, 22, "a", "x", 1, 0)   # ttl 必须为正
-expect_value_error(db.set, 22, "a", "x", None)   # None 留给删除标记
-expect_value_error(db.restore, 22, 99)           # 不存在的备份 id
-expect_value_error(db.restore, 22, -1)           # 负数 id 不能当成「最后一个」
+expect_value_error(db.set, 19, "a", "x", 1)  # 写入时间倒退
+expect_value_error(db.set, 22, "a", "x", 1, 0)  # ttl 必须为正
+expect_value_error(db.set, 22, "a", "x", None)  # None 留给删除标记
+expect_value_error(db.restore, 22, 99)  # 不存在的备份 id
+expect_value_error(db.restore, 22, -1)  # 负数 id 不能当成「最后一个」
 ```
 
 ### 复杂度与追问

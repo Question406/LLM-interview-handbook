@@ -4,22 +4,25 @@ section: google
 order: 1
 level: A
 title: Google DeepMind：分子（或其它科学）数据怎么做 ML design？
-quick: "先确认任务、样本单位、监督信号和切分方式，再选图网络、3D encoder 或语言模型。科学数据容易因相似结构泄漏而高估效果，评测要落到独立结构、置信度和实验验证上。"
+quick: >-
+  先确认任务、样本单位、监督信号和切分方式，再选图网络、3D encoder
+  或语言模型。科学数据容易因相似结构泄漏而高估效果，评测要落到独立结构、置信度和实验验证上。
 tags:
   - Google
   - DeepMind
   - ML Design
   - Evaluation
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: DeepMind ML Design 面经
-    url: https://www.1point3acres.com/bbs/thread-1141657-1-1.html
+    url: 'https://www.1point3acres.com/bbs/thread-1141657-1-1.html'
     type: candidate-first-hand
   - title: Highly accurate protein structure prediction with AlphaFold
-    url: https://www.nature.com/articles/s41586-021-03819-2
+    url: 'https://www.nature.com/articles/s41586-021-03819-2'
     type: primary
 ---
 
@@ -41,11 +44,19 @@ sources:
 
 缺失的分子字段、数据量、目标性质及实验预算均需明确作为假设。要处理同一分子的不同表示、结构相似样本间的泄漏、标签成本和所选任务所需的几何对称性。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 若练习选择“由分子图预测溶解度”，输入是带原子/键属性的分子，输出是带单位和适用范围的预测；测试应能区分真正的新骨架泛化与仅记住相似训练分子的表现。
+
+## 可以这样回答
+
+做分子等科学数据的 ML design，我会先定义任务和评测单位，再选模型。首先确认一条样本是分子图、3D 构象还是带条件的反应，目标是分类、回归、生成还是检索，标签又来自哪里。比如结合能、溶解度的回归，与生成新分子，监督信号和验收方式就不同。
+
+切分应尽早定下来。科学数据未必是 i.i.d. 样本，随机拆分可能让相似 scaffold 同时进入训练和测试，线下 RMSE 很好，实验室却复现不了。应根据目标按 scaffold、时间或目标蛋白切 train/val/test，把新结构上的泛化作为验收内容。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
@@ -55,9 +66,9 @@ sources:
 
 表示方式跟数据约束走。原子作点、化学键作边的图适合性质预测；坐标或点云适合构象 / 对接，模型需要处理平移旋转下的等变性或不变性，直接 flatten 成 MLP 会丢掉这些约束。SMILES / SELFIES 适合生成与语言模型，同一分子却可能有多个 SMILES，评测要 canonical 化或做图匹配。GNN、3D encoder 的选择，应解释为满足数据的对称性。
 
-性质预测可以报 MAE 与校准；生成评 validity、uniqueness、novelty，再看与训练集的 scaffold 距离。生成结果即使合法，novelty 为 0 仍说明可能只是在复制训练分子。湿实验标签贵时，把主动学习、模拟器打分和专家抽查放进 pipeline。AlphaFold 提醒我们，数据、等价性与独立结构评测都影响科学结论。
+性质预测可以报 MAE 与 calibration；生成评 validity、uniqueness、novelty，再看与训练集的 scaffold 距离。生成结果即使合法，novelty 为 0 仍说明可能只是在复制训练分子。湿实验标签贵时，把主动学习、模拟器打分和专家抽查放进 pipeline。AlphaFold 提醒我们，数据、等价性与独立结构评测都影响科学结论。
 
-系统设计还要考虑物理模拟是否在训练环内、按图大小如何 batch / padding，以及 3D 对齐的计算成本。MLE 岗可能展开这些问题，RS 岗则可能进一步问能量函数，或是否过拟合 CASP 式公开集。
+系统设计还要考虑物理模拟是否在训练环内、按图大小如何 batch / padding，以及 3D 对齐的计算成本。MLE 岗可能展开这些问题，RS 岗则可能进一步问能量函数，或是否 overfitting CASP 式公开集。
 
 ## 追问
 

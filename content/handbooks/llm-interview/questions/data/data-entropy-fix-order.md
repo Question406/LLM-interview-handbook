@@ -4,7 +4,9 @@ section: data
 order: 17
 level: S
 title: 熵塌了先动哪几个旋钮？温度为什么排最后？
-quick: "先确认熵下降时成功率没跟上，排除正常收敛。然后按顺序动：先让组里有可区分的奖励，再查 clip 与学习率，再管输出长度，最后才调熵正则。温度只改轨迹采样、不改权重，排在最后；过早加大熵系数，会放大靠拉长输出拿奖励的行为和无关输出。"
+quick: >-
+  先确认熵下降时成功率没跟上，排除正常收敛。然后按顺序动：先让组里有可区分的奖励，再查 clip 与学习率，再管输出长度，最后才调 entropy
+  regularization。温度只改轨迹 sampling、不改权重，排在最后；过早加大熵系数，会放大靠拉长输出拿奖励的行为和无关输出。
 tags:
   - Entropy
   - RL Debug
@@ -12,32 +14,34 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-24
+updatedAt: 2026-08-24T00:00:00.000Z
 sources:
-  - title: The Entropy Mechanism of Reinforcement Learning for Reasoning Language Models
-    url: https://arxiv.org/abs/2505.22617
+  - title: >-
+      The Entropy Mechanism of Reinforcement Learning for Reasoning Language
+      Models
+    url: 'https://arxiv.org/abs/2505.22617'
     type: primary
   - title: DAPO
-    url: https://arxiv.org/abs/2503.14476
+    url: 'https://arxiv.org/abs/2503.14476'
     type: primary
   - title: SimKO — Simple Pass@K Policy Optimization
-    url: https://arxiv.org/abs/2510.14807
+    url: 'https://arxiv.org/abs/2510.14807'
     type: secondary
 ---
 
 顺序是先让组里有信号，再让好 token 有梯度，再管长度，最后才管探索的形状；温度排在最后，甚至可以不上清单。这题默认已经判断过，这是一次成功率没跟上的坏塌。熵掉了算不算坏事是另一道题，见 `data-entropy-collapse`，那边要把正确率、熵、长度、组内 $\sigma$ 叠起来看。这题面试官想听的是旋钮顺序。
 
-举个例子，一个 GRPO run 熵掉得很快，大部分组的回答全对。这时候把温度调高、把熵系数加大，采样看起来是散开了，可组内奖励还是一样，优势还是 0，什么也学不到。要先解决的是题太简单。
+举个例子，一个 GRPO run 熵掉得很快，大部分组的回答全对。这时候把温度调高、把熵系数加大，sampling 看起来是散开了，可组内奖励还是一样，优势还是 0，什么也学不到。要先解决的是题太简单。
 
 ## 按这个顺序动
 
-第一步看有效组。零方差组比例高，GRPO 这一步本来就没有优势，见 `byte-grpo-all-same-zero-adv`。先改题目难度、$G$，或者上 DAPO 的动态采样，见 `pt-dapo`、`data-rlvr-select`。组内没有可区分的奖励，正则怎么调都补不出有效的任务学习信号。
+第一步看有效组。零方差组比例高，GRPO 这一步本来就没有优势，见 `byte-grpo-all-same-zero-adv`。先改题目难度、$G$，或者上 DAPO 的动态 sampling，见 `pt-dapo`、`data-rlvr-select`。组内没有可区分的奖励，正则怎么调都补不出有效的任务学习信号。
 
 第二步看 clip 和步长。clip fraction 长期贴着正向上界，说明少见的高质量 token 的更新被裁掉了，概率分布进一步往常见 token 上集中。先试 clip-higher，或者把学习率 / PPO epoch 降下来，见 `pt-rl-hparams-joint`。Entropy Mechanism（`2505.22617`）把熵变写成概率和 logit 更新的协方差：高概率且高优势的 token 在降熵。限制这些 token 的步长，比在整条损失（loss）上加一个 $\lambda H$ 更对症。
 
-第三步看长度。熵掉的同时平均长度暴涨，先按长度 hacking 处理：overlong、GFPO 组内过滤、评测锁预算，见 `data-length-hacking`、`pt-gfpo`。这时候先加熵奖励，模型会写得更散、更长。
+第三步看长度。熵掉的同时平均长度暴涨，先按长度 hacking 处理：overlong、GFPO 组内过滤、评测锁预算，见 `data-length-hacking`、`pt-gfpo`。这时候先加 entropy bonus，模型会写得更散、更长。
 
-最后才动熵正则：训练目标里的 $\lambda H(\pi)$、Clip-Cov / KL-Cov、SimKO 保 top-$K$ support，见 `fund-entropy-temp`、`pt-grpo-family-sapo-simko`。它们是在已经有有效梯度的基础上，调整策略对不同候选的概率分配。温度，比如 $T=1.2$ 的采样轨迹（rollout），排在最后：评测一律用 greedy，训练里的塌缩就原形毕露。
+最后才动 entropy regularization：训练目标里的 $\lambda H(\pi)$、Clip-Cov / KL-Cov、SimKO 保 top-$K$ support，见 `fund-entropy-temp`、`pt-grpo-family-sapo-simko`。它们是在已经有有效梯度的基础上，调整策略对不同候选的概率分配。温度，比如 $T=1.2$ 的 sampling 轨迹（rollout），排在最后：评测一律用 greedy，训练里的塌缩就原形毕露。
 
 ## 别先动的几刀
 

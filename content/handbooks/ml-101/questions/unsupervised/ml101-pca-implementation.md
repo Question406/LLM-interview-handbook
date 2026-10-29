@@ -4,36 +4,42 @@ section: unsupervised
 order: 12
 level: A
 title: 用中心化与 SVD 实现 PCA，验证投影、重构和误差
-quick: 先用训练集均值中心化，对中心化矩阵做 SVD，取前 K 个右奇异向量作为主轴。新数据减同一个训练均值后投影，乘回主轴再加均值即可重构。重构平方误差等于被丢弃奇异值的平方和；主轴符号可能翻转，验证时应比较重构或子空间，不能要求每个向量元素完全相同。
-tags: [ML Fundamentals, Linear Algebra, Coding]
+quick: >-
+  先用训练集均值中心化，对中心化矩阵做 SVD，取前 K
+  个右奇异向量作为主轴。新数据减同一个训练均值后投影，乘回主轴再加均值即可重构。重构平方误差等于被丢弃奇异值的平方和；主轴符号可能翻转，验证时应比较重构或子空间，不能要求每个向量元素完全相同。
+tags:
+  - ML Fundamentals
+  - Linear Algebra
+  - Coding
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-23
+updatedAt: 2026-10-23T00:00:00.000Z
 sources:
   - title: NumPy linalg.svd
-    url: https://numpy.org/doc/stable/reference/generated/numpy.linalg.svd.html
+    url: 'https://numpy.org/doc/stable/reference/generated/numpy.linalg.svd.html'
     type: primary
   - title: scikit-learn PCA
-    url: https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
+    url: >-
+      https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 仅用 NumPy 实现中心化 PCA，提供拟合、降维投影与从低维表示近似重建的接口，不自动按特征标准差缩放。
 
 ### 输入与接口
 
-实现 SmallPCA，提供 fit(X,k)、transform(X)、`inverse_transform`(Z)。拟合X为N×D有限矩阵，N≥2，D≥1，1≤k≤min(N,D)；transform输入M×D，inverse_transform输入M×k。
+实现 SmallPCA，提供 fit(X,k)、transform(X)、`inverse_transform`(Z)。拟合 X 为 N×D 有限矩阵，N≥2，D≥1，1≤k≤min(N,D)；transform 输入 M×D，inverse_transform 输入 M×k。
 
 ### 输出与约束
 
-fit 返回self并保存 mean(D)、components(k×D，按奇异值降序排列的正交主轴)、`singular_values`(min(N,D)，包含全部奇异值)、`explained_variance`(k)、`explained_variance_ratio`(k)。方差以N-1为分母；比例以所有方向方差之和为分母，总方差为0时比例返回全0。
+fit 返回 self 并保存 mean(D)、components(k×D，按奇异值降序排列的正交主轴)、`singular_values`(min(N,D)，包含全部奇异值)、`explained_variance`(k)、`explained_variance_ratio`(k)。方差以 N-1为分母；比例以所有方向方差之和为分母，总方差为0时比例返回全0。
 
-投影必须使用拟合时的mean，transform返回M×k；inverse_transform返回M×D并加回mean。主轴正负号均可，重根对应的正交基也可不同；评估投影/重建和子空间等价性，不要求逐元素复现某个SVD库的符号。拟合、投影均不修改调用者输入。
+投影必须使用拟合时的 mean，transform 返回 M×k；inverse_transform 返回 M×D 并加回 mean。主轴正负号均可，重根对应的正交基也可不同；评估投影/重建和子空间等价性，不要求逐元素复现某个 SVD 库的符号。拟合、投影均不修改调用者输入。
 
 ### 示例
 
@@ -52,7 +58,7 @@ PCA 可以通过中心化矩阵的 SVD 实现。这里手写的是 PCA 的数据
 
 训练矩阵 X 有 n 行、d 列，均值为 $\mu$。令 $X_c=X-\mu=USV^T$，选 $V^T$ 的前 K 行作为主轴 C，则投影 $Z=X_cC^T$，重构 $\hat X=ZC+\mu$。样本协方差在这些方向上的方差为 $s_j^2/(n-1)$。
 
-本练习要求 n≥2、d≥1，K 为 1 到 min(n,d) 的整数；只中心化，不自动按列标准化，不做 whitening。新数据必须复用训练均值，不能在测试集上重新拟合。常量数据的总方差为零时，把解释方差比例设为零；主轴本身没有可辨认的方差信息。
+本练习要求 n≥2、d≥1，K 为 1 到 min(n,d) 的整数；只中心化，不自动按列 standardization，不做 whitening。新数据必须复用训练均值，不能在测试集上重新拟合。常量数据的总方差为零时，把解释方差比例设为零；主轴本身没有可辨认的方差信息。
 
 ```python
 import numpy as np
@@ -70,10 +76,12 @@ class SmallPCA:
         _, singular_values, vt = np.linalg.svd(centered, full_matrices=False)
         self.components = vt[:k].copy()
         self.singular_values = singular_values.copy()
-        all_variances = singular_values ** 2 / (len(X) - 1)
+        all_variances = singular_values**2 / (len(X) - 1)
         self.explained_variance = all_variances[:k]
         total = all_variances.sum()
-        self.explained_variance_ratio = self.explained_variance / total if total > 0 else np.zeros(k)
+        self.explained_variance_ratio = (
+            self.explained_variance / total if total > 0 else np.zeros(k)
+        )
         return self
 
     def transform(self, X):
@@ -88,7 +96,11 @@ class SmallPCA:
         if not hasattr(self, "components"):
             raise ValueError("fit PCA first")
         Z = np.asarray(Z, dtype=float)
-        if Z.ndim != 2 or Z.shape[1] != len(self.components) or not np.isfinite(Z).all():
+        if (
+            Z.ndim != 2
+            or Z.shape[1] != len(self.components)
+            or not np.isfinite(Z).all()
+        ):
             raise ValueError("projected dimension must match")
         return Z @ self.components + self.mean
 ```
@@ -102,8 +114,8 @@ class SmallPCA:
 **为什么不能直接比较两次的主轴元素？**
 除符号不唯一外，重复奇异值对应的子空间还可以选择不同正交基。应比较重构、投影矩阵或子空间；若 K 刚好截断一个重复值空间，选出的 K 维子空间也可能不同，但训练重构误差相同。
 
-**特征标准化应该放在哪里？**
-若不同单位不应主导 PCA，可以先用训练集统计量缩放，再拟合 PCA。该选择改变了优化的距离和方差目标；不能把标准化版与仅中心化版的结果当成实现应该完全一致。
+**特征 standardization 应该放在哪里？**
+若不同单位不应主导 PCA，可以先用训练集统计量缩放，再拟合 PCA。该选择改变了优化的距离和方差目标；不能把 standardization 版与仅中心化版的结果当成实现应该完全一致。
 
 ## 简单测试怎么写
 
@@ -113,7 +125,8 @@ class SmallPCA:
 
 ```python
 import numpy as np
-X = np.array([[-1., -1.], [0., 0.], [1., 1.]])
+
+X = np.array([[-1.0, -1.0], [0.0, 0.0], [1.0, 1.0]])
 model = SmallPCA().fit(X, 1)
 np.testing.assert_allclose(model.inverse_transform(model.transform(X)), X, atol=1e-12)
 np.testing.assert_allclose(model.explained_variance_ratio, [1])

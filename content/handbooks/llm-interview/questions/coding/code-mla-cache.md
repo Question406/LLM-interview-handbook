@@ -3,8 +3,10 @@ id: code-mla-cache
 section: coding
 order: 20
 level: S
-title: 手写 MLA：只缓存 latent，decode 时把 $W_{UK}$ / $W_{UV}$ 吸收掉
-quick: "cache 里只存每个 token 的 $d_c$ 维 latent $c_{kv}$，加上各头共享的 $D_r$ 维 RoPE key。decode 时把 $W_{UK}$ 吸收进 query、把 $W_{UV}$ 挪到输出端，直接在 latent 上做 attention，不用把 K/V 还原出来。"
+title: '手写 MLA：只缓存 latent，decode 时把 $W_{UK}$ / $W_{UV}$ 吸收掉'
+quick: >-
+  cache 里只存每个 token 的 $d_c$ 维 latent $c_{kv}$，加上各头共享的 $D_r$ 维 RoPE key。decode 时把
+  $W_{UK}$ 吸收进 query、把 $W_{UV}$ 挪到输出端，直接在 latent 上做 attention，不用把 K/V 还原出来。
 tags:
   - MLA
   - KV Cache
@@ -13,18 +15,20 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
-  - title: "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model"
-    url: https://arxiv.org/abs/2405.04434
+  - title: >-
+      DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts
+      Language Model
+    url: 'https://arxiv.org/abs/2405.04434'
     type: primary
 ---
 
 ## 题目描述
 
-实现一个小型 Multi-head Latent Attention 模块，比较整段因果前向与带压缩 KV cache 的逐 token 解码。这是手册独立张量练习，不要求复刻完整模型或推理框架。
+实现一个小型 Multi-head Latent Attention 模块，比较整段因果前向与带压缩 KV cache 的逐 token decoding。这是手册独立张量练习，不要求复刻完整模型或推理框架。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -32,7 +36,7 @@ sources:
 
 ### 输出与约束
 
-prefill 返回 `(o,(c_kv,k_r))`：o 为 [B,T,d]，两项缓存为 [B,T,dc] 与 [B,T,Dr]。decode 接收历史长S的同结构缓存，返回 [B,1,d] 输出及历史长S+1的新缓存。使用因果注意力，旋转位置按绝对位置递增；缓存保存压缩潜变量和共享旋转key，不按头展开完整KV。
+prefill 返回 `(o,(c_kv,k_r))`：o 为 [B,T,d]，两项缓存为 [B,T,dc] 与 [B,T,Dr]。decode 接收历史长 S 的同结构缓存，返回 [B,1,d] 输出及历史长 S+1的新缓存。使用因果 attention，旋转位置按绝对位置递增；缓存保存压缩潜变量和共享旋转 key，不按头展开完整 KV。
 
 ### 数学契约与参数名
 
@@ -40,9 +44,9 @@ prefill 返回 `(o,(c_kv,k_r))`：o 为 [B,T,d]，两项缓存为 [B,T,dc] 与 [
 
 对于输入 token 向量 h，先定义查询潜变量 `c_q=w_dq(h)`，内容查询 `q_c=reshape(w_uq(c_q),[H,Dh])`，位置查询 `q_r=RoPE(reshape(w_qr(c_q),[H,Dr]),位置)`。KV 潜变量 `c_kv=w_dkv(h)`，内容 key `k_c=reshape(w_uk(c_kv),[H,Dh])`，value `v=reshape(w_uv(c_kv),[H,Dh])`；共享位置 key 为 `k_r=RoPE(w_kr(h),位置)`，没有头维。
 
-此卡 RoPE 使用前后半维配对，而非相邻偶奇维配对。令 m=Dr/2，对 r=0,…,m-1，位置p的角度为 `theta=p*10000^(-r/m)`；将第r维a和第r+m维b变为 `(a*cos(theta)-b*sin(theta), a*sin(theta)+b*cos(theta))`，结果仍按前半、后半顺序排列。所有头共享相同频率。
+此卡 RoPE 使用前后半维配对，而非相邻偶奇维配对。令 m=Dr/2，对 r=0,…,m-1，位置 p 的角度为 `theta=p*10000^(-r/m)`；将第 r 维 a 和第 r+m 维 b 变为 `(a*cos(theta)-b*sin(theta), a*sin(theta)+b*cos(theta))`，结果仍按前半、后半顺序排列。所有头共享相同频率。
 
-第i头的 query 位置t对key位置j的分数定义为 `(dot(q_c[t,i],k_c[j,i])+dot(q_r[t,i],k_r[j]))/sqrt(Dh+Dr)`。对所有可见j做softmax，再以这些概率加权对应 `v[j,i]`；按头编号拼接得到H*Dh维向量，经 `w_o` 得到最终输出。prefill只允许j≤t；decode把当前token加入缓存后允许读取全部历史及自身。prefill位置从0开始，历史长S的decode新位置为S。非零权重时，decode输出必须等于同一序列完整prefill的最后位置输出；压缩缓存约束始终成立。
+第 i 头的 query 位置 t 对 key 位置 j 的分数定义为 `(dot(q_c[t,i],k_c[j,i])+dot(q_r[t,i],k_r[j]))/sqrt(Dh+Dr)`。对所有可见 j 做 softmax，再以这些概率加权对应 `v[j,i]`；按头编号拼接得到 H*Dh 维向量，经 `w_o` 得到最终输出。prefill 只允许 j≤t；decode 把当前 token 加入缓存后允许读取全部历史及自身。prefill 位置从0开始，历史长 S 的 decode 新位置为 S。非零权重时，decode 输出必须等于同一序列完整 prefill 的最后位置输出；压缩缓存约束始终成立。
 
 ### 示例
 
@@ -56,7 +60,7 @@ prefill任意h -> o为[1,2,4]全零；cache形状分别[1,2,2]、[1,2,2]。
 
 MLA 的 cache 里只放两样东西：每个 token 的 $d_c$ 维 latent $c_{kv}$，和所有头共享的 $D_r$ 维 RoPE key。逐 token 生成（decode）时把 $W_{UK}$ 吸收进 query、把 $W_{UV}$ 挪到输出端，attention 直接在 latent 上算，每步读的 cache 就很小。原理见 `arch-mla`，普通 MHA 的写法见 `code-attention`。
 
-面试官主要看三件事：cache 里到底存什么，decoupled RoPE 为什么要单独拆出来，吸收之后的 decode 和输入预填充（prefill，即处理输入并建立缓存）是否逐位相等。最常见的两种错法正好对着前两件。一种是把 RoPE 直接加在上投影出来的 $k_c=W_{UK}c_{kv}$ 上，这样 $W_{UK}$ 就再也吸收不进 query，decode 时每步还得把整段 latent 还原成 K，低维 cache 省读取量的收益也就没了。另一种是 cache 里存了还原后的 K/V，那只是换了个参数化的 MHA。
+面试官主要看三件事：cache 里到底存什么，decoupled RoPE 为什么要单独拆出来，吸收之后的 decode 和输入 prefill 是否逐位相等。最常见的两种错法正好对着前两件。一种是把 RoPE 直接加在上投影出来的 $k_c=W_{UK}c_{kv}$ 上，这样 $W_{UK}$ 就再也吸收不进 query，decode 时每步还得把整段 latent 还原成 K，低维 cache 省读取量的收益也就没了。另一种是 cache 里存了还原后的 K/V，那只是换了个参数化的 MHA。
 
 ## 形状
 
@@ -79,15 +83,17 @@ $$
 import torch
 import torch.nn.functional as F
 
+
 def rope(x, pos, base=10000.0):
     # x: [B,T,...,D], pos: [T]
     half = x.shape[-1] // 2
     freq = base ** (-torch.arange(half, dtype=x.dtype) / half)
-    ang = pos[:, None].to(x.dtype) * freq                     # [T,half]
+    ang = pos[:, None].to(x.dtype) * freq  # [T,half]
     shape = (1, x.shape[1]) + (1,) * (x.dim() - 3) + (half,)
     cos, sin = ang.cos().view(shape), ang.sin().view(shape)
     x1, x2 = x[..., :half], x[..., half:]
     return torch.cat([x1 * cos - x2 * sin, x1 * sin + x2 * cos], -1)
+
 
 class MLA(torch.nn.Module):
     def __init__(self, d, H, Dh, Dr, dc, dq):
@@ -105,17 +111,19 @@ class MLA(torch.nn.Module):
         cq = self.w_dq(h)
         q_c = self.w_uq(cq).view(B, T, self.H, self.Dh)
         q_r = rope(self.w_qr(cq).view(B, T, self.H, self.Dr), pos)
-        return q_c, q_r                                        # [B,T,H,Dh], [B,T,H,Dr]
+        return q_c, q_r  # [B,T,H,Dh], [B,T,H,Dr]
 
     def prefill(self, h):
         B, T, _ = h.shape
         pos = torch.arange(T)
         q_c, q_r = self._q(h, pos)
-        c_kv = self.w_dkv(h)                                   # [B,T,dc]
-        k_r = rope(self.w_kr(h), pos)                          # [B,T,Dr]
+        c_kv = self.w_dkv(h)  # [B,T,dc]
+        k_r = rope(self.w_kr(h), pos)  # [B,T,Dr]
         k_c = self.w_uk(c_kv).view(B, T, self.H, self.Dh)
         v = self.w_uv(c_kv).view(B, T, self.H, self.Dh)
-        s = torch.einsum('bthd,bshd->bhts', q_c, k_c) + torch.einsum('bthd,bsd->bhts', q_r, k_r)
+        s = torch.einsum('bthd,bshd->bhts', q_c, k_c) + torch.einsum(
+            'bthd,bsd->bhts', q_r, k_r
+        )
         mask = torch.ones(T, T, dtype=torch.bool).triu(1)
         a = F.softmax((s * self.scale).masked_fill(mask, float('-inf')), -1)
         o = torch.einsum('bhts,bshd->bthd', a, v).reshape(B, T, -1)
@@ -129,12 +137,14 @@ class MLA(torch.nn.Module):
         c_kv = torch.cat([c_kv, self.w_dkv(h)], 1)
         k_r = torch.cat([k_r, rope(self.w_kr(h), pos)], 1)
         q_c, q_r = self._q(h, pos)
-        W_uk = self.w_uk.weight.view(self.H, self.Dh, -1)      # [H,Dh,dc]
-        W_uv = self.w_uv.weight.view(self.H, self.Dh, -1)      # [H,Dh,dc]
+        W_uk = self.w_uk.weight.view(self.H, self.Dh, -1)  # [H,Dh,dc]
+        W_uv = self.w_uv.weight.view(self.H, self.Dh, -1)  # [H,Dh,dc]
         q_lat = torch.einsum('bhd,hdc->bhc', q_c[:, 0], W_uk)  # [B,H,dc]
-        s = torch.einsum('bhc,bsc->bhs', q_lat, c_kv) + torch.einsum('bhd,bsd->bhs', q_r[:, 0], k_r)
-        a = F.softmax(s * self.scale, -1)                      # [B,H,S+1]
-        o_lat = torch.einsum('bhs,bsc->bhc', a, c_kv)          # [B,H,dc]
+        s = torch.einsum('bhc,bsc->bhs', q_lat, c_kv) + torch.einsum(
+            'bhd,bsd->bhs', q_r[:, 0], k_r
+        )
+        a = F.softmax(s * self.scale, -1)  # [B,H,S+1]
+        o_lat = torch.einsum('bhs,bsc->bhc', a, c_kv)  # [B,H,dc]
         o = torch.einsum('bhc,hdc->bhd', o_lat, W_uv).reshape(B, 1, -1)
         return self.w_o(o), (c_kv, k_r)
 ```

@@ -4,20 +4,20 @@ section: binary-search
 order: 3
 level: A
 title: LC 162 · 寻找峰值
-quick: "二分，比较 `mid` 和 `mid+1`，往更大的那一侧走，那边一定有峰，因为两端外侧都视为 $-\\infty$。时间 $O(\\log n)$。"
+quick: 二分，比较 `mid` 和 `mid+1`，往更大的那一侧走，那边一定有峰，因为两端外侧都视为 $-\infty$。时间 $O(\log n)$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 162. 寻找峰值
-    url: https://leetcode.cn/problems/find-peak-element/
+    url: 'https://leetcode.cn/problems/find-peak-element/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +99,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时两端外侧是 $-\infty$，唯一的元素就是峰，循环不进，返回 $0$。单调升时每次都是 `nums[mid] \lt nums[mid+1]`，`lo` 推到末尾，峰是最后一个。单调降时每次往左收，`hi = mid` 收到下标 $0$。有多个峰时，算法保证停在其中一个，不一定是全局最大。
 
@@ -126,7 +126,7 @@ def findPeakGrid(mat):
 ```
 
 **允许相邻相等呢？**
-那就没法保证 $\log$ 了，最坏退化成 $O(n)$。本题保证相邻不同，所以 `mid` 和 `mid+1` 比一次就知道是升还是降。有平台时 `nums[mid] == nums[mid+1]`，判断不了峰在哪边，只能沿着相等段扩到边界，再看外侧是升还是降。外侧上升就往那边走，两侧都下降，平台本身就是峰。整段都相等就是最坏情况。
+那就没法保证 $\log$ 了，最坏退化成 $O(n)$。本题保证相邻不同，所以 `mid` 和 `mid+1` 比一次就知道是升还是降。有平台时 `nums[mid] == nums[mid+1]`，判断不了峰在哪边，只能沿着相等段扩到 endpoints，再看外侧是升还是降。外侧上升就往那边走，两侧都下降，平台本身就是峰。整段都相等就是最坏情况。
 
 ```python
 def findPeakWithPlateau(nums):

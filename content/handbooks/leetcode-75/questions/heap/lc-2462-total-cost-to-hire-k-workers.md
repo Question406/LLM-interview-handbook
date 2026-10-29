@@ -5,7 +5,9 @@ order: 4
 level: A
 title: LC 2462 · 雇佣 K 位工人的总代价
 quick: >-
-  用左右两个小根堆分别装前 `candidates` 个和后 `candidates` 个工人，两个指针从两端往中间补人，每轮取最小只要对数时间。每轮比较两个堆顶，取更小的（相等取左边），弹出后从同一侧补一个。时间 $O((k+c)\log c)$，额外空间 $O(c)$。
+  用左右两个小根堆分别装前 `candidates` 个和后 `candidates`
+  个工人，两个指针从两端往中间补人，每轮取最小只要对数时间。每轮比较两个堆顶，取更小的（相等取左边），弹出后从同一侧补一个。时间 $O((k+c)\log
+  c)$，额外空间 $O(c)$。
 tags:
   - Heap
   - Two Pointers
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2462. Total Cost to Hire K Workers
-    url: https://leetcode.com/problems/total-cost-to-hire-k-workers/
+    url: 'https://leetcode.com/problems/total-cost-to-hire-k-workers/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -133,7 +135,7 @@ print("simple tests passed")
 
 初始建堆最多 $2c$ 次入堆，之后每轮一次出堆、至多一次入堆，时间 $O((k+c)\log c)$，$c$ 为 `candidates`。额外空间 $O(c)$。
 
-## 边界
+## Edge Cases
 
 $2c\ge n$ 的时候，第一轮左堆装满后 `l` 和 `r` 就交错了，右堆可能是空的或者很少，比较堆顶时要处理某一侧为空。
 

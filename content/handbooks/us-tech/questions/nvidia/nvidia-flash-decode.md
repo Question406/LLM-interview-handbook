@@ -4,41 +4,50 @@ section: nvidia
 order: 21
 level: S
 title: NVIDIA：FlashDecoding split-K，和训练用 FlashAttention 差在哪
-quick: "我会在小 batch、长上下文 decode 时沿 KV 长度做 split-K，让更多 CTA 并行，再用各段 softmax 统计精确合并。训练用 FlashAttention 主要沿 query 行铺开，decode 的 $Q$ 只有一行，直接沿用训练网格容易填不满 SM。"
+quick: >-
+  我会在小 batch、长上下文 decode 时沿 KV 长度做 split-K，让更多 CTA 并行，再用各段 softmax 统计精确合并。训练用
+  FlashAttention 主要沿 query 行铺开，decode 的 $Q$ 只有一行，直接沿用训练网格容易填不满 SM。
 tags:
   - 完整编程练习
   - NVIDIA
   - FlashDecoding
   - Split-K
   - CUDA
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Flash-Decoding for long-context inference
-    url: https://crfm.stanford.edu/2023/10/12/flashdecoding.html
+    url: 'https://crfm.stanford.edu/2023/10/12/flashdecoding.html'
     type: primary
   - title: Flash-Decoding — PyTorch Blog
-    url: https://pytorch.org/blog/flash-decoding/
+    url: 'https://pytorch.org/blog/flash-decoding/'
     type: secondary
-  - title: FlashAttention — Fast and Memory-Efficient Exact Attention with IO-Awareness
-    url: https://arxiv.org/abs/2205.14135
+  - title: >-
+      FlashAttention — Fast and Memory-Efficient Exact Attention with
+      IO-Awareness
+    url: 'https://arxiv.org/abs/2205.14135'
     type: primary
-  - title: FlashAttention-2 — Faster Attention with Better Parallelism and Work Partitioning
-    url: https://arxiv.org/abs/2307.08691
+  - title: >-
+      FlashAttention-2 — Faster Attention with Better Parallelism and Work
+      Partitioning
+    url: 'https://arxiv.org/abs/2307.08691'
     type: primary
 ---
 
 ## 题目描述
 
-实现单 query 的分段注意力统计及合并，模拟 Flash Decode 的输出。
+实现单 query 的分段 attention 统计及合并，模拟 Flash Decode 的输出。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
 
-`split_stats(q,k,v,scale)` 输入 q `[D]`、k/v `[Sg,D]`，返回 `(m,ell,O)`。分数定义为 `scale*(k@q)`；m 为段内最大分数，ell 为 `sum(exp(score-m))`，O 为以相同指数权重对 v 求和的未归一化向量。
+### 接口、输入与输出要求
 
-`merge_mlo(stats)` 返回 `[D]` 输出，必须等于将各段合并后做一次完整 softmax 注意力的结果；ell=0 的空段不贡献，至少有一段非空。`flash_decode(q,k,v,scale,n_split=4)` 输入完整 k/v `[S,D]`，返回相同输出，S>=1、`n_split`>=1；`n_split` 大于 S 时允许空段。要求对大幅值分数仍保持数值稳定。
+`split_stats(q,k,v,scale)` 输入 q `[D]`、k/v `[Sg,D]`，返回 `(m,ell,O)`。分数定义为 `scale*(k@q)`；m 为段内最大分数，ell 为 `sum(exp(score-m))`，O 为以相同指数权重对 v 求和的未 normalization 向量。
+
+`merge_mlo(stats)` 返回 `[D]` 输出，必须等于将各段合并后做一次完整 softmax attention 的结果；ell=0 的空段不贡献，至少有一段非空。`flash_decode(q,k,v,scale,n_split=4)` 输入完整 k/v `[S,D]`，返回相同输出，S>=1、`n_split`>=1；`n_split` 大于 S 时允许空段。要求对大幅值分数仍保持数值稳定。
 
 ### 示例
 
@@ -54,12 +63,12 @@ FlashDecoding 会沿 KV 长度切分工作，再把各段统计合并成同一�
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + NumPy，在 CPU 上做数值验证，没有验证 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + NumPy，在 CPU 上做数值验证，没有验证 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
-- `split_stats(q, k, v, scale) -> (m, ell, O)`：对一段 KV 算出最大分数 `m`、指数和 `ell` 和未归一化的加权和 `O`。`q` 是 `[D]`，`k`、`v` 是 `[S_g, D]`，`S_g >= 1`。
-- `merge_mlo(stats) -> [D]`：把各段统计按全局 max 重新缩放后合并，返回归一化输出；`ell == 0` 的段跳过，全部为空时抛 `ValueError`。
+- `split_stats(q, k, v, scale) -> (m, ell, O)`：对一段 KV 算出最大分数 `m`、指数和 `ell` 和未 normalization 的加权和 `O`。`q` 是 `[D]`，`k`、`v` 是 `[S_g, D]`，`S_g >= 1`。
+- `merge_mlo(stats) -> [D]`：把各段统计按全局 max 重新缩放后合并，返回 normalization 输出；`ell == 0` 的段跳过，全部为空时抛 `ValueError`。
 - `flash_decode(q, k, v, scale, n_split=4) -> [D]`：把长度 `S` 的 KV 切成 `n_split` 段，结果必须等于 `softmax(scale * K q) @ V`。
 - 约束：`S >= 1`，`n_split >= 1`，否则抛 `ValueError`。`n_split` 可以大于 `S`，多出来的空段要安全跳过，不能对空数组取 max。
 
@@ -92,16 +101,16 @@ def split_stats(q, k, v, scale):
 
     q: [D]，k, v: [S_g, D]，S_g >= 1。
     """
-    scores = (k @ q).astype(np.float64) * scale   # [S_g]
+    scores = (k @ q).astype(np.float64) * scale  # [S_g]
     m = float(np.max(scores))
-    weights = np.exp(scores - m)                  # [S_g]，每项在 (0, 1]
+    weights = np.exp(scores - m)  # [S_g]，每项在 (0, 1]
     ell = float(weights.sum())
-    out = weights @ v.astype(np.float64)          # [D]，未归一化
+    out = weights @ v.astype(np.float64)  # [D]，未 normalization
     return m, ell, out
 
 
 def merge_mlo(stats):
-    """把各段的 (m, ell, O) 按全局 max 重新缩放后相加，返回归一化输出 [D]。
+    """把各段的 (m, ell, O) 按全局 max 重新缩放后相加，返回 normalization 输出 [D]。
 
     ell == 0 的段（空段或整段被 mask）直接跳过。
     """
@@ -112,7 +121,7 @@ def merge_mlo(stats):
     total_ell = 0.0
     total_out = 0.0
     for m, ell, out in valid:
-        factor = np.exp(m - global_max)   # (0, 1]
+        factor = np.exp(m - global_max)  # (0, 1]
         total_ell += factor * ell
         total_out = total_out + factor * out
     return total_out / total_ell
@@ -146,7 +155,7 @@ def flash_decode(q, k, v, scale, n_split=4):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -181,9 +190,11 @@ assert np.allclose(flash_decode(q, k[:1], v[:1], 0.5, 8), v[0])
 
 # 分数很大时也不溢出：每段先减自己的 max
 big_q = q * 1000.0
-assert np.allclose(flash_decode(big_q, k, v, 0.5, 3), reference_attention(big_q, k, v, 0.5))
+assert np.allclose(
+    flash_decode(big_q, k, v, 0.5, 3), reference_attention(big_q, k, v, 0.5)
+)
 
-# 常见错法：每段先归一化再平均，结果不对
+# 常见错法：每段先 normalization 再平均，结果不对
 per_split = [reference_attention(q, k[a:b], v[a:b], 0.5) for a, b in ((0, 2), (2, 7))]
 assert not np.allclose(np.mean(per_split, axis=0), expected)
 
@@ -206,9 +217,9 @@ NVIDIA CUDA / LLM serving 岗问完 `nvidia-flash-attn` 后，常会补一句：
 
 ## 训练核：沿 $Q$ 铺开，瓶颈是 $[T,T]$ 的 IO
 
-标准注意力会物化 $S=QK^{\top}$，形状 $[T,T]$，HBM 读写是 $\Theta(T^2)$。FlashAttention 把 $K,V$ 切成宽 $B_c$ 的块、把 $Q$ 切成高 $B_r$ 的块，在 SRAM 里做 online softmax，HBM 访问降到 $\Theta(T^2 d^2/M)$，其中 $M$ 是 SRAM 大小。网格主要沿 **query 行** 铺开，CTA 数大约是 $B\cdot H\cdot \lceil T/B_r\rceil$。训练和输入预填充（prefill，即处理输入并建立 KV cache）时 $T$ 是几千到几万，这个 CTA 数足以喂满 A100/H100 的 SM。
+标准 attention 会物化 $S=QK^{\top}$，形状 $[T,T]$，HBM 读写是 $\Theta(T^2)$。FlashAttention 把 $K,V$ 切成宽 $B_c$ 的块、把 $Q$ 切成高 $B_r$ 的块，在 SRAM 里做 online softmax，HBM 访问降到 $\Theta(T^2 d^2/M)$，其中 $M$ 是 SRAM 大小。网格主要沿 **query 行** 铺开，CTA 数大约是 $B\cdot H\cdot \lceil T/B_r\rceil$。训练和输入 prefill (即处理输入并建立 KV cache)时 $T$ 是几千到几万，这个 CTA 数足以喂满 A100/H100 的 SM。
 
-FlashAttention-2 改的是 CTA **内部** 的 warp 分工。FA-1 用 sliced-K，多个 warp 各切一段 $K$，再在 shared memory 里归约；FA-2 改成切 $Q$，warp 之间的同步更少。这是 tile 内部的工作划分，并行轴仍然是 $Q$。反向传播还要重算 $S$，所以前向只存 $m,\ell$，不存完整的 $P$。这些都是训练核才有的开销，decode 没有。
+FlashAttention-2 改的是 CTA **内部** 的 warp 分工。FA-1 用 sliced-K，多个 warp 各切一段 $K$，再在 shared memory 里归约；FA-2 改成切 $Q$，warp 之间的同步更少。这是 tile 内部的工作划分，并行轴仍然是 $Q$。backpropagation 还要重算 $S$，所以前向只存 $m,\ell$，不存完整的 $P$。这些都是训练核才有的开销，decode 没有。
 
 ## Decode 核：沿 $K$ 切，瓶颈是 occupancy
 
@@ -225,7 +236,7 @@ $$
 Flash-Decoding 的 split-K 分三步：
 
 1. 把 $K,V$ 沿 $T$ 切成 $G$ 段，每段大约 $T/G$ 个 token。
-2. $G$ 个 CTA 并行，各自在自己那段上跑 FlashAttention 式的 online softmax，写出一份段内已归一化的部分输出 $O^{(g)}$，外加一个标量 $\mathrm{lse}^{(g)}=\log\sum_j e^{s^{(g)}_j}$。博客特别强调，每个 split 每行只多写这一个标量。
+2. $G$ 个 CTA 并行，各自在自己那段上跑 FlashAttention 式的 online softmax，写出一份段内已 normalization 的部分输出 $O^{(g)}$，外加一个标量 $\mathrm{lse}^{(g)}=\log\sum_j e^{s^{(g)}_j}$。博客特别强调，每个 split 每行只多写这一个标量。
 3. 第二个 kernel 做归约，用各段的 lse 稳定地加权合并：
 
 $$
@@ -233,9 +244,9 @@ $$
 O=\sum_g e^{\mathrm{lse}^{(g)}-\mathrm{lse}}\,O^{(g)}.
 $$
 
-实现上先减去 $\max_g \mathrm{lse}^{(g)}$ 再求指数，避免溢出。上面的练习代码用的是等价的另一种约定：每段存 $(m_g,\ell_g)$ 和未归一化的 $O_g$，有 $\mathrm{lse}^{(g)}=m_g+\log\ell_g$。
+实现上先减去 $\max_g \mathrm{lse}^{(g)}$ 再求指数，避免溢出。上面的练习代码用的是等价的另一种约定：每段存 $(m_g,\ell_g)$ 和未 normalization 的 $O_g$，有 $\mathrm{lse}^{(g)}=m_g+\log\ell_g$。
 
-这里 online softmax 用了两层：段内一层（和 FA 一样），段间再一层。结果仍是精确注意力，只是求和顺序变了。$G$ 太大时归约 kernel 和额外写回变得明显，tile 也变窄；$G$ 太小又填不满 SM。经验是让 $B\cdot H\cdot G$ 至少盖住 SM 数，再根据 $T$ 调整。Paged 布局下每段还要按 block table 做 gather，见 `nvidia-paged-kv`。
+这里 online softmax 用了两层：段内一层（和 FA 一样），段间再一层。结果仍是精确 attention，只是求和顺序变了。$G$ 太大时归约 kernel 和额外写回变得明显，tile 也变窄；$G$ 太小又填不满 SM。经验是让 $B\cdot H\cdot G$ 至少盖住 SM 数，再根据 $T$ 调整。Paged 布局下每段还要按 block table 做 gather，见 `nvidia-paged-kv`。
 
 xFormers 的 dispatcher 会按问题尺寸在 FA 和 Flash-Decoding 之间切换：$T$ 短、$B$ 大时不必 split，$T$ 长、$B$ 小才切。面试时不要说「decode 一律用 split-K」。
 

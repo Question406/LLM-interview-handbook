@@ -4,7 +4,9 @@ section: agent
 order: 166
 level: A
 title: 京东：Agent 和 RAG 的原理有何不同？
-quick: "检索增强生成（RAG）是先检索一块知识再生成，解决「答案要来自某份文档」；Agent 是带状态的决策环，能多次选工具、改计划、拒答，动作还会改变外部世界。RAG 常是 Agent 的一个工具，两者可以叠加，不必二选一。"
+quick: >-
+  检索增强生成（RAG）是先检索一块知识再生成，解决「答案要来自某份文档」；Agent
+  是带状态的决策环，能多次选工具、改计划、拒答，动作还会改变外部世界。RAG 常是 Agent 的一个工具，两者可以叠加，不必二选一。
 tags:
   - JD
   - Agent
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 京东大模型算法 实习面经
-    url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46
+    url: 'https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46'
     type: candidate-first-hand
 ---
 
@@ -26,9 +28,9 @@ sources:
 - 届别 / 流程：实习
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“解释Agent和RAG原理”**
+- 原始措辞：**“解释 Agent 和 RAG 原理”**
 
-RAG 是检索一块知识再生成，目标是减少参数记忆带来的过时和幻觉；Agent 是一个带状态的决策环，可以多次选工具、改计划、拒答，动作还会改变外部世界。RAG 常常只是 Agent 动作集合里的一种。没有状态机和副作用控制，就只是一条 RAG 管道，算不上「更好的 RAG」。
+RAG 是检索一块知识再生成，目标是减少参数记忆带来的过时和 hallucination；Agent 是一个带状态的决策环，可以多次选工具、改计划、拒答，动作还会改变外部世界。RAG 常常只是 Agent 动作集合里的一种。没有状态机和副作用控制，就只是一条 RAG 管道，算不上「更好的 RAG」。
 
 用「客服问库存」最容易看出区别。纯 RAG 只能念出「库存以页面为准」或者一份过期的 FAQ，给不出当前可售量。Agent 会去调库存接口，再决定要不要建议加购、要不要转人工；接口失败了就按错误码恢复，别编一个数字出来，见 `byte-tool-fail-retry`。
 
@@ -49,7 +51,7 @@ Agent 维护任务状态：查过哪些订单、哪些权限还没定、下一�
 **为什么公司内部更爱上 Agent？**
 运营和售后要查实时订单、写工单，纯导购话术有时 RAG 就够了。按任务选，见 `jd-agent-beyond-guide`。
 
-**两者的幻觉来源有什么不同？**
-RAG 的幻觉常是没引用或者检索错了；Agent 的幻觉常是没调工具却假装调了，或者把失败的 Observation 说成成功。归因见 `jd-agent-reflection-error-attribution`。
+**两者的 hallucination 来源有什么不同？**
+RAG 的 hallucination 常是没引用或者检索错了；Agent 的 hallucination 常是没调工具却假装调了，或者把失败的 Observation 说成成功。归因见 `jd-agent-reflection-error-attribution`。
 
 相关：`jd-agent-beyond-guide`、`jd-agent-eval-beyond-qa`

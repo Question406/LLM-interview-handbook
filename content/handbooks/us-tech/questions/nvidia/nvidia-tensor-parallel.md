@@ -29,7 +29,7 @@ sources:
     type: primary
 ---
 
-Megatron 的张量并行会把同一层的矩阵乘法分到多张卡上：QKV 和 MLP 上投影按列切，输出投影和下投影按行切。按列切时，每张卡算自己的输出片段；按行切时，每张卡只算出完整输出的一部分贡献，需要把结果相加。因此一层正向的两次 all-reduce，分别落在注意力输出投影和 MLP 下投影之后。
+Megatron 的张量并行会把同一层的矩阵乘法分到多张卡上：QKV 和 MLP 上投影按列切，输出投影和下投影按行切。按列切时，每张卡算自己的输出片段；按行切时，每张卡只算出完整输出的一部分贡献，需要把结果相加。因此一层正向的两次 all-reduce，分别落在 attention 输出投影和 MLP 下投影之后。
 
 我会先沿着一层的数据流解释这两次通信，再讲序列并行怎么减少激活副本。整个模型的并行配置见 `nvidia-trillion-train`。
 
@@ -45,15 +45,15 @@ Transformer 的默认接法（Megatron 论文）：
 4. MLP 上投影（$D\to 4D$）：列并行，GeLU 本地。
 5. MLP 下投影（$4D\to D$）：行并行，正向 all-reduce ②。
 
-一层正向就是这两次。反向时，列并行各卡对同一输入的梯度贡献需要相加，因此 forward、backward 各有两次 all-reduce。QKV 刚投影后，每卡持有自己的 head，可以先本地做注意力，不需要立即通信。
+一层正向就是这两次。反向时，列并行各卡对同一输入的梯度贡献需要相加，因此 forward、backward 各有两次 all-reduce。QKV 刚投影后，每卡持有自己的 head，可以先本地做 attention，不需要立即通信。
 
 ```python
 # x: [B, T, D]，已在 TP 组内对齐
-qkv = x @ W_qkv_col            # 列并行，无通信；W 是 [D, 3D/N]
+qkv = x @ W_qkv_col  # 列并行，无通信；W 是 [D, 3D/N]
 ctx = local_attn(split_heads(qkv))
 h = all_reduce(ctx @ W_o_row)  # 行并行，all-reduce ①
 h = ln(h + x)
-u = gelu(h @ W_fc1_col)        # 列并行，无通信
+u = gelu(h @ W_fc1_col)  # 列并行，无通信
 y = all_reduce(u @ W_fc2_row)  # 行并行，all-reduce ②
 return ln(y + h)
 ```
@@ -64,7 +64,7 @@ return ln(y + h)
 
 再算通信量，一次 all-reduce 的字节数，和 reduce-scatter + all-gather 同阶，都是 $2(N-1)/N$ 倍消息大小。省下的是激活，不是通信。SP 绑在同一个 TP 组上，度数相同；单独说「我做了序列并行」却没有 TP，对不上 Megatron 的实现。
 
-context parallel、ring attention 则进一步切开注意力本身的 $T$，每卡算一段 Q，K/V 沿环传。这里的 SP 只减少 TP 下 LN 等位置的激活副本，不能解决超长注意力的 $T^2$ 开销。
+context parallel、ring attention 则进一步切开 attention 本身的 $T$，每卡算一段 Q，K/V 沿环传。这里的 SP 只减少 TP 下 LN 等位置的激活副本，不能解决超长 attention 的 $T^2$ 开销。
 
 两次 all-reduce 的 payload 都是 $[B, T, D]$ 量级，延迟敏感。NVLink 域内（一台 8 卡 $N=8$）通常划得来；跨节点做大 TP，PCIe / IB 延迟会把 kernel 切碎，MFU 掉。所以常见是节点内 TP，节点间 PP / DP。集合算法见 `nvidia-nccl-allreduce`。
 
@@ -73,10 +73,10 @@ context parallel、ring attention 则进一步切开注意力本身的 $T$，每
 ## 追问
 
 **反向那两次在哪？**
-列并行对 $x$ 的梯度要 all-reduce（各卡只看到 $D/N$ 的输出，反传到完整 $D$ 要对齐）；行并行的权重梯度本地可算。和正向两次配对，不是另起一套拓扑。
+列并行对 $x$ 的梯度要 all-reduce（各卡只看到 $D/N$ 的输出，backpropagation 到完整 $D$ 要对齐）；行并行的权重梯度本地可算。和正向两次配对，不是另起一套拓扑。
 **QKV 不 fuse 成一块列并行？**
 三次独立列并行也对，通信次数不变，只是 kernel 启动变多。fuse 是为了占满 Tensor Core，不是为了少一次 all-reduce。
 **ZeRO-3 能替代这两次 all-reduce 吗？**
 不能直接替代。ZeRO-3 分片保存参数，使用时仍要组装对应矩阵来算；TP 才把层内大 GEMM 的计算分给多卡。万亿 dense 通常两个都要，见 `nvidia-trillion-train`。
 **vocab 并行呢？**
-embedding / softmax 沿词表切，那是另一组 all-reduce / all-gather，不要算进「一层两次」里。
+embedding / softmax 沿 vocabulary 切，那是另一组 all-reduce / all-gather，不要算进「一层两次」里。

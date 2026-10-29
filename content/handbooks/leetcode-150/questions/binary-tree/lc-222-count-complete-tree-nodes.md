@@ -4,7 +4,9 @@ section: binary-tree
 order: 13
 level: A
 title: LC 222 · 完全二叉树的节点个数
-quick: "沿最左和最右路径各量一次高度，相等说明当前子树是满树，节点数直接是 $2^h-1$；不等就递归统计左右子树再加根。左右必有一侧是满的，所以时间 $O(h^2)$，额外空间 $O(h)$。"
+quick: >-
+  沿最左和最右路径各量一次高度，相等说明当前子树是满树，节点数直接是 $2^h-1$；不等就递归统计左右子树再加根。左右必有一侧是满的，所以时间
+  $O(h^2)$，额外空间 $O(h)$。
 tags:
   - Tree
   - Binary Search
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 222. 完全二叉树的节点个数
-    url: https://leetcode.cn/problems/count-complete-tree-nodes/
+    url: 'https://leetcode.cn/problems/count-complete-tree-nodes/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -117,10 +119,10 @@ if __name__ == "__main__":
 
 ```python
 root = TreeNode(
-        1,
-        TreeNode(2, TreeNode(4), TreeNode(5)),
-        TreeNode(3, TreeNode(6)),
-    )
+    1,
+    TreeNode(2, TreeNode(4), TreeNode(5)),
+    TreeNode(3, TreeNode(6)),
+)
 assert countNodes(root) == 6
 assert countNodes(None) == 0
 assert countNodes(TreeNode(1)) == 1
@@ -133,7 +135,7 @@ print("simple tests passed")
 
 每层量高 $O(h)$，递归深度 $O(h)$，总共 $O(h^2)$；整棵是满树时，一次量高就结束。额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 空树返回 $0$。$n=1$ 时满树公式给出 $2^1-1=1$。最后一层刚好满时，左右高相等，一次公式结束。最后一层只有最左一个节点时，左右高差 $1$，递归下去左边是满的，右边几乎为空。
 

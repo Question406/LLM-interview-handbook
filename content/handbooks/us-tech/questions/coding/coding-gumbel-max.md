@@ -3,8 +3,10 @@ id: coding-gumbel-max
 section: coding
 order: 13
 level: A
-title: 白板：Gumbel-max 采样，和 softmax 温度的关系
-quick: "硬采样先缩放 logits，再用 argmax(z/τ+g)，得到温度采样。Gumbel-softmax 松弛用 softmax((z+g)/τ)，它的 τ 只改变连续输出和梯度，在固定噪声下不改变选中的类别。"
+title: 白板：Gumbel-max sampling，和 softmax 温度的关系
+quick: >-
+  硬 sampling 先缩放 logits，再用 argmax(z/τ+g)，得到 temperature sampling。Gumbel-softmax
+  松弛用 softmax((z+g)/τ)，它的 τ 只改变连续输出和 gradient，在固定噪声下不改变选中的类别。
 tags:
   - 完整编程练习
   - Coding
@@ -14,27 +16,28 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-28'
 sources:
   - title: Categorical Reparameterization with Gumbel-Softmax
-    url: https://arxiv.org/abs/1611.01144
+    url: 'https://arxiv.org/abs/1611.01144'
     type: primary
   - title: torch.nn.functional.gumbel_softmax
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.gumbel_softmax.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.gumbel_softmax.html
     type: primary
 ---
 
 ## 题目描述
 
-实现 Gumbel 噪声、离散类别采样以及可选 hard 输出的可微 Gumbel-softmax 接口。
+实现 Gumbel 噪声、离散类别 sampling 以及可选 hard 输出的 differentiable Gumbel-softmax 接口。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `gumbel_noise(shape, generator=None, device=None, dtype=torch.float32) -> Tensor`：生成标准 Gumbel 噪声 $g=-\log(-\log U)$。
 - `gumbel_max(logits, tau=1.0, generator=None) -> LongTensor[...]`：输出形状为 logits 去掉最后一维；沿最后一维从 $\mathrm{softmax}(\text{logits}/\tau)$ 抽一个类别。
-- `gumbel_softmax(logits, tau=1.0, hard=False, generator=None) -> Tensor`：输出与 logits 同形。标准松弛 $\mathrm{softmax}((\text{logits}+g)/\tau)$。`hard=True` 时前向输出 one-hot，反向沿松弛输出传梯度（straight-through）。
+- `gumbel_softmax(logits, tau=1.0, hard=False, generator=None) -> Tensor`：输出与 logits 同形。标准松弛 $\mathrm{softmax}((\text{logits}+g)/\tau)$。`hard=True` 时 forward 输出 one-hot，反向沿松弛输出传 gradient（straight-through）。
 - `tau` 必须是有限正数。logits 可以用 $-\infty$ 做 mask，但每行至少有一个有限值；合法输入不含 NaN 或 $+\infty$。
 
 ### 输入输出示例
@@ -50,17 +53,17 @@ logits = [0, 2], tau = 0.5 时，gumbel_max 多次独立抽样中
 
 ## 解题思路与参考答案
 
-Gumbel-max 给 logits 加独立的标准 Gumbel 噪声，再取最大值；$\arg\max_i(z_i+g_i)$ 与从 $\mathrm{softmax}(z)$ 抽样同分布。要按温度 $\tau$ 抽类别，就先把 logits 缩放成 $z/\tau$，再加标准噪声。
+Gumbel-max 给 logits 加独立的标准 Gumbel 噪声，再取最大值；$\arg\max_i(z_i+g_i)$ 与从 $\mathrm{softmax}(z)$ sampling 同分布。要按温度 $\tau$ 抽类别，就先把 logits 缩放成 $z/\tau$，再加标准噪声。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
 - `gumbel_noise(shape, generator=None, device=None, dtype=torch.float32) -> Tensor`：生成标准 Gumbel 噪声 $g=-\log(-\log U)$。
 - `gumbel_max(logits, tau=1.0, generator=None) -> LongTensor[...]`：沿最后一维从 $\mathrm{softmax}(\text{logits}/\tau)$ 抽一个类别。
-- `gumbel_softmax(logits, tau=1.0, hard=False, generator=None) -> Tensor`：标准松弛 $\mathrm{softmax}((\text{logits}+g)/\tau)$。`hard=True` 时前向输出 one-hot，反向沿松弛输出传梯度（straight-through）。
+- `gumbel_softmax(logits, tau=1.0, hard=False, generator=None) -> Tensor`：标准松弛 $\mathrm{softmax}((\text{logits}+g)/\tau)$。`hard=True` 时 forward 输出 one-hot，反向沿松弛输出传 gradient（straight-through）。
 - `tau` 必须是有限正数。logits 可以用 $-\infty$ 做 mask，但每行至少有一个有限值；NaN 或 $+\infty$ 一律抛 `ValueError`。
 
 ### 输入输出示例
@@ -72,7 +75,7 @@ z = [0, 2]，30000 次 gumbel_max(z, tau=0.5)  -> 选中类别 1 的比例 ≈ s
 
 ### 解题思路与正确性
 
-Gumbel-softmax 的 $\tau$ 除的是 $z+g$ 整体。对固定噪声，除以正数不改变 argmax，所以这个 $\tau$ 只控制连续输出有多尖、梯度有多大，不改变 `hard=True` 选出的类别。这就是两种温度不能混用的原因。
+Gumbel-softmax 的 $\tau$ 除的是 $z+g$ 整体。对固定噪声，除以正数不改变 argmax，所以这个 $\tau$ 只控制连续输出有多尖、gradient 有多大，不改变 `hard=True` 选出的类别。这就是两种温度不能混用的原因。
 
 $U$ 必须严格落在 $(0,1)$ 内，否则 $\log 0$ 或 $\log(-\log 1)$ 会得到无穷大。clamp 的端点要用当前 dtype 能表示的值：下界用 `finfo.tiny`，上界用 `1 - finfo.eps`。如果写 `1 - 1e-20`，float32 会把它舍入回 1。
 
@@ -124,11 +127,11 @@ def gumbel_softmax(logits, tau=1.0, hard=False, generator=None):
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert abs(samples.float().mean() - expected) < 0.015` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert abs(samples.float().mean() - expected) < 0.015` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
+数值结果用 `allclose` 一类带容差的 assertion 检查，并同时确认形状；随机输入固定 seed。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -141,7 +144,7 @@ def expect_value_error(fn, *args):
     raise AssertionError("expected ValueError")
 
 
-# gumbel_max 的采样频率匹配 softmax(z / tau)
+# gumbel_max 的 sampling 频率匹配 softmax(z / tau)
 logits = torch.tensor([[0.0, 2.0]]).expand(30000, -1)
 for tau in (0.5, 2.0):
     generator = torch.Generator().manual_seed(7)
@@ -177,14 +180,14 @@ expect_value_error(gumbel_softmax, torch.tensor([[0.0, float("nan")]]), 1.0)
 
 设 batch 为 B、类别数为 V。两个函数的时间和空间都是 O(BV)。
 
-- 追问「两种温度到底差在哪」：松弛温度改变连续输出和梯度，但在固定噪声下不改变 `hard=True` 的类别；要改变抽到哪个类别的分布，得先缩放 logits 再加噪声。
-- 追问「GPU 上为什么有时更快」：加噪声加 argmax 不需要归一化，也不需要累计分布函数，容易和前一个 kernel 融合。
+- 追问「两种温度到底差在哪」：松弛温度改变连续输出和 gradient，但在固定噪声下不改变 `hard=True` 的类别；要改变抽到哪个类别的分布，得先缩放 logits 再加噪声。
+- 追问「GPU 上为什么有时更快」：加噪声加 argmax 不需要 normalization，也不需要累计分布函数，容易和前一个 kernel 融合。
 
 ## 题怎么来的
 
-Jang et al. 和 Maddison et al. 把 Gumbel-max 写成了可微松弛，研究岗喜欢问「这和 softmax 温度是不是一回事」。OpenAI 的采样题有时不用 multinomial，而是让你写 Gumbel 噪声加 logits。Apple、Anthropic 问得少一些，但作为「离散采样怎么反传」的标准答案要能写出来。普通温度采样见 `coding-topk-nucleus`。
+Jang et al. 和 Maddison et al. 把 Gumbel-max 写成了 differentiable 松弛，研究岗喜欢问「这和 softmax 温度是不是一回事」。OpenAI 的 sampling 题有时不用 multinomial，而是让你写 Gumbel 噪声加 logits。Apple、Anthropic 问得少一些，但作为「离散 sampling 怎么 backpropagation」的标准答案要能写出来。普通 temperature sampling 见 `coding-topk-nucleus`。
 
-## Gumbel-max：argmax 就是采样
+## Gumbel-max：argmax 就是 sampling
 
 $g_i=-\log(-\log U_i)$，$U_i\sim\mathrm{Uniform}(0,1)$。对概率 $\pi$，或者等价地对 logits $z=\log\pi+c$：
 
@@ -194,27 +197,32 @@ $$
 
 $y$ 与 `multinomial(softmax(z))` 同分布。
 
-温度要区分两种用途。要从 $\mathrm{softmax}(z/\tau)$ 抽离散类别，用 $\arg\max_i(z_i/\tau+g_i)$。标准 Gumbel-softmax 松弛的连续输出是 $\mathrm{softmax}((z+g)/\tau)$；固定噪声时 $\arg\max((z+g)/\tau)=\arg\max(z+g)$，类别不随正温度变，温度只控制松弛的尖锐程度。`hard=True` 用的是 straight-through 梯度，也不会把松弛温度变成类别温度。
+温度要区分两种用途。要从 $\mathrm{softmax}(z/\tau)$ 抽离散类别，用 $\arg\max_i(z_i/\tau+g_i)$。标准 Gumbel-softmax 松弛的连续输出是 $\mathrm{softmax}((z+g)/\tau)$；固定噪声时 $\arg\max((z+g)/\tau)=\arg\max(z+g)$，类别不随正温度变，温度只控制松弛的尖锐程度。`hard=True` 用的是 straight-through gradient，也不会把松弛温度变成类别温度。
 
 ## 什么时候用，什么时候不用
 
-训练中需要对离散选择反传（硬注意力、离散 bottleneck）时才用 Gumbel-softmax。纯生成采样用 `multinomial` 或 Gumbel-max 都对。
+训练中需要对离散选择 backpropagation（硬 attention、离散 bottleneck）时才用 Gumbel-softmax。纯生成 sampling 用 `multinomial` 或 Gumbel-max 都对。
 
-做 nucleus / top-k 截断后再加 Gumbel，等于在截断后的子集上采样，顺序仍然是先截断再加噪声。温度只作用一次，在 logits 上，不要再对 softmax 输出除温度。mask 先打 $-\infty$ 再加 Gumbel 噪声：$-\infty$ 加任何有限噪声仍是 $-\infty$，argmax 不会选中它；整行都被 mask 时要报错。
+做 nucleus / top-k 截断后再加 Gumbel，等于在截断后的子集上 sampling，顺序仍然是先截断再加噪声。温度只作用一次，在 logits 上，不要再对 softmax 输出除温度。mask 先打 $-\infty$ 再加 Gumbel 噪声：$-\infty$ 加任何有限噪声仍是 $-\infty$，argmax 不会选中它；整行都被 mask 时要报错。
 
 ## 追问
 
-**为什么等价于 softmax 采样？**
+**为什么等价于 softmax sampling？**
 Gumbel 分布是 max-stable 的：独立的 Gumbel 变量平移后取最大值仍是 Gumbel，可以算出 $\arg\max_i(\log\pi_i+g_i)=i$ 的概率正好是 $\pi_i$。面试里说到这一步就够了。
 **两种温度相同吗？**
-不同。硬类别温度先缩放 logits 再加标准噪声；松弛温度缩放的是 logits 与噪声的和，改变的是连续输出和梯度。
+不同。硬类别温度先缩放 logits 再加标准噪声；松弛温度缩放的是 logits 与噪声的和，改变的是连续输出和 gradient。
 **能替代 nucleus 吗？**
 不能，它不会自动截尾。要 nucleus 仍然先按 `coding-topk-nucleus` 截断，再在核上做 Gumbel-max。
 
 ## 相关题
 
-- [[coding-softmax-stable]]：Gumbel-max 等价于按 softmax 概率采样，那张讲这个 softmax 本身怎么减 max、沿哪一维算。
-- [[anthropic-grpo-debug]]：调试题里第一个 bug 就是把原始 logits 直接喂给 multinomial，从 logits 正确采样正是这张的内容。
+- [[coding-softmax-stable]]：Gumbel-max 等价于按 softmax 概率 sampling，那张讲这个 softmax 本身怎么减 max、沿哪一维算。
+- [[anthropic-grpo-debug]]：调试题里第一个 bug 就是把原始 logits 直接喂给 multinomial，从 logits 正确 sampling 正是这张的内容。
 - [[coding-topk-nucleus]]：Gumbel-max 本身不截尾，要 top-k 或 nucleus 时先按那张卡截断。
-- [[p3a-cohere-numpy-top-k-sampling]]：用累计概率做逆变换的 top-k 采样，可以和 argmax 加噪声的写法对照。
-- [[apple-topk-sample]]：温度、top-k、nucleus 的顺序，以及端侧为什么常用 top-k。
+- [[p3a-cohere-numpy-top-k-sampling]]：用累计概率做逆变换的 top-k sampling，可以和 argmax 加噪声的写法对照。
+- [[apple-topk-sample]]：温度、top-k、nucleus 的顺序，以及 on-device 为什么常用 top-k。
+
+
+## Batch 支持范围与完整生成版本
+
+本题已经沿最后一维支持 `[B,V]` 等 batch 单步选择，但没有多步生成。使用同一 Gumbel 方法的完整 batch loop 见[新增 batch 实现](?book=apple-interview&section=decoding&question=apple-batched-generation)。

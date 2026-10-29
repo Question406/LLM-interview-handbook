@@ -4,7 +4,9 @@ section: graph-dfs
 order: 2
 level: S
 title: LC 547 · 省份数量
-quick: "这是邻接矩阵表示的无向图数连通块。对每个没访问过的城市起一次 DFS，把整块标掉，起了几次就是几个省份。时间 $O(n^2)$，额外空间 $O(n)$；并查集同样是 $O(n^2)$。"
+quick: >-
+  这是邻接矩阵表示的无向图数连通块。对每个没访问过的城市起一次 DFS，把整块标掉，起了几次就是几个省份。时间 $O(n^2)$，额外空间
+  $O(n)$；并查集同样是 $O(n^2)$。
 tags:
   - Graph
   - DFS
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 547. Number of Provinces
-    url: https://leetcode.com/problems/number-of-provinces/
+    url: 'https://leetcode.com/problems/number-of-provinces/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -115,7 +117,7 @@ print("simple tests passed")
 
 时间 $O(n^2)$，每个城市出栈一次并扫一整行。额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 只有一个城市时，答案是 $1$。
 

@@ -3,20 +3,24 @@ id: ml101-learning-rate-trees
 section: ensemble
 order: 8
 level: A
-title: "提升树的学习率、树数和树深怎样配合？"
-quick: "学习率决定每棵树对总预测贡献多大，树数决定加多少步，树深决定每步能拟合多复杂的交互。降低学习率通常要增加树数，深树则更容易贴近复杂结构也更容易过拟合。用验证曲线与早停一起选择，训练时间和推理成本也要纳入取舍。"
+title: 提升树的学习率、树数和树深怎样配合？
+quick: >-
+  学习率决定每棵树对总预测贡献多大，树数决定加多少步，树深决定每步能拟合多复杂的交互。降低学习率通常要增加树数，深树则更容易贴近复杂结构也更容易
+  overfitting。用验证曲线与早停一起选择，训练时间和推理成本也要纳入取舍。
 tags:
   - ML Fundamentals
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: GradientBoostingRegressor"
-    url: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
+  - title: 'scikit-learn: GradientBoostingRegressor'
+    url: >-
+      https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
     type: primary
-  - title: "scikit-learn: Early stopping in Gradient Boosting"
-    url: https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_early_stopping.html
+  - title: 'scikit-learn: Early stopping in Gradient Boosting'
+    url: >-
+      https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_early_stopping.html
     type: primary
 ---
 
@@ -29,7 +33,7 @@ sources:
 ## 追问
 
 **学习率越小越好吗？**
-不一定。太小可能在训练预算内欠拟合；需要更多树也会增加模型和推理成本。
+不一定。太小可能在训练预算内 underfitting；需要更多树也会增加模型和推理成本。
 
 **早停看到哪条曲线？**
 看独立验证指标，不能只看训练误差。若据验证集选择了轮数，最终效果仍用未参与选择的测试集评估。

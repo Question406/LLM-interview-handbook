@@ -5,7 +5,9 @@ order: 4
 level: A
 title: 阿里 AI 研发 0325：分糖果的单人总分 min / max 是什么？
 quick: >-
-  每种糖单独看，$k$ 个人的份数差至多 $1$，所以指定孩子在第 $i$ 种上只可能拿 $\lfloor c_i/k\rfloor$ 或 $\lceil c_i/k\rceil$。各种糖互不牵制，最小值是 $\sum\lfloor c_i/k\rfloor$，最大值是 $\sum\lceil c_i/k\rceil$。
+  每种糖单独看，$k$ 个人的份数差至多 $1$，所以指定孩子在第 $i$ 种上只可能拿 $\lfloor c_i/k\rfloor$ 或 $\lceil
+  c_i/k\rceil$。各种糖互不牵制，最小值是 $\sum\lfloor c_i/k\rfloor$，最大值是 $\sum\lceil
+  c_i/k\rceil$。
 tags:
   - Alibaba
   - OA
@@ -13,13 +15,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
-    url: https://www.nowcoder.com/discuss/866741961221292032
+    url: 'https://www.nowcoder.com/discuss/866741961221292032'
     type: candidate-first-hand
   - title: 淘天笔试糖果/字典序讨论
-    url: https://www.nowcoder.com/discuss/867439311984082944
+    url: 'https://www.nowcoder.com/discuss/867439311984082944'
     type: secondary
 ---
 
@@ -96,7 +98,7 @@ def candy_min_max(k, c):
 def main():
     data = list(map(int, sys.stdin.read().split()))
     n, k = data[0], data[1]
-    c = data[2:2 + n]
+    c = data[2 : 2 + n]
     mn, mx = candy_min_max(k, c)
     print(mn, mx)
 
@@ -122,7 +124,7 @@ print("simple tests passed")
 
 时间 $O(n)$，空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=0$ 时两个答案都是 $0$；$k=1$ 时 min=max=$\sum c_i$；某个 $c_i=0$ 时这一项贡献 $0$。`k` 与 `c_i` 到 $10^9$ 时要用任意精度或 64 位整数，Python 的 `int` 就够。
 

@@ -3,8 +3,13 @@ id: mcp-resource-indicator
 section: mcp-security
 order: 1
 level: S
-title: MCP 的 OAuth Resource Indicator 和 canonical server URI 为什么必要？Token passthrough 如何造成 confused deputy，服务端应怎样验证并换取下游 token？
-quick: "token 必须签发给一个具体的 MCP server，否则谁拿到都能用。我会让 client 在授权和换 token 时声明 `resource`，server 校验 audience，上游 token 绝不原样转给下游；需要下游访问时，由可信 broker 用最小 scope 换一张独立的短期 token。"
+title: >-
+  MCP 的 OAuth Resource Indicator 和 canonical server URI 为什么必要？Token passthrough
+  如何造成 confused deputy，服务端应怎样验证并换取下游 token？
+quick: >-
+  token 必须签发给一个具体的 MCP server，否则谁拿到都能用。我会让 client 在授权和换 token 时声明
+  `resource`，server 校验 audience，上游 token 绝不原样转给下游；需要下游访问时，由可信 broker 用最小 scope
+  换一张独立的短期 token。
 tags:
   - MCP
   - OAuth
@@ -12,10 +17,11 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: MCP Authorization Specification
-    url: https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization
+    url: >-
+      https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization
     type: primary
 ---
 
@@ -35,7 +41,7 @@ MCP server 收到 token 后校验 issuer、签名、expiry、audience / resource
 
 正确的做法是：server 只消费签给自己的 token；需要访问下游时，由可信 broker 做 token exchange / delegation，明确下游 audience、最小 scope、短有效期，留下审计链，并取得用户同意。下游失败时，不得拿上游 token 当 fallback。用户同意一次，不代表可以永久转发，下游 audience 一变就等于一次新授权。
 
-发布检查应该拒绝任何「把入站 token 写出进程」的代码路径，代码门禁可以直接搜入站的 `Authorization` 有没有被写进出站请求。
+发布检查应该拒绝任何「把入站 token 写出进程」的代码路径，代码 acceptance checks 可以直接搜入站的 `Authorization` 有没有被写进出站请求。
 
 ## 评测要记什么
 

@@ -4,7 +4,7 @@ section: linked-list
 order: 1
 level: S
 title: LC 141 · 环形链表
-quick: "用 Floyd 快慢指针，慢的一次走一步、快的一次走两步，相遇就说明有环，快指针走到空就没环。时间 $O(n)$，额外空间 $O(1)$。"
+quick: 用 Floyd 快慢指针，慢的一次走一步、快的一次走两步，相遇就说明有环，快指针走到空就没环。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Two Pointers
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 141. 环形链表
-    url: https://leetcode.cn/problems/linked-list-cycle/
+    url: 'https://leetcode.cn/problems/linked-list-cycle/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -118,7 +118,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。无环时扫一遍；有环时快慢在环内相遇，圈数不超过环长。
 
-## 边界
+## Edge Cases
 
 - 空表或者单节点无环时，`fast` 或 `fast.next` 为空，返回假。
 - 自环（`pos=0`）时，第一步 `slow` 和 `fast` 都回到头，马上相遇。

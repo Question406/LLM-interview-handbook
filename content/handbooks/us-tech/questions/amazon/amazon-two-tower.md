@@ -4,28 +4,40 @@ section: amazon
 order: 2
 level: S
 title: Amazon：双塔召回，训练对齐和 serving 近似，ANN 掉点怎么补？
-quick: "双塔训练用正例和难负例对齐 query / item 向量，线上预计算 item 后用 ANN 召回。掉点先测 ANN 对精确近邻的覆盖，再查编码版本、量化和搜索预算；覆盖足够后，用 ANN 难负例、词法并集和精排改进相关性。"
+quick: >-
+  双塔训练用正例和难负例对齐 query / item 向量，线上预计算 item 后用 ANN 召回。掉点先测 ANN
+  对精确近邻的覆盖，再查编码版本、量化和搜索预算；覆盖足够后，用 ANN 难负例、词法并集和精排改进相关性。
 tags:
   - Amazon
   - Two-Tower
   - Retrieval
   - ANN
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Semantic product search
-    url: https://www.amazon.science/publications/semantic-product-search
+    url: 'https://www.amazon.science/publications/semantic-product-search'
     type: primary
   - title: Web-scale semantic product search with large language models
-    url: https://www.amazon.science/publications/web-scale-semantic-product-search-with-large-language-models
+    url: >-
+      https://www.amazon.science/publications/web-scale-semantic-product-search-with-large-language-models
     type: primary
 ---
 
+## 可以这样回答
+
 ANN 掉点先拆成两件事：索引有没有找回精确向量搜索的邻居，以及这些邻居是否真能满足用户意图。前者查编码、量化和搜索预算，后者查训练负例与排序目标。比如精确 Recall@100 很好，HNSW / PQ 实际返回的却是另一组商品，继续优化原来的训练 loss 未必能补上。
 
-Amazon Science 的 Semantic Product Search 用 query 塔实时编码、item 塔离线编码来做商品召回；后续 BERT 双塔通过蒸馏适应实时延迟。十亿级目录、毫秒召回需要这种预计算，Search、Recs 和 Bedrock 检索都可以按同样的失败路径分析。
+Amazon Science 的 Semantic Product Search 用 query 塔实时编码、item 塔离线编码来做商品召回；后续 BERT 双塔通过 distillation 适应实时延迟。十亿级目录、毫秒召回需要这种预计算，Search、Recs 和 Bedrock 检索都可以按同样的失败路径分析。
+
+## 技术备查
+
+ANN 掉点先拆成两件事：索引有没有找回精确向量搜索的邻居，以及这些邻居是否真能满足用户意图。前者查编码、量化和搜索预算，后者查训练负例与排序目标。比如精确 Recall@100 很好，HNSW / PQ 实际返回的却是另一组商品，继续优化原来的训练 loss 未必能补上。
+
+Amazon Science 的 Semantic Product Search 用 query 塔实时编码、item 塔离线编码来做商品召回；后续 BERT 双塔通过 distillation 适应实时延迟。十亿级目录、毫秒召回需要这种预计算，Search、Recs 和 Bedrock 检索都可以按同样的失败路径分析。
 
 ## 训练先把空间和难负例对齐
 
@@ -42,6 +54,7 @@ item 塔输入标题、品牌和类目路径，用户历史进入 query 塔或�
 ```python
 import torch
 import torch.nn.functional as F
+
 
 def infonce(q, p, t=0.05):
     # q, p: [B, D], in-batch negatives
@@ -61,14 +74,14 @@ def infonce(q, p, t=0.05):
 
 固定 query 集，先测精确 top-$k$ 被 ANN 覆盖的比例，可先把目标放到 $0.95$ 以上。覆盖不足时调大 `efSearch` / `nprobe` 或减轻 PQ；覆盖够了再挖 ANN 难负例重训。仍有缺口时合并词法候选，见 `amazon-kendra-hybrid`，再对 top 200 交叉编码或精排。ASIN、型号和错误码要保留倒排精确路径。
 
-蒸馏可用大 cross-encoder 或大双塔指导小双塔。公开论文约 75M 学生相对 20 倍教师只损失约 3% 相关性，使它能进入实时预算；教师本身不适合直接塞进 p99 链路。
+distillation 可用大 cross-encoder 或大双塔指导小双塔。公开论文约 75M 学生相对 20 倍教师只损失约 3% 相关性，使它能进入实时预算；教师本身不适合直接塞进 p99 链路。
 
 索引也要有新鲜度 SLO：新 ASIN 多久可召回，标题变更后多久重嵌。向量不会自动过期，与 `amazon-bedrock-rag` 的政策版本同理；特征版本和索引别名一起发布，见 `amazon-feature-store`。
 
 ## 追问
 
 **为什么不让 query 和 item 进同一个 Transformer？**
-交叉注意力可以更准，但 item 不能独立预计算，无法对全库逐对运行。召回双塔，候选精排再交叉。
+cross-attention 可以更准，但 item 不能独立预计算，无法对全库逐对运行。召回双塔，候选精排再交叉。
 
 **ANN recall 到 0.99，转化还下降呢？**
 继续看任务相关性。可能点击目标与购买不一致，或精确商品被语义近邻挤走。失败 query 中先区分漏 ASIN 与 ranker 排错。

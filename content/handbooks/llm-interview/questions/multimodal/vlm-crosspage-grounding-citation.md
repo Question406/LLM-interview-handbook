@@ -4,7 +4,7 @@ section: multimodal
 order: 202
 level: S
 title: 跨页文档问答如何做 grounding 与引用验证？
-quick: "每个关键断言都绑页码、目标框或段落 id。先检索证据，阅读器只在证据上生成；再由独立检查器核对引用是否支持这句话，不支持就删句或拒答。"
+quick: 每个关键断言都绑页码、目标框或段落 id。先检索证据，阅读器只在证据上生成；再由独立检查器核对引用是否支持这句话，不支持就删句或拒答。
 tags:
   - Document AI
   - Citation
@@ -12,10 +12,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: DocVQA
-    url: https://arxiv.org/abs/2007.00398
+    url: 'https://arxiv.org/abs/2007.00398'
     type: primary
 ---
 
@@ -27,7 +27,7 @@ sources:
 
 生成之后做后验证。检查器可以是规则加另一个模型，但别让同一个生成器自己裁判，它要判断引用的跨度是否在文本上蕴含这条命题。检查器还要能处理「数字相同但列不同」，金额出现在备注列和应付列，是两个不同的命题。定位命中可以用 bbox 交并比（IoU，即两个区域的交集与并集之比）$\mathrm{IoU}\gt 0.5$ 作为阈值，但语义蕴含要单独过；没有蕴含检查，grounding 会退化成「附近有个数字」。验证失败就删句或整题拒答，别补一句「大致如此」。
 
-指标拆开报：答案正确、citation 页码正确、span 级 evidence F1、无依据断言率。只报答案 EM，张冠李戴的引用就放过去了，所以 evidence F1 和无依据率要和答案准确率一起当门禁，模型引错了页但答案对，也判失败。几种评测做法容易误导：用合成的单页短文档；oracle 只看最终数字；允许把整页当 span 引用；同一个 VLM 既答题又验引用。评测集里要有答案在 A 页、关键约束在 B 页的题，有近邻行错位，有目录 / 页眉干扰。
+指标拆开报：答案正确、citation 页码正确、span 级 evidence F1、无依据断言率。只报答案 EM，张冠李戴的引用就放过去了，所以 evidence F1 和无依据率要和答案准确率一起当 acceptance checks，模型引错了页但答案对，也判失败。几种评测做法容易误导：用合成的单页短文档；oracle 只看最终数字；允许把整页当 span 引用；同一个 VLM 既答题又验引用。评测集里要有答案在 A 页、关键约束在 B 页的题，有近邻行错位，有目录 / 页眉干扰。
 
 这和 `vlm-structured-document-action` 的 provenance 是同一条证据链：那题用它挡住财务 action，本题停在问答，用它挡住无依据的回答。说到底，跨页 QA 的单元是带几何的断言，能点回原件的引用才算 grounding。
 

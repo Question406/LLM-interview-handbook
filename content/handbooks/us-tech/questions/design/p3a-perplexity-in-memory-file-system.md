@@ -3,8 +3,8 @@ id: p3a-perplexity-in-memory-file-system
 section: design
 order: 600
 level: A
-title: "Perplexity：树形文件系统：路径与文件/目录操作"
-quick: "用一棵树表示文件系统：目录保存名字到子节点的映射，文件保存内容。所有接口复用路径规范化与遍历，文件和空目录可直接删除，非空目录只有明确要求递归时才删除。"
+title: Perplexity：树形文件系统：路径与文件/目录操作
+quick: 用一棵树表示文件系统：目录保存名字到子节点的映射，文件保存内容。所有接口复用路径规范化与遍历，文件和空目录可直接删除，非空目录只有明确要求递归时才删除。
 companies:
   - ai-labs
 tags:
@@ -16,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · in-memory-file-system"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/in-memory-file-system
+  - title: 1Point3Acres · Perplexity · in-memory-file-system
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/in-memory-file-system
     type: secondary
 ---
 
@@ -27,7 +28,7 @@ sources:
 
 实现内存中的 Unix 风格目录和文本文件系统，支持路径规范化、文件读写、目录列举与删除。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -58,7 +59,7 @@ read("/b/x")         -> "z"
 
 分阶段实现一个内存文件系统：先创建目录和列出内容，再支持读写文件，最后支持删除，包括删除非空目录。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -215,7 +216,7 @@ class FS:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -226,6 +227,7 @@ def expect_error(error, fn, *args):
     except error:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise {error.__name__}")
+
 
 # 写入、追加、带 "." 的路径
 fs = FS()
@@ -253,12 +255,12 @@ fs.write("/b/empty", "")
 assert fs.read("/b/empty") == ""
 assert fs.ls("/b") == ["c", "empty", "x"]
 
-expect_error(FileNotFoundError, fs.mkdir, "/p/q")      # 缺上级且没给 parents
-expect_error(FileExistsError, fs.mkdir, "/b/x")        # 同名文件已存在
-expect_error(NotADirectoryError, fs.read, "/b/x/y")    # 把文件当目录
+expect_error(FileNotFoundError, fs.mkdir, "/p/q")  # 缺上级且没给 parents
+expect_error(FileExistsError, fs.mkdir, "/b/x")  # 同名文件已存在
+expect_error(NotADirectoryError, fs.read, "/b/x/y")  # 把文件当目录
 expect_error(IsADirectoryError, fs.write, "/b/c", "t")  # 往目录里写内容
-expect_error(ValueError, fs.remove, "/")               # 根目录不能删
-expect_error(ValueError, fs.ls, "b")                   # 只接受绝对路径
+expect_error(ValueError, fs.remove, "/")  # 根目录不能删
+expect_error(ValueError, fs.ls, "b")  # 只接受绝对路径
 ```
 
 ### 复杂度与追问

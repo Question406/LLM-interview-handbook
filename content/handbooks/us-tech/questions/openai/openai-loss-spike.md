@@ -4,30 +4,42 @@ section: openai
 order: 17
 level: S
 title: OpenAI：训练 loss 突然炸或变 NaN，怎么分层排查
-quick: "我会先保存出问题 step、rank、样本和 RNG，区分有限 spike 与已经污染 Adam 状态的 NaN。再依次查数据、学习率、并行同步和精度；坏 batch 可跳过，脏动量要回干净 checkpoint，不能只降学习率继续跑。"
+quick: >-
+  我会先保存出问题 step、rank、样本和 RNG，区分有限 spike 与已经污染 Adam 状态的 NaN。再依次查数据、学习率、并行同步和精度；坏
+  batch 可跳过，脏动量要回干净 checkpoint，不能只降学习率继续跑。
 tags:
   - OpenAI
   - Training
   - Debug
   - NaN
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Mixed Precision Training
-    url: https://arxiv.org/abs/1710.03740
+    url: 'https://arxiv.org/abs/1710.03740'
     type: primary
   - title: Small-scale proxies for large-scale Transformer training instabilities
-    url: https://arxiv.org/abs/2309.14322
+    url: 'https://arxiv.org/abs/2309.14322'
     type: primary
   - title: Language Models are Few-Shot Learners
-    url: https://arxiv.org/abs/2005.14165
+    url: 'https://arxiv.org/abs/2005.14165'
     type: primary
   - title: OpenAI Research Engineer Interview Guide
-    url: https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
+    url: >-
+      https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
     type: secondary
 ---
+
+## 可以这样回答
+
+我会先保留故障现场，判断是可恢复的有限 spike，还是已经让优化器状态变脏的 NaN / Inf。比如 loss 从 2.1 跳到 20 后回来，与 Adam 动量吃进 NaN 后每步都错，需要不同处置。这里按混合精度、Wortsman 的不稳定代理和 GPT-3 的 clip / Adam 公开设定讨论，没有单独候选人报告确认这是一道 OpenAI 原题。
+
+两件事先分开：spike 是有限大数，下一步往往掉回来；NaN / Inf 是非有限值，Adam 的 $m,v$ 一旦吃进去，后面每步都是脏的。前者可以跳过坏 batch；后者通常要回到上一个干净 checkpoint，不能靠再跑一步「很小的 lr」。
+
+## 技术备查
 
 我会先保留故障现场，判断是可恢复的有限 spike，还是已经让优化器状态变脏的 NaN / Inf。比如 loss 从 2.1 跳到 20 后回来，与 Adam 动量吃进 NaN 后每步都错，需要不同处置。这里按混合精度、Wortsman 的不稳定代理和 GPT-3 的 clip / Adam 公开设定讨论，没有单独候选人报告确认这是一道 OpenAI 原题。
 
@@ -37,7 +49,7 @@ sources:
 
 打开这次 step 的 rank 日志，不要看平滑后的 dashboard。问四件事：所有 rank 一起炸还是一张卡先 Inf？是第一个 microbatch 还是累加到第 $k$ 个？grad norm 先爆还是 loss 先爆？fp16 的 inf 标志是否亮了（动态缩放见 `nvidia-loss-scale`）。
 
-先 dump 该 step 的 token id，检查数据：是否越出词表、是否整段 ignore index、是否出现超长 HTML / 乱码重复字符把某个 embedding 打满。packing 把两篇文档拼在一起且没文档 mask 时，偶发会出现「目标全是特殊符」的退化序列。标签若是 $-100$ 以外的负数，交叉熵损失（CE） 会在 gather 时读到垃圾。坏 shard 的签名是：复现同一个 data index 必炸，换一条就不炸。
+先 dump 该 step 的 token id，检查数据：是否越出 vocabulary、是否整段 ignore index、是否出现超长 HTML / 乱码重复字符把某个 embedding 打满。packing 把两篇文档拼在一起且没文档 mask 时，偶发会出现「目标全是特殊符」的退化序列。标签若是 $-100$ 以外的负数，cross entropy loss（CE） 会在 gather 时读到垃圾。坏 shard 的签名是：复现同一个 data index 必炸，换一条就不炸。
 
 数据排除后对照学习率日程：warmup 还没结束就按大 batch 线性外推后的峰值；cosine 已经到底又被 resume 成初始 lr；或者只对一部分参数组设了 lr。GPT-3 公开用 clip，grad 范数先看一眼：clip 之前已经 Inf，clip 救不了。和 `openai-adamw` 缠在一起的常见误区是：把 $L_2$ 耦合进 Adam 后再把 lr 加大一档，个别坐标步长离谱。
 

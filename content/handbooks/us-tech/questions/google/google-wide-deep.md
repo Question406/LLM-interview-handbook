@@ -4,24 +4,35 @@ section: google
 order: 10
 level: A
 title: Google：Wide & Deep 记忆 vs 泛化，现在还怎么用这个直觉
-quick: "Wide 用显式交叉的线性模型记住常见 ID 组合，Deep 用 embedding 和 MLP 给未见过的组合泛化。比如高频应用对可以直接记权重，新物品则需要依赖类别、文本等侧信息。这个记忆与泛化的分工也能迁移到 FM、DCN 和更大的推荐模型里。"
+quick: >-
+  Wide 用显式交叉的线性模型记住常见 ID 组合，Deep 用 embedding 和 MLP
+  给未见过的组合泛化。比如高频应用对可以直接记权重，新物品则需要依赖类别、文本等侧信息。这个记忆与泛化的分工也能迁移到 FM、DCN 和更大的推荐模型里。
 tags:
   - Google
   - Wide & Deep
   - Recsys
   - Features
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Wide & Deep Learning for Recommender Systems
-    url: https://arxiv.org/abs/1606.07792
+    url: 'https://arxiv.org/abs/1606.07792'
     type: primary
   - title: Deep & Cross Network for Ad Click Predictions
-    url: https://arxiv.org/abs/1708.05123
+    url: 'https://arxiv.org/abs/1708.05123'
     type: primary
 ---
+
+## 可以这样回答
+
+Wide & Deep 给记忆和泛化各留了一条路径：显式交叉记常见组合，embedding 加 MLP 给新组合打分。比如用户装了 Netflix 后常点 Hulu，wide 可以记住这对应用；新应用没有这个历史，就需要 deep 从类别等共享信息推断。Google Play 的 2016 论文用这个组合做推荐，漏斗设计见 `google-youtube-rank`。
+
+Wide：线性模型 $y=w^\top x+b$，输入里显式放交叉，比如 `AND(user_installed_app=netflix, impression_app=hulu)`。这类特征一旦在训练里出现过且权重大，就能 **记住** 高频共现。它几乎不把「没见过的交叉」推到一个合理分数上。
+
+## 技术备查
 
 Wide & Deep 给记忆和泛化各留了一条路径：显式交叉记常见组合，embedding 加 MLP 给新组合打分。比如用户装了 Netflix 后常点 Hulu，wide 可以记住这对应用；新应用没有这个历史，就需要 deep 从类别等共享信息推断。Google Play 的 2016 论文用这个组合做推荐，漏斗设计见 `google-youtube-rank`。
 
@@ -42,7 +53,7 @@ Google Play 的结果说明：只用 wide，长尾组合缺少泛化；只用 de
 生产线很少再训练一个「左边 LR、右边三层 MLP」的原版。但问题没消失：
 
 **ID 要记忆。**
-用户 ID、物品 ID、广告创意 ID 的头部组合，仍然是最强信号。交叉可以用 FM、Deep & Cross (DCN / DCN-v2)、掩码交叉，不必手写一百万条 `AND`。DCN 的显式交叉层就是在自动化 wide 那一侧。
+用户 ID、物品 ID、广告创意 ID 的头部组合，仍然是最强信号。交叉可以用 FM、Deep & Cross (DCN / DCN-v2)、mask 交叉，不必手写一百万条 `AND`。DCN 的显式交叉层就是在自动化 wide 那一侧。
 **侧信息要泛化。**
 类别、文本、图像、上下文进 embedding / Transformer。新物品没有点击，只能靠内容塔，这是 deep 的活。
 **别让 MLP 独自扛记忆。**
@@ -52,9 +63,9 @@ Google Play 的结果说明：只用 wide，长尾组合缺少泛化；只用 de
 
 可以用出现频次说明这种区别：某交叉一天出现 $10^7$ 次，另一交叉出现 3 次。前者应该被记住，几乎是 lookup；后者必须靠共享 embedding 才有分。Wide & Deep 就是给这两类样本两条路。
 
-把 wide 说成「浅层网络」、deep 说成「深层网络」，没提交叉和 embedding。把记忆说成过拟合、主张全丢掉 ID。反过来，只堆手工交叉、没有泛化路径，新广告冷启动会挂，见 `google-ads-auction`。
+把 wide 说成「浅层网络」、deep 说成「深层网络」，没提交叉和 embedding。把记忆说成 overfitting、主张全丢掉 ID。反过来，只堆手工交叉、没有泛化路径，新广告冷启动会挂，见 `google-ads-auction`。
 
-过拟合确实会发生：wide 交叉太多会记噪声。要用正则、频次截断、交叉只留高频候选。记忆是有意保留可复现的共现，不是把训练集背下来。
+overfitting 确实会发生：wide 交叉太多会记噪声。要用正则、频次截断、交叉只留高频候选。记忆是有意保留可复现的共现，不是把训练集背下来。
 
 ## 追问
 

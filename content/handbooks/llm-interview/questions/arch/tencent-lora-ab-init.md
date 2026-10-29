@@ -4,24 +4,43 @@ section: arch
 order: 200
 level: A
 title: 腾讯混元：LoRA 的 A/B 矩阵如何初始化？还有哪些初始化？
-quick: "常见做法是 $A$ 高斯随机、$B$ 全零，训练开始时 $\\Delta W=BA=0$，不破坏预训练的输出。$A$ 也可以用 Kaiming 等初始化，还可以聊 PiSSA、正交初始化这些变体，但面试先把「零起步残差」讲清楚。"
+quick: 假设要调整一个很大的线性层，但希望只训练少量参数。LoRA 不直接训练整张 weight matrix，而是用两个较小矩阵的乘积表示更新。
 tags:
   - Tencent
   - Hunyuan
   - LoRA
   - 2025-2026
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: 腾讯-混元大模型面经
-    url: https://www.nowcoder.com/feed/main/detail/19561cb3bcbf4a519766f61d6414a44c
+    url: 'https://www.nowcoder.com/feed/main/detail/19561cb3bcbf4a519766f61d6414a44c'
     type: candidate-first-hand
   - title: LoRA
-    url: https://arxiv.org/abs/2106.09685
+    url: 'https://arxiv.org/abs/2106.09685'
     type: primary
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设要调整一个很大的线性层，但希望只训练少量参数。
+>
+> **做法与原因：** 常见初始化是一边随机、一边为零，使初始更新为零，保留原模型输出，同时让非零那一边为另一边提供初始 gradient。
+>
+> **检查与取舍：** Low rank 是对更新结构的约束，不是说原权重本身一定 low rank。
+
+## 可以这样回答
+
+假设要调整一个很大的线性层，但希望只训练少量参数。LoRA 不直接训练整张 weight matrix，而是用两个较小矩阵的乘积表示更新。
+
+常见初始化是一边随机、一边为零，使初始更新为零，保留原模型输出，同时让非零那一边为另一边提供初始 gradient。若两边都为零，普通乘积参数化下双方最初的 gradients 都可能为零。
+
+Low rank 是对更新结构的约束，不是说原权重本身一定 low rank。我会比较不同 rank 的任务表现、训练成本和部署方式。
+
+## 技术备查
 
 ## 真题记录
 
@@ -44,7 +63,7 @@ $$
 
 面试官问「还有哪些」时，点名就够了，别假装都实现过。PiSSA 用 $W$ 的主奇异方向初始化 $A,B$，让适配器从「已有的重要子空间」起步，有时收敛更快，但起步就不再严格满足 $\Delta W=0$，要接受一开始就有微扰。正交 / 谱初始化约束 $A$ 的行正交，改善训练初期的条件数。AdaLoRA 这类自适应秩的方法在训练中调整有效秩，本身不算初始化，但常被连着问。
 
-重点仍然是能不能 merge 回 $W$、多个 adapter 怎么路由，以及和量化（QLoRA）共存时的数值，见 `arch-qlora`。rank 过大容易过拟合，显存也上去；过小又会欠拟合。混元如果追问「和全参比怎么样」，就落到数据量和能不能回滚上，见 `tencent-lora-vs-full-exp`。
+重点仍然是能不能 merge 回 $W$、多个 adapter 怎么路由，以及和量化（QLoRA）共存时的数值，见 `arch-qlora`。rank 过大容易 overfitting，显存也上去；过小又会 underfitting。混元如果追问「和全参比怎么样」，就落到数据量和能不能回滚上，见 `tencent-lora-vs-full-exp`。
 
 ## 追问
 

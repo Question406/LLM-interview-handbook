@@ -4,21 +4,33 @@ section: systems
 order: 37
 level: A
 title: DeepSeek-V3 的 device-limited routing 怎么限制跨机通信？实现上先选节点还是先选专家？
-quick: "Device-limited routing 先选设备，再选专家，保证每个 token 的专家最多落在 $M$ 台设备上。V3 先把每台设备的专家亲和相加，选出 $M=4$ 台，再从设备并集里选 Top-$k$。这样跨机 all-to-all 的目的 rank 数有上限，但热点专家仍要另做负载均衡。"
+quick: >-
+  Device-limited routing 先选设备，再选专家，保证每个 token 的专家最多落在 $M$ 台设备上。V3
+  先把每台设备的专家亲和相加，选出 $M=4$ 台，再从设备并集里选 Top-$k$。这样跨机 all-to-all 的目的 rank
+  数有上限，但热点专家仍要另做负载均衡。
 tags:
   - MoE
   - DeepSeek
   - Expert Parallel
   - Routing
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: DeepSeek-V3 Technical Report
-    url: https://arxiv.org/abs/2412.19437
+    url: 'https://arxiv.org/abs/2412.19437'
     type: primary
 ---
+
+## 可以这样回答
+
+实现上先选设备集合，再在集合内选专家，这样才能保证一个 token 最多发到 $M$ 台设备。比如先做全局 Top-$k$，选中的专家已经散到 $8$ 个节点，再谈尽量本地就约束不了通信。V3 给的是硬约束：一个 token 的 $k$ 个 routed expert 必须落在至多 $M$ 台设备上，它限制的是通信目的地数量。
+
+于是该 token 的 dispatch 目的 rank 至多 $M$ 个，而不是「理论上 $k$ 个专家在 $k$ 台不同的机器」。$k=8$、$M=4$ 意味着平均每台入选设备上约 $2$ 个专家，部分通信可以在节点内走 NVLink，跨机 RDMA 消息数也会减少。Shared expert 每卡常开，不走这套 dispatch，见 `arch-shared-expert`。
+
+## 技术备查
 
 实现上先选设备集合，再在集合内选专家，这样才能保证一个 token 最多发到 $M$ 台设备。比如先做全局 Top-$k$，选中的专家已经散到 $8$ 个节点，再谈尽量本地就约束不了通信。V3 给的是硬约束：一个 token 的 $k$ 个 routed expert 必须落在至多 $M$ 台设备上，它限制的是通信目的地数量。
 

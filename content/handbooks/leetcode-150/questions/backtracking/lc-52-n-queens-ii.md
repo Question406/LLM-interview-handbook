@@ -4,20 +4,22 @@ section: backtracking
 order: 5
 level: A
 title: LC 52 · N 皇后 II
-quick: "一行放一个皇后，尝试 $(r,c)$ 时检查列、主对角 $r-c$、副对角 $r+c$ 有没有被占。合法就递归下一行，回来撤销；放完第 $n$ 行方案数加一。只要个数，不用构造棋盘。"
+quick: >-
+  一行放一个皇后，尝试 $(r,c)$ 时检查列、主对角 $r-c$、副对角 $r+c$ 有没有被占。合法就递归下一行，回来撤销；放完第 $n$
+  行方案数加一。只要个数，不用构造棋盘。
 tags:
   - Backtracking
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 52. N 皇后 II
-    url: https://leetcode.cn/problems/n-queens-ii/
+    url: 'https://leetcode.cn/problems/n-queens-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -54,7 +56,7 @@ $n$ 皇后：在 $n\times n$ 棋盘放 $n$ 个皇后，彼此不能同行、同�
 
 用 `r-c` 和 `r+c` 是因为同一条主对角线上 $r-c$ 相同，同一条副对角线上 $r+c$ 相同。比如 $(0,1)$ 和 $(1,2)$ 的 $r-c$ 都是 $-1$，在同一条主对角线上，放了前一个，后一个就会被挡掉。
 
-题目只要个数，不必构造字符串棋盘。$n\le 9$ 时可以用三个位掩码代替集合。
+题目只要个数，不必构造字符串棋盘。$n\le 9$ 时可以用三个 bitmask 代替集合。
 
 ## 参考代码
 
@@ -109,7 +111,7 @@ print("simple tests passed")
 
 时间是 $O(n!)$ 量级，每行剪枝后少于 $n$ 个选择；额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时答案是 $1$，一个皇后占唯一的格子。$n=2,3$ 时列和对角互相卡住，无解，返回 $0$。$n=4$ 恰好 $2$ 种，可以手算验证回溯。
 
@@ -146,7 +148,7 @@ def solveNQueens(n):
 ```
 
 **能用位运算加速吗？**
-可以，$n\le 9$ 时用三个整型掩码代替集合。`cols` 第 $c$ 位表示这一列被占；往下走一行，主对角掩码左移一位，副对角掩码右移一位。`avail = ((1 << n) - 1) & ~(cols | diag | antidiag)` 取出可放的列，`bit = avail & -avail` 取最低位的 1，放下后递归。
+可以，$n\le 9$ 时用三个整型 mask 代替集合。`cols` 第 $c$ 位表示这一列被占；往下走一行，主对角 mask 左移一位，副对角 mask 右移一位。`avail = ((1 << n) - 1) & ~(cols | diag | antidiag)` 取出可放的列，`bit = avail & -avail` 取最低位的 1，放下后递归。
 
 ```python
 def totalNQueensBits(n):

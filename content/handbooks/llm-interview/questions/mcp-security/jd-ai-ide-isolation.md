@@ -4,7 +4,10 @@ section: mcp-security
 order: 191
 level: S
 title: 京东一面：设计 AI IDE 时怎么定位，如何防止类似数据库的幻读？
-quick: "IDE Agent 的「幻读」是工作区在推理过程中被别的编辑改掉，模型还按旧快照做决策。我会把 AI IDE 定位成受控的工作区执行器：turn 绑定快照，工具结果带版本，补丁带基准哈希做 CAS，冲突就重读重规划，聊天只是 UI。ACP / MCP 只解决会话协议，隔离要靠 sandbox 和文件锁。"
+quick: >-
+  IDE Agent 的「幻读」是工作区在推理过程中被别的编辑改掉，模型还按旧快照做决策。我会把 AI IDE 定位成受控的工作区执行器：turn
+  绑定快照，工具结果带版本，补丁带基准哈希做 CAS，冲突就重读重规划，聊天只是 UI。ACP / MCP 只解决会话协议，隔离要靠 sandbox
+  和文件锁。
 tags:
   - JD
   - AI IDE
@@ -12,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 京东后端-一面
-    url: https://www.nowcoder.com/feed/main/detail/ad9b86d7b29b4b5583840d0169458b0a
+    url: 'https://www.nowcoder.com/feed/main/detail/ad9b86d7b29b4b5583840d0169458b0a'
     type: candidate-first-hand
 ---
 
@@ -25,7 +28,7 @@ sources:
 - 团队 / 岗位：后端
 - 届别 / 流程：一面
 - 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：“你觉得ai ide 设计的时候怎么定位，怎么防止类似数据库的幻读情况，如果让你来设计一个ai ide该怎么做”（原帖提到 ACP / MCP）
+- 原始措辞：“你觉得 ai ide 设计的时候怎么定位，怎么防止类似数据库的幻读情况，如果让你来设计一个 ai ide 该怎么做”（原帖提到 ACP / MCP）
 
 我会把 AI IDE 定位成一个带事务语义的工作区执行器：读有快照，写有 CAS，失败有重试，聊天只是 UI。防「幻读」的办法是让每次决策绑定一个工作区版本，补丁只能相对这个版本打，版本对不上就拒绝、重读、重新规划。MCP / ACP 管的是怎么连、怎么发现工具，解决不了工作区在推理过程中被改掉的问题。
 
@@ -39,7 +42,7 @@ sources:
 
 测试运行也要绑版本，跑的是快照里的树，别跑磁盘上此刻的树，否则「测试绿了」和「补丁对应的代码」不是同一份。多个子 Agent 并行修改同一目录会增加这类并发冲突，所以每个 Agent / 子任务一个可写副本或 branch，各自 sandbox，禁止共享可写目录，除非显式 checkout 同一快照；合并走显式 rebase，或者把可写区串行化。
 
-权限也放在 Host：删除、改配置、跑任意 shell 走白名单和二次确认，模型只提议，Host 执行。MCP 负责 tools/resources 的 list 与 call，ACP 一类协议管 IDE 会话和编辑器事件，把编辑器事件推进会话，但二者都替代不了文件锁、工作区快照和权限边界。同面的 MCP 权限题可以连起来说：连得上不等于写得对。
+权限也放在 Host：删除、改配置、跑任意 shell 走白名单和二次确认，模型只提议，Host 执行。MCP 负责 tools/resources 的 list 与 call，ACP 一类协议管 IDE 会话和编辑器事件，把编辑器事件推进会话，但二者都替代不了文件锁、工作区快照和 authorization rules。同面的 MCP 权限题可以连起来说：连得上不等于写得对。
 
 验收目标是测试通过、diff 可应用、冲突可重试，「感觉改对了」不算。评测用「并发编辑后补丁是否仍然适用」，别只报单测通过率；还要报冲突检测率，该冲突却静默合并，比冲突后重试危险得多。
 

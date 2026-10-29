@@ -4,7 +4,9 @@ section: array-string
 order: 2
 level: A
 title: LC 1071 · 字符串的最大公因子
-quick: "先判 `str1 + str2 == str2 + str1`，不相等就没有公因子；相等时答案就是长度为 $\\gcd(m,n)$ 的前缀。拼接比较一次，时间 $O(m+n)$，额外空间 $O(m+n)$ 存拼接串。"
+quick: >-
+  先判 `str1 + str2 == str2 + str1`，不相等就没有公因子；相等时答案就是长度为 $\gcd(m,n)$ 的前缀。拼接比较一次，时间
+  $O(m+n)$，额外空间 $O(m+n)$ 存拼接串。
 tags:
   - String
   - Math
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1071. Greatest Common Divisor of Strings
-    url: https://leetcode.com/problems/greatest-common-divisor-of-strings/
+    url: 'https://leetcode.com/problems/greatest-common-divisor-of-strings/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -103,7 +105,7 @@ print("simple tests passed")
 
 时间 $O(m+n)$：拼接和比较各一次，gcd 是 $O(\log\min(m,n))$。额外空间 $O(m+n)$，存两个拼接串。
 
-## 边界
+## Edge Cases
 
 两串相同的时候，答案就是它本身。
 

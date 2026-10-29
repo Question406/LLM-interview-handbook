@@ -44,7 +44,7 @@ sources:
 | Microsoft | DeepSpeed ZeRO、Copilot grounding、Phi / ORPO | `msft-deepspeed-zero`、`msft-copilot-ground` |
 | xAI / SpaceXAI / Tesla | 15 分钟筛（项目深挖 + why xAI）、内存 KV/race、Grok 工具与缓存；先读现在在卖什么 | `xai-spacexai-now`、`xai-screen-15min`、`xai-kv-txn`、`tesla-data-engine` |
 
-白板手撕走 ML Coding 章（`coding-softmax-stable`），训练/推理系统走 `sys-3d-parallel`，RAG / 推荐 / 评测平台走 `design-prod-rag`，RLHF / 直接偏好优化（DPO） / CAI 走 `align-rlhf-kl`。公司章只收「这家怎么问」。
+白板手撕走 ML Coding 章（`coding-softmax-stable`），训练/推理系统走 `sys-3d-parallel`，RAG / 推荐 / 评测平台走 `design-prod-rag`，RLHF / DPO / CAI 走 `align-rlhf-kl`。公司章只收「这家怎么问」。
 
 ## 常见题型怎样练
 

@@ -1,0 +1,2606 @@
+[
+  {
+    "file": "content/handbooks/data-team-interview/questions/frontier-release/dt-frontier-who-reports.md",
+    "id": "dt-frontier-who-reports",
+    "book": "data-team-interview",
+    "title": "哪家 lab、哪个模型、在哪次发布里报了哪项 benchmark？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/good-data/dt-good-data-def.md",
+    "id": "dt-good-data-def",
+    "book": "data-team-interview",
+    "title": "什么叫好数据？别用「高质量」三个字糊过去",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/hm-screen/dt-data-story.md",
+    "id": "dt-data-story",
+    "book": "data-team-interview",
+    "title": "HM 30 分钟：怎么把项目讲成「数据解锁了能力」？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/labs/dt-code-bench-bleed.md",
+    "id": "dt-code-bench-bleed",
+    "book": "data-team-interview",
+    "title": "开源代码合成集自称 HumanEval +9%，你先查什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/labs/dt-contam-hold.md",
+    "id": "dt-contam-hold",
+    "book": "data-team-interview",
+    "title": "Anthropic 风格：safety evaluation gate 被训练数据看见了，你先停什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/labs/dt-synth-bench-trap.md",
+    "id": "dt-synth-bench-trap",
+    "book": "data-team-interview",
+    "title": "Anthropic 风格陷阱：开源合成推理集自称 GSM8K +15%，你先做什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/labs/dt-tau-passk.md",
+    "id": "dt-tau-passk",
+    "book": "data-team-interview",
+    "title": "τ-bench：过一次库状态，为什么还不够当正例？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/labs/dt-userlog-contrast.md",
+    "id": "dt-userlog-contrast",
+    "book": "data-team-interview",
+    "title": "OpenAI 练习题：用户对话怎么做成 SFT？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-audio-semantic-regression.md",
+    "id": "dt-audio-semantic-regression",
+    "book": "data-team-interview",
+    "title": "Panel 情景：语音识别 WER 降了，语音助手却更容易做错操作？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-contamination.md",
+    "id": "dt-contamination",
+    "book": "data-team-interview",
+    "title": "Panel：怎么查评测被训练数据看见了，查到了怎么办？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-curriculum-moving-target.md",
+    "id": "dt-curriculum-moving-target",
+    "book": "data-team-interview",
+    "title": "Panel 情景：昨天的高价值难题，今天都变简单了，如何更新合成课程？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-data-replay-incident.md",
+    "id": "dt-data-replay-incident",
+    "book": "data-team-interview",
+    "title": "Panel 情景：数据任务重跑后样本翻倍，怎么恢复并防止训练重复？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-judge-ranking-reversal.md",
+    "id": "dt-judge-ranking-reversal",
+    "book": "data-team-interview",
+    "title": "Panel 情景：自动 judge 胜率涨了，human evaluation 却反转，先修模型还是修测量？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-mm-shortcut-audit.md",
+    "id": "dt-mm-shortcut-audit",
+    "book": "data-team-interview",
+    "title": "Panel 情景：截图问答高分，换一套 UI 就失败，如何排查视觉捷径？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-paraphrase-leakage-audit.md",
+    "id": "dt-paraphrase-leakage-audit",
+    "book": "data-team-interview",
+    "title": "Panel 情景：13-gram contamination scan 全绿，模型却能背出翻译后的评测答案？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-preference-multilingual-conflict.md",
+    "id": "dt-preference-multilingual-conflict",
+    "book": "data-team-interview",
+    "title": "Panel 情景：英文 preference labels 很一致，换语言后“好答案”标准冲突怎么办？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-stale-rollout-incident.md",
+    "id": "dt-stale-rollout-incident",
+    "book": "data-team-interview",
+    "title": "Panel 情景：异步 rollout 吞吐翻倍，为什么训练奖励上涨但任务成功下降？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-tokenizer-migration-gap.md",
+    "id": "dt-tokenizer-migration-gap",
+    "book": "data-team-interview",
+    "title": "Panel 情景：换 tokenizer 后 loss 更低，为什么 multilingual 能力和 long context 都退化？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-tool-gap-factorial.md",
+    "id": "dt-tool-gap-factorial",
+    "book": "data-team-interview",
+    "title": "Panel 情景：工具选对了，任务成功率却掉了，怎么设计诊断实验？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-video-temporal-shortcut.md",
+    "id": "dt-video-temporal-shortcut",
+    "book": "data-team-interview",
+    "title": "Panel 情景：视频问答能识物却分不清先后，如何造时序训练数据？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-web-extract.md",
+    "id": "dt-web-extract",
+    "book": "data-team-interview",
+    "title": "Panel：网页抽取失败有哪些，LLM 抽取什么时候才上？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-when-not-synth.md",
+    "id": "dt-when-not-synth",
+    "book": "data-team-interview",
+    "title": "Panel：什么时候不要上 synthetic data？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/dt-zero-advantage-groups.md",
+    "id": "dt-zero-advantage-groups",
+    "book": "data-team-interview",
+    "title": "Panel 情景：组内奖励几乎都一样，RL 数据怎样恢复学习信号？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/p3a-apple-aiml-mixture-defense.md",
+    "id": "p3a-apple-aiml-mixture-defense",
+    "book": "data-team-interview",
+    "title": "Apple AIML 面经：为什么用这个 data mix，你验证过哪些替代方案？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/panel/p3a-apple-classifier-data-system.md",
+    "id": "p3a-apple-classifier-data-system",
+    "book": "data-team-interview",
+    "title": "一亩三分地 Apple MLE：从简单分类器讲到完整数据系统",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/posttrain-data/dt-agent-passk-zero.md",
+    "id": "dt-agent-passk-zero",
+    "book": "data-team-interview",
+    "title": "Agent RL 一组 rollout 全零或全一对，这批任务还要不要？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/posttrain-data/dt-agent-tmax-synth.md",
+    "id": "dt-agent-tmax-synth",
+    "book": "data-team-interview",
+    "title": "没有现成 GitHub issue 池，怎么合成一批能拿来做 Agent RL 的环境？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/posttrain-data/dt-posttrain-map.md",
+    "id": "dt-posttrain-map",
+    "book": "data-team-interview",
+    "title": "post-training 数据：数学、代码、工具、agent，各自的 acceptance criteria 是什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/posttrain-data/dt-tool-write-confirm.md",
+    "id": "dt-tool-write-confirm",
+    "book": "data-team-interview",
+    "title": "会改状态的工具，数据里要不要先确认再写？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/data-team-interview/questions/senior/dt-senior-proxy-scale-reversal.md",
+    "id": "dt-senior-proxy-scale-reversal",
+    "book": "data-team-interview",
+    "title": "Director 情景：small model 筛出的最佳 data mixture，large model 上失效，下一步投什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-context-eval.md",
+    "id": "agent-context-eval",
+    "book": "llm-interview",
+    "title": "怎么评估 Context Compression？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-context.md",
+    "id": "agent-context",
+    "book": "llm-interview",
+    "title": "为什么 Context Window 很大仍需要 Context Engineering？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-definition.md",
+    "id": "agent-definition",
+    "book": "llm-interview",
+    "title": "什么是 LLM Agent？Workflow 和 Agent 有何区别？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-harness.md",
+    "id": "agent-harness",
+    "book": "llm-interview",
+    "title": "Agent Harness 是什么？为什么同一个模型换 Harness 性能差很多？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-knowledge-placement.md",
+    "id": "agent-knowledge-placement",
+    "book": "llm-interview",
+    "title": "Skill、RAG、Memory、Weights、Tool：知识到底放哪？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-mcp.md",
+    "id": "agent-mcp",
+    "book": "llm-interview",
+    "title": "MCP、Function Calling、Agent Framework 有什么区别？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-memory.md",
+    "id": "agent-memory",
+    "book": "llm-interview",
+    "title": "Agent Memory 应如何分类和更新？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-skill-diff.md",
+    "id": "agent-skill-diff",
+    "book": "llm-interview",
+    "title": "Skill、Tool、MCP、Workflow、Agent 五者如何区分？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-skill-progressive.md",
+    "id": "agent-skill-progressive",
+    "book": "llm-interview",
+    "title": "Skill 的 Progressive Disclosure 是什么？为什么重要？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-skill-routing.md",
+    "id": "agent-skill-routing",
+    "book": "llm-interview",
+    "title": "系统有 10,000 个 Skills，怎么做 Retrieval / Routing？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-skill-security.md",
+    "id": "agent-skill-security",
+    "book": "llm-interview",
+    "title": "第三方 Skill 有哪些安全风险？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/agent-tool-call.md",
+    "id": "agent-tool-call",
+    "book": "llm-interview",
+    "title": "Function Calling 的本质是什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/ali-mcp-vs-fc.md",
+    "id": "ali-mcp-vs-fc",
+    "book": "llm-interview",
+    "title": "MCP 和 Function Calling 的区别？为何生产不能只靠 FC？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/byte-memory-pollution.md",
+    "id": "byte-memory-pollution",
+    "book": "llm-interview",
+    "title": "字节实习一面：长期记忆过期或写进错误结论，怎么发现和纠错？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/jd-skills-essence.md",
+    "id": "jd-skills-essence",
+    "book": "llm-interview",
+    "title": "京东后端一面：Skills 的本质是什么？和 MCP 差在哪一层？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/jd-toolformer-vs-rlhf.md",
+    "id": "jd-toolformer-vs-rlhf",
+    "book": "llm-interview",
+    "title": "京东大模型：Toolformer 自监督 tool-call 数据与 RLHF 有何不同，为什么可能更泛化？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agent/pdd-multi-vs-single-agent.md",
+    "id": "pdd-multi-vs-single-agent",
+    "book": "llm-interview",
+    "title": "拼多多：为什么用多 Agent？改成单 Agent 会怎样？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-action-granularity.md",
+    "id": "arl-action-granularity",
+    "book": "llm-interview",
+    "title": "Agent 的 Action 粒度应该是 token、completion、tool-call 还是 semantic step？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-checkpoint.md",
+    "id": "arl-checkpoint",
+    "book": "llm-interview",
+    "title": "Agent State Checkpoint / Restore 怎么做？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-credit.md",
+    "id": "arl-credit",
+    "book": "llm-interview",
+    "title": "最终只有一个 Outcome Reward，50-step Agent 怎么做 Credit Assignment？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-critic-return.md",
+    "id": "arl-critic-return",
+    "book": "llm-interview",
+    "title": "为什么 Agent RL 中 Critic 可能重新变重要？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-eval.md",
+    "id": "arl-eval",
+    "book": "llm-interview",
+    "title": "Agent Eval 为什么不能只看 Final Success？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-multiagent.md",
+    "id": "arl-multiagent",
+    "book": "llm-interview",
+    "title": "Multi-Agent 一定比 Single-Agent 强吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-reward.md",
+    "id": "arl-reward",
+    "book": "llm-interview",
+    "title": "Agent Reward 怎么设计？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-self-improve.md",
+    "id": "arl-self-improve",
+    "book": "llm-interview",
+    "title": "Agent Self-Improvement 如何避免错误自强化？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/arl-vs-reasoning.md",
+    "id": "arl-vs-reasoning",
+    "book": "llm-interview",
+    "title": "Agent RL 和普通 Reasoning RL 根本差在哪里？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/stepfun-react-io-blocks.md",
+    "id": "stepfun-react-io-blocks",
+    "book": "llm-interview",
+    "title": "阶跃星辰：以 ReAct 为例，Plan / Action / Observation 的输入输出是什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/agentrl/xiaohongshu-credit-assignment.md",
+    "id": "xiaohongshu-credit-assignment",
+    "book": "llm-interview",
+    "title": "小红书：Credit assignment 怎么做？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-attn-scale.md",
+    "id": "arch-attn-scale",
+    "book": "llm-interview",
+    "title": "为什么 Scaled Dot-Product Attention 要除以 $\\sqrt{d_k}$？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-causal-mask.md",
+    "id": "arch-causal-mask",
+    "book": "llm-interview",
+    "title": "Causal Mask 和 Padding Mask 怎么组合？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-gqa.md",
+    "id": "arch-gqa",
+    "book": "llm-interview",
+    "title": "MHA、MQA、GQA 的区别和 KV Cache 收益？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-kv-cache.md",
+    "id": "arch-kv-cache",
+    "book": "llm-interview",
+    "title": "KV Cache 显存怎么估？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-lora.md",
+    "id": "arch-lora",
+    "book": "llm-interview",
+    "title": "LoRA 为什么假设 Low-Rank？A/B 为什么常一个随机一个 0？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-moe-balance.md",
+    "id": "arch-moe-balance",
+    "book": "llm-interview",
+    "title": "MoE Load Balancing Loss 为什么需要？为什么太大又伤性能？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-moe.md",
+    "id": "arch-moe",
+    "book": "llm-interview",
+    "title": "Dense vs MoE：为什么参数能增很多但 FLOPs 不同比增长？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-norm.md",
+    "id": "arch-norm",
+    "book": "llm-interview",
+    "title": "Pre-Norm vs Post-Norm；LayerNorm vs RMSNorm",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-param-count.md",
+    "id": "arch-param-count",
+    "book": "llm-interview",
+    "title": "如何快速估 Decoder-only Transformer 参数量？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-rope.md",
+    "id": "arch-rope",
+    "book": "llm-interview",
+    "title": "RoPE 为什么能编码相对位置？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/arch-swiglu.md",
+    "id": "arch-swiglu",
+    "book": "llm-interview",
+    "title": "SwiGLU 为什么比普通 ReLU FFN 常见？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/baichuan-rope-extrapolation.md",
+    "id": "baichuan-rope-extrapolation",
+    "book": "llm-interview",
+    "title": "百川智能：超长文本外推常见怎么做，RoPE 你怎么理解？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/kuaishou-gqa-mqa-mla.md",
+    "id": "kuaishou-gqa-mqa-mla",
+    "book": "llm-interview",
+    "title": "快手：除了 MHA，GQA / MQA / MLA 原理是什么？Decoder 的 QKV 从哪来？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/kuaishou-lora-ab-init.md",
+    "id": "kuaishou-lora-ab-init",
+    "book": "llm-interview",
+    "title": "快手：LoRA 的 A/B 矩阵一般怎么初始化，能否都全零？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/meituan-swiglu.md",
+    "id": "meituan-swiglu",
+    "book": "llm-interview",
+    "title": "美团秋招二面：SwiGLU 的公式是什么，相对 ReLU / GELU 强在哪？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/minimax-param-breakdown.md",
+    "id": "minimax-param-breakdown",
+    "book": "llm-interview",
+    "title": "MiniMax：大模型参数量在各部分大概怎么拆？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/tencent-lora-ab-init.md",
+    "id": "tencent-lora-ab-init",
+    "book": "llm-interview",
+    "title": "腾讯混元：LoRA 的 A/B 矩阵如何初始化？还有哪些初始化？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/arch/tencent-moe-vs-dense.md",
+    "id": "tencent-moe-vs-dense",
+    "book": "llm-interview",
+    "title": "腾讯混元一面：MoE 相对 Dense 赚在哪、亏在哪？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/coding/code-sizing.md",
+    "id": "code-sizing",
+    "book": "llm-interview",
+    "title": "白板：给定模型配置，如何快速算参数量、训练显存和 KV Cache？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-length-hacking.md",
+    "id": "data-length-hacking",
+    "book": "llm-interview",
+    "title": "RL 后输出长度从 2k 变 8k，如何判断是真推理提升还是 Length Hacking？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-minhash.md",
+    "id": "data-minhash",
+    "book": "llm-interview",
+    "title": "MinHash / LSH 为什么能做近重复去重？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-reward-eval-flat.md",
+    "id": "data-reward-eval-flat",
+    "book": "llm-interview",
+    "title": "RL reward 涨但真正 Eval 不涨，怎么 Debug？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-rlvr-select.md",
+    "id": "data-rlvr-select",
+    "book": "llm-interview",
+    "title": "给 100 万 RLVR prompts，只能选 10 万，怎么选？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-sft-pipeline.md",
+    "id": "data-sft-pipeline",
+    "book": "llm-interview",
+    "title": "如何从零构建高质量 SFT 数据？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-synthetic-self-contamination.md",
+    "id": "data-synthetic-self-contamination",
+    "book": "llm-interview",
+    "title": "如何检测合成数据自污染（模型生成→再训练的反馈环）？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/data/data-verifier.md",
+    "id": "data-verifier",
+    "book": "llm-interview",
+    "title": "Verifier 95% 准确率，可以放心跑 RL 吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-adamw.md",
+    "id": "fund-adamw",
+    "book": "llm-interview",
+    "title": "Adam vs AdamW；为什么 Decoupled Weight Decay？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-ann.md",
+    "id": "fund-ann",
+    "book": "llm-interview",
+    "title": "HNSW / IVF / PQ 各自是什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-bellman.md",
+    "id": "fund-bellman",
+    "book": "llm-interview",
+    "title": "Bellman Equation、V、Q、Advantage 的关系？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-bernoulli-adv-var.md",
+    "id": "fund-bernoulli-adv-var",
+    "book": "llm-interview",
+    "title": "0-1 奖励的方差何时最大？这对 GRPO 有效组意味着什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-gradclip.md",
+    "id": "fund-gradclip",
+    "book": "llm-interview",
+    "title": "Gradient Clipping 和 PPO Clipping 是一回事吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-is.md",
+    "id": "fund-is",
+    "book": "llm-interview",
+    "title": "Importance Sampling 为什么成立？为什么 variance 会爆？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-pg-baseline.md",
+    "id": "fund-pg-baseline",
+    "book": "llm-interview",
+    "title": "Policy Gradient 为什么可以减 Baseline？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/fund-shaping.md",
+    "id": "fund-shaping",
+    "book": "llm-interview",
+    "title": "Reward Normalization / Potential-based Shaping 会不会改变最优 Policy？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/fundamentals/meituan-attention-scale-dk.md",
+    "id": "meituan-attention-scale-dk",
+    "book": "llm-interview",
+    "title": "美团：Attention 为什么要除以 $\\sqrt{d_k}$？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/multimodal/sensetime-cot-overdesign.md",
+    "id": "sensetime-cot-overdesign",
+    "book": "llm-interview",
+    "title": "商汤：为什么要思维链，怎样判断是不是过度设计？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/papers/paper-ds-taubench.md",
+    "id": "paper-ds-taubench",
+    "book": "llm-interview",
+    "title": "$\\tau$-bench 的 Airline / Retail 有多少题？$\\mathrm{pass}^{k}$ 和 $\\mathrm{pass@}k$ 为什么方向相反？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/ali-dapo-allcorrect.md",
+    "id": "ali-dapo-allcorrect",
+    "book": "llm-interview",
+    "title": "Group 里样本全对或全错时 GRPO 会怎样？DAPO 怎么处理？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/ali-grpo-kl-vs-ppo.md",
+    "id": "ali-grpo-kl-vs-ppo",
+    "book": "llm-interview",
+    "title": "GRPO 的 KL 和 PPO 的 KL 是一模一样的吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/ali-grpo-loss.md",
+    "id": "ali-grpo-loss",
+    "book": "llm-interview",
+    "title": "阿里算法面：请写出 GRPO Loss，并解释每一项",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/ant-why-dpo-under-resource.md",
+    "id": "ant-why-dpo-under-resource",
+    "book": "llm-interview",
+    "title": "蚂蚁日常实习：资源受限时为何选用 DPO？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/baidu-dpo-chosen-curve.md",
+    "id": "baidu-dpo-chosen-curve",
+    "book": "llm-interview",
+    "title": "百度文心：DPO 对齐训练曲线长什么样？正例概率一定会上升吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/baidu-ppo-clip-sign.md",
+    "id": "baidu-ppo-clip-sign",
+    "book": "llm-interview",
+    "title": "百度文心 RL 后训练：PPO clip 在优势为正/负时分别限制哪一侧？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/byte-agentic-rl-process-reward.md",
+    "id": "byte-agentic-rl-process-reward",
+    "book": "llm-interview",
+    "title": "字节 27 暑期：GRPO 在 Agentic RL 场景下如何设计过程打分？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/byte-grpo-all-same-zero-adv.md",
+    "id": "byte-grpo-all-same-zero-adv",
+    "book": "llm-interview",
+    "title": "字节大模型算法：GRPO 一组全对或全错时为什么这一步不起作用？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/kuaishou-posttrain-after-sft.md",
+    "id": "kuaishou-posttrain-after-sft",
+    "book": "llm-interview",
+    "title": "快手：SFT 之后常见还有哪些 Post-Training，各自目的是什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-credit-value.md",
+    "id": "pt-credit-value",
+    "book": "llm-interview",
+    "title": "如果 Value Model 非常准确，Credit Assignment 还重要吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-dpo-beta.md",
+    "id": "pt-dpo-beta",
+    "book": "llm-interview",
+    "title": "DPO 的 β 到底控制什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-dpo-chosen.md",
+    "id": "pt-dpo-chosen",
+    "book": "llm-interview",
+    "title": "DPO 训练后 chosen response 的概率一定会上升吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-dpo-derive.md",
+    "id": "pt-dpo-derive",
+    "book": "llm-interview",
+    "title": "从 KL-Regularized RL 完整推导 DPO",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-dpo-vs-ppo.md",
+    "id": "pt-dpo-vs-ppo",
+    "book": "llm-interview",
+    "title": "DPO vs PPO：tradeoff 是什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-drgrpo.md",
+    "id": "pt-drgrpo",
+    "book": "llm-interview",
+    "title": "Dr.GRPO 认为 vanilla GRPO 有哪些 bias？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-four-models.md",
+    "id": "pt-four-models",
+    "book": "llm-interview",
+    "title": "Actor、Reference、Reward Model、Critic 分别做什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-gae.md",
+    "id": "pt-gae",
+    "book": "llm-interview",
+    "title": "从 TD residual 推导 GAE，并解释 $\\gamma$、$\\lambda$",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-grounded-rlvr-reward-staging.md",
+    "id": "pt-grounded-rlvr-reward-staging",
+    "book": "llm-interview",
+    "title": "RAG / Grounded QA 的 RLVR 如何同时奖励答案正确、引用充分、证据一致和恰当拒答？为什么适合分阶段训练？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-grpo-group-size.md",
+    "id": "pt-grpo-group-size",
+    "book": "llm-interview",
+    "title": "GRPO 的 Group Size 越大越好吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-grpo-variance.md",
+    "id": "pt-grpo-variance",
+    "book": "llm-interview",
+    "title": "GRPO 一组全对/全错会怎样？这对 RL 数据意味着什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-grpo.md",
+    "id": "pt-grpo",
+    "book": "llm-interview",
+    "title": "GRPO 是什么？为什么能去掉 Critic？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-gspo.md",
+    "id": "pt-gspo",
+    "book": "llm-interview",
+    "title": "GSPO 为什么改成 sequence-level importance ratio？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-multineg-dpo.md",
+    "id": "pt-multineg-dpo",
+    "book": "llm-interview",
+    "title": "一个正样本配多个负样本，DPO 能学到负样本之间的排序吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-online-freshness.md",
+    "id": "pt-online-freshness",
+    "book": "llm-interview",
+    "title": "On-policy RL 为什么强调 rollout freshness？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-ppo-clip.md",
+    "id": "pt-ppo-clip",
+    "book": "llm-interview",
+    "title": "PPO clipped objective 为什么长这样？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-pref-family.md",
+    "id": "pt-pref-family",
+    "book": "llm-interview",
+    "title": "SimPO、KTO、ORPO 分别在解决什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-reward-design.md",
+    "id": "pt-reward-design",
+    "book": "llm-interview",
+    "title": "Reward Design：为什么 Reward 越多不一定越好？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-rm.md",
+    "id": "pt-rm",
+    "book": "llm-interview",
+    "title": "Reward Model 如何训练？为什么 RM accuracy 高仍会 Reward Hacking？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-sft-objective.md",
+    "id": "pt-sft-objective",
+    "book": "llm-interview",
+    "title": "SFT 到底优化什么？Loss mask 应如何定义？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-tool-mask.md",
+    "id": "pt-tool-mask",
+    "book": "llm-interview",
+    "title": "Agent SFT 中，Tool call 和 Tool response 哪些 token 应该算 loss？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/posttrain/pt-trust-region-vs-drift-kl.md",
+    "id": "pt-trust-region-vs-drift-kl",
+    "book": "llm-interview",
+    "title": "PPO 里的 Trust-Region KL 和 Drift KL 是同一个东西吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/swe-agent/swe-multi-worktree-patch-merge.md",
+    "id": "swe-multi-worktree-patch-merge",
+    "book": "llm-interview",
+    "title": "多 worktree 并行改同一仓库时，Agent 如何合并 patch 并处理冲突？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/swe-agent/swe-production-success.md",
+    "id": "swe-production-success",
+    "book": "llm-interview",
+    "title": "如何把离线 resolve rate 转为可靠的线上 Coding Agent quality / cost 指标？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/ant-flash-attention.md",
+    "id": "ant-flash-attention",
+    "book": "llm-interview",
+    "title": "蚂蚁：FlashAttention 原理是什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/baichuan-flash-attn.md",
+    "id": "baichuan-flash-attn",
+    "book": "llm-interview",
+    "title": "百川智能：FlashAttention 是什么，能提多少性能？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/infra-rl-rollout-optimize.md",
+    "id": "infra-rl-rollout-optimize",
+    "book": "llm-interview",
+    "title": "AI Infra 实习：RL rollout 有哪些优化？量化、异步分别换什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/infra-rl-weight-sync.md",
+    "id": "infra-rl-weight-sync",
+    "book": "llm-interview",
+    "title": "AI Infra 实习：训练完的权重怎么同步到推理引擎？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/kuaishou-tool-chain-latency.md",
+    "id": "kuaishou-tool-chain-latency",
+    "book": "llm-interview",
+    "title": "快手：三工具高 QPS 链路延迟高，从哪些维度优化？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/meituan-grpo-stage-bottleneck.md",
+    "id": "meituan-grpo-stage-bottleneck",
+    "book": "llm-interview",
+    "title": "美团二面：GRPO 哪个阶段最耗时？rollout 采样卡在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sensetime-model-route-fallback.md",
+    "id": "sensetime-model-route-fallback",
+    "book": "llm-interview",
+    "title": "商汤二面：多模型如何按视频场景路由？全挂了怎么 fallback 和回切？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-admission-control.md",
+    "id": "sys-admission-control",
+    "book": "llm-interview",
+    "title": "容量不足时，LLM API 该拒绝、排队、降级还是缩短预算？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-checkpoint.md",
+    "id": "sys-checkpoint",
+    "book": "llm-interview",
+    "title": "Activation Checkpointing 的 Compute–Memory Tradeoff 是什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-cont-batch.md",
+    "id": "sys-cont-batch",
+    "book": "llm-interview",
+    "title": "Continuous Batching 为什么提升吞吐？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-distributed-hang.md",
+    "id": "sys-distributed-hang",
+    "book": "llm-interview",
+    "title": "分布式训练卡住没有报错，怎样判断是 NCCL 问题还是代码路径不一致？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-dualpipe.md",
+    "id": "sys-dualpipe",
+    "book": "llm-interview",
+    "title": "DualPipe 如何压 PP bubble？和 1F1B 差在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-elastic-resume-reshard.md",
+    "id": "sys-elastic-resume-reshard",
+    "book": "llm-interview",
+    "title": "弹性扩缩容后如何 Resume，并对模型状态 Reshard？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-flash.md",
+    "id": "sys-flash",
+    "book": "llm-interview",
+    "title": "FlashAttention 为什么更快？是不是近似 Attention？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-kv-fair-allocation.md",
+    "id": "sys-kv-fair-allocation",
+    "book": "llm-interview",
+    "title": "动态长度、多分支 sampling 的 KV Cache 如何分配，为什么要有 block / page、copy-on-write 和 preemption 策略？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-mixed-traffic-scheduler.md",
+    "id": "sys-mixed-traffic-scheduler",
+    "book": "llm-interview",
+    "title": "长 prompt 把聊天请求 TTFT 打爆时，continuous batching 与 chunked prefill 怎么设计 / 调参？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-moe-alltoall-overlap.md",
+    "id": "sys-moe-alltoall-overlap",
+    "book": "llm-interview",
+    "title": "MoE 的 All-to-All 如何与 GEMM 重叠？什么会挡住 overlap？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-moe-grouped-gemm.md",
+    "id": "sys-moe-grouped-gemm",
+    "book": "llm-interview",
+    "title": "MoE 专家计算为什么要用 Grouped GEMM，而不是 for-loop 或 pad 成 batched GEMM？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-moe-node-limited-routing.md",
+    "id": "sys-moe-node-limited-routing",
+    "book": "llm-interview",
+    "title": "DeepSeek-V3 的 device-limited routing 怎么限制跨机通信？实现上先选节点还是先选专家？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-parallel.md",
+    "id": "sys-parallel",
+    "book": "llm-interview",
+    "title": "DP / TP / PP / CP / EP 分别切什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-prefill-decode.md",
+    "id": "sys-prefill-decode",
+    "book": "llm-interview",
+    "title": "Prefill 为什么更 Compute-Bound，Decode 为什么更 Memory-Bound？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-prefix-cache-isolation.md",
+    "id": "sys-prefix-cache-isolation",
+    "book": "llm-interview",
+    "title": "共享 Prefix Cache 如何省钱但不串数据？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-prefix-cache.md",
+    "id": "sys-prefix-cache",
+    "book": "llm-interview",
+    "title": "Prefix Cache 的命中条件和风险？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-engine-kv-util.md",
+    "id": "sys-rl-engine-kv-util",
+    "book": "llm-interview",
+    "title": "vLLM / SGLang 怎么看利用率？RL 训练里 KV cache 利用率看什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-group-n.md",
+    "id": "sys-rl-group-n",
+    "book": "llm-interview",
+    "title": "GRPO 的组大小 $n$ 为什么必须大于 1？太大或太小会怎样？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-grpo-loop-roles.md",
+    "id": "sys-rl-grpo-loop-roles",
+    "book": "llm-interview",
+    "title": "讲一遍 GRPO 一步：Actor、Ref、Reward、Rollout 各干什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-infra.md",
+    "id": "sys-rl-infra",
+    "book": "llm-interview",
+    "title": "为什么 RL Systems 比 SFT 复杂？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-longer-after-rl.md",
+    "id": "sys-rl-longer-after-rl",
+    "book": "llm-interview",
+    "title": "为什么做完 GRPO 之后，模型回答往往越来越长？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-memory.md",
+    "id": "sys-rl-memory",
+    "book": "llm-interview",
+    "title": "7B 模型做 GRPO，显存主要花在哪里？怎么优化？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-multinode-bwd.md",
+    "id": "sys-rl-multinode-bwd",
+    "book": "llm-interview",
+    "title": "多机多卡 RL 训练时反向传播是怎么走的？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-response-mask.md",
+    "id": "sys-rl-response-mask",
+    "book": "llm-interview",
+    "title": "GRPO / PPO 的损失为什么只加在 response token 上？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-rollout-admission.md",
+    "id": "sys-rl-rollout-admission",
+    "book": "llm-interview",
+    "title": "RL 训练如何准入、丢弃或重试 rollout，而不是把轨迹一股脑塞进 batch？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-rl-why-vllm-rollout.md",
+    "id": "sys-rl-why-vllm-rollout",
+    "book": "llm-interview",
+    "title": "为什么 LLM RL 的 rollout 要用 vLLM，而不是训练图自己 generate？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-serving-metrics.md",
+    "id": "sys-serving-metrics",
+    "book": "llm-interview",
+    "title": "TTFT、TPOT、Throughput、Goodput 分别是什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-staleness.md",
+    "id": "sys-staleness",
+    "book": "llm-interview",
+    "title": "Policy Staleness 是什么？为什么 Agent RL 更严重？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-structured-decoding-contract.md",
+    "id": "sys-structured-decoding-contract",
+    "book": "llm-interview",
+    "title": "JSON Schema / Grammar constrained decoding 能保证什么，不能保证什么？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-verl-dynamic-bsz.md",
+    "id": "sys-verl-dynamic-bsz",
+    "book": "llm-interview",
+    "title": "veRL 的 `use_dynamic_bsz` 和写死 micro-batch 有何不同？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-verl-hybridengine.md",
+    "id": "sys-verl-hybridengine",
+    "book": "llm-interview",
+    "title": "veRL 的 HybridEngine 解决什么？和 OpenRLHF 把 vLLM 单独拉一套有何不同？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-verl-vs-slime.md",
+    "id": "sys-verl-vs-slime",
+    "book": "llm-interview",
+    "title": "你用过 veRL 和 slime，面试官问两者差在哪、什么时候换？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/sys-zero.md",
+    "id": "sys-zero",
+    "book": "llm-interview",
+    "title": "ZeRO-1/2/3 分别 Shard 什么？和 FSDP 什么关系？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/tencent-sft-parameter-gpu-utilization.md",
+    "id": "tencent-sft-parameter-gpu-utilization",
+    "book": "llm-interview",
+    "title": "腾讯 WXG：如何估算 SFT 参数量与显卡利用率？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/llm-interview/questions/systems/tencent-zero3-qwen72b-mem.md",
+    "id": "tencent-zero3-qwen72b-mem",
+    "book": "llm-interview",
+    "title": "腾讯混元：ZeRO-3 微调 Qwen2-72B 时如何估算单卡显存？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/ml-101/questions/classical-models/ml101-kernel.md",
+    "id": "ml101-kernel",
+    "book": "ml-101",
+    "title": "核技巧是什么？RBF 核的 gamma 有什么影响？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/ml-101/questions/ensemble/ml101-xgboost.md",
+    "id": "ml101-xgboost",
+    "book": "ml-101",
+    "title": "XGBoost 相比基础 GBDT 增加了什么？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/ml-101/questions/generalization/ml101-bias-variance.md",
+    "id": "ml101-bias-variance",
+    "book": "ml-101",
+    "title": "偏差和方差分别是什么？能推一下误差分解吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/ml-101/questions/metrics/ml101-calibration.md",
+    "id": "ml101-calibration",
+    "book": "ml-101",
+    "title": "概率校准是什么？AUC 高还需要校准吗？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-cache-consistency.md",
+    "id": "sd-cache-consistency",
+    "book": "system-design",
+    "title": "缓存：一致性、击穿和热点分别怎么处理？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-consistency-transactions.md",
+    "id": "sd-consistency-transactions",
+    "book": "system-design",
+    "title": "一致性与事务：什么时候需要串行化或共识？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-multiregion-recovery.md",
+    "id": "sd-multiregion-recovery",
+    "book": "system-design",
+    "title": "多机房与容灾：RPO、RTO 和脑裂怎么讲？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-observability-rollout.md",
+    "id": "sd-observability-rollout",
+    "book": "system-design",
+    "title": "监控、灰度和回滚：怎样证明设计真的可用？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-partition-replication.md",
+    "id": "sd-partition-replication",
+    "book": "system-design",
+    "title": "分片和复制：如何扩容，又如何处理热点？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-queue-delivery.md",
+    "id": "sd-queue-delivery",
+    "book": "system-design",
+    "title": "消息队列：至少一次投递怎样做到业务去重？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-rate-limit-overload.md",
+    "id": "sd-rate-limit-overload",
+    "book": "system-design",
+    "title": "限流、准入和背压：如何阻止过载扩散？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/fundamentals/sd-slo-tail-latency.md",
+    "id": "sd-slo-tail-latency",
+    "book": "system-design",
+    "title": "可用性和延迟：怎样把 SLO 变成架构约束？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-chat.md",
+    "id": "sd-chat",
+    "book": "system-design",
+    "title": "设计聊天系统：消息顺序、多设备与离线补取",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-feed.md",
+    "id": "sd-feed",
+    "book": "system-design",
+    "title": "设计 Feed：写扩散、读扩散与大 V 热点",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-file-storage.md",
+    "id": "sd-file-storage",
+    "book": "system-design",
+    "title": "设计文件存储：大文件上传、权限与版本",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-job-scheduler.md",
+    "id": "sd-job-scheduler",
+    "book": "system-design",
+    "title": "设计任务调度平台：重试、租约和重复执行",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-notifications.md",
+    "id": "sd-notifications",
+    "book": "system-design",
+    "title": "设计通知系统：投递、去重、偏好与退订",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-reservation-payment.md",
+    "id": "sd-reservation-payment",
+    "book": "system-design",
+    "title": "设计预约和支付流程：保留、超时与对账",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/general/sd-url-shortener.md",
+    "id": "sd-url-shortener",
+    "book": "system-design",
+    "title": "设计短链服务：生成、重定向与过期",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/llm/sd-agent.md",
+    "id": "sd-agent",
+    "book": "system-design",
+    "title": "生产 Agent：工具权限、状态机与预算",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/llm/sd-eval-multimodal.md",
+    "id": "sd-eval-multimodal",
+    "book": "system-design",
+    "title": "LLM 评测与多模态应用：如何覆盖质量、成本和故障？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/llm/sd-rag.md",
+    "id": "sd-rag",
+    "book": "system-design",
+    "title": "生产 RAG：检索、权限、新鲜度与引用",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/llm/sd-serving.md",
+    "id": "sd-serving",
+    "book": "system-design",
+    "title": "LLM 推理服务：排队、KV、流式输出与取消",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/method/sd-api-data-contract.md",
+    "id": "sd-api-data-contract",
+    "book": "system-design",
+    "title": "接口和数据模型：怎样把架构图讲具体？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/method/sd-capacity-estimation.md",
+    "id": "sd-capacity-estimation",
+    "book": "system-design",
+    "title": "容量估算：QPS、存储、带宽与并发怎么算？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/method/sd-design-review.md",
+    "id": "sd-design-review",
+    "book": "system-design",
+    "title": "设计评审：怎样发现风险并提出可落地的修改？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/method/sd-interview-plan.md",
+    "id": "sd-interview-plan",
+    "book": "system-design",
+    "title": "45 分钟 System Design：怎样组织回答？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/ml/sd-feature-platform.md",
+    "id": "sd-feature-platform",
+    "book": "system-design",
+    "title": "特征平台：事件时间、回填与训练服务一致性",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/ml/sd-fraud-moderation.md",
+    "id": "sd-fraud-moderation",
+    "book": "system-design",
+    "title": "风控与内容审核：阈值、人审和延迟如何协调？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/ml/sd-recommendation.md",
+    "id": "sd-recommendation",
+    "book": "system-design",
+    "title": "推荐系统：从业务目标到召回、排序和反馈",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/system-design/questions/ml/sd-training-platform.md",
+    "id": "sd-training-platform",
+    "book": "system-design",
+    "title": "训练与模型发布平台：数据、作业、产物和回滚",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-startup/questions/harvey/harvey-drive-acl.md",
+    "id": "harvey-drive-acl",
+    "book": "us-startup",
+    "title": "Harvey：网盘加权限，或一套律所 RAG",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-startup/questions/posttrain/fireworks-rft.md",
+    "id": "fireworks-rft",
+    "book": "us-startup",
+    "title": "Fireworks：客户只写一个打分函数，没有偏好对",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-startup/questions/posttrain/scale-posttrain-oral.md",
+    "id": "scale-posttrain-oral",
+    "book": "us-startup",
+    "title": "Scale：MLE 第一面是后训练八股，公开帖没写出问了哪几条",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-startup/questions/posttrain/scale-process-outcome.md",
+    "id": "scale-process-outcome",
+    "book": "us-startup",
+    "title": "Scale 岗位：多 agent 同时学过程奖励和结果奖励",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-startup/questions/posttrain/snorkel-iterative-dpo.md",
+    "id": "snorkel-iterative-dpo",
+    "book": "us-startup",
+    "title": "Snorkel：五条回复取最好和最差，做三轮 DPO",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-startup/questions/scale/scale-prompt-hash-debug.md",
+    "id": "scale-prompt-hash-debug",
+    "book": "us-startup",
+    "title": "Scale AI：一段能调模型的代码，输出空了，查 prompt 的 hash",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-best-of-n.md",
+    "id": "align-best-of-n",
+    "book": "us-tech",
+    "title": "对齐：Best-of-N 推理时对齐，成本与 RM over-optimize",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-grpo.md",
+    "id": "align-grpo",
+    "book": "us-tech",
+    "title": "对齐：GRPO / group relative，相对 PPO 少了 critic",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-ipo.md",
+    "id": "align-ipo",
+    "book": "us-tech",
+    "title": "对齐：IPO 相对 DPO",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-length-bias.md",
+    "id": "align-length-bias",
+    "book": "us-tech",
+    "title": "对齐：偏好学习里的长度偏见",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-llm-judge.md",
+    "id": "align-llm-judge",
+    "book": "us-tech",
+    "title": "对齐：LLM-as-judge 偏差（位置、自偏好）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-online-dpo.md",
+    "id": "align-online-dpo",
+    "book": "us-tech",
+    "title": "对齐：在线 / iterative DPO，策略滞后",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-over-refuse.md",
+    "id": "align-over-refuse",
+    "book": "us-tech",
+    "title": "对齐：过度拒答 vs 有害遵从，评测切片怎么切",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-process-reward.md",
+    "id": "align-process-reward",
+    "book": "us-tech",
+    "title": "对齐：过程奖励 vs 结果奖励，步骤标注噪声",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-red-team.md",
+    "id": "align-red-team",
+    "book": "us-tech",
+    "title": "对齐：红队和自动化攻击，覆盖率和过拟合评测模型",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-reward-hack.md",
+    "id": "align-reward-hack",
+    "book": "us-tech",
+    "title": "对齐：reward hacking 例子（冗长、谄媚、格式刷分）怎么发现",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-reward-model.md",
+    "id": "align-reward-model",
+    "book": "us-tech",
+    "title": "对齐：奖励模型怎么训、校准、Bradley-Terry 噪声",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-rft.md",
+    "id": "align-rft",
+    "book": "us-tech",
+    "title": "对齐：Reinforcement Fine-Tuning / RLVR，可验证奖励接到策略",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-rlaif.md",
+    "id": "align-rlaif",
+    "book": "us-tech",
+    "title": "对齐：RLAIF，批评模型隔离，宪法条款要有反例",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-safety-tax.md",
+    "id": "align-safety-tax",
+    "book": "us-tech",
+    "title": "对齐：安全对齐掉能力，怎么测",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/alignment/align-sycophancy.md",
+    "id": "align-sycophancy",
+    "book": "us-tech",
+    "title": "对齐：谄媚用户错误观点，和 helpful 目标冲突",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-agent-eval.md",
+    "id": "amazon-agent-eval",
+    "book": "us-tech",
+    "title": "Amazon：企业 agent 怎么评，任务成功、越权、引用？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-cold-start.md",
+    "id": "amazon-cold-start",
+    "book": "us-tech",
+    "title": "Amazon：冷启动商品 / 新 query，推荐和搜索怎么共用信号？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-feature-store.md",
+    "id": "amazon-feature-store",
+    "book": "us-tech",
+    "title": "Amazon：特征存储一致性，训练/服务特征偏移？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-guardrails.md",
+    "id": "amazon-guardrails",
+    "book": "us-tech",
+    "title": "Amazon Bedrock Guardrails：拦截应发生在生成前还是后，和模型对齐的分工？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-kendra-hybrid.md",
+    "id": "amazon-kendra-hybrid",
+    "book": "us-tech",
+    "title": "Amazon：关键词 + 向量混合检索，何时 BM25 赢 embedding？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-nova.md",
+    "id": "amazon-nova",
+    "book": "us-tech",
+    "title": "Amazon：Nova / Titan 当 Bedrock 模型族，怎么评、怎么路由？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-p99-stream.md",
+    "id": "amazon-p99-stream",
+    "book": "us-tech",
+    "title": "Amazon：流式生成的 p99，首 token 和整段完成为什么要拆开报？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-rerank-llm.md",
+    "id": "amazon-rerank-llm",
+    "book": "us-tech",
+    "title": "Amazon：LLM rerank 和 embedding 召回怎么叠？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-titan-eval.md",
+    "id": "amazon-titan-eval",
+    "book": "us-tech",
+    "title": "Amazon：Bedrock/Titan 类应用怎么评，不能只报 BLEU？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/amazon/amazon-two-tower.md",
+    "id": "amazon-two-tower",
+    "book": "us-tech",
+    "title": "Amazon：双塔召回，训练对齐和 serving 近似，ANN 掉点怎么补？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-agent-eval.md",
+    "id": "anthropic-agent-eval",
+    "book": "us-tech",
+    "title": "Anthropic：OSWorld / WebArena 类公开基准怎么讲？污染和成功定义卡在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-computer-rl.md",
+    "id": "anthropic-computer-rl",
+    "book": "us-tech",
+    "title": "Anthropic：computer use 上动作级和轨迹级反馈差在哪？确认框为什么不能训进策略？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-context-distill.md",
+    "id": "anthropic-context-distill",
+    "book": "us-tech",
+    "title": "Anthropic：context distillation 把原则压进模型，和 system prompt 差在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-extended-thinking.md",
+    "id": "anthropic-extended-thinking",
+    "book": "us-tech",
+    "title": "Anthropic：extended thinking 的推理预算、延迟，以及为什么不能把 CoT 当产品日志？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-hh-rlhf.md",
+    "id": "anthropic-hh-rlhf",
+    "book": "us-tech",
+    "title": "Anthropic：HH-RLHF 里 helpful 和 harmless 冲突时，偏好怎么采？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-json-schema.md",
+    "id": "anthropic-json-schema",
+    "book": "us-tech",
+    "title": "Anthropic：structured output 约束解码和事后再解析，各挡哪类错误？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-long-context.md",
+    "id": "anthropic-long-context",
+    "book": "us-tech",
+    "title": "Anthropic：长上下文评测为什么大海捞针不够，位置偏差怎么测？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-mcp.md",
+    "id": "anthropic-mcp",
+    "book": "us-tech",
+    "title": "Anthropic：MCP 当 tool 总线，与 function calling 的职责区别在哪？不可信服务器怎么防？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-memory.md",
+    "id": "anthropic-memory",
+    "book": "us-tech",
+    "title": "Anthropic：跨会话记忆什么进检索、什么不该持久化？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-mm-harm.md",
+    "id": "anthropic-mm-harm",
+    "book": "us-tech",
+    "title": "Anthropic：多模态越狱图里藏指令，和纯文本 injection 差在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-pdf.md",
+    "id": "anthropic-pdf",
+    "book": "us-tech",
+    "title": "Anthropic：PDF 是页图还是文本层？引用怎么落到页？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-pref-bt.md",
+    "id": "anthropic-pref-bt",
+    "book": "us-tech",
+    "title": "Anthropic：Bradley-Terry 偏好模型，平局和噪声标签怎么处理？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-pref-collect.md",
+    "id": "anthropic-pref-collect",
+    "book": "us-tech",
+    "title": "Anthropic：偏好数据怎么采？双盲、平局、多轴 HH",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-prompt-cache.md",
+    "id": "anthropic-prompt-cache",
+    "book": "us-tech",
+    "title": "Anthropic：prompt caching 为什么要求前缀稳定，breakpoint 该打在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-prompt-injection.md",
+    "id": "anthropic-prompt-injection",
+    "book": "us-tech",
+    "title": "Anthropic：prompt injection 碰上 tool 调用，authorization checks 应该放在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-rlaif.md",
+    "id": "anthropic-rlaif",
+    "book": "us-tech",
+    "title": "Anthropic：RLAIF 和 RLHF 的人在环里位置差在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-streaming-tools.md",
+    "id": "anthropic-streaming-tools",
+    "book": "us-tech",
+    "title": "Anthropic：流式 tool 调用怎么处理 partial JSON、用户取消和幂等？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/anthropic/anthropic-xml-prompt.md",
+    "id": "anthropic-xml-prompt",
+    "book": "us-tech",
+    "title": "Anthropic：为什么偏爱 XML 标签组织 tool / 条款，解析失败怎么降级？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-afm-eval.md",
+    "id": "apple-afm-eval",
+    "book": "us-tech",
+    "title": "Apple：on-device LLM 怎么评，延迟、耗电、隐私，为什么不能只报 BLEU？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-ane.md",
+    "id": "apple-ane",
+    "book": "us-tech",
+    "title": "Apple：Neural Engine 约束（静态 shape、算子白名单）对 Transformer 设计的影响？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-diff-privacy.md",
+    "id": "apple-diff-privacy",
+    "book": "us-tech",
+    "title": "Apple：differential privacy 在个性化语言模型里怎么讲 ε，和「数据不出设备」的关系？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-foundation-models.md",
+    "id": "apple-foundation-models",
+    "book": "us-tech",
+    "title": "Apple：Foundation Models 公开叙事怎么讲，on-device 和云各自干什么、capability limits 在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-multimodal.md",
+    "id": "apple-multimodal",
+    "book": "us-tech",
+    "title": "Apple：图文 / 屏幕理解 grounding，引用的是像素区域还是 OCR 文本？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-personalize.md",
+    "id": "apple-personalize",
+    "book": "us-tech",
+    "title": "Apple：个性化不能上传全量私有上下文，adapter / 本地检索怎么选？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-rank-adapter.md",
+    "id": "apple-rank-adapter",
+    "book": "us-tech",
+    "title": "Apple：low-rank adapter 做个性化，和检索怎么选，数据如何不出设备？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-siri-latency.md",
+    "id": "apple-siri-latency",
+    "book": "us-tech",
+    "title": "Apple：Siri 语音链路延迟预算，流式 TTS vs 等完整答案？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-spec-edge.md",
+    "id": "apple-spec-edge",
+    "book": "us-tech",
+    "title": "Apple：on-device speculative decoding 值得上吗，草稿模型放哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-token-prune.md",
+    "id": "apple-token-prune",
+    "book": "us-tech",
+    "title": "Apple：视觉 token 剪枝 / 合并，质量和延迟怎么折？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/apple/apple-vision-edge.md",
+    "id": "apple-vision-edge",
+    "book": "us-tech",
+    "title": "Apple：on-device 视觉 token 预算和 ANE 静态 shape 怎么卡？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-ads-rank.md",
+    "id": "design-ads-rank",
+    "book": "us-tech",
+    "title": "设计：广告预测与拍卖，校准、延迟、探索",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-agent-budget.md",
+    "id": "design-agent-budget",
+    "book": "us-tech",
+    "title": "设计：Agent 的步数与美元预算，以及降级到无工具",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-agent-harness.md",
+    "id": "design-agent-harness",
+    "book": "us-tech",
+    "title": "设计：Agent harness（工具、沙箱、预算、确认框）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-browser-agent.md",
+    "id": "design-browser-agent",
+    "book": "us-tech",
+    "title": "设计：浏览器 agent 的沙箱、确认与选择器脆弱",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-eval-agent.md",
+    "id": "design-eval-agent",
+    "book": "us-tech",
+    "title": "设计：Agent 评测平台——任务图、重放、非确定性",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-eval-platform.md",
+    "id": "design-eval-platform",
+    "book": "us-tech",
+    "title": "设计：LLM 评测平台（离线集、在线 A/B、人工抽查、污染）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-feature-store.md",
+    "id": "design-feature-store",
+    "book": "us-tech",
+    "title": "设计：特征平台，点查延迟、训练一致性",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-mm-assistant.md",
+    "id": "design-mm-assistant",
+    "book": "us-tech",
+    "title": "设计：multimodal 助手的引用区域与视觉 token 预算",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-mm-rag.md",
+    "id": "design-mm-rag",
+    "book": "us-tech",
+    "title": "设计：多模态 RAG——图向量、文本与 ACL",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-moderation.md",
+    "id": "design-moderation",
+    "book": "us-tech",
+    "title": "设计：内容安全分级，延迟、申诉、模型+规则",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-multimodal-prod.md",
+    "id": "design-multimodal-prod",
+    "book": "us-tech",
+    "title": "设计：multimodal 助手（图/屏/语音），模态延迟不齐",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-offline-eval.md",
+    "id": "design-offline-eval",
+    "book": "us-tech",
+    "title": "设计：LLM 离线评测平台（切片、人评、污染、regression checks）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-prod-rag.md",
+    "id": "design-prod-rag",
+    "book": "us-tech",
+    "title": "设计：生产 RAG（切片、新鲜度、权限、引用、p95）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-prompt-mgmt.md",
+    "id": "design-prompt-mgmt",
+    "book": "us-tech",
+    "title": "设计：prompt / 工具 schema 版本、灰度、回滚",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-recsys.md",
+    "id": "design-recsys",
+    "book": "us-tech",
+    "title": "设计：推荐系统召回-排序-重排，多目标与探索",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-search.md",
+    "id": "design-search",
+    "book": "us-tech",
+    "title": "设计：语义搜索 + 关键词，混合与拼写纠错",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-tool-prod.md",
+    "id": "design-tool-prod",
+    "book": "us-tech",
+    "title": "设计：生产 tool calling（超时、幂等、确认、审计）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/design/design-voice-agent.md",
+    "id": "design-voice-agent",
+    "book": "us-tech",
+    "title": "设计：语音 agent 的打断、端到端延迟、ASR 错误传播",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/gdm-ml-design.md",
+    "id": "gdm-ml-design",
+    "book": "us-tech",
+    "title": "Google DeepMind：分子（或其它科学）数据怎么做 ML design？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-block-attn.md",
+    "id": "google-block-attn",
+    "book": "us-tech",
+    "title": "Google：长序列注意力的 blockwise / ring IO，和 FlashAttention 什么关系",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-flamingo.md",
+    "id": "google-flamingo",
+    "book": "us-tech",
+    "title": "Google：Flamingo 用 Perceiver resampler 和交叉注意把视觉压进 LLM",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-flash-attention.md",
+    "id": "google-flash-attention",
+    "book": "us-tech",
+    "title": "Google/DeepMind 岗：FlashAttention 省的是 HBM 往返，不是 FLOPs 公式变了",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-gemini-longctx.md",
+    "id": "google-gemini-longctx",
+    "book": "us-tech",
+    "title": "Google：Gemini 长上下文怎么评、位置偏差和成本，别只报 1M",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-gemini-mm.md",
+    "id": "google-gemini-mm",
+    "book": "us-tech",
+    "title": "Google：Gemini 原生多模态，视觉 token、交错训练，OCR 还是像素",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-gqa-mqa.md",
+    "id": "google-gqa-mqa",
+    "book": "us-tech",
+    "title": "Google：MHA、MQA、GQA 怎么选？KV 显存差多少？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-jax-pjit.md",
+    "id": "google-jax-pjit",
+    "book": "us-tech",
+    "title": "Google：jax.pjit / shard_map 面试怎么讲 SPMD 和编译时切分",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-mm-sft.md",
+    "id": "google-mm-sft",
+    "book": "us-tech",
+    "title": "Google：多模态 SFT，交错图文、纯文本回退、灾难遗忘",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-moe-routing.md",
+    "id": "google-moe-routing",
+    "book": "us-tech",
+    "title": "Google：MoE 路由、容量因子和 decode 专家并行怎么落地",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-pali.md",
+    "id": "google-pali",
+    "book": "us-tech",
+    "title": "Google：PaLI / PaliGemma 多任务多语言视觉-语言，和 Gemini 差在哪",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-spec-decode.md",
+    "id": "google-spec-decode",
+    "book": "us-tech",
+    "title": "Google：投机解码怎么保证无损，和 Medusa / EAGLE 差在哪",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-tpu-decode.md",
+    "id": "google-tpu-decode",
+    "book": "us-tech",
+    "title": "Google：TPU 上 decode，MXU 吃不满、KV 带宽，和 GPU 怎么对照",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-tpu-llm.md",
+    "id": "google-tpu-llm",
+    "book": "us-tech",
+    "title": "Google：TPU 上训 Transformer，MXU、流水线和 GPU 三维并行怎么对照",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-tpu-mesh.md",
+    "id": "google-tpu-mesh",
+    "book": "us-tech",
+    "title": "Google：TPU mesh / 把 batch 和模型维切到芯片上，和 GPU 三维并行怎么类比",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-wide-deep.md",
+    "id": "google-wide-deep",
+    "book": "us-tech",
+    "title": "Google：Wide & Deep 记忆 vs 泛化，现在还怎么用这个直觉",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/google/google-youtube-rank.md",
+    "id": "google-youtube-rank",
+    "book": "us-tech",
+    "title": "Google：YouTube / 信息流排序 ML design（召回-粗排-精排-重排）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-fsdp-llm.md",
+    "id": "meta-fsdp-llm",
+    "book": "us-tech",
+    "title": "Meta：FSDP 训 LLM 的具体坑——prefetch、wrap policy、activation",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-gqa.md",
+    "id": "meta-llama-gqa",
+    "book": "us-tech",
+    "title": "Meta / Llama：为什么 70B 用 GQA？和 MHA 比 decode 省在哪？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-rope.md",
+    "id": "meta-llama-rope",
+    "book": "us-tech",
+    "title": "Meta：Llama 的 RoPE / 长上下文外推（NTK、YaRN 只需概念层）面试怎么讲",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-llama-vision.md",
+    "id": "meta-llama-vision",
+    "book": "us-tech",
+    "title": "Meta：Llama 3.2 Vision / Mllama——cross-attn 视觉编码器怎么接",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-multi-token.md",
+    "id": "meta-multi-token",
+    "book": "us-tech",
+    "title": "Meta：multi-token prediction 训练目标是什么，推理怎么用",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-newsfeed-rank.md",
+    "id": "meta-newsfeed-rank",
+    "book": "us-tech",
+    "title": "Meta：News Feed 排序，多目标（停留、互动、违规）怎么权衡",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-pack-seq.md",
+    "id": "meta-pack-seq",
+    "book": "us-tech",
+    "title": "Meta：sample packing、document boundaries、attention mask 的坑",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-ranking-logloss.md",
+    "id": "meta-ranking-logloss",
+    "book": "us-tech",
+    "title": "Meta：为什么排序常盯 logloss / 校准而不只是 AUC",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-segment-anything.md",
+    "id": "meta-segment-anything",
+    "book": "us-tech",
+    "title": "Meta：SAM 作为「提示分割」系统，数据和评测怎么设计",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-synth-sft.md",
+    "id": "meta-synth-sft",
+    "book": "us-tech",
+    "title": "Meta：合成 SFT 数据——自指令、教师模型、泄漏和多样性",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-toolformer.md",
+    "id": "meta-toolformer",
+    "book": "us-tech",
+    "title": "Meta：Toolformer 式自监督工具调用",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-vllm.md",
+    "id": "meta-vllm",
+    "book": "us-tech",
+    "title": "Meta：vLLM 伺候 Llama——PagedAttention 和 continuous batching 公开怎么讲",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/meta-yarn-ntk.md",
+    "id": "meta-yarn-ntk",
+    "book": "us-tech",
+    "title": "Meta：NTK / YaRN 长上下文外推，和改 rope_theta 差在哪",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/meta/p3a-meta-ml-foundations-optimizers-scaling-law-clustering.md",
+    "id": "p3a-meta-ml-foundations-optimizers-scaling-law-clustering",
+    "book": "us-tech",
+    "title": "Meta ML Foundations：优化器、Scaling Law、K-Means 与 GMM",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-autogen.md",
+    "id": "msft-autogen",
+    "book": "us-tech",
+    "title": "Microsoft：AutoGen / 多 agent 编排，失败、预算、和 SK 差别",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-bing-rank.md",
+    "id": "msft-bing-rank",
+    "book": "us-tech",
+    "title": "Microsoft：Bing / 搜索排序，LLM 重排和传统 LTR 怎么叠",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-copilot-ground.md",
+    "id": "msft-copilot-ground",
+    "book": "us-tech",
+    "title": "Microsoft：Copilot grounding（代码/文档检索），引用和权限",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-deepspeed-zero.md",
+    "id": "msft-deepspeed-zero",
+    "book": "us-tech",
+    "title": "Microsoft：DeepSpeed ZeRO 1/2/3 切的是什么状态，通信体积怎么变",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-orpo.md",
+    "id": "msft-orpo",
+    "book": "us-tech",
+    "title": "Microsoft：ORPO 相对 DPO/PPO，少了参考模型意味着什么",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-phi-data.md",
+    "id": "msft-phi-data",
+    "book": "us-tech",
+    "title": "Microsoft：Phi「教科书数据」质量 vs 规模，污染和评测切片",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/msft-ulysses.md",
+    "id": "msft-ulysses",
+    "book": "us-tech",
+    "title": "Microsoft：DeepSpeed Ulysses 序列并行，和 Megatron SP 对照",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-embedding-lm-head-distributed-sharding.md",
+    "id": "p3a-microsoft-embedding-lm-head-distributed-sharding",
+    "book": "us-tech",
+    "title": "Microsoft AI / Copilot：Embedding 与 LM Head 分片及通信",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/microsoft/p3a-microsoft-web-crawler-system-design.md",
+    "id": "p3a-microsoft-web-crawler-system-design",
+    "book": "us-tech",
+    "title": "Microsoft AI / Copilot：MAI 分布式爬虫：调度、礼貌与去重",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-chunked-prefill.md",
+    "id": "nvidia-chunked-prefill",
+    "book": "us-tech",
+    "title": "NVIDIA：chunked prefill 把长 prompt 切开和 decode 混部",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-cuda-graph.md",
+    "id": "nvidia-cuda-graph",
+    "book": "us-tech",
+    "title": "NVIDIA：CUDA Graph 在 decode 上的收益和动态 shape 限制",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flash-attn.md",
+    "id": "nvidia-flash-attn",
+    "book": "us-tech",
+    "title": "NVIDIA：FlashAttention IO 分析，SRAM tiling，为什么 decode 收益不同",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-flashinfer.md",
+    "id": "nvidia-flashinfer",
+    "book": "us-tech",
+    "title": "NVIDIA：FlashInfer 的 append KV、sampler，和 vLLM 什么关系",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-fp8-kv.md",
+    "id": "nvidia-fp8-kv",
+    "book": "us-tech",
+    "title": "NVIDIA：FP8 KV cache 和权重量化不是一回事",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-fp8.md",
+    "id": "nvidia-fp8",
+    "book": "us-tech",
+    "title": "NVIDIA：FP8 训练 scale、延迟缩放、和 INT8 推理量化不是同一件事",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-int8-quant.md",
+    "id": "nvidia-int8-quant",
+    "book": "us-tech",
+    "title": "NVIDIA：FP32 tensor 怎么量化到 INT8？非对称量化跟什么走？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-lora-serve.md",
+    "id": "nvidia-lora-serve",
+    "book": "us-tech",
+    "title": "NVIDIA：多 LoRA 同服务，基础权重共享、adapter 切换成本",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-loss-scale.md",
+    "id": "nvidia-loss-scale",
+    "book": "us-tech",
+    "title": "NVIDIA：混合精度 loss scaling，overflow 怎么发现和恢复",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-nccl-allreduce.md",
+    "id": "nvidia-nccl-allreduce",
+    "book": "us-tech",
+    "title": "NVIDIA：NCCL all-reduce 环/树，带宽瓶颈 vs 计算重叠",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-occupancy.md",
+    "id": "nvidia-occupancy",
+    "book": "us-tech",
+    "title": "NVIDIA：CUDA occupancy、register 压力，Nsight 上看什么",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-pipeline-bubble.md",
+    "id": "nvidia-pipeline-bubble",
+    "book": "us-tech",
+    "title": "NVIDIA：流水线气泡从哪来，1F1B / interleaved 怎么减",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-trillion-train.md",
+    "id": "nvidia-trillion-train",
+    "book": "us-tech",
+    "title": "NVIDIA：万亿参数 LLM 怎么分布式训练？并行切在哪？",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-triton-infer.md",
+    "id": "nvidia-triton-infer",
+    "book": "us-tech",
+    "title": "NVIDIA：Triton Inference Server 动态 batch、多模型、GPU 共享",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-trt-llm.md",
+    "id": "nvidia-trt-llm",
+    "book": "us-tech",
+    "title": "NVIDIA：TensorRT-LLM 相对 vLLM / Triton 的定位，plugin、inflight、量化",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-w4a8.md",
+    "id": "nvidia-w4a8",
+    "book": "us-tech",
+    "title": "NVIDIA：W4A8 和 KV 量化、激活量化不是一把开关",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/nvidia/nvidia-ws-decode.md",
+    "id": "nvidia-ws-decode",
+    "book": "us-tech",
+    "title": "NVIDIA：warp specialization 和 persistent decode kernel 的公开概念",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-adamw.md",
+    "id": "openai-adamw",
+    "book": "us-tech",
+    "title": "OpenAI：AdamW 为什么要把 weight decay 从自适应步长里拆出来",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-logprob.md",
+    "id": "openai-logprob",
+    "book": "us-tech",
+    "title": "OpenAI：logprobs、校准和温度，什么时候不该信模型的 p",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-long-ctx-train.md",
+    "id": "openai-long-ctx-train",
+    "book": "us-tech",
+    "title": "OpenAI：长上下文怎么训，RoPE 基频、续训和文档 packing",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-lora-sft.md",
+    "id": "openai-lora-sft",
+    "book": "us-tech",
+    "title": "OpenAI：对基座做 LoRA SFT，rank、目标模块和全参怎么取舍",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-loss-spike.md",
+    "id": "openai-loss-spike",
+    "book": "us-tech",
+    "title": "OpenAI：训练 loss 突然炸或变 NaN，怎么分层排查",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-moe-aux-loss.md",
+    "id": "openai-moe-aux-loss",
+    "book": "us-tech",
+    "title": "OpenAI：MoE 辅助损失和负载均衡，路由塌缩怎么发现",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-ppo-clip.md",
+    "id": "openai-ppo-clip",
+    "book": "us-tech",
+    "title": "OpenAI：PPO clip 在 InstructGPT/RLHF 里在干什么，ratio 爆了怎么收",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-scaling-laws.md",
+    "id": "openai-scaling-laws",
+    "book": "us-tech",
+    "title": "OpenAI：Kaplan 和 Chinchilla 差在哪，compute-optimal 坐标别背错",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-speculative-decoding.md",
+    "id": "openai-speculative-decoding",
+    "book": "us-tech",
+    "title": "OpenAI：投机解码拒绝草稿时为什么要 rollback KV",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-test-time.md",
+    "id": "openai-test-time",
+    "book": "us-tech",
+    "title": "OpenAI：test-time compute / 推理时搜索，公开层怎么讲，不编内部",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-tiktoken.md",
+    "id": "openai-tiktoken",
+    "book": "us-tech",
+    "title": "OpenAI：tiktoken / BPE 和 SentencePiece 差在哪，特殊 token 和词表怎么扩",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-tool-loop.md",
+    "id": "openai-tool-loop",
+    "book": "us-tech",
+    "title": "OpenAI：多步 tool loop，观察怎么塞回上下文，工具调错和停止条件",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/openai/openai-vit-connect.md",
+    "id": "openai-vit-connect",
+    "book": "us-tech",
+    "title": "OpenAI：ViT / patch embed 怎么接到 LLM，投影、对齐预训练、分辨率插值",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-3d-parallel.md",
+    "id": "sys-3d-parallel",
+    "book": "us-tech",
+    "title": "系统：DP+TP+PP 三维并行怎么选切分，通信体积直觉",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-act-checkpoint.md",
+    "id": "sys-act-checkpoint",
+    "book": "us-tech",
+    "title": "系统：activation checkpoint 重算 vs 存，和序列并行叠",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-agent-sched.md",
+    "id": "sys-agent-sched",
+    "book": "us-tech",
+    "title": "系统：agent 多轮，工具等待时 GPU 空转怎么插 decode",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-async-ckpt.md",
+    "id": "sys-async-ckpt",
+    "book": "us-tech",
+    "title": "系统：异步 checkpoint，一致性和占用",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-chunked-prefill.md",
+    "id": "sys-chunked-prefill",
+    "book": "us-tech",
+    "title": "系统：chunked prefill 和 decode 混部",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-cont-batch.md",
+    "id": "sys-cont-batch",
+    "book": "us-tech",
+    "title": "系统：continuous batching，iteration-level 调度，hole 碎片",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-data-pipeline.md",
+    "id": "sys-data-pipeline",
+    "book": "us-tech",
+    "title": "系统：万亿 token 数据管道，shuffle、checkpoint、坏样本",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-expert-parallel.md",
+    "id": "sys-expert-parallel",
+    "book": "us-tech",
+    "title": "系统：专家并行，token 调度不均和 all-to-all",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-flashinfer.md",
+    "id": "sys-flashinfer",
+    "book": "us-tech",
+    "title": "系统：FlashInfer 推理核库，append、sampling、调度器接口",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-kv-offload.md",
+    "id": "sys-kv-offload",
+    "book": "us-tech",
+    "title": "系统：KV 分层存储，HBM / CPU / 盘和命中率",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-kv-quant.md",
+    "id": "sys-kv-quant",
+    "book": "us-tech",
+    "title": "系统：KV cache 量化（INT8/FP8），outlier 和注意力质量",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-loss-spike.md",
+    "id": "sys-loss-spike",
+    "book": "us-tech",
+    "title": "系统：分布式训练 loss spike 排查清单",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-mixed-precision.md",
+    "id": "sys-mixed-precision",
+    "book": "us-tech",
+    "title": "系统：BF16/FP8 训练，master weights，和推理量化分开",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-overlong.md",
+    "id": "sys-overlong",
+    "book": "us-tech",
+    "title": "系统：超长序列的激活、注意力时间、并行怎么叠",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-prefix-cache.md",
+    "id": "sys-prefix-cache",
+    "book": "us-tech",
+    "title": "系统：prefix / prompt cache，多用户系统提示共享",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-radix-tree.md",
+    "id": "sys-radix-tree",
+    "book": "us-tech",
+    "title": "系统：radix / prefix tree 共享 KV（SGLang）",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-replay.md",
+    "id": "sys-replay",
+    "book": "us-tech",
+    "title": "系统：旧的 rollout 能不能留到下一步再训？",
+    "kind": "rewritten"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/systems/sys-zero-stages.md",
+    "id": "sys-zero-stages",
+    "book": "us-tech",
+    "title": "系统：ZeRO 1/2/3 与 FSDP 对照，CPU offload 何时值得",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/xai/tesla-data-engine.md",
+    "id": "tesla-data-engine",
+    "book": "us-tech",
+    "title": "Tesla：数据引擎（挖难例、自动标注、feedback loop），面试怎么结构化",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/xai/tesla-occupancy-net.md",
+    "id": "tesla-occupancy-net",
+    "book": "us-tech",
+    "title": "Tesla：occupancy / BEV 类表示，评测用什么，和纯相机占用栅格差在哪",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/xai/xai-lmarena.md",
+    "id": "xai-lmarena",
+    "book": "us-tech",
+    "title": "xAI：LMSYS Arena / 在线偏好，和离线榜的差，不要神化 Elo",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/xai/xai-moe-decode.md",
+    "id": "xai-moe-decode",
+    "book": "us-tech",
+    "title": "xAI：MoE decode 专家不齐和 batch 碎片",
+    "kind": "reorganized"
+  },
+  {
+    "file": "content/handbooks/us-tech/questions/xai/xai-prompt-cache.md",
+    "id": "xai-prompt-cache",
+    "book": "us-tech",
+    "title": "xAI：系统提示缓存，多租户前缀共享",
+    "kind": "rewritten"
+  }
+]

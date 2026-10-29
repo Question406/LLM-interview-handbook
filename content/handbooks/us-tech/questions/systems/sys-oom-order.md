@@ -21,7 +21,7 @@ sources:
 
 预训练 OOM 时，我会先分清占满显存的是激活、模型状态，还是临时缓冲，再改对应的配置。最直接的判断是缩短序列或减小 micro batch，观察能不能跑起来。
 
-序列长度减半就能跑，通常是激活或注意力中间量太大。减小 micro batch 有效，也指向激活，可以用梯度累积补回 global batch。两者都减了仍然 OOM，而且显存几乎不随序列长度变化，再查参数、梯度和 Adam，考虑 ZeRO 阶段或张量并行。具体的状态账和激活账见 `sys-param-bytes`、`sys-act-checkpoint`。
+序列长度减半就能跑，通常是激活或 attention 中间量太大。减小 micro batch 有效，也指向激活，可以用 gradient accumulation 补回 global batch。两者都减了仍然 OOM，而且显存几乎不随序列长度变化，再查参数、梯度和 Adam，考虑 ZeRO 阶段或张量并行。具体的状态账和激活账见 `sys-param-bytes`、`sys-act-checkpoint`。
 
 张量并行把一层矩阵切开，也能减少激活，但每层都增加通信。如果只是 Adam 放不下，ZeRO-1 就能分摊优化器状态，没必要为此承担张量并行的通信。
 

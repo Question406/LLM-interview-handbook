@@ -4,47 +4,66 @@ section: xai
 order: 13
 level: A
 title: xAI：系统提示缓存，多租户前缀共享
-quick: "前缀缓存复用已算好的 KV，token 序列、模型权重、LoRA 和位置配置一致才能命中。我会把公共、租户和用户内容分层，用 cache salt 隔离，防错命中与时序侧信道；长工具轨迹则另用 compaction 缩短，已经超窗要先裁剪或拆分。"
+quick: 假设很多请求都有相同的 system prompt。如果这段内容的计算条件也相同，就可以复用已经算好的 prefix KV，减少重复 prefill。
 tags:
   - xAI
   - Prefix Cache
   - Serving
   - Multi-tenant
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-29
+updatedAt: '2026-10-28'
 sources:
   - title: Automatic Prefix Caching — vLLM
-    url: https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html
+    url: 'https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html'
     type: secondary
   - title: SGLang / RadixAttention
-    url: https://lmsys.org/blog/2024-01-17-sglang/
+    url: 'https://lmsys.org/blog/2024-01-17-sglang/'
     type: secondary
   - title: PagedAttention paper
-    url: https://arxiv.org/abs/2309.06180
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
   - title: Open Release of Grok-1
-    url: https://x.ai/news/grok-os
+    url: 'https://x.ai/news/grok-os'
     type: primary
   - title: Prompt caching
-    url: https://docs.x.ai/developers/advanced-api-usage/prompt-caching
+    url: 'https://docs.x.ai/developers/advanced-api-usage/prompt-caching'
     type: primary
   - title: Context compaction
-    url: https://docs.x.ai/developers/advanced-api-usage/context-compaction
+    url: 'https://docs.x.ai/developers/advanced-api-usage/context-compaction'
     type: primary
   - title: Grok 4.7
-    url: https://docs.x.ai/developers/grok-4-6
+    url: 'https://docs.x.ai/developers/grok-4-6'
     type: primary
 ---
 
-我会复用完全一致的公共前缀 KV，在租户策略和用户内容处分叉并隔离。例如模板改一个空格可能改变 token，公共文档相同也不能绕过 ACL 共享私有检索结果。xAI 内部拓扑没有公开，这里按 vLLM automatic prefix caching 和 SGLang RadixAttention 解释；页表见 `sys-paged-attn`，通用机制见 `sys-prefix-cache`。`xai-lru-cache` 讨论业务对象的并发缓存，这里讨论注意力 KV。
+## 回答思路
+
+> **问题与场景：** 假设很多请求都有相同的 system prompt。
+>
+> **做法与原因：** 复用前要确认的不只是原文字符串。
+>
+> **检查与取舍：** 我会同时看省下的 prefill 工作与缓存占用。
+
+## 可以这样回答
+
+假设很多请求都有相同的 system prompt。如果这段内容的计算条件也相同，就可以复用已经算好的 prefix KV，减少重复 prefill。
+
+复用前要确认的不只是原文字符串。Token IDs、有效模型权重、adapter、位置和 mask 的语义都要一致。用户私有数据还要按授权范围隔离，不能为了提高 hit rate 跨用户共享。
+
+我会同时看省下的 prefill 工作与缓存占用。缓存也使用显存，可能挤掉正在生成的请求；因此 hit rate 提高但整体 latency 变差，是完全可能发生的。
+
+## 技术备查
+
+我会复用完全一致的公共前缀 KV，在租户策略和用户内容处分叉并隔离。例如模板改一个空格可能改变 token，公共文档相同也不能绕过 ACL 共享私有检索结果。xAI 内部拓扑没有公开，这里按 vLLM automatic prefix caching 和 SGLang RadixAttention 解释；页表见 `sys-paged-attn`，通用机制见 `sys-prefix-cache`。`xai-lru-cache` 讨论业务对象的并发缓存，这里讨论 attention KV。
 
 ## 命中的是 KV 页，系统提示必须使用相同 token 序列
 
-Prefix cache 复用的是已算好的 K/V 块。Key 至少包括：token id 序列（不是 UTF-8 原文）、模型版本、LoRA、位置编码配置。System 输入提示（prompt） 改一个空格、chat template 换一行，从第一个不同 token 断开。把一段 KV 接到另一条长度不同的请求后面，RoPE 起点错了，数值是错的。错命中比 miss 更危险：输出可能悄悄出错。
+Prefix cache 复用的是已算好的 K/V 块。Key 至少包括：token id 序列（不是 UTF-8 原文）、模型版本、LoRA、位置编码配置。System prompt 改一个空格、chat template 换一行，从第一个不同 token 断开。把一段 KV 接到另一条长度不同的请求后面，RoPE 起点错了，数值是错的。错命中比 miss 更危险：输出可能悄悄出错。
 
-Grok-1 公开上下文是 8192；后来代际博文声称更长窗口。系统提示越长，输入预填充（prefill，即处理输入并建立缓存） 占比越高，前缀命中越值钱。APC 只削 prefill，不削 逐 token 生成（decode）。长 Think 回复（见 Grok-3 公开的 test-time compute）会让缓存收益看起来变小，那是 decode 墙，不是缓存坏了。
+Grok-1 公开上下文是 8192；后来代际博文声称更长窗口。系统提示越长，输入 prefill 占比越高，前缀命中越值钱。APC 只削 prefill，不削 逐 token 生成（decode）。长 Think 回复（见 Grok-3 公开的 test-time compute）会让缓存收益看起来变小，那是 decode 墙，不是缓存坏了。
 
 实现两条公开索引：
 
@@ -67,7 +86,7 @@ PagedAttention 的引用计数让共享便宜：多条 block table 指向同一�
 
 常见误区是：按字符串 hash 缓存「用户 A 的检索结果给用户 B」，那是 ACL 事故，不是前缀缓存。权限故事和微软 Copilot 同一句，只是这里没有 Graph：谁的上下文就谁的 KV，公共段除外。
 
-限流在入口保护 GPU 队列，缓存命中会改变有效 prefill 成本。计费若按 token，要决定命中的前缀算不算钱。公开 API 各家口径不同；xAI 怎么计费以当时文档为准，面试不要编折扣比例。队列公平仍走 `xai-rate-limiter`，缓存命中不是让大象租户免费占满 KV 池。
+限流在入口保护 GPU 队列，缓存命中会改变有效 prefill 成本。计费若按 token，要决定命中的前缀算不算钱。公开 API 各家定义不同；xAI 怎么计费以当时文档为准，面试不要编折扣比例。队列公平仍走 `xai-rate-limiter`，缓存命中不是让大象租户免费占满 KV 池。
 
 2026 年的 Grok 4.7 文档要求通过 Responses 的 `prompt_cache_key` 或 Chat Completions 的 `x-grok-conv-id`，让连续轮次落到同一服务器；否则冷副本还要完整 prefill。这里复用的仍是相同 token 前缀的 KV。
 
@@ -82,7 +101,7 @@ KV 是离散 token 上的函数。Tokenizer、特殊符号、模板空白都会�
 只有仓库对两家都可见且 ACL 相同才能共享。否则检索块进公共缓存就是串租户。宁可多算 prefill。
 
 **和 MoE decode 的关系？**
-缓存省的是公共前缀的注意力 KV；专家权重每步仍要按新 token 路由。命中不会让专家 GEMM 变齐，见 `xai-moe-decode`。
+缓存省的是公共前缀的 attention KV；专家权重每步仍要按新 token 路由。命中不会让专家 GEMM 变齐，见 `xai-moe-decode`。
 
 **系统提示每周改一版怎么办？**
 版本进 cache key。灰度两份前缀就两份 KV，内存翻倍要算进去。切 100% 后再丢旧根节点。

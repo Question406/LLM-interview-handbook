@@ -3,8 +3,10 @@ id: p3a-anthropic-prompting-engineering-with-llms
 section: anthropic
 order: 619
 level: S
-title: "Anthropic：Prompting：任务提示词与评测脚手架"
-quick: "我会先用代表性案例跑出基线，再根据失败类型改 prompt，每次重跑同一开发集。评测脚本把非法输出也记成失败；保留的最终测试集只在最后用一次，避免反复挑 prompt 把分数调高。"
+title: Anthropic：Prompting：任务 prompt 与评测脚手架
+quick: >-
+  我会先用代表性案例跑出基线，再根据失败类型改 prompt，每次重跑同一开发集。评测脚本把非法输出也记成失败；保留的最终测试集只在最后用一次，避免反复挑
+  prompt 把分数调高。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · prompting-engineering-with-llms"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/prompting-engineering-with-llms
+  - title: 1Point3Acres · Anthropic · prompting-engineering-with-llms
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/prompting-engineering-with-llms
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 给定一个只输出结构化动作的模型、可调用工具表和用户目标，实现工具调用循环，并提供固定案例的正确率评估。模型可能重复发送同一工具动作，循环必须避免重复执行有副作用的调用。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -53,7 +56,7 @@ sources:
 
 在 Colab 里针对一个指定任务写 prompt，同时写配套的评测代码，用数据说明 prompt 的效果。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 我会先把评测跑通，再改 prompt，这样才知道改动有没有解决问题。先选常见和长尾输入，固定案例跑基线，把失败分成格式错、理解错、漏信息等类别；每改一次就比较同一组案例的分数和具体错误。
 
@@ -184,7 +187,7 @@ def evaluate(cases, predict):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -193,12 +196,15 @@ def scripted_model(actions):
     remaining = iter(actions)
     return lambda messages: next(remaining)
 
+
 # 同一个 id 请求两次，工具只执行一次
 calls = []
+
 
 def add(a, b):
     calls.append((a, b))
     return a + b
+
 
 add_call = {"type": "tool", "name": "add", "args": {"a": 2, "b": 3}, "id": "x"}
 model = scripted_model([add_call, add_call, {"type": "final", "answer": "5"}])
@@ -215,9 +221,11 @@ answer, trace = run_agent(model, {"add": add}, "2+3")
 assert trace[4]["content"]["ok"] is False
 assert "conflicting" in trace[4]["content"]["error"]
 
+
 # 工具抛异常也变成失败结果，循环继续
 def broken():
     raise KeyError("missing")
+
 
 broken_call = {"type": "tool", "name": "broken", "args": {}, "id": "b"}
 model = scripted_model([broken_call, {"type": "final", "answer": "gave up"}])
@@ -246,4 +254,4 @@ assert report["failures"] == [(1, "x", "B")]
 设案例数为 N、步数上限为 B。`evaluate` 调用 N 次 `predict`，额外空间是失败列表 O(N)；`run_agent` 最多调用 B 次模型和工具，消息和缓存 O(B)。
 
 - 输出是自由文本、无法严格相等比较怎么办？先尽量让模型输出结构化字段再比较；确实是开放答案时，可以用规则检查关键字段，或者用另一个模型按评分标准打分，但要人工抽查评分模型本身的准确性。
-- 案例太少，分数差一两个点算不算改进？不一定。案例少时随机波动很大，应该看失败案例具体变了哪些，必要时扩充案例或多次采样取平均。
+- 案例太少，分数差一两个点算不算改进？不一定。案例少时随机波动很大，应该看失败案例具体变了哪些，必要时扩充案例或多次 sampling 取平均。

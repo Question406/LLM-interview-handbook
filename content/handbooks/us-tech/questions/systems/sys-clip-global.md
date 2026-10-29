@@ -3,8 +3,10 @@ id: sys-clip-global
 section: systems
 order: 47
 level: A
-title: 系统：多卡上梯度裁剪，范数要先 AllReduce 再缩放
-quick: "分片梯度先汇总各卡平方和，再开方得到统一 L2 范数，所有 rank 用同一个系数裁剪。混合精度先 unscale；任一卡出现 inf / NaN 时同步异常标志，整步跳过并记录原因。"
+title: 系统：多卡上 gradient clipping，范数要先 AllReduce 再缩放
+quick: >-
+  分片梯度先汇总各卡平方和，再开方得到统一 L2 范数，所有 rank 用同一个系数裁剪。混合精度先 unscale；任一卡出现 inf / NaN
+  时同步异常标志，整步跳过并记录原因。
 tags:
   - Pretrain
   - Gradient Clip
@@ -12,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-24
+updatedAt: 2026-09-24T00:00:00.000Z
 sources:
   - title: On the difficulty of training Recurrent Neural Networks
-    url: https://arxiv.org/abs/1211.5063
+    url: 'https://arxiv.org/abs/1211.5063'
     type: primary
   - title: torch.nn.utils.clip_grad_norm_
-    url: https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.utils.clip_grad_norm_.html
     type: primary
 ---
 
@@ -39,6 +42,7 @@ sources:
 ```python
 import torch
 import torch.distributed as dist
+
 
 def clip_global_(grads, tau, group):
     sq = torch.zeros((), device=grads[0].device)

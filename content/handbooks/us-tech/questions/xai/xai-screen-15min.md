@@ -3,8 +3,11 @@ id: xai-screen-15min
 section: xai
 order: 0
 level: S
-title: "xAI: 15-minute video screen, clock and cut reasons"
-quick: "我会按 15 分钟准备：2–3 分钟从近期工作讲起，5–8 分钟展开一个技术决策，1–2 分钟说明想去的具体团队。公开材料称多数被报告的拒绝发生在这里；若面试官迟到 10 分钟就改用 90 秒项目介绍，并提前和 coordinator 确认本轮是否包含 coding，准备可选 CS 问答或 BankAccount race。"
+title: 'xAI: 15-minute video screen, clock and cut reasons'
+quick: >-
+  我会按 15 分钟准备：2–3 分钟从近期工作讲起，5–8 分钟展开一个技术决策，1–2
+  分钟说明想去的具体团队。公开材料称多数被报告的拒绝发生在这里；若面试官迟到 10 分钟就改用 90 秒项目介绍，并提前和 coordinator
+  确认本轮是否包含 coding，准备可选 CS 问答或 BankAccount race。
 tags:
   - xAI
   - 15-minute screen
@@ -12,19 +15,20 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-29
+updatedAt: 2026-09-29T00:00:00.000Z
 sources:
   - title: The xAI 15-Minute Phone Screen (Complete Guide)
-    url: https://aceoffer.app/interviews/xai_phone_screen_guide
+    url: 'https://aceoffer.app/interviews/xai_phone_screen_guide'
     type: secondary
   - title: xAI Interview Question Bank (1Point3Acres)
-    url: https://www.1point3acres.com/interview/problems/company/xai
+    url: 'https://www.1point3acres.com/interview/problems/company/xai'
     type: secondary
   - title: xAI Exceptional Engineer (SWE) Interview Guide
-    url: https://www.tryexponent.com/guides/xai-exceptional-engineer-swe-interview
+    url: 'https://www.tryexponent.com/guides/xai-exceptional-engineer-swe-interview'
     type: secondary
-  - title: Member of Technical Staff, Coding Agents / Post Training (job loop)
-    url: https://simplify.jobs/p/1bfe5ce2-5b08-407c-8528-525c646ffee4/Member-of-Technical-Staff
+  - title: 'Member of Technical Staff, Coding Agents / Post Training (job loop)'
+    url: >-
+      https://simplify.jobs/p/1bfe5ce2-5b08-407c-8528-525c646ffee4/Member-of-Technical-Staff
     type: secondary
 ---
 
@@ -56,7 +60,7 @@ coordinator 的说明写着「...as well as a coding question」，就准备 `xa
 
 可选的 BankAccount 题通常给一段 `deposit`：读余额、`sleep`、写回。共享状态是 `balance`，临界区覆盖整个读改写，sleep 只是放大竞态窗口。两个线程都读到 100、都写回 110，就丢了一次存款。可以用 mutex 包住整个 RMW，或用 CAS 循环；不允许改原类时就在外层 wrap，并明确说出锁覆盖哪几行。细节见 `xai-kv-txn`。
 
-还有一种 live-debug 变体，预约 15 分钟，实际可能跑 30–45 分钟：在 CoderPad 上修失败单测，常用 Python，有时还是 BankAccount，难度通常不高。时间到时仍漏了异常路径也会失败。我会先复述约定、跑最小失败用例、修复，再检查剩余的 `except`、`None` 和空列表边界，然后才说完成。
+还有一种 live-debug 变体，预约 15 分钟，实际可能跑 30–45 分钟：在 CoderPad 上修失败单测，常用 Python，有时还是 BankAccount，难度通常不高。时间到时仍漏了异常路径也会失败。我会先复述约定、跑最小失败用例、修复，再检查剩余的 `except`、`None` 和 empty-list edge case，然后才说完成。
 
 ## 追问
 

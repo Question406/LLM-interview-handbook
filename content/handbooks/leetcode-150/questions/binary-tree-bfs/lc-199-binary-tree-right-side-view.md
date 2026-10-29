@@ -4,7 +4,7 @@ section: binary-tree-bfs
 order: 1
 level: S
 title: LC 199 · 二叉树的右视图
-quick: "层序 BFS，每层取最后一个节点就是右视图；如果先右后左入队，就取每层第一个。时间 $O(n)$，额外空间 $O(w)$。"
+quick: 层序 BFS，每层取最后一个节点就是右视图；如果先右后左入队，就取每层第一个。时间 $O(n)$，额外空间 $O(w)$。
 tags:
   - Tree
   - BFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 199. 二叉树的右视图
-    url: https://leetcode.cn/problems/binary-tree-right-side-view/
+    url: 'https://leetcode.cn/problems/binary-tree-right-side-view/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -126,7 +126,7 @@ print("simple tests passed")
 
 时间 $O(n)$。额外空间 $O(w)$，$w$ 是最宽一层。
 
-## 边界
+## Edge Cases
 
 空树返回 `[]`。只有左链时每层只有一个节点，从右边也能看到它，所以整条链都在右视图里。某层右孩子缺失时，这一层最右的会是左侧露出来的节点。
 
@@ -137,6 +137,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def leftSideView(root):
     if root is None:
@@ -161,6 +162,7 @@ def leftSideView(root):
 
 ```python
 from collections import deque
+
 
 def zigzagLevelOrder(root):
     if root is None:

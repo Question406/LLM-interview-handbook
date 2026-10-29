@@ -4,7 +4,9 @@ section: systems
 order: 46
 level: A
 title: 系统：预训练一步的 MFU 怎么算，哪些时间不能算进分子？
-quick: "MFU 用这一步模型的有用 FLOPs 除以实际耗时和集群理论峰值，常用近似是 6ND，前向约 2ND、反向约 4ND。D 按真实有效 token 计数，数据等待、通信、checkpoint 和评估只增加分母。MFU 低时，再用 timeline 区分等待、气泡和矩阵规模过小。"
+quick: >-
+  MFU 用这一步模型的有用 FLOPs 除以实际耗时和集群理论峰值，常用近似是 6ND，前向约 2ND、反向约 4ND。D 按真实有效 token
+  计数，数据等待、通信、checkpoint 和评估只增加分母。MFU 低时，再用 timeline 区分等待、气泡和矩阵规模过小。
 tags:
   - Pretrain
   - MFU
@@ -12,14 +14,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-24
+updatedAt: 2026-09-24T00:00:00.000Z
 sources:
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
 ---
 
-MFU 衡量集群理论算力中有多少转化成了模型的有用计算，常用模型 FLOPs 近似 $6ND$ 除以整步耗时和集群峰值。比如 dataloader 多等了一段时间，分子没变、分母变大，MFU 就会下降。这道题按 Megatron 的口径整理，后训练采样时间见 `infra-rl-mfu-6nd`。
+MFU 衡量集群理论算力中有多少转化成了模型的有用计算，常用模型 FLOPs 近似 $6ND$ 除以整步耗时和集群峰值。比如 dataloader 多等了一段时间，分子没变、分母变大，MFU 就会下降。这道题按 Megatron 的定义整理，后训练 sampling 时间见 `infra-rl-mfu-6nd`。
 
 $N$ 是参数量，$D$ 是这一步真正计入损失（loss）的 token 数。前向一次乘加大约 $2ND$，训练还要反向，合计约 $6ND$。MFU 是这组 FLOPs 除以「一步实际耗时 × 机器理论峰值」。峰值用厂商的稠密 Tensor Core 数字，不要用自己测到的 GEMM 当峰值，否则 MFU 会被抬高。
 

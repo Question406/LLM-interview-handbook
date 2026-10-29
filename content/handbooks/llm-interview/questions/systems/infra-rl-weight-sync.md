@@ -4,26 +4,38 @@ section: systems
 order: 239
 level: S
 title: AI Infra 实习：训练完的权重怎么同步到推理引擎？
-quick: "训练权重需要先从 FSDP/Megatron 分片转换为推理引擎的布局，再按部署方式同步：同卡可用 IPC 或 HybridEngine，分卡可用 NCCL/IB 广播，磁盘适合冷启动和容错。同步后要清 KV、记录 policy version；70B 全量权重每步走磁盘通常太慢。"
+quick: >-
+  训练权重需要先从 FSDP/Megatron 分片转换为推理引擎的布局，再按部署方式同步：同卡可用 IPC 或 HybridEngine，分卡可用
+  NCCL/IB 广播，磁盘适合冷启动和容错。同步后要清 KV、记录 policy version；70B 全量权重每步走磁盘通常太慢。
 tags:
   - RL Infra
   - VeRL
   - vLLM
   - SGLang
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: AI infra实习面经（小厂）
-    url: https://www.nowcoder.com/feed/main/detail/166e576d5afa4a298cf9492ed51bed04
+    url: 'https://www.nowcoder.com/feed/main/detail/166e576d5afa4a298cf9492ed51bed04'
     type: candidate-first-hand
   - title: SGLang for RL
-    url: https://github.com/sgl-project/sglang/blob/main/docs/advanced_features/sglang_for_rl.md
+    url: >-
+      https://github.com/sgl-project/sglang/blob/main/docs/advanced_features/sglang_for_rl.md
     type: primary
 ---
 
-同步权重要做完布局转换、传输、装载、清 KV 和记录版本这几件事。训练端的 FSDP / Megatron 分片，通常不能原样交给 vLLM / SGLang 的 TP 布局。比如权重已经更新，旧 KV 却还留着，下一轮采样就会把旧激活和新权重混用。
+## 可以这样回答
+
+同步权重要做完布局转换、传输、装载、清 KV 和记录版本这几件事。训练端的 FSDP / Megatron 分片，通常不能原样交给 vLLM / SGLang 的 TP 布局。比如权重已经更新，旧 KV 却还留着，下一轮 sampling 就会把旧激活和新权重混用。
+
+我会先看训练和推理是否在同一组 GPU 上，再选传输方式。HybridEngine 负责布局转换，本题关注权重版本怎样送到引擎；随后在训练图重算 logp，负责保证 ratio 使用的数值一致。这几步各自解决不同的问题，漏一步都可能让 $\rho$ 出现不易察觉的偏差。
+
+## 技术备查
+
+同步权重要做完布局转换、传输、装载、清 KV 和记录版本这几件事。训练端的 FSDP / Megatron 分片，通常不能原样交给 vLLM / SGLang 的 TP 布局。比如权重已经更新，旧 KV 却还留着，下一轮 sampling 就会把旧激活和新权重混用。
 
 我会先看训练和推理是否在同一组 GPU 上，再选传输方式。HybridEngine 负责布局转换，本题关注权重版本怎样送到引擎；随后在训练图重算 logp，负责保证 ratio 使用的数值一致。这几步各自解决不同的问题，漏一步都可能让 $\rho$ 出现不易察觉的偏差。
 
@@ -41,14 +53,14 @@ Actor update 结束时，参数按训练并行切开：FSDP 按 unit 分片，Me
 
 LoRA 可以只推 adapter，流量从百 GB 降到百 MB 级，但版本语义仍要一致：base 没变、adapter 变了，cache key 也要变。Delta 同步同理：漏一个 name 就会 silently 用半新半旧权。
 
-选型先问拓扑。同构、卡紧、大模型：偏 HybridEngine / 同卡 IPC。已经有独立推理池、要异构扩容：偏 NCCL 广播。磁盘只当兜底和拉新 replica，不要当每步热路径。70B BF16 整模大约 140GB，PCIe 写读一轮就是秒到十秒量级，共享存储更慢；同节点 NVLink 搬切片是毫秒到百毫秒。面试用数量级说明「为什么磁盘不能当热路径」，更有用。LoRA / delta 把流量从整模降到变更切片，但漏 name、漏 layernorm、漏 embedding 会让引擎处于半新半旧状态，比完全不同步更难查。同步协议要有版本号和完整性校验：要么整版切过去，要么失败回滚，不要部分成功还继续 generate。
+选型先问拓扑。同构、卡紧、大模型：偏 HybridEngine / 同卡 IPC。已经有独立推理池、要异构扩容：偏 NCCL 广播。磁盘只当 fallback 和拉新 replica，不要当每步热路径。70B BF16 整模大约 140GB，PCIe 写读一轮就是秒到十秒量级，共享存储更慢；同节点 NVLink 搬切片是毫秒到百毫秒。面试用数量级说明「为什么磁盘不能当热路径」，更有用。LoRA / delta 把流量从整模降到变更切片，但漏 name、漏 layernorm、漏 embedding 会让引擎处于半新半旧状态，比完全不同步更难查。同步协议要有版本号和完整性校验：要么整版切过去，要么失败回滚，不要部分成功还继续 generate。
 
-## 切换版本后再恢复采样
+## 切换版本后再恢复 sampling
 
 权重装进引擎后，还要处理缓存和未完成的请求，才能继续 generate：
 
 - Flush KV。 旧 KV 是旧 $\theta$ 算的，和新权混用会让后续 token 的数值错乱。Prefix cache 的 key 也必须带上 policy version。
-- 记下 `policy_version`。 Buffer 里每条轨迹要知道自己生于哪一版，异步强化学习才可以按版本差丢弃过旧样本，见 `sys-rl-infra`。
+- 记下 `policy_version`。 Buffer 里每条轨迹要知道自己生于哪一版，异步 RL 才可以按版本差丢弃过旧样本，见 `sys-rl-infra`。
 - 未完成请求。 要么取消重采，要么吃完旧权并打 off-policy 标记。两边都不做，组内会混两个 $\theta$。
 
 同步频率需要在通信开销和策略滞后之间取舍：每步全量同步最干净，实际耗时被通信吃掉；隔 $k$ 步同步则 $\rho$ 偏离 $1$。面试把「带宽 × 同步间隔 × 是否 LoRA」讲清楚，比背框架 API 有用。未完成请求尤其要有书面策略：取消则浪费已经生成的 token，但版本干净；吃完旧权则必须在 Buffer 里打 `policy_version`，后续用 TIS 或丢弃，见 `slime-async-train`。Prefix cache 的 key 若不带版本，公共系统提示的 KV 会跨策略复用，等于把旧激活续进新权，见 `sys-prefix-cache-isolation`。
@@ -66,15 +78,15 @@ colocate 场景下同步还和 offload 抢 PCIe：一边在把 Megatron 搬回�
 ## 追问
 
 **为什么 70B 每步落盘不行？**
-写读各一份整模，SSD / 共享存储是秒到分钟，而一步训练可能只要几十秒。热路径必须走内存或 RDMA。磁盘只当扩容 replica 和容错兜底。
+写读各一份整模，SSD / 共享存储是秒到分钟，而一步训练可能只要几十秒。热路径必须走内存或 RDMA。磁盘只当扩容 replica 和容错 fallback。
 **HybridEngine 还要不要 NCCL？**
 同卡 reshard 走卡内 / NVLink 的切片补齐，不是全集群广播整模。分卡部署才需要跨节点 communicator。对不齐会退回朴素 gather，原先的显存节省就无法实现。
 **同步完还要重算 logp 吗？**
-要。引擎里的 $\theta$ 已经是新的，但采样 logp 的算子、精度、TP 仍可能和训练图不一致。同步管版本，重算管数值图，见 `meituan-verl-recompute-logprob`。
+要。引擎里的 $\theta$ 已经是新的，但 sampling logp 的算子、精度、TP 仍可能和训练图不一致。同步管版本，重算管数值图，见 `meituan-verl-recompute-logprob`。
 **SGLang 的 `update_weights` 失败了怎么办？**
 视为版本没切过去：不要继续 rollout，也不要混用新旧 KV。先确认 named tensor 对齐和通信组还在。部分成功比完全失败更危险。
 **LoRA 只推 adapter 还要 flush KV 吗？**
-要。adapter 变了，同一输入提示 的 KV 也不能留。cache key 还要带 adapter id 和 policy version。
+要。adapter 变了，同一 prompt 的 KV 也不能留。cache key 还要带 adapter id 和 policy version。
 **未完成请求怎么处理？**
 取消则浪费已生成 decode、版本干净；吃完旧权则必须打 version，后续 TIS 或丢弃。两边都不做，组内会混两个 $\theta$。
 **delta / named tensor 漏一层会怎样？**

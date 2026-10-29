@@ -5,20 +5,21 @@ order: 3
 level: A
 title: LC 373 · 查找和最小的 K 对数字
 quick: >-
-  把每个 `nums1[i]` 和升序的 `nums2` 配出的和看成一条有序序列，用小根堆做多路归并。堆里我先放 `(nums1[i], nums2[0])`，弹出后再把同一 $i$ 的下一个 $j$ 推进去，时间 $O(k\log k)$。
+  把每个 `nums1[i]` 和升序的 `nums2` 配出的和看成一条有序序列，用小根堆做多路归并。堆里我先放 `(nums1[i],
+  nums2[0])`，弹出后再把同一 $i$ 的下一个 $j$ 推进去，时间 $O(k\log k)$。
 tags:
   - Heap
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 373. 查找和最小的 K 对数字
-    url: https://leetcode.cn/problems/find-k-pairs-with-smallest-sums/
+    url: 'https://leetcode.cn/problems/find-k-pairs-with-smallest-sums/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,7 +105,7 @@ print("simple tests passed")
 
 时间 $O(k\log k)$，堆里最多 $k$ 个候选，额外空间 $O(k)$。
 
-## 边界
+## Edge Cases
 
 $k$ 大于总对数时，循环在堆空时停下，返回全部 $mn$ 对。某一侧长度为 $1$ 时，堆里最多有 $\min(k, |nums1|)$ 条「行」，每条沿着 `nums2` 走到底。两个数组有重复时，同一个和可能对应多对，按 `(i, j)` 推进不会把同一对入堆两次。
 

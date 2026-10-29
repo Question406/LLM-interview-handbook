@@ -29,8 +29,8 @@ sources:
 
 ## 先看 KV 在哪些地方移动
 
-1. **张量并行。** 头或隐维切开。标准 MHA 下，某张卡算注意力可能缺其它头的 K/V，要 all-gather 或把 Q 送到有 K/V 的卡。每层 decode 都可能等待这部分通信，所以 TP 通常希望在 NVLink 互联的卡之间进行。MLA 把 KV 压成共享 latent，传的字节少一个数量级，这是 DeepSeek 推理能把 KV 做小的原因，见 `arch-mla`。
-2. **PD 分离。** Prefill worker 算出 输入提示（prompt） KV，decode worker 接着生成。必须跨池传 KV（或传 latent）。上下文一长，传输可能比 GEMM 贵。Mooncake 一类是把 KV 当成可调度的分布式缓存：RDMA、分层存储、跟调度器协同，而不是 `cudaMemcpy` 一下了事。slime 的配法见 `slime-pd-disagg`。
+1. **张量并行。** 头或隐维切开。标准 MHA 下，某张卡算 attention 可能缺其它头的 K/V，要 all-gather 或把 Q 送到有 K/V 的卡。每层 decode 都可能等待这部分通信，所以 TP 通常希望在 NVLink 互联的卡之间进行。MLA 把 KV 压成共享 latent，传的字节少一个数量级，这是 DeepSeek 推理能把 KV 做小的原因，见 `arch-mla`。
+2. **PD 分离。** Prefill worker 算出 prompt KV，decode worker 接着生成。必须跨池传 KV（或传 latent）。上下文一长，传输可能比 GEMM 贵。Mooncake 一类是把 KV 当成可调度的分布式缓存：RDMA、分层存储、跟调度器协同，而不是 `cudaMemcpy` 一下了事。slime 的配法见 `slime-pd-disagg`。
 3. **多 replica / 抢占。** 请求从一张卡迁到另一张，或 prefix cache 命中远端块，也是 KV 传输。和 PD 同构，只是触发条件是调度而不是角色拆分。
 
 ## 按传输量和等待时间优化
@@ -40,11 +40,11 @@ MLA、GQA、KV INT8/FP8、只传 miss 的后缀。量化 KV 减少的是缓存�
 **重叠：**
 把下一块 prefill 的计算与上一段 KV 的传输放入流水线并行执行；decode 不要空等整段 KV 到齐才开算，能 chunk 就 chunk。
 **命中：**
-同一输入提示下的 GRPO 组应尽量复用前缀缓存，见 `sys-rl-engine-kv-util`。命中了就不用传。
+同一 prompt 下的 GRPO 组应尽量复用前缀缓存，见 `sys-rl-engine-kv-util`。命中了就不用传。
 **拓扑：**
 机内 NVLink / NVSwitch；跨机 RDMA。PD 的 KV 如果走 TCP，额外通信开销可能抵消优化收益。
 
-强化学习（RL） 采样轨迹（rollout） 里还有第四条：`update_weights` 之后旧 KV 作废，见 `sys-partial-kv-policy`。那是禁止复用，不是又一次 KV 传输。
+RL sampling 轨迹（rollout） 里还有第四条：`update_weights` 之后旧 KV 作废，见 `sys-partial-kv-policy`。那是禁止复用，不是又一次 KV 传输。
 
 面试时先画：TP 是层内集合通信，PD 是角色间点对点，权重是参数广播。这三类通信要分别分析，不能都当成 AllReduce。
 

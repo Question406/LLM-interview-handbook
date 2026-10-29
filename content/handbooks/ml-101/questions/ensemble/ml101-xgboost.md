@@ -3,23 +3,44 @@ id: ml101-xgboost
 section: ensemble
 order: 5
 level: S
-title: "XGBoost 相比基础 GBDT 增加了什么？"
-quick: "XGBoost 把树的复杂度惩罚直接写进目标，用梯度和 Hessian 的二阶近似计算叶子权重与分裂收益，同时提供稀疏缺失值处理和高效训练实现。它属于梯度提升树体系，效果取决于数据与调参，不能保证所有任务都胜过其他模型。"
+title: XGBoost 相比基础 GBDT 增加了什么？
+quick: >-
+  普通 gradient boosting 每轮训练一棵树，去改善当前预测的错误。XGBoost
+  在这个框架上，用目标的一阶和二阶信息评价候选更新，并对树复杂度加 regularization。
 tags:
   - Machine Learning
   - ensemble
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: '2026-10-28'
 sources:
-  - title: "XGBoost: Introduction to Boosted Trees"
-    url: https://xgboost.readthedocs.io/en/stable/tutorials/model.html
+  - title: 'XGBoost: Introduction to Boosted Trees'
+    url: 'https://xgboost.readthedocs.io/en/stable/tutorials/model.html'
     type: primary
-  - title: "Chen and Guestrin: XGBoost — A Scalable Tree Boosting System"
-    url: https://arxiv.org/abs/1603.02754
+  - title: 'Chen and Guestrin: XGBoost — A Scalable Tree Boosting System'
+    url: 'https://arxiv.org/abs/1603.02754'
     type: primary
 ---
+
+## 回答思路
+
+> **问题与场景：** 普通 gradient boosting 每轮训练一棵树，去改善当前预测的错误。
+>
+> **做法与原因：** 例如两种切分带来的训练 loss 降幅接近时，叶子数与叶子权重的惩罚会影响选择。
+>
+> **检查与取舍：** 我会在相同划分与调参预算下比较效果，并检查 early stopping。
+
+## 可以这样回答
+
+普通 gradient boosting 每轮训练一棵树，去改善当前预测的错误。XGBoost 在这个框架上，用目标的一阶和二阶信息评价候选更新，并对树复杂度加 regularization。
+
+例如两种切分带来的训练 loss 降幅接近时，叶子数与叶子权重的惩罚会影响选择。Shrinkage、sampling 与缺失值处理也帮助控制训练与泛化。
+
+我会在相同划分与调参预算下比较效果，并检查 early stopping。它不是因为名字不同就一定胜过所有 GBDT 实现。
+
+## 技术备查
 
 XGBoost 把提升树训练中的目标、正则和计算过程组织得更完整。理解它可以先看如何决定一棵新树的叶子输出，再看如何高效找分裂。
 

@@ -31,7 +31,7 @@ sources:
 
 Phi 多模态先要控制视觉 token，再选择投影或 LoRA 的适配方式。小参数并不让多图输入变便宜。例如三张图每张 576 个 token，已占 1728，系统提示、检索与输出还没计入。
 
-公开 Phi-3.5-Vision 约 4.2B，用 CLIP ViT-L/14 与 phi-3.5-mini，动态切块支持高分辨率和多图；Phi-4-Multimodal 用 LoRA 与模态路由连接冻结语言模型，减少视觉、语音互相干扰。本卡来自公开方案，不是逐字真题；数据路线见 `msft-phi-slm`、`msft-phi-data`。
+公开 Phi-3.5-Vision 约 4.2B，用 CLIP ViT-L/14 与 phi-3.5-mini，动态切块支持高分辨率和多图；Phi-4-Multimodal 用 LoRA 与模态路由连接冻结语言模型，减少视觉、语音互相干扰。本卡来自公开方案；数据路线见 `msft-phi-slm`、`msft-phi-data`。
 
 ## 预算与适配一起设计
 

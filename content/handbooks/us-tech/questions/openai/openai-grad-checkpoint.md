@@ -30,9 +30,9 @@ Activation checkpointing 用重计算减少激活显存，ZeRO 分片模型状�
 
 Transformer 前向要为每层反向保留激活，总量随 $B\cdot T\cdot L\cdot d$ 增长。checkpoint 只存段界输入，反向进入一段时再前向计算其中激活。每层都重算时，前向粗占 fwd+bwd 的三分之一，实际时间常多 20%–40%，约 $+30\%$ 量级。每 $\sqrt{L}$ 层存一次是论文的亚线性方案，激活可从 $O(L)$ 降到 $O(\sqrt{L})$；按每层 checkpoint 则保留每层常数的入口存储，不能把入口一起丢掉。
 
-选择性 checkpoint 会按算子划分，比如重算注意力、FFN，留下 LayerNorm、残差短连接。FlashAttention 已避免在 HBM 留完整 `[B,H,T,T]` 分数，它只覆盖注意力，与其他段的重算仍可配合。这是训练图中的重计算边，和 `torch.no_grad` 不同。
+选择性 checkpoint 会按算子划分，比如重算 attention、FFN，留下 LayerNorm、残差短连接。FlashAttention 已避免在 HBM 留完整 `[B,H,T,T]` 分数，它只覆盖 attention，与其他段的重算仍可配合。这是训练图中的重计算边，和 `torch.no_grad` 不同。
 
-把显存账写具体：$B=2$、$T=8\mathrm{k}$、$L=32$、$d=4096$，仅每层一份 hidden 就有 $B T L d \times 2$ 字节、数 GB，注意力和 FFN 还会增加。Adam 状态约 $12$ 字节/参数，7B 就是 $\approx 84$ GB。ZeRO-1 切优化器，ZeRO-2 再切梯度，ZeRO-3 连参数一起切、用前 all-gather；它们主要随参数量增长，checkpoint 省的则随 $B,T,L$ 增长。
+把显存账写具体：$B=2$、$T=8\mathrm{k}$、$L=32$、$d=4096$，仅每层一份 hidden 就有 $B T L d \times 2$ 字节、数 GB，attention 和 FFN 还会增加。Adam 状态约 $12$ 字节/参数，7B 就是 $\approx 84$ GB。ZeRO-1 切优化器，ZeRO-2 再切梯度，ZeRO-3 连参数一起切、用前 all-gather；它们主要随参数量增长，checkpoint 省的则随 $B,T,L$ 增长。
 
 选方法时先测两列：短上下文大模型，优先用 ZeRO、张量并行装下状态；上下文拉长，ZeRO-3 后仍爆且参数已少，就查激活。一起用时 gather 和重计算都增加时间、降低 MFU，可以尝试通信重叠、更粗的段来隐藏额外前向。纯加数据并行卡数不会减少每卡 microbatch 的激活，超长 $T$ 还要考虑序列并行。
 
@@ -43,7 +43,7 @@ Transformer 前向要为每层反向保留激活，总量随 $B\cdot T\cdot L\cd
 **推理要 checkpoint 吗？**
 通常不要，decode 没有整段反向。
 
-**梯度累积能降低峰值吗？**
+**gradient accumulation 能降低峰值吗？**
 它控制等效 batch，单步激活峰值仍由 microbatch 的 $B,T$ 决定。
 
 **offload 能代替吗？**

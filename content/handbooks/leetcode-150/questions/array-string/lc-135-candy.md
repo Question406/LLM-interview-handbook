@@ -4,7 +4,9 @@ section: array-string
 order: 15
 level: A
 title: LC 135 · 分发糖果
-quick: "左右各扫一遍：从左扫保证比左边分高就比左边多一颗，从右扫保证比右边分高就比右边多，每位取两次结果的 $\\max$。每人至少 $1$ 颗。时间 $O(n)$，额外空间 $O(n)$。"
+quick: >-
+  左右各扫一遍：从左扫保证比左边分高就比左边多一颗，从右扫保证比右边分高就比右边多，每位取两次结果的 $\max$。每人至少 $1$ 颗。时间
+  $O(n)$，额外空间 $O(n)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 135. 分发糖果
-    url: https://leetcode.cn/problems/candy/
+    url: 'https://leetcode.cn/problems/candy/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -102,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 全相等时相邻没有「更高」，每人 $1$ 颗，总数 $n$。严格递增时从左扫成 $1,2,\ldots,n$，严格递减时从右扫成 $n,\ldots,1$。山峰取左右约束的较大值，谷底保持 $1$。
 

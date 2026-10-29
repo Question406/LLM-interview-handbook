@@ -3,8 +3,10 @@ id: p3a-google-ml-fundamentals-deep-dive
 section: google
 order: 811
 level: A
-title: "Google AI/ML：按 LLM/NLP/CV 方向深挖基础"
-quick: "基础题可以从项目中的一个建模选择讲起：先说它优化什么，再推梯度、说明适用条件与失效反例，最后用实验验证。交叉熵、Adam、缩放律和聚类都是手册选的练习主题，回答时要接回自己真正做过的选择。"
+title: Google AI/ML：按 LLM/NLP/CV 方向深挖基础
+quick: >-
+  基础题可以从项目中的一个建模选择讲起：先说它优化什么，再推梯度、说明适用条件与失效反例，最后用实验验证。cross
+  entropy、Adam、缩放律和聚类都是手册选的练习主题，回答时要接回自己真正做过的选择。
 companies:
   - google
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Google AI/ML：按 LLM/NLP/CV 方向深挖基础"
-    url: https://www.1point3acres.com/interview/problems/company/google/ml-fundamentals-deep-dive
+  - title: 1Point3Acres · Google AI/ML：按 LLM/NLP/CV 方向深挖基础
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/google/ml-fundamentals-deep-dive
     type: secondary
 ---
 
@@ -26,7 +29,7 @@ sources:
 
 领域面以候选人自己的研究方向为主，考察你是否理解概念为什么成立，而不只是会背定义。面试官通常从你项目里的某个选择切入，一路追问到推导和适用条件。
 
-> 来源：一亩三分地 Google 题卡摘要（2026-10-18 读取），未核实完整题干或原帖，网站收录也不代表公司官方确认；不同岗位之间不要互相套用。摘要没有给出完整的原题清单，下面的四个小问是手册选的练习主题，不是面经逐字真题。
+> 来源：一亩三分地 Google 题卡摘要（2026-10-18 读取）。摘要没有给出完整的原题清单，下面的四个小问是手册选的练习主题。
 
 ## 思路
 
@@ -38,23 +41,23 @@ LLM 方向可以准备 attention、优化器、检索和评测这些主题。下
 
 ### 练习题
 
-把练习固定为四个可以回答的小问：交叉熵为什么能训练分类器；Adam 和 SGD 的区别；怎么理解缩放律；K-Means 和 GMM 的区别。
+把练习固定为四个可以回答的小问：cross entropy 为什么能训练分类器；Adam 和 SGD 的区别；怎么理解缩放律；K-Means 和 GMM 的区别。
 
 ### 参考回答
 
-**1. 为什么交叉熵可以训练分类器？** 交叉熵是目标分布 $y$ 下模型负对数概率的期望：$L = -\sum_k y_k \log p_k$。标签是 one-hot 时，它就是正确类别的负 log 概率。设 $p = \mathrm{softmax}(z)$，对 logits 的梯度是 $\partial L / \partial z = p - y$：模型给正确类别的概率越低，推动越大。实际实现里要说明 padding 位置怎么 mask，以及 loss 按样本数还是按 token 数归一化。
+**1. 为什么 cross entropy 可以训练分类器？** cross entropy 是目标分布 $y$ 下模型负 log probability 的期望：$L = -\sum_k y_k \log p_k$。标签是 one-hot 时，它就是正确类别的负 log 概率。设 $p = \mathrm{softmax}(z)$，对 logits 的梯度是 $\partial L / \partial z = p - y$：模型给正确类别的概率越低，推动越大。实际实现里要说明 padding 位置怎么 mask，以及 loss 按样本数还是按 token 数 normalization。
 
-**2. Adam 和 SGD 有什么区别？** SGD 直接沿梯度方向更新。Adam 维护梯度的一阶和二阶指数滑动平均，并做偏差校正，每个参数的更新尺度会被历史梯度平方的大小缩放。还要讲清一个常见误区：权重衰减和把 L2 项直接加进 Adam 的梯度，效果不一样，因为后者也会被二阶矩缩放；AdamW 把衰减从梯度里解耦出来，正是为了解决这个问题。
+**2. Adam 和 SGD 有什么区别？** SGD 直接沿梯度方向更新。Adam 维护梯度的一阶和二阶指数滑动平均，并做偏差校正，每个参数的更新尺度会被历史梯度平方的大小缩放。还要讲清一个常见误区：weight decay 和把 L2 项直接加进 Adam 的梯度，效果不一样，因为后者也会被二阶矩缩放；AdamW 把衰减从梯度里解耦出来，正是为了解决这个问题。
 
 **3. 怎么理解缩放律？** 它是在指定的数据、模型家族和训练设置下，拟合出来的损失随参数量、数据量或计算量变化的经验关系，不是适用于任意训练预算的物理定律。往外推之前，要先确认数据质量和优化状态（比如学习率调度是否合适）与拟合时一致。
 
-**4. K-Means 和 GMM 有什么区别？** K-Means 最小化每个点到所属中心的平方距离，每个点硬分配给一个簇。GMM 最大化混合高斯的似然，用后验责任度做软分配，并且每个簇可以有不同的协方差。GMM 可能出现协方差退化（某个分量塌缩到一个点上），需要正则和合理的初始化。只说“一个是聚类、一个是概率模型”是不够的。
+**4. K-Means 和 GMM 有什么区别？** K-Means 最小化每个点到所属中心的平方距离，每个点硬分配给一个 cluster。GMM 最大化混合高斯的似然，用后验责任度做软分配，并且每个 cluster 可以有不同的协方差。GMM 可能出现协方差退化（某个分量塌缩到一个点上），需要正则和合理的初始化。只说“一个是聚类、一个是概率模型”是不够的。
 
-准备时可以实际手算两个样本的交叉熵梯度、写一轮 Adam 更新，再用留出数据检查缩放律的预测误差。聚类则拿两个重叠的簇，解释同一个点在硬分配和软分配下如何处理。
+准备时可以实际手算两个样本的 cross entropy 梯度、写一轮 Adam 更新，再用留出数据检查缩放律的预测误差。聚类则拿两个重叠的 cluster，解释同一个点在硬分配和软分配下如何处理。
 
 ### 面试追问与参考回答
 
-**类别极度不平衡时，交叉熵还合适吗？** 交叉熵本身仍然是合法的目标，但梯度会被多数类主导。可以按类别加权，或者换成 focal loss 这类压低易分样本权重的变体；更重要的是评估时换成 PR 曲线或分类别召回，而不是看总体准确率。
+**类别极度不平衡时，cross entropy 还合适吗？** cross entropy 本身仍然是合法的目标，但梯度会被多数类主导。可以按类别加权，或者换成 focal loss 这类压低易分样本权重的变体；更重要的是评估时换成 PR 曲线或分类别召回，而不是看总体准确率。
 
 **Adam 的偏差校正是为了什么？** 一阶和二阶矩都从 0 开始初始化，训练早期的估计会偏向 0。除以 $1 - \beta^t$ 可以把这个偏差修正回来，否则最开始几步的更新尺度会不准确。
 

@@ -4,20 +4,22 @@ section: dp-1d
 order: 2
 level: S
 title: LC 198 · 打家劫舍
-quick: "一维 DP：到第 $i$ 间房，不抢就继承 $dp[i-1]$，抢就是 $dp[i-2]+nums[i]$，即 $dp[i]=\\max(dp[i-1],\\,dp[i-2]+nums[i])$。转移只依赖前两项，滚成两个变量，时间 $O(n)$、空间 $O(1)$。"
+quick: >-
+  一维 DP：到第 $i$ 间房，不抢就继承 $dp[i-1]$，抢就是 $dp[i-2]+nums[i]$，即
+  $dp[i]=\max(dp[i-1],\,dp[i-2]+nums[i])$。转移只依赖前两项，滚成两个变量，时间 $O(n)$、空间 $O(1)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 198. 打家劫舍
-    url: https://leetcode.cn/problems/house-robber/
+    url: 'https://leetcode.cn/problems/house-robber/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -94,7 +96,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 只有 $1$ 间时答案就是它的金额，循环一次 `prev1` 就变成它。两间时取较大的，即 $\max(nums[0], nums[1])$。金额里有 $0$ 也不影响，转移仍是 $\max(\text{不偷},\,\text{偷})$，$0$ 相当于没贡献。
 
@@ -110,6 +112,7 @@ def robII(nums):
         for x in a:
             prev2, prev1 = prev1, max(prev1, prev2 + x)
         return prev1
+
     if len(nums) == 1:
         return nums[0]
     return max(rob_line(nums[:-1]), rob_line(nums[1:]))
@@ -128,5 +131,6 @@ def robIII(root):
         skip = max(ls, lt) + max(rs, rt)
         take = node.val + ls + rs
         return (skip, take)
+
     return max(dfs(root))
 ```

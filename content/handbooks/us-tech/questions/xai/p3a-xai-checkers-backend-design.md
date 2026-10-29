@@ -3,8 +3,10 @@ id: p3a-xai-checkers-backend-design
 section: xai
 order: 606
 level: A
-title: "xAI：跳棋后端：棋盘、合法走子和胜负"
-quick: "我会先确认强制跳吃、连跳和升王规则，再把 move 实现成先校验、后整体更新的状态转移。服务端保存权威局面，客户端只提交走法；非法操作不改状态，连跳结束后才换手并检查胜负。"
+title: xAI：跳棋后端：棋盘、合法走子和胜负
+quick: >-
+  我会先确认强制跳吃、连跳和升王规则，再把 move
+  实现成先校验、后整体更新的状态转移。服务端保存权威局面，客户端只提交走法；非法操作不改状态，连跳结束后才换手并检查胜负。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · checkers-backend-design"
-    url: https://www.1point3acres.com/interview/problems/company/xai/checkers-backend-design
+  - title: 1Point3Acres · xAI · checkers-backend-design
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/checkers-backend-design
     type: secondary
 ---
 
@@ -53,9 +56,9 @@ Checkers({(2, 1): 1, (3, 2): -1, (5, 4): -1}).move((2, 1), (3, 0))   -> ValueErr
 
 ## 题目
 
-在限定时间内设计并部分实现一个 checkers（跳棋）游戏的后端：表示棋盘，校验并执行玩家的走子，判断胜负。题目更看重先把核心规则做对、形成可运行的闭环，再讨论服务端架构。
+在限定时间内设计并部分实现一个 checkers（跳棋）游戏的后端：表示棋盘，校验并执行玩家的走子，判断胜负。题目更看重先把核心规则做对、形成可运行的 feedback loop，再讨论服务端架构。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的规则变体、接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的规则变体、接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -113,7 +116,11 @@ class Checkers:
         if turn not in (-1, 1):
             raise ValueError("turn must be 1 or -1")
         for square, piece in board.items():
-            if not inside(square) or sum(square) % 2 != 1 or piece not in (-KING, -MAN, MAN, KING):
+            if (
+                not inside(square)
+                or sum(square) % 2 != 1
+                or piece not in (-KING, -MAN, MAN, KING)
+            ):
                 raise ValueError(f"invalid piece {piece!r} at {square!r}")
         self.board = dict(board)
         self.turn = turn
@@ -145,7 +152,9 @@ class Checkers:
 
     def move(self, src, dst):
         """执行一步；非法时抛 ValueError 且不改棋盘。返回胜者（1 或 -1），未分胜负返回 None。"""
-        legal = self.options(self.turn, captures_only=self.forced is not None, only=self.forced)
+        legal = self.options(
+            self.turn, captures_only=self.forced is not None, only=self.forced
+        )
         choice = next((action for action in legal if action[:2] == (src, dst)), None)
         if choice is None:
             raise ValueError(f"illegal move {src} -> {dst}")
@@ -182,7 +191,7 @@ class Checkers:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -195,6 +204,7 @@ def expect_illegal(game, src, dst):
         assert game.board == before  # 非法操作不留下半更新的状态
         return
     raise AssertionError(f"{src} -> {dst} should be illegal")
+
 
 # 跳吃掉对方最后一枚子，正方获胜
 game = Checkers({(2, 1): 1, (3, 2): -1})

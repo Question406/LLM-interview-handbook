@@ -65,10 +65,10 @@ $$
 
 ## 接到模型
 
-下一 token 的交叉熵是在估 $H(x_t\mid x_{\lt t})$ 的上界，模型越好，条件熵越低。
+下一 token 的 cross entropy 是在估 $H(x_t\mid x_{\lt t})$ 的上界，模型越好，条件熵越低。
 
-Attention 或表征里说的「token 之间的依赖」，可以粗略说成互信息，但别把点积注意力直接写成 $I(Q;K)$。
+Attention 或表征里说的「token 之间的依赖」，可以粗略说成互信息，但别把点积 attention 直接写成 $I(Q;K)$。
 
-信息瓶颈、对比学习都在最大化某种 $I(\text{repr};\text{target})$，实现上仍常落到交叉熵损失（CE）或 InfoNCE，而 InfoNCE 是互信息的变分下界。
+信息瓶颈、contrastive learning 都在最大化某种 $I(\text{repr};\text{target})$，实现上仍常落到 cross entropy loss（CE）或 InfoNCE，而 InfoNCE 是互信息的变分下界。
 
 白板上我会先画 $H(X)$、$H(Y)$、$H(X,Y)$ 三个圈，交叠的部分就是 $I$，再写那条 KL。

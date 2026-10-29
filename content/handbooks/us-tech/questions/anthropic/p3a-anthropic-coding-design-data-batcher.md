@@ -3,8 +3,10 @@ id: p3a-anthropic-coding-design-data-batcher
 section: anthropic
 order: 611
 level: S
-title: "Anthropic：加权 DataBatcher：确定性采样与断点续训"
-quick: "我会把加权取样做成跨 batch 连续的确定性序列，batch 只负责截取其中一段。这样不会因每个 batch 向下取整而饿死小权重源；保存调度位置和各源游标后，恢复输出就能和不中断时一致。"
+title: Anthropic：加权 DataBatcher：确定性 sampling 与断点续训
+quick: >-
+  我会把加权取样做成跨 batch 连续的确定性序列，batch 只负责截取其中一段。这样不会因每个 batch
+  向下取整而饿死小权重源；保存调度位置和各源游标后，恢复输出就能和不中断时一致。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · coding-design-data-batcher"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/coding-design-data-batcher
+  - title: 1Point3Acres · Anthropic · coding-design-data-batcher
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/coding-design-data-batcher
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 训练数据来自多个有限数据源。实现可循环读取、按固定整数比例混合、可保存和恢复进度的数据 batcher。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -53,7 +56,7 @@ batcher.next_batch(3)   -> [b0, a0, a1]
 
 实现一个 DataBatcher：有多个数据源，每个源有一个权重，按权重比例从各个源取样本组成 batch。要支持从某个 offset 断点续训，而且 batch 大小不一定能整除权重和。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -61,9 +64,9 @@ batcher.next_batch(3)   -> [b0, a0, a1]
 
 解决办法是让调度跨 batch 延续。可以把一个周期展开成序列，比如权重 [2, 1] 对应 [源 0, 源 0, 源 1]，用一个游标在序列上循环，batch 只是从当前位置往后截一段。这样无论 batch 多大，长期比例都严格等于权重比例。
 
-断点续训要求恢复后的输出和不中断时完全一样，所以状态里要包含所有会影响后续输出的东西：调度游标、每个源各自的读取位置；如果用随机采样，还要加上随机数生成器的状态。
+断点续训要求恢复后的输出和不中断时完全一样，所以状态里要包含所有会影响后续输出的东西：调度游标、每个源各自的读取位置；如果用 random sampling，还要加上随机数生成器的状态。
 
-动手前先问清楚：权重是严格比例（确定性调度）还是采样概率（随机抽样）；源读完以后是循环、报错还是移出调度。
+动手前先问清楚：权重是严格比例（确定性调度）还是 sampling 概率（随机抽样）；源读完以后是循环、报错还是移出调度。
 
 ## 完整编程练习（手册重构版）
 
@@ -87,7 +90,7 @@ batcher.next_batch(3)   -> [b0, a0, a1]
 
 ### 解题思路与正确性
 
-输出序列完全由「调度位置」和「各源游标」决定：每取一个样本，从调度序列读出源编号，从该源的游标处取样本，然后两个游标各加一并取模。由于调度位置不在 batch 边界重置，分几次取和一次取完得到的是同一个序列，权重小的源在每个周期里都会出现。
+输出序列完全由「调度位置」和「各源游标」决定：每取一个样本，从调度序列读出源编号，从该源的游标处取样本，然后两个游标各加一并取模。由于调度位置不在 batch boundaries 重置，分几次取和一次取完得到的是同一个序列，权重小的源在每个周期里都会出现。
 
 恢复时把这两部分状态原样设回，后续的每一步都和不中断运行时一致。
 
@@ -106,7 +109,9 @@ class Batcher:
             raise ValueError("weights must be positive ints")
         self.sources = [list(source) for source in sources]
         # 一个调度周期：源 0 连续 weights[0] 次，源 1 连续 weights[1] 次……
-        self.schedule = [index for index, weight in enumerate(weights) for _ in range(weight)]
+        self.schedule = [
+            index for index, weight in enumerate(weights) for _ in range(weight)
+        ]
         self.pos = 0  # 在调度周期里的位置
         self.offsets = [0] * len(sources)  # 每个源下一个要读的下标
 
@@ -119,7 +124,9 @@ class Batcher:
             index = self.schedule[self.pos]
             source = self.sources[index]
             batch.append(source[self.offsets[index]])
-            self.offsets[index] = (self.offsets[index] + 1) % len(source)  # 源读完后从头循环
+            self.offsets[index] = (self.offsets[index] + 1) % len(
+                source
+            )  # 源读完后从头循环
             self.pos = (self.pos + 1) % len(self.schedule)
         return batch
 
@@ -133,7 +140,10 @@ class Batcher:
             raise ValueError(f"schedule position out of range: {pos}")
         if len(offsets) != len(self.sources):
             raise ValueError("need one offset per source")
-        if any(not 0 <= offset < len(source) for offset, source in zip(offsets, self.sources)):
+        if any(
+            not 0 <= offset < len(source)
+            for offset, source in zip(offsets, self.sources)
+        ):
             raise ValueError(f"source offset out of range: {offsets}")
         self.pos = pos
         self.offsets = list(offsets)
@@ -147,13 +157,14 @@ class Batcher:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 def make():
     return Batcher([["a0", "a1"], ["b0"]], [2, 1])
+
 
 # 按 2:1 的周期取数
 batcher = make()
@@ -184,5 +195,5 @@ else:
 设源的总长度为 $L$、权重和为 $W$、源个数为 $m$。构造是 $O(L + W)$，取 $n$ 个样本是 $O(n)$，状态大小是 $O(m)$。
 
 - 权重很大（比如 1000:1）怎么办？展开的调度序列会很长。可以只存权重前缀和，用二分查找周期位置对应的源，空间降到 $O(m)$。另外，连续 1000 个都来自同一个源，局部混合不均匀，可以改用平滑加权轮询（smooth weighted round-robin）让各个源交错出现。
-- 换成随机采样怎么办？状态里还要保存随机数生成器的状态和采样算法的版本，否则代码升级后同一个种子也会产生不同的序列。
+- 换成 random sampling 怎么办？状态里还要保存随机数生成器的状态和 sampling 算法的版本，否则代码升级后同一个种子也会产生不同的序列。
 - 多机训练怎么办？每个 worker 要能根据全局样本编号推出自己该读的位置，恢复时所有 worker 从同一个全局步数开始。

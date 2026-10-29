@@ -4,27 +4,38 @@ section: anthropic
 order: 33
 level: A
 title: Anthropic：跨会话记忆什么进检索、什么不该持久化？
-quick: "跨会话只保存下次还用得上的短事实，比如稳定偏好、项目约定和用户明确要求记住的内容，每条都应可审计、可删除。密钥、OTP、他人 PII、原始工具输出和网页指令在写入前过滤；检索按用户和工作区隔离，只取相关条目。"
+quick: >-
+  跨会话只保存下次还用得上的短事实，比如稳定偏好、项目约定和用户明确要求记住的内容，每条都应可审计、可删除。密钥、OTP、他人
+  PII、原始工具输出和网页指令在写入前过滤；检索按用户和工作区隔离，只取相关条目。
 tags:
   - Anthropic
   - Memory
   - Agents
   - Privacy
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Using agent memory (Claude Docs)
-    url: https://platform.claude.com/docs/en/managed-agents/memory
+    url: 'https://platform.claude.com/docs/en/managed-agents/memory'
     type: primary
   - title: Building effective agents
-    url: https://www.anthropic.com/engineering/building-effective-agents
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
     type: primary
   - title: Constitutional AI — Harmlessness from AI Feedback
-    url: https://arxiv.org/abs/2212.08073
+    url: 'https://arxiv.org/abs/2212.08073'
     type: primary
 ---
+
+## 可以这样回答
+
+我会把跨会话记忆做成可审计、可删除的短事实，只留对下次任务有用的内容。比如代码偏好可以记，刚收到的一次性验证码就不该存。Claude 托管 agent 的 memory store 采用工作区小文本文档，挂到 session 后显示为目录，模型用普通文件工具读写，每次改动保留不可变版本。
+
+官方形态是很多小文件（单条有大小上限，文档量级约 100 KB），用路径当键，例如 `preferences/formatting.md`。描述字段会进系统提示，告诉模型这个目录是干什么的。宿主也能经 API 写入、覆盖、按版本清除敏感内容（redact）。清除操作用于删除泄漏的密钥和个人信息 PII，审计里留下「谁何时删了什么」，当前最新版本不能直接清除，要先写入新版本，再清除旧版本。
+
+## 技术备查
 
 我会把跨会话记忆做成可审计、可删除的短事实，只留对下次任务有用的内容。比如代码偏好可以记，刚收到的一次性验证码就不该存。Claude 托管 agent 的 memory store 采用工作区小文本文档，挂到 session 后显示为目录，模型用普通文件工具读写，每次改动保留不可变版本。
 
@@ -45,7 +56,7 @@ sources:
 
 | 类别 | 例子 | 为什么 |
 | --- | --- | --- |
-| 密钥 | API key、cookie、私钥、连接串 | 记忆目录对模型是可读文件，等于把秘密放进 输入提示（prompt） |
+| 密钥 | API key、cookie、私钥、连接串 | 记忆目录对模型是可读文件，等于把秘密放进 prompt |
 | 一次性 | OTP、魔术链接、会话令牌 token | 过期后仍会被模型当有效凭据用 |
 | 他人 PII | 通讯录里别人的身份证号、病历 | 用户同意不等于第三人同意；删除请求要能清除对应内容 |
 | 工具原始输出 | 整页 HTML、数据库 dump | 胀库，且网页指令会变成「用户偏好」，见 `anthropic-prompt-injection` |

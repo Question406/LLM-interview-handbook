@@ -4,20 +4,22 @@ section: dp-1d
 order: 4
 level: S
 title: LC 322 · 零钱兑换
-quick: "完全背包求最小值：$dp[x]$ 表示凑出金额 $x$ 的最少硬币数，枚举最后一枚硬币 $c$，取 $dp[x]=\\min_c(dp[x-c]+1)$。$dp[0]=0$，其余初始化为 $+\\infty$；最后仍无法凑出就返回 $-1$。"
+quick: >-
+  完全背包求最小值：$dp[x]$ 表示凑出金额 $x$ 的最少硬币数，枚举最后一枚硬币 $c$，取
+  $dp[x]=\min_c(dp[x-c]+1)$。$dp[0]=0$，其余初始化为 $+\infty$；最后仍无法凑出就返回 $-1$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 322. 零钱兑换
-    url: https://leetcode.cn/problems/coin-change/
+    url: 'https://leetcode.cn/problems/coin-change/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(\mathrm{amount}\cdot |coins|)$，额外空间 $O(\mathrm{amount})$。
 
-## 边界
+## Edge Cases
 
 `amount=0` 不需要硬币，返回 $0$。所有面值都大于金额时，`dp[amount]` 一直是无穷大，返回 $-1$。凑不出的情况（比如 `[2]` 凑 $3$）也一样，不能用贪心硬凑。
 
@@ -129,5 +131,7 @@ def greedy_wrong(coins, amount):
         cnt += amount // c
         amount %= c
     return cnt if amount == 0 else -1
+
+
 # greedy_wrong([1, 3, 4], 6) == 3，而最优是 2
 ```

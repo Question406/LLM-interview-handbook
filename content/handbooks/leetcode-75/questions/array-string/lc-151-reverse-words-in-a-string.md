@@ -4,7 +4,7 @@ section: array-string
 order: 6
 level: S
 title: LC 151 · 反转字符串中的单词
-quick: "用 `split()` 按空白拆出单词，反转后用一个空格拼回去，多余的空格在拆的时候就被丢掉了。结果首尾没有空格，单词间只留一个空格，时间 $O(n)$。"
+quick: 用 `split()` 按空白拆出单词，反转后用一个空格拼回去，多余的空格在拆的时候就被丢掉了。结果首尾没有空格，单词间只留一个空格，时间 $O(n)$。
 tags:
   - String
   - Two Pointers
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 151. Reverse Words in a String
-    url: https://leetcode.com/problems/reverse-words-in-a-string/
+    url: 'https://leetcode.com/problems/reverse-words-in-a-string/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -92,7 +92,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$（单词列表）。原地字符数组做法额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 只有一个单词时，去掉首尾空格后原样返回。
 

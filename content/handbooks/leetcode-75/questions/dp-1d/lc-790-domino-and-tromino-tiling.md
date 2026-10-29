@@ -4,20 +4,23 @@ section: dp-1d
 order: 4
 level: A
 title: LC 790 · 多米诺和托米诺平铺
-quick: "用两个状态：$f[i]$ 是 $2\\times i$ 铺满的方案数，$p[i]$ 是前 $i-1$ 列铺满、第 $i$ 列只铺一格。$f[i]=f[i-1]+f[i-2]+2p[i-1]$，$p[i]=p[i-1]+f[i-2]$，消掉 $p$ 得 $f[n]=2f[n-1]+f[n-3]$。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  用两个状态：$f[i]$ 是 $2\times i$ 铺满的方案数，$p[i]$ 是前 $i-1$ 列铺满、第 $i$
+  列只铺一格。$f[i]=f[i-1]+f[i-2]+2p[i-1]$，$p[i]=p[i-1]+f[i-2]$，消掉 $p$ 得
+  $f[n]=2f[n-1]+f[n-3]$。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 790. Domino and Tromino Tiling
-    url: https://leetcode.com/problems/domino-and-tromino-tiling/
+    url: 'https://leetcode.com/problems/domino-and-tromino-tiling/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -53,7 +56,7 @@ sources:
 
 ## 思路
 
-我按列从左往右铺，用最右边的边界形状当状态。边界只会有两种形状：右边齐平，记作 $f$；或者最后一列只铺了上格或下格、凸出一个角，记作 $p$。上凸和下凸对称，只算一种，用到时乘 $2$。
+我按列从左往右铺，用 rightmost frontier shape 当状态。frontier 只会有两种形状：右边齐平，记作 $f$；或者最后一列只铺了上格或下格、凸出一个角，记作 $p$。上凸和下凸对称，只算一种，用到时乘 $2$。
 
 先看 $f[i]$ 从哪来。最后放一块竖多米诺，来自 $f[i-1]$；最后两块横多米诺叠着放，来自 $f[i-2]$；最后放一块托米诺把凸角补平，来自 $p[i-1]$，上凸下凸各一种，所以是 $2p[i-1]$。合起来 $f[i]=f[i-1]+f[i-2]+2p[i-1]$。
 
@@ -119,7 +122,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 只能放一块竖多米诺，答案 $1$。
 

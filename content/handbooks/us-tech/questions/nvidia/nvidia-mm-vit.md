@@ -40,7 +40,7 @@ X_{\mathrm{vit}}:[B_{\mathrm{img}}, N_{\mathrm{patch}}, D_v],\qquad
 E_{\mathrm{vis}}:[B_{\mathrm{img}}, N_{\mathrm{vis}}, D].
 $$
 
-视觉 encoder 做一次完整前向：自注意力是对称的，不使用 KV cache，也不逐 token decode。它的算术强度较高，GEMM 形状规整，batch 维统计的是图片张数。
+视觉 encoder 做一次完整前向：self-attention 是对称的，不使用 KV cache，也不逐 token decode。它的算术强度较高，GEMM 形状规整，batch 维统计的是图片张数。
 
 LLM 侧：文本 embedding 和 $E_{\mathrm{vis}}$ 按占位符插进同一条序列。一条请求的 prefill 长是 $T_{\mathrm{text}}+N_{\mathrm{vis}}$（多图再加）。IFB 一步看到的是 packed token：
 
@@ -56,7 +56,7 @@ Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nv
 
 纯文本 IFB 以 `max_num_tokens` 为预算，一步里 decode 行 + chunked prefill，见 `nvidia-inflight-batch`、`nvidia-chunked-prefill`。多模态多出来的坑：
 
-1. **Encoder 不可切成 LLM 那种 token chunk。** ViT 的层间依赖是整图注意力。Chunked prefill 切的是 **已经算好的视觉 embedding 在 LLM 里的消费**，不是把一张图的 patch 分两步跑完 encoder。TRT-LLM 后来给 llava-next / Qwen2 补的 multimodal chunked prefill，文档强调 embedding cache / 只跑尚未消费的视觉段。把一张图的 encoder 斩两半当 chunk，hidden 对不上。
+1. **Encoder 不可切成 LLM 那种 token chunk。** ViT 的层间依赖是整图 attention。Chunked prefill 切的是 **已经算好的视觉 embedding 在 LLM 里的消费**，不是把一张图的 patch 分两步跑完 encoder。TRT-LLM 后来给 llava-next / Qwen2 补的 multimodal chunked prefill，文档强调 embedding cache / 只跑尚未消费的视觉段。把一张图的 encoder 斩两半当 chunk，hidden 对不上。
 
 2. **Token budget 被图打满。** 一张图 576-2k token，再加长 caption，$U=2048$ 可能只够半张图的 LLM prefill。正在生成的请求 TBT 被这条视觉 prefill 抬成尖刺，比纯文本 8k 还常见，因为请求一来就带着图。
 
@@ -66,13 +66,13 @@ Attention 走 paged KV，因果 mask，新视觉 token 也要写 cache，见 `nv
 
 Triton 路径常是两个模型：`multimodal_encoder` 和 LLM engine，用 ensemble 串。这是显式拆阶段，形状各自固定，代价是中间 embedding 的一次设备间拷。同进程同卡省拷，scheduler 必须自己插入 encoder 阶段，不能假装只有一种 prefill kernel。
 
-选择部署方式时，我会先看延迟和吞吐目标。
+选择部署方式时，我会先看延迟和 throughput 目标。
 
-延迟敏感且图片少时，可以同卡运行，把 encoder 放在请求 admit 之后、LLM prefill 之前，必要时让 decode 步退避。吞吐敏感且图片大时，可以将 encoder 分池，并按图 hash 复用 embedding 缓存。Chunk 只切 LLM 侧，page 对齐仍要遵守。别承诺「多模态 IFB 和文本一样只要把图当 token」。图在 encoder 里不是 token，进 LLM 之后才是。
+延迟敏感且图片少时，可以同卡运行，把 encoder 放在请求 admit 之后、LLM prefill 之前，必要时让 decode 步退避。throughput 敏感且图片大时，可以将 encoder 分池，并按图 hash 复用 embedding 缓存。Chunk 只切 LLM 侧，page 对齐仍要遵守。别承诺「多模态 IFB 和文本一样只要把图当 token」。图在 encoder 里不是 token，进 LLM 之后才是。
 
 ## 追问
 
-- **视觉 token 能和文本 token 做一次 FA 吗？** 进 LLM 之后可以，它们已经在同一 $D$ 上。Encoder 内部的 ViT 注意力是另一张图、另一套核。
+- **视觉 token 能和文本 token 做一次 FA 吗？** 进 LLM 之后可以，它们已经在同一 $D$ 上。Encoder 内部的 ViT attention 是另一张图、另一套核。
 - **无图请求和有图请求混跑？** 可以。Encoder 对无图请求是空。LLM 步里 $N_{\mathrm{vis}}=0$，ragged pack 本来就允许变长。
 - **视频呢？** 帧数乘 $N_{\mathrm{patch}}$，prefill 更不齐。必须抽帧或时序压缩，否则 `max_num_tokens` 没有上限。
 - **量化 encoder 吗？** TRT-LLM 备注里视觉侧常仍 FP16，和 LLM 的 W4A8 不是一把开关。质量回归先看 OCR / 细粒度定位。

@@ -5,7 +5,8 @@ order: 1
 level: A
 title: LC 2095 · 删除链表的中间节点
 quick: >-
-  删单链表节点要拿到前驱，所以用快慢指针让慢指针停在中间节点的前驱：`slow=head`、`fast=head.next.next` 起跑，快的走到头时 `slow.next` 就是中间节点，直接跳过它。时间 $O(n)$，额外空间 $O(1)$。
+  删单链表节点要拿到前驱，所以用快慢指针让慢指针停在中间节点的前驱：`slow=head`、`fast=head.next.next` 起跑，快的走到头时
+  `slow.next` 就是中间节点，直接跳过它。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Two Pointers
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2095. Delete the Middle Node of a Linked List
-    url: https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
+    url: 'https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -127,7 +128,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 没有前驱，单独返回 `None`。
 

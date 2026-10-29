@@ -46,7 +46,7 @@ $$
 
 ## 放到 LLM 里
 
-词表大小为 $V$ 时，完全瞎猜的 next-token 分布接近均匀，$H\approx\log V$。训练把更多概率集中到正确答案上，熵随之下降。强化学习（RL）里监控的 policy entropy 是同一个定义，只是 $p=\pi_\theta(\cdot\mid s)$。熵掉到 $0$ 就是 collapse：每个 state 几乎只输出一个 token。
+vocabulary 大小为 $V$ 时，完全瞎猜的 next-token 分布接近均匀，$H\approx\log V$。训练把更多概率集中到正确答案上，熵随之下降。RL 里监控的 policy entropy 是同一个定义，只是 $p=\pi_\theta(\cdot\mid s)$。熵掉到 $0$ 就是 collapse：每个 state 几乎只输出一个 token。
 
 白板上先写定义，再声明 $0\log 0$，并问清用 bit 还是 nat。
 

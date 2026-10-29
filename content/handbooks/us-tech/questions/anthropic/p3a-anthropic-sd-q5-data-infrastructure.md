@@ -27,7 +27,7 @@ sources:
 
 设计一个大规模数据摄取和处理系统，服务不同的利益相关方，并处理不同的敏感级别。题卡给出的详细规格有限。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖，原题详细规格有限；收录为面经题型不代表公司官方确认。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，原题详细规格有限。规模数字、SLO 和故障情景是手册补的练习约定。
 
 ## 思路
 
@@ -45,7 +45,7 @@ sources:
 
 我会先确认来源、更新频率、能否重放和访问范围，再把原始层、处理层、服务层分开。题卡规格有限，练习暂定每天 10TB、批流混合，研究、分析和生产用户分别授权；删除时限、研究能否读原始数据还要继续澄清。
 
-比如一天的数据按 `source_offset` 不可变地落到 landing，校验发现 0.1% 的行缺字段，就隔离这些行并记录问题，其余进入标准化任务。`job_run` 记录 code、config 和 `input_versions`，产出 curated 的新 version，继承来源的 classification 和 acl。检查全部通过才原子切换 manifest，让研究快照和在线服务读到新数据。
+比如一天的数据按 `source_offset` 不可变地落到 landing，校验发现 0.1% 的行缺字段，就隔离这些行并记录问题，其余进入 standardization 任务。`job_run` 记录 code、config 和 `input_versions`，产出 curated 的新 version，继承来源的 classification 和 acl。检查全部通过才原子切换 manifest，让研究快照和在线服务读到新数据。
 
 数据集要记录 dataset、version、schema、classification、acl、retention、血缘和质量检查结果。调度元数据与数据存储分开，每份派生数据都能追到输入和代码，这也是失败后按相同输入版本重跑的基础。更正数据生成新版本，保留可追溯的变化。
 

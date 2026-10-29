@@ -4,7 +4,11 @@ section: coding
 order: 57
 level: A
 title: 手写对称 INT8 量化：scale、饱和，以及 dequant GEMM 的形状
-quick: "对称量化是 $q=\\mathrm{round}(w/s).\\mathrm{clamp}(-127,127)$，$s=\\|w\\|_\\infty/127$，反量化 $\\hat w=q\\cdot s$。GEMM 写成 $(x q^\\top)\\cdot s$，scale 留在外层乘，不用先把 $q$ 扩成 fp16 再乘。per-tensor 只有一个 $s$；per-channel 的 $s$ 是 $[V]$ 或 $[K]$ 向量，沿输出通道广播。"
+quick: >-
+  对称量化是
+  $q=\mathrm{round}(w/s).\mathrm{clamp}(-127,127)$，$s=\|w\|_\infty/127$，反量化
+  $\hat w=q\cdot s$。GEMM 写成 $(x q^\top)\cdot s$，scale 留在外层乘，不用先把 $q$ 扩成 fp16
+  再乘。per-tensor 只有一个 $s$；per-channel 的 $s$ 是 $[V]$ 或 $[K]$ 向量，沿输出通道广播。
 tags:
   - Quantization
   - INT8
@@ -12,10 +16,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
   - title: LLM.int8()
-    url: https://arxiv.org/abs/2208.07339
+    url: 'https://arxiv.org/abs/2208.07339'
     type: primary
 ---
 
@@ -23,11 +27,11 @@ sources:
 
 实现权重的对称低位量化，以及用该量化权重做矩阵乘法的浮点参考结果。本题不要求真正的整数 GEMM 内核。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `quant_symm(w,bits=8)` 与 `int8_gemm(x,q,scale)`。w 为非全零浮点权重 [N,K]，bits 在2到8之间；x 为 [B,K]，q 为 [N,K] int8，scale 为标量或长度N的每输出通道缩放。
+实现 `quant_symm(w,bits=8)` 与 `int8_gemm(x,q,scale)`。w 为非全零浮点权重 [N,K]，bits 在2到8之间；x 为 [B,K]，q 为 [N,K] int8，scale 为标量或长度 N 的每输出通道缩放。
 
 ### 输出与约束
 
@@ -58,11 +62,13 @@ $$
 ```python
 import torch
 
+
 def quant_symm(w, bits=8):
     qmax = 2 ** (bits - 1) - 1
     scale = w.abs().amax() / qmax
     q = (w / scale).round().clamp(-qmax, qmax)
     return q.to(torch.int8), scale
+
 
 def int8_gemm(x, q, scale):
     # x: [B,K], q: [N,K] int8, scale 标量或 [N]
@@ -78,7 +84,7 @@ def int8_gemm(x, q, scale):
 用可精确表示的 [-1,0,1] 检查量化端点，再用单位矩阵做 GEMM，结果应还原权重的转置。这里避免全零权重，因为原片段尚未处理 scale=0 的分支。
 
 ```python
-w = torch.tensor([[-1., 0., 1.]])
+w = torch.tensor([[-1.0, 0.0, 1.0]])
 q, scale = quant_symm(w)
 assert q.dtype == torch.int8 and q.tolist() == [[-127, 0, 127]]
 torch.testing.assert_close(q.float() * scale, w)

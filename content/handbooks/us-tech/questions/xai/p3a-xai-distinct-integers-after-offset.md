@@ -3,8 +3,10 @@ id: p3a-xai-distinct-integers-after-offset
 section: xai
 order: 610
 level: A
-title: "xAI：数组元素各加 [-k,k] 后最多不同值"
-quick: "我会把每个 x 看成可选区间 [x - k, x + k]，排序后尽量分配比 last 大的最小整数，把空间留给后面的元素。分不到新值就保留原值；这个证明只适用于偏移可重复使用的版本，偏移只能用一次时要另建模型。"
+title: 'xAI：数组元素各加 [-k,k] 后最多不同值'
+quick: >-
+  我会把每个 x 看成可选区间 [x - k, x + k]，排序后尽量分配比 last
+  大的最小整数，把空间留给后面的元素。分不到新值就保留原值；这个证明只适用于偏移可重复使用的版本，偏移只能用一次时要另建模型。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · distinct-integers-after-offset"
-    url: https://www.1point3acres.com/interview/problems/company/xai/distinct-integers-after-offset
+  - title: 1Point3Acres · xAI · distinct-integers-after-offset
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/distinct-integers-after-offset
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 数组中每个整数都可以独立向左或向右调整最多 k。求能够得到的最大不同值数量，并返回一个达到最优值的数组。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -52,7 +55,7 @@ distinct([], 2)        -> (0, [])
 
 给一个整数数组和非负整数 k。每个元素可以独立地加上 $[-k, k]$ 内的任意整数，问变换后数组最多能有多少个不同的值。题卡还提到一个少见的变体：每个偏移量只能用一次。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题，只覆盖偏移可以重复使用的普通版本。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定，只覆盖偏移可以重复使用的普通版本。
 
 ## 思路
 
@@ -121,7 +124,7 @@ def distinct(nums, k):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -129,6 +132,7 @@ def distinct(nums, k):
 def brute_force(nums, k):
     choices = (range(x - k, x + k + 1) for x in nums)
     return max(len(set(candidate)) for candidate in itertools.product(*choices))
+
 
 # 三个相同元素，k = 1 时可以拉开成 0, 1, 2
 assert distinct([1, 1, 1], 1) == (3, [0, 1, 2])

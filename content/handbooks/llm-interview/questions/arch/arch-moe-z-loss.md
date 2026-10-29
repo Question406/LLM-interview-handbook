@@ -4,7 +4,9 @@ section: arch
 order: 24
 level: A
 title: Router z-loss 惩罚的是什么？和 aux load-balance 为什么不是同一个旋钮？
-quick: "Z-loss 惩罚每个 token 的 router logits 的 log-sum-exp 平方，压住分数幅度，防止 softmax 塌成 one-hot 和半精度溢出。Aux loss 管的是专家之间的流量是否均匀。一个控数值幅度，一个控负载，监控和系数都要分开。"
+quick: >-
+  Z-loss 惩罚每个 token 的 router logits 的 log-sum-exp 平方，压住分数幅度，防止 softmax 塌成
+  one-hot 和半精度溢出。Aux loss 管的是专家之间的流量是否均匀。一个控数值幅度，一个控负载，监控和系数都要分开。
 tags:
   - MoE
   - Router
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: ST-MoE
-    url: https://arxiv.org/abs/2202.08906
+    url: 'https://arxiv.org/abs/2202.08906'
     type: primary
   - title: Switch Transformers
-    url: https://arxiv.org/abs/2101.03961
+    url: 'https://arxiv.org/abs/2101.03961'
     type: primary
 ---
 
@@ -36,13 +38,13 @@ $$
 =\frac1T\sum_{t=1}^{T}\mathrm{LSE}(z_t)^2.
 $$
 
-$\mathrm{LSE}$ 就是 softmax 分母取对数。它大，说明这一行 logits 整体偏大或极度尖锐；平方之后，对已经很大的 token 罚得更重。实现时用 `logsumexp`，别先 `exp` 再 `sum` 再 `log`。系数 $\alpha_z$ 通常远小于 aux（ST-MoE 量级 $10^{-3}$ 到 $10^{-2}$ 量级，以论文为准），加在主交叉熵损失（CE）上：
+$\mathrm{LSE}$ 就是 softmax 分母取对数。它大，说明这一行 logits 整体偏大或极度尖锐；平方之后，对已经很大的 token 罚得更重。实现时用 `logsumexp`，别先 `exp` 再 `sum` 再 `log`。系数 $\alpha_z$ 通常远小于 aux（ST-MoE 量级 $10^{-3}$ 到 $10^{-2}$ 量级，以论文为准），加在主 cross entropy loss（CE）上：
 
 $$
 \mathcal{L}=\mathcal{L}_{\mathrm{LM}}+\lambda\mathcal{L}_{\mathrm{aux}}+\alpha_z\mathcal{L}_z.
 $$
 
-Sigmoid 门控没有单一的 $N$ 类分母，但仍可以对 affinity logits 做幅度惩罚，或者直接罚 $\|z\|_2^2$。V3 的无辅助方案管的是谁进 Top-$k$，替代不了 z-loss 的数值动机。两者也都可以不开，Mixtral 粗粒度时两样都没用。
+Sigmoid gating 没有单一的 $N$ 类分母，但仍可以对 affinity logits 做幅度惩罚，或者直接罚 $\|z\|_2^2$。V3 的无辅助方案管的是谁进 Top-$k$，替代不了 z-loss 的数值动机。两者也都可以不开，Mixtral 粗粒度时两样都没用。
 
 ## 和 aux 拆开看
 
@@ -50,7 +52,7 @@ Sigmoid 门控没有单一的 $N$ 类分母，但仍可以对 affinity logits �
 | --- | --- | --- |
 | 看什么 | 各专家的 $f_i$、$P_i$ | 每个 token 的 $\mathrm{LSE}(z)$ |
 | 想阻止 | 热点 / 死专家 | 分数爆炸、softmax 塌成 one-hot、溢出 |
-| 失败样子 | 直方图歪、all-to-all 拖尾 | NaN、门控全 $0/1$、训练后半段突然不稳 |
+| 失败样子 | 直方图歪、all-to-all 拖尾 | NaN、gating 全 $0/1$、训练后半段突然不稳 |
 | 调太大 | 路由为了平均牺牲语义 | 路由器不敢自信，专家区分度掉 |
 
 举两个反方向的例子。Switch 形式的 aux 在负载均匀时取最小值 $1$，和 logits 幅度无关：把分数乘 $100$ 再减一个常数，softmax 不变，$f_i$ 不变，aux 一动不动，z-loss 却会爆。反过来，所有专家流量已经均匀，logits 却涨到了 $60$，aux 看着很健康，半精度前向已经在 overflow 边缘。所以监控要两套：专家份额的 CV，以及 `router_logits.abs().max()` / `lse.mean()`。

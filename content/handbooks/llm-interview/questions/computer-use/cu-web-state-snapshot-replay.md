@@ -28,7 +28,7 @@ sources:
 
 ## 快照分三层
 
-轻量层存 URL、viewport、locale、无障碍信息 / DOM 摘要 hash、可见控件名单。中量层存完整 DOM 或 accessibility tree、关键网络响应哈希、cookie 分区标识、localStorage 里的非秘密键。重量层是浏览器上下文导出和容器镜像 digest。动作序列和每步的观测结果（observation）都要绑时间戳。树摘要和截图都要留，DOM 和视觉怎么融合定位见 `cu-dom-a11y-visual-grounding`。
+轻量层存 URL、viewport、locale、无障碍信息 / DOM 摘要 hash、可见控件名单。中量层存完整 DOM 或 accessibility tree、关键网络响应哈希、cookie 分区标识、localStorage 里的非秘密键。重量层是浏览器上下文导出和容器镜像 digest。动作序列和每步的 observation 都要绑时间戳。树摘要和截图都要留，DOM 和视觉怎么融合定位见 `cu-dom-a11y-visual-grounding`。
 
 重量快照成本高，我会按失败率抽样：所有失败都留轻量层，归因不明再升到中量。不必给每次成功的 run 都存全量 DOM。
 

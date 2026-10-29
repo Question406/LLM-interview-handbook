@@ -4,7 +4,9 @@ section: coding
 order: 190
 level: B
 title: 京东大模型算法实习：最长公共子序列和环形链表怎么写？
-quick: "LCS 用 `dp[i][j]` 表示两条前缀的最长公共子序列长度，字符相同取左上角加一，不同取左边和上边的较大值。环形链表用快慢指针判环并找入口，也可以用 `HashSet` 记录访问过的节点。动手前先说清复杂度和边界。"
+quick: >-
+  LCS 用 `dp[i][j]` 表示两条前缀的最长公共子序列长度，字符相同取左上角加一，不同取左边和上边的较大值。环形链表用快慢指针判环并找入口，也可以用
+  `HashSet` 记录访问过的节点。动手前先说清 complexity 和 edge cases。
 tags:
   - JD
   - Coding
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 京东大模型算法 实习面经 55min
-    url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46
+    url: 'https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46'
     type: candidate-first-hand
 ---
 
@@ -23,15 +25,15 @@ sources:
 
 完成两道独立函数题：求两字符串的最长公共子序列长度，以及判断单链表是否有环并定位入环节点。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `longest_common_subsequence(text1,text2)`、`has_cycle(head)` 和 `detect_cycle(head)`。字符串允许为空；链表节点含val/next，head可为None，节点值可重复。
+实现 `longest_common_subsequence(text1,text2)`、`has_cycle(head)` 和 `detect_cycle(head)`。字符串允许为空；链表节点含 val/next，head 可为 None，节点值可重复。
 
 ### 输出与约束
 
-LCS只需保持相对顺序，不要求连续，返回长度。`has_cycle`返回布尔值；`detect_cycle`返回原链表中首次进入环的节点对象，无环返回None。按节点身份判断，不按val判断，不能改变原next连接。
+LCS 只需保持相对顺序，不要求连续，返回长度。`has_cycle`返回布尔值；`detect_cycle`返回原链表中首次进入环的节点对象，无环返回 None。按节点身份判断，不按 val 判断，不能改变原 next 连接。
 
 ### 示例
 
@@ -50,7 +52,7 @@ has_cycle -> True，detect_cycle -> 该值为2的原节点对象。
 
 ## 思路
 
-LCS 里 `dp[i][j]` 表示 $a[:i]$ 和 $b[:j]$ 的最长公共子序列长度。当前字符相等就取左上角的值 $+1$，否则取左边、上边的较大值，空串对应的边界是 $0$。比如 `"abcde"` 和 `"ace"`，a、c、e 依次对上，答案是 3。只求长度可以用滚动数组；要还原序列就保留二维表，从右下角回溯。
+LCS 里 `dp[i][j]` 表示 $a[:i]$ 和 $b[:j]$ 的最长公共子序列长度。当前字符相等就取左上角的值 $+1$，否则取左边、上边的较大值，empty-string base case 是 $0$。比如 `"abcde"` 和 `"ace"`，a、c、e 依次对上，答案是 3。只求长度可以用滚动数组；要还原序列就保留二维表，从右下角回溯。
 
 环形链表用 Floyd：慢指针每次走 $1$ 步，快指针走 $2$ 步，没环的话快指针会先走到末尾。只要布尔（141）的话，相遇就返回；要入口（142），相遇后把一个指针放回头，两个指针同步走，再相遇的地方就是入口。`HashSet` 也能判断有没有重复访问节点，但要 $O(n)$ 空间，面试先给 Floyd。
 
@@ -125,7 +127,7 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 
@@ -133,7 +135,7 @@ LCS 时间 $O(mn)$，滚动之后空间 $O(\min(m,n))$。Floyd 时间 $O(n)$、�
 
 ## 追问
 
-**LCS 要测哪些边界？**
+**LCS 要覆盖哪些 edge cases？**
 空串、没有公共字符、两串完全相等。
 
 **改成最长公共子串呢？**

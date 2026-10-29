@@ -4,60 +4,75 @@ section: meta
 order: 25
 level: A
 title: Meta：Llama 3.2 Vision / Mllama——cross-attn 视觉编码器怎么接
-quick: "Llama 3.2 Vision 冻结 Llama 3.1 的语言模型，用可训练视觉编码器和 gated cross-attention adapter 接图像。文本提供 $Q$，图像提供 $K/V$，视觉信息放在旁路，不挤进文本自注意力序列，因此能作为 3.1 的 drop-in。"
+quick: >-
+  Llama 3.2 Vision 冻结 Llama 3.1 的语言模型，用可训练视觉编码器和 gated cross-attention adapter
+  接图像。文本提供 $Q$，图像提供 $K/V$，视觉信息放在旁路，不挤进文本 self-attention 序列，因此能作为 3.1 的 drop-in。
 tags:
   - Meta
   - Llama
   - Vision
   - Cross-attention
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Llama 3.2 — Revolutionizing edge AI and vision with open, customizable models
-    url: https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/
+  - title: >-
+      Llama 3.2 — Revolutionizing edge AI and vision with open, customizable
+      models
+    url: >-
+      https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/
     type: primary
   - title: Llama 3.2 Vision model card
-    url: https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD_VISION.md
+    url: >-
+      https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD_VISION.md
     type: primary
   - title: Mllama — Hugging Face Transformers
-    url: https://huggingface.co/docs/transformers/main/en/model_doc/mllama
+    url: 'https://huggingface.co/docs/transformers/main/en/model_doc/mllama'
     type: secondary
   - title: Flamingo — a Visual Language Model for Few-Shot Learning
-    url: https://arxiv.org/abs/2204.14198
+    url: 'https://arxiv.org/abs/2204.14198'
     type: secondary
 ---
+
+## 可以这样回答
+
+Llama 3.2 Vision 用独立视觉编码器和 gated cross-attention adapter，把图像接入冻结的 Llama 3.1。比如多张图进入模型后，文本 token 通过 cross-attn 读取图像表示，不必把几百个视觉 token 全塞进文本因果序列。Connect 博客和 vision model card 公开的是这种 Flamingo 式结构，Hugging Face 实现名为 Mllama。
+
+文本序列里只有少量 image 占位符，告诉模型「这里有图」；视觉信息不走 LM self-attention 的 $T$ 维。这和 LLaVA 把几百个视觉 token 拼进同一条因果序列是两种系统。
+
+## 技术备查
 
 Llama 3.2 Vision 用独立视觉编码器和 gated cross-attention adapter，把图像接入冻结的 Llama 3.1。比如多张图进入模型后，文本 token 通过 cross-attn 读取图像表示，不必把几百个视觉 token 全塞进文本因果序列。Connect 博客和 vision model card 公开的是这种 Flamingo 式结构，Hugging Face 实现名为 Mllama。
 
 ## 图像怎样进入语言模型
 
 1. **视觉编码器。** 公开实现是两段 ViT：约 $32$ 层局部编码（按 tile）再约 $8$ 层 global，让不同切块互相看见。中间若干层和最后一层拼接再投影到 LM 隐空间。图像先按长宽比切成最多 $4$ 块正方形 tile（Meta Guard 3 Vision 卡片写每块 $560\times 560$），不是整图强行缩成一张正方形。
-2. **语言模型。** 11B-Vision 挂在 Llama 3.1 8B 栈上（约 $40$ 层），90B-Vision 挂在 70B 上。名字里的 11B / 90B 是 **LM + 视觉** 合计，别当成又训了一个 11B 稠密 LM。文本自注意力、RoPE、GQA 仍按 3.1，见 `meta-llama-gqa`。
-3. **Adapter。** 在 LM 若干层插入 cross-attn。11B 公开默认层号 $[3,8,13,18,23,28,33,38]$，大约每 $5$ 层一块。文本 token 当 $Q$，视觉表示当 $K/V$。**没有 RoPE，没有因果 mask**：图像不是从左到右的词。Query/Key 上再做 RMSNorm。残差用可学门控，初始化近 $0$，插进去时不立刻打坏已冻住的 3.1 表示，和 Flamingo 的 gated xattn 同一思路。
+2. **语言模型。** 11B-Vision 挂在 Llama 3.1 8B 栈上（约 $40$ 层），90B-Vision 挂在 70B 上。名字里的 11B / 90B 是 **LM + 视觉** 合计，别当成又训了一个 11B 稠密 LM。文本 self-attention、RoPE、GQA 仍按 3.1，见 `meta-llama-gqa`。
+3. **Adapter。** 在 LM 若干层插入 cross-attn。11B 公开默认层号 $[3,8,13,18,23,28,33,38]$，大约每 $5$ 层一块。文本 token 当 $Q$，视觉表示当 $K/V$。**没有 RoPE，没有因果 mask**：图像不是从左到右的词。Query/Key 上再做 RMSNorm。残差用 learnable gate，初始化近 $0$，插进去时不立刻打坏已冻住的 3.1 表示，和 Flamingo 的 gated xattn 同一思路。
 
-文本序列里只有少量 image 占位符，告诉模型「这里有图」；视觉信息不走 LM 自注意力的 $T$ 维。这和 LLaVA 把几百个视觉 token 拼进同一条因果序列是两种系统。
+文本序列里只有少量 image 占位符，告诉模型「这里有图」；视觉信息不走 LM self-attention 的 $T$ 维。这和 LLaVA 把几百个视觉 token 拼进同一条因果序列是两种系统。
 
 ```python
 def gated_xattn(x, vis, wq, wk, wv, wo, g):
     # x: [B, T, D] 文本; vis: [B, N, D] 视觉（N = tiles * patches）
     q = rmsnorm(x) @ wq
     k, v = vis @ wk, vis @ wv
-    q, k = rmsnorm(q), rmsnorm(k)          # 无 RoPE
-    attn = softmax((q @ k.transpose(-2, -1)) / d ** 0.5) @ v
-    return x + tanh(g) * (attn @ wo)       # g 初值 0，起步近似恒等
+    q, k = rmsnorm(q), rmsnorm(k)  # 无 RoPE
+    attn = softmax((q @ k.transpose(-2, -1)) / d**0.5) @ v
+    return x + tanh(g) * (attn @ wo)  # g 初值 0，起步近似恒等
 ```
 
-从张量形状看，自注意力仍是 $[B, T, D]$；cross-attn 的 $K/V$ 是 $[B, N, D]$，$N$ 跟 tile 数走，不跟 $128\mathrm{k}$ 文本窗走。Decode 每一步新 token 都要对全部视觉 $K/V$ 做一次 cross-attn，视觉 KV 算一次可缓存。
+从张量形状看，self-attention 仍是 $[B, T, D]$；cross-attn 的 $K/V$ 是 $[B, N, D]$，$N$ 跟 tile 数走，不跟 $128\mathrm{k}$ 文本窗走。Decode 每一步新 token 都要对全部视觉 $K/V$ 做一次 cross-attn，视觉 KV 算一次可缓存。
 
 ## 为什么冻 LM
 
-博客明确说明：adapter 训练时 **更新编码器 + cross-attn，不更新 LM**。目的是文本能力不回退，视觉版当 3.1 的 drop-in。训练分两段：先大规模含噪声图文对，再中等规模高质量 / 知识增强对；后训练跟文本类似，监督微调（SFT）、rejection sampling、直接偏好优化（DPO），合成题用 Llama 3.1 滤和扩。数据量公开写约 $6\mathrm{B}$ 图文对，知识截止 2023-12。指令数据另有公开视觉指令集和约 $3\mathrm{M}$ 合成例。
+博客明确说明：adapter 训练时 **更新编码器 + cross-attn，不更新 LM**。目的是文本能力不回退，视觉版当 3.1 的 drop-in。训练分两段：先大规模含噪声图文对，再中等规模高质量 / 知识增强对；后训练跟文本类似，SFT、rejection sampling、DPO，合成题用 Llama 3.1 滤和扩。数据量公开写约 $6\mathrm{B}$ 图文对，知识截止 2023-12。指令数据另有公开视觉指令集和约 $3\mathrm{M}$ 合成例。
 
 这套结构与 Chameleon / Gemini 的原生早融合不同，也与冻结视觉编码器、只训练一层 MLP 的 LLaVA 连接器不同：3.2 明确更新了 encoder。SAM 面向分割任务，也不能直接当成这里的视觉语言模型塔。
 
-服务时，视觉 encoder 是额外的输入预填充（prefill，即处理输入并建立缓存），与文本 prefill 分池处理。Cross-attn 的 $K/V$ 按图缓存，图不变就别重算。多图、高分辨率会线性抬 $N$，见 `meta-anyres`。安全闸门要能看图，见 `meta-mm-safety`。
+服务时，视觉 encoder 是额外的输入 prefill，与文本 prefill 分池处理。Cross-attn 的 $K/V$ 按图缓存，图不变就别重算。多图、高分辨率会线性抬 $N$，见 `meta-anyres`。safety checks 要能看图，见 `meta-mm-safety`。
 
 相关：`meta-early-fusion`、`meta-anyres`、`google-gemini-mm`、`meta-segment-anything`。
 

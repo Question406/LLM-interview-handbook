@@ -4,20 +4,22 @@ section: linked-list
 order: 10
 level: A
 title: LC 86 · 分隔链表
-quick: "小于 $x$ 的节点接到一条链，其余的接到另一条，各自保持原来的顺序，最后把左链尾接到右链头。右链尾巴一定要置空，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  小于 $x$ 的节点接到一条链，其余的接到另一条，各自保持原来的顺序，最后把左链尾接到右链头。右链尾巴一定要置空，时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Linked List
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 86. 分隔链表
-    url: https://leetcode.cn/problems/partition-list/
+    url: 'https://leetcode.cn/problems/partition-list/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -128,7 +130,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个节点改一次 `next`。
 
-## 边界
+## Edge Cases
 
 - 全部小于 $x$ 时右链为空，`left` 接到 `None`，相对顺序不变。
 - 全部不小于 $x$ 时左链为空，返回右链的头。

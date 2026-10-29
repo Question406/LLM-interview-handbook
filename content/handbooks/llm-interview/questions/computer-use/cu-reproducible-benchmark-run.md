@@ -25,13 +25,13 @@ sources:
 
 ## 版本包里要有什么
 
-一条 run 要标出：task ID 与任务版本、初始 VM / 容器 image digest、账号 fixture 与种子数据、浏览器与 OS 版本、外部 API 是 mock 还是 live、harness 与 oracle 版本、模型 snapshot、输入提示（prompt）/ tool 字段和类型规范（schema）hash、sampling seed、动作步数与实际耗时预算。分辨率、设备像素比（DPR）、语言 locale、时区也要写进合同，不然相同坐标也可能指向不同的位置。
+一条 run 要标出：task ID 与任务版本、初始 VM / 容器 image digest、账号 fixture 与种子数据、浏览器与 OS 版本、外部 API 是 mock 还是 live、harness 与 oracle 版本、模型 snapshot、prompt/ tool 字段和类型规范（schema）hash、sampling seed、动作步数与实际耗时预算。分辨率、设备像素比（DPR）、语言 locale、时区也要写进合同，不然相同坐标也可能指向不同的位置。
 
 真实云服务只放在 live 轨，frozen 轨一律用 snapshot 或 mock，评测时不许打没有版本化的生产站点。登录态用预置 cookie 或本地账号，别每次都走验证码。能冻时钟的任务就冻上。
 
 ## 记什么、怎么报
 
-每次执行保存观测结果（observation）、action、tool result、屏幕 / DOM checkpoint、oracle 逐条结果，以及失败原因（`timeout` / `oracle_fail` / `env_crash` / `auth_expired`）。artifact 和环境 digest 绑在一起存，缺 checkpoint 的 run 不进正式对比。环境崩溃和模型失败分两列记，否则 harness 一抖，模型分数就跟着抖。
+每次执行保存 observation、action、tool result、屏幕 / DOM checkpoint、oracle 逐条结果，以及失败原因（`timeout` / `oracle_fail` / `env_crash` / `auth_expired`）。artifact 和环境 digest 绑在一起存，缺 checkpoint 的 run 不进正式对比。环境崩溃和模型失败分两列记，否则 harness 一抖，模型分数就跟着抖。
 
 有随机性的环境至少要多次重跑，报均值、方差、超时率，单次的百分点说明不了什么。提交结果时附上环境 digest、重跑次数、超时率、env_crash 率，缺这四项，百分点就没有对照物。比较两个模型必须用同一个任务版本包，换过 mock 或 DPI 的数字不能直接相减。
 

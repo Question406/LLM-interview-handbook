@@ -3,8 +3,10 @@ id: p3a-microsoft-search-autocomplete-typeahead
 section: microsoft
 order: 613
 level: A
-title: "Microsoft AI / Copilot：MAI 搜索补全：前缀、更新与延迟"
-quick: "我会把高频前缀的 top-K 预计算在内存索引里，查询优先走缓存，再合并离线热度和实时趋势排序。索引按语言、地区分区，版本原子切换；过滤词实时生效，个性化只用当前用户有权使用的信号。"
+title: Microsoft AI / Copilot：MAI 搜索补全：前缀、更新与延迟
+quick: >-
+  我会把高频前缀的 top-K
+  预计算在内存索引里，查询优先走缓存，再合并离线热度和实时趋势排序。索引按语言、地区分区，版本原子切换；过滤词实时生效，个性化只用当前用户有权使用的信号。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · search-autocomplete-typeahead"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/search-autocomplete-typeahead
+  - title: 1Point3Acres · Microsoft AI / Copilot · search-autocomplete-typeahead
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/search-autocomplete-typeahead
     type: secondary
 ---
 
@@ -27,9 +30,9 @@ sources:
 
 ## 题目
 
-设计一个低延迟的搜索补全（typeahead）服务：用户每敲一个字符，就返回最可能的若干条补全建议。要考虑候选怎么生成、索引怎么更新、热点怎么扛，以及敏感内容和个性化的边界。
+设计一个低延迟的搜索补全（typeahead）服务：用户每敲一个字符，就返回最可能的若干条补全建议。要考虑候选怎么生成、索引怎么更新、热点怎么扛，以及 sensitive content 与 personalization 的使用规则。
 
-> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理，没有逐条核对原帖，网站收录也不代表公司官方确认；规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理；规模数字、SLO 和故障情景是手册补的练习约定。
 
 ## 思路
 
@@ -37,7 +40,7 @@ sources:
 
 服务按地区和语言分区，热点前缀（比如单个字母）放在缓存里。敏感词过滤和个性化权限要讲清楚：个性化只能用当前用户有权使用的信号。
 
-预计算的粒度由两件事决定：查询吞吐有多高，更新需要多新鲜。更新越频繁，越不适合每次都全量重建。
+预计算的粒度由两件事决定：查询 throughput 有多高，更新需要多新鲜。更新越频繁，越不适合每次都全量重建。
 
 ## 完整非编程练习（场景与参考回答）
 
@@ -60,7 +63,7 @@ sources:
 
 索引的 `prefix_key` 里包含语言和地区；每个候选带 `query_id`、score 和过滤版本。个性化特征只在权限允许的范围内用于重排，不能把其他用户的私有 query 当作候选泄漏出去。
 
-具体查询时，沿用上面的美国英文用户输入 "wea" 这个例子。请求带上 `prefix_key` = (en, US, "wea") 查缓存，命中后拿到离线 top10，例如 "weather"、"weather tomorrow" 等；再查实时增量层，发现某个突发事件相关的查询正在上涨，按合并规则把它插到第 3 位。最后过一遍当前过滤版本的屏蔽词表，返回 10 条结果。整个过程不访问日志库，只读内存中的索引。
+具体查询时，沿用上面的美国英文用户输入 "wea" 这个例子。请求带上 `prefix_key` = (en, US, "wea") 查缓存，命中后拿到离线 top10，例如 "weather"、"weather tomorrow" 等；再查实时增量层，发现某个突发事件相关的查询正在上涨，按合并规则把它插到第 3 位。最后过一遍当前过滤版本的屏蔽 vocabulary，返回 10 条结果。整个过程不访问日志库，只读内存中的索引。
 
 发布时，索引保留新旧两个版本，原子切换；增量层落后或出错时回退到纯离线候选。屏蔽词被撤回或新增时走高优先级过滤，立即生效，不能等全量索引刷新。
 

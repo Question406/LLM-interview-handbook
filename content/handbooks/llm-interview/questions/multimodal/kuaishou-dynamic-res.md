@@ -4,7 +4,9 @@ section: multimodal
 order: 182
 level: A
 title: 快手实习二面：多模态动态分辨率怎么做，位置编码怎么设计？
-quick: "动态分辨率按输入的高宽保留长宽比，切出可变数量的 patch；位置编码给每个 patch 带二维坐标（视频再加时间），随网格大小变化。同时要压缩或限制视觉 token 数，避免吃光上下文；直播任务先控视觉 token 预算，再考虑用并行降延迟。"
+quick: >-
+  动态分辨率按输入的高宽保留长宽比，切出可变数量的 patch；位置编码给每个 patch 带二维坐标（视频再加时间），随网格大小变化。同时要压缩或限制视觉
+  token 数，避免吃光上下文；直播任务先控视觉 token 预算，再考虑用并行降延迟。
 tags:
   - Kuaishou
   - Dynamic Resolution
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 快手大模型算法二面-实习面经
-    url: https://www.nowcoder.com/feed/main/detail/ca3fe5949e0b4ddbb7807e43380ab7a6
+    url: 'https://www.nowcoder.com/feed/main/detail/ca3fe5949e0b4ddbb7807e43380ab7a6'
     type: candidate-first-hand
   - title: Qwen2-VL
-    url: https://arxiv.org/abs/2409.12191
+    url: 'https://arxiv.org/abs/2409.12191'
     type: primary-paper
 ---
 
@@ -39,15 +41,15 @@ sources:
 
 流程是：保留原始长宽比，或者按长宽比分组统计 → 按 patch（如 $14\times 14$）得到 $H\times W$ → 视觉编码器输出可变长度的 token 序列 → 投影进 LLM。Qwen2-VL 一类用的是 Naive Dynamic Resolution，不强制正方形，token 数随图变。
 
-任意分辨率会让序列长度差出一个数量级，所以工程上常配合最短边 / 最长边分组统计、面积上限，或者 AnyRes 式的切块再拼接。超清图先切块，再池化或抽 token；像素 shuffle、池化这类 token 合并要和动态分辨率一起用，共同控制序列长度。否则预填充（prefill）的计算量和 KV 缓存都会过大。
+任意分辨率会让序列长度差出一个数量级，所以工程上常配合最短边 / 最长边分组统计、面积上限，或者 AnyRes 式的切块再拼接。超清图先切块，再 pooling 或抽 token；像素 shuffle、pooling 这类 token 合并要和动态分辨率一起用，共同控制序列长度。否则 prefill 的计算量和 KV 缓存都会过大。
 
-预算可以按任务定：OCR / 价签给更高的上限，开放描述、封面美学给更低的上限。视觉 token 数近似随面积线性涨，prefill 又是 $O(n^2)$ 注意力，所以先设硬顶 $N_{\mathrm{vis}}$，超出就降采样，或者切块 + 局部再融合。并行解码救不了已经膨胀的 KV，所以和时延题连起来说，就是先控视觉 token 数，再谈并行解码。
+预算可以按任务定：OCR / 价签给更高的上限，开放描述、封面美学给更低的上限。视觉 token 数近似随面积线性涨，prefill 又是 $O(n^2)$ attention，所以先设硬顶 $N_{\mathrm{vis}}$，超出就降 sampling，或者切块 + 局部再融合。并行 decoding 救不了已经膨胀的 KV，所以和时延题连起来说，就是先控视觉 token 数，再谈并行 decoding。
 
 ## 位置编码跟着网格走
 
 每个 patch 给整数坐标 $(h,w)$，视频再加 $t$。常用的是分解 RoPE / M-RoPE：把旋转频率分给时间、高、宽三轴，文本三轴共用同一个 1D 下标，视觉则拆开。光栅扫描的 1D 序号在分辨率一变时就错位：同一物体换了图尺寸，它的「句子位置」变了，空间邻居本该不变。所以编码必须是网格坐标的函数，和序列下标无关。
 
-这样做的好处在快手的场景里很具体：动态分辨率让价签区域有足够多的 patch，二维位置再让「左上的价签」和「右下的销量」在注意力里不会挤成邻居。面试先讲「模态各编各的，再进同一个注意力」，细节数字以当时的公开报告为准，层数别编。
+这样做的好处在快手的场景里很具体：动态分辨率让价签区域有足够多的 patch，二维位置再让「左上的价签」和「右下的销量」在 attention 里不会挤成邻居。面试先讲「模态各编各的，再进同一个 attention」，细节数字以当时的公开报告为准，层数别编。
 
 训练要混多种面积桶，否则模型只在某一种网格上见过 RoPE，上线换了分辨率，位置外推就可能不稳定。视频多一维 $t$，同一个空间格子在不同 $t$ 上要能区分「上一秒的价格」和「这一秒的价格」，否则倒计时 OCR 会串帧。
 
@@ -56,8 +58,8 @@ sources:
 **只用 1D RoPE 为什么不行？**
 1D 上一行行末和下一行行首是相邻的，空间上却不相邻，OCR 对位和框选都会乱。
 
-**切块的边界怎么处理？**
-用重叠窗口或边界 pad，避免一个字被切成两半又没有跨块注意力；必要时对跨块字段做二次拼接。
+**chunk transitions 怎么处理？**
+用重叠窗口或 padding，避免一个字被切成两半又没有跨块 attention；必要时对跨块字段做二次拼接。
 
 **视频怎么控预算？**
 先降帧，再做动态空间分辨率。时间轴用 $t$ 或显式的时间戳 token，倒计时类 OCR 尤其要锁住帧对齐。

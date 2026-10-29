@@ -42,7 +42,7 @@ FSDP 切的是同一组 dense 状态，DLRM 切的是特征表与行，见 `meta
 
 热 id 频繁读写，Adam fp32 状态也随表行占空间。可以按频率分表，热小表放 GPU、冷表放 CPU 或多卡，或用 hash 碰撞换容量、AdaGrad / Row-wise 优化器减少状态。通信量约为 $B \cdot F \cdot d \cdot \mathrm{bytes}$，反向再来一次，$F$、$d$ 增大时网络可能先于 GEMM 饱和，要关注 RDMA 与拓扑，FlashAttention 解决不了。动态下标与集体通信也容易让 `torch.compile` graph break，见 `meta-pytorch-compile`。
 
-广告还需校准概率，AUC 之外看 predicted vs observed，见 `meta-ads-calibration`。
+广告还需 calibration 概率，AUC 之外看 predicted vs observed，见 `meta-ads-calibration`。
 
 ## 追问
 
@@ -53,4 +53,4 @@ FSDP 切的是同一组 dense 状态，DLRM 切的是特征表与行，见 `meta
 每卡复制 TB 级表不现实，DDP 更适合小 MLP。
 
 **交互能换 Transformer 吗？**
-可以，但算力和 serving 延迟会明显增加，需要级联或蒸馏支持。先把 lookup、浅 MLP、点积交互的基线讲清。
+可以，但算力和 serving 延迟会明显增加，需要级联或 distillation 支持。先把 lookup、浅 MLP、点积交互的基线讲清。

@@ -4,18 +4,24 @@ section: probability
 order: 16
 level: A
 title: 频率学派与贝叶斯怎样解释参数、不确定性和区间？
-quick: 频率学派通常把参数视为固定未知量，通过重复抽样评价估计方法与区间覆盖率；贝叶斯用先验和似然得到参数的后验分布，表达给定模型与数据后的不确定性。95% 置信区间描述方法的长期覆盖，95% 可信区间描述后验概率质量，二者即使数值相近也不能交换解释。
-tags: [ML Fundamentals, Statistics]
+quick: >-
+  频率学派通常把参数视为固定未知量，通过重复抽样评价估计方法与区间覆盖率；贝叶斯用先验和似然得到参数的后验分布，表达给定模型与数据后的不确定性。95%
+  confidence interval 描述方法的长期覆盖，95% 可信区间描述 posterior probability
+  质量，二者即使数值相近也不能交换解释。
+tags:
+  - ML Fundamentals
+  - Statistics
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-23
+updatedAt: 2026-10-23T00:00:00.000Z
 sources:
-  - title: CMU 36-705, Bayesian inference lecture 33
-    url: https://www.stat.cmu.edu/~siva/teaching/705/lec33.pdf
+  - title: 'CMU 36-705, Bayesian inference lecture 33'
+    url: 'https://www.stat.cmu.edu/~siva/teaching/705/lec33.pdf'
     type: primary
-  - title: Pishro-Nik, Bayesian interval estimation
-    url: https://www.probabilitycourse.com/chapter9/9_1_9_bayesian_interval_estimation.php
+  - title: 'Pishro-Nik, Bayesian interval estimation'
+    url: >-
+      https://www.probabilitycourse.com/chapter9/9_1_9_bayesian_interval_estimation.php
     type: primary
 ---
 
@@ -31,7 +37,7 @@ $$
 
 对参数设置分布，可以表示对未知量的知识状态，不要求现实中的物理参数在每次观测时随机改变。95% 可信区间是在这个后验分布下包含 95% 概率质量的区间；它的解释以先验和模型为条件。
 
-用一个可算的例子比较：假设三个观测 [1,2,3] 独立来自 $\mathcal N(\mu,1)$，方差 1 已知。频率学派均值估计为 2，95% 正态置信区间约为 $2\pm1.96/\sqrt3$，即 [0.868,3.132]。若贝叶斯先验为 $\mu\sim\mathcal N(0,1)$，后验为 $\mathcal N(1.5,0.25)$，95% 对称可信区间约为 [0.52,2.48]。先验把估计向 0 收缩，改变了中心和区间宽度。
+用一个可算的例子比较：假设三个观测 [1,2,3] 独立来自 $\mathcal N(\mu,1)$，方差 1 已知。频率学派均值估计为 2，95% 正态 confidence interval 约为 $2\pm1.96/\sqrt3$，即 [0.868,3.132]。若贝叶斯先验为 $\mu\sim\mathcal N(0,1)$，后验为 $\mathcal N(1.5,0.25)$，95% 对称可信区间约为 [0.52,2.48]。先验把估计向 0 收缩，改变了中心和区间宽度。
 
 两个区间分别对应不同程序与条件，不能仅凭哪个更窄就认定哪个更好。应检查模型、先验是否合理，以及需要的是后验决策、长期覆盖还是预测性能。
 
@@ -42,4 +48,4 @@ $$
 可以使用条件概率和贝叶斯公式。区别在于是否对待估参数设置先验并据此作后验推断；使用贝叶斯公式处理已知分布，不足以把所有分析都归为贝叶斯参数推断。
 
 **数据很多时，两者总会一致吗？**
-在一些正则模型、合适先验和可辨识条件下，结果可能接近。模型错设、边界参数、高维或很强先验都可能让这种近似失效，不能当成无条件结论。
+在一些正则模型、合适先验和可辨识条件下，结果可能接近。模型错设、boundary parameters、高维或很强先验都可能让这种近似失效，不能当成无条件结论。

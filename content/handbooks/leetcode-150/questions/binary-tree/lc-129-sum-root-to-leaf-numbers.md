@@ -4,7 +4,9 @@ section: binary-tree
 order: 10
 level: A
 title: LC 129 · 求根节点到叶节点数字之和
-quick: "DFS 带着当前前缀往下走，每进一层做 `acc = acc * 10 + val`，到叶子把 `acc` 加进答案，和 LC 112 是同一个骨架。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  DFS 带着当前前缀往下走，每进一层做 `acc = acc * 10 + val`，到叶子把 `acc` 加进答案，和 LC 112 是同一个骨架。时间
+  $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 129. 求根节点到叶节点数字之和
-    url: https://leetcode.cn/problems/sum-root-to-leaf-numbers/
+    url: 'https://leetcode.cn/problems/sum-root-to-leaf-numbers/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -118,7 +120,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(h)$。路径长度受题面约束，`acc` 用 `int` 即可。
 
-## 边界
+## Edge Cases
 
 单节点时答案就是那一位数字。值为 $0$ 的节点也合法，前缀乘十再加 $0$，比如 $10$。只有一侧孩子时，不要在空的那一侧把当前 `acc` 当成叶子加进去。
 

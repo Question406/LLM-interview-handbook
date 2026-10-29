@@ -3,8 +3,10 @@ id: p3a-openai-time-based-kv-store
 section: openai
 order: 630
 level: A
-title: "OpenAI：时间 KV：历史值查询与生产测试"
-quick: "每个 key 按时间保存版本，用 upper_bound（bisect_right）找最后一个不晚于查询时刻的值。若允许乱序写就要有序插入，并约定同时间戳覆盖规则；测试注入可控时钟。并发读只能看到写前或写后的完整状态，不能看到时间与版本写到一半的结果。"
+title: OpenAI：时间 KV：历史值查询与生产测试
+quick: >-
+  每个 key 按时间保存版本，用
+  upper_bound（bisect_right）找最后一个不晚于查询时刻的值。若允许乱序写就要有序插入，并约定同时间戳覆盖规则；测试注入可控时钟。并发读只能看到写前或写后的完整状态，不能看到时间与版本写到一半的结果。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · time-based-kv-store"
-    url: https://www.1point3acres.com/interview/problems/company/openai/time-based-kv-store
+  - title: 1Point3Acres · OpenAI · time-based-kv-store
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/time-based-kv-store
     type: secondary
 ---
 
@@ -60,7 +63,7 @@ get(1, "a", "x")   -> 7       # restore 不改写更早的历史
 
 实现一个时间 KV：同一个 key 可以在不同时间戳写入多个值，查询给定时刻时返回不晚于它的最新值。面经提到，后续还会讨论怎么用 mock clock 写测试、时间戳是否单调，以及并发读写。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -122,7 +125,7 @@ class DB:
     """
 
     def __init__(self):
-        self.times = {}     # (key, field) -> [写入时间, ...]，单调不减，供二分查找
+        self.times = {}  # (key, field) -> [写入时间, ...]，单调不减，供二分查找
         self.versions = {}  # (key, field) -> [(value, expires_at), ...]，与 times 一一对应
         self.clock = float("-inf")  # 最近一次写入的时间
         self.backups = []
@@ -210,7 +213,7 @@ class DB:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -221,6 +224,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # TTL 有效期是左闭右开区间 [0, 5)
 db = DB()
@@ -260,11 +264,11 @@ db.set(21, "u", "obj", payload)
 payload["n"] = 2
 assert db.get(21, "u", "obj") == {"n": 1}
 
-expect_value_error(db.set, 19, "a", "x", 1)      # 写入时间倒退
-expect_value_error(db.set, 22, "a", "x", 1, 0)   # ttl 必须为正
-expect_value_error(db.set, 22, "a", "x", None)   # None 留给删除标记
-expect_value_error(db.restore, 22, 99)           # 不存在的备份 id
-expect_value_error(db.restore, 22, -1)           # 负数 id 不能当成「最后一个」
+expect_value_error(db.set, 19, "a", "x", 1)  # 写入时间倒退
+expect_value_error(db.set, 22, "a", "x", 1, 0)  # ttl 必须为正
+expect_value_error(db.set, 22, "a", "x", None)  # None 留给删除标记
+expect_value_error(db.restore, 22, 99)  # 不存在的备份 id
+expect_value_error(db.restore, 22, -1)  # 负数 id 不能当成「最后一个」
 ```
 
 ### 复杂度与追问

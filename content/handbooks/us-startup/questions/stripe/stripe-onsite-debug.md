@@ -5,7 +5,8 @@ order: 3
 level: A
 title: Stripe：Bug Bash、集成轮，和分布式计数器设计
 quick: >-
-  Senior onsite 的系统设计是分布式 metric counter，我会按「短窗口可以少计、不能多计」来设计。Bug Bash 有人只记得 retry policy 的两个字段互相覆盖，先复现再缩到一个函数。集成轮是在不熟的仓库里按文档接 API，不许用 AI 把功能写出来。
+  Senior onsite 的系统设计是分布式 metric counter，我会按「短窗口可以少计、不能多计」来设计。Bug Bash 有人只记得
+  retry policy 的两个字段互相覆盖，先复现再缩到一个函数。集成轮是在不熟的仓库里按文档接 API，不许用 AI 把功能写出来。
 tags:
   - Stripe
   - Debugging
@@ -13,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
   - title: Stripe L3 全套挂经，系统设计与 retry policy
-    url: https://www.1point3acres.com/bbs/thread-1171504-1-1.html
+    url: 'https://www.1point3acres.com/bbs/thread-1171504-1-1.html'
     type: candidate-first-hand
   - title: Stripe Software Engineer Interview Guide，Bug Bash 与 Integration
-    url: https://www.tryexponent.com/guides/stripe-software-engineer-interview
+    url: 'https://www.tryexponent.com/guides/stripe-software-engineer-interview'
     type: secondary
 ---
 
@@ -41,7 +42,7 @@ sources:
 
 计数器的流量、窗口和可接受延迟由候选人先澄清；本练习约定重复上报不得多计。仓库、API 规格和现场 bug 原文未公开，不能把推测的代码缺陷当成事实。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
@@ -57,7 +58,7 @@ Exponent 指南把 SWE onsite 写成五轮，其中三轮编码：普通业务�
 
 Metric counter 先把范围收窄，题目是计数器，不用做成通用时序数据库。先问清楚：哪些 metric 名、哪些 tag，聚合是 sum 还是 last，查询窗口多大，能不能丢点。写入路径是 SDK 在本地按 `(name, tags)` 累加，几秒刷一次；网关按 key 分片，单分片内原子加；查询走副本或预聚合，不在请求里扫原始事件。
 
-放在 Stripe 的场景里，我会主动说三件事。时钟用服务端收到的时间，不信客户端时钟。同一批上报带 idempotency key，重试不会双计。user id 这种基数高的 tag 要拒绝或采样，不然一个 metric 名下面的序列会爆。一致性上，短窗口可以少一点，但不能多计，多计会让告警误报，比少计更难查。
+放在 Stripe 的场景里，我会主动说三件事。时钟用服务端收到的时间，不信客户端时钟。同一批上报带 idempotency key，重试不会双计。user id 这种基数高的 tag 要拒绝或 sampling，不然一个 metric 名下面的序列会爆。一致性上，短窗口可以少一点，但不能多计，多计会让告警误报，比少计更难查。
 
 Bug Bash 先让失败测试复现，再缩小到一个函数。retry policy 两个字段互相覆盖，常见原因是后写的配置把先写的整个对象换掉了，没有按字段合并。我会把合并写成显式的字段拷贝，再加一个测试：只改第二个字段时，第一个字段还在。指南里的另三例准备方式一样，目录判断、visitor 缺分支、没加锁的读改写，练的是在别人的仓库里十分钟内找到相关文件，背 bug 没用。
 

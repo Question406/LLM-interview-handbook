@@ -4,7 +4,9 @@ section: trie
 order: 3
 level: A
 title: LC 212 · 单词搜索 II
-quick: "对每个词单独做 LC 79 会超时，所以先把单词表建成 Trie，再从每个格子四向 DFS、沿 Trie 往下走，走不通立刻剪。找到一个词就把词尾清空防重，掏空的子树可以删掉。"
+quick: >-
+  对每个词单独做 LC 79 会超时，所以先把单 vocabulary 建成 Trie，再从每个格子四向 DFS、沿 Trie
+  往下走，走不通立刻剪。找到一个词就把词尾清空防重，掏空的子树可以删掉。
 tags:
   - Trie
   - Backtracking
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 212. 单词搜索 II
-    url: https://leetcode.cn/problems/word-search-ii/
+    url: 'https://leetcode.cn/problems/word-search-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -47,7 +49,7 @@ sources:
 
 ## 题意
 
-$m\times n$ 字母网格和单词表。从任意格四连通走，不能重复使用同一格，把所有能在网格里走出的单词（去重）列出来。
+$m\times n$ 字母网格和单 vocabulary。从任意格四连通走，不能重复使用同一格，把所有能在网格里走出的单词（去重）列出来。
 
 ## 思路
 
@@ -125,11 +127,11 @@ if __name__ == "__main__":
 
 ```python
 board = [
-        ["o", "a", "a", "n"],
-        ["e", "t", "a", "e"],
-        ["i", "h", "k", "r"],
-        ["i", "f", "l", "v"],
-    ]
+    ["o", "a", "a", "n"],
+    ["e", "t", "a", "e"],
+    ["i", "h", "k", "r"],
+    ["i", "f", "l", "v"],
+]
 assert sorted(findWords(board, ["oath", "pea", "eat", "rain"])) == ["eat", "oath"]
 assert findWords([["a", "b"], ["c", "d"]], ["abcb"]) == []
 print("simple tests passed")
@@ -141,9 +143,9 @@ print("simple tests passed")
 
 最坏仍接近 $O(mn\cdot 4^L)$，$L$ 为最长词；Trie 与删空节点会大幅剪枝。空间 $O(\sum |word|)$ 加递归栈。
 
-## 边界
+## Edge Cases
 
-词表里有前缀重叠时，比如 `app` 和 `apple`，节点上存的是完整的 `word`，走到 `app` 先收下，再继续往 `l` 走，长词不会被提前剪掉。
+vocabulary 里有前缀重叠时，比如 `app` 和 `apple`，节点上存的是完整的 `word`，走到 `app` 先收下，再继续往 `l` 走，长词不会被提前剪掉。
 
 同一个词有多条路径时，第一次找到就设 `node.word = None`，后面的路径再走到这个节点也不会重复加入。
 

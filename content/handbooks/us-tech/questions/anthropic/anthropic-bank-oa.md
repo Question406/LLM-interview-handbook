@@ -4,7 +4,9 @@ section: anthropic
 order: 4
 level: A
 title: Anthropic OA：银行账户 / 转账后续，接口如何从内存库长出来？
-quick: "先用显式 now 推进时间，转账用 pending / accepted / expired / cancelled 状态保证资金只结算一次。账户名对应唯一实例 id，避免同名重建继承旧转账；再保留日志与流出统计，支持预约、合户和历史查询。"
+quick: >-
+  先用显式 now 推进时间，转账用 pending / accepted / expired / cancelled
+  状态保证资金只结算一次。账户名对应唯一实例 id，避免同名重建继承旧转账；再保留日志与流出统计，支持预约、合户和历史查询。
 tags:
   - 完整编程练习
   - Anthropic
@@ -14,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Anthropic interview questions (IGotAnOffer)
-    url: https://igotanoffer.com/en/advice/anthropic-interview-questions
+    url: 'https://igotanoffer.com/en/advice/anthropic-interview-questions'
     type: secondary
   - title: Anthropic SDE OA — Memory Database and Bank System
-    url: https://programhelp.net/en/oa/anthropic-sde-oa-interview-guide/
+    url: 'https://programhelp.net/en/oa/anthropic-sde-oa-interview-guide/'
     type: secondary
 ---
 
@@ -58,7 +60,7 @@ accept("b", 2, 6)                    -> False  # 新的 b 不是转账 2 的接�
 
 ## 完整编程练习（手册重构版）
 
-> 来源网站只披露了题型。下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试。Python 3 标准库。
+> 来源网站只披露了题型。下面的接口、约束和测试是手册补的练习约定。Python 3 标准库。
 
 ### 题面、接口与约束
 
@@ -97,7 +99,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Transfer:
-    source: int       # 账户实例 id，不是账户名
+    source: int  # 账户实例 id，不是账户名
     target: int
     amount: int
     expires_at: int
@@ -113,8 +115,8 @@ class Bank:
 
     def __init__(self):
         self.account_ids = {}  # 账户名 -> 当前实例 id
-        self.balances = {}     # 实例 id -> 可用余额（不含冻结中的转账）
-        self.transfers = {}    # 转账 id -> Transfer
+        self.balances = {}  # 实例 id -> 可用余额（不含冻结中的转账）
+        self.transfers = {}  # 转账 id -> Transfer
         self.next_account_id = 0
         self.next_transfer_id = 0
         self.time = float("-inf")
@@ -174,7 +176,9 @@ class Bank:
             return None
         self.balances[source_id] -= amount
         self.next_transfer_id += 1
-        self.transfers[self.next_transfer_id] = Transfer(source_id, target_id, amount, now + ttl)
+        self.transfers[self.next_transfer_id] = Transfer(
+            source_id, target_id, amount, now + ttl
+        )
         return self.next_transfer_id
 
     def accept(self, target, transfer_id, now):
@@ -197,7 +201,10 @@ class Bank:
         target_id = self.account_ids[target]
         source_id = self.account_ids[source]
         for transfer in self.transfers.values():
-            if transfer.state == "pending" and source_id in (transfer.source, transfer.target):
+            if transfer.state == "pending" and source_id in (
+                transfer.source,
+                transfer.target,
+            ):
                 self._refund(transfer, "cancelled")
         # 退款先回到 source，再随余额一起并入 target，冻结款不会丢也不会退两次
         self.balances[target_id] += self.balances[source_id]
@@ -213,7 +220,7 @@ class Bank:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

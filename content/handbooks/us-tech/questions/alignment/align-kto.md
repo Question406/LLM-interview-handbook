@@ -4,7 +4,9 @@ section: alignment
 order: 18
 level: A
 title: 对齐：KTO 只用 binary 反馈
-quick: "KTO 用单条回答的好 / 坏标签训练，不要求同一题的成对偏好。它将 $\\log(\\pi/\\pi_{\\mathrm{ref}})$ 与 KL 基线比较，好样本向上推、坏样本向下推；两类覆盖、标签噪声和基线估计都会影响更新。"
+quick: >-
+  KTO 用单条回答的好 / 坏标签训练，不要求同一题的成对偏好。它将 $\log(\pi/\pi_{\mathrm{ref}})$ 与 KL
+  基线比较，好样本向上推、坏样本向下推；两类覆盖、标签噪声和基线估计都会影响更新。
 tags:
   - KTO
   - DPO
@@ -13,16 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: KTO — Model Alignment as Prospect Theoretic Optimization
-    url: https://arxiv.org/abs/2402.01306
+    url: 'https://arxiv.org/abs/2402.01306'
     type: primary
   - title: Direct Preference Optimization
-    url: https://arxiv.org/abs/2305.18290
+    url: 'https://arxiv.org/abs/2305.18290'
     type: primary
-  - title: A General Theoretical Paradigm to Understand Learning from Human Preferences
-    url: https://arxiv.org/abs/2310.12036
+  - title: >-
+      A General Theoretical Paradigm to Understand Learning from Human
+      Preferences
+    url: 'https://arxiv.org/abs/2310.12036'
     type: primary
 ---
 
@@ -48,13 +52,13 @@ def kto_terms(r, z0, lam_d, lam_u, desirable):
 
 ## 数据和监控怎样准备
 
-两类反馈都要覆盖。只有赞会进一步强化原有文风，难压坏模式；只有踩可能让回答过短、过度拒绝。实际生产里，点踩可能偏安全或失败工具调用，点赞偏闲聊，切片失衡就改变了训练目标。
+两类反馈都要覆盖。只有赞会进一步强化原有文风，难压坏模式；只有踩可能让回答过短、over-refusal。实际生产里，点踩可能偏安全或失败工具调用，点赞偏闲聊，切片失衡就改变了训练目标。
 
 不能随便给一条赞配一条踩做 DPO：不同输入不满足同一 $x$ 的比较假设，BT 间隔没有对应含义。有真实 pair 时，DPO / IPO 通常更直接，见 `align-dpo`、`align-ipo`。点赞点踩也有误点、讽刺和长度噪声，低一致率来源应降权或丢弃，长度偏见见 `align-length-bias`。
 
 模型也可以生成 binary 标签，但要隔离反馈 critic，见 `align-rlaif`。当前策略给自己贴赞的 self-rewarding 会让标签、基线与策略一起漂。KTO 仍是离线或准离线更新，策略离开数据分布后需要迭代刷新，见 `align-online-dpo`；真正在线 rollout 且奖励可验证时，可考虑 GRPO / PPO，见 `align-grpo`。
 
-我会监控好样本 $r-z_0$、坏样本 $z_0-r$、KL、长度和 held-out 任务。损失下降但两边 $r$ 一起下降，可能只是整体位移；$\lambda_U$ 过大则可能过度拒绝，见 `align-over-refuse`。参考模型也必须保留，否则 $r$ 绝对尺度漂移，点赞容易退化成提高所有 token 似然，直接用 logp 做 binary 分类可能破坏原来的生成能力。
+我会监控好样本 $r-z_0$、坏样本 $z_0-r$、KL、长度和 held-out 任务。损失下降但两边 $r$ 一起下降，可能只是整体位移；$\lambda_U$ 过大则可能 over-refusal，见 `align-over-refuse`。reference model 也必须保留，否则 $r$ 绝对尺度漂移，点赞容易退化成提高所有 token 似然，直接用 logp 做 binary 分类可能破坏原来的生成能力。
 
 ## 追问
 
@@ -71,5 +75,5 @@ def kto_terms(r, z0, lam_d, lam_u, desirable):
 
 - [[align-dpo]]：隐式奖励来源。
 - [[align-ipo]]：仍用 pair、改变损失形状。
-- [[msft-orpo]]：省参考模型与省成对标注的区别。
-- [[align-online-dpo]]：线上反馈持续回流。
+- [[msft-orpo]]：省 reference model 与省成对标注的区别。
+- [[align-online-dpo]]：持续收集并使用 online feedback。

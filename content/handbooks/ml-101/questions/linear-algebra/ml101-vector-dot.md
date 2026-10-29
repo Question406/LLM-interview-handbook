@@ -38,12 +38,12 @@ $$
 
 它在 $[-1,1]$ 内：1 表示同向，0 表示正交，-1 表示反向。若向量只含非负坐标，就不会出现负余弦。实向量点积的计算约定见 [NumPy dot 文档](https://numpy.org/doc/stable/reference/generated/numpy.dot.html)。
 
-选择时先问长度有没有业务含义。比如检索已经明确采用单位长度向量，就可以用点积完成余弦排序；如果向量长度本来代表强度，归一化会丢掉它。零向量没有方向，不能直接除以零，要在输入检查中约定报错、跳过或给默认结果。
+选择时先问长度有没有业务含义。比如检索已经明确采用单位长度向量，就可以用点积完成余弦排序；如果向量长度本来代表强度，normalization 会丢掉它。零向量没有方向，不能直接除以零，要在输入检查中约定报错、跳过或给默认结果。
 
 ## 追问
 
-**归一化后，欧氏距离和余弦排序还一样吗？**
-一样。对单位向量，有 $\|u-v\|_2^2=2-2u^\top v=2-2\operatorname{sim}_{\cos}(u,v)$，所以距离越小，余弦越大。这个等价关系要求两边都已归一化。
+**normalization 后，欧氏距离和余弦排序还一样吗？**
+一样。对单位向量，有 $\|u-v\|_2^2=2-2u^\top v=2-2\operatorname{sim}_{\cos}(u,v)$，所以距离越小，余弦越大。这个等价关系要求两边都已 normalization。
 
 **库里叫 cosine 的函数返回的就是相似度吗？**
 要看接口。SciPy 的 `scipy.spatial.distance.cosine` 返回 $1-\operatorname{sim}_{\cos}(u,v)$，是余弦距离，值小更相近，见 [官方定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cosine.html)。排序方向不能用反。

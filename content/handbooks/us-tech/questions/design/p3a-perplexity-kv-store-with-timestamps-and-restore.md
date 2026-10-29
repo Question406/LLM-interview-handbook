@@ -3,8 +3,10 @@ id: p3a-perplexity-kv-store-with-timestamps-and-restore
 section: design
 order: 604
 level: A
-title: "Perplexity：历史 KV：时间戳操作与 restore"
-quick: "每个字段按时间保存版本，删除也追加标记，查询二分找到最后一个不晚于目标时刻的版本。这份练习把 restore 定义成当前时刻的一次覆盖写入，保留更早历史，备份中的剩余 TTL 从恢复时重新计时。"
+title: Perplexity：历史 KV：时间戳操作与 restore
+quick: >-
+  每个字段按时间保存版本，删除也追加标记，查询二分找到最后一个不晚于目标时刻的版本。这份练习把 restore
+  定义成当前时刻的一次覆盖写入，保留更早历史，备份中的剩余 TTL 从恢复时重新计时。
 companies:
   - ai-labs
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Perplexity
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Perplexity · kv-store-with-timestamps-and-restore"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/kv-store-with-timestamps-and-restore
+  - title: 1Point3Acres · Perplexity · kv-store-with-timestamps-and-restore
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/kv-store-with-timestamps-and-restore
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现可查询历史、支持字段 TTL 和备份恢复的内存键值数据库。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `DB.set(t,key,field,value,ttl=None)` 写入字段；ttl 为正数时有效区间为 `[t,t+ttl)`，None 表示永不过期，value 不为 None。`delete(t,key,field)` 返回删除前该字段是否存在且有效。`get(t,key,field)` 返回当时有效值，不存在、删除或过期则为 None。`scan(t,key,prefix="")` 返回字段名以 prefix 开头的有效 `(field,value)` 列表，按字段名排序。
 
@@ -48,7 +54,7 @@ get(12,"a","x")=7；get(13,"a","x")=None；get(1,"a","x")=7。
 
 实现一个带时间戳的 KV 存储，`set`、`get`、`delete` 都带时间参数，`get` 可以查询过去某一时刻的值。之后再加一个 `restore`，把数据恢复到某个历史状态。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -108,7 +114,7 @@ class DB:
     """
 
     def __init__(self):
-        self.times = {}     # (key, field) -> [写入时间, ...]，单调不减，供二分查找
+        self.times = {}  # (key, field) -> [写入时间, ...]，单调不减，供二分查找
         self.versions = {}  # (key, field) -> [(value, expires_at), ...]，与 times 一一对应
         self.clock = float("-inf")  # 最近一次写入的时间
         self.backups = []
@@ -196,7 +202,7 @@ class DB:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -207,6 +213,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # TTL 有效期是左闭右开区间 [0, 5)
 db = DB()
@@ -246,11 +253,11 @@ db.set(21, "u", "obj", payload)
 payload["n"] = 2
 assert db.get(21, "u", "obj") == {"n": 1}
 
-expect_value_error(db.set, 19, "a", "x", 1)      # 写入时间倒退
-expect_value_error(db.set, 22, "a", "x", 1, 0)   # ttl 必须为正
-expect_value_error(db.set, 22, "a", "x", None)   # None 留给删除标记
-expect_value_error(db.restore, 22, 99)           # 不存在的备份 id
-expect_value_error(db.restore, 22, -1)           # 负数 id 不能当成「最后一个」
+expect_value_error(db.set, 19, "a", "x", 1)  # 写入时间倒退
+expect_value_error(db.set, 22, "a", "x", 1, 0)  # ttl 必须为正
+expect_value_error(db.set, 22, "a", "x", None)  # None 留给删除标记
+expect_value_error(db.restore, 22, 99)  # 不存在的备份 id
+expect_value_error(db.restore, 22, -1)  # 负数 id 不能当成「最后一个」
 ```
 
 ### 复杂度与追问

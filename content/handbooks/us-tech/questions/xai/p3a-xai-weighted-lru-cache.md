@@ -3,8 +3,10 @@ id: p3a-xai-weighted-lru-cache
 section: xai
 order: 605
 level: A
-title: "xAI：按总权重限容的 LRU"
-quick: "哈希表和双向链表维护 LRU，再用 used 记录总权重。put 先检查单项是否超容，更新已有 key 时扣旧权重，再循环淘汰最久未用项；超容写入按练习约定返回 False 并保留旧值。"
+title: xAI：按总权重限容的 LRU
+quick: >-
+  哈希表和双向链表维护 LRU，再用 used 记录总权重。put 先检查单项是否超容，更新已有 key
+  时扣旧权重，再循环淘汰最久未用项；超容写入按练习约定返回 False 并保留旧值。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · weighted-lru-cache"
-    url: https://www.1point3acres.com/interview/problems/company/xai/weighted-lru-cache
+  - title: 1Point3Acres · xAI · weighted-lru-cache
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/weighted-lru-cache
     type: secondary
 ---
 
@@ -58,7 +61,7 @@ call_key((True,), {}) == call_key((1,), {})                           -> False
 
 实现一个 LRU 缓存，每个条目带一个权重（大小），限制的是所有条目的总权重而不是条目个数。插入一个大条目时，可能要连续淘汰好几个最久未用的条目才能放得下。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。这份练习和 Anthropic 的 LRU 调试题共用一份实现，所以还带了缓存键和持久化接口。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。这份练习和 Anthropic 的 LRU 调试题共用一份实现，所以还带了缓存键和持久化接口。
 
 几个容易出错的地方：
 
@@ -95,7 +98,7 @@ call_key((True,), {}) == call_key((1,), {})                           -> False
 
 `save` 先写同目录下的临时文件并 `fsync`，再用 `os.replace` 原子替换，所以崩溃时目标文件要么是旧快照，要么是新快照，不会是半截 JSON。这是显式调用 `save` 的契约，不保证每次 `put` 之后都已落盘。
 
-`call_key` 把每个参数编码成「类型名 + 内容」，dict 按 key 排序，再用 JSON 序列化成字符串。它不会把函数默认参数补齐：`f(1)` 和 `f(1, b=2)` 即使语义相同也是两个键，要归一化得先用 `inspect.signature(f).bind(...)` 再 `apply_defaults()`。
+`call_key` 把每个参数编码成「类型名 + 内容」，dict 按 key 排序，再用 JSON 序列化成字符串。它不会把函数默认参数补齐：`f(1)` 和 `f(1, b=2)` 即使语义相同也是两个键，要 normalization 得先用 `inspect.signature(f).bind(...)` 再 `apply_defaults()`。
 
 ### 完整参考实现（Python 3）
 
@@ -190,7 +193,7 @@ class Cache:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -201,6 +204,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 访问 a 之后插入 c，最久未用的 b 被淘汰
 cache = Cache(5)

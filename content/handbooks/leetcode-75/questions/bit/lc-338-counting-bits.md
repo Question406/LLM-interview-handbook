@@ -5,7 +5,8 @@ order: 1
 level: A
 title: LC 338 · 比特位计数
 quick: >-
-  用 DP 递推：$ans[i]=ans[i\gg 1]+(i\,\&\,1)$，右移一位的数已经算过，再补上最低位。也可以用 $ans[i]=ans[i\,\&\,(i-1)]+1$，去掉最低位的 $1$。时间 $O(n)$，额外空间 $O(1)$（不计输出）。
+  用 DP 递推：$ans[i]=ans[i\gg 1]+(i\,\&\,1)$，右移一位的数已经算过，再补上最低位。也可以用
+  $ans[i]=ans[i\,\&\,(i-1)]+1$，去掉最低位的 $1$。时间 $O(n)$，额外空间 $O(1)$（不计输出）。
 tags:
   - Bit
   - DP
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 338. Counting Bits
-    url: https://leetcode.com/problems/counting-bits/
+    url: 'https://leetcode.com/problems/counting-bits/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -101,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$，输出数组 $O(n)$ 不计。
 
-## 边界
+## Edge Cases
 
 - $n=0$ 时返回 `[0]`，循环不进。
 - $2$ 的幂只有一个 $1$，由 $ans[i\gg 1]$ 一路继承到 $ans[1]=1$。

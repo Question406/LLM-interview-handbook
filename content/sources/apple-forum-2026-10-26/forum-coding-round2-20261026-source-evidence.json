@@ -1,0 +1,53 @@
+[
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1084615-1-1.html",
+    "postedAtDisplayed": "2024-09-05 14:00:32",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "完整主楼与第一页作者回复可见，积分段显示已经可以浏览",
+    "reportedTopics": [
+      "给数据集现场实现model/train/metrics",
+      "feature reduction与visualization",
+      "作者确认preprocess/train/test/eval全流程，模型可以简单",
+      "相册照片排序设计",
+      "大型video summary系统设计"
+    ],
+    "addedQuestion": "dt-p3a-tabular-full-pipeline",
+    "extensions": "数值表格、LogisticRegression、PCA、缺失值与接口为练习约定，未宣称原帖指定",
+    "teamScope": "未披露AFM data身份"
+  },
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1158691-1-1.html",
+    "postedAtDisplayed": "2025-12-19 13:58:52",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "完整主楼及部分作者回复可见",
+    "reportedTopics": [
+      "手写kfold CV",
+      "手写kmeans",
+      "基本pandas",
+      "causal与LLM case study"
+    ],
+    "addedQuestion": "dt-p3a-kfold-indices",
+    "extensions": "索引接口、余数、shuffle与seed语义为练习约定",
+    "teamScope": "分析/数据科学类，非已确认AFM"
+  },
+  {
+    "url": "https://www.1point3acres.com/bbs/thread-1041756-1-1.html",
+    "openedUrl": "https://www.1point3acres.com/bbs/forum.php?mod=viewthread&tid=1041756&ctid=247411",
+    "postedAtDisplayed": "2024-01-29 16:07:11",
+    "retrievedAt": "2026-10-26",
+    "browser": "Chrome extension browser 1",
+    "visibleScope": "完整主楼与第一页作者回复可见，作者确认AIML视频组",
+    "reportedTopics": [
+      "手写KL divergence",
+      "手写BatchNorm及LN区别/可学习参数",
+      "图像原地90度旋转",
+      "图像去噪可调用OpenCV",
+      "maxsubarray与dropout train/test"
+    ],
+    "addedQuestion": "dt-p3a-batchnorm-state",
+    "extensions": "NumPy二维实现、running variance与momentum对齐PyTorch的语义为练习约定",
+    "teamScope": "AIML视频组，非已确认AFM data"
+  }
+]

@@ -3,8 +3,10 @@ id: p3a-openai-memory-allocator
 section: openai
 order: 609
 level: A
-title: "OpenAI：内存分配器：malloc、free 与空闲块索引"
-quick: "first-fit 可以用按地址排序、维护子树最大空闲长度的 treap，沿树找到地址最小的可用块，释放时合并相邻块。best-fit 还需要按长度的索引，每次拆分合并都同步维护两个索引。"
+title: OpenAI：内存分配器：malloc、free 与空闲块索引
+quick: >-
+  first-fit 可以用按地址排序、维护子树最大空闲长度的 treap，沿树找到地址最小的可用块，释放时合并相邻块。best-fit
+  还需要按长度的索引，每次拆分合并都同步维护两个索引。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · memory-allocator"
-    url: https://www.1point3acres.com/interview/problems/company/openai/memory-allocator
+  - title: 1Point3Acres · OpenAI · memory-allocator
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/memory-allocator
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现整数地址空间上的内存分配器，支持最低地址优先分配、整块释放和相邻空闲区合并。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -57,7 +60,7 @@ first-fit 可以用按地址排序的树，加上子树最大空闲长度来跳�
 
 在一块固定大小的内存池上实现 `malloc` 和 `free`。先写出能用的版本，再改进线性扫描空闲块的做法，让分配和释放更快。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；网站收录为面经题型不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 改进的关键是看分配策略：
 
@@ -242,7 +245,7 @@ class Allocator:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -268,18 +271,18 @@ for _ in range(1000):
         ptr = rng.choice(list(live))
         size = live.pop(ptr)
         assert allocator.free(ptr)
-        cells[ptr:ptr + size] = [False] * size
+        cells[ptr : ptr + size] = [False] * size
     else:
         size = rng.randrange(1, 12)
         expected = next(
-            (i for i in range(capacity - size + 1) if not any(cells[i:i + size])),
+            (i for i in range(capacity - size + 1) if not any(cells[i : i + size])),
             None,
         )
         got = allocator.malloc(size)
         assert got == expected
         if got is not None:
             live[got] = size
-            cells[got:got + size] = [True] * size
+            cells[got : got + size] = [True] * size
 ```
 
 ### 复杂度与追问

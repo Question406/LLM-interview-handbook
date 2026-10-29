@@ -31,7 +31,7 @@ sources:
 
 MoE decode 难在每步 token 少，还要把它们分发到不同专家：每个专家的 GEMM 小且不齐，整层又要等最慢专家和通信。可以用公开 Grok-1 的 top-2 / 8 专家结构解释这个问题，再按 prefill 和 decode 分别选并行度。
 
-这道系统题依据 Grok-1、Mixtral / Switch 的公开机制，并非能点名某次 onsite 的逐字题。Grok-1 公开配置是 314B、8 专家、每 token 选 2 个、约 25% 权重激活、64 层、Q 48 头 / KV 8 头、$d=6144$。官方 JAX 示例注明 MoE 层以正确性为目标，没有做高效实现。后续 Grok 没有同等开源结构图，所以这里不推断内部 EP 拓扑、卡数或线上专家数。
+这道系统题依据 Grok-1、Mixtral / Switch 的公开机制。Grok-1 公开配置是 314B、8 专家、每 token 选 2 个、约 25% 权重激活、64 层、Q 48 头 / KV 8 头、$d=6144$。官方 JAX 示例注明 MoE 层以正确性为目标，没有做高效实现。后续 Grok 没有同等开源结构图，所以这里不推断内部 EP 拓扑、卡数或线上专家数。
 
 Attention 仍按序列；FFN 换成专家。token $x$ 经 router 得 $p(i)$，取 top-$k$（Grok-1 公开是 $k=2$）：
 
@@ -62,7 +62,7 @@ Grok-1 量级单卡放不下全部专家权重。EP 换的是显存，代价是�
 **和 dense 张量并行比？**
 TP 切同一块矩阵，每层 all-reduce，负载齐。EP 切不同专家，负载不齐。8 专家 $k=2$ 也可以 EP 叠 TP，先画清通信再叠。
 **Router 在 decode 会抖吗？**
-会。同一前缀 greedy 应对齐；采样时专家选择随 token 变，负载均衡看窗口统计，不是一步一迁。
+会。同一前缀 greedy 应对齐；sampling 时专家选择随 token 变，负载均衡看窗口统计，不是一步一迁。
 **官方示例为什么慢？**
 正确性实现会算未选专家或走通用 gather。生产要 fused dispatch 加分组 GEMM。承认没写过 kernel 比装熟好。
 

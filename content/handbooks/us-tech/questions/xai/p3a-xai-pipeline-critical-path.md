@@ -3,8 +3,10 @@ id: p3a-xai-pipeline-critical-path
 section: xai
 order: 750
 level: S
-title: "xAI：数据流水线：无限并行下的目标完成时间"
-quick: "机器无限时，任务等最晚就绪的输入到达后开始，再加自身耗时得到完成时间。只在目标依赖子图上拓扑传播并检测环，时间和空间都是 O(V + E)，长链用显式栈与队列处理。"
+title: xAI：数据流水线：无限并行下的目标完成时间
+quick: >-
+  机器无限时，任务等最晚就绪的输入到达后开始，再加自身耗时得到完成时间。只在目标依赖子图上拓扑传播并检测环，时间和空间都是 O(V +
+  E)，长链用显式栈与队列处理。
 companies:
   - xai
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: 1Point3Acres xAI source
-    url: https://www.1point3acres.com/interview/problems/98b3005e-64bf-49ac-9c1f-abfdc73e7189
+    url: >-
+      https://www.1point3acres.com/interview/problems/98b3005e-64bf-49ac-9c1f-abfdc73e7189
     type: secondary
 ---
 
@@ -166,7 +169,7 @@ def critical_path(tasks, goal):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -177,6 +180,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 tasks = [(["a", "b"], "c", 30), (["b"], "d", 15), (["c", "d"], "g", 60)]
 

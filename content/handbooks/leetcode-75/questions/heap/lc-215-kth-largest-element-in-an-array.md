@@ -3,8 +3,10 @@ id: lc-215-kth-largest-element-in-an-array
 section: heap
 order: 1
 level: S
-title: LC 215 · 数组中的第K个最大元素
-quick: "我会开一个大小为 $k$ 的小根堆，堆顶就是第 $k$ 大，时间 $O(n\\log k)$、额外空间 $O(k)$。也可以快选按枢纽划分，期望 $O(n)$。"
+title: LC 215 · 数组中的第 K 个最大元素
+quick: >-
+  我会开一个大小为 $k$ 的小根堆，堆顶就是第 $k$ 大，时间 $O(n\log k)$、额外空间 $O(k)$。也可以快选按枢纽划分，期望
+  $O(n)$。
 tags:
   - Heap
   - Quickselect
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 215. Kth Largest Element in an Array
-    url: https://leetcode.com/problems/kth-largest-element-in-an-array/
+    url: 'https://leetcode.com/problems/kth-largest-element-in-an-array/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -103,7 +105,7 @@ print("simple tests passed")
 
 堆的写法时间 $O(n\log k)$，额外空间 $O(k)$。快选期望时间 $O(n)$，额外空间 $O(n)$，因为下面的三段写法开了新列表；原地分区可以做到 $O(1)$ 额外空间。
 
-## 边界
+## Edge Cases
 
 $k=1$ 时堆里只留当前最大值，新数更大就替换，答案是全局最大。
 
@@ -118,6 +120,7 @@ $k=n$ 时堆里装着全部元素，堆顶是最小值，也就是第 $n$ 大。
 
 ```python
 import random
+
 
 def quickSelect(nums, k):
     while True:
@@ -139,6 +142,7 @@ def quickSelect(nums, k):
 
 ```python
 import heapq
+
 
 class KthLargest:
     def __init__(self, k, nums):

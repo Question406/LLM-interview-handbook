@@ -3,8 +3,10 @@ id: ml101-knn-implementation
 section: classical-models
 order: 11
 level: A
-title: 不调用机器学习库，怎样实现 KNN 分类并处理边界情况？
-quick: 对查询计算它与各训练样本的平方欧氏距离，取最近 K 个后投票。先约定距离相同和票数相同的处理方式，再校验 K、特征维数与数值是否合法。完整排序的参考实现每次查询需要 O(nd + n log n) 时间；平方距离保持邻居顺序，可以省去开平方。
+title: 不调用机器学习库，怎样实现 KNN 分类并处理 edge cases？
+quick: >-
+  对查询计算它与各训练样本的平方欧氏距离，取最近 K 个后投票。先约定距离相同和票数相同的处理方式，再校验
+  K、特征维数与数值是否合法。完整排序的参考实现每次查询需要 O(nd + n log n) 时间；平方距离保持邻居顺序，可以省去开平方。
 companies:
   - google
 tags:
@@ -13,29 +15,29 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
   - title: Google L5 MLE 候选人面经：实现 KNN
-    url: https://www.1point3acres.com/interview/thread/1116207
+    url: 'https://www.1point3acres.com/interview/thread/1116207'
     type: secondary
   - title: scikit-learn Nearest Neighbors
-    url: https://scikit-learn.org/stable/modules/neighbors.html
+    url: 'https://scikit-learn.org/stable/modules/neighbors.html'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 不调用机器学习库，实现一次 KNN 分类预测：依据查询点的最近 k 个训练样本，使用均匀投票决定类别。
 
 ### 输入与接口
 
-实现 `knn_predict`(X,y,query,k)。X 是非空 n×d 有限实数列表，n、d 均至少1；y 为 n 个整数标签，query 有 d 个有限实数特征；k 为1到n的整数。输入数值的平方距离在浮点可表示范围内。
+实现 `knn_predict`(X,y,query,k)。X 是非空 n×d 有限实数列表，n、d 均至少1；y 为 n 个整数标签，query 有 d 个有限实数特征；k 为1到 n 的整数。输入数值的平方距离在浮点可表示范围内。
 
 ### 输出与约束
 
-返回一个整数类别标签。距离为欧氏距离，每位邻居权重相同。函数不修改 X、y 或 query，不自行进行标准化。
+返回一个整数类别标签。距离为欧氏距离，每位邻居权重相同。函数不修改 X、y 或 query，不自行进行 standardization。
 
 距离相同的训练样本按原始输入顺序选入；票数相同时选择数值较小的类别。重复训练样本作为不同样本分别计票。训练数据与查询的缩放由调用者预先一致处理。
 
@@ -51,7 +53,7 @@ knn_predict([[0],[2]],[1,0],[1],2) -> 0
 
 先计算距离，再选邻居并投票。下面用完整排序实现，便于在面试时说明正确性和检查平票行为；数据大时可以再替换为堆或选择算法。
 
-面经只披露要求实现 KNN，没有给接口和边界规则。下面是手册重构练习：X 为非空的 n×d 有限实数列表，d 至少为 1；y 为 n 个整数标签；query 有 d 个特征；K 为 1 到 n 的整数。使用均匀投票。距离相同时按训练输入顺序选邻居，票数相同时选较小的标签。调用者负责在训练集上拟合缩放，并对查询应用相同变换。
+面经只披露要求实现 KNN，没有给接口和 edge-case conventions。下面是手册重构练习：X 为非空的 n×d 有限实数列表，d 至少为 1；y 为 n 个整数标签；query 有 d 个特征；K 为 1 到 n 的整数。使用均匀投票。距离相同时按训练输入顺序选邻居，票数相同时选较小的标签。调用者负责在训练集上拟合缩放，并对查询应用相同变换。
 
 ```python
 from collections import Counter

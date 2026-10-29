@@ -5,24 +5,25 @@ order: 54
 level: S
 title: 阿里研发面：Kafka 和 RocketMQ 怎么比？消息不丢、幂等、积压怎么做？
 quick: >-
-  Kafka 适合高吞吐日志和分区内有序的场景；RocketMQ 自带事务消息、延时消息和死信，交易链路和阿里云生态用得多。不丢消息要把生产重试、刷盘副本、处理完再提交这条链路配齐，重复消费用业务键幂等。积压时先找消费瓶颈，再扩分区和消费者，或按业务优先级降级。
+  Kafka 适合高 throughput 日志和分区内有序的场景；RocketMQ
+  自带事务消息、延时消息和死信，交易链路和阿里云生态用得多。不丢消息要把生产重试、刷盘副本、处理完再提交这条链路配齐，重复消费用业务键幂等。积压时先找消费瓶颈，再扩分区和消费者，或按业务优先级降级。
 tags:
   - Alibaba
   - MQ
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
-    url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
+    url: 'https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6'
     type: candidate-first-hand
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
-Kafka 是分区日志，吞吐极强，适合日志、埋点和对接 Flink；RocketMQ 偏业务消息，事务消息、延时和死信开箱即用，交易链路更常用。两者给的都是至少一次投递，不丢要靠整条链路配齐，不重复要靠业务幂等。MQ 是阿里校招的特色题。
+Kafka 是分区日志，throughput 极强，适合日志、埋点和对接 Flink；RocketMQ 偏业务消息，事务消息、延时和死信开箱即用，交易链路更常用。两者给的都是至少一次投递，不丢要靠整条链路配齐，不重复要靠业务幂等。MQ 是阿里校招的特色题。
 
 先说模型。消息队列把同步调用拆成发送、存储、消费三段。主题按分区（Kafka）或队列（RocketMQ）切开，同一分区内有序，跨分区一般无序。生产者要的是投递确认，写到约定的副本数才算成功；消费者要管位移，处理完再提交可能重复，先提交再处理可能丢。所以 MQ 通常提供至少一次，业务自己做幂等，才能接近恰好一次。
 
@@ -31,7 +32,7 @@ Kafka 是分区日志，吞吐极强，适合日志、埋点和对接 Flink；Ro
 | | Kafka | RocketMQ |
 | --- | --- | --- |
 | 模型 | 分区日志，消费者拉，位移自管 | 队列 + 消费组，Broker 管进度更重 |
-| 吞吐 | 顺序写、零拷贝，日志/埋点极强 | 够用，更偏业务消息 |
+| throughput | 顺序写、零拷贝，日志/埋点极强 | 够用，更偏业务消息 |
 | 顺序 | 分区内有序 | 队列内有序，有顺序消息语义 |
 | 事务 / 半消息 | 事务 API 有，业务侧用得少 | 事务消息是阿里主推：本地事务 + 半消息回查 |
 | 延时 / 重试 | 要自己做 | 延时等级、死信开箱 |

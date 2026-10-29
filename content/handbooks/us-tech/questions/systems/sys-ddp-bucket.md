@@ -23,7 +23,7 @@ DDP 能把通信和反向重叠，是因为反向从后往前算，靠近 loss �
 
 参数按反向时梯度就绪的顺序装进桶。默认大约 25MB 量级，一个桶满了就发起通信。后面的层先就绪，所以先通信的是靠近 loss 的参数，前面的层还在算。通信和计算用不同的流，才能重叠。同一条流上先算完再通信，桶没有任何好处。
 
-梯度累积的前几次不要通信。桶只在最后一次反向时打开。否则每个 micro batch 都在同步一份不完整的梯度。
+gradient accumulation 的前几次不要通信。桶只在最后一次反向时打开。否则每个 micro batch 都在同步一份不完整的梯度。
 
 桶很小：每次 AllReduce 的字节少，延迟占主导，GPU 在等很多个小集合通信。桶很大：要等很多参数的梯度才发车，反向快结束时才开始通信，重叠消失，步时间末尾多出一截。
 
@@ -31,6 +31,7 @@ DDP 能把通信和反向重叠，是因为反向从后往前算，靠近 loss �
 
 ```python
 from contextlib import nullcontext
+
 
 def backward_with_buckets(model, micro_batches, opt, bucket_bytes=25 * 2**20):
     opt.zero_grad(set_to_none=True)

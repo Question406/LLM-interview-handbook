@@ -4,7 +4,9 @@ section: companies
 order: 12
 level: A
 title: 京东：大模型 / Agent 研发应重点准备什么？
-quick: "京东 Agent 工程题密度高，会问工具目录治理、MCP / Skill 分层、Reflection 归因、工具权限和 AI IDE 隔离、检索增强生成（RAG）幻觉兜底。电商场景还要讲清导购以外的用例，以及 Redis、压测。"
+quick: >-
+  京东 Agent 工程题密度高，会问工具目录治理、MCP / Skill 分层、Reflection 归因、工具权限和 AI IDE
+  隔离、检索增强生成（RAG）hallucination fallback。电商场景还要讲清导购以外的用例，以及 Redis、压测。
 tags:
   - JD
   - 真题导航
@@ -12,41 +14,41 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 秋招面经-京东大模型算法一面
-    url: https://www.nowcoder.com/feed/main/detail/3f02a8e652fa414c819de810452a2b2a
+    url: 'https://www.nowcoder.com/feed/main/detail/3f02a8e652fa414c819de810452a2b2a'
     type: candidate-first-hand
   - title: 京东科技 AI 全栈 agent 研发一面面经
-    url: https://www.nowcoder.com/feed/main/detail/e80b257b1c064970a72c9679c2177585
+    url: 'https://www.nowcoder.com/feed/main/detail/e80b257b1c064970a72c9679c2177585'
     type: candidate-first-hand
   - title: 京东大模型算法 实习面经
-    url: https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46
+    url: 'https://www.nowcoder.com/feed/main/detail/9ce9749030b24f6a9a7afcaa62b27f46'
     type: candidate-first-hand
   - title: 27暑期实习-京东Agent开发二面分享
-    url: https://www.nowcoder.com/feed/main/detail/6af1c8611e434bbe8ba9cfa2bd0eaf18
+    url: 'https://www.nowcoder.com/feed/main/detail/6af1c8611e434bbe8ba9cfa2bd0eaf18'
     type: candidate-first-hand
   - title: 京东后端-一面
-    url: https://www.nowcoder.com/feed/main/detail/ad9b86d7b29b4b5583840d0169458b0a
+    url: 'https://www.nowcoder.com/feed/main/detail/ad9b86d7b29b4b5583840d0169458b0a'
     type: candidate-first-hand
   - title: 京东零售平台产品与研发中心二面
-    url: https://www.nowcoder.com/feed/main/detail/6a94272eee68460d9e8f90c72ddb8dab
+    url: 'https://www.nowcoder.com/feed/main/detail/6a94272eee68460d9e8f90c72ddb8dab'
     type: candidate-first-hand
   - title: 京东大模型应用开发 实习面经
-    url: https://www.nowcoder.com/feed/main/detail/904555611d13461da9288d4147b7550b
+    url: 'https://www.nowcoder.com/feed/main/detail/904555611d13461da9288d4147b7550b'
     type: candidate-first-hand
 ---
 
-京东相关岗分两条线。大模型算法会追 Toolformer、Reflection、PPO/GRPO 和复读机；Agent 研发会追工具目录、检索增强生成（RAG）幻觉、意图识别评测和电商场景。准备时「会调工具」只是起点。
+京东相关岗分两条线。大模型算法会追 Toolformer、Reflection、PPO/GRPO 和复读机；Agent 研发会追工具目录、检索增强生成（RAG）hallucination、意图识别评测和电商场景。准备时「会调工具」只是起点。
 
 比如 Agent 答错了一道商品问题，面试官会让你说清这是知识缺失还是工具调用出错，Reflection 归因那张卡回答的就是这件事。
 
 ## 准备主线
 
 1. 工具、协议和隔离这块，MCP 只解决连接，Skill 解决流程，执行权在 Host。AI IDE / 工作区要防「幻读」式的过期快照。
-2. 训练范式要比较 Toolformer 自监督和基于人类反馈的强化学习（RLHF），以及什么时候用 PPO、什么时候用 GRPO。
-3. 生成病态主要是复读机和重复解码，要从数据、解码、训练三侧讲怎么处理。
-4. RAG 上了生产，幻觉光靠输入提示（prompt）压不住，要有检索归因、拒答和人工兜底。
+2. 训练范式要比较 Toolformer 自监督和 RLHF，以及什么时候用 PPO、什么时候用 GRPO。
+3. 生成病态主要是复读机和重复 decoding，要从数据、decoding、训练三侧讲怎么处理。
+4. RAG 上了生产，hallucination 光靠 prompt 压不住，要有检索归因、拒答和 human escalation。
 
 ## 本手册真题卡
 
@@ -57,11 +59,11 @@ sources:
 - 京东科技：工具上下文太长、工具列表太多时如何治理
 - 京东：什么时候用 PPO，什么时候用 GRPO
 - 京东：如何解决复读机问题
-- 京东 Agent：RAG 出现幻觉时如何设计兜底
+- 京东 Agent：RAG 出现 hallucination 时如何设计 fallback
 - 京东：意图识别用什么模型，准确率怎么测
 - 京东：向量检索里 IVF / HNSW 和暴力有何差异
 - 京东：输入不标准时，混合检索权重怎么配
-- 京东：监督微调（SFT） 和 PEFT 训练有哪些实用 trick
+- 京东：SFT 和 PEFT 训练有哪些实用 trick
 - 京东：Agent 为什么不能只看问答准确率，还要评什么
 - 京东：如何评测 RAG 系统的准确率
 - 京东：什么时候加缓存，为什么不能只用 MySQL

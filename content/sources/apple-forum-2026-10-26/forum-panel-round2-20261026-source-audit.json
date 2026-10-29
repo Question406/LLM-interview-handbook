@@ -1,0 +1,71 @@
+{
+  "collectedAt": "2026-10-26",
+  "method": "Chrome via cua_repl, own tab 1006832491; main post and visible replies",
+  "sources": [
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1149108-1-1.html",
+      "title": "苹果AIML infra engr全套",
+      "publishedVisible": "2025-10-07 14:14:15",
+      "interviewPeriodVisible": "2025 Q4",
+      "team": "AIML Infra engineer; no AFM attribution",
+      "visibleScope": "main post and one visible reply; no gate encountered",
+      "verifiedTopics": [
+        "large JSON string cleaning/processing, three subquestions unspecified",
+        "incomplete object-oriented Airflow-like DAG task pipeline, add task and compute all results",
+        "fix bugs in file-reading/data-processing code, exact code not disclosed",
+        "write Flask model inference API"
+      ],
+      "cards": [
+        "p3a-apple-task-dag-code",
+        "p3a-apple-json-clean-code",
+        "p3a-apple-flask-inference-contract"
+      ],
+      "notDisclosed": [
+        "original class and API signatures",
+        "JSON schema and exact three questions",
+        "buggy program and four fixes",
+        "model type/input shape/endpoints/deployment scale"
+      ],
+      "excludedAsInsufficientDetail": [
+        "file-reading bugfix exercise: exact code unavailable; do not invent original bugs"
+      ]
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1177713-1-1.html",
+      "title": "Apple店面",
+      "publishedVisible": "2026-05-22 15:25:14",
+      "interviewPeriodVisible": "2025 Q4",
+      "team": "Apple MLE, unspecified team",
+      "visibleScope": "full main post; zero replies",
+      "verifiedTopics": [
+        "rotate square matrix 90 degrees in Python",
+        "vision encoder concepts and training",
+        "LLM memory and latency bottlenecks"
+      ],
+      "cards": [],
+      "excludedAsDuplicate": [
+        "vision encoder training overlaps apple-mm-train",
+        "LLM memory/latency overlaps existing Apple ondevice/vision/ANE cards; original post gives no further specifics",
+        "matrix rotation left to coding agent"
+      ]
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1176800-1-1.html",
+      "title": "Apple Video MLE 面经（挂经）分享",
+      "publishedVisible": "2026-05-14 17:11:00",
+      "interviewPeriodVisible": "2026 Q2",
+      "team": "Apple Video MLE, specific org not established",
+      "visibleScope": "main post and two replies; page says threshold 200 and already authorized to browse, body visibly readable; no access control bypass or points transaction",
+      "verifiedTopics": [
+        "project discussion, no actual coding performed despite CoderPad link",
+        "conflict resolution and tracking AI developments",
+        "video compression algorithms and diffusion models"
+      ],
+      "cards": [],
+      "excludedAsInsufficientDetail": [
+        "technical topics only, no specific compression/diffusion questions; avoid inventing complete original question",
+        "not evidence that all Apple or AFM technical rounds omit coding"
+      ]
+    }
+  ]
+}

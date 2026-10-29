@@ -4,7 +4,9 @@ section: agent
 order: 202
 level: A
 title: 字节 Agent 一面：从 ES 切到向量检索，哪些能力升、哪些会降？
-quick: "向量检索更容易找到同义、口语和改写的表达，但精确 ID、错误码、指定关键词的命中和可解释的过滤会变差。生产上一般混合，让 ES 处理过滤与专有名词，向量检索查找语义相近的内容，最后重排候选结果。"
+quick: >-
+  向量检索更容易找到同义、口语和改写的表达，但精确 ID、错误码、指定关键词的命中和可解释的过滤会变差。生产上一般混合，让 ES
+  处理过滤与专有名词，向量检索查找语义相近的内容，最后重排候选结果。
 tags:
   - ByteDance
   - Elasticsearch
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 字节跳动-Agent开发实习生 一面（45分钟）
-    url: https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604
+    url: 'https://www.nowcoder.com/feed/main/detail/931a8a935a5e4b4f8d0b71cd4e818604'
     type: candidate-first-hand
 ---
 
@@ -24,7 +26,7 @@ sources:
 - 公司：字节跳动
 - 岗位：Agent 开发实习；一面
 - 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：**“为什么选择用ElasticSearch”**；**“如果从ES切换向向量检索，哪些能力会下降，哪些能力会提升？”**
+- 原始措辞：**“为什么选择用 ElasticSearch”**；**“如果从 ES 切换向向量检索，哪些能力会下降，哪些能力会提升？”**
 
 切到向量检索，同义、口语和改写类的 query 会变好，精确 ID、错误码、必须命中的关键词和可解释的结构化过滤会变差。所以生产上一般混合：过滤和专有名词留在 ES，语义近邻走向量，统一候选池后再 rerank，再用 Recall@$K$ 和精确命中率分别验收。字节 Agent 实习一面连着问「为什么用 ES」和「切过去升什么降什么」，把切换讲成全面升级是最常见的错。
 

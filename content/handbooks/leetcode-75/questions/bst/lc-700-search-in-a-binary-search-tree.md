@@ -4,7 +4,7 @@ section: bst
 order: 1
 level: A
 title: LC 700 · 二叉搜索树中的搜索
-quick: "从根开始比较：目标更小走左子树，更大走右子树，相等就返回这个节点。BST 搜索只走一条路径，写成循环时间 $O(h)$，额外空间 $O(1)$。"
+quick: 从根开始比较：目标更小走左子树，更大走右子树，相等就返回这个节点。BST 搜索只走一条路径，写成循环时间 $O(h)$，额外空间 $O(1)$。
 tags:
   - Tree
   - BST
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 700. Search in a Binary Search Tree
-    url: https://leetcode.com/problems/search-in-a-binary-search-tree/
+    url: 'https://leetcode.com/problems/search-in-a-binary-search-tree/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -152,7 +152,7 @@ print("simple tests passed")
 
 时间 $O(h)$，平衡时 $O(\log n)$，最坏 $O(n)$。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 目标就是根时，循环一次都不进，直接返回根。
 

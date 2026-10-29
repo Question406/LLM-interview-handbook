@@ -4,7 +4,9 @@ section: anthropic
 order: 3
 level: S
 title: Anthropic：Constitutional AI 和 RLHF 差在哪？监督从哪来？
-quick: "RLHF 通常由人给回答偏好；CAI 让模型按人写的 constitution 批评、改写，再用 AI 比较产生偏好，训练偏好模型并做 RLAIF。人的工作转向原则设计、反例和抽查，偏好模型与强化学习仍然存在。"
+quick: >-
+  RLHF 通常由人给回答偏好；CAI 让模型按人写的 constitution 批评、改写，再用 AI 比较产生偏好，训练偏好模型并做
+  RLAIF。人的工作转向原则设计、反例和抽查，偏好模型与 RL 仍然存在。
 tags:
   - Anthropic
   - Constitutional AI
@@ -13,30 +15,30 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Constitutional AI — Harmlessness from AI Feedback
-    url: https://arxiv.org/abs/2212.08073
+    url: 'https://arxiv.org/abs/2212.08073'
     type: primary
   - title: Claude's Constitution
-    url: https://www.anthropic.com/news/claudes-constitution
+    url: 'https://www.anthropic.com/news/claudes-constitution'
     type: primary
 ---
 
-CAI 与 RLHF 的主要区别在反馈从哪里来。RLHF 由人逐条比较回答，CAI 由人先写原则，再让 AI 按原则批评、改写和比较。比如一条回答太容易拒绝，constitution 就需要包含避免过度拒答的要求，反馈模型也要据此判断。
+CAI 与 RLHF 的主要区别在反馈从哪里来。RLHF 由人逐条比较回答，CAI 由人先写原则，再让 AI 按原则批评、改写和比较。比如一条回答太容易拒绝，constitution 就需要包含避免 over-refusal 的要求，反馈模型也要据此判断。
 
 ## 原则怎样变成训练信号
 
 论文先做监督阶段：模型读一条有害或越界回答，按 constitution 批评，再改写，用这些改写结果做 SL，让策略更无害且仍然有用。然后进入 RL 阶段，由模型按原则比较两条回答，产生偏好数据，训练偏好模型，再用 PPO 更新策略，这一阶段就是 RLAIF。
 
-Constitution 是可版本化的条款列表，包括人权、非歧视、尊重法律、避免过度拒绝等。原则会冲突，例如有帮助与无害，通常优先无害，同时用单独条款限制过度拒绝。公开 constitution 也供人审查，区别于隐藏的 system prompt。
+Constitution 是可版本化的条款列表，包括人权、非歧视、尊重法律、避免 over-refusal 等。原则会冲突，例如有帮助与无害，通常优先无害，同时用单独条款限制 over-refusal。公开 constitution 也供人审查，区别于隐藏的 system prompt。
 
 | | RLHF (InstructGPT) | CAI |
 | --- | --- | --- |
 | 偏好来源 | 人标 chosen/rejected | 模型按条款比较 |
 | 人的工作 | 持续标注 | 写 / 改条款，抽查失败 case |
-| 主要风险 | 标注员偏好、讨好 | 模型自嗨、条款漏洞、过度拒绝 |
-| 规模 | 标注吞吐限制 | 原则一旦写好，反馈更便宜 |
+| 主要风险 | 标注员偏好、讨好 | 模型自嗨、条款漏洞、over-refusal |
+| 规模 | 标注 throughput 限制 | 原则一旦写好，反馈更便宜 |
 
 CAI 降低了 harmlessness 标注的成本，也减少人反复查看有害内容的负担。它仍使用偏好模型和 RL，监督来自人制定的原则。InstructGPT 与 KL 的相关解释见 `openai-instructgpt-kl`、`pt-rlhf-why-reverse-kl`。
 

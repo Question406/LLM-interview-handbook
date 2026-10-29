@@ -5,20 +5,21 @@ order: 2
 level: S
 title: LC 136 · 只出现一次的数字
 quick: >-
-  全部 XOR 一遍：$a\oplus a=0$、$a\oplus 0=a$，出现两次的数成对抵消，剩下的就是只出现一次的那个。时间 $O(n)$，额外空间 $O(1)$。
+  全部 XOR 一遍：$a\oplus a=0$、$a\oplus 0=a$，出现两次的数成对抵消，剩下的就是只出现一次的那个。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Bit
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 136. Single Number
-    url: https://leetcode.com/problems/single-number/
+    url: 'https://leetcode.com/problems/single-number/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -100,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $n=1$ 时，初值 $0$ 异或它就是它。
 - 只出现一次的数在开头还是结尾都一样，XOR 可交换，位置不影响结果。

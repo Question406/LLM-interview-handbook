@@ -4,7 +4,9 @@ section: nvidia
 order: 26
 level: S
 title: NVIDIA：fused MoE 的 permute、grouped GEMM、unpermute
-quick: "先按 expert 把 token 行聚齐，再用 grouped GEMM 处理不同的 $M_i$，最后按原位置乘 top-$k$ 权重合并输出。融合主要省掉 gather、激活和 scatter 的 HBM 往返；decode 时每个专家分到的 token 太少，仍会限制利用率。"
+quick: >-
+  先按 expert 把 token 行聚齐，再用 grouped GEMM 处理不同的 $M_i$，最后按原位置乘 top-$k$
+  权重合并输出。融合主要省掉 gather、激活和 scatter 的 HBM 往返；decode 时每个专家分到的 token 太少，仍会限制利用率。
 tags:
   - NVIDIA
   - MoE
@@ -13,19 +15,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Scaling Expert Parallelism in TensorRT-LLM (Part 2)
-    url: https://nvidia.github.io/TensorRT-LLM/blogs/tech_blog/blog8_Scaling_Expert_Parallelism_in_TensorRT-LLM_part2.html
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/blogs/tech_blog/blog8_Scaling_Expert_Parallelism_in_TensorRT-LLM_part2.html
     type: primary
   - title: Mixture of Experts — Megatron Core
-    url: https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/features/moe.html
+    url: >-
+      https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/features/moe.html
     type: primary
   - title: Mixtral of Experts
-    url: https://arxiv.org/abs/2401.04088
+    url: 'https://arxiv.org/abs/2401.04088'
     type: primary
   - title: NVIDIA CUTLASS
-    url: https://github.com/NVIDIA/CUTLASS
+    url: 'https://github.com/NVIDIA/CUTLASS'
     type: primary
 ---
 
@@ -33,14 +37,14 @@ fused MoE 先把 token 按 expert 聚齐，再成组计算，最后写回原来�
 
 ## token 怎么从路由走到输出
 
-一层 MoE 的 hidden $x$ 形状是 $[N, D]$。router 为每个 token 选出 top-$k$ expert id 和门控权重，随后 expert $i$ 用下面的 MLP 计算输出：
+一层 MoE 的 hidden $x$ 形状是 $[N, D]$。router 为每个 token 选出 top-$k$ expert id 和 gating weights，随后 expert $i$ 用下面的 MLP 计算输出：
 
 $$
 y_i=\mathrm{SiLU}(x W_{\mathrm{gate},i})\odot (x W_{\mathrm{up},i}),\quad
 z_i=y_i W_{\mathrm{down},i}.
 $$
 
-$x$ 在内存里按请求 / 序列排，同一 expert 的行不相邻。不 permute 就变成不规则 gather GEMM，Tensor Core tile 对不齐，$M_i=3$ 那种边角会把吞吐打穿。
+$x$ 在内存里按请求 / 序列排，同一 expert 的行不相邻。不 permute 就变成不规则 gather GEMM，Tensor Core tile 对不齐，$M_i=3$ 那种边角会把 throughput 打穿。
 
 Permute（有的实现叫 expand / sort）：把 $N\cdot k$ 个 token-expert 对按 expert id 排序，得到 $x_{\mathrm{perm}}$ 和一组 `group_sizes` $[M_0,\ldots,M_{E-1}]$，$\sum M_i=Nk$。CUTLASS grouped GEMM 要求同一核里 $K,N$ 维相同，只允许 $M_i$ 变：MoE 正好满足。再 launch 两次（或三次）grouped：gate/up、down。Unpermute：按逆置换把 $z$ 写回，并
 
@@ -49,14 +53,14 @@ h=\sum_{j=1}^{k} w_{i,j}\,z_{i,j}.
 $$
 
 ```python
-ids, w = router_topk(x, k)                 # [N, k]
-xp, sizes, inv = permute(x, ids)           # [N*k, D], M_i
+ids, w = router_topk(x, k)  # [N, k]
+xp, sizes, inv = permute(x, ids)  # [N*k, D], M_i
 h = silu(grouped_gemm(xp, Wg, sizes)) * grouped_gemm(xp, Wu, sizes)
 z = grouped_gemm(h, Wd, sizes)
-y = unpermute_weighted(z, inv, w)          # [N, D]
+y = unpermute_weighted(z, inv, w)  # [N, D]
 ```
 
-Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核，Megatron 训练侧常单独执行。推理中的 fused 核可以在读取 GEMM 的 A 时完成 gather，在第二段 GEMM 的 epilogue 中完成 scatter 和门控乘法，中间激活也不必完整写回 HBM。FLOPs 没有因此减少，减少的是几次 $NkD$ 数据的往返。
+Permute / unpermute 本身是 $\Theta(NkD)$ 的带宽核，Megatron 训练侧常单独执行。推理中的 fused 核可以在读取 GEMM 的 A 时完成 gather，在第二段 GEMM 的 epilogue 中完成 scatter 和 gating 乘法，中间激活也不必完整写回 HBM。FLOPs 没有因此减少，减少的是几次 $NkD$ 数据的往返。
 
 TRT-LLM 的 Triton / CUTLASS / DeepGEMM 后端都走这套骨架。Triton 核注释写得很直：`sorted_token_ids` 按 expert 聚齐并 pad 到 `BLOCK_M` 的倍数，无效 pad 行要 mask，否则脏数据进累加器。
 
@@ -68,7 +72,7 @@ EP 大于 1：permute 之前先 all-to-all，每卡只看到自己那 $E/\mathrm
 
 CUDA Graph：`group_sizes` 每步变。要么 pad 到固定容量再 mask，要么 piecewise graph。Fused 核能减少 launch 次数，让 Graph 更容易录，见 `nvidia-cuda-graph`。
 
-融合也有边界。
+fusion 也有 applicability limits。
 
 可以融：token sort 的元数据、第一段 grouped、SiLU$\odot$、量化 cast、第二段 grouped、scatter 加权。不要把 router 的 softmax 硬塞进 GEMM：$E$ 很大时 router 是另一类核。共享 expert（DeepSeek 一类）形状和 routed expert 不同，$K,N$ 不一致，grouped 要求拆核或共享那路单独 GEMM。
 
@@ -77,8 +81,8 @@ FP8 / W4 的 grouped 路径还要带 per-group scale，tile 对齐更烦。质�
 ## 追问
 
 - **不 permute 行不行？** 行，变成 gather GEMM，几乎总更慢。permute 的代价是一次读写，换的是规整 $M_i$。
-- **pad 到 `BLOCK_M` 算不算浪费？** Decode 上浪费比例高，这是小 $M$ 带来的额外开销。减小 block 会伤 输入预填充（prefill，即处理输入并建立缓存）。常两套核或按 $N$ 分发。
-- **top-$k$ 权重何时乘？** 乘在 down-proj 之后、unpermute 之时，避免门控缩放到中间激活再进第二段 GEMM 的量化范围。有的核融进 epilogue。
+- **pad 到 `BLOCK_M` 算不算浪费？** Decode 上浪费比例高，这是小 $M$ 带来的额外开销。减小 block 会伤 输入 prefill。常两套核或按 $N$ 分发。
+- **top-$k$ 权重何时乘？** 乘在 down-proj 之后、unpermute 之时，避免 gating 缩放到中间激活再进第二段 GEMM 的量化范围。有的核融进 epilogue。
 - **和 dense MLP 比 FLOPs？** 每 token 只算 $k$ 个 expert，算术上 $k/E$。实际耗时还要加 permute + 不规则 $M$ + all-to-all，MFU 按 dense 套会骗人。
 
 ## 相关题

@@ -52,7 +52,7 @@ $$
 
 $\mathrm{Var}(\nabla\log\pi\cdot R)=\mathrm{Var}(\nabla\log\pi\cdot(G_t+\text{past}))$。past 和 $\nabla\log\pi(a_t\mid s_t)$ 不相关，可它自己的噪声还是被乘进了梯度，减掉 past，等于丢掉一项均值为 0 的干扰。这里没有引入新的 $b(s)$，算不上控制变量，就是把一项纯噪声直接删了。
 
-白板上可以用一个两步 MDP 讲：第一步的 $r_0$ 很大、和 $a_1$ 无关。用整段 $R$ 更新 $a_1$ 时，一次幸运的 $r_0$ 会让所有第二步动作都显得好；换成 $G_1$，就只剩从 $a_1$ 起的回报。LLM 里输入提示（prompt）不算动作、损失只算在回复 token 上，也是同一条因果性：别人已经吐出的 token、环境转移，都不进当前的 score。
+白板上可以用一个两步 MDP 讲：第一步的 $r_0$ 很大、和 $a_1$ 无关。用整段 $R$ 更新 $a_1$ 时，一次幸运的 $r_0$ 会让所有第二步动作都显得好；换成 $G_1$，就只剩从 $a_1$ 起的回报。LLM 里 prompt 不算动作、损失只算在回复 token 上，也是同一条因果性：别人已经吐出的 token、环境转移，都不进当前的 score。
 
 它解决不了稀疏终局奖励。如果只有 $r_T$ 非零，$G_t=\gamma^{T-t}r_T$，每个前缀 token 仍然乘同一个随机变量，方差随 $T$ 涨，见 `fund-pg-horizon-var`。下一步要减 $V(s_t)$ 或组 baseline，见 `fund-optimal-baseline`。
 

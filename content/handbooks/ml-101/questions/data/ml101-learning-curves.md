@@ -3,18 +3,19 @@ id: ml101-learning-curves
 section: data
 order: 5
 level: A
-title: "学习曲线怎么看？怎么判断该不该继续加数据？"
-quick: "学习曲线比较不同训练样本量下的训练和验证表现。验证表现仍随数据增加而改善时，加有代表性的数据值得尝试；两条曲线都差且接近时，优先检查特征、模型容量和优化，曲线趋稳也要排除标签噪声或分布问题。"
+title: 学习曲线怎么看？怎么判断该不该继续加数据？
+quick: >-
+  学习曲线比较不同训练样本量下的训练和验证表现。验证表现仍随数据增加而改善时，加有代表性的数据值得尝试；两条曲线都差且接近时，优先检查特征、模型容量和优化，曲线趋稳也要排除标签噪声或分布问题。
 tags:
   - Machine Learning
   - data
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Validation curves and learning curves"
-    url: https://scikit-learn.org/stable/modules/learning_curve.html
+  - title: 'scikit-learn: Validation curves and learning curves'
+    url: 'https://scikit-learn.org/stable/modules/learning_curve.html'
     type: primary
 ---
 
@@ -30,4 +31,4 @@ sources:
 验证曲线改变超参数，比如树深度；学习曲线改变训练样本数。前者帮助选模型复杂度，后者帮助判断数据规模是否仍有收益。
 
 **增加数据后效果下降，先查什么？**
-先检查新增数据的标签口径、时间范围与目标人群，再看是否改变了类别配比。数据量增加同时改变了分布时，不能把结果单纯归因于数量。
+先检查新增数据的 label definitions、时间范围与目标人群，再看是否改变了类别配比。数据量增加同时改变了分布时，不能把结果单纯归因于数量。

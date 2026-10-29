@@ -4,7 +4,9 @@ section: agent
 order: 101
 level: S
 title: 京东大模型：Reflection 如何归因知识缺失还是工具调用错误？
-quick: "先有可回放 trace，再做受控替换：换上标准证据、换上正确工具结果、重放执行器，看失败在哪一步消失，再归到知识与检索、工具选择、参数、执行、结果使用或规划。归因要多标签、带置信度，并对应到具体修复；同一个模型的自评只能当弱信号。"
+quick: >-
+  先有可回放
+  trace，再做受控替换：换上标准证据、换上正确工具结果、重放执行器，看失败在哪一步消失，再归到知识与检索、工具选择、参数、执行、结果使用或规划。归因要多标签、带置信度，并对应到具体修复；同一个模型的自评只能当弱信号。
 tags:
   - JD
   - Agent
@@ -13,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 秋招面经-京东大模型算法一面（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/3f02a8e652fa414c819de810452a2b2a
+    url: 'https://www.nowcoder.com/feed/main/detail/3f02a8e652fa414c819de810452a2b2a'
     type: candidate-first-hand
 ---
 
@@ -27,7 +29,7 @@ sources:
 - 届别 / 流程：秋招；一面
 - 面试时间：原帖未披露；帖子发布于 2025-12-12
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“Reflection机制里,如何判断一个Agent的失败是由知识缺失还是工具调用错误引起的?”**
+- 原始措辞：**“Reflection 机制里,如何判断一个 Agent 的失败是由知识缺失还是工具调用错误引起的?”**
 
 我会靠可回放的 trace 加受控替换来判断：在同一个状态上，把检索结果换成标准证据、把工具结果换成正确结果、再重放执行器，看失败在哪一步消失。让同一个 LLM 再写一段「我这次是缺知识还是调错工具」靠不住，自评没有反事实，置信度高也不代表对。归因的目的是找对修复路径，统一「再反思一次」会修错模块。
 
@@ -37,15 +39,15 @@ sources:
 
 一次失败经常有主因也有辅因，比如检索漏了关键 SOP，同时参数里的订单号又填错了。所以报告里写 primary cause、contributing cause 和置信度：做过替换实验的是高置信，只有模型自述的标低置信，不能直接拿去改线上。我会建一个可重放的 failure set，按错误类型分别统计回归；工具目录或文档更新后要重跑，免得归因还绑在过期的 schema 上。Reflection 模块要是拿来产训练信号，也用这些桶，别去看「反思文本像不像人」。
 
-修复跟着桶走。知识和检索的问题，就补数据、改切块、改召回，加一句更长的「请仔细想」没用。选错工具，改 description、路由、权限可见集，或者加监督微调（SFT）示范，见 `jd-agent-tool-catalog-context`。参数错误，用 schema、constrained decoding、参数校验器。环境失败，用 retry、幂等、超时策略，见 `byte-tool-fail-retry`。规划不用观察，就改提示或训练，让 Observation 成为下一跳的强制输入。缺文档的任务再试一次还是缺，403 再试只是噪声。训练时把错误调用写进 SFT/RL，也要和这些桶对齐，见 `ali-tool-call-error-sft-rl`。
+修复跟着桶走。知识和检索的问题，就补数据、改切块、改召回，加一句更长的「请仔细想」没用。选错工具，改 description、路由、权限可见集，或者加 SFT 示范，见 `jd-agent-tool-catalog-context`。参数错误，用 schema、constrained decoding、参数校验器。环境失败，用 retry、幂等、超时策略，见 `byte-tool-fail-retry`。规划不用观察，就改提示或训练，让 Observation 成为下一跳的强制输入。缺文档的任务再试一次还是缺，403 再试只是噪声。训练时把错误调用写进 SFT/RL，也要和这些桶对齐，见 `ali-tool-call-error-sft-rl`。
 
 ## 追问
 
 **单靠 LLM-as-judge 行不行？**
 可以当弱信号，当不了主归因。没有替换实验，judge 会把文笔流畅当成根因找对了。
 
-**知识缺失和幻觉怎么分？**
-索引里确实没有证据、模型还给出了具体数字，是幻觉或捏造；索引里有但没召回，是检索失败。两种修法不一样。
+**知识缺失和 hallucination 怎么分？**
+索引里确实没有证据、模型还给出了具体数字，是 hallucination 或捏造；索引里有但没召回，是检索失败。两种修法不一样。
 
 **工具返回本身就是错的，算谁的？**
 先 replay 执行器。环境 bug 归基础设施；模型在错误的观察上编出结论，归工具结果的使用。

@@ -4,20 +4,23 @@ section: array-string
 order: 23
 level: A
 title: LC 28 · 找出字符串中第一个匹配项的下标
-quick: "先写朴素匹配：枚举起点，逐字符和 `needle` 比，找不到返回 $-1$，最坏 $O(nm)$。再提一句 KMP，主串指针不回头，可以做到 $O(n+m)$。"
+quick: >-
+  先写朴素匹配：枚举起点，逐字符和 `needle` 比，找不到返回 $-1$，最坏 $O(nm)$。再提一句 KMP，主串指针不回头，可以做到
+  $O(n+m)$。
 tags:
   - String
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 28. 找出字符串中第一个匹配项的下标
-    url: https://leetcode.cn/problems/find-the-index-of-the-first-occurrence-in-a-string/
+    url: >-
+      https://leetcode.cn/problems/find-the-index-of-the-first-occurrence-in-a-string/
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -92,7 +95,7 @@ print("simple tests passed")
 
 朴素最坏 $O((n-m+1)m)$，平均情况更好。KMP 时间 $O(n+m)$，额外空间 $O(m)$。
 
-## 边界
+## Edge Cases
 
 `needle` 等于整段 `haystack` 时，起点 $0$ 一次比完就返回 $0$。只在末尾匹配时起点要扫到 $n-m$，写成 `range(n-m)` 会漏掉最后一次。完全没有公共子串时所有窗口都失败，返回 $-1$。
 

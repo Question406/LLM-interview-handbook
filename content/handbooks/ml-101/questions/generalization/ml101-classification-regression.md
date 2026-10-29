@@ -3,17 +3,17 @@ id: ml101-classification-regression
 section: generalization
 order: 2
 level: A
-title: "分类和回归怎么根据业务目标选择？"
-quick: "先看业务需要的输出：类别或某事件的概率用分类，连续数量用回归。同样是送货，预测是否超时是分类，预测还要多少分钟是回归；标签虽然用数字编码，也可能仍是类别。"
+title: 分类和回归怎么根据业务目标选择？
+quick: 先看业务需要的输出：类别或某事件的概率用分类，连续数量用回归。同样是送货，预测是否超时是分类，预测还要多少分钟是回归；标签虽然用数字编码，也可能仍是类别。
 tags:
   - ML101
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Google: Framing an ML problem"
-    url: https://developers.google.com/machine-learning/problem-framing/ml-framing
+  - title: 'Google: Framing an ML problem'
+    url: 'https://developers.google.com/machine-learning/problem-framing/ml-framing'
     type: primary
 ---
 
@@ -31,7 +31,7 @@ sources:
 不一定。房间数、订单件数是有数量意义的整数，可以作为计数预测；产品编号虽然也是整数，却是类别。
 
 **把价格分成高、中、低，可以做分类吗？**
-可以，但分箱会丢掉箱内差异。只有当这些档位就是业务动作依据，并且边界明确时，这种任务定义才方便验收。
+可以，但分箱会丢掉箱内差异。只有当这些档位就是业务动作依据，并且 cluster separation 清晰时，这种任务定义才方便验收。
 
 **先回归时间，再按阈值判断超时，等价吗？**
 通常不等价。一个条件均值并不能给出超时概率；同样的预计时间背后可能有完全不同的波动范围。需要概率决策时要评估事件概率或完整分布。

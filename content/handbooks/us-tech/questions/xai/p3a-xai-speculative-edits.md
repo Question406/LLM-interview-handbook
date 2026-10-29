@@ -3,8 +3,10 @@ id: p3a-xai-speculative-edits
 section: xai
 order: 750
 level: S
-title: "xAI：代码编辑 Speculative Edits：复用原代码草稿"
-quick: "原代码作为草稿批量验证，只接受与确定性模型预测一致的连续前缀；首次分歧时输出该位置的模型预测，丢弃后面的预测。练习随后退回 greedy，EOS 和长度上限的行为保持一致，因此输出与逐 token 贪心相同。"
+title: xAI：代码编辑 Speculative Edits：复用原代码草稿
+quick: >-
+  原代码作为草稿批量验证，只接受与确定性模型预测一致的连续前缀；首次分歧时输出该位置的模型预测，丢弃后面的预测。练习随后退回 greedy，EOS
+  和长度上限的行为保持一致，因此输出与逐 token 贪心相同。
 companies:
   - xai
 tags:
@@ -15,23 +17,23 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: 1Point3Acres xAI source
-    url: https://www.1point3acres.com/interview/thread/1193219
+    url: 'https://www.1point3acres.com/interview/thread/1193219'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-实现确定性模型上的 speculative edits。原文本作为 draft，模型一次能验证一段候选 token；返回的 token 必须与普通逐 token greedy 解码完全相同，同时记录模型调用次数。
+实现确定性模型上的 speculative edits。原文本作为 draft，模型一次能验证一段候选 token；返回的 token 必须与普通逐 token greedy decoding 完全相同，同时记录模型调用次数。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
 - `verify(prefix, candidates) -> list`：模拟模型。返回长度与 `candidates` 相同的列表，第 $i$ 项是以 `prefix + candidates[:i]` 为上下文时的 argmax。模型固定、确定性，平局按统一规则打破。
-- `greedy(verify, limit, eos=-1)`：逐 token 解码，返回 `(tokens, calls)`。
+- `greedy(verify, limit, eos=-1)`：逐 token decoding，返回 `(tokens, calls)`。
 - `edits(verify, draft, block, limit, eos=-1)`：每次最多验证 `block` 个草稿 token，只接受与预测一致的连续前缀；第一次不一致时输出该位置的模型预测，之后永久切回 greedy。返回 `(tokens, calls)`。
 - EOS 不放进输出；`limit = 0` 时不调用模型；`block >= 1`，`limit >= 0`。
 
@@ -50,7 +52,7 @@ edits(verify, draft=[1,9,3], block=2, limit=10) -> ([1,2,3],3)
 
 ## 题目
 
-代码编辑场景下，模型要输出的新代码大部分和原代码相同。题目要求实现普通的 greedy 解码和 speculative edits：把原代码当作草稿，让模型一次验证多个 token，从而减少调用次数，同时输出必须和 greedy 完全一致。要处理草稿全部匹配、中途分歧和输出长度上限这几种情况。
+代码编辑场景下，模型要输出的新代码大部分和原代码相同。题目要求实现普通的 greedy decoding 和 speculative edits：把原代码当作草稿，让模型一次验证多个 token，从而减少调用次数，同时输出必须和 greedy 完全一致。要处理草稿全部匹配、中途分歧和输出长度上限这几种情况。
 
 > 来源：一亩三分地 xAI 候选人原帖（thread 1193219）。原帖明确要求 greedy 与 speculative edits 输出相同、复用原代码作为草稿、处理全匹配、分歧与长度上限，并以加速为目标；`verify` 的模拟接口、函数签名和测试是手册补的练习约定，原帖没写的条件不当作已确认的面试事实。
 
@@ -62,14 +64,14 @@ edits(verify, draft=[1,9,3], block=2, limit=10) -> ([1,2,3],3)
 
 这份练习在第一次分歧后就永久退回 greedy，不尝试把草稿重新对齐。面试中可以把重新对齐（比如在草稿里找到和当前输出后缀匹配的位置继续用）作为改进方向提出来。
 
-还有一点要和面试官说清：这里的模型是确定性 argmax，接受条件是「完全相等」。采样版 speculative decoding 用 $p/q$ 概率比做接受判断，那套规则不适用于这道题。
+还有一点要和面试官说清：这里的模型是确定性 argmax，接受条件是「完全相等」。sampling 版 speculative decoding 用 $p/q$ 概率比做接受判断，那套规则不适用于这道题。
 
 ## 完整编程练习（手册重构版）
 
 ### 题面、接口与约束
 
 - `verify(prefix, candidates) -> list`：模拟模型。返回长度与 `candidates` 相同的列表，第 $i$ 项是以 `prefix + candidates[:i]` 为上下文时的 argmax。模型固定、确定性，平局按统一规则打破。
-- `greedy(verify, limit, eos=-1)`：逐 token 解码，返回 `(tokens, calls)`。
+- `greedy(verify, limit, eos=-1)`：逐 token decoding，返回 `(tokens, calls)`。
 - `edits(verify, draft, block, limit, eos=-1)`：每次最多验证 `block` 个草稿 token，只接受与预测一致的连续前缀；第一次不一致时输出该位置的模型预测，之后永久切回 greedy。返回 `(tokens, calls)`。
 - EOS 不放进输出；`limit = 0` 时不调用模型；`block >= 1`，`limit >= 0`，否则抛 `ValueError`。
 
@@ -93,13 +95,15 @@ edits(verify, [1, 9, 3], 2, 10)[0]  -> [1, 2, 3]
 
 ```python
 def greedy(verify, limit, eos=-1):
-    """逐 token 贪心解码，返回 (输出 token 列表, 模型调用次数)。EOS 不放进输出。"""
+    """逐 token greedy decoding，返回 (输出 token 列表, 模型调用次数)。EOS 不放进输出。"""
     if limit < 0:
         raise ValueError(f"limit must be non-negative, got {limit}")
     out = []
     calls = 0
     while len(out) < limit:
-        token = verify(out, [0])[0]  # 只要下一个 token，candidates 内容不影响第 0 个预测
+        token = verify(out, [0])[
+            0
+        ]  # 只要下一个 token，candidates 内容不影响第 0 个预测
         calls += 1
         if token == eos:
             break
@@ -123,7 +127,7 @@ def edits(verify, draft, block, limit, eos=-1):
     use_draft = True
     while len(out) < limit:
         if use_draft and pos < len(draft):
-            candidates = list(draft[pos:pos + min(block, limit - len(out))])
+            candidates = list(draft[pos : pos + min(block, limit - len(out))])
             predictions = verify(out, candidates)
             calls += 1
             if len(predictions) != len(candidates):
@@ -154,7 +158,7 @@ def edits(verify, draft, block, limit, eos=-1):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -175,6 +179,7 @@ def make_verify(target):
         return predictions
 
     return verify
+
 
 # 各种草稿（空、全错、中间分歧、完全匹配）和长度上限下，输出都必须和 greedy 一致
 for target in ([], [1], [1, 2, 3, 4]):
@@ -204,5 +209,5 @@ assert edits(verify, list(range(6)), 3, 0) == ([], 0)
 
 ## 相关题
 
-- [[coding-spec-accept]]：采样版的接受规则，用 $\min(1,p/q)$ 和残差分布；本卡的 greedy 前缀匹配是它的特例。
+- [[coding-spec-accept]]：sampling 版的接受规则，用 $\min(1,p/q)$ 和残差分布；本卡的 greedy 前缀匹配是它的特例。
 - [[p3a-cursor-speculative-decoding-acceptance]]：同样是编程题，草稿来自小模型，要求输出分布和 target 一致，而不是逐字相同。

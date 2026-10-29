@@ -45,4 +45,4 @@ Meta / Amazon / Microsoft 通用软件轮仍要。lab 的 RE 岗可以少刷 har
 
 ## 相关题
 
-- [[p3a-openai-transformer-bug-hunt]]：这里讲为什么考 debug，那张是可以直接练的版本，带一份植入了 mask 和位置 bug 的注意力函数和测试。
+- [[p3a-openai-transformer-bug-hunt]]：这里讲为什么考 debug，那张是可以直接练的版本，带一份植入了 mask 和位置 bug 的 attention 函数和测试。

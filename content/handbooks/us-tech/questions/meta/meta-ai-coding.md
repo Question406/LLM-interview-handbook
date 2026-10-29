@@ -4,7 +4,9 @@ section: meta
 order: 2
 level: A
 title: Meta：AI-enabled coding 轮怎么考？和普通 LeetCode 差在哪？
-quick: "这轮主要看你能否在约 60 分钟的多文件仓库任务里拆问题、审查 AI 的 diff 并跑测试。已有来源记录从 2025 年 10 月进入 onsite，AI 可选；自己能解释算法、边界和纠错过程，比把代码全部交给助手更关键。"
+quick: >-
+  这轮主要看你能否在约 60 分钟的多文件仓库任务里拆问题、审查 AI 的 diff 并跑测试。已有来源记录从 2025 年 10 月进入 onsite，AI
+  可选；自己能解释 algorithm、edge cases 和纠错过程，比把代码全部交给助手更关键。
 tags:
   - Meta
   - Coding
@@ -12,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Meta's AI-Enabled Coding Interview — How to Prepare
-    url: https://www.hellointerview.com/blog/meta-ai-enabled-coding
+    url: 'https://www.hellointerview.com/blog/meta-ai-enabled-coding'
     type: secondary
   - title: Inside Meta's New AI-Enabled Coding Round
-    url: https://dglearning.substack.com/p/inside-metas-new-ai-enabled-coding
+    url: 'https://dglearning.substack.com/p/inside-metas-new-ai-enabled-coding'
     type: secondary
 ---
 
@@ -29,11 +31,11 @@ sources:
 - 来源：Hello Interview 对内部试点说明和多位候选人的整理；2025-10 起进入 onsite，2026 已是默认形态之一
 - 形态：CoderPad 三栏，约 60 分钟，一个加长的多文件题，分阶段推进（修 bug → 实现核心 → 优化）
 
-这轮不是「LeetCode 允许开 ChatGPT」。仓库已经在那儿，测试能跑，模型菜单可能有 GPT / Claude / Llama / Gemini。评委看你怎么指挥和验收，不看你能不能写出花哨 输入提示（prompt）。
+这轮不是「LeetCode 允许开 ChatGPT」。仓库已经在那儿，测试能跑，模型菜单可能有 GPT / Claude / Llama / Gemini。评委看你怎么指挥和验收，不看你能不能写出花哨 prompt。
 
 ## 怎样完成这一轮
 
-我会先把任务拆成能独立验证的小步，再决定哪些交给 AI。Hello Interview 转述的评分关注问题拆解、写与读代码、验证三个方面：先读文件树和失败测试，讲清不变式，再逐步实现；生成的脚手架可以采用，但算法、边界、复杂度必须自己解释，不能只复制运行。
+我会先把任务拆成能独立验证的小步，再决定哪些交给 AI。Hello Interview 转述的评分关注问题拆解、写与读代码、验证三个方面：先读文件树和失败测试，讲清不变式，再逐步实现；生成的脚手架可以采用，但 algorithm、edge cases、complexity 必须自己解释，不能只复制运行。
 
 前 5 分钟先熟悉面试官介绍的环境，包括如何切模型、跑测试，然后打开失败测试，用一句话复述 spec。样板、重命名、明显的 getter 可以交给模型，带算法不变量的核心函数自己写或逐行审。模型可能比平时慢、弱，还会编 API，出现错误复杂度、共享状态或并发遗漏时，应直接说明原因并纠正。
 

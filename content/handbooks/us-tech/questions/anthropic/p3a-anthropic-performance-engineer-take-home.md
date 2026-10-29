@@ -3,8 +3,8 @@ id: p3a-anthropic-performance-engineer-take-home
 section: anthropic
 order: 620
 level: S
-title: "Anthropic：性能 Take-home：优化模拟 GPU kernel"
-quick: "我会先固定输入、正确性检查和计时协议，再用 roofline 判断该优化哪部分。每次只改一个点，覆盖多种尺寸测量，并记录运行次数和波动，确认加速能复现。"
+title: Anthropic：性能 Take-home：优化模拟 GPU kernel
+quick: 我会先固定输入、正确性检查和计时协议，再用 roofline 判断该优化哪部分。每次只改一个点，覆盖多种尺寸测量，并记录运行次数和波动，确认加速能复现。
 companies:
   - anthropic
 tags:
@@ -16,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · performance-engineer-take-home"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/performance-engineer-take-home
+  - title: 1Point3Acres · Anthropic · performance-engineer-take-home
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/performance-engineer-take-home
     type: secondary
 ---
 
@@ -27,7 +28,7 @@ sources:
 
 完成两项小规模数值任务：估计矩阵乘法的理论时间下界，以及实现支持尾部小块的矩阵乘法接口。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -51,7 +52,7 @@ gemm_blocked([[1, 2]], [[3], [4]], block=2) -> [[11]]
 
 限时优化一个模拟 GPU kernel 的核心函数，按测出来的加速比评分。真实 kernel 的代码没有公开。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题；练习固定用分块 GEMM 代替未公开的 kernel。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定；练习固定用分块 GEMM 代替未公开的 kernel。
 
 我会先建立能复现的正确性基线，再逐项优化。比如练习用分块 GEMM 代替未公开 kernel，就先固定输入和随机种子，用原输出建立对照；每次改块大小或访存方式，先确认结果仍然正确。
 
@@ -132,8 +133,8 @@ def gemm_blocked(a, b, block=32):
         for j in range(0, cols, block):
             # 同一个输出块要把 K 方向所有分块的乘积累加起来
             for p in range(0, inner, block):
-                out[i:i + block, j:j + block] += (
-                    a[i:i + block, p:p + block] @ b[p:p + block, j:j + block]
+                out[i : i + block, j : j + block] += (
+                    a[i : i + block, p : p + block] @ b[p : p + block, j : j + block]
                 )
     return out
 ```
@@ -146,7 +147,7 @@ def gemm_blocked(a, b, block=32):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -157,6 +158,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 2x2x2：16 FLOPs、24 字节，带宽受限，下界 24 ns
 estimate = roofline(2, 2, 2, 1e9, 1e9)

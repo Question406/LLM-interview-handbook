@@ -3,8 +3,9 @@ id: p3a-openai-toy-language-type-inference
 section: openai
 order: 610
 level: A
-title: "OpenAI：玩具语言：泛型、嵌套元组与类型推断"
-quick: "把类型表示成树，同时递归匹配形参和实参。类型变量首次出现时绑定具体类型，再出现必须与已有绑定相同；元组逐项匹配，冲突就报错。全部匹配后，沿返回类型树替换变量，未绑定的变量也要报错。"
+title: OpenAI：玩具语言：泛型、嵌套元组与类型推断
+quick: >-
+  把类型表示成树，同时递归匹配形参和实参。类型变量首次出现时绑定具体类型，再出现必须与已有绑定相同；元组逐项匹配，冲突就报错。全部匹配后，沿返回类型树替换变量，未绑定的变量也要报错。
 companies:
   - openai
 tags:
@@ -16,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · toy-language-type-inference"
-    url: https://www.1point3acres.com/interview/problems/company/openai/toy-language-type-inference
+  - title: 1Point3Acres · OpenAI · toy-language-type-inference
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/toy-language-type-inference
     type: secondary
 ---
 
@@ -27,7 +29,7 @@ sources:
 
 实现一种只包含基本类型、类型变量和嵌套 tuple 的类型推断器，依据实参推断返回类型。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -50,7 +52,7 @@ infer(["$T", ("$T", "str")], "$T", ["int", ("float", "str")])           -> Value
 
 给一门玩具语言实现类型推断。类型有基本类型、泛型（类型变量）和可以嵌套的元组；给出函数签名（形参类型和返回类型）和调用时的实参类型，检查实参能否匹配形参，并把返回类型里的泛型替换成具体类型。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -122,7 +124,9 @@ def infer(params, return_type, actual):
     def unify(pattern, value):
         if is_type_var(pattern):
             if pattern in bindings and bindings[pattern] != value:
-                raise ValueError(f"{pattern} bound to {bindings[pattern]!r}, conflicts with {value!r}")
+                raise ValueError(
+                    f"{pattern} bound to {bindings[pattern]!r}, conflicts with {value!r}"
+                )
             bindings[pattern] = value
             return
         if isinstance(pattern, tuple):
@@ -158,7 +162,7 @@ def infer(params, return_type, actual):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -169,6 +173,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 同一个 $T 在两处出现，绑定一致，返回类型里两处都替换
 params = ["$T", ("$T", "str")]

@@ -4,7 +4,10 @@ section: coding
 order: 9
 level: A
 title: 设计 Tool-Call State Machine：哪些状态不能交给 LLM 自己“记”？
-quick: "运行时要显式保存 PARSE→VALIDATE→AUTHORIZE→EXECUTE→OBSERVE→RETRY/FAIL→RETURN 这些状态，并把 attempt、tool-call ID、权限和 side-effect status 持久化。重试次数、授权结果、副作用有没有发生，都由 harness 记，模型从对话上下文里“记得”的不算数。"
+quick: >-
+  运行时要显式保存 PARSE→VALIDATE→AUTHORIZE→EXECUTE→OBSERVE→RETRY/FAIL→RETURN 这些状态，并把
+  attempt、tool-call ID、权限和 side-effect status 持久化。重试次数、授权结果、副作用有没有发生，都由 harness
+  记，模型从对话上下文里“记得”的不算数。
 tags:
   - Agent
   - State Machine
@@ -12,13 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: OpenAI — A practical guide to building AI agents
-    url: https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/
+    url: >-
+      https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/
     type: reference
   - title: MCP specification
-    url: https://modelcontextprotocol.io/specification/2025-06-18
+    url: 'https://modelcontextprotocol.io/specification/2025-06-18'
     type: reference
 ---
 
@@ -26,15 +30,15 @@ sources:
 
 实现工具调用运行时的一个确定性状态转移函数，由程序保存重试预算。本题是独立状态表练习，不要求实现真实工具、持久化系统或图中所有扩展状态。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `step(state,event,ctx)`。state/event为下列合法状态事件对；ctx包含非负整数attempts、`max_retry`，attempts表示已经批准的重试次数。
+实现 `step(state,event,ctx)`。state/event 为下列合法状态事件对；ctx 包含非负整数 attempts、`max_retry`，attempts 表示已经批准的重试次数。
 
 ### 输出与约束
 
-转移为 PARSE+ok→VALIDATE，VALIDATE+ok→AUTHORIZE，VALIDATE+`bad_args`→REPAIR，AUTHORIZE+ok→EXECUTE，AUTHORIZE+deny→DENY，EXECUTE+ok→OBSERVE，RETRY+ok→EXECUTE，OBSERVE+ok→RETURN。EXECUTE+fail在attempts小于`max_retry`时把attempts加1并返回RETRY，否则返回FAIL且不加计数。其他转移不改ctx；基础输入保证事件合法。
+转移为 PARSE+ok→VALIDATE，VALIDATE+ok→AUTHORIZE，VALIDATE+`bad_args`→REPAIR，AUTHORIZE+ok→EXECUTE，AUTHORIZE+deny→DENY，EXECUTE+ok→OBSERVE，RETRY+ok→EXECUTE，OBSERVE+ok→RETURN。EXECUTE+fail 在 attempts 小于`max_retry`时把 attempts 加1并返回 RETRY，否则返回 FAIL 且不加计数。其他转移不改 ctx；基础输入保证事件合法。
 
 ### 示例
 
@@ -47,7 +51,7 @@ step("EXECUTE","fail",ctx) -> "RETRY"，attempts变为1
 
 ## 解题思路与参考答案
 
-模型可以决定调不调工具、参数怎么填，但事务状态、权限、重试次数和已经产生的副作用，要由运行框架 harness 结构化保存。把 tool 调用进度写进对话、让模型「自己记得」，一压缩 context、一出幻觉、一重启进程，这些安全信息就丢了。
+模型可以决定调不调工具、参数怎么填，但事务状态、权限、重试次数和已经产生的副作用，要由运行框架 harness 结构化保存。把 tool 调用进度写进对话、让模型「自己记得」，一压缩 context、一出 hallucination、一重启进程，这些安全信息就丢了。
 
 比如一次转账工具调用超时了，模型看对话觉得「好像没成功」，就再发一次，结果钱转了两笔。状态机要做的，就是让这种情况只能走查状态那条路，没法盲目重发。
 
@@ -63,7 +67,7 @@ PARSE -> VALIDATE -> AUTHORIZE -> EXECUTE -> OBSERVE -> RETURN
                                     STATUS_CHECK
 ```
 
-PARSE 把模型输出解析成结构化 call，带名字、参数和 id；VALIDATE 按 JSON schema 检查参数；AUTHORIZE 查权限策略，看是只读、写入还是要人工审核；EXECUTE 真正调工具；OBSERVE 把返回值整理成机器可读的观测结果（observation）；RETURN 把结果交给模型或用户。失败的几条边各管各的：REPAIR 只修参数，不跳过授权；DENY 就是不执行；RETRY 受 `attempt` 上限约束；UNKNOWN / STATUS_CHECK 用在超时之后，拿幂等键去查状态，别再发一次付款。
+PARSE 把模型输出解析成结构化 call，带名字、参数和 id；VALIDATE 按 JSON schema 检查参数；AUTHORIZE 查权限策略，看是只读、写入还是要人工审核；EXECUTE 真正调工具；OBSERVE 把返回值整理成机器可读的 observation；RETURN 把结果交给模型或用户。失败的几条边各管各的：REPAIR 只修参数，不跳过授权；DENY 就是不执行；RETRY 受 `attempt` 上限约束；UNKNOWN / STATUS_CHECK 用在超时之后，拿 idempotency key 去查状态，别再发一次付款。
 
 ```python
 TRANSITIONS = {
@@ -77,6 +81,7 @@ TRANSITIONS = {
     ("RETRY", "ok"): "EXECUTE",
     ("OBSERVE", "ok"): "RETURN",
 }
+
 
 def step(state, event, ctx):
     if state == "EXECUTE" and event == "fail":

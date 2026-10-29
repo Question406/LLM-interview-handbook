@@ -5,7 +5,8 @@ order: 40
 level: A
 title: 阿里手撕：最小路径和、最大矩形的 DP 怎么设？
 quick: >-
-  最小路径和（64）只能向右或向下，`dp=grid+min(上,左)`，第一行和第一列只能单向累加。最大矩形（85）逐行累积各列连续为 1 的高度，把每一行变成直方图，再用 84 的单调栈求最大面积，整题 $O(mn)$。
+  最小路径和（64）只能向右或向下，`dp=grid+min(上,左)`，第一行和第一列只能单向累加。最大矩形（85）逐行累积各列连续为 1
+  的高度，把每一行变成直方图，再用 84 的单调栈求最大面积，整题 $O(mn)$。
 tags:
   - Alibaba
   - DP
@@ -13,13 +14,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 最小路径和
-    url: https://leetcode.cn/problems/minimum-path-sum/
+    url: 'https://leetcode.cn/problems/minimum-path-sum/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -27,7 +28,7 @@ sources:
 
 本卡包含两个网格任务和一个独立的柱状图接口：求只向右或向下移动的最小路径和；求二进制矩阵中只含 1 的最大轴对齐矩形面积；求柱状图最大矩形面积。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -121,11 +122,11 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
-**要测哪些边界？**
+**要覆盖哪些 edge cases？**
 64 测 $1\times 1$、单行、单列；85 测全 $0$、全 $1$、单列。
 
 **格子里有负权，还是只能往右下走，要换 Dijkstra 吗？**

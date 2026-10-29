@@ -4,7 +4,9 @@ section: matrix
 order: 5
 level: A
 title: LC 289 · 生命游戏
-quick: "原地用中间编码同时存新旧状态，活变死记 $-1$，死变活记 $2$。数邻居时用绝对值判断「原来是不是活的」，最后统一解码回 $0/1$。时间 $O(mn)$，额外空间 $O(1)$。"
+quick: >-
+  原地用中间编码同时存新旧状态，活变死记 $-1$，死变活记 $2$。数邻居时用绝对值判断「原来是不是活的」，最后统一 decoding 回 $0/1$。时间
+  $O(mn)$，额外空间 $O(1)$。
 tags:
   - Matrix
   - Simulation
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 289. 生命游戏
-    url: https://leetcode.cn/problems/game-of-life/
+    url: 'https://leetcode.cn/problems/game-of-life/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -32,7 +34,7 @@ sources:
 
 ### 合法输入与约束
 
-行数和列数均为 1 到 25，所有格子为整数 0 或 1。网格不会环绕，边界外不属于活邻居；示例输出展示调用后的 board，不是函数返回值。
+行数和列数均为 1 到 25，所有格子为整数 0 或 1。网格不会环绕，grid 外的 cells 不计入 live neighbours；示例输出展示调用后的 board，不是函数返回值。
 
 ### 示例
 
@@ -66,9 +68,14 @@ from typing import List
 def gameOfLife(board: List[List[int]]) -> None:
     m, n = len(board), len(board[0])
     dirs = (
-        (-1, -1), (-1, 0), (-1, 1),
-        (0, -1), (0, 1),
-        (1, -1), (1, 0), (1, 1),
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
     )
     for i in range(m):
         for j in range(n):
@@ -118,7 +125,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，每格最多看 $8$ 个邻居。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $1\times 1$ 时没有邻居，活细胞变死，死细胞还是死。
 - 全死时下一轮仍然全死。
@@ -133,6 +140,7 @@ print("simple tests passed")
 ```python
 def gameOfLifeSparse(live):
     from collections import Counter
+
     cnt = Counter()
     for i, j in live:
         for di in (-1, 0, 1):

@@ -4,7 +4,9 @@ section: array-string
 order: 18
 level: A
 title: LC 12 · 整数转罗马数字
-quick: "用贪心查表：把 $1000,900,500,400,\\ldots,1$ 连同减法写法一起放进面值表，从大到小能减就减、拼上对应符号，4 和 9 就不用单独处理。输入上限 $3999$ 固定，所以时间与空间都是 $O(1)$。"
+quick: >-
+  用贪心查表：把 $1000,900,500,400,\ldots,1$ 连同减法写法一起放进面值表，从大到小能减就减、拼上对应符号，4 和 9
+  就不用单独处理。输入上限 $3999$ 固定，所以时间与空间都是 $O(1)$。
 tags:
   - Hash
   - String
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 12. 整数转罗马数字
-    url: https://leetcode.cn/problems/integer-to-roman/
+    url: 'https://leetcode.cn/problems/integer-to-roman/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -111,7 +113,7 @@ print("simple tests passed")
 
 时间和空间都是 $O(1)$。输入最大 $3999$，输出长度也有常数上限。
 
-## 边界
+## Edge Cases
 
 $1$ 和 $3999$ 都要过一遍。减法档 $4/9/40/90/400/900$ 也得覆盖到，表里必须有 `IV`、`IX`、`XL`、`XC`、`CD`、`CM`，漏一个就会拼出 `IIII` 这种非法串。
 

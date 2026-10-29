@@ -4,7 +4,10 @@ section: meta
 order: 21
 level: S
 title: Meta：Llama 4 / MoE 服务侧（公开信息）——专家并行和 batch
-quick: "Llama 4 每个 token 经过 shared expert 和一个 Top-1 routed expert，采用 dropless 路由。稀疏计算减少每 token 的 FLOPs，但服务仍要容纳全部专家权重；decode batch 太小时，每专家 token 太少，EP 的 all-to-all 反而可能比 GEMM 更慢。"
+quick: >-
+  Llama 4 每个 token 经过 shared expert 和一个 Top-1 routed expert，采用 dropless
+  路由。稀疏计算减少每 token 的 FLOPs，但服务仍要容纳全部专家权重；decode batch 太小时，每专家 token 太少，EP 的
+  all-to-all 反而可能比 GEMM 更慢。
 tags:
   - Meta
   - Llama
@@ -13,19 +16,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: The Llama 4 herd — natively multimodal AI
-    url: https://ai.meta.com/blog/llama-4-multimodal-intelligence/
+    url: 'https://ai.meta.com/blog/llama-4-multimodal-intelligence/'
     type: primary
   - title: MetaShuffling — Accelerating Llama 4 MoE Inference
-    url: https://pytorch.org/blog/metashuffling-accelerating-llama-4-moe-inference/
+    url: 'https://pytorch.org/blog/metashuffling-accelerating-llama-4-moe-inference/'
     type: primary
   - title: Switch Transformers
-    url: https://arxiv.org/abs/2101.03961
+    url: 'https://arxiv.org/abs/2101.03961'
     type: secondary
   - title: Mixtral of Experts
-    url: https://arxiv.org/abs/2401.04088
+    url: 'https://arxiv.org/abs/2401.04088'
     type: secondary
 ---
 
@@ -36,12 +39,12 @@ Llama 4 服务要同时算专家权重占用和每专家拿到的 token 数。�
 博客和 MetaShuffling 公开了以下架构信息：
 
 - **Scout：** $17\mathrm{B}$ 激活，$16$ 个 routed expert，总量约 $109\mathrm{B}$。
-- **Maverick：** $17\mathrm{B}$ 激活，$128$ 个 routed expert，总量 $400\mathrm{B}$。单机 H100 DGX 能放下（博客口径），也可以分布式。
+- **Maverick：** $17\mathrm{B}$ 激活，$128$ 个 routed expert，总量 $400\mathrm{B}$。单机 H100 DGX 能放下（博客介绍），也可以分布式。
 - **层：** 交替 dense 和 MoE，推理效率用的。
 - **路由：** token-choice、Top-1、**dropless**。每个 token 进 **shared expert + 一个 routed expert**。
 - **FFN：** 两边都是 SwiGLU，三路线性。
 
-Behemoth 博客写了 $288\mathrm{B}$ 激活、$16$ expert、近 $2\mathrm{T}$ 总量，当时作教师、未发权。因此这里只把它作为蒸馏教师来源，不推断服务拓扑。
+Behemoth 博客写了 $288\mathrm{B}$ 激活、$16$ expert、近 $2\mathrm{T}$ 总量，当时作教师、未发权。因此这里只把它作为 distillation 教师来源，不推断服务拓扑。
 
 与 dense Llama 3 相比，显存按总参数量计算，每 token 的 FLOPs 则按激活参数量计算。 $400\mathrm{B}$ 权都要在内存里（或 NVLink 域里），只是每 token 只乘一小撮。专家卸载可以再省显存，但要另算加载延迟。
 

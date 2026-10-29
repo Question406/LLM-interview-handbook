@@ -33,7 +33,7 @@ ZeRO-1 分片优化器状态，ZeRO-2 加上梯度，ZeRO-3 再加上参数。�
 
 Adam 的 FP32 $m/v$ 加 master 约 $12$ bytes/param，常是大头，所以只分优化器就能明显省显存，参数仍复制，前向通信较少。ZeRO-2 在反向 reduce-scatter，减少梯度副本和反向峰值。ZeRO-3 则前向按层 all-gather 参数，用完释放，反向再 gather 并 reduce-scatter 梯度；单卡参数稳态约 $/D$，每层却会有通信等待。
 
-稳态和峰值要分别看。`nvidia-smi` 高于 $16N/D$ 并不奇怪，all-gather、activation 和临时 buffer 都会增加峰值。Activation 随 $B\cdot T$ 增长，ZeRO 不负责切它；8k 监督微调（SFT）如果卡在激活，要用 checkpoint、SP、减 micro-batch 或减 $T$。FlashAttention、checkpoint、序列并行和 LoRA 都是分片表以外的手段。
+稳态和峰值要分别看。`nvidia-smi` 高于 $16N/D$ 并不奇怪，all-gather、activation 和临时 buffer 都会增加峰值。Activation 随 $B\cdot T$ 增长，ZeRO 不负责切它；8k SFT 如果卡在激活，要用 checkpoint、SP、减 micro-batch 或减 $T$。FlashAttention、checkpoint、序列并行和 LoRA 都是分片表以外的手段。
 
 72B 的 BF16 权重约 $144\,\mathrm{GB}$，全参 Adam 状态还要再增加好几倍。单卡无法复制权重时，需要 ZeRO-3，或者先用 TP/PP 切开 $N$。TP 切计算图、矩阵和激活，ZeRO 切 DP 维状态，两者可以叠加。混元稠密模型常用 TP + ZeRO-1/2，只有切分后单卡仍放不下，才继续评估 3。
 

@@ -3,32 +3,36 @@ id: design-ads-rank
 section: design
 order: 4
 level: A
-title: 设计：广告预测与拍卖，校准、延迟、探索
-quick: "我会把候选过滤、pCTR / pCVR 预测、排序和拍卖分开设计，重点保证绝对概率校准，因为它会乘出价直接影响收入和扣费。延迟先查特征点查，并准备保守降级；探索流量单独记成本，避免训练只看到已经被展示的广告。"
+title: 设计：广告预测与拍卖，calibration、延迟、探索
+quick: >-
+  我会把候选过滤、pCTR / pCVR 预测、排序和拍卖分开设计，重点保证绝对 probability
+  calibration，因为它会乘出价直接影响收入和扣费。延迟先查特征点查，并准备保守降级；探索流量单独记成本，避免训练只看到已经被展示的广告。
 tags:
   - Ads
   - Google
   - Meta
   - Calibration
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Ad Click Prediction — a View from the Trenches
-    url: https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/41159.pdf
+    url: >-
+      https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/41159.pdf
     type: primary
   - title: On Calibration of Modern Neural Networks
-    url: https://arxiv.org/abs/1706.04599
+    url: 'https://arxiv.org/abs/1706.04599'
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -42,32 +46,40 @@ sources:
 
 ### 约束与交付物
 
-先明确采用 CPC、CPM 或 CPA 等哪种计费场景。需要给出延迟预算、概率校准、探索成本、反馈偏差、重复事件处理与线上指标之间的关系，不能只用 AUC 证明系统可用。
+先明确采用 CPC、CPM 或 CPA 等哪种计费场景。需要给出延迟预算、probability calibration、探索成本、反馈偏差、重复事件处理与线上指标之间的关系，不能只用 AUC 证明系统可用。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 两条广告分别有不同出价和预估点击/转化概率，系统应按已选定的业务规则产生展示与收费结果；即使某条预测分更高，预算耗尽后也不能继续无约束投放。
 
+## 可以这样回答
+
+广告系统要把概率预测和拍卖规则分开，先保证 pCTR / pCVR calibration，再把它们换成排序分和扣费。比如 CTR 只偏了 0.02，乘上高 bid 后就会改变库存分配和收入，所以 AUC 高还不够。McMahan 的 trenches 论文也把特征、calibration、系统和延迟放在一起讨论。推荐漏斗与它类似，见 `design-recsys`；这是一道 Google Ads、Meta Ads、Amazon 广告、Microsoft Bing Ads 的 MLE 设计题型整理，Hello Interview 式系统题会一起问预测与拍卖。
+
+我会先问：计费是 CPC / CPM / CPA、是否有转化延迟、候选是怎样召回的、端到端预算（常见是几十毫秒级预测 + 拍卖）、监管（品牌安全、频次）。然后把链路拆开，避免画成「一个模型输出广告」。
+
+## 技术备查
+
 ## 解题思路与参考答案
 
-广告系统要把概率预测和拍卖规则分开，先保证 pCTR / pCVR 校准，再把它们换成排序分和扣费。比如 CTR 只偏了 0.02，乘上高 bid 后就会改变库存分配和收入，所以 AUC 高还不够。McMahan 的 trenches 论文也把特征、校准、系统和延迟放在一起讨论。推荐漏斗与它类似，见 `design-recsys`；这是一道 Google Ads、Meta Ads、Amazon 广告、Microsoft Bing Ads 的 MLE 设计题型整理，Hello Interview 式系统题会一起问预测与拍卖，不是某次现场逐字题。
+广告系统要把概率预测和拍卖规则分开，先保证 pCTR / pCVR calibration，再把它们换成排序分和扣费。比如 CTR 只偏了 0.02，乘上高 bid 后就会改变库存分配和收入，所以 AUC 高还不够。McMahan 的 trenches 论文也把特征、calibration、系统和延迟放在一起讨论。推荐漏斗与它类似，见 `design-recsys`；这是一道 Google Ads、Meta Ads、Amazon 广告、Microsoft Bing Ads 的 MLE 设计题型整理，Hello Interview 式系统题会一起问预测与拍卖。
 
 ## 先把订单价值和拍卖流程说清楚
 
 我会先问：计费是 CPC / CPM / CPA、是否有转化延迟、候选是怎样召回的、端到端预算（常见是几十毫秒级预测 + 拍卖）、监管（品牌安全、频次）。然后把链路拆开，避免画成「一个模型输出广告」。
 
 1. 候选。 广告主定向、库存、预算、频次、品牌安全先过滤，再对剩下做 pCTR / pCVR。全库神经网络打分不现实。
-2. 预测。 点击 $\hat{p}_{\mathrm{CTR}}$、转化 $\hat{p}_{\mathrm{CVR}}$（常级联，因为转化以点击为条件）。训练 logloss 或交叉熵，但上线看的是钱，不是 AUC 单点。
+2. 预测。 点击 $\hat{p}_{\mathrm{CTR}}$、转化 $\hat{p}_{\mathrm{CVR}}$（常级联，因为转化以点击为条件）。训练 logloss 或 cross entropy，但上线看的是钱，不是 AUC 单点。
 3. 排序分。 例如 $\mathrm{eCPM} \propto \hat{p}_{\mathrm{CTR}} \times \mathrm{bid}$（CPA 再乘转化）。有的系统对 bid 做幂次 $\alpha$ 来折中广告主价值和用户体验。$\alpha$ 是产品旋钮，要 A/B，不要写进网络最后一层假装学到了。
 4. 拍卖。 一价或 GSP：排序用 eCPM，扣费按规则，不一定等于 bid。模型和拍卖是两个模块。把 GSP 画进 softmax 里，面试官会认为你没做过广告。
 
 延迟转化：购买可能 T+1 到 T+7。用窗口、延迟校正、或两阶段（点击模型实时、转化模型滞后更新）。把未观察的转化当负例，模型会系统性低估高延迟品类。
 
-## 再约束校准、延迟与探索成本
+## 再约束 calibration、延迟与探索成本
 
-检查校准时，分组统计后的 $\hat{p}$ 的均值要贴近真实点击率。ECE / 可靠性图是广告题必提的图，比「我们 AUC 0.9」重要。不准的后果：高估的广告占满库存、广告主赔钱或平台少收、探索也歪。上线用 Platt / 保序回归按位置、设备、广告类型分层校准，因为绝对概率进了 eCPM。
+检查 calibration 时，分组统计后的 $\hat{p}$ 的均值要贴近真实点击率。ECE / 可靠性图是广告题必提的图，比「我们 AUC 0.9」重要。不准的后果：高估的广告占满库存、广告主赔钱或平台少收、探索也歪。上线用 Platt / 保序回归按位置、设备、广告类型分层 calibration，因为绝对概率进了 eCPM。
 
 $$
 \mathrm{ECE} = \sum_b \frac{n_b}{n} \lvert \mathrm{acc}_b - \mathrm{conf}_b \rvert
@@ -77,27 +89,27 @@ $$
 
 延迟方面，特征点查往往占掉大半预算，模型前向反而小。用户即时特征（刚搜了什么、刚买了什么）要有新鲜度 SLO，过期特征和训练不一致，见 `design-feature-store`。p95 / p99 超了就降级：砍交叉特征、砍候选、用缓存的用户塔，不要拖住整页。预测超时返回的默认分必须保守，乱给 0.5 会把拍卖打穿。
 
-探索方面，只训练被展示的广告会产生选择偏差。用随机流量、Thompson、或偏差校正（IPS）。探索要受品牌安全和预算约束，不能拿违禁广告练胆。短期 eCPM 可能掉，长期校准和覆盖会回来，和推荐一样要单独记账。
+探索方面，只训练被展示的广告会产生 selection bias。用随机流量、Thompson、或偏差校正（IPS）。探索要受品牌安全和预算约束，不能拿违禁广告练胆。短期 eCPM 可能掉，长期 calibration 和覆盖会回来，和推荐一样要单独记账。
 
 验证时还要检查几个容易被整体指标掩盖的问题。
 
-- 校准在总体很好、在新广告主或新位置很差，钱从这漏。
+- calibration 在总体很好、在新广告主或新位置很差，钱从这漏。
 - 训练用「点击=1、没点=0」，忽略没获得展示的广告，模型变成「学竞价胜出者」。
 - 频次和疲劳没进重排，用户被同一条广告打穿，体验指标掉、广告主还以为模型准。
 - 完整性 / 违禁分类延迟于创意上传，违法创意先赢几次拍卖再下线，是事故。
 - 日志和训练时钟不一致，用了点击之后才生成的特征，泄漏。
 
-离线 AUC 用来看排序，线上看 RPM、广告主 ROI、用户隐藏、违规率、延迟。缺校准报告的广告模型，我不会同意全量。
+离线 AUC 用来看排序，线上看 RPM、广告主 ROI、用户隐藏、违规率、延迟。缺 calibration 报告的广告模型，我不会同意全量。
 
 常见误区是：购买 T+7 才到，训练在 T+1 把没转化当负例，高客单品类会被系统性压价。用延迟校正或「只对已成熟窗口算 CVR」；未成熟样本不要当硬负。探索流量要记账：随机 1% 的 RPM 损失 vs 新广告主冷启动覆盖，产品得认这笔成本。
 
 ## 追问
 
 **AUC 很高但收入掉？**
-先看校准和位置分布。AUC 不关心绝对概率，拍卖关心。
+先看 calibration 和位置分布。AUC 不关心绝对概率，拍卖关心。
 **为什么探索伤短期收入还要做？**
 否则新广告和新广告主进不去，长期库存质量塌。
 **和推荐模型能否共用？**
-底层特征平台可以共用，目标和校准不行。点击内容不等于点击广告。
+底层特征平台可以共用，目标和 calibration 不行。点击内容不等于点击广告。
 **p99 超时怎么降级？**
 预设保守分、缩小候选、跳过可变特征；降级策略要可复盘，不能静默。

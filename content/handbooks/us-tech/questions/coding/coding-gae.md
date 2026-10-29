@@ -4,7 +4,9 @@ section: coding
 order: 41
 level: S
 title: 白板：GAE 反向递推，done、截断和 value clip 各在哪一行
-quick: "从后往前递推 $\\delta_t$ 和 $A_t$，terminal 时两处都乘 $(1-d_t)$，阻止跨回合泄漏。buffer 长度截断仍用 $V(s_T)$ 自举；回报目标 detach，value clip 取两种误差中的 max。"
+quick: >-
+  从后往前递推 $\delta_t$ 和 $A_t$，terminal 时两处都乘 $(1-d_t)$，阻止跨回合泄漏。buffer 长度截断仍用
+  $V(s_T)$ 自举；回报目标 detach，value clip 取两种误差中的 max。
 tags:
   - 完整编程练习
   - Coding
@@ -13,22 +15,22 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: High-Dimensional Continuous Control Using Generalized Advantage Estimation
-    url: https://arxiv.org/abs/1506.02438
+    url: 'https://arxiv.org/abs/1506.02438'
     type: primary
   - title: The 37 Implementation Details of Proximal Policy Optimization
-    url: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
+    url: 'https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/'
     type: secondary
   - title: Proximal Policy Optimization Algorithms
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: primary
 ---
 
 ## 题目描述
 
-给定一段 rollout 的奖励、状态价值、真正终止标记与末状态价值，计算 GAE 优势和回报；另实现带价值裁剪的 value loss。区分“环境真正结束”和“采样缓冲区在回合中途截断”。
+给定一段 rollout 的奖励、状态价值、真正终止标记与末状态价值，计算 GAE 优势和回报；另实现带价值裁剪的 value loss。区分“环境真正结束”和“sampling 缓冲区在回合中途截断”。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
@@ -36,7 +38,7 @@ sources:
 
 - `gae(rewards, values, dones, last_value, gamma, lam) -> (advantages, returns)`：`rewards`、`values`、`dones` 都是长度 $T$ 的一维浮点张量。`dones[t] = 1` 只表示第 $t$ 步之后回合真正结束（terminal）。`last_value` 是 buffer 最后一步之后那个状态的值 $V(s_T)$，buffer 在回合中途被截断时用它自举；最后一步是 terminal 时它会被 `(1 - done)` 屏蔽掉。返回的 `returns = advantages + values`，不带梯度。
 - `value_loss(v_pred, v_old, returns, mask, clip) -> scalar`：带 value clip 的均方误差，只在 `mask = 1` 的位置求平均，`mask` 全 0 时返回 0。
-- 同一个 buffer 里不包含「时间限制截断后又开始新回合」的边界：那种边界既要切断递推、又要用真实的 next value 自举，一个 `done` 表达不了。
+- 同一个 buffer 里不包含「时间限制截断后又开始新回合」的 episode transition：这种 episode transition 既要切断递推、又要用真实的 next value 自举，一个 `done` 表达不了。
 
 - 用 `next_value[t]=values[t+1]`（末步取 `last_value`）定义 `delta[t]=rewards[t]+gamma*(1-dones[t])*next_value[t]-values[t]`。目标优势满足 `A[T]=0`，`A[t]=delta[t]+gamma*lam*(1-dones[t])*A[t+1]`。`gamma`、`lam` 在 `[0,1]`，输出形状均为 `[T]` 且不带梯度。
 - value loss 的各张量形状相同，mask 为 0/1，`clip>=0`。定义 `v_clip=v_old+clamp(v_pred-v_old,-clip,clip)`，每位置误差是 `0.5*max((v_pred-returns)^2,(v_clip-returns)^2)`，只对有效位置求平均。
@@ -56,13 +58,13 @@ GAE 用从后往前的递推实现，只需缓存后一步优势 $A_{t+1}$；同
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
 - `gae(rewards, values, dones, last_value, gamma, lam) -> (advantages, returns)`：`rewards`、`values`、`dones` 都是长度 $T$ 的一维浮点张量。`dones[t] = 1` 只表示第 $t$ 步之后回合真正结束（terminal）。`last_value` 是 buffer 最后一步之后那个状态的值 $V(s_T)$，buffer 在回合中途被截断时用它自举；最后一步是 terminal 时它会被 `(1 - done)` 屏蔽掉。返回的 `returns = advantages + values`，不带梯度。
 - `value_loss(v_pred, v_old, returns, mask, clip) -> scalar`：带 value clip 的均方误差，只在 `mask = 1` 的位置求平均，`mask` 全 0 时返回 0。
-- 同一个 buffer 里不包含「时间限制截断后又开始新回合」的边界：那种边界既要切断递推、又要用真实的 next value 自举，一个 `done` 表达不了（见复杂度与追问）。
+- 同一个 buffer 里不包含「时间限制截断后又开始新回合」的 episode transition：这种 episode transition 既要切断递推、又要用真实的 next value 自举，一个 `done` 表达不了（见复杂度与追问）。
 
 ### 输入输出示例
 
@@ -127,7 +129,7 @@ def value_loss(v_pred, v_old, returns, mask, clip=0.2):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -135,30 +137,47 @@ def value_loss(v_pred, v_old, returns, mask, clip=0.2):
 torch.set_num_threads(1)
 
 # 第二步 terminal：A = [1 + 2, 2]，values 为 0 时 returns 等于 advantages
-advantages, returns = gae(torch.tensor([1.0, 2.0]), torch.zeros(2),
-                          torch.tensor([0.0, 1.0]), 0.0, gamma=1.0, lam=1.0)
+advantages, returns = gae(
+    torch.tensor([1.0, 2.0]),
+    torch.zeros(2),
+    torch.tensor([0.0, 1.0]),
+    0.0,
+    gamma=1.0,
+    lam=1.0,
+)
 assert torch.equal(advantages, torch.tensor([3.0, 2.0]))
 assert torch.equal(advantages, returns)
 
 # 截断：没有 terminal，用 last_value 自举
-advantages, _ = gae(torch.tensor([1.0]), torch.zeros(1), torch.zeros(1),
-                    5.0, gamma=1.0, lam=1.0)
+advantages, _ = gae(
+    torch.tensor([1.0]), torch.zeros(1), torch.zeros(1), 5.0, gamma=1.0, lam=1.0
+)
 assert advantages.item() == 6
 
 # 最后一步是 terminal 时 last_value 被屏蔽
-advantages, _ = gae(torch.tensor([1.0]), torch.zeros(1), torch.ones(1),
-                    5.0, gamma=1.0, lam=1.0)
+advantages, _ = gae(
+    torch.tensor([1.0]), torch.zeros(1), torch.ones(1), 5.0, gamma=1.0, lam=1.0
+)
 assert advantages.item() == 1
 
 # 中间的 terminal 阻止下一个回合的奖励反向泄漏
-advantages, _ = gae(torch.tensor([1.0, 100.0]), torch.zeros(2), torch.ones(2),
-                    0.0, gamma=1.0, lam=1.0)
+advantages, _ = gae(
+    torch.tensor([1.0, 100.0]), torch.zeros(2), torch.ones(2), 0.0, gamma=1.0, lam=1.0
+)
 assert torch.equal(advantages, torch.tensor([1.0, 100.0]))
 
 # lam = 0 退化成一步 TD：A_t = r_t + gamma * V_{t+1} - V_t
-advantages, _ = gae(torch.tensor([1.0, 1.0]), torch.tensor([0.5, 2.0]),
-                    torch.zeros(2), 3.0, gamma=0.5, lam=0.0)
-assert torch.allclose(advantages, torch.tensor([1.0 + 0.5 * 2.0 - 0.5, 1.0 + 0.5 * 3.0 - 2.0]))
+advantages, _ = gae(
+    torch.tensor([1.0, 1.0]),
+    torch.tensor([0.5, 2.0]),
+    torch.zeros(2),
+    3.0,
+    gamma=0.5,
+    lam=0.0,
+)
+assert torch.allclose(
+    advantages, torch.tensor([1.0 + 0.5 * 2.0 - 0.5, 1.0 + 0.5 * 3.0 - 2.0])
+)
 
 # returns 不带梯度，即使 values 来自 critic 前向
 critic_values = torch.zeros(2, requires_grad=True)
@@ -215,7 +234,7 @@ def gae(rewards, values, dones, gamma=0.99, lam=0.95):
 
 ## LLM 上长什么样
 
-一条回答是一个回合，每个 token 是一个时间步，通常取 $\gamma = 1$、$\lambda$ 取 0.95 或 1。奖励模型的分数只加在最后一个 token 上，每个 token 另有 $-\beta(\log\pi - \log\pi_{\mathrm{ref}})$ 的 KL 惩罚。$\lambda = 1$ 时 $A_t = \sum_{k\ge t} r_k - V_t$，也就是蒙特卡洛回报减去 baseline。
+一条回答是一个回合，每个 token 是一个时间步，通常取 $\gamma = 1$、$\lambda$ 取 0.95 或 1。reward model 的分数只加在最后一个 token 上，每个 token 另有 $-\beta(\log\pi - \log\pi_{\mathrm{ref}})$ 的 KL 惩罚。$\lambda = 1$ 时 $A_t = \sum_{k\ge t} r_k - V_t$，也就是 Monte Carlo 回报减去 baseline。
 
 批量写法是在 `[B, T]` 上沿 $T$ 反向循环，用 response mask 代替 done。pad 位置的 reward 和 value 都要置 0，否则会被递推进有效 token。
 
@@ -225,14 +244,14 @@ value clip 取 max 而不是 min，和 policy 那边的 min 一样，选的是�
 
 ## 追问
 
-**advantage 要不要再归一化？**
-PPO 常见做法是在 mini-batch 内减均值、除以标准差。归一化放在 GAE 之后做，回报目标仍用归一化之前的 $A + V$。
+**advantage 要不要再 normalization？**
+PPO 常见做法是在 mini-batch 内减均值、除以标准差。normalization 放在 GAE 之后做，回报目标仍用 normalization 之前的 $A + V$。
 
 **$\lambda$ 起什么作用？**
-$\lambda = 0$ 是一步 TD，偏差大、方差小；$\lambda = 1$ 是蒙特卡洛，无偏但方差大。GAE 在两者之间插值。
+$\lambda = 0$ 是一步 TD，偏差大、方差小；$\lambda = 1$ 是 Monte Carlo，无偏但方差大。GAE 在两者之间插值。
 
 **critic 从哪初始化？**
-常见做法是从奖励模型初始化，把最后一层换成标量头。critic 训练不稳时 advantage 全是噪声，这也是 GRPO 去掉 critic 的主要理由之一。
+常见做法是从 reward model 初始化，把最后一层换成标量头。critic 训练不稳时 advantage 全是噪声，这也是 GRPO 去掉 critic 的主要理由之一。
 
 ## 相关题
 

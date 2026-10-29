@@ -5,7 +5,8 @@ order: 13
 level: B
 title: 淘天研发 0411：模乘循环会出现多少个不同数？
 quick: >-
-  从 $1$ 出发反复做 $x\leftarrow (x\cdot k)\bmod m$，用集合记下见过的值，第一次撞上旧值就停，集合大小就是答案。$m=1$ 时 $1$ 和 $0$ 都算，答案是 $2$。
+  从 $1$ 出发反复做 $x\leftarrow (x\cdot k)\bmod m$，用集合记下见过的值，第一次撞上旧值就停，集合大小就是答案。$m=1$
+  时 $1$ 和 $0$ 都算，答案是 $2$。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 淘天研发 2026.04.11 改编真题
-    url: https://www.nowcoder.com/discuss/872969146470887424
+    url: 'https://www.nowcoder.com/discuss/872969146470887424'
     type: secondary
 ---
 
@@ -24,7 +25,7 @@ sources:
 
 一个整数状态 x 从 1 开始，重复执行“把 x 乘以 k 后对 m 取模”。在某个状态第一次重复出现之前，统计总共访问过多少个不同状态。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -120,7 +121,7 @@ print("simple tests passed")
 
 时间 $O(\min(m,T_{\mathrm{loop}}))$，最坏 $O(m)$；空间最坏 $O(m)$。
 
-## 边界
+## Edge Cases
 
 $m=1$、$k=0$ 在上面已经覆盖。同一组数据重复读入时，答案应该稳定。
 

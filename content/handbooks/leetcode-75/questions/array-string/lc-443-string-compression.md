@@ -5,7 +5,8 @@ order: 9
 level: A
 title: LC 443 · 压缩字符串
 quick: >-
-  用读写双指针原地压缩：读指针 `i` 找出一段相同字符，写指针 `w` 先写字符，段长大于 $1$ 再逐位写数字。压缩结果永远不比原段长，写指针追不上读指针。时间 $O(n)$，额外空间 $O(1)$。
+  用读写双指针原地压缩：读指针 `i` 找出一段相同字符，写指针 `w` 先写字符，段长大于 $1$
+  再逐位写数字。压缩结果永远不比原段长，写指针追不上读指针。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - String
   - Two Pointers
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 443. String Compression
-    url: https://leetcode.com/problems/string-compression/
+    url: 'https://leetcode.com/problems/string-compression/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -121,7 +122,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个字符被读一次、最多写一次。额外空间 $O(1)$；`str(j - i)` 最多 $4$ 位，算常数。
 
-## 边界
+## Edge Cases
 
 - 组长 $\ge 10$ 时要逐位写，`12` 写成 `"1"`、`"2"` 两个元素。
 - 组长为 $1$ 只写字符，不写 `"1"`。

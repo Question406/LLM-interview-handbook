@@ -5,20 +5,21 @@ order: 4
 level: S
 title: LC 242 · 有效的字母异位词
 quick: >-
-  长度不等直接返回否。开 26 个桶，对 $s$ 的字符加一、对 $t$ 的字符减一，最后全为 $0$ 就是异位词，时间 $O(n)$；排序后比较也行，时间 $O(n\log n)$。
+  长度不等直接返回否。开 26 个桶，对 $s$ 的字符加一、对 $t$ 的字符减一，最后全为 $0$ 就是异位词，时间 $O(n)$；排序后比较也行，时间
+  $O(n\log n)$。
 tags:
   - Hash
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 242. 有效的字母异位词
-    url: https://leetcode.cn/problems/valid-anagram/
+    url: 'https://leetcode.cn/problems/valid-anagram/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +100,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。排序写法的时间是 $O(n\log n)$。
 
-## 边界
+## Edge Cases
 
 空串对空串是真；长度不等直接是假。只要有一个字符不同，或者某个字母次数差一，26 个桶扫完就会留下非零。
 
@@ -111,6 +112,7 @@ print("simple tests passed")
 ```python
 from collections import Counter
 
+
 def isAnagram(s, t):
     return len(s) == len(t) and Counter(s) == Counter(t)
 ```
@@ -120,6 +122,7 @@ def isAnagram(s, t):
 
 ```python
 from collections import defaultdict
+
 
 def groupAnagrams(strs):
     groups = defaultdict(list)

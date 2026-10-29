@@ -4,7 +4,9 @@ section: heap
 order: 2
 level: A
 title: LC 2336 · 无限集中的最小数字
-quick: "用指针 `cur` 表示「从 `cur` 起的所有正整数都还在集合里」，再用小根堆加哈希集合存被加回来、比 `cur` 小的数。弹出时堆非空取堆顶，否则取 `cur`。两个操作都是 $O(\\log m)$，$m$ 是堆大小。"
+quick: >-
+  用指针 `cur` 表示「从 `cur` 起的所有正整数都还在集合里」，再用小根堆加哈希集合存被加回来、比 `cur` 小的数。弹出时堆非空取堆顶，否则取
+  `cur`。两个操作都是 $O(\log m)$，$m$ 是堆大小。
 tags:
   - Heap
   - Design
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2336. Smallest Number in Infinite Set
-    url: https://leetcode.com/problems/smallest-number-in-infinite-set/
+    url: 'https://leetcode.com/problems/smallest-number-in-infinite-set/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -140,7 +142,7 @@ print("simple tests passed")
 
 `popSmallest` 和 `addBack` 都是 $O(\log m)$，$m$ 是堆里的数的个数，不会超过已经弹出过的数的个数。额外空间 $O(m)$。
 
-## 边界
+## Edge Cases
 
 加回一个从没弹出过的数（`num` 大于等于 `cur`）时，它本来就在集合里，忽略。
 

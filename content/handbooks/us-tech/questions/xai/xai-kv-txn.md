@@ -4,7 +4,9 @@ section: xai
 order: 1
 level: A
 title: xAI：内存 KV 怎么加事务？15 分钟屏幕上的 race 怎么找？
-quick: "我会在 begin 固定快照，把写入留在事务缓冲；commit 在锁内验证读写集版本，全部通过才原子发布，冲突就 abort。BankAccount 的 lost update 同样要锁住整个读改写过程：两个线程都读到 100、都写成 110，就会丢掉一次存款。"
+quick: >-
+  我会在 begin 固定快照，把写入留在事务缓冲；commit 在锁内验证读写集版本，全部通过才原子发布，冲突就 abort。BankAccount 的
+  lost update 同样要锁住整个读改写过程：两个线程都读到 100、都写成 110，就会丢掉一次存款。
 tags:
   - 完整编程练习
   - xAI
@@ -14,13 +16,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: xAI Interview Question Bank (1Point3Acres)
-    url: https://www.1point3acres.com/interview/problems/company/xai
+    url: 'https://www.1point3acres.com/interview/problems/company/xai'
     type: secondary
   - title: xAI interview questions from candidate reports
-    url: https://aceoffer.app/interviews/xai
+    url: 'https://aceoffer.app/interviews/xai'
     type: secondary
 ---
 
@@ -28,7 +30,7 @@ sources:
 
 实现线程安全数据库的乐观事务：每个事务读自己的固定快照及本地写入，提交时检测它访问过的键是否发生并发变更。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -55,7 +57,7 @@ T2.put("b", "3"); T2.commit()     -> False   # T2 读过的 a 已被 T1 改掉
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是原帖的完整题面或官方测试。Python 3，只用标准库。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3，只用标准库。
 
 ### 题面、接口与约束
 
@@ -94,8 +96,8 @@ class Database:
     """线程安全的内存 KV，事务用乐观并发控制：begin 拍快照，commit 时验证版本。"""
 
     def __init__(self):
-        self.data = {}       # key -> 当前值（只存字符串）
-        self.versions = {}   # key -> 最后一次提交写它的版本号；删除后保留，用来发现 ABA
+        self.data = {}  # key -> 当前值（只存字符串）
+        self.versions = {}  # key -> 最后一次提交写它的版本号；删除后保留，用来发现 ABA
         self.clock = 0
         self.lock = RLock()
 
@@ -109,10 +111,10 @@ class Transaction:
 
     def __init__(self, db, snapshot, versions):
         self.db = db
-        self.snapshot = snapshot   # begin 时的数据
-        self.versions = versions   # begin 时的版本表
+        self.snapshot = snapshot  # begin 时的数据
+        self.versions = versions  # begin 时的版本表
         self.reads = set()
-        self.writes = {}           # key -> 新值；None 表示删除
+        self.writes = {}  # key -> 新值；None 表示删除
         self.closed = False
 
     def _check_open(self):
@@ -142,7 +144,10 @@ class Transaction:
         with self.db.lock:
             self.closed = True
             touched = self.reads | self.writes.keys()
-            if any(self.db.versions.get(key, 0) != self.versions.get(key, 0) for key in touched):
+            if any(
+                self.db.versions.get(key, 0) != self.versions.get(key, 0)
+                for key in touched
+            ):
                 return False
             if self.writes:
                 self.db.clock += 1
@@ -168,7 +173,7 @@ class Transaction:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -193,12 +198,12 @@ assert setup.commit()
 # T1、T2 同时 begin：T1 改 a 并提交；T2 仍读到旧快照，但它读过 a，提交必须失败
 first, second = db.begin(), db.begin()
 first.put("a", "2")
-assert first.get("a") == "2"          # 读到自己的写入
+assert first.get("a") == "2"  # 读到自己的写入
 assert first.commit()
 assert second.get("a") == "1"
 second.put("b", "3")
 assert not second.commit()
-assert db.begin().get("b") is None     # 失败的事务不留下任何写入
+assert db.begin().get("b") is None  # 失败的事务不留下任何写入
 
 # 不相交的 key：两个事务都能提交
 first, second = db.begin(), db.begin()
@@ -293,7 +298,7 @@ Rate limiter 和令牌桶（token bucket）是相邻题，也可以先画共享�
 ## 追问
 
 **为什么不直接用一把全局大锁做 serializable？**
-能写对，但吞吐差。面试里先保证正确，再提高并发度。
+能写对，但 throughput 差。面试里先保证正确，再提高并发度。
 
 **和训练 checkpoint 有什么关系？**
 是同一类问题：版本要原子地变得可见。权重文件要么完整可见，要么不可见，不能出现半份。

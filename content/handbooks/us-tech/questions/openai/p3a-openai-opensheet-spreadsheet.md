@@ -3,8 +3,10 @@ id: p3a-openai-opensheet-spreadsheet
 section: openai
 order: 624
 level: A
-title: "OpenAI：电子表格：公式、依赖、环与 O(1) 读取"
-quick: "公式解析成类型受限的 AST，并维护依赖关系；写入先在候选状态检测环，失败就保留原表。要 O(1) 读取，可以在写入时重算缓存值；规模大时只沿反向依赖重算受影响子图，替换公式时也要删掉旧边。"
+title: OpenAI：电子表格：公式、依赖、环与 O(1) 读取
+quick: >-
+  公式解析成类型受限的 AST，并维护依赖关系；写入先在候选状态检测环，失败就保留原表。要 O(1)
+  读取，可以在写入时重算缓存值；规模大时只沿反向依赖重算受影响子图，替换公式时也要删掉旧边。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · opensheet-spreadsheet"
-    url: https://www.1point3acres.com/interview/problems/company/openai/opensheet-spreadsheet
+  - title: 1Point3Acres · OpenAI · opensheet-spreadsheet
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/opensheet-spreadsheet
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现简化电子表格：单元格可存整数或公式，上游值变动后，所有依赖单元格的可见值应随之更新。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -53,7 +56,7 @@ get("B1")            -> 13
 
 实现一个电子表格：单元格可以存整数，也可以存引用其他单元格的公式；写入会造成循环依赖时要拒绝。追问是怎么让 `getCell` 变成 O(1)。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -190,7 +193,7 @@ class Sheet:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -201,6 +204,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 sheet = Sheet()
 sheet.set("A1", 2)

@@ -3,18 +3,19 @@ id: ml101-tree-pruning
 section: ensemble
 order: 2
 level: S
-title: "决策树为什么容易过拟合？怎么剪枝？"
-quick: "树不断分裂会形成只覆盖少量样本的小区域，把噪声也当成规律。可以提前限制深度、最小叶子样本数或分裂收益，也可以先长树再用成本复杂度剪枝；控制强度要按独立验证表现选择。"
+title: 决策树为什么容易 overfitting？怎么剪枝？
+quick: >-
+  树不断分裂会形成只覆盖少量样本的小区域，把噪声也当成规律。可以提前限制深度、最小叶子样本数或分裂收益，也可以先长树再用成本复杂度剪枝；控制强度要按独立验证表现选择。
 tags:
   - Machine Learning
   - ensemble
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "scikit-learn: Decision Trees"
-    url: https://scikit-learn.org/stable/modules/tree.html
+  - title: 'scikit-learn: Decision Trees'
+    url: 'https://scikit-learn.org/stable/modules/tree.html'
     type: primary
 ---
 
@@ -35,5 +36,5 @@ $T$ 是一棵树，$R(T)$ 是叶子上的加权训练不纯度或损失，$|T|$ 
 **最大深度和最小叶子样本数有什么区别？**
 深度限制一条判断路径最多问多少次；最小叶子样本数限制每个局部区域至少包含多少训练样本。相同深度下，后者仍可避免极小叶子。
 
-**特征缩放能防止树过拟合吗？**
-对常规精确阈值树，单调缩放通常保持样本顺序和候选分组，无法有效控制复杂度。应直接调整树结构约束、采样或正则参数。
+**特征缩放能防止树 overfitting 吗？**
+对常规精确阈值树，单调缩放通常保持样本顺序和候选分组，无法有效控制复杂度。应直接调整树结构约束、sampling 或正则参数。

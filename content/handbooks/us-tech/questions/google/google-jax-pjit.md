@@ -4,27 +4,39 @@ section: google
 order: 8
 level: S
 title: Google：jax.pjit / shard_map 面试怎么讲 SPMD 和编译时切分
-quick: "SPMD 让每张芯片运行同一份程序、处理自己的数据分片。带 sharding 的 `jax.jit`（原 `pjit` 能力）按 PartitionSpec 在编译期安排切分和集合通信；`shard_map` 则让函数看见局部块，由程序员显式写 `psum`。选哪种方式取决于是否需要控制局部通信。"
+quick: >-
+  SPMD 让每张芯片运行同一份程序、处理自己的数据分片。带 sharding 的 `jax.jit`（原 `pjit` 能力）按 PartitionSpec
+  在编译期安排切分和集合通信；`shard_map` 则让函数看见局部块，由程序员显式写 `psum`。选哪种方式取决于是否需要控制局部通信。
 tags:
   - Google
   - JAX
   - pjit
   - SPMD
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Distributed arrays and automatic parallelization (JAX)
-    url: https://jax.readthedocs.io/en/latest/notebooks/Distributed_arrays_and_automatic_parallelization.html
+    url: >-
+      https://jax.readthedocs.io/en/latest/notebooks/Distributed_arrays_and_automatic_parallelization.html
     type: primary
   - title: shard_map docs (JAX)
-    url: https://jax.readthedocs.io/en/latest/notebooks/shard_map.html
+    url: 'https://jax.readthedocs.io/en/latest/notebooks/shard_map.html'
     type: primary
   - title: GSPMD — General and Scalable Parallelization for ML Computation Graphs
-    url: https://arxiv.org/abs/2105.04663
+    url: 'https://arxiv.org/abs/2105.04663'
     type: primary
 ---
+
+## 可以这样回答
+
+`pjit` 的核心是把数组怎样分片告诉编译器，让它生成同一份 SPMD 程序，在每张芯片的数据块上执行。比如写完整的 `x @ w`，编译器会根据分片方式安排局部乘法和通信。这里讲的是带 PartitionSpec 的 `jax.jit`：文档中 `jax.experimental.pjit.pjit` 已弃用，对应能力并入 `in_shardings` / `out_shardings`。Mesh 轴含义见 `google-tpu-mesh`。
+
+SPMD = Single Program Multiple Data。编译器产出一份 XLA 可执行文件，广播到 mesh 上每张芯片。芯片 $i$ 不跑「if rank==i」的分支去执行别的图；它只持有数组的一个 shard，遇到需要完整张量的算子时，图里已经插了 all-gather / reduce-scatter / all-reduce。
+
+## 技术备查
 
 `pjit` 的核心是把数组怎样分片告诉编译器，让它生成同一份 SPMD 程序，在每张芯片的数据块上执行。比如写完整的 `x @ w`，编译器会根据分片方式安排局部乘法和通信。这里讲的是带 PartitionSpec 的 `jax.jit`：文档中 `jax.experimental.pjit.pjit` 已弃用，对应能力并入 `in_shardings` / `out_shardings`。Mesh 轴含义见 `google-tpu-mesh`。
 
@@ -44,9 +56,11 @@ in_x = NamedSharding(mesh, P("data", None))
 in_w = NamedSharding(mesh, P(None, "model"))
 out_y = NamedSharding(mesh, P("data", "model"))
 
+
 @jax.jit
 def f(x, w):
     return x @ w
+
 
 y = f(x, w)  # 运行前 device_put 到对应 sharding
 ```

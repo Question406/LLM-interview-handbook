@@ -4,22 +4,36 @@ section: fundamentals
 order: 14
 level: A
 title: HNSW / IVF / PQ 各自是什么？
-quick: "三种东西放在召回率、延迟、内存三条轴上比。HNSW 用多层小世界图换高召回，代价是内存；IVF 先把向量聚类成倒排分区，查询只搜 `nprobe` 个分区，用扫描量换延迟；PQ 把各子空间量化成编码，压内存、加快距离估计，召回打折。实践里多半组合用（IVF-PQ、HNSW 存量化向量），选型时还要看增量更新需求。"
+quick: >-
+  三种东西放在召回率、延迟、内存三条轴上比。HNSW 用多层小世界图换高召回，代价是内存；IVF 先把向量聚类成倒排分区，查询只搜 `nprobe`
+  个分区，用扫描量换延迟；PQ 把各子空间量化成编码，压内存、加快距离估计，召回打折。实践里多半组合用（IVF-PQ、HNSW
+  存量化向量），选型时还要看增量更新需求。
 tags:
   - RAG
   - ANN
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
-  - title: Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs
-    url: https://arxiv.org/abs/1603.09320
+  - title: >-
+      Efficient and robust approximate nearest neighbor search using
+      Hierarchical Navigable Small World graphs
+    url: 'https://arxiv.org/abs/1603.09320'
     type: primary
   - title: Faiss indexes
-    url: https://github.com/facebookresearch/faiss/wiki/Faiss-indexes
+    url: 'https://github.com/facebookresearch/faiss/wiki/Faiss-indexes'
     type: primary
 ---
+
+## 可以这样回答
+
+我会把三者放在召回率、延迟、内存这三条轴上讲：HNSW 用图换高召回，内存贵；IVF 用探查的 cell 数在延迟和召回之间滑；PQ 用码本近似距离，省内存、提速，召回打折。实践里几乎总是组合着用，比如 IVF-PQ、HNSW 存 PQ code，很少三选一。背数据结构的名词不够，要能讲清每个旋钮往哪边拧会发生什么。具体毫秒和百分数不用编，把曲线形状讲对就行。
+
+举个场景，一个千万级的 RAG 文档库，机器内存宽裕，要高 recall@k，文档一天才更新几次，这时 HNSW 很合适。换成十亿级向量、内存放不下原始向量，就得上 IVF-PQ，再用原向量对短列表做 rerank 把召回补回来。
+
+## 技术备查
 我会把三者放在召回率、延迟、内存这三条轴上讲：HNSW 用图换高召回，内存贵；IVF 用探查的 cell 数在延迟和召回之间滑；PQ 用码本近似距离，省内存、提速，召回打折。实践里几乎总是组合着用，比如 IVF-PQ、HNSW 存 PQ code，很少三选一。背数据结构的名词不够，要能讲清每个旋钮往哪边拧会发生什么。具体毫秒和百分数不用编，把曲线形状讲对就行。
 
 举个场景，一个千万级的 RAG 文档库，机器内存宽裕，要高 recall@k，文档一天才更新几次，这时 HNSW 很合适。换成十亿级向量、内存放不下原始向量，就得上 IVF-PQ，再用原向量对短列表做 rerank 把召回补回来。
@@ -28,7 +42,7 @@ sources:
 
 HNSW 的查询从稀疏的高层图一路走到密集的底层。中等规模上高召回、低延迟很常见，但每个点都要存邻居指针，内存随 $N\times M$（$M$ 是每个点的边数）涨，比一份向量副本还大一截。构建也重，动态插入可以做，大规模重建仍然贵。它适合内存够、要高 recall@k、更新又不是每秒百万级的检索增强生成（RAG）。
 
-IVF 先把空间分成一批 coarse centroids，查询只搜 `nprobe` 个倒排列表。`nprobe` 是个显式旋钮：调小就快，但容易漏掉落在邻近列表里的真邻居；调大就接近扫全库。内存主要是原向量（或再量化过的向量），加一张很小的质心表。它适合十亿级、必须控制扫描量的场景，对落在聚类边界附近的点不太友好。
+IVF 先把空间分成一批 coarse centroids，查询只搜 `nprobe` 个倒排列表。`nprobe` 是个显式旋钮：调小就快，但容易漏掉落在邻近列表里的真邻居；调大就接近扫全库。内存主要是原向量（或再量化过的向量），加一张很小的质心表。它适合十亿级、必须控制扫描量的场景，对落在 cluster boundaries 附近的点不太友好。
 
 PQ 把向量切成 $m$ 段，每段用码本里的编号代替，距离靠查表近似。每个向量可以从几百维浮点压到几十字节，SIMD 扫库也快，但近似误差会拉低召回率。PQ 本身是压缩和距离估计，单独算不上「一种搜法」，常挂在 IVF 列表或 HNSW 节点上用。
 

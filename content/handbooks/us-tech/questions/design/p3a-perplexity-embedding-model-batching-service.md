@@ -3,8 +3,10 @@ id: p3a-perplexity-embedding-model-batching-service
 section: design
 order: 612
 level: S
-title: "Perplexity：Embedding 批服务：并发、容量与 shutdown"
-quick: "用队列连接 submit 和后台 worker：每个请求带着自己的 Future 入队，worker 按条数与 token 预算组批，再把结果逐个写回。shutdown 停止接收请求并把哨兵放到队尾，已有请求处理完才退出，模型异常则传给整批 Future。"
+title: Perplexity：Embedding 批服务：并发、容量与 shutdown
+quick: >-
+  用队列连接 submit 和后台 worker：每个请求带着自己的 Future 入队，worker 按条数与 token
+  预算组批，再把结果逐个写回。shutdown 停止接收请求并把哨兵放到队尾，已有请求处理完才退出，模型异常则传给整批 Future。
 companies:
   - ai-labs
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · embedding-model-batching-service"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/embedding-model-batching-service
+  - title: 1Point3Acres · Perplexity · embedding-model-batching-service
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/embedding-model-batching-service
     type: secondary
 ---
 
@@ -53,7 +56,7 @@ shutdown() 后结果依次为   -> 3, 3, 15, 0
 
 给定一个能一次处理一批序列的 embedding 模型，把它包装成一个服务：多个调用方并发提交单条请求，服务在后台把请求攒成批送进模型，再把结果分别还给各自的调用方。变体要求每批同时受「序列条数」和「token 总数」两个上限约束，并且要能干净地 shutdown。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -111,7 +114,7 @@ class BatchService:
         self.max_batch = max_batch
         self.max_tokens = max_tokens
         self.queue = Queue()  # 元素是 (tokens, future) 或 STOP
-        self.lock = Lock()    # 保证 closed 检查和入队是原子的
+        self.lock = Lock()  # 保证 closed 检查和入队是原子的
         self.closed = False
         self.worker = Thread(target=self._run)
         self.worker.start()
@@ -119,7 +122,9 @@ class BatchService:
     def submit(self, tokens):
         tokens = list(tokens)
         if len(tokens) > self.max_tokens:
-            raise ValueError(f"request has {len(tokens)} tokens, limit is {self.max_tokens}")
+            raise ValueError(
+                f"request has {len(tokens)} tokens, limit is {self.max_tokens}"
+            )
         with self.lock:
             if self.closed:
                 raise RuntimeError("service is shut down")
@@ -165,13 +170,19 @@ class BatchService:
 
     def _run_batch(self, batch):
         # 已被调用方取消的请求不送进模型
-        live = [(tokens, future) for tokens, future in batch if future.set_running_or_notify_cancel()]
+        live = [
+            (tokens, future)
+            for tokens, future in batch
+            if future.set_running_or_notify_cancel()
+        ]
         if not live:
             return
         try:
             outputs = list(self.model([tokens for tokens, _ in live]))
             if len(outputs) != len(live):
-                raise ValueError(f"model returned {len(outputs)} results for {len(live)} inputs")
+                raise ValueError(
+                    f"model returned {len(outputs)} results for {len(live)} inputs"
+                )
         except Exception as error:
             for _, future in live:
                 future.set_exception(error)  # 整批失败，但每个 Future 都会完成
@@ -188,7 +199,7 @@ class BatchService:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -196,11 +207,13 @@ class BatchService:
 # 每批最多 2 条、4 个 token；结果按原请求对应
 batches = []
 
+
 def sum_model(batch):
     assert len(batch) <= 2
     assert sum(map(len, batch)) <= 4
     batches.append(batch)
     return [sum(tokens) for tokens in batch]
+
 
 service = BatchService(sum_model, max_batch=2, max_tokens=4)
 futures = [service.submit(tokens) for tokens in ([1, 2], [3], [4, 5, 6], [])]
@@ -223,9 +236,11 @@ else:
     raise AssertionError("oversized request should raise ValueError")
 service.shutdown()
 
+
 # 模型抛错时，本批每个 Future 都收到同一个异常
 def failing_model(batch):
     raise ValueError("model failed")
+
 
 service = BatchService(failing_model, max_batch=2, max_tokens=4)
 future = service.submit([1])
@@ -249,6 +264,6 @@ assert isinstance(future.exception(timeout=1), ValueError)
 设请求数为 R、token 总数为 T。worker 的调度开销是 O(R + T)（主要是复制 token 列表），队列空间与未完成请求的 token 数成正比。这份参考用的是无界队列，没有背压。
 
 - 背压：把 `Queue` 换成有界队列，满了以后 `submit` 是阻塞、超时还是直接拒绝，要和调用方约定。
-- 吞吐和延迟的取舍：现在 worker 只取「此刻已经在队列里」的请求，低负载时批会很小。可以在拿到第一条后再最多等几毫秒凑批，用一点延迟换更大的批。
+- throughput 和延迟的取舍：现在 worker 只取「此刻已经在队列里」的请求，低负载时批会很小。可以在拿到第一条后再最多等几毫秒凑批，用一点延迟换更大的批。
 - 超时和取消：调用方可以 `future.cancel()`，但只在请求还没送进模型前有效。
 - 多个 worker 或多张 GPU：每个 worker 各自取队列组批即可，但要确认模型对象是否线程安全。

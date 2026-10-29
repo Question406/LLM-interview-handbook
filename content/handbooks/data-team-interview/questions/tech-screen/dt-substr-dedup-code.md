@@ -3,8 +3,10 @@ id: dt-substr-dedup-code
 section: tech-screen
 order: 19
 level: A
-title: CoderPad：精确子串去重怎么写，滚动哈希怎么扫评测泄漏？
-quick: "把评测内容切成固定长度的字符或 token 窗口，用滚动哈希扫训练文档，命中后再比原文，排除哈希碰撞。它能发现整篇哈希漏掉的局部片段复制。窗口太短会误杀常见代码，太长会漏掉变体，规范化按域选；训练内部的子串去重和评测隔离用不同的表和阈值。"
+title: CoderPad：精确子串 deduplication 怎么写，滚动哈希怎么扫 evaluation leakage？
+quick: >-
+  把评测内容切成固定长度的字符或 token 窗口，用滚动哈希扫训练文档，命中后再比原文，排除哈希碰撞。它能发现整篇哈希漏掉的局部片段复制。窗口太短会
+  false rejection 常见代码，太长会漏掉变体，规范化按域选；训练内部的子串 deduplication 和评测隔离用不同的表和阈值。
 companies:
   - apple
 tags:
@@ -15,22 +17,22 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: Deduplicating Training Data Makes Language Models Better
-    url: https://arxiv.org/abs/2107.06499
+    url: 'https://arxiv.org/abs/2107.06499'
     type: primary
-  - title: "The Pile: An 800GB Dataset of Diverse Text"
-    url: https://arxiv.org/abs/2101.00027
+  - title: 'The Pile: An 800GB Dataset of Diverse Text'
+    url: 'https://arxiv.org/abs/2101.00027'
     type: primary
   - title: LiveCodeBench
-    url: https://arxiv.org/abs/2403.07974
+    url: 'https://arxiv.org/abs/2403.07974'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 定位训练文本中与评测文本完全相同的固定长度字符片段，使用哈希候选表但不能把哈希碰撞当作真实命中。
 
@@ -56,7 +58,7 @@ scan("xabcdy",table,L=3) -> [("q",1,0),("q",2,1)]
 
 我会把评测内容切成固定长度的窗口，存下 Rabin-Karp 滚动哈希；训练文档按同样的窗口扫，哈希命中后再比一次原字符串，确认真的重叠才隔离。CoderPad 上写滚动哈希就够，不必实现 DC3 后缀数组。
 
-整篇哈希不够用，因为代码和数学里常见的是连续片段被复制进别的文件。比如一个训练文件开头写着「# copied from somewhere」，中间原样贴了一段 `two_sum` 的评测代码，结尾还有别的内容，全文哈希和评测题对不上，窗口扫描却能定位到它从第几个字符开始重叠。Lee et al. 2021 用后缀数组找精确重复子串，现场用滚动哈希扫冻结的评测集就可以。它和 `dt-ngram-contam-code` 是叠加关系，那边用词级 13-gram，这边用字符或 token 窗口。
+整篇哈希不够用，因为代码和数学里常见的是连续片段被复制进别的文件。比如一个训练文件开头写着「# copied from somewhere」，中间原样贴了一段 `two_sum` 的评测代码，结尾还有别的内容，全文哈希和评测题对不上，窗口扫描却能定位到它从第几个字符开始重叠。Lee et al. 2021 用后缀数组找精确重复子串，现场用滚动哈希扫冻结的 evaluation set 就可以。它和 `dt-ngram-contam-code` 是叠加关系，那边用词级 13-gram，这边用字符或 token 窗口。
 
 ## Rabin-Karp 滚评测窗口
 
@@ -88,7 +90,7 @@ def eval_windows(eval_items, L=50):
     table = {}
     for eval_id, text in eval_items:
         for i, h in enumerate(rolling_hashes(text, L)):
-            table.setdefault(h, []).append((eval_id, i, text[i:i + L]))
+            table.setdefault(h, []).append((eval_id, i, text[i : i + L]))
     return table
 
 
@@ -97,25 +99,27 @@ def scan(text, table, L=50):
     hits = []
     for i, h in enumerate(rolling_hashes(text, L)):
         for eval_id, j, fragment in table.get(h, ()):
-            if text[i:i + L] == fragment:
+            if text[i : i + L] == fragment:
                 hits.append((eval_id, i, j))
                 break
     return hits
 ```
 
-测试覆盖滚动哈希和重算一致、短文本、嵌入片段的命中位置、无关文档和碰撞复核：
+测试覆盖滚动哈希和重算一致、短文本、embedding 片段的命中位置、无关文档和碰撞复核：
 
 ```python
 # 滚动哈希和逐窗口重算的结果一致
 sample = "def add(a, b):\n    return a + b\n"
-recomputed = [rolling_hashes(sample[i:i + 8], L=8)[0] for i in range(len(sample) - 7)]
+recomputed = [rolling_hashes(sample[i : i + 8], L=8)[0] for i in range(len(sample) - 7)]
 assert rolling_hashes(sample, L=8) == recomputed
 
 # 短于窗口的文本没有窗口
 assert rolling_hashes("short", L=50) == []
 
 # 训练文档里嵌了一段评测代码：命中位置对得上
-eval_code = "def two_sum(nums, target):\n    seen = {}\n    for i, x in enumerate(nums):\n"
+eval_code = (
+    "def two_sum(nums, target):\n    seen = {}\n    for i, x in enumerate(nums):\n"
+)
 table = eval_windows([("he-1", eval_code)], L=20)
 train_doc = "# copied from somewhere\n" + eval_code + "# end"
 hits = scan(train_doc, table, L=20)
@@ -130,34 +134,34 @@ fake_table = {h: [("fake", 0, "x" * 20)] for h in rolling_hashes(train_doc, L=20
 assert scan(train_doc, fake_table, L=20) == []
 ```
 
-滚动哈希每移一位是常数时间，扫一篇文档是 $O(n)$，评测侧的表放内存就行。$L$ 的取舍是太短会误杀 `for (int i = 0;` 这种常见片段，太长又会漏掉改了空白的变体，代码评测用 token 窗口更稳，先 `tokenize` 再滚。规范化也要按数据类型选：滚之前先过 `dt-unicode-canon-code` 处理空白和大小写，但代码不能 `lower`，不然会抹掉标识符的差异。
+滚动哈希每移一位是常数时间，扫一篇文档是 $O(n)$，评测侧的表放内存就行。$L$ 的取舍是太短会 false rejection `for (int i = 0;` 这种常见片段，太长又会漏掉改了空白的变体，代码评测用 token 窗口更稳，先 `tokenize` 再滚。规范化也要按数据类型选：滚之前先过 `dt-unicode-canon-code` 处理空白和大小写，但代码不能 `lower`，不然会抹掉标识符的差异。
 
-训练集内部的精确子串去重（丢掉彼此重复的 50-token 片段）是另一件事，那是 Lee 论文的主结果，要用后缀数组或大规模哈希表。现场可以这样分：对评测用这份扫描；训练内部去重按域做，许可证和常见头文件放白名单。
+training set 内部的精确子串 deduplication（丢掉彼此重复的 50-token 片段）是另一件事，那是 Lee 论文的主结果，要用后缀数组或大规模哈希表。现场可以这样分：对评测用这份扫描；训练内部 deduplication 按域做，许可证和常见头文件放白名单。
 
-命中的训练文档进 quarantine，评测题留下。代码题还要查同一仓库里的测试文件和 issue 正文，见 `dt-code-bench-bleed`。要确认旧题分数高是不是因为泄漏，可以用按时间切的新题（LiveCodeBench）对照。
+命中的训练文档进 quarantine，评测题留下。代码题还要查同一仓库里的测试文件和 issue 正文，见 `dt-code-bench-bleed`。要确认旧题分数高是不是因为 leakage，可以用按时间切的新题（LiveCodeBench）对照。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert rolling_hashes(sample, L=8) == recomputed` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert rolling_hashes(sample, L=8) == recomputed` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
 **模数碰撞怎么办？**
-用双哈希，或者命中后比原文。评测集小，复核很便宜。
+用双哈希，或者命中后比原文。evaluation set 小，复核很便宜。
 
-**训练集内部也滚 50-gram？**
+**training set 内部也滚 50-gram？**
 可以，但要用另一张表、另一个阈值，别和评测指纹混用。
 
 **窗口重叠会不会把同一题重复报很多次？**
-会，所以先按 `eval_id` 对 hits 去重，再做决策。同一题连续 20 个窗口命中，比只命中 1 次更像整段抄袭。
+会，所以先按 `eval_id` 对 hits deduplication，再做决策。同一题连续 20 个窗口命中，比只命中 1 次更像整段抄袭。
 
 **窗口取多长？**
-现场用 50。太短会误杀常见代码片段，太长会漏掉改了空白的变体，代码用 token 窗口更稳。
+现场用 50。太短会 false rejection 常见代码片段，太长会漏掉改了空白的变体，代码用 token 窗口更稳。
 
 相关：`dt-ngram-contam-code`、`dt-unicode-canon-code`、`dt-code-bench-bleed`

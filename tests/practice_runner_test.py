@@ -20,6 +20,19 @@ def run(code, tests="", **kwargs):
 
 
 class RunnerTests(unittest.TestCase):
+    def test_collection_exercises_reuse_the_canonical_implementation_and_tests(self):
+        for book, question in [("us-tech", "coding-packed-lm"),
+                               ("data-team-interview", "p3a-apple-cvml-circular-padding"),
+                               ("llm-interview", "code-linear-attn")]:
+            with self.subTest(question=question):
+                original = load_exercise(book, question)
+                collected = load_exercise("apple-interview", question)
+                self.assertEqual(collected["book"], "apple-interview")
+                for field in ("reference", "tests", "starter", "description"):
+                    self.assertEqual(collected[field], original[field])
+        with self.assertRaisesRegex(ValueError, "Question source not found"):
+            load_exercise("apple-interview", "not-in-this-collection")
+
     def test_transformer_starter_preserves_frozen_weight_fixture(self):
         exercise = load_exercise("us-tech-interview", "kv-prefix-transformer")
         namespace = {}

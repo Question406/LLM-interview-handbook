@@ -4,20 +4,22 @@ section: dp-2d
 order: 7
 level: A
 title: LC 123 · 买卖股票的最佳时机 III
-quick: "最多两笔交易，用四个变量的状态机：第一次买入成本、第一次卖出利润、第二次买入的净成本、第二次卖出利润。每天按这个顺序更新，同一天买了又卖不会被当成两笔，时间 $O(n)$、空间 $O(1)$。"
+quick: >-
+  最多两笔交易，用四个变量的状态机：第一次买入成本、第一次卖出利润、第二次买入的净成本、第二次卖出利润。每天按这个顺序更新，同一天买了又卖不会被当成两笔，时间
+  $O(n)$、空间 $O(1)$。
 tags:
   - DP
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 123. 买卖股票的最佳时机 III
-    url: https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/
+    url: 'https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 一路下跌时 `sell1`、`sell2` 都停在 $0$。最优只做一笔时，`buy2` 可以等于「零利润后再买」，`sell2` 会继承 `sell1`，不用特判。两段峰谷分开时，四个变量按天滚动就能自然拆成两笔。
 

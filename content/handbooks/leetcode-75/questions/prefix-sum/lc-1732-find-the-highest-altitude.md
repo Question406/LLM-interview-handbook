@@ -4,8 +4,7 @@ section: prefix-sum
 order: 1
 level: A
 title: LC 1732 · 找到最高海拔
-quick: >-
-  海拔就是 `gain` 的前缀和，起点海拔 $0$ 也算一个点，所以一边累加一边取最大值，最大值从 $0$ 起。时间 $O(n)$，额外空间 $O(1)$。
+quick: 海拔就是 `gain` 的前缀和，起点海拔 $0$ 也算一个点，所以一边累加一边取最大值，最大值从 $0$ 起。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Prefix Sum
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1732. Find the Highest Altitude
-    url: https://leetcode.com/problems/find-the-highest-altitude/
+    url: 'https://leetcode.com/problems/find-the-highest-altitude/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -98,7 +97,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 全是负数时最高点是起点，返回 $0$。`best` 如果初始化成负无穷或 `gain[0]` 就错了。
 

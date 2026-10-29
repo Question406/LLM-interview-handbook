@@ -4,7 +4,9 @@ section: sliding-window
 order: 3
 level: A
 title: LC 30 · 串联所有单词的子串
-quick: "单词等长，所以能按词滑窗：对偏移 $0\\ldots w-1$ 各滑一遍、步长 $w$，窗口词频凑齐 `words` 的多重集就记下起点，某个词超量就左缩。不用枚举排列，时间 $O(|s|\\cdot w)$。"
+quick: >-
+  单词等长，所以能按词滑窗：对偏移 $0\ldots w-1$ 各滑一遍、步长 $w$，窗口词频凑齐 `words`
+  的多重集就记下起点，某个词超量就左缩。不用枚举排列，时间 $O(|s|\cdot w)$。
 tags:
   - Sliding Window
   - Hash
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 30. 串联所有单词的子串
-    url: https://leetcode.cn/problems/substring-with-concatenation-of-all-words/
+    url: 'https://leetcode.cn/problems/substring-with-concatenation-of-all-words/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -56,7 +58,7 @@ sources:
 
 起点按对 $w$ 取余只有 $w$ 种，所以对每个偏移 `offset`（$0\ldots w-1$）各做一遍步长为 $w$ 的滑窗，维护窗口内的词频。切出来的词不在 `need` 里，就整窗清空，左端跳到这个词后面；某个词超过需求，就从左边一个词一个词地弹出。窗口词数等于 $n$ 时，左端就是一个答案。
 
-拿 `s="barfoothefoobarman"`、`words=["foo","bar"]` 看，$w=3$。偏移 $0$ 这一轮切出 `bar foo the foo bar man`。`bar foo` 凑齐，记下起点 $0$；遇到 `the` 不在词表里，窗口清空；接着 `foo bar` 又凑齐，起点是 $9$。偏移 $1$、$2$ 切不出有效的词，答案是 `[0, 9]`。
+拿 `s="barfoothefoobarman"`、`words=["foo","bar"]` 看，$w=3$。偏移 $0$ 这一轮切出 `bar foo the foo bar man`。`bar foo` 凑齐，记下起点 $0$；遇到 `the` 不在 vocabulary 里，窗口清空；接着 `foo bar` 又凑齐，起点是 $9$。偏移 $1$、$2$ 切不出有效的词，答案是 `[0, 9]`。
 
 ## 参考代码
 
@@ -97,8 +99,15 @@ def findSubstring(s: str, words: List[str]) -> List[int]:
 
 if __name__ == "__main__":
     assert findSubstring("barfoothefoobarman", ["foo", "bar"]) == [0, 9]
-    assert findSubstring("wordgoodgoodgoodbestword", ["word", "good", "best", "word"]) == []
-    assert findSubstring("barfoofoobarthefoobarman", ["bar", "foo", "the"]) == [6, 9, 12]
+    assert (
+        findSubstring("wordgoodgoodgoodbestword", ["word", "good", "best", "word"])
+        == []
+    )
+    assert findSubstring("barfoofoobarthefoobarman", ["bar", "foo", "the"]) == [
+        6,
+        9,
+        12,
+    ]
     print("ok")
 ```
 
@@ -121,7 +130,7 @@ print("simple tests passed")
 
 每个起点至多当一次词首，切一个词是 $O(w)$，所以时间 $O(|s|\cdot w)$。空间 $O(|words|)$。
 
-## 边界
+## Edge Cases
 
 `s` 比 $n\cdot w$ 短，直接返回空答案。
 
@@ -136,6 +145,7 @@ print("simple tests passed")
 
 ```python
 from collections import Counter
+
 
 def findSubstringUnequal(s, words):
     need0 = Counter(words)

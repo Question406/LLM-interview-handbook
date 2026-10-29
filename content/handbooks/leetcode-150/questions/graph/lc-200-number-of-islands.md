@@ -5,7 +5,8 @@ order: 1
 level: S
 title: LC 200 · 岛屿数量
 quick: >-
-  扫网格，遇到 `'1'` 就说明发现一座新岛，计数加一，再用 DFS/BFS 把它四连通的陆地全改成 `'0'`（或记进 `visited`），之后不会重复计数。每个格子最多访问一次，时间 $O(mn)$。
+  扫网格，遇到 `'1'` 就说明发现一座新岛，计数加一，再用 DFS/BFS 把它四连通的陆地全改成 `'0'`（或记进
+  `visited`），之后不会重复计数。每个格子最多访问一次，时间 $O(mn)$。
 tags:
   - DFS
   - Grid
@@ -13,19 +14,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 200. 岛屿数量
-    url: https://leetcode.cn/problems/number-of-islands/
+    url: 'https://leetcode.cn/problems/number-of-islands/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
 ## 题目描述
 
-给定字符网格 grid，`"1"` 表示陆地，`"0"` 表示水。只要陆地格子能通过上下左右相邻的陆地互相到达，就属于同一座岛屿。网格边界外都视为水，求网格中共有多少座岛屿。
+给定字符网格 grid，`"1"` 表示陆地，`"0"` 表示水。只要陆地格子能通过上下左右相邻的陆地互相到达，就属于同一座岛屿。grid 外都视为水，求网格中共有多少座岛屿。
 
 ### 接口与输出
 
@@ -118,18 +119,18 @@ if __name__ == "__main__":
 
 ```python
 g1 = [
-        ["1", "1", "1", "1", "0"],
-        ["1", "1", "0", "1", "0"],
-        ["1", "1", "0", "0", "0"],
-        ["0", "0", "0", "0", "0"],
-    ]
+    ["1", "1", "1", "1", "0"],
+    ["1", "1", "0", "1", "0"],
+    ["1", "1", "0", "0", "0"],
+    ["0", "0", "0", "0", "0"],
+]
 assert numIslands(g1) == 1
 g2 = [
-        ["1", "1", "0", "0", "0"],
-        ["1", "1", "0", "0", "0"],
-        ["0", "0", "1", "0", "0"],
-        ["0", "0", "0", "1", "1"],
-    ]
+    ["1", "1", "0", "0", "0"],
+    ["1", "1", "0", "0", "0"],
+    ["0", "0", "1", "0", "0"],
+    ["0", "0", "0", "1", "1"],
+]
 assert numIslands(g2) == 3
 print("simple tests passed")
 ```
@@ -140,11 +141,11 @@ print("simple tests passed")
 
 时间 $O(mn)$，每个格子最多进一次 DFS。额外空间最坏 $O(mn)$，整张图都是陆地时递归栈会这么深。
 
-## 边界
+## Edge Cases
 
 全是水的话一次 DFS 都不进，答案是 $0$；全是陆地的话第一次沉岛就把整盘淹掉，答案是 $1$。单格 `'1'` 答案是 $1$，单格 `'0'` 答案是 $0$。两座岛只在斜对角相邻时，四连通下仍然算两座。
 
-被围区域那种「保留边界、翻转内部」的题是 LC 130，单独一张卡 `lc-130-surrounded-regions`。
+被围区域那种「保留与 outer edge 相连的 cells，翻转其余 cells」的题是 LC 130，单独一张卡 `lc-130-surrounded-regions`。
 
 ## 追问
 
@@ -153,9 +154,16 @@ print("simple tests passed")
 
 ```python
 DIRS8 = (
-    (1, 0), (-1, 0), (0, 1), (0, -1),
-    (1, 1), (1, -1), (-1, 1), (-1, -1),
+    (1, 0),
+    (-1, 0),
+    (0, 1),
+    (0, -1),
+    (1, 1),
+    (1, -1),
+    (-1, 1),
+    (-1, -1),
 )
+
 
 def numIslands8(grid):
     m, n = len(grid), len(grid[0])

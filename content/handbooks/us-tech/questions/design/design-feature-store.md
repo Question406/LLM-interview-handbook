@@ -5,31 +5,34 @@ order: 9
 level: A
 title: 设计：特征平台，点查延迟、训练一致性
 quick: >-
-  在线点查有 p99 预算，离线关联特征时，要保证只用事件发生当时已知的数据。同一份变换代码服务两条路径。泄漏（用了标签之后的特征）会让线下指标骗人。监控在线/离线同一 key 的值是否漂移，比再上一个特征更要紧。
+  在线点查有 p99
+  预算，离线关联特征时，要保证只用事件发生当时已知的数据。同一份变换代码服务两条路径。泄漏（用了标签之后的特征）会让线下指标骗人。监控在线/离线同一 key
+  的值是否漂移，比再上一个特征更要紧。
 tags:
   - Feature Store
   - Meta
   - Google
   - Latency
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Feast documentation
-    url: https://docs.feast.dev/
+    url: 'https://docs.feast.dev/'
     type: primary
   - title: Meet Michelangelo — Uber’s Machine Learning Platform
-    url: https://www.uber.com/blog/michelangelo-machine-learning-platform/
+    url: 'https://www.uber.com/blog/michelangelo-machine-learning-platform/'
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -45,11 +48,19 @@ sources:
 
 训练特征必须是预测发生时已经可知的信息，不能引入未来事件。需要定义事件时间、更新时效、在线尾部延迟、跨机房可用性及训练/服务结果一致性的检验。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 为 10:00 的点击预测构造训练样本时，可以使用 10:00 之前的行为，不能使用 10:01 才发生的停留时长。线上查询同一版本特征应具有对应的时间语义。
+
+## 可以这样回答
+
+我会用同一份特征定义服务在线点查和离线训练，并按事件发生时已知的数据回放训练样本。比如预测这次点击，却 join 了点击之后的停留时长，离线 AUC 会很好，上线却可能没有收益。在线路径还要保证点查 p99，因为推荐和广告的特征查询往往会耗尽打分预算。
+
+这类题覆盖 Meta / Google 排序、Uber Michelangelo 和 Amazon 个性化。Feast 区分 online / offline 路径，Michelangelo 强调生产化。相关：`design-recsys`、`design-ads-rank`。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
@@ -89,7 +100,7 @@ def pit_lookup(rows, as_of, window_s):
 
 训练-serving 监控：抽样同一 `(entity, request_id)`，比线上日志里的值和离线回放值。相对误差超阈告警。往往比再加一个特征更管用。Schema 演进：加字段要默认值；改语义要新名字，不要原地改 `click_1h` 的定义。
 
-失败模式：泄漏（join 了点击之后的停留时长当特征预测这次点击）；时钟（处理时间和事件时间混用）；热 key 请求让 KV 服务过载；embedding 表没随物品上架更新；两个模型共用一个 view 但一个以为是标准化后的值。泄漏会让离线 AUC 很好、上线平或更差，和随机 split 分子数据是同一类错，见 `gdm-ml-design`。
+失败模式：泄漏（join 了点击之后的停留时长当特征预测这次点击）；时钟（处理时间和事件时间混用）；热 key 请求让 KV 服务过载；embedding 表没随物品上架更新；两个模型共用一个 view 但一个以为是 standardization 后的值。泄漏会让离线 AUC 很好、上线平或更差，和随机 split 分子数据是同一类错，见 `gdm-ml-design`。
 
 漂移监控不必复杂：每分钟抽 N 个 `request_id`，比线上日志里的特征向量和离线 PIT 回放。相对误差超阈告警，并按 view 拆，才能知道是实时计数漂了还是 embedding 表没刷。热 key 用本地 LRU + 单飞，避免头部用户让 KV 服务过载，拖高全站 p99 延迟。
 

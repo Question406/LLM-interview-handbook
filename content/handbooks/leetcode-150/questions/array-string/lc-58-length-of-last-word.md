@@ -4,20 +4,20 @@ section: array-string
 order: 19
 level: A
 title: LC 58 · 最后一个单词的长度
-quick: "从右往左扫：先跳过尾部空格，再数连续的非空格字符，碰到空格或开头就停。时间 $O(L)$，额外空间 $O(1)$。不用 `split` 也能写。"
+quick: 从右往左扫：先跳过尾部空格，再数连续的非空格字符，碰到空格或开头就停。时间 $O(L)$，额外空间 $O(1)$。不用 `split` 也能写。
 tags:
   - String
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 58. 最后一个单词的长度
-    url: https://leetcode.cn/problems/length-of-last-word/
+    url: 'https://leetcode.cn/problems/length-of-last-word/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -95,7 +95,7 @@ print("simple tests passed")
 
 时间 $O(L)$，最坏扫完整串。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 没有尾空格时，第一段 `while` 立刻停，直接数最后一个单词。前导和尾随都有空格时，先跳尾空格再数，前导空格根本碰不到。整个串只有一个单词时，第二段 `while` 会一直数到下标 $0$。
 

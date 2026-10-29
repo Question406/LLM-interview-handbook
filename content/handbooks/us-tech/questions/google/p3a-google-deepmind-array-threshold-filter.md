@@ -3,8 +3,10 @@ id: p3a-google-deepmind-array-threshold-filter
 section: google
 order: 807
 level: A
-title: "DeepMind Android：数组阈值过滤与索引"
-quick: "用一次遍历收集严格大于阈值的元素下标，列表长度就是数量，时间 O(n)。开写前确认比较是否包含等号、下标从哪里开始；这份练习采用严格大于和零基下标，空数组返回 `(0, [])`。"
+title: DeepMind Android：数组阈值过滤与索引
+quick: >-
+  用一次遍历收集严格大于阈值的元素下标，列表长度就是数量，时间
+  O(n)。开写前确认比较是否包含等号、下标从哪里开始；这份练习采用严格大于和零基下标，空数组返回 `(0, [])`。
 companies:
   - google
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · DeepMind Android：数组阈值过滤与索引"
-    url: https://www.1point3acres.com/interview/problems/6ef654a3-ec8c-4ce7-b96b-1eb1455d9e21
+  - title: 1Point3Acres · DeepMind Android：数组阈值过滤与索引
+    url: >-
+      https://www.1point3acres.com/interview/problems/6ef654a3-ec8c-4ce7-b96b-1eb1455d9e21
     type: secondary
 ---
 
@@ -47,13 +50,13 @@ above([], 0)        -> (0, [])
 
 给一个数组和一个阈值，统计有多少个元素严格大于阈值，并返回这些元素的下标。题目来自 DeepMind Android 岗位相关的题目目录。
 
-> 来源：一亩三分地题目详情页（2026-10-18 读取），题面是网站从面经整理的，没有逐条核对原帖；网站收录不等于公司官方确认。这条属于 Android 岗位，不能当成 DeepMind 研究岗的题。下面的接口、约束和测试是手册补的练习约定。
+> 来源：一亩三分地题目详情页（2026-10-18 读取），题面是网站从面经整理的；网站收录不等于公司官方确认。这条属于 Android 岗位，不能当成 DeepMind 研究岗的题。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
 我会直接遍历数组，把严格大于阈值的元素下标追加到列表，最后返回列表长度和列表本身。例如 `[4, 5]` 的阈值是 4 时，只收集下标 1，因为等于阈值的 4 不满足条件。
 
-这是一道基础题，重点是把边界问清楚：比较用「大于」还是「大于等于」，下标从 0 还是从 1 开始，空数组返回什么。这份练习的约定是严格大于、零基下标、空数组返回 `(0, [])`。
+这是一道基础题，重点是把 constraints 问清楚：比较用「大于」还是「大于等于」，下标从 0 还是从 1 开始，空数组返回什么。这份练习的约定是严格大于、零基下标、空数组返回 `(0, [])`。
 
 ## 完整编程练习（手册重构版）
 
@@ -148,7 +151,7 @@ def above(nums, threshold):
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -159,6 +162,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # suffix_counts：最大值重复、负数
 assert suffix_counts([3, 1, 3], [0, 1, 2]) == [2, 1, 1]
@@ -177,7 +181,12 @@ expect_value_error(topk, [1, 2], 3)
 assert dfs([("a", "b"), ("a", "c"), ("b", "c")], "a") == ["a", "b", "c"]
 assert dfs([("a", "c"), ("a", "b"), ("b", "d")], "a") == ["a", "b", "d", "c"]
 # 入栈时就标记的写法在这里会得到 a, b, d, c
-assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == ["a", "b", "c", "d"]
+assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == [
+    "a",
+    "b",
+    "c",
+    "d",
+]
 assert dfs([], "x") == ["x"]
 
 # above：严格大于；空数组

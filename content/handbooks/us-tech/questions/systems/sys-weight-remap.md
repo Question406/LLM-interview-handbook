@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-同步权重时要先对齐参数名字和切分布局，不能把训练 rank 原样拷到同号推理 rank。比如 FSDP 按第 0 维切参数，vLLM 的 TP 却按注意力头切 QKV，缓冲区大小即使对得上，内容也可能放错。
+同步权重时要先对齐参数名字和切分布局，不能把训练 rank 原样拷到同号推理 rank。比如 FSDP 按第 0 维切参数，vLLM 的 TP 却按 attention 头切 QKV，缓冲区大小即使对得上，内容也可能放错。
 
 这道题按 verl 的权重加载说明拟定。`load_format` 要匹配训练后端的 loader：Megatron 分片、FSDP DTensor 或 Hugging Face 整模。选错时，下一 token 可能生成错误，训练 loss 仍可能看似正常。
 
@@ -45,6 +45,7 @@ LoRA 时只传 adapter。全量权重每步都传，带宽会吃掉后训练的�
 ```python
 import torch
 
+
 def fsdp_to_tp_qkv(full_qkv, tp_rank, tp_size, n_heads, head_dim):
     # full_qkv: [3 * n_heads * head_dim, hidden], gathered from FSDP
     d = n_heads * head_dim
@@ -60,4 +61,4 @@ def fsdp_to_tp_qkv(full_qkv, tp_rank, tp_size, n_heads, head_dim):
 可以。Megatron 训练配匹配的推理 TP 就能这样做。FSDP 训练没有这套 TP，仍要重切；通常换切分比重写训练并行便宜。
 
 **更新到一半失败了？**
-这一步不能采样。进程可能持有半新半旧的权重，要丢掉这次同步，恢复上一版完整权重，或整组重载。
+这一步不能 sampling。进程可能持有半新半旧的权重，要丢掉这次同步，恢复上一版完整权重，或整组重载。

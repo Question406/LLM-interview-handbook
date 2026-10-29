@@ -4,24 +4,36 @@ section: microsoft
 order: 1
 level: S
 title: Microsoft：DeepSpeed ZeRO 1/2/3 切的是什么状态，通信体积怎么变
-quick: "ZeRO 在数据并行组内分片冗余状态：1 切优化器，2 再切梯度，3 再切参数。论文口径下 1/2 每步通信仍为 $2\\Psi$，3 为 $3\\Psi$，约多 $1.5\\times$。按显存缺口选阶段，再检查逐层 gather 延迟，激活和大 GEMM 仍需其他并行策略。"
+quick: >-
+  ZeRO 在数据并行组内分片冗余状态：1 切优化器，2 再切梯度，3 再切参数。论文定义下 1/2 每步通信仍为 $2\Psi$，3 为
+  $3\Psi$，约多 $1.5\times$。按显存缺口选阶段，再检查逐层 gather 延迟，激活和大 GEMM 仍需其他并行策略。
 tags:
   - Microsoft
   - DeepSpeed
   - ZeRO
   - Distributed Training
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: ZeRO — Memory Optimizations Toward Training Trillion Parameter Models
-    url: https://arxiv.org/abs/1910.02054
+    url: 'https://arxiv.org/abs/1910.02054'
     type: primary
   - title: DeepSpeed — Extreme-scale model training for everyone
-    url: https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone/
+    url: >-
+      https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone/
     type: primary
 ---
+
+## 可以这样回答
+
+ZeRO 按阶段切分数据并行中的冗余状态，用通信换取显存：ZeRO-1 分优化器，2 再分梯度，3 再分参数。例如 $70\mathrm{B}$ 模型的混合精度 Adam 状态约 $1.12\mathrm{TB}$，普通 DDP 每卡都保留完整副本，多加数据并行卡也不会降低这份单卡占用。
+
+公开依据是 Rajbhandari 等的 ZeRO 论文与 MSR DeepSpeed 博客。这里讨论分片数据并行，3D 并行组合另见 `nvidia-trillion-train`，选型不能只看 `zero_stage=3`。
+
+## 技术备查
 
 ZeRO 按阶段切分数据并行中的冗余状态，用通信换取显存：ZeRO-1 分优化器，2 再分梯度，3 再分参数。例如 $70\mathrm{B}$ 模型的混合精度 Adam 状态约 $1.12\mathrm{TB}$，普通 DDP 每卡都保留完整副本，多加数据并行卡也不会降低这份单卡占用。
 
@@ -42,7 +54,7 @@ ZeRO 按阶段切分数据并行中的冗余状态，用通信换取显存：ZeR
 
 基线梯度 all-reduce 包含 reduce-scatter 一份 $\Psi$ 和 all-gather 一份 $\Psi$，总 $2\Psi$。ZeRO-1/2 改为梯度 reduce-scatter、分片更新后 all-gather 参数，量级仍是 $2\Psi$，增加的是调度复杂度和小包延迟。
 
-ZeRO-3 每层前向 gather 参数，算完释放，反向再 gather，梯度再 reduce-scatter，总 $3\Psi$，相对基线 $1.5\times$，属于论文口径的通信上界。实际瓶颈往往是逐层延迟和气泡：小层、prefetch 没与计算重叠、CPU hook 太碎，会在 Nsight 里看到等待集合通信。DeepSpeed 用下一层 prefetch 与 bucket 隐藏这部分时间。
+ZeRO-3 每层前向 gather 参数，算完释放，反向再 gather，梯度再 reduce-scatter，总 $3\Psi$，相对基线 $1.5\times$，属于论文定义的通信上界。实际瓶颈往往是逐层延迟和气泡：小层、prefetch 没与计算重叠、CPU hook 太碎，会在 Nsight 里看到等待集合通信。DeepSpeed 用下一层 prefetch 与 bucket 隐藏这部分时间。
 
 ## 按缺口选阶段，并留意未解决的内存
 

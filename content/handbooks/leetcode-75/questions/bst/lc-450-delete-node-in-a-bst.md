@@ -4,7 +4,9 @@ section: bst
 order: 2
 level: S
 title: LC 450 · 删除二叉搜索树中的节点
-quick: "先按值走到目标节点。缺一个孩子就让另一个孩子顶上来；两个孩子都在，就拿右子树最小值（后继）覆盖当前值，再去右子树删掉那个后继。递归返回新子树根，时间 $O(h)$，额外空间 $O(h)$。"
+quick: >-
+  先按值走到目标节点。缺一个孩子就让另一个孩子顶上来；两个孩子都在，就拿右子树最小值（后继）覆盖当前值，再去右子树删掉那个后继。递归返回新子树根，时间
+  $O(h)$，额外空间 $O(h)$。
 tags:
   - Tree
   - BST
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 450. Delete Node in a BST
-    url: https://leetcode.com/problems/delete-node-in-a-bst/
+    url: 'https://leetcode.com/problems/delete-node-in-a-bst/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -140,12 +142,36 @@ def deleteNode(root: Optional[TreeNode], key: int) -> Optional[TreeNode]:
 
 
 if __name__ == "__main__":
-    assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 3)) == [5, 4, 6, 2, None, None, 7]
-    assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 0)) == [5, 3, 6, 2, 4, None, 7]
+    assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 3)) == [
+        5,
+        4,
+        6,
+        2,
+        None,
+        None,
+        7,
+    ]
+    assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 0)) == [
+        5,
+        3,
+        6,
+        2,
+        4,
+        None,
+        7,
+    ]
     assert to_level_list(deleteNode(build_tree([]), 0)) == []
     assert to_level_list(deleteNode(build_tree([5]), 5)) == []
-    assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 5)) == [6, 3, 7, 2, 4]
-    t = deleteNode(build_tree([50, 30, 70, 20, 40, 60, 80, None, None, 35, 45, 55, 65]), 30)
+    assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 5)) == [
+        6,
+        3,
+        7,
+        2,
+        4,
+    ]
+    t = deleteNode(
+        build_tree([50, 30, 70, 20, 40, 60, 80, None, None, 35, 45, 55, 65]), 30
+    )
     assert inorder(t) == [20, 35, 40, 45, 50, 55, 60, 65, 70, 80]
     print("ok")
 ```
@@ -157,8 +183,24 @@ if __name__ == "__main__":
 先用本题的节点类型和辅助函数构造输入。比较节点值时转成列表或遍历序列；如果题目要求返回某个原节点或复制结构，还要用 `is` 检查对象身份。每个用例重新建节点，避免上一次调用改动了下一次的输入。
 
 ```python
-assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 3)) == [5, 4, 6, 2, None, None, 7]
-assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 0)) == [5, 3, 6, 2, 4, None, 7]
+assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 3)) == [
+    5,
+    4,
+    6,
+    2,
+    None,
+    None,
+    7,
+]
+assert to_level_list(deleteNode(build_tree([5, 3, 6, 2, 4, None, 7]), 0)) == [
+    5,
+    3,
+    6,
+    2,
+    4,
+    None,
+    7,
+]
 assert to_level_list(deleteNode(build_tree([]), 0)) == []
 print("simple tests passed")
 ```
@@ -169,7 +211,7 @@ print("simple tests passed")
 
 时间 $O(h)$：定位走一条路径，找后继再删除又是一条往下的路径。额外空间 $O(h)$，是递归栈。
 
-## 边界
+## Edge Cases
 
 `key` 不存在时，一路走到 `None` 返回，树原样不动。
 

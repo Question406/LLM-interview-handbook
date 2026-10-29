@@ -4,7 +4,9 @@ section: dp-1d
 order: 5
 level: S
 title: LC 300 · 最长递增子序列
-quick: "先讲清 $O(n^2)$ DP：$dp[i]$ 是以 $i$ 结尾的 LIS 长度，枚举左侧更小的 $j$ 转移。要 $O(n\\log n)$ 就维护 `tails`，即各长度递增子序列的最小结尾，每个新数二分找第一个 $\\ge$ 它的位置替换，`tails` 的长度就是答案。"
+quick: >-
+  先讲清 $O(n^2)$ DP：$dp[i]$ 是以 $i$ 结尾的 LIS 长度，枚举左侧更小的 $j$ 转移。要 $O(n\log n)$ 就维护
+  `tails`，即各长度递增子序列的最小结尾，每个新数二分找第一个 $\ge$ 它的位置替换，`tails` 的长度就是答案。
 tags:
   - DP
   - Binary Search
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 300. 最长递增子序列
-    url: https://leetcode.cn/problems/longest-increasing-subsequence/
+    url: 'https://leetcode.cn/problems/longest-increasing-subsequence/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 `tails` 版时间 $O(n\log n)$、空间 $O(n)$；朴素 DP 时间 $O(n^2)$、空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 全递减时每个新数都替换 `tails[0]`，长度 $1$。全递增时每次都追加，长度 $n$。有重复时因为要严格递增，相等的数走「第一个 $\ge x$ 的位置替换」，不会让长度变长。
 

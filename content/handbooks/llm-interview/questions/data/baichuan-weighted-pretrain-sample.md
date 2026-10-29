@@ -4,7 +4,10 @@ section: data
 order: 145
 level: A
 title: 百川智能：不想训全量数据、只想按权重取样，在线怎么调？
-quick: "各数据源保留可随机访问的 shard，给每个源设采样概率，训练时按权重做多项式抽样或温度混合，配置能在线热更新，不用离线重切。日志记随机种子和各源实际消耗的 token，再看各源 loss 与下游探针，判断哪个领域因为抽得太少学不到。"
+quick: >-
+  各数据源保留可随机访问的 shard，给每个源设 sampling
+  概率，训练时按权重做多项式抽样或温度混合，配置能在线热更新，不用离线重切。日志记随机种子和各源实际消耗的 token，再看各源 loss
+  与下游探针，判断哪个领域因为抽得太少学不到。
 tags:
   - Baichuan
   - Data Mixture
@@ -12,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 百川智能大模型实习一面
-    url: https://www.nowcoder.com/feed/main/detail/290832d2cd3242c386e56f27f975bce3
+    url: 'https://www.nowcoder.com/feed/main/detail/290832d2cd3242c386e56f27f975bce3'
     type: candidate-first-hand
 ---
 
@@ -36,11 +39,11 @@ sources:
 
 记域 $i$ 的目标概率为 $p_i$（$\sum_i p_i=1$）。每步做多项式抽域，或者用温度 $p_i\propto q_i^{\,1/\tau}$ 把头部大域压一压。另一个等价的办法是给样本损失（loss）乘域权重，但梯度尺度会变，要和全局 lr 一起报。
 
-热更新 $p$ 之后，日志必须记**实际消耗 token 占比** $\hat p_i$，因为过滤、长度、packing 都会让 $\hat p\neq p$。$\hat p$ 跟不上目标的话，先修过滤器，别继续加大目标权重。种子、epoch 边界、去重状态（Bloom / 已见表）都要能复现，不然分不清效果来自「调了权重」还是「换了遍历顺序」。
+热更新 $p$ 之后，日志必须记**实际消耗 token 占比** $\hat p_i$，因为过滤、长度、packing 都会让 $\hat p\neq p$。$\hat p$ 跟不上目标的话，先修过滤器，别继续加大目标权重。种子、epoch boundaries、去重状态（Bloom / 已见表）都要能复现，不然分不清效果来自「调了权重」还是「换了遍历顺序」。
 
 ## 怎么验证调得对
 
-实验一次只改一个域的 $p$，看这个域的探针有没有涨、通用锚点有没有掉。域级 perplexity 和下游探针一起看，防止某个源被饿死，或者被污染：低质量数据源的 $p$ 很高，探针表现却在下降。
+实验一次只改一个域的 $p$，看这个域的探针有没有涨、general-capability regression data 有没有掉。域级 perplexity 和下游探针一起看，防止某个源被饿死，或者被污染：低质量数据源的 $p$ 很高，探针表现却在下降。
 
 要比较两种做法，就在同一个目标 $p$ 下对比预先按比例切文件和在线多项式抽样，报改一次 $p$ 的周转时间和 $\hat p$ 的跟踪误差。面试里重点讲在线这种：配置热更新，不用重切全库。
 

@@ -3,8 +3,10 @@ id: xai-grok-pretrain
 section: xai
 order: 11
 level: S
-title: xAI：Grok 预训练公开口径能讲什么，不要编数据配比
-quick: "Grok-1 的公开权重和架构可核对：314B、8 专家每 token 用 2 个，JAX / Rust 从零训练，是未做对话微调的基座。公开数据描述只到「大量文本」；Grok-3 的算力、后训练和评测说法单独引用，不能反推出预训练配比。"
+title: xAI：Grok 预训练公开说明能讲什么，不要编数据配比
+quick: >-
+  Grok-1 的公开权重和架构可核对：314B、8 专家每 token 用 2 个，JAX / Rust
+  从零训练，是未做对话微调的基座。公开数据描述只到「大量文本」；Grok-3 的算力、后训练和评测说法单独引用，不能反推出预训练配比。
 tags:
   - xAI
   - Grok
@@ -13,19 +15,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Open Release of Grok-1
-    url: https://x.ai/news/grok-os
+    url: 'https://x.ai/news/grok-os'
     type: primary
   - title: xai-org/grok-1
-    url: https://github.com/xai-org/grok-1
+    url: 'https://github.com/xai-org/grok-1'
     type: primary
   - title: Grok 3 Beta — The Age of Reasoning Agents
-    url: https://x.ai/blog/grok-3
+    url: 'https://x.ai/blog/grok-3'
     type: primary
   - title: xAI Series C (6 billion USD)
-    url: https://x.ai/blog/series-c
+    url: 'https://x.ai/blog/series-c'
     type: primary
 ---
 
@@ -36,8 +38,8 @@ sources:
 Grok-1 的开源博文与 GitHub 给出了这些可核对事实：
 
 - 规模。314B 总参、Mixture of 8 Experts、每个 token 用 2 个，约 25% 权重激活。
-- 层与注意力。64 层；Q 48 头、KV 8 头（GQA）；$d=6144$；RoPE；上下文 8192。
-- 词表。SentencePiece，131072。
+- 层与 attention。64 层；Q 48 头、KV 8 头（GQA）；$d=6144$；RoPE；上下文 8192。
+- vocabulary。SentencePiece，131072。
 - 栈。从零训，自定义栈在 JAX 和 Rust 上。预训练阶段 2023 年 10 月结束。
 - 官方写明 Grok-1 是预训练基座，没有为对话微调，因此它在 HumanEval 上的表现或输出不能直接代表 Grok 聊天产品。
 
@@ -48,7 +50,7 @@ Grok-1 的开源博文与 GitHub 给出了这些可核对事实：
 Grok-3 在 2025 年 2 月博文里的说法，应按对应版本单独读：
 
 - 算力。写在 Colossus 上训，号称约 10 倍于此前他们口中的 SOTA 训练计算。这是公司博文，不是你复现过的 FLOPs 账。集群就绪时间、Hopper 量级见 `xai-colossus`。不要把 10 倍换算成 token 数。
-- 推理后训练。Think 变体用大规模 强化学习（RL） 修思维链、回退、验算。这是预训练之后的轴。SimpleQA / AIME / GPQA 数字是博文表格，面试引用要带「官方自报、切片和提示未知」。
+- 推理后训练。Think 变体用大规模 RL 修 chain of thought、回退、验算。这是预训练之后的轴。SimpleQA / AIME / GPQA 数字是博文表格，面试引用要带「官方自报、切片和提示未知」。
 - 上下文。声称 1M window；LOFT 128k 作为长上下文 检索增强生成（RAG） 基准。实现（YaRN、分段、检索）没有公开，不要编位置编码配方。
 - Arena。早期版本代号 chocolate，博文写过 Chatbot Arena Elo 1402。这是在线偏好快照，不是预训练质量。怎么读 Elo 见 `xai-lmarena`。
 
@@ -64,7 +66,7 @@ Grok-3 的 AIME 分数不能证明预训练见过哪些竞赛题，X 实时搜�
 4. 优化：公开没写 batch、学习率、token 预算。可以说 Adam / μP / 稳定性是通用话题，不要报假超参。
 5. 验收：公开榜会脏，见 `xai-lmarena`；预训练更信持有时间切片的内部集，但那是他们的，不是你的。
 
-这样可以说明哪些训练判断能够迁移，同时保留数据与超参尚未公开的边界。
+这样可以说明哪些训练判断能够迁移，同时保留 data 与 hyperparameters 尚未公开的限制。
 
 ## 追问
 

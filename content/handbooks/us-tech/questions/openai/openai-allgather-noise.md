@@ -4,7 +4,9 @@ section: openai
 order: 2
 level: S
 title: OpenAI：noisy 链路上实现 all_gather，轮数 bound 怎么推？
-quick: "我会先写对 ring all_gather，再和面试官约定噪声模型、值域与允许误差。若允许误差 $\\varepsilon$，有界 float 可量化成约 $\\log_2(\\mathrm{range}/\\varepsilon)$ 位；练习再用重复码和 union bound 给出 BSC 下的保守轮数上界。"
+quick: >-
+  我会先写对 ring all_gather，再和面试官约定噪声模型、值域与允许误差。若允许误差 $\varepsilon$，有界 float 可量化成约
+  $\log_2(\mathrm{range}/\varepsilon)$ 位；练习再用重复码和 union bound 给出 BSC 下的保守轮数上界。
 tags:
   - 完整编程练习
   - OpenAI
@@ -14,13 +16,15 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: OpenAI Research Engineer Interview Experience (2025)
-    url: https://www.tryexponent.com/experiences/openai-machine-learning-engineer-interview-c7b6a2
+    url: >-
+      https://www.tryexponent.com/experiences/openai-machine-learning-engineer-interview-c7b6a2
     type: candidate-first-hand
   - title: OpenAI Research Engineer Interview Guide
-    url: https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
+    url: >-
+      https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
     type: secondary
 ---
 
@@ -54,7 +58,7 @@ values = [0.3], extent=1, eps=0.05, flip_p=0, delta=0.01（N = 1）
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题；原帖没有给出信道模型，这里选了二元对称信道（BSC）。Python 3 + NumPy，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定；原帖没有给出信道模型，这里选了二元对称信道（BSC）。Python 3 + NumPy，CPU 上验证。
 
 ### 题面、接口与约束
 
@@ -124,11 +128,15 @@ def noisy_ring_all_gather(values, extent, eps, flip_p, delta, rng):
 
     # union bound：全网 n(n-1)*bits 次 bit-hop，每次出错概率 <= exp(-R(1-2p)^2/2)
     total_bit_hops = max(1, n * (n - 1) * bits)
-    repetitions = math.ceil(2 * math.log(total_bit_hops / delta) / (1 - 2 * flip_p) ** 2)
+    repetitions = math.ceil(
+        2 * math.log(total_bit_hops / delta) / (1 - 2 * flip_p) ** 2
+    )
     if repetitions % 2 == 0:
         repetitions += 1  # 奇数次，多数表决不会平票
 
-    seen = [{rank: int(q)} for rank, q in enumerate(quantized)]  # rank -> {origin: 量化值}
+    seen = [
+        {rank: int(q)} for rank, q in enumerate(quantized)
+    ]  # rank -> {origin: 量化值}
     for step in range(n - 1):
         received = []
         for rank in range(n):
@@ -142,10 +150,12 @@ def noisy_ring_all_gather(values, extent, eps, flip_p, delta, rng):
         for rank, origin, number in received:  # 同步：本步收到的数据下一步才转发
             seen[rank][origin] = number
 
-    result = np.array([
-        [min(levels, max(0, row[origin])) * extent / levels for origin in range(n)]
-        for row in seen
-    ])
+    result = np.array(
+        [
+            [min(levels, max(0, row[origin])) * extent / levels for origin in range(n)]
+            for row in seen
+        ]
+    )
     stats = {"bits": bits, "repetitions": repetitions, "rounds": (n - 1) * repetitions}
     return result, stats
 ```
@@ -158,7 +168,7 @@ def noisy_ring_all_gather(values, extent, eps, flip_p, delta, rng):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

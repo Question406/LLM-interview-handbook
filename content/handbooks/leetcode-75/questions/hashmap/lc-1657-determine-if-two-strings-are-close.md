@@ -4,7 +4,9 @@ section: hashmap
 order: 3
 level: S
 title: LC 1657 · 确定两个字符串是否接近
-quick: "两串接近，当且仅当出现的字符集合相同、且频次排序后相同。操作 1 让顺序无关，操作 2 让频次能在已出现的字符之间任意重新分配。时间 $O(n)$，额外空间 $O(1)$（字符集 26）。"
+quick: >-
+  两串接近，当且仅当出现的字符集合相同、且频次排序后相同。操作 1 让顺序无关，操作 2 让频次能在已出现的字符之间任意重新分配。时间 $O(n)$，额外空间
+  $O(1)$（字符集 26）。
 tags:
   - String
   - Hash
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1657. Determine if Two Strings Are Close
-    url: https://leetcode.com/problems/determine-if-two-strings-are-close/
+    url: 'https://leetcode.com/problems/determine-if-two-strings-are-close/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -109,7 +111,7 @@ print("simple tests passed")
 
 时间 $O(n)$：计数是线性的，排序最多 $26$ 个频次，是常数。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 长度不同，直接 `false`。
 
@@ -127,6 +129,7 @@ print("simple tests passed")
 
 ```python
 from collections import Counter
+
 
 def closeStringsAnyLetter(word1, word2):
     return sorted(Counter(word1).values()) == sorted(Counter(word2).values())

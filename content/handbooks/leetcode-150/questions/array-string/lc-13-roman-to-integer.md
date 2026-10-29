@@ -4,7 +4,9 @@ section: array-string
 order: 17
 level: S
 title: LC 13 · 罗马数字转整数
-quick: "建一张符号表，从左往右扫：`s[i]` 的值 $\\lt$ `s[i+1]` 就减去当前值，否则加上。小符号写在大符号左边表示减，所以比较相邻值就够，不用特判六种组合。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  建一张符号表，从左往右扫：`s[i]` 的值 $\lt$ `s[i+1]`
+  就减去当前值，否则加上。小符号写在大符号左边表示减，所以比较相邻值就够，不用特判六种组合。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Hash
   - String
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 13. 罗马数字转整数
-    url: https://leetcode.cn/problems/roman-to-integer/
+    url: 'https://leetcode.cn/problems/roman-to-integer/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -96,7 +98,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。符号表大小固定。
 
-## 边界
+## Edge Cases
 
 单字符直接查表，比如 `V` $\to$ $5$。全是加法的情况比如 `VIII` $=8$，每位都比右边大或相等，一路加下去。连续减法对比如 `MCMXCIV`，相邻小减大加就行，不必每次跳过两个字符。
 
@@ -111,9 +113,19 @@ print("simple tests passed")
 ```python
 def intToRoman(num):
     table = [
-        (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
-        (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
-        (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I"),
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
     ]
     parts = []
     for val, sym in table:

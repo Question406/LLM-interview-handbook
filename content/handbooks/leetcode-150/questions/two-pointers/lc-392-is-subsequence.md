@@ -4,20 +4,22 @@ section: two-pointers
 order: 2
 level: A
 title: LC 392 · 判断子序列
-quick: "双指针贪心：从左往右扫 `t`，按顺序匹配 `s` 的每个字符，每个字符都用 `t` 里最早能匹配的位置。`s` 的指针走完就是子序列。时间 $O(|t|)$，额外空间 $O(1)$。"
+quick: >-
+  双指针贪心：从左往右扫 `t`，按顺序匹配 `s` 的每个字符，每个字符都用 `t` 里最早能匹配的位置。`s` 的指针走完就是子序列。时间
+  $O(|t|)$，额外空间 $O(1)$。
 tags:
   - Two Pointers
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 392. 判断子序列
-    url: https://leetcode.cn/problems/is-subsequence/
+    url: 'https://leetcode.cn/problems/is-subsequence/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -95,7 +97,7 @@ print("simple tests passed")
 
 时间 $O(|t|)$，额外空间 $O(1)$。`s` 的指针只前进、不回头。
 
-## 边界
+## Edge Cases
 
 `s` 为空时，空串是任何串的子序列，返回真。
 
@@ -114,6 +116,7 @@ def preprocess(t):
         nxt[i] = nxt[i + 1][:]
         nxt[i][ord(t[i]) - 97] = i
     return nxt
+
 
 def isSubsequence(s, nxt, n):
     pos = 0

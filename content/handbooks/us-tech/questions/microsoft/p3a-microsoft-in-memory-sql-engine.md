@@ -3,8 +3,10 @@ id: p3a-microsoft-in-memory-sql-engine
 section: microsoft
 order: 601
 level: A
-title: "Microsoft AI / Copilot：CSV 初始化的内存 SQL 引擎"
-quick: "我会先确认 CSV 的引号、转义和字段类型，再把查询拆成筛选、排序、投影。这里用 csv.reader 解析，所有值按字符串比较，所以 \"10\" 会排在 \"2\" 前；投影放最后，避免提前丢掉排序所需的列。"
+title: Microsoft AI / Copilot：CSV 初始化的内存 SQL 引擎
+quick: >-
+  我会先确认 CSV 的引号、转义和字段类型，再把查询拆成筛选、排序、投影。这里用 csv.reader 解析，所有值按字符串比较，所以 "10" 会排在
+  "2" 前；投影放最后，避免提前丢掉排序所需的列。
 companies:
   - microsoft
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Microsoft AI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · in-memory-sql-engine"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/in-memory-sql-engine
+  - title: 1Point3Acres · Microsoft AI / Copilot · in-memory-sql-engine
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/in-memory-sql-engine
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现一个面向 CSV 字符串的简化内存表查询器，不需要解析完整 SQL。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Table(csv_text)` 读取标准 CSV：首行为唯一列名，数据行列数一致，双引号允许字段内包含逗号及转义引号。所有单元格都是字符串，不做数字类型推断。`insert(row)` 接收恰含全部列名的字符串值字典并追加一行。
 
@@ -52,7 +58,7 @@ query(["name"],where=[("score",">","1")]) = [{"name":"a"},{"name":"b"}]
 
 用一段 CSV 文本初始化一张内存表，然后分阶段支持 SELECT、WHERE 和 ORDER BY。
 
-> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -151,7 +157,8 @@ class Table:
             self._check_column(column)
 
         matched = [
-            row for row in self.rows
+            row
+            for row in self.rows
             if all(OPERATORS[op](row[column], value) for column, op, value in where)
         ]
         # Python 排序是稳定的：从优先级最低的键开始排，最后一次排序的键优先级最高
@@ -168,7 +175,7 @@ class Table:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -180,10 +187,14 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
 
+
 # 字符串比较："10" < "2"，所以升序时 b 在前；排序列不在投影里也可以
 table = Table("name,score\na,2\nb,10\n")
 assert table.query(["name"], order=[("score", False)]) == [{"name": "b"}, {"name": "a"}]
-assert table.query(["name"], where=[("score", ">", "1")]) == [{"name": "a"}, {"name": "b"}]
+assert table.query(["name"], where=[("score", ">", "1")]) == [
+    {"name": "a"},
+    {"name": "b"},
+]
 
 # 带引号的字段里可以有逗号
 table = Table('name,note\na,"x,y"\n')

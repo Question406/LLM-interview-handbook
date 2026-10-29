@@ -4,7 +4,10 @@ section: dp-multi
 order: 2
 level: S
 title: LC 1143 · 最长公共子序列
-quick: "用二维 DP，$dp[i][j]$ 是 `text1` 前 $i$ 个与 `text2` 前 $j$ 个的 LCS 长度。末字符相等取 $dp[i-1][j-1]+1$，否则取 $\\max(dp[i-1][j],\\,dp[i][j-1])$。时间 $O(mn)$，额外空间可压到 $O(\\min(m,n))$。"
+quick: >-
+  用二维 DP，$dp[i][j]$ 是 `text1` 前 $i$ 个与 `text2` 前 $j$ 个的 LCS 长度。末字符相等取
+  $dp[i-1][j-1]+1$，否则取 $\max(dp[i-1][j],\,dp[i][j-1])$。时间 $O(mn)$，额外空间可压到
+  $O(\min(m,n))$。
 tags:
   - DP
   - String
@@ -12,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1143. Longest Common Subsequence
-    url: https://leetcode.com/problems/longest-common-subsequence/
+    url: 'https://leetcode.com/problems/longest-common-subsequence/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -104,7 +107,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(mn)$；滚动一行后是 $O(\min(m,n))$。
 
-## 边界
+## Edge Cases
 
 没有公共字符时，整张表都是 $0$。
 

@@ -4,7 +4,9 @@ section: anthropic
 order: 25
 level: S
 title: Anthropic：ASL / RSP 面试能公开讲到哪，不要编内部阈值
-quick: "我会按版本解释公开 RSP：能力阈值触发更严的部署和安保措施，也可以预防性地先启用保护。新版 ASL 更接近措施包，ASL-4 及以上仍写得较粗；具体门槛和内部数字没有公开依据时，就明确说不知道。"
+quick: >-
+  我会按版本解释公开 RSP：能力阈值触发更严的部署和安保措施，也可以预防性地先启用保护。新版 ASL 更接近措施包，ASL-4 及以上仍写得较粗；具体
+  threshold 和内部数字没有公开依据时，就明确说不知道。
 tags:
   - Anthropic
   - ASL
@@ -13,20 +15,20 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Announcing Anthropic's Responsible Scaling Policy
-    url: https://www.anthropic.com/news/anthropics-responsible-scaling-policy
+    url: 'https://www.anthropic.com/news/anthropics-responsible-scaling-policy'
     type: primary
   - title: Responsible Scaling Policy Version 3.0
-    url: https://www.anthropic.com/news/responsible-scaling-policy-v3
+    url: 'https://www.anthropic.com/news/responsible-scaling-policy-v3'
     type: primary
   - title: Activating ASL-3 protections
-    url: https://www.anthropic.com/news/activating-asl3-protections
+    url: 'https://www.anthropic.com/news/activating-asl3-protections'
     type: primary
 ---
 
-我会按版本讲公开 RSP，把能力判断和保护措施分开，内部未公开的数字就明确说不知道。2023 年第一版借用生物安全分级：能力越高，部署和安保越严。2025 年 5 月公开激活 ASL-3 措施（配合 Opus 4），并写明是预防性的，当时还没断定一定跨过能力阈值。2026 年 RSP 3.x 把「ASL」更多说成措施簇，能力阈值和 Required Safeguards 分开写。回答的依据应是相应版本的公开文档。
+我会按版本讲公开 RSP，把能力判断和保护措施分开，内部未公开的数字就明确说不知道。2023 年第一版借用生物安全分级：能力越高，部署和安保越严。2025 年 5 月公开激活 ASL-3 措施（配合 Opus 4），并写明是预防性的，当时还没断定一定跨过能力阈值。2026 年 RSP 3.x 把「ASL」更多说成 safeguard groups，能力阈值和 Required Safeguards 分开写。回答的依据应是相应版本的公开文档。
 
 ## 公开框架里有什么
 
@@ -47,7 +49,7 @@ If-then 结构：能力评估（或「还没能排除」）→ 上更严措施�
 - CBRN 的可操作细节、如何做能力 uplift 实验。面试只谈到「这类误用是公开威胁模型」为止。
 - 声称你知道当前所有生产模型的 ASL 标签。3.x 后这句话可能范畴都不对。
 
-被问到「你们内部阈值是多少」：答「我只根据公开 RSP 和 system card 讲；具体评估协议和数字不在公开材料里，我不会猜。」如果被要求猜数字门槛，也说明公开材料不足以支持这个数字。细节指向当时的 RSP PDF / system card / Risk Report。
+被问到「你们内部阈值是多少」：答「我只根据公开 RSP 和 system card 讲；具体评估协议和数字不在公开材料里，我不会猜。」如果被要求猜数字 threshold，也说明公开材料不足以支持这个数字。细节指向当时的 RSP PDF / system card / Risk Report。
 
 和产品设计联系时，先区分范围：constitution、HH 和拒答政策处理日常有害内容，RSP 规定灾难性风险随能力扩大时的组织承诺。不要把 over-refusal 评测和 ASL-3 部署标准混成一个开关。Computer use、MCP 权限是产品层 TCB，见 `anthropic-computer-use`、`anthropic-mcp`，替代不了权重安保。政策文本会改版：答「以当时公开 RSP 为准」，不要把 2023 定义背成 2026 仍有效的教条。
 

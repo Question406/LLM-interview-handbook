@@ -4,7 +4,10 @@ section: systems
 order: 3
 level: S
 title: Adam 训练一个 7B 模型为什么远不止 14GB？
-quick: "7B 的 BF16 权重约 14GB，但 Adam 训练还要梯度、FP32 master weights 和 m/v。经典 mixed-precision Adam 的参数状态合计约 16 bytes/param，$7\\mathrm{B}$ 约 $112\\,\\mathrm{GB}$，还没算 activation 和临时 buffer。ZeRO/FSDP 可以分片参数状态，长序列的 activation 还要靠重算或并行切分。"
+quick: >-
+  7B 的 BF16 权重约 14GB，但 Adam 训练还要梯度、FP32 master weights 和 m/v。经典 mixed-precision
+  Adam 的参数状态合计约 16 bytes/param，$7\mathrm{B}$ 约 $112\,\mathrm{GB}$，还没算 activation
+  和临时 buffer。ZeRO/FSDP 可以分片参数状态，长序列的 activation 还要靠重算或并行切分。
 tags:
   - Memory
   - Optimizer
@@ -12,10 +15,10 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 'ZeRO: Memory Optimizations Toward Training Trillion Parameter Models'
-    url: https://arxiv.org/abs/1910.02054
+    url: 'https://arxiv.org/abs/1910.02054'
     type: primary
 ---
 
@@ -47,7 +50,7 @@ $$
 
 Activation 与 `batch`、序列长 $T$、`hidden`、层数、是否重算成正比，**不是** $16$ bytes/param 的一部分。Attention 中间量大致随 $B\cdot T\cdot d$ 或 $B\cdot H\cdot T^2$ 涨；长上下文时它会反超参数状态。
 
-Activation checkpointing（gradient checkpointing）用重算换显存：只留若干层边界，反向时重做前向。序列并行 / 上下文并行再把 $T$ 切开。面试若只答「用 ZeRO」却不提 activation，长序列一上来仍会 OOM。
+Activation checkpointing（gradient checkpointing）用重算换显存：只留若干 layer boundaries，反向时重做前向。序列并行 / 上下文并行再把 $T$ 切开。面试若只答「用 ZeRO」却不提 activation，长序列一上来仍会 OOM。
 
 临时通信 buffer、softmax 工作区、MoE dispatch 缓冲也要另计，峰值往往高于「稳态占用」。
 

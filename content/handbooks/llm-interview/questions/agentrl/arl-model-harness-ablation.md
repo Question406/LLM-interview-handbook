@@ -4,7 +4,10 @@ section: agentrl
 order: 11
 level: S
 title: 怎么判断提升来自 Model，还是 Harness / Tool / Budget？
-quick: "做受控消融：固定模型、工具、token 预算、环境和运行框架，每次只改一个变量；再做模型 × Harness 的 2×2 交叉，把模型本身的效果和两者配合产生的变化分开。B 配高预算 Harness 与 A 配低预算 Harness 的差值，不能直接记成模型增益，结果还要同时报成本和延迟。"
+quick: >-
+  做受控 ablation：固定模型、工具、token 预算、环境和运行框架，每次只改一个变量；再做模型 × Harness 的 2×2
+  交叉，把模型本身的效果和两者配合产生的变化分开。B 配高预算 Harness 与 A 配低预算 Harness
+  的差值，不能直接记成模型增益，结果还要同时报成本和延迟。
 tags:
   - Eval Design
   - Harness
@@ -12,14 +15,14 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: SWE-bench
     url: 'https://arxiv.org/abs/2310.06770'
     type: primary
 ---
 
-做受控消融：固定模型、工具、token 预算、环境和运行框架，每次只改一个变量；再做模型 × harness 的交叉矩阵，把模型本身的效果和两者配合产生的效果分开。最常见的错，是拿 B 配贵 harness 去比 A 配穷 harness，再把差值全记到模型头上。
+做受控 ablation：固定模型、工具、token 预算、环境和运行框架，每次只改一个变量；再做模型 × harness 的交叉矩阵，把模型本身的效果和两者配合产生的效果分开。最常见的错，是拿 B 配贵 harness 去比 A 配穷 harness，再把差值全记到模型头上。
 
 比如发版纪要里写「换模型 +8 分」，可同一个版本还换了更强的搜索、加了 retry、拉长了 context、多开了子 Agent。这些都是 test-time compute 和脚手架，涨的分不能写成「模型变强」。所以要声称是模型增益，就得冻结工具集和预算；工具和步数变了，就拆成两行写。
 
@@ -31,17 +34,17 @@ Skill 和 router 也属于 harness，见 `agent-skill-eval`、`agent-tool-routin
 
 ## 先写清楚评的是模型还是系统
 
-评模型本身（intrinsic model），就用标准化 harness，固定工具、固定步数和超时、固定提示骨架，只换权重。评产品系统可以全栈优化，但结论要写成 system improves，别写 model improves。SWE-bench 一类榜已经说明，分数是系统的属性，提交各带私有脚手架时，横向比的是产品，比不出权重。
+评模型本身（intrinsic model），就用 standardization harness，固定工具、固定步数和超时、固定提示骨架，只换权重。评产品系统可以全栈优化，但结论要写成 system improves，别写 model improves。SWE-bench 一类榜已经说明，分数是系统的属性，提交各带私有脚手架时，横向比的是产品，比不出权重。
 
-最小报告模板包括模型版本、工具列表哈希、步数 / token 上限、retry 策略、是否加载 Skill，缺一项就不能说消融是干净的。
+最小报告模板包括模型版本、工具列表哈希、步数 / token 上限、retry 策略、是否加载 Skill，缺一项就不能说 ablation 是干净的。
 
 ## 追问
 
 **Leaderboard 为什么常常答不了模型能力？**
-提交之间的 scaffold、tool budget、retry、输入提示（prompt）、并行都不一样，分数是 system property。要先对齐 harness 再比权重，不然比的是产品。
+提交之间的 scaffold、tool budget、retry、prompt、并行都不一样，分数是 system property。要先对齐 harness 再比权重，不然比的是产品。
 
 **Harness 本身也要训练怎么办？**
-做联合消融，或者冻住一侧，同时报训练数据和 compute，再测 cross-model / cross-harness 迁移。只在自家脚手架上好的模型，泛化的说法要收着说。
+做联合 ablation，或者冻住一侧，同时报训练数据和 compute，再测 cross-model / cross-harness 迁移。只在自家脚手架上好的模型，泛化的说法要收着说。
 
 **评 Skill 时怎么控制变量？**
 Skill 是 harness 的一块。评 Skill 冻模型和预算，评模型冻 Skill，见 `agent-skill-eval`。两边同时改，就别写「模型 +8」。

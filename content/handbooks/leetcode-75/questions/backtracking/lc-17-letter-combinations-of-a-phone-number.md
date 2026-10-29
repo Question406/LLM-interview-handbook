@@ -5,20 +5,21 @@ order: 1
 level: A
 title: LC 17 · 电话号码的字母组合
 quick: >-
-  数字到字母写死一张映射表，然后回溯：第 $i$ 位枚举该键的每个字母，拼到和 `digits` 一样长就收一条，空串返回空列表。时间 $O(4^n\cdot n)$，额外空间 $O(n)$（不计输出）。
+  数字到字母写死一张映射表，然后回溯：第 $i$ 位枚举该键的每个字母，拼到和 `digits` 一样长就收一条，空串返回空列表。时间 $O(4^n\cdot
+  n)$，额外空间 $O(n)$（不计输出）。
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 17. Letter Combinations of a Phone Number
-    url: https://leetcode.com/problems/letter-combinations-of-a-phone-number/
+    url: 'https://leetcode.com/problems/letter-combinations-of-a-phone-number/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -111,8 +112,8 @@ if __name__ == "__main__":
 
 ```python
 assert sorted(letterCombinations("23")) == sorted(
-        ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
-    )
+    ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"]
+)
 assert letterCombinations("") == []
 assert sorted(letterCombinations("2")) == ["a", "b", "c"]
 print("simple tests passed")
@@ -124,7 +125,7 @@ print("simple tests passed")
 
 设长度为 $n$，每位最多 $4$ 叉。时间 $O(4^n\cdot n)$，其中 $n$ 来自每条答案的拼接；额外空间 $O(n)$，是递归栈和路径，输出另计。
 
-## 边界
+## Edge Cases
 
 - 空串必须特判返回 `[]`，不判会收一条 `""`。
 - 单个数字时，答案就是该键的 $3$ 或 $4$ 个字母。

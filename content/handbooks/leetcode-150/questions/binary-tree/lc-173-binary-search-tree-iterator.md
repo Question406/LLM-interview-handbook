@@ -4,7 +4,9 @@ section: binary-tree
 order: 12
 level: A
 title: LC 173 · 二叉搜索树迭代器
-quick: "实现 `BSTIterator` 时用栈做一个可以暂停的中序遍历：初始化把根的左链压栈，`next` 弹出栈顶，再把它右孩子的左链压进去。每个节点只进出栈一次，`next` / `hasNext` 均摊 $O(1)$，空间 $O(h)$。"
+quick: >-
+  实现 `BSTIterator` 时用栈做一个可以暂停的中序遍历：初始化把根的左链压栈，`next`
+  弹出栈顶，再把它右孩子的左链压进去。每个节点只进出栈一次，`next` / `hasNext` 均摊 $O(1)$，空间 $O(h)$。
 tags:
   - Tree
   - Stack
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 173. 二叉搜索树迭代器
-    url: https://leetcode.cn/problems/binary-search-tree-iterator/
+    url: 'https://leetcode.cn/problems/binary-search-tree-iterator/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -129,7 +131,7 @@ print("simple tests passed")
 
 `next` / `hasNext` 均摊 $O(1)$，单次 `next` 最坏 $O(h)$。空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 空树时 `hasNext` 为假，这时不要调 `next`。只有左链的树，构造时栈先涨到 $h$，之后每次 `next` 几乎都是 $O(1)$。只有右链的树，栈里几乎总是只有 $1$ 个节点。
 

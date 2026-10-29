@@ -4,20 +4,22 @@ section: two-pointers
 order: 5
 level: S
 title: LC 15 · 三数之和
-quick: "先排序，固定 `i`，在右边区间用对撞双指针找和为 $0-nums[i]$ 的两个数。`i`、`l`、`r` 都要跳过重复值，三元组才唯一。时间 $O(n^2)$，额外空间 $O(1)$。"
+quick: >-
+  先排序，固定 `i`，在右边区间用对撞双指针找和为 $0-nums[i]$ 的两个数。`i`、`l`、`r` 都要跳过重复值，三元组才唯一。时间
+  $O(n^2)$，额外空间 $O(1)$。
 tags:
   - Two Pointers
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 15. 三数之和
-    url: https://leetcode.cn/problems/3sum/
+    url: 'https://leetcode.cn/problems/3sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -116,7 +118,7 @@ print("simple tests passed")
 
 时间 $O(n^2)$，排序的 $O(n\log n)$ 被盖住。额外空间 $O(1)$（不计答案与排序开销）。
 
-## 边界
+## Edge Cases
 
 不足三个数时答案为空。
 

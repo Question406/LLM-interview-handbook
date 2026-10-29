@@ -4,7 +4,10 @@ section: binary-tree
 order: 11
 level: S
 title: LC 124 · 二叉树中的最大路径和
-quick: "后序 DFS，每个节点向父节点返回单边贡献 $\\max(0,\\text{左},\\text{右})+\\text{根}$，因为往上接的路径不能分叉；同时用「左贡献 $+$ 右贡献 $+$ 根」更新全局答案，完整路径可以在当前节点连接两侧。负贡献当 $0$ 不选。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  后序 DFS，每个节点向父节点返回单边贡献
+  $\max(0,\text{左},\text{右})+\text{根}$，因为往上接的路径不能分叉；同时用「左贡献 $+$ 右贡献 $+$
+  根」更新全局答案，完整路径可以在当前节点连接两侧。负贡献当 $0$ 不选。时间 $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 124. 二叉树中的最大路径和
-    url: https://leetcode.cn/problems/binary-tree-maximum-path-sum/
+    url: 'https://leetcode.cn/problems/binary-tree-maximum-path-sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -123,7 +126,7 @@ print("simple tests passed")
 
 后序遍历每个节点常数次，时间 $O(n)$，额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 单节点（包括负数）时答案就是这个值。全是负数时，负的边都被丢掉，全局取的仍是最大的那个节点，不会拼出更负的路径。最优路径不过根时，它已经在某棵子树内部以「左贡献 $+$ 右贡献 $+$ 子根」的形式写进全局了。
 

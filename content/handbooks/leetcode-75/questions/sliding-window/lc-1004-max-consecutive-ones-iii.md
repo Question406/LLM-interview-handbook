@@ -5,7 +5,8 @@ order: 3
 level: S
 title: LC 1004 · 最大连续1的个数 III
 quick: >-
-  换个问法，找最长的子数组，里面 $0$ 的个数不超过 $k$。用可变滑窗，右端扩张，$0$ 超了就收左端，答案是出现过的最大窗口长度。时间 $O(n)$，额外空间 $O(1)$。
+  换个问法，找最长的子数组，里面 $0$ 的个数不超过 $k$。用可变滑窗，右端扩张，$0$ 超了就收左端，答案是出现过的最大窗口长度。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Sliding Window
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1004. Max Consecutive Ones III
-    url: https://leetcode.com/problems/max-consecutive-ones-iii/
+    url: 'https://leetcode.com/problems/max-consecutive-ones-iii/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -79,7 +80,9 @@ def longestOnes(nums: List[int], k: int) -> int:
 
 if __name__ == "__main__":
     assert longestOnes([1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0], 2) == 6
-    assert longestOnes([0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1], 3) == 10
+    assert (
+        longestOnes([0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1], 3) == 10
+    )
     assert longestOnes([0, 0], 0) == 0
     assert longestOnes([1, 1], 0) == 2
     assert longestOnes([0, 0, 0], 5) == 3
@@ -105,7 +108,7 @@ print("simple tests passed")
 
 时间 $O(n)$，左右指针各走一遍；额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $k = 0$ 时退化成原数组最长连续 $1$。
 

@@ -4,30 +4,52 @@ section: systems
 order: 7
 level: A
 title: 系统：prefix / prompt cache，多用户系统提示共享
-quick: "Prefix cache 复用的是已经计算好的 KV 页，只有 token ID、模型权重、LoRA 与位置语义等条件一致才能命中。共享系统提示可以减少重复 prefill，但缓存占用同一块 HBM，要同时看命中收益、租户隔离和对在途请求的影响。"
+quick: 假设很多请求都有相同的 system prompt。如果这段内容的计算条件也相同，就可以复用已经算好的 prefix KV，减少重复 prefill。
 tags:
   - vLLM
   - Serving
   - KV Cache
   - NVIDIA
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
-    url: https://arxiv.org/abs/2309.06180
+  - title: >-
+      Efficient Memory Management for Large Language Model Serving with
+      PagedAttention
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
   - title: Automatic Prefix Caching — vLLM
-    url: https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html
+    url: 'https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html'
     type: secondary
   - title: SGLang — Fast Serving Framework with RadixAttention
-    url: https://lmsys.org/blog/2024-01-17-sglang/
+    url: 'https://lmsys.org/blog/2024-01-17-sglang/'
     type: secondary
   - title: PagedAttention — Hugging Face TGI
-    url: https://huggingface.co/docs/text-generation-inference/main/conceptual/paged_attention
+    url: >-
+      https://huggingface.co/docs/text-generation-inference/main/conceptual/paged_attention
     type: secondary
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设很多请求都有相同的 system prompt。
+>
+> **做法与原因：** 复用前要确认的不只是原文字符串。
+>
+> **检查与取舍：** 我会同时看省下的 prefill 工作与缓存占用。
+
+## 可以这样回答
+
+假设很多请求都有相同的 system prompt。如果这段内容的计算条件也相同，就可以复用已经算好的 prefix KV，减少重复 prefill。
+
+复用前要确认的不只是原文字符串。Token IDs、有效模型权重、adapter、位置和 mask 的语义都要一致。用户私有数据还要按授权范围隔离，不能为了提高 hit rate 跨用户共享。
+
+我会同时看省下的 prefill 工作与缓存占用。缓存也使用显存，可能挤掉正在生成的请求；因此 hit rate 提高但整体 latency 变差，是完全可能发生的。
+
+## 技术备查
 
 Prefix cache 可以把同一段公共前缀的 KV 算一次、给多个请求复用，减少重复 prefill。关键是确认两次计算会得到相同 KV；字符串相同只是表面条件。
 
@@ -35,7 +57,7 @@ Prefix cache 可以把同一段公共前缀的 KV 算一次、给多个请求复
 
 ## 什么情况下能复用
 
-Cache key 至少包含 token ID 序列、模型版本、LoRA / adapter、注意力配置，包括 sliding window 和位置编码。Tokenizer 或 chat template 不同，即使原文看起来一样，也应 miss。System prompt 改了一个空格，就要从第一个不同 token 处分叉；RoPE 起点与计算时的绝对位置也必须对上，不能把同一段 KV 随意接到不同位置。LoRA 改变有效权重，通常也不能复用 base 模型的前缀。错命中会让输出悄悄出错，比 miss 更难排查。
+Cache key 至少包含 token ID 序列、模型版本、LoRA / adapter、attention 配置，包括 sliding window 和位置编码。Tokenizer 或 chat template 不同，即使原文看起来一样，也应 miss。System prompt 改了一个空格，就要从第一个不同 token 处分叉；RoPE 起点与计算时的绝对位置也必须对上，不能把同一段 KV 随意接到不同位置。LoRA 改变有效权重，通常也不能复用 base 模型的前缀。错命中会让输出悄悄出错，比 miss 更难排查。
 
 索引常见两种：vLLM 用块哈希，查公共前缀后从分叉块开始 prefill；SGLang 用基数树，把共享的 token 路径指向物理页，更自然地表达多轮或工具模板的部分共享。Agent 中稳定的公共段往往只有模板头，工具 schema 一改就分叉，要把稳定与易变部分分开缓存。
 
@@ -43,7 +65,7 @@ PagedAttention 可让多条 block table 指向同一物理块，用引用计数�
 
 ## 共享后还要看什么
 
-多租户要把 tenant / 安全边界加入 key。公共系统提示可以共享，用户文档默认不跨租户命中，隔离越严格，命中机会就越少。Key 漏掉 LoRA 或 template 版本会造成错命中，不能只检查 token。
+多租户要把 tenant / security constraints 加入 key。公共系统提示可以共享，用户文档默认不跨租户命中，隔离越严格，命中机会就越少。Key 漏掉 LoRA 或 template 版本会造成错命中，不能只检查 token。
 
 页与 decode 共用 HBM，一条超长热门前缀可能挤掉在途请求的 KV。于是 hit rate 很高，P99 TPOT 却变差。淘汰采用 LRU / size-aware，并限制单前缀占比。跨机 replica 没有相同页面时，需要请求 affinity，或者接受 miss 重算。PD 分离时，prefill 池命中后 decode 池仍要取得 KV，见 `sys-prefill-decode-disagg`。
 
@@ -64,7 +86,7 @@ Key 的语义应一致，区别是 HBM 与存储介质。磁盘多一次访问�
 通常不能。Adapter 改变有效权重，K/V 也变，必须区分 key。
 
 **多租户一定拆 cache 吗？**
-安全边界必须进入 key。可共享公共 system prompt，但用户文档默认不跨租户命中。
+security constraints 必须进入 key。可共享公共 system prompt，但用户文档默认不跨租户命中。
 
 ## 相关题
 

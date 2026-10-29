@@ -5,7 +5,8 @@ order: 1
 level: S
 title: Stripe：按国家、商品、数量算运费，三关递进
 quick: >-
-  三关共用一个函数：一关是单价乘数量，二关看数量落在哪个区间，用那个区间的单价乘整单数量，三关同一个区间可以改成一口价。2025 年 10 月实习生电面的算式是 5 台 laptop 全按 900，没有拆成两档相加。
+  三关共用一个函数：一关是单价乘数量，二关看数量落在哪个区间，用那个区间的单价乘整单数量，三关同一个区间可以改成一口价。2025 年 10
+  月实习生电面的算式是 5 台 laptop 全按 900，没有拆成两档相加。
 tags:
   - Stripe
   - Coding
@@ -13,34 +14,35 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
   - title: Stripe SDE Intern 面经，Technical Screen，2025-10-20
-    url: https://learncswithus.com/2025/10/20/stripe-intern-screen/
+    url: 'https://learncswithus.com/2025/10/20/stripe-intern-screen/'
     type: candidate-first-hand
   - title: 一亩三分地 Stripe 标签页（shipping cost 被多次点名）
-    url: https://www.1point3acres.com/bbs/tag/stripe-2126-7.html
+    url: 'https://www.1point3acres.com/bbs/tag/stripe-2126-7.html'
     type: secondary
   - title: Compute shipping cost with tiered pricing
-    url: https://prachub.com/coding-questions/compute-shipping-cost-with-tiered-pricing-2
+    url: >-
+      https://prachub.com/coding-questions/compute-shipping-cost-with-tiered-pricing-2
     type: secondary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 按订单行的商品数量选择一个运费档位，计算该行运费。三阶段可复用同一接口：固定单价、按数量档位选择整行单价、档位支持固定总价。
 
 ### 输入与接口
 
-实现 `line_cost`(qty,tiers)。qty为非负整数；tiers为有序规则列表，每项含min（非负整数闭下界）、max（整数闭上界或None表示无上界）、type（incremental或fixed）、cost（非负整数美分）。合法配置保证qty恰好命中一档，不要求测试缺失或冲突的配置。
+实现 `line_cost`(qty,tiers)。qty 为非负整数；tiers 为有序规则列表，每项含 min（非负整数闭下界）、max（整数闭上界或 None 表示无上界）、type（incremental 或 fixed）、cost（非负整数美分）。合法配置保证 qty 恰好命中一档，不要求测试缺失或冲突的配置。
 
 ### 输出与约束
 
-返回该订单行的整数美分运费。选择满足min≤qty且max为空或qty≤max的档位；incremental返回qty×cost，fixed直接返回cost。不能把数量拆到多个档位逐段累加。
+返回该订单行的整数美分运费。选择满足 min≤qty 且 max 为空或 qty≤max 的档位；incremental 返回 qty×cost，fixed 直接返回 cost。不能把数量拆到多个档位逐段累加。
 
-国家和商品的规则查找可由调用者用(country,product)键完成，line_cost只计算已经查到的规则。整单运费是各订单行费用之和。第一阶段可表示为一条min=0、max=None、type=incremental的规则；输入顺序不影响合法配置的唯一匹配结果。
+国家和商品的规则查找可由调用者用(country,product)键完成，line_cost 只计算已经查到的规则。整单运费是各订单行费用之和。第一阶段可表示为一条 min=0、max=None、type=incremental 的规则；输入顺序不影响合法配置的唯一匹配结果。
 
 ### 示例
 
@@ -80,7 +82,7 @@ def line_cost(qty, tiers):
 
 一关可以看成每条规则都是 `min=0, max=None, type=incremental`，这样三关共用一个函数，只换表。
 
-边界帖子没写死。0 到 2 和 3+ 在数量 2、3 上是闭区间还是半开，要和面试官确认，样例没卡在边界上。缺国家或商品我会直接抛错，运费算少了就是少收钱。
+帖子没有明确 edge-case conventions。0 到 2 和 3+ 在数量 2、3 上是闭区间还是半开，要和面试官确认，样例没有覆盖 threshold endpoints。缺国家或商品我会直接抛错，运费算少了就是少收钱。
 
 还有一套流传的读法要知道。Prachub、DarkInterview 把二关写成按件跨档累加：前 2 台 1000，后面每台 900，5 台是 `2*1000 + 3*900`。三关的 fixed 也有人写成「走进这一档就加一次固定费」。这和上面的 15700 对不上。现场要是面试官说 each unit is priced by the tier it falls into，再改成跨档累加，别背完一套就不听题。
 
@@ -88,11 +90,13 @@ def line_cost(qty, tiers):
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-两档规则用数量 2 和 3 检查边界，数量 5 必须整行按 900 计为 4500。fixed 档收费与数量无关；缺少匹配区间应抛错。
+两档规则用数量 2 和 3 检查 threshold transitions，数量 5 必须整行按 900 计为 4500。fixed 档收费与数量无关；缺少匹配区间应抛错。
 
 ```python
-tiers = [{"min": 0, "max": 2, "type": "incremental", "cost": 1000},
-         {"min": 3, "max": None, "type": "incremental", "cost": 900}]
+tiers = [
+    {"min": 0, "max": 2, "type": "incremental", "cost": 1000},
+    {"min": 3, "max": None, "type": "incremental", "cost": 900},
+]
 assert line_cost(2, tiers) == 2000
 assert line_cost(3, tiers) == 2700
 assert line_cost(5, tiers) == 4500
@@ -112,7 +116,7 @@ print("simple tests passed")
 不用。样例全是整数，我会用 int，单位是分。float 的精度误差可能让金额在分位上出现偏差。
 
 **区间重叠或有洞怎么处理？**
-建表时就拒绝。电面帖说不强制处理所有边界情况，我会在建表时按 `min` 排序，有重叠或有洞就拒绝这张配置，不在算钱时悄悄跳过。
+建表时就拒绝。电面帖说不强制处理所有 edge cases，我会在建表时按 `min` 排序，有重叠或有洞就拒绝这张配置，不在算钱时悄悄跳过。
 
 **为什么二关最容易写错？**
 人会把「匹配一档」写成「从 0 扫到 qty，每档加一段」。拿样例 15700 一对，马上就能看出写反了。

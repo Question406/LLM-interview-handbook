@@ -4,7 +4,9 @@ section: binary-tree
 order: 14
 level: S
 title: LC 236 · 二叉树的最近公共祖先
-quick: "这是普通二叉树，要两边都搜：递归碰到 `p`、`q` 或空就返回；左右都有结果，说明两个目标分居两侧，当前节点就是 LCA；只有一侧有结果，答案就在那一侧。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  这是普通二叉树，要两边都搜：递归碰到 `p`、`q` 或空就返回；左右都有结果，说明两个目标分居两侧，当前节点就是
+  LCA；只有一侧有结果，答案就在那一侧。时间 $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 236. 二叉树的最近公共祖先
-    url: https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/
+    url: 'https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -128,7 +130,7 @@ print("simple tests passed")
 
 最坏要扫完整棵树，时间 $O(n)$，额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 `p` 是 `q` 的祖先时，碰到 `p` 就返回，不用再往下找 `q`。`p`、`q` 是根的左右孩子时，根就是 LCA。链状树上，LCA 是更靠上的那一个。
 

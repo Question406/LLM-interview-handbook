@@ -4,7 +4,9 @@ section: posttrain
 order: 237
 level: A
 title: Qwen3 一类 hybrid thinking（think / no-think）怎么训、怎么切，和固定长 CoT 差在哪？
-quick: "同一套权重、两套模板：`/think` 先写分步推理再答，`/no_think` 直接给答案。训练时先用长分步推理（CoT）示范冷启动，再做推理强化学习，融合阶段把 think 的终答蒸馏进 no-think。它是模式开关，和推理时的预算控制器、训练里的长度惩罚是三件事。"
+quick: >-
+  同一套权重、两套模板：`/think` 先写分步推理再答，`/no_think` 直接给答案。训练时先用长分步推理（CoT）示范冷启动，再做推理
+  RL，融合阶段把 think 的终答 distillation 进 no-think。它是模式开关，和推理时的预算控制器、训练里的长度惩罚是三件事。
 tags:
   - Qwen3
   - Thinking
@@ -13,17 +15,17 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Qwen3 Technical Report
-    url: https://arxiv.org/abs/2505.09388
+    url: 'https://arxiv.org/abs/2505.09388'
     type: primary
 ---
-Qwen3 这类 hybrid thinking 是同一套权重、两套条件模板：`/think` 先写过程再给答案，`/no_think` 跳过过程直接答。训法是先用长 CoT 冷启动、再做推理 RL，最后专门有一个融合阶段，把 think 模式的终答蒸馏进 no-think。它和固定长 CoT 的区别在于「要不要想」本身变成了一个训练过、可切换的条件。
+Qwen3 这类 hybrid thinking 是同一套权重、两套条件模板：`/think` 先写过程再给答案，`/no_think` 跳过过程直接答。训法是先用长 CoT 冷启动、再做推理 RL，最后专门有一个融合阶段，把 think 模式的终答 distillation 进 no-think。它和固定长 CoT 的区别在于「要不要想」本身变成了一个训练过、可切换的条件。
 
 比如一个助手既要回答「把这段话里的日期抽出来」，也要做一道多步的数学题。固定长 CoT 两题都先写一大段推理，抽取题白白付了延迟；hybrid 让抽取走 no-think，数学题走 think。
 
-这张卡只管模式开关和蒸馏。推理时要不要继续写、什么时候停，是 `pt-adaptive-thinking-budget`；训练目标里惩罚无效推理 token，是 `pt-reasoning-token-cost-frontier`。三张卡别合成一句「让模型少想一点」。最常见的答偏有两种：直接答成固定长 CoT，或者训练只喂很长的推理过程，线上却把思考关掉。
+这张卡只管模式开关和 distillation。推理时要不要继续写、什么时候停，是 `pt-adaptive-thinking-budget`；训练目标里惩罚无效推理 token，是 `pt-reasoning-token-cost-frontier`。三张卡别合成一句「让模型少想一点」。最常见的答偏有两种：直接答成固定长 CoT，或者训练只喂很长的推理过程，线上却把思考关掉。
 
 ## 怎么切：同一权重，两套模板
 
@@ -33,13 +35,13 @@ Qwen3 并没有两套模型。Chat 模板里用 `/think` 和 `/no_think`（实�
 
 它和运行时预算控制器也要分清。hybrid 先决定想还是不想；控制器是在已经开始想的那条链上，再决定想多久。两者可以叠起来用：简单题走 no-think，难题走 think 再加长度封顶。所以别把 `/no_think` 说成「自适应停」。
 
-## 怎么训：冷启动、推理 RL、再融合蒸馏
+## 怎么训：冷启动、推理 RL、再融合 distillation
 
 Qwen3 的后训练是分阶段的，hybrid 的关键在融合这一步，一上来就混着训是训不出来的。
 
-先用带过程的示范做长 CoT 冷启动的 SFT，把「先算再答」写进分布，让模型具备可以做强化学习的推理格式。然后在数学、代码、逻辑上用结果奖励（比如 GRPO）做推理 RL，提高长推理过程的质量，这一段基本还在 think 模式里。接着是思考模式融合：混入 think 和 no-think 两类监督，think 那边保留过程，no-think 那边用同一道题的终答当目标，这个终答常常就是从 think 模型的答案里蒸馏出来、去掉了中间 token 的。模型由此学会，看到 no-think 条件就直接给最终答案，不再写一段没用的过程。最后再做一轮通用 RL，补帮助性、安全和格式，免得融合把指令跟随冲掉。
+先用带过程的示范做长 CoT 冷启动的 SFT，把「先算再答」写进分布，让模型具备可以做 RL 的推理格式。然后在数学、代码、逻辑上用结果奖励（比如 GRPO）做推理 RL，提高长推理过程的质量，这一段基本还在 think 模式里。接着是思考模式融合：混入 think 和 no-think 两类监督，think 那边保留过程，no-think 那边用同一道题的终答当目标，这个终答常常就是从 think 模型的答案里 distillation 出来、去掉了中间 token 的。模型由此学会，看到 no-think 条件就直接给最终答案，不再写一段没用的过程。最后再做一轮通用 RL，补帮助性、安全和格式，免得融合把指令跟随冲掉。
 
-蒸馏的对象是答案，不是把很长的推理过程压成固定 $L$ 个 token。学生在 no-think 条件下拟合教师的最终答案，过程留在教师和 think 模式里。这和 long-to-short 在同一模式里把推理压短不一样，hybrid 允许推理时完全不生成过程。
+distillation 的对象是答案，不是把很长的推理过程压成固定 $L$ 个 token。学生在 no-think 条件下拟合教师的最终答案，过程留在教师和 think 模式里。这和 long-to-short 在同一模式里把推理压短不一样，hybrid 允许推理时完全不生成过程。
 
 SFT 时开着还是关着 Thinking 会给分布写进什么，见 `meituan-thinking-on-sft`。那题问的是「开着微调会写进什么」，这题问的是「怎么让同一份权重两种模式都能用」。
 
@@ -47,7 +49,7 @@ SFT 时开着还是关着 Thinking 会给分布写进什么，见 `meituan-think
 
 固定长 CoT，或者「永远先想固定几步」，每道题都要付一段过程的预算：简单题浪费，难题可能还不够，而且没有一个训练过的关闭方式。hybrid 把「要不要过程」做成可切换的条件分布，延迟敏感、抽取、闲聊走 no-think，多步推理走 think。
 
-验收的时候，光报 think 模式的 raw acc 不够。要同时报 no-think 的正确率和延迟、切换开关后格式合法的比例，还有「同一题 think 对、no-think 错」的比例。最后这一项量的是蒸馏有没有把终答迁过去。只开 think 刷分，说明 hybrid 根本没训成。
+验收的时候，光报 think 模式的 raw acc 不够。要同时报 no-think 的正确率和延迟、切换开关后格式合法的比例，还有「同一题 think 对、no-think 错」的比例。最后这一项量的是 distillation 有没有把终答迁过去。只开 think 刷分，说明 hybrid 根本没训成。
 
 长度惩罚让同一模式少写无效 token，hybrid 允许另一种模式零过程，两个可以一起用，think 模式里照样可以给无效步骤加代价，见 `pt-reasoning-token-cost-frontier`。少了融合阶段，关掉思考就可能掉能力，因为模型还没学会另一种模式。
 
@@ -57,7 +59,7 @@ SFT 时开着还是关着 Thinking 会给分布写进什么，见 `meituan-think
 可以，但要维护两倍的权重，还要做路由。hybrid 用条件前缀共享表示，think 学到的终答能迁到 no-think。代价在融合数据的配比上：no-think 太少，模式切不干净；太多，推理能力会退。
 
 **融合会不会把推理训废？**
-会，如果 no-think 数据里掺了不带过程的难题，而且权重还大。按难度分组统计就能看出来，难题保留 think，只在简单题上蒸馏直答。
+会，如果 no-think 数据里掺了不带过程的难题，而且权重还大。按难度分组统计就能看出来，难题保留 think，只在简单题上 distillation 直答。
 
 **hybrid 和自适应预算谁先做？**
 先有能切换的两套模式，再在 think 模式上做什么时候停。模式都不会切，控制器只能在一条永远很长的链上拧。
@@ -66,4 +68,4 @@ SFT 时开着还是关着 Thinking 会给分布写进什么，见 `meituan-think
 训推不一致。训练带 `/think`、线上不带，分数掉得比能力掉得还狠。先把模板对齐，再谈效果。
 
 **no-think 的答案从哪来？**
-优先用 think 模型在同一题上的终答做蒸馏，别另写一套短答案，这样两种模式的结论不会打架。
+优先用 think 模型在同一题上的终答做 distillation，别另写一套短答案，这样两种模式的结论不会打架。

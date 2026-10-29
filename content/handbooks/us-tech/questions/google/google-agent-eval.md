@@ -3,8 +3,10 @@ id: google-agent-eval
 section: google
 order: 32
 level: A
-title: Google：Agent 基准和 Gemini 产品评测切片（公开口径）
-quick: "Agent 用执行后的任务成功率评测，再按环境、步数、延迟、安全确认和引用质量切片。Gemini 公开 computer use 口径偏浏览器，桌面 OS 任务需单独测试，MMLU 或视频 QA 不能代替真实操作验收。"
+title: Google：Agent 基准和 Gemini 产品评测切片（公开说明）
+quick: >-
+  Agent 用执行后的任务成功率评测，再按环境、步数、延迟、安全确认和引用质量切片。Gemini 公开 computer use 定义偏浏览器，桌面 OS
+  任务需单独测试，MMLU 或视频 QA 不能代替真实操作验收。
 tags:
   - Google
   - Agents
@@ -13,22 +15,25 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: OSWorld — Benchmarking Multimodal Agents in Real Computer Environments
-    url: https://arxiv.org/abs/2404.07972
+    url: 'https://arxiv.org/abs/2404.07972'
     type: primary
   - title: WebArena — A Realistic Web Environment for Building Autonomous Agents
-    url: https://arxiv.org/abs/2307.13854
+    url: 'https://arxiv.org/abs/2307.13854'
     type: primary
   - title: Mind2Web — Towards a Generalist Agent for the Web
-    url: https://arxiv.org/abs/2306.06070
+    url: 'https://arxiv.org/abs/2306.06070'
     type: secondary
   - title: Introducing the Gemini 2.5 Computer Use model
-    url: https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-computer-use-model/
+    url: >-
+      https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-computer-use-model/
     type: primary
-  - title: Gemini 1.5 — Unlocking multimodal understanding across millions of tokens of context
-    url: https://arxiv.org/abs/2403.05530
+  - title: >-
+      Gemini 1.5 — Unlocking multimodal understanding across millions of tokens
+      of context
+    url: 'https://arxiv.org/abs/2403.05530'
     type: secondary
 ---
 

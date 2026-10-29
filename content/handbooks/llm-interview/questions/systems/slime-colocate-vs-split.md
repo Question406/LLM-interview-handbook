@@ -4,7 +4,10 @@ section: systems
 order: 251
 level: S
 title: slime 训推一体和训推分离怎么配？和 veRL HybridEngine 是一回事吗？
-quick: "slime 默认分离部署，用 `--actor-num-nodes × --actor-num-gpus-per-node` 分配训练卡、`--rollout-num-gpus` 分配采样卡。`--colocate` 让两套进程共享 GPU，并靠 `--offload-train` / `--offload-rollout` 轮换显存；veRL HybridEngine 则在同进程里换布局，机制不同。"
+quick: >-
+  slime 默认分离部署，用 `--actor-num-nodes × --actor-num-gpus-per-node`
+  分配训练卡、`--rollout-num-gpus` 分配 sampling 卡。`--colocate` 让两套进程共享 GPU，并靠
+  `--offload-train` / `--offload-rollout` 轮换显存；veRL HybridEngine 则在同进程里换布局，机制不同。
 tags:
   - slime
   - VeRL
@@ -12,23 +15,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: slime 使用文档
-    url: https://thudm.github.io/slime/zh/get_started/usage.html
+    url: 'https://thudm.github.io/slime/zh/get_started/usage.html'
     type: primary
 ---
 
-slime 的 `--colocate` 是让 Megatron trainer 和 SGLang server 两套进程共享 GPU，通过 offload 分时使用显存。veRL HybridEngine 则追求同进程换布局、少一份完整模型；进程边界和权重切换机制不同，相关区别见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。
+slime 的 `--colocate` 是让 Megatron trainer 和 SGLang server 两套进程共享 GPU，通过 offload 分时使用显存。veRL HybridEngine 则追求同进程换布局、少一份完整模型；process boundary 和权重切换机制不同，相关区别见 `sys-verl-hybridengine`、`sys-verl-vs-slime`。
 
-比如卡数紧时，colocate 可以省下一套采样卡，但训练、采样切换要搬状态，CUDA context 和通信组也仍是两套。我会把省下的 GPU 和 offload 拷贝时间一起算；如果拷贝气泡接近 generate 的耗时，分卡可能反而更便宜。分离时则是独立训练池与生成池，再用 NCCL / 磁盘 / delta 同步权重。
+比如卡数紧时，colocate 可以省下一套 sampling 卡，但训练、sampling 切换要搬状态，CUDA context 和通信组也仍是两套。我会把省下的 GPU 和 offload 拷贝时间一起算；如果拷贝气泡接近 generate 的耗时，分卡可能反而更便宜。分离时则是独立训练池与生成池，再用 NCCL / 磁盘 / delta 同步权重。
 
 ## 分离怎么配
 
 资源账本先写在启动参数上，不要事后在 Ray 里猜。默认训推分离：
 
 - Megatron actor：`--actor-num-nodes × --actor-num-gpus-per-node`
-- SGLang 采样服务（rollout）：`--rollout-num-gpus`
+- SGLang sampling 服务（rollout）：`--rollout-num-gpus`
 - `--rollout-num-gpus-per-engine` 是 一个 SGLang engine 的世界卡数。多机 serving 填总卡，不是「单机 tp 再乘节点」。填错会让 router 和 engine 的世界大小对不上。
 
 分离的好处是生成池可以根据逐 token 生成（decode）的瓶颈独立扩容、训练卡不用卸 KV。坏处是 两份权驻留，每步 `update_weights`，见 `infra-rl-weight-sync`、`slime-weight-sync`。`--rollout-num-gpus 0` 只起 router，接外部 engine，适合已经有独立 SGLang 集群。
@@ -38,11 +41,11 @@ slime 的 `--colocate` 是让 Megatron trainer 和 SGLang server 两套进程共
 `--colocate` 让两边共享卡：默认训推卡数相等，并且会打开 `--offload`（等价 `--offload-train` + `--offload-rollout`）。也可让 rollout 卡多于 actor，多出来的是 rollout-only。显存互斥：
 
 - 训练阶段 offload SGLang（含 KV / CUDA graph）
-- 采样阶段 offload Megatron（含优化器状态）
+- sampling 阶段 offload Megatron（含优化器状态）
 
 `--sglang-mem-fraction-static` 常降到 0.8 左右，给两边各留一点，否则两套权在切换瞬间叠爆。Offload 的代价是 PCIe / NVLink 上把优化器状态和 KV 来回搬，一步里会出现两段拷贝气泡。卡内带宽够时可以接受；跨 NUMA 或 PCIe 代差大时，colocate 可能比分卡还慢。选放置要 profile 拷贝，不要只比「省不省卡」。
 
-一体时训推仍 串行：同一张卡不能边 backward 边 decode。别把 `--colocate` 说成异步强化学习（RL），见 `slime-async-train`。Offload 没配对是最常见的 OOM：只开 `--offload-rollout` 却在训练阶段忘了把 SGLang 的 KV / CUDA graph 卸掉，两套权叠在同一张卡上。反过来，采样阶段 Megatron 优化器状态还在 HBM，SGLang 的 `mem-fraction-static` 再按 0.9 预留，切换瞬间爆。官方 `--colocate` 默认打开双边 offload，就是为了避免这种「以为一体、其实双驻留」。手动拆开关时必须按阶段互斥。拷贝气泡要单独 profile：H100 上 NVLink 搬 70B 分片和 PCIe 搬优化器状态完全不是一个数量级，跨 NUMA 再降一档。选 colocate 之前用一次空跑看 offload 占比，若已经接近 generate 时间，分卡可能更便宜。
+一体时训推仍 串行：同一张卡不能边 backward 边 decode。别把 `--colocate` 说成异步 RL，见 `slime-async-train`。Offload 没配对是最常见的 OOM：只开 `--offload-rollout` 却在训练阶段忘了把 SGLang 的 KV / CUDA graph 卸掉，两套权叠在同一张卡上。反过来，sampling 阶段 Megatron 优化器状态还在 HBM，SGLang 的 `mem-fraction-static` 再按 0.9 预留，切换瞬间爆。官方 `--colocate` 默认打开双边 offload，就是为了避免这种「以为一体、其实双驻留」。手动拆开关时必须按阶段互斥。拷贝气泡要单独 profile：H100 上 NVLink 搬 70B 分片和 PCIe 搬优化器状态完全不是一个数量级，跨 NUMA 再降一档。选 colocate 之前用一次空跑看 offload 占比，若已经接近 generate 时间，分卡可能更便宜。
 
 
 
@@ -70,7 +73,7 @@ rollout-only，不参与 Megatron。适合 decode 比 backward 更吃卡的长�
 **和 HybridEngine 一句话差在哪？**
 HybridEngine：同进程、换布局、少一份整模。slime colocate：两进程、offload 轮转、两份权互斥显存。两者要按进程、布局和显存切换机制分别解释。
 **offload 没配对的典型 OOM 在哪？**
-切换瞬间：训练阶段 SGLang 的 KV / CUDA graph 还在，或采样阶段 Megatron 优化器还在。稳态显存看起来够，峰值不够。双边 offload 必须互斥。
+切换瞬间：训练阶段 SGLang 的 KV / CUDA graph 还在，或 sampling 阶段 Megatron 优化器还在。稳态显存看起来够，峰值不够。双边 offload 必须互斥。
 **一体时 `--sglang-mem-fraction-static` 为什么常 0.8？**
 给 offload 回来的训练状态留空。按 0.9 预留给 serving 独占没问题，一体切换会叠爆。这是放置参数，不是「SGLang 更省显存」。
 **怎么向面试官画这张图？**

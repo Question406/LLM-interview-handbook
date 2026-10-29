@@ -4,7 +4,9 @@ section: computer-use
 order: 6
 level: S
 title: Computer-use Agent 对敏感动作如何做确认与防误触？
-quick: "按 UI 语义识别删除、支付、发送、改权限这类动作，由 harness 弹系统确认框，展示解析后的收款人、金额、路径等关键参数，用户点了才放行。默认 deny，超时取消，全程写审计，模型不能既提议又批准。"
+quick: >-
+  按 UI 语义识别删除、支付、发送、改权限这类动作，由 harness 弹系统确认框，展示解析后的收款人、金额、路径等关键参数，用户点了才放行。默认
+  deny，超时取消，全程写审计，模型不能既提议又批准。
 tags:
   - Safety
   - Computer Use
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Developing a computer use model (Anthropic)
-    url: https://www.anthropic.com/news/developing-computer-use
+    url: 'https://www.anthropic.com/news/developing-computer-use'
     type: primary
 ---
 
@@ -33,7 +35,7 @@ computer-use 的敏感动作藏在 UI 语义里，看起来是普通点击，实
 
 确认 UI 由 harness 弹出，展示解析后的关键参数，比如收款人全名、金额、附件 hash、将要删除的路径，用户点系统按钮才放行。确认不许画进被控浏览器，也不许模型生成一个假对话框再自己点。超时 $T$ 内没响应就当取消，动作 deny 并记审计。连续的同类请求要聚合，避免审批疲劳；疲劳之后「全点允许」要当安全事故处理，别当成效率优化。
 
-日志字段包括动作类、解析参数、是否确认、确认耗时、是否超时、是否命中白名单。没有这些字段，出了事只能说「当时点了」。生产上我会把确认策略和工具权限写在同一张表里，别等事后补一条输入提示（prompt）。Anthropic 一类 computer-use 安全说明的核心也是这个：模型操作计算机时，破坏性动作光靠模型自检是不够的。
+日志字段包括动作类、解析参数、是否确认、确认耗时、是否超时、是否命中白名单。没有这些字段，出了事只能说「当时点了」。生产上我会把确认策略和工具权限写在同一张表里，别等事后补一条 prompt。Anthropic 一类 computer-use 安全说明的核心也是这个：模型操作计算机时，破坏性动作光靠模型自检是不够的。
 
 红队至少测这几种：诱导连续点击、在截图上伪造系统确认框、隐藏真实收款人只显示昵称、把高风险按钮做得像「下一步」。评测报三个数：敏感动作未确认就执行的比例、确认绕过成功率、正常低风险任务被过度拦截的比例。「模型说了请确认」不算过关，环境里副作用已经发生就是失败。会让评测结果虚高的做法有：用 tool 名黑名单代替语义分类、确认框画在网页里、超时当允许、不测伪造确认 UI。
 
@@ -49,4 +51,4 @@ computer-use 的敏感动作藏在 UI 语义里，看起来是普通点击，实
 默认允许，等于把没响应当成授权。资金和删除类动作必须 fail-closed。
 
 **和 `cu-security-evaluation`、`agent-approval-boundaries` 怎么分？**
-`cu-security-evaluation` 定义攻击成功和 deny-state，这题是生产闸门，讲敏感动作怎么强制人审。`agent-approval-boundaries` 讲通用的人审分层和防疲劳，这题落到 computer-use 的系统确认控件和伪造 UI 红队。
+`cu-security-evaluation` 定义攻击成功和 deny-state，这题是生产 acceptance checks，讲敏感动作怎么强制人审。`agent-approval-boundaries` 讲通用的人审分层和防疲劳，这题落到 computer-use 的系统确认控件和伪造 UI 红队。

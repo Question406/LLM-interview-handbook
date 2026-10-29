@@ -3,8 +3,10 @@ id: amazon-batch-infer
 section: amazon
 order: 14
 level: A
-title: Amazon：Bedrock batch 和实时推理怎么选，吞吐和成本各看什么？
-quick: "用户正在等回复时用实时 Invoke / Converse，重点看 TTFT 和 E2E p99；夜间摘要、回填和评测用 batch，看作业完成时间与成功率。Batch 把 JSONL 放到 S3 异步处理，价格通常约为按需一半，但不支持工具调用和服务端多轮。"
+title: Amazon：Bedrock batch 和实时推理怎么选，throughput 和成本各看什么？
+quick: >-
+  用户正在等回复时用实时 Invoke / Converse，重点看 TTFT 和 E2E p99；夜间摘要、回填和评测用
+  batch，看作业完成时间与成功率。Batch 把 JSONL 放到 S3 异步处理，价格通常约为按需一半，但不支持工具调用和服务端多轮。
 tags:
   - Amazon
   - Bedrock
@@ -13,19 +15,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Process multiple prompts with batch inference
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference.html'
     type: primary
   - title: Amazon Bedrock pricing
-    url: https://aws.amazon.com/bedrock/pricing/
+    url: 'https://aws.amazon.com/bedrock/pricing/'
     type: primary
   - title: Monitor Amazon Bedrock with Amazon CloudWatch
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-runtime-metrics.html
+    url: >-
+      https://docs.aws.amazon.com/bedrock/latest/userguide/monitoring-runtime-metrics.html
     type: primary
   - title: Amazon Titan Text Embeddings V2 now available in Amazon Bedrock
-    url: https://aws.amazon.com/blogs/aws/amazon-titan-text-v2-now-available-in-amazon-bedrock-optimized-for-improving-rag/
+    url: >-
+      https://aws.amazon.com/blogs/aws/amazon-titan-text-v2-now-available-in-amazon-bedrock-optimized-for-improving-rag/
     type: primary
 ---
 
@@ -33,9 +37,9 @@ sources:
 
 ## 延迟目标和失败处理有什么不同
 
-实时：聊天、Seller 助手、Agent 填参。用户正在等待回复。瓶颈是 首个 token 的等待时间（TTFT）、输入 Guardrail、输入预填充（prefill，即处理输入并建立缓存）、配额排队。吞吐用 in-flight 连接和 token/s 描述，长 prompt 和限流重试会显著拉高 p99。
+实时：聊天、Seller 助手、Agent 填参。用户正在等待回复。瓶颈是 首个 token 的等待时间（TTFT）、输入 Guardrail、输入 prefill、配额排队。throughput 用 in-flight 连接和 token/s 描述，长 prompt 和限流重试会显著拉高 p99。
 
-Batch：每晚摘要十万张工单、给知识库重嵌、离线 LLM-as-judge、回放评测集。瓶颈是作业排队、S3 吞吐、记录是否可重试、失败部分如何补。实际耗时可以是分钟到小时。用实时 API 硬打十万次，会先撞 RPM，还可能拖慢用户请求、拉高 p99，影响实时服务。
+Batch：每晚摘要十万张工单、给知识库重嵌、离线 LLM-as-judge、回放评测集。瓶颈是作业排队、S3 throughput、记录是否可重试、失败部分如何补。实际耗时可以是分钟到小时。用实时 API 硬打十万次，会先撞 RPM，还可能拖慢用户请求、拉高 p99，影响实时服务。
 
 两种模式可以这样对照：
 
@@ -47,7 +51,7 @@ Batch：每晚摘要十万张工单、给知识库重嵌、离线 LLM-as-judge�
 | 成本 | 按需或预留 | 通常更低的批量价 |
 | 失败 | 单请求重试 | 按行重跑失败 JSONL |
 
-Embedding 是教科书例子：Titan 文档写检索步用低延迟调用，建索引用吞吐型 batch。同一模型，两条 API，见 `amazon-titan-embed`。
+Embedding 是教科书例子：Titan 文档写检索步用低延迟调用，建索引用 throughput 型 batch。同一模型，两条 API，见 `amazon-titan-embed`。
 
 ## 怎么估成本、安排作业
 

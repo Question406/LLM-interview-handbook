@@ -3,31 +3,47 @@ id: sys-kv-quant
 section: systems
 order: 9
 level: A
-title: 系统：KV cache 量化（INT8/FP8），outlier 和注意力质量
-quick: "长上下文 decode 每步都要读历史 KV，用 INT8 或 FP8 压窄 cache 能同时省容量和带宽。scale 要结合 outlier 选：K 常沿 channel、V 常沿 token，K 的误差还会通过 softmax 改变注意力权重。上线前要确认 attention 核直接支持量化页，并测长上下文检索和复制质量。"
+title: 系统：KV cache 量化（INT8/FP8），outlier 和 attention 质量
+quick: >-
+  长上下文 decode 每步都要读历史 KV，用 INT8 或 FP8 压窄 cache 能同时省容量和带宽。scale 要结合 outlier 选：K
+  常沿 channel、V 常沿 token，K 的误差还会通过 softmax 改变 attention 权重。上线前要确认 attention
+  核直接支持量化页，并测长上下文检索和复制质量。
 tags:
   - NVIDIA
   - Quantization
   - KV Cache
   - Serving
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: "KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache"
-    url: https://arxiv.org/abs/2402.02750
+  - title: 'KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache'
+    url: 'https://arxiv.org/abs/2402.02750'
     type: primary
-  - title: "KVQuant: Towards 10 Million Context Length LLM Inference with KV Cache Quantization"
-    url: https://arxiv.org/abs/2401.18079
+  - title: >-
+      KVQuant: Towards 10 Million Context Length LLM Inference with KV Cache
+      Quantization
+    url: 'https://arxiv.org/abs/2401.18079'
     type: primary
-  - title: SmoothQuant — Accurate and Efficient Post-Training Quantization for Large Language Models
-    url: https://arxiv.org/abs/2211.10438
+  - title: >-
+      SmoothQuant — Accurate and Efficient Post-Training Quantization for Large
+      Language Models
+    url: 'https://arxiv.org/abs/2211.10438'
     type: primary
   - title: Quantization — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/features/quant.html
+    url: 'https://nvidia.github.io/TensorRT-LLM/features/quant.html'
     type: secondary
 ---
+
+## 可以这样回答
+
+KV cache 值得单独量化，因为长上下文 decode 每步都要读历史 K/V，权重量化并没有减少这部分字节。比如 FP16 cache 每个值占 2 字节，改成 FP8 或 INT8 后占 1 字节，就能省容量和读取带宽，但要同时验证量化误差和核支持。权重量化见 `nvidia-int8-quant`，FP8 配方见 `nvidia-fp8`。
+
+Decode 每步都要把历史 K/V 从 HBM 读进 SM。序列变长，KV 流量线性涨，权重流量不变，所以长上下文decode更受内存带宽限制。一份 KV 的字节大约 $2\cdot L\cdot n_{\mathrm{kv}}\cdot d_h\cdot T\cdot b$。把 $b$ 从 2（FP16）收到 1（FP8/INT8）或 0.5（INT4），同样显存能塞更长 $T$ 或更大 batch，带宽也减半。这和权重量化正交：GPTQ/AWQ 减的是读权重；KV 量化减的是读 cache。
+
+## 技术备查
 
 KV cache 值得单独量化，因为长上下文 decode 每步都要读历史 K/V，权重量化并没有减少这部分字节。比如 FP16 cache 每个值占 2 字节，改成 FP8 或 INT8 后占 1 字节，就能省容量和读取带宽，但要同时验证量化误差和核支持。权重量化见 `nvidia-int8-quant`，FP8 配方见 `nvidia-fp8`。
 
@@ -42,9 +58,9 @@ FP8（E4M3 / E5M2）动态范围比 INT8 友好，Hopper / Blackwell Tensor Core
 **V 的 outlier 多沿 token。**
 某个 token 的 value 整体偏大。V 更适合 per-token scale。
 
-注意力里 $QK^{\top}$ 的误差会进 softmax，再去加权 $V$。K 量化噪声会被 softmax 放大成错误的权重分布；V 量化噪声更像加权和上的加性误差。同样 bit 下，K 通常比 V 对误差更敏感。实务常见：K 用更高精度或更细的 scale，V 可以压到更低比特；或两边都 FP8，但 K 用 per-channel amax。
+attention 里 $QK^{\top}$ 的误差会进 softmax，再去加权 $V$。K 量化噪声会被 softmax 放大成错误的权重分布；V 量化噪声更像加权和上的加性误差。同样 bit 下，K 通常比 V 对误差更敏感。实务常见：K 用更高精度或更细的 scale，V 可以压到更低比特；或两边都 FP8，但 K 用 per-channel amax。
 
-如果直接使用 per-tensor INT8，可能出现这样的误差：一条序列一个 scale，outlier 通道把格子撑满，其余通道只能映射到少数几个量化值，长上下文的针点检索先坏。校准时还要看具体任务：要看长上下文检索、复制、多轮是否还对。PPL 对局部量化噪声不敏感。
+如果直接使用 per-tensor INT8，可能出现这样的误差：一条序列一个 scale，outlier 通道把格子撑满，其余通道只能映射到少数几个量化值，长上下文的针点检索先坏。calibration 时还要看具体任务：要看长上下文检索、复制、多轮是否还对。PPL 对局部量化噪声不敏感。
 
 KIVI 一类还会把**最近若干 token 留在高精度**（sliding window），只把更早的 KV 打到 2/4 bit。Decode 对最近 token 最敏感，这个不对称往往比「全序列同一 bit」更稳。没有对应 dequant kernel，低比特只是占着窄存储，算的时候仍要还原成 FP16，预期的带宽收益就可能无法实现。
 
@@ -70,7 +86,7 @@ KIVI 一类显示很多模型仍能保持可用质量，但要 grouped scale、�
 越小越准、元数据越多。Channel group 32/64 常见。Window 太大，最近 token 的高精度优势被稀释；太小，kernel 切换碎。
 
 **和权重量化一起开注意什么？**
-Scale 不要共用。权重 per-channel 的 amax 救不了 K 的 channel outlier；KV 要单独校准。
+Scale 不要共用。权重 per-channel 的 amax 救不了 K 的 channel outlier；KV 要单独 calibration。
 
 **记不住 per-token / per-channel？**
 K 的 outlier 沿 channel，V 沿 token。scale 轴跟 outlier 轴走，这一句够画图。

@@ -5,7 +5,8 @@ order: 192
 level: B
 title: 商汤多模态一面：链表反转如何处理输入输出？
 quick: >-
-  迭代用三指针 `prev, cur, nxt` 原地反转，返回新头。先处理空表和单节点；输入如果是数组，要自己建表，反转后再序列化输出。用递归的话要主动说明 $O(n)$ 的栈，长链表会溢出。
+  迭代用三指针 `prev, cur, nxt` 原地反转，返回新头。先处理空表和单节点；输入如果是数组，要自己建表，反转后再序列化输出。用递归的话要主动说明
+  $O(n)$ 的栈，长链表会溢出。
 tags:
   - SenseTime
   - Coding
@@ -13,26 +14,26 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 商汤 多模态大模型算法实习一面
-    url: https://www.nowcoder.com/feed/main/detail/bc02d116feb54a46a8b85a46f620f9e6
+    url: 'https://www.nowcoder.com/feed/main/detail/bc02d116feb54a46a8b85a46f620f9e6'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-反转一条无环单链表，返回反转后的头节点；同时提供一个便于本地标准输入练习的字符串token入口。
+反转一条无环单链表，返回反转后的头节点；同时提供一个便于本地标准输入练习的字符串 token 入口。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `reverse_list(head)` 和 `reverse_from_tokens(tokens)`。链表节点含整数val和next，head可为None；tokens是合法整数的字符串列表。main读取空白分隔的这些整数。
+实现 `reverse_list(head)` 和 `reverse_from_tokens(tokens)`。链表节点含整数 val 和 next，head 可为 None；tokens 是合法整数的字符串列表。main 读取空白分隔的这些整数。
 
 ### 输出与约束
 
-`reverse_list`重新连接原节点，返回原尾节点，不修改节点值。`reverse_from_tokens`把输入建立成链表并返回反转后的整数列表。main把结果以单个空格连接后输出一行；空输入输出空行。
+`reverse_list`重新连接原节点，返回原尾节点，不修改节点值。`reverse_from_tokens`把输入建立成链表并返回反转后的整数列表。main 把结果以单个空格连接后输出一行；空输入输出空行。
 
 ### 示例
 
@@ -130,7 +131,7 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 复杂度
 
@@ -138,7 +139,7 @@ if __name__ == "__main__":
 
 ## 追问
 
-**要测哪些边界？**
+**要覆盖哪些 edge cases？**
 空输入、单节点、已经逆序。还要先问清分隔符是空格、逗号还是一行一个，空输入打空行还是不打。
 
 **反转 $[l,r]$ 怎么做？**

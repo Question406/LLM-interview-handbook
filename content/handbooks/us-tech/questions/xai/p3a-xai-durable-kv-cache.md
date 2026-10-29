@@ -3,8 +3,10 @@ id: p3a-xai-durable-kv-cache
 section: xai
 order: 612
 level: A
-title: "xAI：持久 KV cache：日志、压缩和大文件"
-quick: "我会用 WAL 记录增量、快照保存全量，日志带长度和校验和，恢复时截掉没写完的尾部。快照先写完再原子发布，compaction 期间新写入进新日志；还要先约定成功是到 OS 缓冲区还是 fsync，下面的练习只实现快照分片与 manifest 发布。"
+title: xAI：持久 KV cache：日志、压缩和大文件
+quick: >-
+  我会用 WAL 记录增量、快照保存全量，日志带长度和校验和，恢复时截掉没写完的尾部。快照先写完再原子发布，compaction
+  期间新写入进新日志；还要先约定成功是到 OS 缓冲区还是 fsync，下面的练习只实现快照分片与 manifest 发布。
 companies:
   - xai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · durable-kv-cache"
-    url: https://www.1point3acres.com/interview/problems/company/xai/durable-kv-cache
+  - title: 1Point3Acres · xAI · durable-kv-cache
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/durable-kv-cache
     type: secondary
 ---
 
@@ -27,13 +30,13 @@ sources:
 
 实现支持任意 bytes 键值的快照编码、分片落盘与恢复；发布新快照时必须维持读者可读到完整版本。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `encode(data) -> bytes` / `decode(payload) -> dict`：`data` 是 `dict[bytes, bytes]`，不能用 JSON 或 pickle，key 和 value 可以是任意字节。格式固定为 4 字节魔数 `KVS1`、8 字节无符号大端条目数，然后每条是 8 字节无符号大端 key 长度、8 字节无符号大端 value 长度和原始字节，最后不能有多余数据。
 - `dump_chunks(data, directory, limit=1024)`：把编码结果切成多个文件，每个不超过 `limit` 字节，最后再发布 `manifest.json`（字段 `files` 按序记录分片文件名，字段 `sha` 为整个 payload 的 SHA-256 十六进制摘要）。
-- `load_chunks(directory)`：按 manifest 读回、校验并解码。
+- `load_chunks(directory)`：按 manifest 读回、校验并 decoding。
 - 截断、魔数错误、重复 key、尾部多余数据、校验不通过都抛 `ValueError`。写新快照时旧快照的文件保留，写到一半失败不影响当前 manifest。快照不超过 10MB。
 - 本练习要求的是显式快照接口。`limit` 是正整数，空键、空值和空字典均合法。
 
@@ -53,7 +56,7 @@ dump_chunks(data, d, 100); load_chunks(d) -> 与 data 相同，每个 .bin 文�
 
 实现一个写盘的 KV cache：进程重启后数据还能恢复，并讨论旧日志怎么清理（compaction）、数据很大时怎么拆文件。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -73,7 +76,7 @@ dump_chunks(data, d, 100); load_chunks(d) -> 与 data 相同，每个 .bin 文�
 
 - `encode(data) -> bytes` / `decode(payload) -> dict`：`data` 是 `dict[bytes, bytes]`，不能用 JSON 或 pickle，key 和 value 可以是任意字节。格式固定为 4 字节魔数 `KVS1`、8 字节条目数，然后每条是 8 字节 key 长度、8 字节 value 长度和原始字节，最后不能有多余数据。
 - `dump_chunks(data, directory, limit=1024)`：把编码结果切成多个文件，每个不超过 `limit` 字节，最后再发布 `manifest.json`（记录分片文件名和整个 payload 的 SHA-256）。
-- `load_chunks(directory)`：按 manifest 读回、校验并解码。
+- `load_chunks(directory)`：按 manifest 读回、校验并 decoding。
 - 截断、魔数错误、重复 key、尾部多余数据、校验不通过都抛 `ValueError`。写新快照时旧快照的文件保留，写到一半失败不影响当前 manifest。快照不超过 10MB。
 - 这份参考实现的是显式快照，不是每次写入都追加 WAL。
 
@@ -87,7 +90,7 @@ dump_chunks(data, d, 100); load_chunks(d) -> 与 data 相同，每个 .bin 文�
 
 ### 解题思路与正确性
 
-每个字段都带字节长度前缀，解码时先读长度再读那么多字节，所以 key 或 value 里出现 `\x00`、换行或任何「分隔符」都不会产生歧义。`decode` 每次取数据前都检查剩余长度，读完声明的条目数后要求正好到达末尾，这样截断和多余数据都能发现。
+每个字段都带字节长度前缀，decoding 时先读长度再读那么多字节，所以 key 或 value 里出现 `\x00`、换行或任何「分隔符」都不会产生歧义。`decode` 每次取数据前都检查剩余长度，读完声明的条目数后要求正好到达末尾，这样截断和多余数据都能发现。
 
 `dump_chunks` 给新分片使用新版本号，全部写完并 fsync 后，再写临时 manifest，通过 `os.replace` 发布。读者因此只能跟随某一版完整的 manifest，读不到新旧混合的分片。SHA-256 能发现损坏但不能修复；旧分片要等没有读者引用后再回收。
 
@@ -102,8 +105,8 @@ import uuid
 from pathlib import Path
 
 MAGIC = b"KVS1"
-COUNT = struct.Struct(">Q")         # 条目数，8 字节大端
-LENGTHS = struct.Struct(">QQ")      # 每条的 key 长度、value 长度
+COUNT = struct.Struct(">Q")  # 条目数，8 字节大端
+LENGTHS = struct.Struct(">QQ")  # 每条的 key 长度、value 长度
 
 
 def encode(data):
@@ -124,7 +127,7 @@ def decode(data):
         nonlocal pos
         if pos + size > len(data):
             raise ValueError("truncated payload")
-        chunk = data[pos:pos + size]
+        chunk = data[pos : pos + size]
         pos += size
         return chunk
 
@@ -165,7 +168,7 @@ def dump_chunks(data, directory, limit=1024):
     names = []
     for start in range(0, len(payload), limit):
         name = f"{version}-{start // limit}.bin"
-        write_durably(directory / name, payload[start:start + limit])
+        write_durably(directory / name, payload[start : start + limit])
         names.append(name)
 
     manifest = {"files": names, "sha": hashlib.sha256(payload).hexdigest()}
@@ -175,7 +178,7 @@ def dump_chunks(data, directory, limit=1024):
 
 
 def load_chunks(directory):
-    """按 manifest 拼回 payload，校验 SHA-256 后解码。"""
+    """按 manifest 拼回 payload，校验 SHA-256 后 decoding。"""
     directory = Path(directory)
     manifest = json.loads((directory / "manifest.json").read_text())
     if any(Path(name).name != name for name in manifest["files"]):
@@ -194,12 +197,13 @@ def load_chunks(directory):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 import tempfile
+
 
 def expect_value_error(fn, *args):
     try:
@@ -208,6 +212,7 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
 
+
 # 任意字节都能往返，包括空 key、\x00 和换行
 sample = {b"a\x00": b"x\ny", b"": bytes(range(256)) * 8}
 assert decode(encode(sample)) == sample
@@ -215,10 +220,10 @@ assert decode(encode({})) == {}
 
 # 损坏的输入
 encoded = encode(sample)
-expect_value_error(decode, encoded[:-1])          # 截断
-expect_value_error(decode, encoded + b"\x00")     # 尾部多余数据
+expect_value_error(decode, encoded[:-1])  # 截断
+expect_value_error(decode, encoded + b"\x00")  # 尾部多余数据
 expect_value_error(decode, b"XXXX" + encoded[4:])  # 魔数错误
-expect_value_error(encode, {"text": b"v"})         # key 不是 bytes
+expect_value_error(encode, {"text": b"v"})  # key 不是 bytes
 
 # 分片落盘：每个数据文件不超过 limit，加载后完全一致
 with tempfile.TemporaryDirectory() as tmp:
@@ -238,7 +243,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 ### 复杂度与追问
 
-设 payload 大小为 B 字节。编码、解码、分片写入和加载都是 O(B) 时间、O(B) 空间。
+设 payload 大小为 B 字节。编码、decoding、分片写入和加载都是 O(B) 时间、O(B) 空间。
 
 - `limit` 只约束数据分片，manifest 不计入。如果面试官要求 manifest 也受限，可以把文件列表改成「版本号 + 分片数」，文件名按规则推出来。
 - 严格的断电持久性还需要在 `os.replace` 之后 fsync 父目录，否则目录项的更新可能丢失。

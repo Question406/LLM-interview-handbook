@@ -4,20 +4,22 @@ section: graph-bfs
 order: 1
 level: A
 title: LC 909 · 蛇梯棋
-quick: "把格子按蛇形编号 $1..n^2$ 当成一维的点做 BFS，每步枚举掷出 $1..6$，落到蛇或梯子就强制传送。先写对「编号 $\\leftrightarrow$ 行列」的映射，BFS 第一次到达 $n^2$ 的步数就是答案，到不了返回 $-1$。"
+quick: >-
+  把格子按蛇形编号 $1..n^2$ 当成一维的点做 BFS，每步枚举掷出 $1..6$，落到蛇或梯子就强制传送。先写对「编号
+  $\leftrightarrow$ 行列」的映射，BFS 第一次到达 $n^2$ 的步数就是答案，到不了返回 $-1$。
 tags:
   - BFS
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 909. 蛇梯棋
-    url: https://leetcode.cn/problems/snakes-and-ladders/
+    url: 'https://leetcode.cn/problems/snakes-and-ladders/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -114,13 +116,13 @@ if __name__ == "__main__":
 
 ```python
 board = [
-        [-1, -1, -1, -1, -1, -1],
-        [-1, -1, -1, -1, -1, -1],
-        [-1, -1, -1, -1, -1, -1],
-        [-1, 35, -1, -1, 13, -1],
-        [-1, -1, -1, -1, -1, -1],
-        [-1, 15, -1, -1, -1, -1],
-    ]
+    [-1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1],
+    [-1, -1, -1, -1, -1, -1],
+    [-1, 35, -1, -1, 13, -1],
+    [-1, -1, -1, -1, -1, -1],
+    [-1, 15, -1, -1, -1, -1],
+]
 assert snakesAndLadders(board) == 4
 assert snakesAndLadders([[-1, -1], [-1, 3]]) == 1
 print("simple tests passed")
@@ -132,7 +134,7 @@ print("simple tests passed")
 
 时间 $O(n^2)$，空间 $O(n^2)$。每个格子至多入队一次，出队后只枚举常数个骰点。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时已经在终点，掷 $0$ 次；实现上起点以 `steps=0` 入队，出队就立刻返回。蛇或梯子可以指向更前或更后，传送后编号变大是梯子、变小是蛇，BFS 照样走，访问集合（vis）防止死循环。没有蛇梯时每步最多 $+6$，答案是 $\lceil (n^2-1)/6\rceil$；编号和行列的映射仍要写对，蛇形行不能走错。
 
@@ -143,6 +145,7 @@ $n=1$ 时已经在终点，掷 $0$ 次；实现上起点以 `steps=0` 入队，�
 
 ```python
 from collections import deque
+
 
 def snakesOptionalTeleport(board):
     n = len(board)

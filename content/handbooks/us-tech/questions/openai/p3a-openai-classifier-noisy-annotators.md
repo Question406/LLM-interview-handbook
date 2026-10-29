@@ -3,8 +3,10 @@ id: p3a-openai-classifier-noisy-annotators
 section: openai
 order: 605
 level: S
-title: "OpenAI：标注员噪声：找出低质量标注并验证改进"
-quick: "我会用独立可信校准集评估标注员，再在不参与筛选和训练的固定验证集上比较分类器。比如某人全标反可以排除，但错误多也可能只是样本更难，所以要分层看误差，并在相同训练预算下确认提升是否超出随机波动。"
+title: OpenAI：标注员噪声：找出低质量标注并验证改进
+quick: >-
+  我会用独立可信 calibration
+  集评估标注员，再在不参与筛选和训练的固定验证集上比较分类器。比如某人全标反可以排除，但错误多也可能只是样本更难，所以要分层看误差，并在相同训练预算下确认提升是否超出随机波动。
 companies:
   - openai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - ML
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · OpenAI · classifier-noisy-annotators"
-    url: https://www.1point3acres.com/interview/problems/company/openai/classifier-noisy-annotators
+  - title: 1Point3Acres · OpenAI · classifier-noisy-annotators
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/classifier-noisy-annotators
     type: secondary
 ---
 
@@ -27,11 +31,20 @@ sources:
 
 实现一个小型二分类基线，并利用独立可信标注筛选噪声标注者。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
 
 `fit(x,y,steps=1000,lr=0.1,l2=0.01)` 返回训练特征的 `(mean,std,weights)`，训练带 L2 正则的二分类 logistic 回归；x 为 `[N,D]` 有限特征，y 为 `[N]` 的 0/1 标签。预测使用训练时的均值、标准差，标准差使用总体标准差，常量列标准差替换为 1；权重包括末尾偏置，初始化为 0，全批量梯度下降运行 steps 步，lr 为步长，L2 项为非偏置权重平方和乘 l2/2；`predict(model,x)`（model 是 fit 返回的三元组） 概率不低于 0.5 时预测为 1。`metrics(y,pred)` 返回含 `accuracy`、`precision`、`recall`、`f1` 的字典，对正类 1 统计，分母为 0 的指标记 0。
 
-`select_annotators(votes,trusted,min_accuracy=0.7)` 输入 `[N,A]` 的 0/1 标注和 `[N]` 可信标签，返回独立校准集上准确率不低于阈值的标注者索引。`vote(votes,selected)` 仅对选中者多数投票，平票为 0；selected 至少含一人。训练目标为平均二元交叉熵 `-(1/N)*sum(y*log(sigmoid(z))+(1-y)*log(1-sigmoid(z)))` 加上述 L2 项，其中 `z=[(x-mean)/std,1]@weights`，sigmoid(z)=1/(1+exp(-z))。不得用测试集可信标签选择标注者。输入特征已编码，N<=5000、D<=100。
+`select_annotators(votes,trusted,min_accuracy=0.7)` 输入 `[N,A]` 的 0/1 标注和 `[N]` 可信标签，返回独立 calibration 集上准确率不低于阈值的标注者索引。`vote(votes,selected)` 仅对选中者多数投票，平票为 0；selected 至少含一人。训练目标为平均 binary cross entropy `-(1/N)*sum(y*log(sigmoid(z))+(1-y)*log(1-sigmoid(z)))` 加上述 L2 项，其中 `z=[(x-mean)/std,1]@weights`，sigmoid(z)=1/(1+exp(-z))。不得用测试集可信标签选择标注者。输入特征已编码，N<=5000、D<=100。
+
+### 子任务与返回类型
+
+这张卡含两个独立子任务，不要求一个函数自动划分数据：
+
+1. `fit` 只训练输入 x/y 的 logistic regression，返回 NumPy arrays `(mean[D],std[D],weights[D+1])`；最后一个 weight 是 bias。`predict` 返回 0/1 数组 `[M]`，不是概率。`metrics` 只按传入的 y、pred 计算分类结果。
+2. `select_annotators` 的 votes 行是**独立 calibration items**，列是 annotators，trusted 是同批 items 的可信标签。函数返回 Python 索引列表；可能为空。`vote` 调用时保证 selected 非空，输入 votes 可以来自另一批待标注 items，列顺序必须一致，输出每行的 0/1 多数标签。
+
+不能用用于最终报告的 test labels 选择 annotators；本题不要求在函数内自动决定 calibration/test split。steps 可以为 0，零初始化时 predict 全部输出 1。
 
 ### 示例
 
@@ -44,19 +57,19 @@ vote([[1,0]],[0,1])=[0]。
 
 ## 解题思路与参考答案
 
-我会把筛选标注员和验证模型效果分开：用独立可信校准集筛选，固定另一份验证集比较过滤前后的分类器。比如标注员在可信集里每条都标反，可以直接发现；但一般数据还要按类别和难度分层，避免把困难样本误当成坏标签。
+我会把筛选标注员和验证模型效果分开：用独立可信 calibration 集筛选，固定另一份验证集比较过滤前后的分类器。比如标注员在可信集里每条都标反，可以直接发现；但一般数据还要按类别和难度分层，避免把困难样本误当成坏标签。
 
 ## 题目
 
 训练数据来自多个标注员，其中一些人的标注质量很差。要找出这些低质量的标注员，并证明把他们的标签去掉之后，训练出来的分类器确实变好了。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
 先固定一份独立的验证集，它不参与标注员筛选，也不参与训练。然后逐个看标注员：每人标了多少样本、标出来的类别分布、在不同类别或难度分层上的误差。一个标注员错得多，可能只是分到了更难的样本，所以要分层比较，避免把困难样本误判成坏标注。
 
-判断标签质量需要一个不依赖被评估标签的参照，可以是人工复核过的可信集，也可以用交叉拟合：用其他折训练的模型去给这一折的标签打分。过滤之后，在相同的训练预算下比较过滤前后的指标，并给出置信区间，确认提升不是随机波动。
+判断标签质量需要一个不依赖被评估标签的参照，可以是人工复核过的可信集，也可以用交叉拟合：用其他折训练的模型去给这一折的标签打分。过滤之后，在相同的训练预算下比较过滤前后的指标，并给出 confidence interval，确认提升不是随机波动。
 
 最容易犯的错是把验证标签和被筛选的训练标签混在一起，这样验证结果本身就被污染了。
 
@@ -64,14 +77,14 @@ vote([[1,0]],[0,1])=[0]。
 
 ## 完整编程练习（手册重构版）
 
-这份练习把题目落到一个可以手写、可以测试的二分类基线上：NumPy 逻辑回归、评估指标，以及用可信校准集筛选标注员。
+这份练习把题目落到一个可以手写、可以测试的二分类基线上：NumPy 逻辑回归、评估指标，以及用可信 calibration 集筛选标注员。
 
 ### 题面、接口与约束
 
 - `fit(x, y, steps=1000, lr=0.1, l2=0.01)`：`x` 是 $N \times D$ 的有限数值矩阵，`y` 是 0/1 标签。返回训练集的均值、标准差和权重 `(mean, std, weights)`。
-- `predict(model, x)`：只能用 `fit` 返回的统计量做标准化，预测概率不低于 0.5 判为 1。
+- `predict(model, x)`：只能用 `fit` 返回的统计量做 standardization，预测概率不低于 0.5 判为 1。
 - `metrics(y_true, y_pred)`：返回 accuracy、precision、recall、F1，分母为 0 时记为 0。
-- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信校准集，返回准确率不低于阈值的标注员下标。
+- `select_annotators(votes, trusted, min_accuracy=0.7)`：`votes` 形状为 $N \times A$，只用一份独立的可信 calibration 集，返回准确率不低于阈值的标注员下标。
 - `vote(votes, selected)`：只用选中的标注员做多数票，生成训练标签，平票取 0；没有可用标注员时抛 `ValueError`。
 - 输入不含缺失值，类别特征要在上游编码好。测试集不能用来筛选标注员。$N \le 5000$，$D \le 100$。
 
@@ -84,11 +97,11 @@ select_annotators([[0, 1], [0, 1], [1, 0], [1, 0]], [0, 0, 1, 1]) -> [0]
 vote([[1, 0]], [0, 1])                                        -> [0]
 ```
 
-第二个标注员在校准集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
+第二个标注员在 calibration 集上每一条都标反，所以被排除；最后一行一票 1、一票 0，平票取 0。
 
 ### 解题思路与正确性
 
-`fit` 先用训练集的均值和标准差把特征标准化，标准差为 0 的常数列不缩放。然后拼一列 1 作为偏置，用全批量梯度下降最小化平均逻辑损失加 L2 正则。逻辑损失对权重的梯度是 $X^\top(\sigma(Xw) - y) / N$，L2 只加在非偏置的维度上。`predict` 复用训练时的统计量，测试数据的分布信息就不会漏进模型。
+`fit` 先用训练集的均值和标准差把特征 standardization，标准差为 0 的常数列不缩放。然后拼一列 1 作为偏置，用全批量梯度下降最小化平均逻辑损失加 L2 正则。逻辑损失对权重的梯度是 $X^\top(\sigma(Xw) - y) / N$，L2 只加在非偏置的维度上。`predict` 复用训练时的统计量，测试数据的分布信息就不会漏进模型。
 
 sigmoid 写成 `exp(-logaddexp(0, -z))`，数学上等于 $1 / (1 + e^{-z})$，但 $z$ 很大或很小时都不会溢出。
 
@@ -143,7 +156,7 @@ def fit(x, y, steps=1000, lr=0.1, l2=0.01):
 
 
 def predict(model, x):
-    """用训练时的 mean/std 标准化，概率 >= 0.5 判为 1。"""
+    """用训练时的 mean/std standardization，概率 >= 0.5 判为 1。"""
     mean, std, weights = model
     x = np.asarray(x, dtype=float)
     design = add_bias((x - mean) / std)
@@ -175,7 +188,7 @@ def metrics(y_true, y_pred):
 
 
 def select_annotators(votes, trusted, min_accuracy=0.7):
-    """votes 形状 (N, A)，trusted 形状 (N,)：返回在可信校准集上准确率达标的标注员下标。"""
+    """votes 形状 (N, A)，trusted 形状 (N,)：返回在可信 calibration 集上准确率达标的标注员下标。"""
     votes = np.asarray(votes)
     trusted = np.asarray(trusted)
     if votes.ndim != 2 or len(votes) != len(trusted) or len(votes) == 0:
@@ -200,7 +213,7 @@ def vote(votes, selected):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -211,6 +224,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__} should raise ValueError")
+
 
 # 一维可分数据：训练后全部预测正确
 x = np.array([[-2.0], [-1.0], [1.0], [2.0]])

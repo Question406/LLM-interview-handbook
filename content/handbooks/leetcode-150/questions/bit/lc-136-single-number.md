@@ -4,20 +4,22 @@ section: bit
 order: 4
 level: S
 title: LC 136 · 只出现一次的数字
-quick: "把所有数异或一遍：$a\\oplus a=0$、$a\\oplus 0=a$，成对出现的数互相抵消，剩下的就是只出现一次的那个。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  把所有数异或一遍：$a\oplus a=0$、$a\oplus 0=a$，成对出现的数互相抵消，剩下的就是只出现一次的那个。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Bit
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 136. 只出现一次的数字
-    url: https://leetcode.cn/problems/single-number/
+    url: 'https://leetcode.cn/problems/single-number/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -95,7 +97,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时数组里只有单身那个，异或初值 $0$ 和它异或就是它。单身在开头还是结尾都不影响，异或可交换、可结合。含负数也没问题，补码下异或同样成立，不用先转无符号。
 

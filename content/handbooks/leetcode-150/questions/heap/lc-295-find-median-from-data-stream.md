@@ -5,7 +5,8 @@ order: 4
 level: S
 title: LC 295 · 数据流的中位数
 quick: >-
-  用对顶堆：大根堆 `lo` 存较小的一半，小根堆 `hi` 存较大的一半，我保持 $|lo|-|hi|\in\{0,1\}$。个数是奇数时取 `lo` 顶，偶数时取两个堆顶的平均。
+  用对顶堆：大根堆 `lo` 存较小的一半，小根堆 `hi` 存较大的一半，我保持 $|lo|-|hi|\in\{0,1\}$。个数是奇数时取 `lo`
+  顶，偶数时取两个堆顶的平均。
 tags:
   - Heap
   - Design
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 295. 数据流的中位数
-    url: https://leetcode.cn/problems/find-median-from-data-stream/
+    url: 'https://leetcode.cn/problems/find-median-from-data-stream/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -124,7 +125,7 @@ print("simple tests passed")
 
 `addNum` 时间 $O(\log n)$，`findMedian` 是 $O(1)$，额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 只有一个数时 `lo` 比 `hi` 多 $1$，中位数就是 `lo` 顶。全部相同时两个堆顶相等，奇偶规则照常。负数也没问题，大根堆用负数模拟，比较的还是原值，符号不会出错。偶数个取两顶平均，奇数个只取 `lo` 顶，因为 `lo` 始终不比 `hi` 短。
 
@@ -136,13 +137,16 @@ print("simple tests passed")
 ```python
 from sortedcontainers import SortedList
 
+
 def medianSlidingWindow(nums, k):
     win = SortedList(nums[:k])
     ans = []
+
     def med():
         if k % 2:
             return float(win[k // 2])
         return (win[k // 2 - 1] + win[k // 2]) / 2.0
+
     ans.append(med())
     for i in range(k, len(nums)):
         win.remove(nums[i - k])

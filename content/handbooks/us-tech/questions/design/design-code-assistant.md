@@ -3,8 +3,10 @@ id: design-code-assistant
 section: design
 order: 16
 level: S
-title: 设计：代码助手（仓库索引、权限、补全延迟、SWE-bench 口径）
-quick: "行内补全和仓库 agent 要分别定 SLO：补全追求几十毫秒级的响应，agent 关注任务完成和误改，两者都依赖带权限且及时更新的索引。SWE-bench 评测要固定 harness、仓库快照和测试命令，私有代码默认不进入训练，也不能跨租户检索。"
+title: 设计：代码助手（仓库索引、权限、补全延迟、SWE-bench 定义）
+quick: >-
+  行内补全和仓库 agent 要分别定 SLO：补全追求几十毫秒级的响应，agent 关注任务完成和误改，两者都依赖带权限且及时更新的索引。SWE-bench
+  评测要固定 harness、仓库快照和测试命令，私有代码默认不进入训练，也不能跨租户检索。
 tags:
   - Microsoft
   - GitHub
@@ -13,22 +15,22 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: SWE-bench — Can Language Models Resolve Real-World GitHub Issues?
-    url: https://arxiv.org/abs/2310.06770
+    url: 'https://arxiv.org/abs/2310.06770'
     type: primary
   - title: Introducing SWE-bench Verified
-    url: https://openai.com/index/introducing-swe-bench-verified/
+    url: 'https://openai.com/index/introducing-swe-bench-verified/'
     type: primary
   - title: GitHub Copilot documentation
-    url: https://docs.github.com/en/copilot
+    url: 'https://docs.github.com/en/copilot'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -44,7 +46,7 @@ sources:
 
 只能访问用户有权读取的仓库和路径。需要分别说明补全与长任务的延迟、成本、索引新鲜度、执行环境和评测协议；不能把测试答案或其他私有仓库内容泄漏到建议中。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
@@ -54,7 +56,7 @@ sources:
 
 我会把行内补全和修改仓库的 agent 分成两条服务路径：补全优先保证键入后的响应速度，agent 则围绕 issue、补丁和测试来完成任务。两条路径都需要带权限、及时更新的仓库索引。比如文件删掉后，助手仍建议调用里面的 API，就说明索引新鲜度出了问题。
 
-这是一道归纳题，并非某次现场逐字题，覆盖 Microsoft Copilot、Meta 内部代码助手和 OpenAI 评测方向。SWE-bench 采用「issue + 仓库快照 + 补丁 + 测试」的评测方式，Verified 则处理了原集的题面噪声。证据支持见 `msft-copilot-ground`；检索骨架见 `design-prod-rag`；对话服务见 `design-chat-serving`。
+这是一道归纳题，覆盖 Microsoft Copilot、Meta 内部代码助手和 OpenAI 评测方向。SWE-bench 采用「issue + 仓库快照 + 补丁 + 测试」的评测方式，Verified 则处理了原集的题面噪声。证据支持见 `msft-copilot-ground`；检索骨架见 `design-prod-rag`；对话服务见 `design-chat-serving`。
 
 ## 索引和权限
 
@@ -73,22 +75,22 @@ sources:
 
 失败：索引滞后导致建议已删 API；权限穿透；补全把密钥从邻接文件补出来；agent 改测试来「通过」而不是改产品代码。密钥扫描要在进上下文前做：`.env`、私钥、高熵串直接丢弃，不要靠模型「注意别泄漏」。
 
-## SWE-bench 口径
+## SWE-bench 定义
 
 SWE-bench：给定 issue 文本和代码库快照，系统交补丁，跑作者测试：fail-to-pass 必须过，pass-to-pass 不能回归。报 resolved 率要写：子集（Full / Lite / Verified）、是否 gold 补丁泄漏、是否用测试名提示、agent 步数和工具集、是否允许看测试文件。Verified 是人滤过的题面，数字不能和 Full 混报。
 
-污染：公开 PR 和解法博客会进预训练，见 `align-eval-contam`。内部代码助手不要只刷 SWE-bench 当发版。私有「内部 issue → 补丁 → CI」才是产品集，口径仍要 fail-to-pass 定义清楚。
+污染：公开 PR 和解法博客会进预训练，见 `align-eval-contam`。内部代码助手不要只刷 SWE-bench 当发版。私有「内部 issue → 补丁 → CI」才是产品集，定义仍要 fail-to-pass 定义清楚。
 
 评测平台：冻结仓库镜像、测试命令、超时、随机性。和 `design-offline-eval` 同一套版本管理。人评看 diff 是否最小、是否改测试作弊。
 
-指标：补全接受率要小心虚荣（乱接受）；加上回退率、编译失败、CI 红。Agent：resolved、步数、误改文件数、沙箱逃逸零容忍。内部评测用真实 PR 抽样，口径仍写 fail-to-pass，不要只报「程序员觉得有用」。
+指标：补全接受率要小心虚荣（乱接受）；加上回退率、编译失败、CI 红。Agent：resolved、步数、误改文件数、沙箱逃逸零容忍。内部评测用真实 PR 抽样，定义仍写 fail-to-pass，不要只报「程序员觉得有用」。
 
 ## 追问
 
 **为什么不把整个 monorepo 塞长上下文？**
 权限、新鲜、p95、中间丢失，见 `design-long-doc`。索引 + 定点读文件更像工程师。
 **SWE-bench 高就能发 Copilot？**
-不能。口径是公开 GitHub issue，不是你的 IDE 分布和延迟。
+不能。定义是公开 GitHub issue，不是你的 IDE 分布和延迟。
 **补全能用对话模型吗？**
 能，但要用 FIM 训练和低延迟池。对话模板的套话在补全里是事故。
 **测试泄漏怎么办？**
@@ -98,6 +100,6 @@ SWE-bench：给定 issue 文本和代码库快照，系统交补丁，跑作者�
 **补全接受率当北极星？**
 不行。加上回退、编译失败、事后删除。虚荣接受会鼓励啰嗦补全。
 
-发布闸门：补全 p95、越权检索零、沙箱逃逸零、SWE-bench Verified 只作参考、内部 PR fail-to-pass。缺权限项不能发。索引滞后 SLA 单独报：文件删除后多少秒从补全消失。
+release criteria：补全 p95、越权检索零、沙箱逃逸零、SWE-bench Verified 只作参考、内部 PR fail-to-pass。缺权限项不能发。索引滞后 SLA 单独报：文件删除后多少秒从补全消失。
 
 IDE 插件和对话 agent 分版本号。补全模型升了、agent 提示没钉，会把对话套话打进行内建议。见 `design-prompt-mgmt`。

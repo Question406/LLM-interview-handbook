@@ -3,8 +3,10 @@ id: p3a-openai-implement-cd-command
 section: openai
 order: 623
 level: A
-title: "OpenAI：实现 cd：路径规范化、符号链接与环检测"
-quick: "用栈维护已解析路径，用队列逐段处理目标；遇到符号链接就把目标插回队首，相对链接以父目录为基准。后续 `..` 在展开链接后处理，展开超过 40 次报错，避免环导致无限循环。"
+title: OpenAI：实现 cd：路径规范化、符号链接与环检测
+quick: >-
+  用栈维护已解析路径，用队列逐段处理目标；遇到符号链接就把目标插回队首，相对链接以父目录为基准。后续 `..` 在展开链接后处理，展开超过 40
+  次报错，避免环导致无限循环。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · implement-cd-command"
-    url: https://www.1point3acres.com/interview/problems/company/openai/implement-cd-command
+  - title: 1Point3Acres · OpenAI · implement-cd-command
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/implement-cd-command
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现 cd 的纯路径解析函数，处理相对路径、回到上层、home 展开和符号链接，不访问真实文件系统。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -53,7 +56,7 @@ cd("/a", "~/x", {})                     -> "/home/u/x"
 
 实现 shell 的 `cd`：给当前目录和目标路径，返回切换后的规范绝对路径。题目分几步加功能：相对路径和绝对路径、`.` 与 `..`、家目录 `~`，最后是符号链接以及链接成环的检测。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 加上符号链接后，不能先在字符串上把 `..` 消掉再解析链接。例如 `/a/link` 指向 `../b`，那么 `/a/link/..` 实际是 `/b/..`，也就是 `/`；如果先按字面消掉 `link/..`，会错误地得到 `/a`。正确做法是逐段处理：每拼出一个新路径，就检查它是不是链接；是的话把链接目标的各段插回待处理队列的最前面，接着解析。
 
@@ -112,7 +115,9 @@ def cd(cwd, destination, links, home="/home/u"):
     destination = _expand_home(destination, home)
 
     # resolved 始终是一条已经解析过的真实路径（不含链接），按组件存
-    resolved = [] if destination.startswith("/") else [part for part in cwd.split("/") if part]
+    resolved = (
+        [] if destination.startswith("/") else [part for part in cwd.split("/") if part]
+    )
     pending = deque(destination.split("/"))
     expansions = 0
     while pending:
@@ -149,7 +154,7 @@ def cd(cwd, destination, links, home="/home/u"):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -160,6 +165,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 links = {"/a/link": "../b"}
 

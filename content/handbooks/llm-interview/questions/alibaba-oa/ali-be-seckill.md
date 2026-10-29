@@ -5,17 +5,18 @@ order: 61
 level: S
 title: 阿里研发面：秒杀系统怎么讲，才像淘天而不是背模板？
 quick: >-
-  秒杀要让注定失败的大多数请求尽早、便宜地失败：页面静态化、库存预热进缓存、独立下单通道，请求先限流排队，再预减库存、异步创建订单。防超卖靠 Redis 原子扣减加数据库条件更新，重复请求靠唯一键幂等，最后通过对账发现并修正差异。
+  秒杀要让注定失败的大多数请求尽早、便宜地失败：页面静态化、库存预热进缓存、独立下单通道，请求先限流排队，再预减库存、异步创建订单。防超卖靠 Redis
+  原子扣减加数据库条件更新，重复请求靠唯一键幂等，最后通过对账发现并修正差异。
 tags:
   - Alibaba
   - 秒杀
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
-    url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
+    url: 'https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6'
     type: candidate-first-hand
 ---
 
@@ -48,7 +49,7 @@ sources:
 ## 追问
 
 **Redis 主从切换导致库存回档怎么办？**
-预减以 DB 条件更新为准，Redis 只当闸门，事后对账。
+预减以 DB 条件更新为准，Redis 只当 acceptance checks，事后对账。
 
 **为什么不直接用 DB 行锁？**
 锁等待会把连接池打满，连成功的请求也会超时。

@@ -4,20 +4,22 @@ section: binary-search
 order: 2
 level: A
 title: LC 74 · 搜索二维矩阵
-quick: "每行有序，且下一行首大于上一行尾，整张表就是一个一维有序数组。对它二分，下标 `mid` 映射成 `(mid // n, mid % n)`，一次就够。时间 $O(\\log(mn))$。"
+quick: >-
+  每行有序，且下一行首大于上一行尾，整张表就是一个一维有序数组。对它二分，下标 `mid` 映射成 `(mid // n, mid % n)`，一次就够。时间
+  $O(\log(mn))$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 74. 搜索二维矩阵
-    url: https://leetcode.cn/problems/search-a-2d-matrix/
+    url: 'https://leetcode.cn/problems/search-a-2d-matrix/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -109,7 +111,7 @@ print("simple tests passed")
 
 时间 $O(\log(mn))$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $1\times 1$ 时 `lo == hi == 0`，比一次就够。`target` 比左上还小或比右下还大时，`mid` 会一路往对应方向收直到出界，返回 `False`。恰好在行缝两侧的值，比如上一行尾 $7$、下一行首 $10$，压成一维后仍然相邻有序，二分不会跨行出错。
 

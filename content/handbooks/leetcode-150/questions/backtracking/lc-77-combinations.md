@@ -4,20 +4,20 @@ section: backtracking
 order: 2
 level: A
 title: LC 77 · 组合
-quick: "用回溯按升序选，下一层从 $i+1$ 开始，这样每个组合只生成一次。剩余名额不够时提前剪枝。时间 $O(\\binom{n}{k}\\cdot k)$。"
+quick: '用回溯按升序选，下一层从 $i+1$ 开始，这样每个组合只生成一次。剩余名额不够时提前剪枝。时间 $O(\binom{n}{k}\cdot k)$。'
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 77. 组合
-    url: https://leetcode.cn/problems/combinations/
+    url: 'https://leetcode.cn/problems/combinations/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -107,7 +107,7 @@ print("simple tests passed")
 
 时间 $O(\binom{n}{k}\cdot k)$，空间 $O(k)$ 加输出。
 
-## 边界
+## Edge Cases
 
 $k=1$ 时答案是 `[1]..[n]` 各一个。$k=n$ 时只有 `[1,2,...,n]` 一条。$n=k=1$ 时是 `[[1]]`。这些情况下剪枝上界 `n-need+1` 都不会把区间剪空。
 

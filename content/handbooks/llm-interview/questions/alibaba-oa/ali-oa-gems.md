@@ -5,7 +5,8 @@ order: 10
 level: A
 title: 淘天算法 0816：光辉宝石融合后如何最大化前缀最大值之和？
 quick: >-
-  融合就是把一颗的能量搬到另一颗再清零，反复做等于任意重分配。有正数时把全部正能量堆到下标 $1$，答案是 $n\sum_{a_i\gt 0}a_i$；全是非正数时，$n=1$ 只能取原值，否则可以做成 $0$。
+  融合就是把一颗的能量搬到另一颗再清零，反复做等于任意重分配。有正数时把全部正能量堆到下标 $1$，答案是 $n\sum_{a_i\gt
+  0}a_i$；全是非正数时，$n=1$ 只能取原值，否则可以做成 $0$。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 淘天算法 2025.08.16 改编真题
-    url: https://www.nowcoder.com/discuss/786279353033232384
+    url: 'https://www.nowcoder.com/discuss/786279353033232384'
     type: secondary
 ---
 
@@ -99,7 +100,7 @@ def main():
     if not data:
         return
     n = data[0]
-    a = data[1:1 + n]
+    a = data[1 : 1 + n]
     print(max_prefix_max_sum(a))
 
 
@@ -124,7 +125,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 全 $0$ 时 $P=0$，$n$ 任意，答案都是 $0$；只有一个负数时消不掉；`[0,-1]` 本身已经是 $0$。其他语言里乘积 `n * pos` 要用 64 位。
 

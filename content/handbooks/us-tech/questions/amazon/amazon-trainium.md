@@ -4,7 +4,10 @@ section: amazon
 order: 10
 level: S
 title: Amazon：Trainium / Neuron 上训 LLM，和 GPU 栈公开层差在哪？
-quick: "Trainium 与 GPU 的主要差异在编译器、集合通信和自定义内核。GPU 常用 CUDA / NCCL，Trainium 用 Neuron 编译、aws-neuronx-collectives 和 NKI，形状与并行切分也要适配。迁移先验证数值，再测编译时间、吞吐和恢复，公开材料之外的内部架构不推测。"
+quick: >-
+  Trainium 与 GPU 的主要差异在编译器、集合通信和自定义内核。GPU 常用 CUDA / NCCL，Trainium 用 Neuron
+  编译、aws-neuronx-collectives 和 NKI，形状与并行切分也要适配。迁移先验证数值，再测编译时间、throughput
+  和恢复，公开材料之外的内部架构不推测。
 tags:
   - Amazon
   - Trainium
@@ -13,25 +16,29 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: AWS Trainium
-    url: https://aws.amazon.com/machine-learning/trainium/
+    url: 'https://aws.amazon.com/machine-learning/trainium/'
     type: primary
   - title: AWS Neuron SDK
-    url: https://aws.amazon.com/ai/machine-learning/neuron/
+    url: 'https://aws.amazon.com/ai/machine-learning/neuron/'
     type: primary
-  - title: End-to-end LLM training on instance clusters with over 100 nodes using AWS Trainium
-    url: https://aws.amazon.com/blogs/machine-learning/end-to-end-llm-training-on-instance-clusters-with-over-100-nodes-using-aws-trainium/
+  - title: >-
+      End-to-end LLM training on instance clusters with over 100 nodes using AWS
+      Trainium
+    url: >-
+      https://aws.amazon.com/blogs/machine-learning/end-to-end-llm-training-on-instance-clusters-with-over-100-nodes-using-aws-trainium/
     type: primary
   - title: Collective Communication — AWS Neuron
-    url: https://awsdocs-neuron.readthedocs-hosted.com/en/latest/general/arch/neuron-features/collective-communication.html
+    url: >-
+      https://awsdocs-neuron.readthedocs-hosted.com/en/latest/general/arch/neuron-features/collective-communication.html
     type: primary
 ---
 
 从 GPU 迁到 Trainium，主要要适配编译、通信和自定义内核，优化器仍可以是熟悉的 Adam。PyTorch 前端看起来相近，并不表示 Triton 或 FlashAttention 能直接搬过去。Trainium 是 AWS 的训练加速器，Neuron 是其软件栈，与 CUDA 栈不同。
 
-AWS 的公开 Trn1 预训练配方包括激活重计算、张量 / 流水 / 序列 / 数据并行，以及 BF16 加 stochastic rounding。评估迁移时看成本、可复现性和故障诊断，门禁见 `amazon-lp-ml`。
+AWS 的公开 Trn1 预训练配方包括激活重计算、张量 / 流水 / 序列 / 数据并行，以及 BF16 加 stochastic rounding。评估迁移时看成本、可复现性和故障诊断，acceptance checks 见 `amazon-lp-ml`。
 
 ## 从编译到内核逐层适配
 
@@ -47,9 +54,9 @@ FSDP、DDP、张量并行接口可以类似 PyTorch，但切分单位是 NeuronC
 
 我会固定 microbatch 和序列档位，减少编译图数量，再用激活重计算管理 Neuron 的 SRAM / HBM 预算。用 `neuron-top` 检查核利用率与通信计算重叠，节点失败恢复可利用 SageMaker / 托管训练的能力。
 
-数值验证使用相同数据和 seed，先比较短序列 token-level loss。对不齐时查精度、collective 顺序，再查 kernel；注意力可用短序列 greedy / teacher-forcing loss 对照 GPU。性能看 token/s/core、MFU 类利用率、loss 曲线，以及第一次 job 的编译时间。
+数值验证使用相同数据和 seed，先比较短序列 token-level loss。对不齐时查精度、collective 顺序，再查 kernel；attention 可用短序列 greedy / teacher-forcing loss 对照 GPU。性能看 token/s/core、MFU 类利用率、loss 曲线，以及第一次 job 的编译时间。
 
-主机 CPU 解码、tokenizer 和 checkpoint 落盘也可能使核空转，这与 GPU 的数据加载问题类似，只是诊断工具换成 Neuron。最终服务在 Bedrock 时，仍按应用任务验收，见 `amazon-titan-eval`。
+主机 CPU decoding、tokenizer 和 checkpoint 落盘也可能使核空转，这与 GPU 的数据加载问题类似，只是诊断工具换成 Neuron。最终服务在 Bedrock 时，仍按应用任务验收，见 `amazon-titan-eval`。
 
 Inferentia 偏推理，Trainium 偏训练，Neuron SDK 同时覆盖两者。Nova / Titan 内部训练配方没有公开时，介绍停在这些公开栈差异，产品选型见 `amazon-nova`。
 

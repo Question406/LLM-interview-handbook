@@ -4,30 +4,42 @@ section: systems
 order: 2
 level: S
 title: 系统：ZeRO 1/2/3 与 FSDP 对照，CPU offload 何时值得
-quick: "ZeRO-1 分片优化器，ZeRO-2 再分梯度，ZeRO-3 再分参数，FSDP 与 ZeRO-3 的原理相近。它们用通信换显存，峰值还要算激活和 all-gather 工作区；GPU 不够时可先 offload 优化器，参数 offload 则要评估每层 PCIe 传输成本。"
+quick: >-
+  ZeRO-1 分片优化器，ZeRO-2 再分梯度，ZeRO-3 再分参数，FSDP 与 ZeRO-3 的原理相近。它们用通信换显存，峰值还要算激活和
+  all-gather 工作区；GPU 不够时可先 offload 优化器，参数 offload 则要评估每层 PCIe 传输成本。
 tags:
   - Microsoft
   - Meta
   - ZeRO
   - FSDP
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: ZeRO — Memory Optimizations Toward Training Trillion Parameter Models
-    url: https://arxiv.org/abs/1910.02054
+    url: 'https://arxiv.org/abs/1910.02054'
     type: primary
   - title: ZeRO-Offload — Democratizing Billion-Scale Model Training
-    url: https://arxiv.org/abs/2101.06840
+    url: 'https://arxiv.org/abs/2101.06840'
     type: primary
   - title: PyTorch FSDP — Experiences on Scaling Fully Sharded Data Parallel
-    url: https://arxiv.org/abs/2304.11277
+    url: 'https://arxiv.org/abs/2304.11277'
     type: primary
   - title: Introducing PyTorch Fully Sharded Data Parallel API
-    url: https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/
+    url: >-
+      https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api/
     type: secondary
 ---
+
+## 可以这样回答
+
+ZeRO-1、2、3 依次分片优化器、梯度和参数，FSDP 在原理上对应 ZeRO-3。显存越省，热路径上的通信通常越多，所以选择时还要看网络和峰值，不能只套稳态公式 $16N/D$。例如把参数也 offload 到 CPU 后，每层都要搬权重，可能放得下却跑得慢。
+
+激活、通信 buffer、碎片都不在这张表里。ZeRO 不分激活，长序列该 checkpoint / 序列并行，见 `sys-act-checkpoint`。
+
+## 技术备查
 
 ZeRO-1、2、3 依次分片优化器、梯度和参数，FSDP 在原理上对应 ZeRO-3。显存越省，热路径上的通信通常越多，所以选择时还要看网络和峰值，不能只套稳态公式 $16N/D$。例如把参数也 offload 到 CPU 后，每层都要搬权重，可能放得下却跑得慢。
 

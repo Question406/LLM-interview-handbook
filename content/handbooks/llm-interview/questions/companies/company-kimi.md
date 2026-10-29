@@ -4,7 +4,9 @@ section: companies
 order: 6
 level: A
 title: Moonshot / Kimi：Agent 方向值得重点读哪些东西？
-quick: "Kimi 方向我会重点看 agentic data、long-context、tool use、orchestration、Agent Swarm / PARL 和 multi-agent credit assignment，模型 benchmark 只是起点。"
+quick: >-
+  Kimi 方向我会重点看 agentic data、long-context、tool use、orchestration、Agent Swarm /
+  PARL 和 multi-agent credit assignment，模型 benchmark 只是起点。
 tags:
   - Moonshot
   - Kimi
@@ -13,7 +15,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: ↗ Kimi K2
     url: 'https://arxiv.org/abs/2507.20534'
@@ -29,7 +31,7 @@ Kimi / Moonshot 方向，背榜单分数用处不大。K2 / K2.5 给面试的素
 
 ## 准备主线
 
-1. Agentic data 的轨迹要包含工具失败、澄清和长 horizon，光堆成功 demo 不够。对照 `minimax-data-quality-gpt`、`byte-agent-posttrain-data-stage` 的阶段划分，讲清监督微调（SFT）怎么教会调用格式，强化学习（RL）怎么学可验证的探索。
+1. Agentic data 的轨迹要包含工具失败、澄清和长 horizon，光堆成功 demo 不够。对照 `minimax-data-quality-gpt`、`byte-agent-posttrain-data-stage` 的阶段划分，讲清 SFT 怎么教会调用格式，RL 怎么学可验证的探索。
 2. Long-context 和检索的取舍在于全塞又贵又脏，要说清检索、memory、skill 各解决什么。相关工程见 `pdd-long-context-cheap`、`agent-mcp`。
 3. 编排和 credit 要讲并行 sub-agent 什么时候能缩短实际耗时、什么时候会因汇总损失而失败，以及冻结 worker 训 orchestrator 时环境是非平稳的。
 4. 桌面 / 本地 Agent 要准备本地文件权限、多窗状态、任务中心、多模态上下文和结果护栏，见下面的 moonshot 卡。
@@ -43,7 +45,7 @@ Kimi / Moonshot 方向，背榜单分数用处不大。K2 / K2.5 给面试的素
 - `moonshot-desktop-task-center`：任务中心如何编排
 - `moonshot-desktop-multimodal-context`：多模态上下文怎么截
 - `moonshot-desktop-result-guardrails`：结果护栏
-- `agent-mcp`：MCP / 工具协议边界
+- `agent-mcp`：MCP / tool protocol scope
 - `pdd-long-context-cheap`：长上下文如何做便宜
 
 ## 追问

@@ -4,7 +4,9 @@ section: array-string
 order: 7
 level: S
 title: LC 121 · 买卖股票的最佳时机
-quick: "只交易一次，扫一遍就够：维护到当天为止的最低买入价，每天拿当天价减它试卖，更新最大利润。卖出日定了，最优买入就是它之前的最低价。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  只交易一次，扫一遍就够：维护到当天为止的最低买入价，每天拿当天价减它试卖，更新最大利润。卖出日定了，最优买入就是它之前的最低价。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 121. 买卖股票的最佳时机
-    url: https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/
+    url: 'https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 单调递减时每天卖都不赚，利润是 $0$。最低价在最后一天时只能买不能卖，还是 $0$。长度为 $1$ 做不完一买一卖，也返回 $0$。
 

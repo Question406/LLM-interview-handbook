@@ -3,8 +3,8 @@ id: p3a-anthropic-oa-worker-management
 section: anthropic
 order: 616
 level: A
-title: "Anthropic：员工管理：打卡、晋升和重叠奖金"
-quick: "我会在每次入场时冻结工资率，晋升留到下一次入场才用。结算只看已结束会话，先与查询区间求交，再按奖金端点切段，逐段计算时长、工资率和叠加倍率。"
+title: Anthropic：员工管理：打卡、晋升和重叠奖金
+quick: 我会在每次入场时冻结工资率，晋升留到下一次入场才用。结算只看已结束会话，先与查询区间求交，再按奖金端点切段，逐段计算时长、工资率和叠加倍率。
 companies:
   - anthropic
 tags:
@@ -13,13 +13,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Anthropic · oa-worker-management"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-worker-management
+  - title: 1Point3Acres · Anthropic · oa-worker-management
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-worker-management
     type: secondary
 ---
 
@@ -27,7 +29,9 @@ sources:
 
 实现员工工时与工资记录，支持下次上班起生效的工资调整和可重叠的奖金时段。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Workers.add(worker_id, rate)` 注册员工；`enter(id,t)` 与 `leave(id,t)` 形成半开工作区间 `[进入时间,离开时间)`。每位员工的操作时间单调不减，工作段互不重叠。`promote(id,new_rate)` 只在该员工下一次 enter 起生效，不改变正在进行的工作段；多次待生效调整以后一次为准。
 
@@ -49,7 +53,7 @@ salary("a",10,12) = 40
 
 实现一个员工工时与工资系统：记录员工打卡进出，支持晋升（新工资率从下一次入场开始生效），支持在某个时间段发放奖金倍率，最后能查询某员工在任意时间区间内挣了多少钱。奖金区间可能互相重叠，也可能只和工作区间部分重叠。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 我会在入场时把工资率存进本次会话，之后晋升只登记为待生效值。比如入场工资率是 10，中途晋升到 20，这次离场前仍按 10 算，下次入场才按 20。这样不会追溯改掉已经结束或进行中的会话。
 
@@ -82,7 +86,7 @@ salary("a", 3, 5)    -> 30     # [3, 4) 双倍 20 + [4, 5) 10
 
 工资率在入场时冻结进会话，之后的 `promote` 只改 `pending_rate`，所以历史会话和进行中的会话都不会被追溯修改。
 
-结算时，交集区间内部的所有奖金端点把它切成若干小段。任意一段内部没有端点，所以每个奖金要么完全覆盖这段、要么完全不覆盖，倍率是常数，用左端点查一次即可。逐段累加后，重叠奖金、跨越查询边界的奖金、只覆盖会话一部分的奖金都能正确处理。倍率相乘是这份练习的约定，原题可能有不同规则。
+结算时，交集区间内部的所有奖金端点把它切成若干小段。任意一段内部没有端点，所以每个奖金要么完全覆盖这段、要么完全不覆盖，倍率是常数，用左端点查一次即可。逐段累加后，重叠奖金、跨越 query interval endpoints 的奖金、只覆盖会话一部分的奖金都能正确处理。倍率相乘是这份练习的约定，原题可能有不同规则。
 
 ### 完整参考实现（Python 3）
 
@@ -93,8 +97,8 @@ from dataclasses import dataclass, field
 @dataclass
 class Worker:
     rate: int
-    pending_rate: int | None = None   # 晋升后的新工资率，下次入场才生效
-    active: tuple | None = None       # 进行中的会话 (入场时间, 冻结的工资率)
+    pending_rate: int | None = None  # 晋升后的新工资率，下次入场才生效
+    active: tuple | None = None  # 进行中的会话 (入场时间, 冻结的工资率)
     sessions: list = field(default_factory=list)  # 已结束的 (start, end, rate)
     last_time: float = float("-inf")
 
@@ -175,7 +179,7 @@ class Workers:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

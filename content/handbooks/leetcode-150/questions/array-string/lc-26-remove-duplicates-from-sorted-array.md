@@ -4,7 +4,9 @@ section: array-string
 order: 3
 level: S
 title: LC 26 · 删除有序数组中的重复项
-quick: "数组有序，相同元素一定相邻，所以用快慢指针原地写：当前值和已写入的最后一个不同才写入，最后返回慢指针，就是新长度。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  数组有序，相同元素一定相邻，所以用快慢指针原地写：当前值和已写入的最后一个不同才写入，最后返回慢指针，就是新长度。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Array
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 26. 删除有序数组中的重复项
-    url: https://leetcode.cn/problems/remove-duplicates-from-sorted-array/
+    url: 'https://leetcode.cn/problems/remove-duplicates-from-sorted-array/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -107,7 +109,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。一次扫描。
 
-## 边界
+## Edge Cases
 
 长度为 $1$ 没有重复可删，返回 $1$。全部相同只留一个，返回 $1$。全部不同时 `slow` 每次都写，返回 $n$。
 

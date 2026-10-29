@@ -1,0 +1,52 @@
+{
+  "commit": "04316c111d0e4b75ca2ab8de0e6b42379727946e",
+  "files": 1808,
+  "cards": 1673,
+  "sections": {
+    "coding": 38,
+    "deepml": 181,
+    "openai": 184,
+    "anthropic": 99,
+    "research": 207,
+    "plans": 104,
+    "collections": 51,
+    "forum-notes": 362,
+    "agent-core": 95,
+    "agent-questions": 36,
+    "mlsd": 218,
+    "robotics": 72,
+    "labs": 19,
+    "references": 6,
+    "guide": 1
+  },
+  "companyFilters": {
+    "anthropic": 207,
+    "openai": 283
+  },
+  "coverage": {
+    "infrastructure-or-data-reference": 81,
+    "reading-card": 1605,
+    "code-download": 13,
+    "source-reference": 6,
+    "original-post-reference": 103
+  },
+  "archiveFiles": 1135,
+  "formulaProseFindings": [],
+  "codeFormatting": {
+    "blocks": 5015,
+    "files": 1492,
+    "changesNeeded": 0
+  },
+  "nodeTests": {
+    "passed": 69,
+    "failed": 0
+  },
+  "algorithmExecution": "Upstream labs and reference algorithms were not all execution-tested.",
+  "fullBuild": "passed: 4289 questions across 12 handbooks",
+  "liveChecks": [
+    "catalog: 1673 cards / 15 sections",
+    "guide JSON: HTTP 200 with download links",
+    "code ZIP: HTTP download SHA-256 matches",
+    "OpenAI / Anthropic facets verified"
+  ]
+}

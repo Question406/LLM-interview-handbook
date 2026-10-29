@@ -5,7 +5,8 @@ order: 1
 level: S
 title: LC 283 · 移动零
 quick: >-
-  用一个写指针 `w` 指向下一个非零数该放的位置，读指针遇到非零就和 `w` 交换，`w` 前移。这样非零数的相对顺序不变，零被挤到末尾。时间 $O(n)$，额外空间 $O(1)$。
+  用一个写指针 `w` 指向下一个非零数该放的位置，读指针遇到非零就和 `w` 交换，`w` 前移。这样非零数的相对顺序不变，零被挤到末尾。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Two Pointers
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 283. Move Zeroes
-    url: https://leetcode.com/problems/move-zeroes/
+    url: 'https://leetcode.com/problems/move-zeroes/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -74,6 +75,7 @@ def moveZeroes(nums: List[int]) -> None:
 
 
 if __name__ == "__main__":
+
     def run(a):
         moveZeroes(a)
         return a
@@ -94,8 +96,10 @@ if __name__ == "__main__":
 
 ```python
 def run(a):
-        moveZeroes(a)
-        return a
+    moveZeroes(a)
+    return a
+
+
 assert run([0, 1, 0, 3, 12]) == [1, 3, 12, 0, 0]
 assert run([0]) == [0]
 assert run([1, 2, 3]) == [1, 2, 3]
@@ -108,7 +112,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 没有 $0$ 时，每次都是 `w == i` 的自交换，数组不变。
 

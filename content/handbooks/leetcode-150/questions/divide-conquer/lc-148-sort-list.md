@@ -4,7 +4,9 @@ section: divide-conquer
 order: 2
 level: A
 title: LC 148 · 排序链表
-quick: "链表排序用归并：快慢指针找中点断开，两段递归排好，再按 LC 21 合并，时间 $O(n\\log n)$。自顶向下有 $O(\\log n)$ 的递归栈；要额外空间 $O(1)$，就改成自底向上按段长 1、2、4 迭代合并。"
+quick: >-
+  链表排序用归并：快慢指针找中点断开，两段递归排好，再按 LC 21 合并，时间 $O(n\log n)$。自顶向下有 $O(\log n)$
+  的递归栈；要额外空间 $O(1)$，就改成自底向上按段长 1、2、4 迭代合并。
 tags:
   - Linked List
   - Merge Sort
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 148. 排序链表
-    url: https://leetcode.cn/problems/sort-list/
+    url: 'https://leetcode.cn/problems/sort-list/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -97,6 +99,7 @@ def merge(a: Optional[ListNode], b: Optional[ListNode]) -> Optional[ListNode]:
 
 
 if __name__ == "__main__":
+
     def from_list(vals):
         dummy = ListNode()
         cur = dummy
@@ -126,18 +129,22 @@ if __name__ == "__main__":
 
 ```python
 def from_list(vals):
-        dummy = ListNode()
-        cur = dummy
-        for v in vals:
-            cur.next = ListNode(v)
-            cur = cur.next
-        return dummy.next
+    dummy = ListNode()
+    cur = dummy
+    for v in vals:
+        cur.next = ListNode(v)
+        cur = cur.next
+    return dummy.next
+
+
 def to_list(head):
-        out = []
-        while head:
-            out.append(head.val)
-            head = head.next
-        return out
+    out = []
+    while head:
+        out.append(head.val)
+        head = head.next
+    return out
+
+
 assert to_list(sortList(from_list([4, 2, 1, 3]))) == [1, 2, 3, 4]
 assert to_list(sortList(from_list([-1, 5, 3, 4, 0]))) == [-1, 0, 3, 4, 5]
 assert to_list(sortList(from_list([]))) == []
@@ -150,7 +157,7 @@ print("simple tests passed")
 
 一共 $\log n$ 层，每层合并遍历 $O(n)$，所以时间是 $O(n\log n)$。自顶向下的递归栈额外占 $O(\log n)$。
 
-## 边界
+## Edge Cases
 
 空表或只有一个结点时，`not head or not head.next` 直接返回，不用再切。已经有序的输入，归并比较永远走左支，比较次数仍是 $O(n\log n)$，只是交换少。完全逆序时每层归并都从右段取，结果照样正确。含负数也没关系，只比较结点值，和符号无关。
 

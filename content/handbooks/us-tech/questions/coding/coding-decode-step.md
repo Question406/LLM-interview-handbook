@@ -4,7 +4,9 @@ section: coding
 order: 33
 level: S
 title: 白板：一步 decode，取 q、concat KV、GQA repeat、出 logits
-quick: "当前 token 在 `cache_len` 位置做 RoPE，把 $k,v$ 沿序列维追加进 cache，再计算注意力和 `[B, 1, V]` logits。cache 始终保留 $H_{\\mathrm{kv}}$ 个头，只在注意力计算时扩展到 $H_q$。"
+quick: >-
+  当前 token 在 `cache_len` 位置做 RoPE，把 $k,v$ 沿序列维追加进 cache，再计算 attention 和 `[B, 1,
+  V]` logits。cache 始终保留 $H_{\mathrm{kv}}$ 个头，只在 attention 计算时扩展到 $H_q$。
 tags:
   - 完整编程练习
   - Coding
@@ -14,24 +16,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
-  - title: GQA — Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints
-    url: https://arxiv.org/abs/2305.13245
+  - title: >-
+      GQA — Training Generalized Multi-Query Transformer Models from Multi-Head
+      Checkpoints
+    url: 'https://arxiv.org/abs/2305.13245'
     type: primary
   - title: Fast Transformer Decoding — One Write-Head is All You Need
-    url: https://arxiv.org/abs/1911.02150
+    url: 'https://arxiv.org/abs/1911.02150'
     type: primary
 ---
 
 ## 题目描述
 
-实现带分组查询注意力（GQA）与 KV cache 的一次 decoder 生成调用。输入已经投影并完成位置旋转的本步 Q/K/V，返回词表 logits 以及追加后的紧凑缓存。
+实现带分组查询 attention（GQA）与 KV cache 的一次 decoder 生成调用。输入已经投影并完成位置旋转的本步 Q/K/V，返回 vocabulary logits 以及追加后的紧凑缓存。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -53,11 +57,11 @@ new_cache_k=[[[[0]]]], new_cache_v=[[[[2]]]]
 
 ## 解题思路与参考答案
 
-一步 decode 先把本步 $k,v$ 接到 cache 末尾，让当前 query 对所有已缓存 key 计算注意力，再做输出投影和词表层。当前 query 是序列里最新的位置，所有已缓存的 key 都在它之前或就是它自己，所以 $T=1$ 时因果 mask 退化成「全部可见」，不需要再造一张下三角。
+一步 decode 先把本步 $k,v$ 接到 cache 末尾，让当前 query 对所有已缓存 key 计算 attention，再做输出投影和 vocabulary 层。当前 query 是序列里最新的位置，所有已缓存的 key 都在它之前或就是它自己，所以 $T=1$ 时因果 mask 退化成「全部可见」，不需要再造一张下三角。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没有验证 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -95,24 +99,26 @@ def repeat_kv(x, n_rep):
 
 
 def decode_step(q, k_t, v_t, cache_k, cache_v, w_o, w_head, n_rep):
-    """一步 decode：追加 KV，GQA 注意力，输出投影和 lm_head。
+    """一步 decode：追加 KV，GQA attention，输出投影和 lm_head。
 
     q: [B, H_q, 1, D]，k_t / v_t: [B, H_kv, 1, D]，都已做过 RoPE。
     cache_k / cache_v: [B, H_kv, S, D]。返回 logits [B, 1, V] 和长度 S + 1 的新 cache。
     """
     if q.size(1) != k_t.size(1) * n_rep:
-        raise ValueError(f"H_q={q.size(1)} must equal H_kv={k_t.size(1)} * n_rep={n_rep}")
+        raise ValueError(
+            f"H_q={q.size(1)} must equal H_kv={k_t.size(1)} * n_rep={n_rep}"
+        )
     cache_k = torch.cat([cache_k, k_t], dim=2)  # [B, H_kv, S + 1, D]
     cache_v = torch.cat([cache_v, v_t], dim=2)
-    k = repeat_kv(cache_k, n_rep)               # [B, H_q, S + 1, D]
+    k = repeat_kv(cache_k, n_rep)  # [B, H_q, S + 1, D]
     v = repeat_kv(cache_v, n_rep)
     scale = q.size(-1) ** -0.5
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale  # [B, H_q, 1, S + 1]
     probs = torch.softmax(scores.float(), dim=-1).to(q.dtype)
-    heads = torch.matmul(probs, v)                         # [B, H_q, 1, D]
+    heads = torch.matmul(probs, v)  # [B, H_q, 1, D]
     hidden = heads.transpose(1, 2).reshape(q.size(0), 1, -1)  # [B, 1, H_q * D]
     hidden = hidden @ w_o.T
-    logits = hidden @ w_head.T                              # [B, 1, V]
+    logits = hidden @ w_head.T  # [B, 1, V]
     return logits, cache_k, cache_v
 ```
 
@@ -124,7 +130,7 @@ def decode_step(q, k_t, v_t, cache_k, cache_v, w_o, w_head, n_rep):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -147,7 +153,7 @@ empty_v = empty_k.clone()
 w_o = torch.eye(8)
 w_head = torch.randn(5, 8)
 
-# 空 cache：注意力权重为 1，输出就是本步 v 经过 GQA repeat 后的投影
+# 空 cache：attention 权重为 1，输出就是本步 v 经过 GQA repeat 后的投影
 logits, cache_k, cache_v = decode_step(q, k_t, v_t, empty_k, empty_v, w_o, w_head, 2)
 expected = v_t.repeat_interleave(2, 1).transpose(1, 2).reshape(2, 1, 8) @ w_head.T
 assert logits.shape == (2, 1, 5)
@@ -158,12 +164,12 @@ assert torch.allclose(logits, expected)
 assert empty_k.shape[2] == 0
 assert cache_k.shape[1] == 2
 
-# 第二步：cache 长度加一，结果与手算的 softmax 注意力一致
+# 第二步：cache 长度加一，结果与手算的 softmax attention 一致
 logits, cache_k, cache_v = decode_step(q, k_t, v_t, cache_k, cache_v, w_o, w_head, 2)
 assert cache_k.shape[2] == 2
 k_full = cache_k.repeat_interleave(2, 1)
 v_full = cache_v.repeat_interleave(2, 1)
-probs = torch.softmax(q @ k_full.transpose(-2, -1) / 2 ** 0.5, dim=-1)
+probs = torch.softmax(q @ k_full.transpose(-2, -1) / 2**0.5, dim=-1)
 expected = (probs @ v_full).transpose(1, 2).reshape(2, 1, 8) @ w_head.T
 assert torch.allclose(logits, expected, atol=1e-6)
 
@@ -178,10 +184,10 @@ expect_error(ValueError, decode_step, q, k_t, v_t, empty_k, empty_v, w_o, w_head
 
 ### 复杂度与追问
 
-设 batch 为 $B$、query 头数 $H_q$、KV 头数 $H_{\mathrm{kv}}$、cache 长度 $S$、头维 $D$、模型宽度 $D_{\mathrm{model}}=H_qD$、词表 $V$。这一步的注意力是 $O(BH_qSD)$，cache 占 $O(BH_{\mathrm{kv}}SD)$，输出投影和词表层另需 $O(BD_{\mathrm{model}}^2+BD_{\mathrm{model}}V)$。
+设 batch 为 $B$、query 头数 $H_q$、KV 头数 $H_{\mathrm{kv}}$、cache 长度 $S$、头维 $D$、模型宽度 $D_{\mathrm{model}}=H_qD$、vocabulary $V$。这一步的 attention 是 $O(BH_qSD)$，cache 占 $O(BH_{\mathrm{kv}}SD)$，输出投影和 vocabulary 层另需 $O(BD_{\mathrm{model}}^2+BD_{\mathrm{model}}V)$。
 
 - 追问「`cat` 的问题」：每步都会把整段历史 KV 复制一遍，总代价随长度平方增长。这是教学写法，生产上预分配到最大长度后原地写，或者用分页布局 append，见 `coding-paged-table`。
-- 追问「$S$ 很长怎么办」：注意力本身可以按 key 切块并行，再用 log-sum-exp 合并，见 `coding-flash-decode`。
+- 追问「$S$ 很长怎么办」：attention 本身可以按 key 切块并行，再用 log-sum-exp 合并，见 `coding-flash-decode`。
 
 ## 题怎么来的
 
@@ -189,7 +195,7 @@ expect_error(ValueError, decode_step, q, k_t, v_t, empty_k, empty_v, w_o, w_head
 
 ## 数据沿哪一维增长
 
-进入这一步时，cache 里的 $K,V$ 是 `[B, H_{\mathrm{kv}}, S, D]`，$S$ 是已经处理过的长度（包括输入提示 prompt）。当前隐状态 `[B, 1, D_{\mathrm{model}}]` 投影后得到
+进入这一步时，cache 里的 $K,V$ 是 `[B, H_{\mathrm{kv}}, S, D]`，$S$ 是已经处理过的长度（包括 prompt prompt）。当前隐状态 `[B, 1, D_{\mathrm{model}}]` 投影后得到
 
 $$
 q\in\mathbb{R}^{B\times H_q\times 1\times D},\quad

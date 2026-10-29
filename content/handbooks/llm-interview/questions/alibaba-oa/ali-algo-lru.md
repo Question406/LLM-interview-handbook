@@ -5,20 +5,21 @@ order: 34
 level: S
 title: 阿里手撕：LRU 为什么是哈希 + 双向链表？
 quick: >-
-  哈希表 $O(1)$ 找到节点，双向链表 $O(1)$ 把节点搬到表头、从表尾淘汰。只用哈希没有访问顺序，只用链表查找是 $O(n)$；节点里还要存 key，淘汰时才能顺手删掉哈希里的映射。
+  哈希表 $O(1)$ 找到节点，双向链表 $O(1)$ 把节点搬到表头、从表尾淘汰。只用哈希没有访问顺序，只用链表查找是 $O(n)$；节点里还要存
+  key，淘汰时才能顺手删掉哈希里的映射。
 tags:
   - Alibaba
   - LRU
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: LRU 缓存
-    url: https://leetcode.cn/problems/lru-cache/
+    url: 'https://leetcode.cn/problems/lru-cache/'
     type: primary
   - title: 阿里校招 Java 面经（秒杀/LRU）
-    url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
+    url: 'https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6'
     type: candidate-first-hand
 ---
 
@@ -140,11 +141,11 @@ if __name__ == "__main__":
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
-**`capacity=1`、重复 `put` 同一个 key 这类边界怎么处理？**
+**`capacity=1`、重复 `put` 同一个 key 这类 edge cases 怎么处理？**
 已有 key 先更新，再判断要不要淘汰，避免刚写进去的值被自己挤掉。`get` 没命中就返回 $-1$。
 
 **要加 TTL 呢？**

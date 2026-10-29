@@ -4,7 +4,10 @@ section: tech-screen
 order: 10
 level: A
 title: CoderPad：SimHash 怎么写，什么时候不用 MinHash？
-quick: "SimHash 把每个特征哈希到 $f$ 维，按权重给每个 bit 投 +1 或 -1，最后取各维的符号当指纹，汉明距离小就是近重复。它适合短标题、URL 和 query，因为短文本的 shingle 集合太小，Jaccard 不稳；长网页近重复仍用 `dt-minhash-code` 的 Jaccard。"
+quick: >-
+  SimHash 把每个特征哈希到 $f$ 维，按权重给每个 bit 投 +1 或 -1，最后取各维的符号当指纹，汉明距离小就是
+  near-duplicates。它适合短标题、URL 和 query，因为短文本的 shingle 集合太小，Jaccard 不稳；长网页
+  near-duplicates 仍用 `dt-minhash-code` 的 Jaccard。
 companies:
   - apple
 tags:
@@ -15,22 +18,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: Similarity Estimation Techniques from Rounding Algorithms (Charikar)
-    url: https://www.cs.princeton.edu/courses/archive/spring04/cos598B/bib/CharikarEstim.pdf
+    url: >-
+      https://www.cs.princeton.edu/courses/archive/spring04/cos598B/bib/CharikarEstim.pdf
     type: primary
-  - title: Detecting Near-Duplicates for Web Crawling (Manku et al., WWW 2007)
-    url: https://www.wwwconference.org/www2007/papers/paper215.pdf
+  - title: 'Detecting Near-Duplicates for Web Crawling (Manku et al., WWW 2007)'
+    url: 'https://www.wwwconference.org/www2007/papers/paper215.pdf'
     type: primary
   - title: Deduplicating Training Data Makes Language Models Better
-    url: https://arxiv.org/abs/2107.06499
+    url: 'https://arxiv.org/abs/2107.06499'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 为文本生成固定宽度的 SimHash 指纹，并提供两个指纹的汉明距离。
 
@@ -55,11 +59,11 @@ hamming(10,6) -> 2
 
 ## 解题思路与参考答案
 
-短文本近重复我会用 SimHash：把特征哈希到 $f$ 维，每个特征按权重给各 bit 累加 +1 或 -1，最后取每一维的正负号当指纹，汉明距离小就是近重复。长网页还是用 `dt-minhash-code` 的 Jaccard。
+短文本 near-duplicates 我会用 SimHash：把特征哈希到 $f$ 维，每个特征按权重给各 bit 累加 +1 或 -1，最后取每一维的正负号当指纹，汉明距离小就是 near-duplicates。长网页还是用 `dt-minhash-code` 的 Jaccard。
 
 短文本要换方法，是因为词太少。比如「Apple announces new foundation models for on device intelligence」和加了个连字符、末尾多一个 today 的版本，词只有十来个，shingle 集合太小，改一两个词 $J$ 就大幅变化。SimHash 指纹对这种小改动的汉明距离很小，和一条完全无关的菜谱标题拉得开。
 
-这是 Charikar 的构造：每个特征 $t$ 有权重 $w_t$（词频或 BM25），$f$ 个哈希把 $t$ 映到一个 $\pm 1$ 向量，按 $w_t$ 加权累加，每一维看符号。Manku 2007 用它抓网页近重复，64-bit 指纹下汉明距离 $\le 3$ 当候选。
+这是 Charikar 的构造：每个特征 $t$ 有权重 $w_t$（词频或 BM25），$f$ 个哈希把 $t$ 映到一个 $\pm 1$ 向量，按 $w_t$ 加权累加，每一维看符号。Manku 2007 用它抓网页 near-duplicates，64-bit 指纹下汉明距离 $\le 3$ 当候选。
 
 ## 指纹：加权随机投影的符号
 
@@ -99,7 +103,7 @@ def hamming(a, b):
     return (a ^ b).bit_count()  # Python 3.10+
 ```
 
-测试覆盖大小写、近重复和无关标题的距离、位数和参数校验：
+测试覆盖大小写、near-duplicates 和无关标题的距离、位数和参数校验：
 
 ```python
 title = "Apple announces new foundation models for on device intelligence"
@@ -110,7 +114,9 @@ different = "Recipe for a quick tomato pasta with garlic and basil"
 assert simhash(title) == simhash(title.upper())
 
 # 近重复标题的汉明距离明显小于无关标题
-assert hamming(simhash(title), simhash(near)) < hamming(simhash(title), simhash(different))
+assert hamming(simhash(title), simhash(near)) < hamming(
+    simhash(title), simhash(different)
+)
 assert hamming(simhash(title), simhash(near)) <= 12
 
 # 指纹不超过 f 位
@@ -127,7 +133,7 @@ except ValueError:
     pass
 ```
 
-算一个指纹是特征数乘 $f$。检索近邻时不能对所有文档两两算汉明距离，那是 $O(N^2)$ 次比较。Manku 的办法是把 64-bit 切成 $k$ 块，每块建一张表，只探「某一块完全相同」的桶，再算精确汉明距离，和 LSH 的 band 是同一类思想，见 `dt-minhash-code`。
+算一个指纹是特征数乘 $f$。检索 nearest neighbors 时不能对所有文档两两算汉明距离，那是 $O(N^2)$ 次比较。Manku 的办法是把 64-bit 切成 $k$ 块，每块建一张表，只探「某一块完全相同」的桶，再算精确汉明距离，和 LSH 的 band 是同一类思想，见 `dt-minhash-code`。
 
 ## 不同输入适合哪种指纹
 
@@ -138,17 +144,17 @@ except ValueError:
 | 字节级复制 | 精确哈希 | 更便宜，先做 |
 | 释义 / 翻译 | embedding | 词面指纹不够 |
 
-短文档的 SimHash 对空白和词序也更敏感，所以标题去重之前先做 `dt-unicode-canon-code`。图文对里，caption 的近重复可以用 SimHash；图片本身的近重复走 pHash 或 embedding，见 `dt-clip-filter-code`。
+短文档的 SimHash 对空白和词序也更敏感，所以标题 deduplication 之前先做 `dt-unicode-canon-code`。image-text pairs 里，caption 的 near-duplicates 可以用 SimHash；图片本身的 near-duplicates 走 pHash 或 embedding，见 `dt-clip-filter-code`。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert simhash(title) == simhash(title.upper())` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert simhash(title) == simhash(title.upper())` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
@@ -156,12 +162,12 @@ except ValueError:
 短文本可以。长网页用词频，但停用词会主导符号，要先剥掉导航再算。
 
 **64-bit 会碰撞吗？**
-会，指纹碰撞不等于近重复，汉明距离为 0 也要抽查。高价值的许可书要再经过一层确认才能丢。
+会，指纹碰撞不等于 near-duplicates，汉明距离为 0 也要抽查。高价值的许可书要再经过一层确认才能丢。
 
 **能和 MinHash 一起跑吗？**
 可以，当作两路候选。最终仍用精确 Jaccard 或人工抽查来定阈值。
 
-**十亿条 query 怎么找近邻？**
+**十亿条 query 怎么找 nearest neighbors？**
 把 64-bit 切成几块，每块建表，只探某一块完全相同的桶，再算精确汉明距离。
 
 相关：`dt-minhash-code`、`dt-unicode-canon-code`、`dt-clip-filter-code`

@@ -5,7 +5,9 @@ order: 127
 level: S
 title: 拼多多：PPO clip 之后为什么仍然需要 min？
 quick: >-
-  clip 只是另造了一条把重要性采样比截断的目标，min 在未截断和截断两条目标里取更悲观的一条，才挡住「看起来能涨、其实越界」的更新。没有 min，优势为正时优化器仍会沿未 clip 的项无约束放大比率，PPO 的保守更新就不成立。
+  clip 只是另造了一条把 importance sampling 比截断的目标，min
+  在未截断和截断两条目标里取更悲观的一条，才挡住「看起来能涨、其实越界」的更新。没有 min，优势为正时优化器仍会沿未 clip 的项无约束放大比率，PPO
+  的保守更新就不成立。
 tags:
   - PDD
   - PPO
@@ -13,13 +15,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 拼多多 - 大模型算法 秋招一面
-    url: https://www.nowcoder.com/discuss/906953010406772736
+    url: 'https://www.nowcoder.com/discuss/906953010406772736'
     type: candidate-first-hand
   - title: PPO
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: primary-paper
 ---
 
@@ -30,11 +32,11 @@ sources:
 - 届别 / 流程：秋招；一面
 - 面试时间：2026-07-15
 - 来源类型与可信度：牛客候选人原帖，A（公司、部门、岗位、日期与轮次明确）
-- 原始措辞：**“PPO优化算法中为什么clip之后仍然需要min操作？”**
+- 原始措辞：**“PPO 优化算法中为什么 clip 之后仍然需要 min 操作？”**
 
 因为 clip 只构造了另一条被截断的目标，min 才在两条目标里选更悲观的那条，PPO 的保守更新靠的是这一步。没有 min，优化器仍然可以沿着未截断的 $r\hat A$ 走，clip 就成了摆设。这是 maximize 形式下的 pessimistic bound，min 也算不上多写的一层函数。答「clip 已经把 ratio 夹住了，min 只是实现细节」会被追问。白板上我会先写 $L^{\mathrm{CLIP}}$，再按 $\hat A$ 的正负两边分别画哪一条更小，这样比背「PPO 要 clip」更容易说清更新什么时候停。
 
-先看公式。记重要性采样比 $r_t(\theta)=\frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)}$，PPO 的代理目标是
+先看公式。记 importance sampling 比 $r_t(\theta)=\frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)}$，PPO 的代理目标是
 
 $$
 L^{\mathrm{CLIP}}=\mathbb{E}\big[\min\big(r_t\hat A_t,\ \mathrm{clip}(r_t,1-\epsilon,1+\epsilon)\hat A_t\big)\big].

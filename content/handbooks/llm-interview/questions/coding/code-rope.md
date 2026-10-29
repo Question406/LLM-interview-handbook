@@ -5,7 +5,8 @@ order: 3
 level: A
 title: 手写 RoPE：如何处理 even/odd 维与广播？
 quick: >-
-  把 hidden 里相邻的两维看成复平面上的一个点，每对 (x_even, x_odd) 按自己的角度乘 cos/sin 做旋转。cos/sin cache 按 position 和 frequency 预先算好，再 broadcast 到 batch 和 head。
+  把 hidden 里相邻的两维看成复平面上的一个点，每对 (x_even, x_odd) 按自己的角度乘 cos/sin 做旋转。cos/sin cache
+  按 position 和 frequency 预先算好，再 broadcast 到 batch 和 head。
 tags:
   - PyTorch
   - RoPE
@@ -21,15 +22,15 @@ sources: []
 
 实现 RoPE 的逐相邻维度旋转，使每对偶数/奇数通道按指定位置角度共同旋转。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `apply_rope(x,cos,sin)`。x为[B,H,T,D]，D是正偶数；cos和sin均为[T,D/2]，来自一致角度的余弦和正弦。每一对是通道(0,1)、(2,3)等，而不是前后半维配对。
+实现 `apply_rope(x,cos,sin)`。x 为[B,H,T,D]，D 是正偶数；cos 和 sin 均为[T,D/2]，来自一致角度的余弦和正弦。每一对是通道(0,1)、(2,3)等，而不是前后半维配对。
 
 ### 输出与约束
 
-返回与x同形的张量。每对(a,b)输出(a*cos-b*sin,a*sin+b*cos)，位置维和batch/head维正确广播；不修改输入。可验证每对的平方范数保持不变。
+返回与 x 同形的张量。每对(a,b)输出(a*cos-b*sin,a*sin+b*cos)，位置维和 batch/head 维正确广播；不修改输入。可验证每对的平方范数保持不变。
 
 ### 示例
 
@@ -59,11 +60,11 @@ cos=[0,0],sin=[1,1] -> [-2,1,-4,3]
 <p>把上面的实现保存为 solution.py，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 python3 solution.py，成功时输出 simple tests passed，失败时按断言报错行定位。不要加 -O，它会跳过 assert。旧参考片段省略的 import 要放到文件开头，再放参考实现和下方断言。</p>
 <p>旧片段需要先导入 torch。cos=1、sin=0 时输入不变；cos=0、sin=1 时每对相邻维度从 (a,b) 变成 (-b,a)，同时平方范数不变。</p>
 <pre><code class="language-python">import torch
-x = torch.tensor([[[[1., 2., 3., 4.]]]])
+
+x = torch.tensor([[[[1.0, 2.0, 3.0, 4.0]]]])
 ones, zeros = torch.ones(1, 2), torch.zeros(1, 2)
 torch.testing.assert_close(apply_rope(x, ones, zeros), x)
 y = apply_rope(x, zeros, ones)
-torch.testing.assert_close(y, torch.tensor([[[[-2., 1., -4., 3.]]]]))
+torch.testing.assert_close(y, torch.tensor([[[[-2.0, 1.0, -4.0, 3.0]]]]))
 torch.testing.assert_close(y.square().sum(), x.square().sum())
-print(&quot;simple tests passed&quot;)
-</code></pre>
+print("simple tests passed")</code></pre>

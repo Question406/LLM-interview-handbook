@@ -1,0 +1,461 @@
+[
+  {
+    "id": "dojo",
+    "title": "AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents",
+    "url": "https://arxiv.org/abs/2406.13352",
+    "year": 2024,
+    "kind": "NeurIPS 2024",
+    "scope": "Tool-output injection 的交互环境；结论依赖 tasks、tools 与 attacker permissions。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "injec",
+    "title": "InjecAgent: Benchmarking Indirect Prompt Injections in Tool-Integrated Large Language Model Agents",
+    "url": "https://arxiv.org/abs/2403.02691",
+    "year": 2024,
+    "kind": "Findings of ACL 2024",
+    "scope": "Tool-integrated indirect injection；需要区分固定上下文测试与完整执行。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "asb",
+    "title": "Agent Security Bench (ASB): Formalizing and Benchmarking Attacks and Defenses in LLM-based Agents",
+    "url": "https://arxiv.org/abs/2410.02644",
+    "year": 2024,
+    "kind": "ICLR 2025",
+    "scope": "多类 agent attacks / defenses；不同版本的 tasks、metrics 和实现需要固定。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "harm",
+    "title": "AgentHarm: A Benchmark for Measuring Harmfulness of LLM Agents",
+    "url": "https://arxiv.org/abs/2410.09024",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "主要研究 malicious user requests 与 tool-assisted harmful completion。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "safearena",
+    "title": "SafeArena: Evaluating the Safety of Autonomous Web Agents",
+    "url": "https://arxiv.org/abs/2503.04957",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "Web-agent misuse；与 benign-user indirect injection 的 attacker model 不同。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "camel",
+    "title": "Defeating Prompt Injections by Design (CaMeL)",
+    "url": "https://arxiv.org/abs/2503.18813",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "Control/data flow 分离与 capabilities；保证依赖 policy、interpreter、tools 和建模假设，论文讨论 side channels。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "patterns",
+    "title": "Design Patterns for Securing LLM Agents against Prompt Injections",
+    "url": "https://arxiv.org/abs/2506.08837",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "架构 design patterns 与案例分析；不提供任意通用 agent 的无条件安全保证。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "hierarchy",
+    "title": "The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions",
+    "url": "https://arxiv.org/abs/2404.13208",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "训练模型区分 instruction priority；learned behavior 与外部 authorization 分别验证。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "ih2026",
+    "title": "Improving instruction hierarchy in frontier LLMs",
+    "url": "https://openai.com/index/instruction-hierarchy-challenge/",
+    "year": 2026,
+    "kind": "official research report",
+    "scope": "IH-Challenge 与 instruction hierarchy training；报告中的测量设置不能直接外推到所有 harness。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "struq",
+    "title": "StruQ: Defending Against Prompt Injection with Structured Queries",
+    "url": "https://arxiv.org/abs/2402.06363",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "Special format 与专门训练共同作用；仅添加 delimiters 不等于复现 StruQ。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "secalign",
+    "title": "SecAlign: Defending Against Prompt Injection with Preference Optimization",
+    "url": "https://arxiv.org/abs/2410.05451",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "针对 injected inputs 的 preference optimization；需评估 unseen attacks 与 task utility。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "metasecalign",
+    "title": "Meta SecAlign: A Secure Foundation LLM Against Prompt Injection Attacks",
+    "url": "https://arxiv.org/abs/2507.02735",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "公开模型和训练方案；论文中的 robustness 是指定 evaluation 下的经验结果。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "ipi",
+    "title": "IPIGuard: A Novel Tool Dependency Graph-Based Defense Against Indirect Prompt Injection in LLM Agents",
+    "url": "https://arxiv.org/abs/2508.15310",
+    "year": 2025,
+    "kind": "EMNLP 2025",
+    "scope": "Planned Tool Dependency Graph 约束执行；dynamic replanning 与 tool arguments 仍需单独分析。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "mcptox",
+    "title": "MCPTox: A Benchmark for Tool Poisoning Attack on Real-World MCP Servers",
+    "url": "https://arxiv.org/abs/2508.14925",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "Tool metadata poisoning；不需要先执行该 malicious tool 才能影响 agent。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "mcp",
+    "title": "MCP Security Best Practices · 2025-11-25 documentation",
+    "url": "https://modelcontextprotocol.io/docs/2025-11-25/tutorials/security/security_best_practices",
+    "year": 2025,
+    "kind": "official protocol documentation",
+    "scope": "Confused deputy、token passthrough、session security 等工程依据；属于协议文档，区别于实验论文。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "skillinject",
+    "title": "Skill-Inject: Measuring Agent Vulnerability to Skill File Attacks",
+    "url": "https://arxiv.org/abs/2602.20156",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "Skill-file injection-task pairs；比较 harmful instruction avoidance 与 legitimate compliance。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "skillguard",
+    "title": "SkillGuard: A Permission-Centric Framework for Agent Skill Security",
+    "url": "https://arxiv.org/abs/2606.03024",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "Skill-level context influence 与 action side effects；permission framework 的假设和表达能力需要检查。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "agentpoison",
+    "title": "AgentPoison: Red-teaming LLM Agents via Poisoning Memory or Knowledge Bases",
+    "url": "https://arxiv.org/abs/2407.12784",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "Poisoned long-term memory / knowledge base 的 trigger-based agent attacks。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "minja",
+    "title": "A Practical Memory Injection Attack against LLM Agents (MINJA)",
+    "url": "https://arxiv.org/abs/2503.03704",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "通过 queries 与 output observations 向 memory 注入 records；不等于任意直接写数据库。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "memorygraft",
+    "title": "MemoryGraft: Persistent Compromise of LLM Agents via Poisoned Experience Retrieval",
+    "url": "https://arxiv.org/abs/2512.16962",
+    "year": 2025,
+    "kind": "preprint",
+    "scope": "Poisoned successful experiences 影响未来任务；特定 agent 的结果需要跨实现复验。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "etamp",
+    "title": "Poison Once, Exploit Forever: Environment-Injected Memory Poisoning Attacks on Web Agents",
+    "url": "https://arxiv.org/abs/2604.02623",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "eTAMP 研究由 environment observation 引入的跨 session / site memory poisoning。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "stego",
+    "title": "StegoMemory: Agentic Memory Acts as Covert Steganographic Channel",
+    "url": "https://arxiv.org/abs/2610.04589",
+    "year": 2026,
+    "kind": "preprint · 2026-10",
+    "scope": "Synthetic payload 的跨 session covert transmission；需要独立复现，不能把摘要结果当现实发生率。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "rag",
+    "title": "PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models",
+    "url": "https://arxiv.org/abs/2402.07867",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "Knowledge corruption 与 attacker-chosen answers；不与授权违规完全等同。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "wasp",
+    "title": "WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks",
+    "url": "https://arxiv.org/abs/2504.18575",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "隔离 web 环境中的 agent hijacking；不同 observation modes 与 attacker control 分别报告。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "image",
+    "title": "Image Hijacks: Adversarial Images can Control Generative Models at Runtime",
+    "url": "https://arxiv.org/abs/2309.00236",
+    "year": 2023,
+    "kind": "research paper",
+    "scope": "特定 VLM 上的 adversarial image 机制；与人可读 OCR text injection 需分开。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "smith",
+    "title": "Agent Smith: A Single Image Can Jailbreak One Million Multimodal LLM Agents Exponentially Fast",
+    "url": "https://arxiv.org/abs/2402.08567",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "随机 pairwise chat 的大规模模拟 proof of concept；不直接证明现实组织中的传播速度。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "osblind",
+    "title": "The Blind Spot of Agent Safety: How Benign User Instructions Expose Critical Vulnerabilities in Computer-Use Agents",
+    "url": "https://arxiv.org/abs/2604.10577",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "OS-BLIND：benign instructions 下的 contextual threats 与 agent-initiated harms。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "osguard",
+    "title": "OSGuard: A Benchmark for Safety in Computer-Use Agents",
+    "url": "https://arxiv.org/abs/2606.15034",
+    "year": 2026,
+    "kind": "preprint · revision 2026-10",
+    "scope": "Action-level judgement 与 state-based end-to-end safety；单步 accuracy 不代替完整 trajectory。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "lab",
+    "title": "AgentLAB: Benchmarking LLM Agents against Long-Horizon Attacks",
+    "url": "https://arxiv.org/abs/2602.16901",
+    "year": 2026,
+    "kind": "ICML 2026",
+    "scope": "Long-horizon、adaptive interaction threats；不从固定 step ASR 推断整段任务风险。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "dyn",
+    "title": "AgentDyn: Are Your Agent Security Defenses Deployable in Real-World Dynamic Environments?",
+    "url": "https://arxiv.org/abs/2602.03117",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "Dynamic planning 与 helpful third-party instructions；security 与 over-defense 同时测量。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "piarena",
+    "title": "PIArena: A Platform for Prompt Injection Evaluation",
+    "url": "https://aclanthology.org/2026.acl-long.1533/",
+    "year": 2026,
+    "kind": "ACL 2026",
+    "scope": "统一 evaluation 平台；adapter、scorer 与 threat model 仍需固定。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "ignored",
+    "title": "Ignored, Not Refused: What Low Prompt-Injection Success Rates Hide in Small Tool-Using Agents",
+    "url": "https://arxiv.org/abs/2610.23254",
+    "year": 2026,
+    "kind": "preprint · 2026-10",
+    "scope": "小型 tool-using agents 的 failure-outcome audit；不能泛化为所有模型的全局规律。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "validity",
+    "title": "Safety, or Just Capability? A Validity Audit of Agent-Safety Benchmarks",
+    "url": "https://arxiv.org/abs/2607.28685",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "区分 benchmarks 的 target constructs、scorers 与 model-panel effects。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "adaptive",
+    "title": "The Attacker Moves Second: Stronger Adaptive Attacks Bypass Defenses Against LLM Jailbreaks and Prompt Injections",
+    "url": "https://arxiv.org/abs/2510.09023",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "Defense-aware adaptive evaluation；具体突破取决于 attacker access 与计算预算。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "firewall",
+    "title": "Indirect Prompt Injections: Are Firewalls All You Need, or Stronger Benchmarks?",
+    "url": "https://arxiv.org/abs/2510.05244",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "Tool-input/output firewalls 与 benchmark limitations；“perfect”只针对指定实验。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "role",
+    "title": "Prompt Injection as Role Confusion",
+    "url": "https://arxiv.org/abs/2603.12277",
+    "year": 2026,
+    "kind": "ICML 2026",
+    "scope": "Role probes 与 style-induced role confusion；预测信号不自动构成因果或安全证明。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "cc",
+    "title": "Constitutional Classifiers: Defending against Universal Jailbreaks across Thousands of Hours of Red Teaming",
+    "url": "https://arxiv.org/abs/2501.18837",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "基于 synthetic data 的 classifiers；universal jailbreak 的成功定义与单次违规不同。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "ccplus",
+    "title": "Constitutional Classifiers++: Efficient Production-Grade Defenses against Universal Jailbreaks",
+    "url": "https://arxiv.org/abs/2601.04603",
+    "year": 2026,
+    "kind": "preprint",
+    "scope": "Exchange classifiers、cascade 与 probes；性能依赖 traffic distribution 和 threshold。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "harmbench",
+    "title": "HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal",
+    "url": "https://arxiv.org/abs/2402.04249",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "主要测 harmful content 与 red teaming；完整 agent authorization 另需环境状态。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "xstest",
+    "title": "XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models",
+    "url": "https://arxiv.org/abs/2308.01263",
+    "year": 2023,
+    "kind": "research paper",
+    "scope": "Benign prompts 与 unsafe contrasts 的 over-refusal；可迁移其设计思路，不把它称作 agent benchmark。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "manyshot",
+    "title": "Many-shot jailbreaking",
+    "url": "https://www.anthropic.com/research/many-shot-jailbreaking",
+    "year": 2024,
+    "kind": "official research report",
+    "scope": "长 context 下的 demonstrations 影响安全行为；与累积单步风险分别分析。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "shade",
+    "title": "SHADE-Arena: Evaluating Sabotage and Monitoring in LLM Agents",
+    "url": "https://www.anthropic.com/research/shade-arena-sabotage-monitoring",
+    "year": 2025,
+    "kind": "official research report",
+    "scope": "模拟 benign tasks + hidden malicious side goals 与 monitoring，区别于外部 injection。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "control",
+    "title": "Evaluating Control Protocols for Untrusted AI Agents",
+    "url": "https://arxiv.org/abs/2511.02997",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "SHADE-Arena 中的 control protocols 和 adaptive attackers；monitor access 是重要实验条件。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "cot",
+    "title": "Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety",
+    "url": "https://arxiv.org/abs/2507.11473",
+    "year": 2025,
+    "kind": "research paper",
+    "scope": "CoT monitoring 的潜力与局限；monitorability 不等于所有 reasoning 都 faithful。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "monitorbench",
+    "title": "MonitorBench: A Comprehensive Benchmark for Chain-of-Thought Monitorability in Large Language Models",
+    "url": "https://arxiv.org/abs/2603.28590",
+    "year": 2026,
+    "kind": "COLM 2026",
+    "scope": "Monitorability evaluation；需要检查 evaluation tasks 与适用的 reasoning formats。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "misalign",
+    "title": "Agentic Misalignment in Summer 2026",
+    "url": "https://alignment.anthropic.com/2026/agentic-misalignment-summer-2026/",
+    "year": 2026,
+    "kind": "official research case studies",
+    "scope": "受控 simulations 中的四个 case studies；来源明确区别于真实部署事件。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "faking",
+    "title": "Alignment faking in large language models",
+    "url": "https://arxiv.org/abs/2412.14093",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "特定 training-awareness setups 的 demonstration；不推断所有模型普遍拥有相同意图。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "sleeper",
+    "title": "Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training",
+    "url": "https://arxiv.org/abs/2401.05566",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "人为训练的 deceptive/backdoor proof of concept；与自然产生的 deception 分开。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "privacy",
+    "title": "PrivacyLens: Evaluating Privacy Norm Awareness of Language Models in Action",
+    "url": "https://arxiv.org/abs/2409.00138",
+    "year": 2024,
+    "kind": "research paper",
+    "scope": "Contextual privacy norms 与 agent actions；“知道规则”与“执行守规”分别测量。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "susvibes",
+    "title": "Is Vibe Coding Safe? Benchmarking Vulnerability of Agent-Generated Code in Real-World Tasks",
+    "url": "https://arxiv.org/abs/2512.03262",
+    "year": 2025,
+    "kind": "ICML 2026 · revision 2026-09",
+    "scope": "Repository-scale functional correctness 与 software security 分开；任务数量随版本变化。",
+    "checkedAt": "2026-10-28"
+  },
+  {
+    "id": "cybergym",
+    "title": "CyberGym: Evaluating AI Agents' Real-World Cybersecurity Capabilities at Scale",
+    "url": "https://arxiv.org/abs/2506.02548",
+    "year": 2025,
+    "kind": "research paper · revision 2026-03",
+    "scope": "主要评估 vulnerability reproduction capability；不等于 agent 自身抵抗 injection 的能力。",
+    "checkedAt": "2026-10-28"
+  }
+]

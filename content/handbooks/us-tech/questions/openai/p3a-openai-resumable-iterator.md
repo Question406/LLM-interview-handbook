@@ -3,8 +3,10 @@ id: p3a-openai-resumable-iterator
 section: openai
 order: 627
 level: A
-title: "OpenAI：可恢复迭代器：一维、二维和三维"
-quick: "状态保存下一次将返回的位置，耗尽后的状态也必须合法。嵌套输入可用游标栈记录每层下标，get_state 返回拷贝，再按栈恢复；这份练习为简短先展开全部叶子，用一个下标作状态，代价是 O(n) 额外内存。"
+title: OpenAI：可恢复迭代器：一维、二维和三维
+quick: >-
+  状态保存下一次将返回的位置，耗尽后的状态也必须合法。嵌套输入可用游标栈记录每层下标，get_state
+  返回拷贝，再按栈恢复；这份练习为简短先展开全部叶子，用一个下标作状态，代价是 O(n) 额外内存。
 companies:
   - openai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - OpenAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · OpenAI · resumable-iterator"
-    url: https://www.1point3acres.com/interview/problems/company/openai/resumable-iterator
+  - title: 1Point3Acres · OpenAI · resumable-iterator
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/resumable-iterator
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现嵌套容器的叶子遍历、结构重建和可保存恢复位置的迭代器。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 数据由整数叶子以及 list、tuple、字符串键 dict 递归组成，bool 不作为整数叶子；字典按插入顺序遍历。构造后数据不再改变，整数叶子不超过 10000，深度不超过 100。
 
@@ -51,7 +57,7 @@ set_state(1) 后 next 为 2；再次 set_state(1)，next 仍为 2。
 
 实现一个带 `get_state` / `set_state` 的可恢复迭代器。先从一维列表开始，再扩展到二维、三维这样的嵌套容器。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -178,7 +184,7 @@ class Iterator:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -189,6 +195,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 data = [1, (), {"a": [2, 3]}]
 assert flatten(data) == [1, 2, 3]
@@ -202,10 +209,10 @@ assert list(it) == [2, 3]
 it.set_state(state)
 assert list(it) == [2, 3]
 
-expect_value_error(unflatten, data, [1])           # 值不够
+expect_value_error(unflatten, data, [1])  # 值不够
 expect_value_error(unflatten, data, [1, 2, 3, 4])  # 值多了
-expect_value_error(flatten, [True])                # bool 不算整数叶子
-expect_value_error(it.set_state, 4)                # 超出叶子数
+expect_value_error(flatten, [True])  # bool 不算整数叶子
+expect_value_error(it.set_state, 4)  # 超出叶子数
 assert list(Iterator([[], (), {}])) == []
 ```
 

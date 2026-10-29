@@ -4,29 +4,40 @@ section: systems
 order: 23
 level: S
 title: 容量不足时，LLM API 该拒绝、排队、降级还是缩短预算？
-quick: "先判断请求能否在当前负载下满足 SLO，再决定排队、降级或拒绝。准入按租户、deadline、token 与 KV 预算计量，队列设上限，拒绝带 `Retry-After`；模型、工具和推理预算的降级要事先约定并明确返回。"
+quick: >-
+  先判断请求能否在当前负载下满足 SLO，再决定排队、降级或拒绝。准入按租户、deadline、token 与 KV 预算计量，队列设上限，拒绝带
+  `Retry-After`；模型、工具和推理预算的降级要事先约定并明确返回。
 tags:
   - Admission Control
   - SLO
   - Reliability
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: Google SRE Book — Service Level Objectives
-    url: https://sre.google/sre-book/service-level-objectives/
+    url: 'https://sre.google/sre-book/service-level-objectives/'
     type: primary
   - title: Google SRE Book — Handling Overload
-    url: https://sre.google/sre-book/handling-overload/
+    url: 'https://sre.google/sre-book/handling-overload/'
     type: primary
 ---
 
-容量不足时，我会先估计请求还能否按时完成，再决定有界排队、按约定降级或拒绝低优先级流量。比如平均 QPS 没变，但内部评测开了最大推理预算，KV 和生成槽位仍可能被占满，聊天用户的首个 token 等待时间（TTFT）就会恶化。LLM 的负载要按输入提示（prompt）长度、输出预算、工具轮次和 KV 驻留计量；SRE overload 的原则同样适用：保护已经承诺的 SLO 和错误预算，避免所有请求一起超时。
+## 可以这样回答
+
+容量不足时，我会先估计请求还能否按时完成，再决定有界排队、按约定降级或拒绝低优先级流量。比如平均 QPS 没变，但内部评测开了最大推理预算，KV 和生成槽位仍可能被占满，聊天用户的首个 token 等待时间（TTFT）就会恶化。LLM 的负载要按 prompt 长度、输出预算、工具轮次和 KV 驻留计量；SRE overload 的原则同样适用：保护已经承诺的 SLO 和错误预算，避免所有请求一起超时。
 
 请求进 GPU 调度器之前，至少估计：输入 token、声明或历史的输出预算、工具 / 检索次数、deadline、租户等级。再叠上当前队列里已经承诺出去的 token 与 KV。若在现有 `max batched tokens` 和排队时延下无法赶上 deadline，就不要再收。这和 `sys-mixed-traffic-scheduler` 是同一条链的入口：调度管交错，admission 管 要不要接。估计输出时不要信用户随便填的 `max_tokens`：有人开到模型上限却只聊一句，有人开思考模式却把上限留默认。用该类请求的历史分位数做预算，超支就截断或改异步，并在响应里标明发生了降级。
 
-只看并发路数会漏掉 输入预填充（prefill，即处理输入并建立缓存） 的计算峰值。一条长文档请求的 prefill 可能相当于几十条短聊天的 逐 token 生成（decode），见 `sys-prefill-decode`。把「在飞请求数」当容量单位，长尾一来就过载。工具调用把一条用户请求变成多段 generate，admission 若只在入口估一次、不把后续轮次算进预算，会在对话中途爆。Agent 流量要把「最大工具轮次 × 每轮输出上限」当作最坏 token，而不是按第一轮闲聊来准入。
+## 技术备查
+
+容量不足时，我会先估计请求还能否按时完成，再决定有界排队、按约定降级或拒绝低优先级流量。比如平均 QPS 没变，但内部评测开了最大推理预算，KV 和生成槽位仍可能被占满，聊天用户的首个 token 等待时间（TTFT）就会恶化。LLM 的负载要按 prompt 长度、输出预算、工具轮次和 KV 驻留计量；SRE overload 的原则同样适用：保护已经承诺的 SLO 和错误预算，避免所有请求一起超时。
+
+请求进 GPU 调度器之前，至少估计：输入 token、声明或历史的输出预算、工具 / 检索次数、deadline、租户等级。再叠上当前队列里已经承诺出去的 token 与 KV。若在现有 `max batched tokens` 和排队时延下无法赶上 deadline，就不要再收。这和 `sys-mixed-traffic-scheduler` 是同一条链的入口：调度管交错，admission 管 要不要接。估计输出时不要信用户随便填的 `max_tokens`：有人开到模型上限却只聊一句，有人开思考模式却把上限留默认。用该类请求的历史分位数做预算，超支就截断或改异步，并在响应里标明发生了降级。
+
+只看并发路数会漏掉 输入 prefill 的计算峰值。一条长文档请求的 prefill 可能相当于几十条短聊天的 逐 token 生成（decode），见 `sys-prefill-decode`。把「在飞请求数」当容量单位，长尾一来就过载。工具调用把一条用户请求变成多段 generate，admission 若只在入口估一次、不把后续轮次算进预算，会在对话中途爆。Agent 流量要把「最大工具轮次 × 每轮输出上限」当作最坏 token，而不是按第一轮闲聊来准入。
 
 选择过载动作时，要看它对 SLO 和租户公平性的影响：
 

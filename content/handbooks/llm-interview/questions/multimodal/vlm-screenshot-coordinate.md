@@ -3,8 +3,13 @@ id: vlm-screenshot-coordinate
 section: multimodal
 order: 2
 level: S
-title: Screenshot-only GUI Agent 的 click 坐标为什么会失效？如何处理 resize、DPI、scroll、crop、overlay 与 stale screenshot？
-quick: "截图像素没有稳定语义，DPR、缩放、滚动、弹窗都会让同一个按钮换位置。坐标要绑定当前 viewport、缩放和截图版本，每次高风险动作前重观察，点击后验证状态。我会优先用 element、目标框或归一化坐标，并对滚动、遮罩和窗口变化做 recovery。"
+title: >-
+  Screenshot-only GUI Agent 的 click 坐标为什么会失效？如何处理 resize、DPI、scroll、crop、overlay
+  与 stale screenshot？
+quick: >-
+  截图像素没有稳定语义，DPR、缩放、滚动、弹窗都会让同一个按钮换位置。坐标要绑定当前
+  viewport、缩放和截图版本，每次高风险动作前重观察，点击后验证状态。我会优先用 element、目标框或 normalization
+  坐标，并对滚动、mask 和窗口变化做 recovery。
 tags:
   - GUI Agent
   - Visual Grounding
@@ -12,10 +17,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: SeeAct
-    url: https://arxiv.org/abs/2401.10935
+    url: 'https://arxiv.org/abs/2401.10935'
     type: primary
 ---
 
@@ -23,7 +28,7 @@ sources:
 
 比如离线标注时点的是「确认」，执行时页面已经往下滚了一段，或者弹出一个广告，同一个点就落到了广告或「取消」上。SeeAct 一类工作把「看」和「点」拆开，正是因为像素观察很容易过期。
 
-Action 的表示里要有 screenshot ID、当前 viewport、缩放 / DPR、目标语义或目标框，以及归一化坐标（相对截图宽高，不用屏幕物理像素）。优先用 element ID 或无障碍树节点，其次 bbox，最后才是点。Crop 过的局部图要记录 crop 原点，不然局部坐标会错位到整屏。实现上把截图、viewport、DPR 放进同一个结构体，执行器不接受裸的两个整数。归一化只挡得住分辨率变化，滚动、overlay 和页面结构变化它管不了，所以它是必要项，单靠它不够。
+Action 的表示里要有 screenshot ID、当前 viewport、缩放 / DPR、目标语义或目标框，以及 normalization 坐标（相对截图宽高，不用屏幕物理像素）。优先用 element ID 或无障碍树节点，其次 bbox，最后才是点。Crop 过的局部图要记录 crop 原点，不然局部坐标会错位到整屏。实现上把截图、viewport、DPR 放进同一个结构体，执行器不接受裸的两个整数。normalization 只挡得住分辨率变化，滚动、overlay 和页面结构变化它管不了，所以它是必要项，单靠它不够。
 
 执行器发点击之前，比较计划时的 screenshot hash 和当前帧，不一致就当 stale，禁止沿用旧点。这要做成执行器的硬错误，只报警告不行。日志记下 hash 是否匹配、是否触发了重观察，不然 stale 点击会被算成 grounding 差。
 
@@ -37,7 +42,7 @@ Action 的表示里要有 screenshot ID、当前 viewport、缩放 / DPR、目�
 通常是，因为可以算交并比（IoU，即两个区域的交集与并集之比）、做中心校正。但它同样要绑当前帧。
 
 **和 DOM / a11y 融合题是什么关系？**
-结构树提供候选，视觉确认几何。纯截图的路径没有结构树兜底，stale 检测得自己做。
+结构树提供候选，视觉确认几何。纯截图的路径没有结构树 fallback，stale 检测得自己做。
 
 **动画过程中能不能点？**
 等稳定帧，或者等目标 bbox 连续两帧重合再点，否则一定 stale。

@@ -4,7 +4,9 @@ section: array-string
 order: 1
 level: A
 title: LC 1768 · 交替合并字符串
-quick: "一个下标 `i` 从 $0$ 走到 $\\max(m,n)-1$，每步先看 `word1` 再看 `word2`，没越界就追加，较长串剩下的部分自然接在后面。时间 $O(m+n)$，额外空间 $O(m+n)$，就是结果串。"
+quick: >-
+  一个下标 `i` 从 $0$ 走到 $\max(m,n)-1$，每步先看 `word1` 再看
+  `word2`，没越界就追加，较长串剩下的部分自然接在后面。时间 $O(m+n)$，额外空间 $O(m+n)$，就是结果串。
 tags:
   - String
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1768. Merge Strings Alternately
-    url: https://leetcode.com/problems/merge-strings-alternately/
+    url: 'https://leetcode.com/problems/merge-strings-alternately/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -102,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(m+n)$，额外空间 $O(m+n)$，就是结果本身。
 
-## 边界
+## Edge Cases
 
 两串等长时严格交替，没有尾巴。
 

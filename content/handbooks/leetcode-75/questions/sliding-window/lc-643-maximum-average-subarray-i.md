@@ -5,7 +5,8 @@ order: 1
 level: S
 title: LC 643 · 子数组最大平均数 I
 quick: >-
-  长度固定时平均值最大就是和最大，所以用定长滑窗，先算前 $k$ 个的和，之后每右移一步加进一个、减出一个，维护最大和，最后除以 $k$。时间 $O(n)$，额外空间 $O(1)$。
+  长度固定时平均值最大就是和最大，所以用定长滑窗，先算前 $k$ 个的和，之后每右移一步加进一个、减出一个，维护最大和，最后除以 $k$。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Sliding Window
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 643. Maximum Average Subarray I
-    url: https://leetcode.com/problems/maximum-average-subarray-i/
+    url: 'https://leetcode.com/problems/maximum-average-subarray-i/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -100,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 `best` 初值要用第一个窗口的和，数组可能全负，初值写 $0$ 会错。
 

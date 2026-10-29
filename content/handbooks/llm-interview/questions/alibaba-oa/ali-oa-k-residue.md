@@ -4,8 +4,7 @@ section: alibaba-oa
 order: 16
 level: A
 title: 阿里春招 0401：下标差为 $k$ 的元素可交换，如何得到字典序最大数组？
-quick: >-
-  下标模 $k$ 同余的位置连成一条链，链内可以任意重排，链之间换不了。每条链的值降序排好，再按原下标从左到右写回，就是字典序最大。
+quick: 下标模 $k$ 同余的位置连成一条链，链内可以任意重排，链之间换不了。每条链的值降序排好，再按原下标从左到右写回，就是字典序最大。
 tags:
   - Alibaba
   - OA
@@ -13,10 +12,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里系列 2026.04.01 算法岗机试
-    url: https://leetcode.cn/discuss/post/3943532/chun-zhao-bi-shi-a-li-xi-lie-ji-shi-fu-p-t91w/
+    url: >-
+      https://leetcode.cn/discuss/post/3943532/chun-zhao-bi-shi-a-li-xi-lie-ji-shi-fu-p-t91w/
     type: secondary
 ---
 
@@ -90,7 +90,7 @@ def max_perm_by_k(a, k):
 def main():
     data = list(map(int, sys.stdin.read().split()))
     n, k = data[0], data[1]
-    a = data[2:2 + n]
+    a = data[2 : 2 + n]
     print(*max_perm_by_k(a, k))
 
 
@@ -115,7 +115,7 @@ print("simple tests passed")
 
 时间 $O(n\log n)$（各链分别排序，长度之和为 $n$），空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 $n=0$ 输出空行；含相同元素时，`sorted` 稳不稳定都不影响值序列。下标从 $1$ 开始时，剩余类改成 $i\bmod k$ 即可，结论相同。
 

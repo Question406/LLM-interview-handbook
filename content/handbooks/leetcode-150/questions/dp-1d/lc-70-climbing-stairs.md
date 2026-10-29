@@ -4,20 +4,22 @@ section: dp-1d
 order: 1
 level: S
 title: LC 70 · 爬楼梯
-quick: "最后一步只能从 $n-1$ 或 $n-2$ 阶上来，所以 $f(n)=f(n-1)+f(n-2)$，就是斐波那契。滚动两个变量即可，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  最后一步只能从 $n-1$ 或 $n-2$ 阶上来，所以 $f(n)=f(n-1)+f(n-2)$，就是斐波那契。滚动两个变量即可，时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - DP
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 70. 爬楼梯
-    url: https://leetcode.cn/problems/climbing-stairs/
+    url: 'https://leetcode.cn/problems/climbing-stairs/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -92,7 +94,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。用矩阵快速幂可以做到 $O(\log n)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 只有一种，走 $1$ 阶。$n=2$ 有两种，$1+1$ 或者直接走 $2$。
 

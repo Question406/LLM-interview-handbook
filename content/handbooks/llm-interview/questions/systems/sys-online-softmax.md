@@ -4,7 +4,10 @@ section: systems
 order: 18
 level: S
 title: FlashAttention 的 Online Softmax 怎么在分块后仍保持精确？
-quick: "Online softmax 每行保存最大值 $m$、归一化和 $\\ell$ 及尚未归一化的输出。新块到来后求 $m'=\\max(m,m_{\\mathrm{block}})$，把旧分子和分母都乘 $\\exp(m-m')$，再加入新块。新旧统计量对齐到同一标度，最后统一归一化，所以分块计算仍与整行 softmax 等价。"
+quick: >-
+  Online softmax 每行保存最大值 $m$、normalization 和 $\ell$ 及尚未 normalization 的输出。新块到来后求
+  $m'=\max(m,m_{\mathrm{block}})$，把旧分子和分母都乘 $\exp(m-m')$，再加入新块。新旧统计量对齐到同一标度，最后统一
+  normalization，所以分块计算仍与整行 softmax 等价。
 tags:
   - FlashAttention
   - Softmax
@@ -13,7 +16,7 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2025 美团大模型面经
     url: 'https://www.nowcoder.com/feed/main/detail/b87b9794a2114f7c818b40a3be51c4f0'
@@ -36,7 +39,7 @@ $$
 对 $Q$ 的一行，扫过已处理的 K/V 块后保存：
 
 - $m$：目前见过的 score 最大值（含 scale 后的 $s=qk^\top/\sqrt{d}$）
-- $\ell$：$\sum e^{s-m}$，即按当前 $m$ 标定后的归一化和
+- $\ell$：$\sum e^{s-m}$，即按当前 $m$ 标定后的 normalization 和
 - $O$：尚未除 $\ell$ 的加权值，也就是 $\sum e^{s-m}v$
 
 初始化：$m=-\infty$，$\ell=0$，$O=0$。

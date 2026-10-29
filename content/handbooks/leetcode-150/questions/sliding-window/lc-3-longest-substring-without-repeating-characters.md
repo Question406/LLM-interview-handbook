@@ -4,20 +4,23 @@ section: sliding-window
 order: 2
 level: S
 title: LC 3 · 无重复字符的最长子串
-quick: "滑动窗口加一个哈希表，记每个字符上次出现的下标。右指针遇到窗口内已有的字符，就把左指针直接跳到它上次位置的下一位，窗口始终没有重复。时间 $O(n)$，空间 $O(\\Sigma)$。"
+quick: >-
+  滑动窗口加一个哈希表，记每个字符上次出现的下标。右指针遇到窗口内已有的字符，就把左指针直接跳到它上次位置的下一位，窗口始终没有重复。时间 $O(n)$，空间
+  $O(\Sigma)$。
 tags:
   - Sliding Window
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 3. 无重复字符的最长子串
-    url: https://leetcode.cn/problems/longest-substring-without-repeating-characters/
+    url: >-
+      https://leetcode.cn/problems/longest-substring-without-repeating-characters/
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,11 +103,11 @@ print("simple tests passed")
 
 时间 $O(n)$，每个字符进窗口一次。空间 $O(\Sigma)$，$\Sigma$ 为字符集大小。
 
-## 边界
+## Edge Cases
 
 空串长度是 $0$，全相同是 $1$，全不同就是 $n$。
 
-重复字符如果出现在窗口左边界之外，也就是 `last[ch] \lt left`，就不用管它，`left` 不能往回跳。
+重复字符如果出现在 window 的 left bound 之外，也就是 `last[ch] \lt left`，就不用管它，`left` 不能往回跳。
 
 ## 追问
 
@@ -129,6 +132,7 @@ def longestSubstring(s):
 
 ```python
 from collections import Counter
+
 
 def lengthOfLongestSubstringKDistinct(s, k):
     cnt = Counter()

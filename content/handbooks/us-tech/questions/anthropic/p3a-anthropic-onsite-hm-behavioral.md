@@ -3,8 +3,8 @@ id: p3a-anthropic-onsite-hm-behavioral
 section: anthropic
 order: 630
 level: A
-title: "Anthropic：HM：跨职能合作、影响与培养他人"
-quick: "我会选一个真实有分歧的合作项目，先说最后做了什么决定，再讲各方的约束、自己的行动和结果。量化影响时交代基线与同期因素，并把个人贡献和团队贡献分清楚。"
+title: Anthropic：HM：跨职能合作、影响与培养他人
+quick: 我会选一个真实有分歧的合作项目，先说最后做了什么决定，再讲各方的约束、自己的行动和结果。量化影响时交代基线与同期因素，并把个人贡献和团队贡献分清楚。
 companies:
   - anthropic
 tags:
@@ -16,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · onsite-hm-behavioral"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/onsite-hm-behavioral
+  - title: 1Point3Acres · Anthropic · onsite-hm-behavioral
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/onsite-hm-behavioral
     type: secondary
 ---
 
@@ -27,7 +28,7 @@ sources:
 
 Hiring manager 的行为面，会聊你做过的项目带来了什么影响、你怎么和非工程背景的同事合作、你怎么指导别人，以及路线图上的取舍是怎么决定的。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理，没有逐条核对原帖，网站收录也不代表公司官方确认；下面的演示回答是手册写的假想示例，不是候选人原话或真实经历。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理；下面的演示回答是手册写的假想示例。
 
 ## 思路
 
@@ -47,7 +48,7 @@ Hiring manager 的行为面，会聊你做过的项目带来了什么影响、�
 
 “在这个假想例子里，我会选择渐进迁移。两名资深工程师分别主张重写服务和局部迁移，期限只有六周，需要先把分歧变成可以验证的假设：瓶颈在哪、六周后必须交付什么、失败代价是什么。
 
-然后我安排了一周的原型和流量回放测试，同时把不兼容的接口单独列为一个风险项。假设测试显示热点路径能局部改造，整库重写却无法在期限内验证完，这就是选择渐进迁移的依据。我会请提出重写的工程师负责边界适配和后续容量验证，让双方都能继续参与方案。
+然后我安排了一周的原型和流量回放测试，同时把不兼容的接口单独列为一个风险项。假设测试显示热点路径能局部改造，整库重写却无法在期限内验证完，这就是选择渐进迁移的依据。我会请提出重写的工程师负责 interface integration 和后续容量验证，让双方都能继续参与方案。
 
 之后每周检查一次里程碑和回滚条件，发布后再做复盘，看最初的假设哪里不成立。”
 
@@ -58,7 +59,7 @@ Hiring manager 的行为面，会聊你做过的项目带来了什么影响、�
 **讲一次和非工程同事（产品、研究、法务等）的合作。** 重点讲你怎么理解对方的目标和约束，怎么把技术取舍翻译成对方关心的语言，比如时间、风险、用户影响，以及最后各自让了什么步。
 
 **这个项目的影响怎么量化？**
-给出基线、变化量和统计口径，并说明同期有没有其他改动也可能影响这个指标。如果只能给定性的影响，就如实说明。
+给出基线、变化量和 metric definition，并说明同期有没有其他改动也可能影响这个指标。如果只能给定性的影响，就如实说明。
 
 **你怎么指导别人？**
 讲一个具体的人：你给了他什么任务、授权到什么程度、在哪些节点检查，他最后能独立负责什么。

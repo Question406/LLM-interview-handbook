@@ -4,20 +4,31 @@ section: swe-agent
 order: 192
 level: A
 title: 多 worktree 并行改同一仓库时，Agent 如何合并 patch 并处理冲突？
-quick: "每个任务一个独立的 worktree 和分支，没隔离就不许并行写同一个工作区。合并时用变基或三路合并，冲突处记下各补丁要修什么、有什么测试证据，按证据裁决，证据弱的一侧整包回滚，合并后再跑一遍并集测试。"
+quick: >-
+  每个任务一个独立的 worktree
+  和分支，没隔离就不许并行写同一个工作区。合并时用变基或三路合并，冲突处记下各补丁要修什么、有什么测试证据，按证据裁决，证据弱的一侧整包回滚，合并后再跑一遍并集测试。
 tags:
   - Worktree
   - Patch Merge
   - SWE Agent
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: Git worktree documentation
-    url: https://git-scm.com/docs/git-worktree
+    url: 'https://git-scm.com/docs/git-worktree'
     type: primary
 ---
+
+## 可以这样回答
+
+每个修复假设放进自己的 worktree 和分支，合并时用变基或三路合并，冲突按各补丁的修复目的和测试证据来裁决，没隔离就不许并行写同一个工作区。多个假设并行跑却共用一个工作区，是 SWE Agent 最常见的文件系统事故。「我们用了线程」或者「最后 git stash 一下」都解决不了这个问题。
+
+举个例子：Agent A 在改 `parser.py`，改到一半，Agent B 在同一个目录里也改了这个文件。测试跑通过了，可通过的是两边改动混在一起的状态，提交时却只带了 A 的 diff，合进去就是坏的。Git worktree 的设计正好是给同一个仓库开多个检出目录，每个绑一个独立分支，各自在自己的 `cwd` 里写，就不会互相覆盖。
+
+## 技术备查
 
 每个修复假设放进自己的 worktree 和分支，合并时用变基或三路合并，冲突按各补丁的修复目的和测试证据来裁决，没隔离就不许并行写同一个工作区。多个假设并行跑却共用一个工作区，是 SWE Agent 最常见的文件系统事故。「我们用了线程」或者「最后 git stash 一下」都解决不了这个问题。
 

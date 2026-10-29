@@ -4,7 +4,9 @@ section: agent
 order: 9
 level: S
 title: 怎么评估一个 Agent Skill 写得好不好？
-quick: "评 Skill 要做只改 Skill 的对照实验：固定模型、工具和预算，比较不加载、只加载描述、加载全文及新版本。成功率之外还要测 token、工具调用、延迟、抗干扰和误触发对其他任务的伤害，并排除把答案写进 Skill 的情况。"
+quick: >-
+  评 Skill 要做只改 Skill 的对照实验：固定模型、工具和预算，比较不加载、只加载描述、加载全文及新版本。成功率之外还要测
+  token、工具调用、延迟、抗干扰和误触发对其他任务的伤害，并排除把答案写进 Skill 的情况。
 tags:
   - Skill
   - Eval
@@ -12,10 +14,11 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Equipping agents for the real world with Agent Skills
-    url: 'https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills'
+    url: >-
+      https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
     type: primary
 ---
 
@@ -29,7 +32,7 @@ sources:
 
 还要承认 Skill 和模型是绑定的。同一篇自然语言 Skill，不同模型的理解差别很大，我会把它当成效果依赖具体模型的文档：要么分模型出变体，要么写成更结构化、可执行的步骤，减少「会不会读长文」带来的差异。
 
-最后是发布门禁：相对 no-skill 有成功增益，token 不涨或者涨幅说得清，干扰条件下误触发低于阈值，held-out 变体不崩。过不了的就当参考文档，不默认加载。Skill 仓库也要有版本和回归集，像代码一样审，合并的条件是对照实验有增益且没有负迁移，写得清楚不够。
+最后是 release criteria：相对 no-skill 有成功增益，token 不涨或者涨幅说得清，干扰条件下误触发低于阈值，held-out 变体不崩。过不了的就当参考文档，不默认加载。Skill 仓库也要有版本和回归集，像代码一样审，合并的条件是对照实验有增益且没有负迁移，写得清楚不够。
 
 ## 追问
 

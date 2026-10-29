@@ -1,0 +1,1955 @@
+[
+  {
+    "book": "data-team-interview",
+    "question": "dt-prep-map",
+    "section": "guide",
+    "order": 20,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-mha-code",
+    "section": "tensor",
+    "order": 21,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "llm-interview",
+    "question": "code-logprob-gather",
+    "section": "tensor",
+    "order": 22,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-layernorm",
+    "section": "tensor",
+    "order": 23,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-packed-sft-code",
+    "section": "tensor",
+    "order": 24,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-packed-lm",
+    "section": "tensor",
+    "order": 25,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "llm-interview",
+    "question": "code-linear-attn",
+    "section": "tensor",
+    "order": 26,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-swa-mask",
+    "section": "tensor",
+    "order": 27,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-sft-collate-code",
+    "section": "tensor",
+    "order": 28,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-response-logprob-code",
+    "section": "tensor",
+    "order": 29,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-dpo-batch-code",
+    "section": "tensor",
+    "order": 30,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-attn-mask",
+    "section": "tensor",
+    "order": 31,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-token-accum-code",
+    "section": "tensor",
+    "order": 32,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "llm-interview",
+    "question": "code-softmax-stable",
+    "section": "tensor",
+    "order": 33,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-rm-weighted-loss-code",
+    "section": "tensor",
+    "order": 34,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "llm-interview",
+    "question": "code-packed-mask",
+    "section": "tensor",
+    "order": 35,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-distill-forward-kl-code",
+    "section": "tensor",
+    "order": 36,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-packed-attention-code",
+    "section": "tensor",
+    "order": 37,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-paper-gated-layer",
+    "section": "tensor",
+    "order": 38,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-numpy-1nn-wx-b",
+    "section": "tensor",
+    "order": 39,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-autograd-hillis-steele-scan",
+    "section": "tensor",
+    "order": 40,
+    "scope": "跨公司/通用 tensor 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-topk-sample",
+    "section": "decoding",
+    "order": 41,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-topk-nucleus",
+    "section": "decoding",
+    "order": 42,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-beam-search",
+    "section": "decoding",
+    "order": 43,
+    "scope": "跨公司/通用 decoding 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-gumbel-max",
+    "section": "decoding",
+    "order": 44,
+    "scope": "跨公司/通用 decoding 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "msft-constrained-decode",
+    "section": "decoding",
+    "order": 45,
+    "scope": "跨公司/通用 decoding 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-spec-accept",
+    "section": "decoding",
+    "order": 46,
+    "scope": "跨公司/通用 decoding 迁移"
+  },
+  {
+    "book": "llm-interview",
+    "question": "code-beam-search",
+    "section": "decoding",
+    "order": 47,
+    "scope": "跨公司/通用 decoding 迁移"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-kmeans",
+    "section": "coding",
+    "order": 48,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-sentence-one-edit",
+    "section": "coding",
+    "order": 49,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-decimal-calendar",
+    "section": "coding",
+    "order": 50,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-cvml-knn-pipeline",
+    "section": "coding",
+    "order": 51,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-ttl-cache-contract",
+    "section": "coding",
+    "order": 52,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-tabular-full-pipeline",
+    "section": "coding",
+    "order": 53,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-kfold-indices",
+    "section": "coding",
+    "order": 54,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-p3a-batchnorm-state",
+    "section": "coding",
+    "order": 55,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-good-data-map",
+    "section": "data",
+    "order": 56,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-pipeline-talk",
+    "section": "data",
+    "order": 57,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-good-data-def",
+    "section": "data",
+    "order": 58,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-minhash-code",
+    "section": "data",
+    "order": 59,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-more-vs-better",
+    "section": "data",
+    "order": 60,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-quality-filter-code",
+    "section": "data",
+    "order": 61,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-data-cascade",
+    "section": "data",
+    "order": 62,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-exact-dedup-code",
+    "section": "data",
+    "order": 63,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-inspect-corpus",
+    "section": "data",
+    "order": 64,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-data-mix-quota",
+    "section": "data",
+    "order": 65,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-filter-too-hard",
+    "section": "data",
+    "order": 66,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-lima-vs-scale",
+    "section": "data",
+    "order": 67,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-temp-mix-code",
+    "section": "data",
+    "order": 68,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-ngram-contam-code",
+    "section": "data",
+    "order": 69,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-repeat-epoch",
+    "section": "data",
+    "order": 70,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-label-noise",
+    "section": "data",
+    "order": 71,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-repro-lineage",
+    "section": "data",
+    "order": 72,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-reservoir-code",
+    "section": "data",
+    "order": 73,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-hold-model-vary-data",
+    "section": "data",
+    "order": 74,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-simhash-code",
+    "section": "data",
+    "order": 75,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-pii-luhn-code",
+    "section": "data",
+    "order": 76,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-utility-select",
+    "section": "data",
+    "order": 77,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-unicode-canon-code",
+    "section": "data",
+    "order": 78,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-wrap-rephrase",
+    "section": "data",
+    "order": 79,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-c4-side-effect",
+    "section": "data",
+    "order": 80,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-semdedup-code",
+    "section": "data",
+    "order": 81,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-boilerplate-code",
+    "section": "data",
+    "order": 82,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-license-is-quality",
+    "section": "data",
+    "order": 83,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-data-intervention",
+    "section": "data",
+    "order": 84,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-longctx-data",
+    "section": "data",
+    "order": 85,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-lid-code",
+    "section": "data",
+    "order": 86,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-lsh-cluster-code",
+    "section": "data",
+    "order": 87,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-substr-dedup-code",
+    "section": "data",
+    "order": 88,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-ppl-filter-code",
+    "section": "data",
+    "order": 89,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-web-extract",
+    "section": "data",
+    "order": 90,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-pretrain-pack-code",
+    "section": "data",
+    "order": 91,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-winnow-code",
+    "section": "data",
+    "order": 92,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-secret-scan-code",
+    "section": "data",
+    "order": 93,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-hash-split-code",
+    "section": "data",
+    "order": 94,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-url-canon-code",
+    "section": "data",
+    "order": 95,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-length-bucket-code",
+    "section": "data",
+    "order": 96,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-countmin-code",
+    "section": "data",
+    "order": 97,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-data-replay-incident",
+    "section": "data",
+    "order": 98,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-token-budget-batch-code",
+    "section": "data",
+    "order": 99,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-worker-shard-code",
+    "section": "data",
+    "order": 100,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-buffer-shuffle-code",
+    "section": "data",
+    "order": 101,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-mixture-factorial-budget",
+    "section": "data",
+    "order": 102,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tokenizer-migration-gap",
+    "section": "data",
+    "order": 103,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-json-clean-code",
+    "section": "data",
+    "order": 104,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-posttrain-map",
+    "section": "synthetic",
+    "order": 105,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-math-passk-band",
+    "section": "synthetic",
+    "order": 106,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-self-improve",
+    "section": "synthetic",
+    "order": 107,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-synth-reasoning",
+    "section": "synthetic",
+    "order": 108,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-math-tir-data",
+    "section": "synthetic",
+    "order": 109,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-synth-tool-mm",
+    "section": "synthetic",
+    "order": 110,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-math-lean-prover",
+    "section": "synthetic",
+    "order": 111,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-math-rewrite-leak",
+    "section": "synthetic",
+    "order": 112,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-rejection-sample-code",
+    "section": "synthetic",
+    "order": 113,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-code-oss-instruct",
+    "section": "synthetic",
+    "order": 114,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-code-hidden-tests",
+    "section": "synthetic",
+    "order": 115,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-code-repo-vs-fn",
+    "section": "synthetic",
+    "order": 116,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-teacher-bias",
+    "section": "synthetic",
+    "order": 117,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-when-not-synth",
+    "section": "synthetic",
+    "order": 118,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-posttrain-mix",
+    "section": "synthetic",
+    "order": 119,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-math-verifier-code",
+    "section": "synthetic",
+    "order": 120,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-shunyu-second-half",
+    "section": "synthetic",
+    "order": 121,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-llama4-rl-recipe",
+    "section": "synthetic",
+    "order": 122,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-anthropic-cu-recipe",
+    "section": "synthetic",
+    "order": 123,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-verifier-counterfactual",
+    "section": "synthetic",
+    "order": 124,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-curriculum-moving-target",
+    "section": "synthetic",
+    "order": 125,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-data-flywheel",
+    "section": "evaluation",
+    "order": 126,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-frontier-release-map",
+    "section": "evaluation",
+    "order": 127,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-frontier-science",
+    "section": "evaluation",
+    "order": 128,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-frontier-code-sets",
+    "section": "evaluation",
+    "order": 129,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-benchmark-gap",
+    "section": "evaluation",
+    "order": 130,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-frontier-agent-sets",
+    "section": "evaluation",
+    "order": 131,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-frontier-ctx-mm",
+    "section": "evaluation",
+    "order": 132,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-frontier-who-reports",
+    "section": "evaluation",
+    "order": 133,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-contamination",
+    "section": "evaluation",
+    "order": 134,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-worse-after-data",
+    "section": "evaluation",
+    "order": 135,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-neg-transfer",
+    "section": "evaluation",
+    "order": 136,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-grounding-data",
+    "section": "evaluation",
+    "order": 137,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-afm-eval",
+    "section": "evaluation",
+    "order": 138,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-locale-data",
+    "section": "evaluation",
+    "order": 139,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-kappa-code",
+    "section": "evaluation",
+    "order": 140,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-human-budget",
+    "section": "evaluation",
+    "order": 141,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-private-tail-budget",
+    "section": "evaluation",
+    "order": 142,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-simpson-release-metrics",
+    "section": "evaluation",
+    "order": 143,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-stale-rollout-incident",
+    "section": "evaluation",
+    "order": 144,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-cluster-bootstrap-code",
+    "section": "evaluation",
+    "order": 145,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-paraphrase-leakage-audit",
+    "section": "evaluation",
+    "order": 146,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-passk-estimator-code",
+    "section": "evaluation",
+    "order": 147,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-afm-rag-deepdive",
+    "section": "evaluation",
+    "order": 148,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-reward-pref",
+    "section": "alignment",
+    "order": 149,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-annotator-protocol",
+    "section": "alignment",
+    "order": 150,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-judge-bias",
+    "section": "alignment",
+    "order": 151,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-pref-pair-code",
+    "section": "alignment",
+    "order": 152,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-length-hack-data",
+    "section": "alignment",
+    "order": 153,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-safety-refuse",
+    "section": "alignment",
+    "order": 154,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-judge-ranking-reversal",
+    "section": "alignment",
+    "order": 155,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-zero-advantage-groups",
+    "section": "alignment",
+    "order": 156,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-preference-multilingual-conflict",
+    "section": "alignment",
+    "order": 157,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-multimodal-data",
+    "section": "multimodal",
+    "order": 158,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "design-multimodal-prod",
+    "section": "multimodal",
+    "order": 159,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-multimodal",
+    "section": "multimodal",
+    "order": 160,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-mm-train",
+    "section": "multimodal",
+    "order": 161,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-vision-edge",
+    "section": "multimodal",
+    "order": 162,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "design-mm-assistant",
+    "section": "multimodal",
+    "order": 163,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-audio-llm",
+    "section": "multimodal",
+    "order": 164,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-token-prune",
+    "section": "multimodal",
+    "order": 165,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-clip-filter-code",
+    "section": "multimodal",
+    "order": 166,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-mm-shortcut-audit",
+    "section": "multimodal",
+    "order": 167,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-audio-semantic-regression",
+    "section": "multimodal",
+    "order": 168,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-video-temporal-shortcut",
+    "section": "multimodal",
+    "order": 169,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-cvml-circular-padding",
+    "section": "multimodal",
+    "order": 170,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-cvml-image-evaluation",
+    "section": "multimodal",
+    "order": 171,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-video-summary-design",
+    "section": "multimodal",
+    "order": 172,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-ondevice-quant",
+    "section": "ondevice",
+    "order": 173,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-privacy-feedback",
+    "section": "ondevice",
+    "order": 174,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-diff-privacy",
+    "section": "ondevice",
+    "order": 175,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-siri-latency",
+    "section": "ondevice",
+    "order": 176,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-adapter-vs-base",
+    "section": "ondevice",
+    "order": 177,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-ane",
+    "section": "ondevice",
+    "order": 178,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-ondevice-distill-data",
+    "section": "ondevice",
+    "order": 179,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-personalize",
+    "section": "ondevice",
+    "order": 180,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-guided-gen-data",
+    "section": "ondevice",
+    "order": 181,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-foundation-models",
+    "section": "ondevice",
+    "order": 182,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-ondevice-kv",
+    "section": "ondevice",
+    "order": 183,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-spec-edge",
+    "section": "ondevice",
+    "order": 184,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-rank-adapter",
+    "section": "ondevice",
+    "order": 185,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-siri-grounded",
+    "section": "systems",
+    "order": 186,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "us-tech",
+    "question": "design-moderation",
+    "section": "systems",
+    "order": 187,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-apigen",
+    "section": "systems",
+    "order": 188,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-parallel",
+    "section": "systems",
+    "order": 189,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-error-recover",
+    "section": "systems",
+    "order": 190,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-write-confirm",
+    "section": "systems",
+    "order": 191,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-fireact",
+    "section": "systems",
+    "order": 192,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-swegym",
+    "section": "systems",
+    "order": 193,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-user-sim",
+    "section": "systems",
+    "order": 194,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-rl-map",
+    "section": "systems",
+    "order": 195,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "design-voice-agent",
+    "section": "systems",
+    "order": 196,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-env-is-data",
+    "section": "systems",
+    "order": 197,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-traj-quality",
+    "section": "systems",
+    "order": 198,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "us-tech",
+    "question": "apple-ondevice-agent",
+    "section": "systems",
+    "order": 199,
+    "scope": "Apple 标签题"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-task-quality",
+    "section": "systems",
+    "order": 200,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-rl-filter",
+    "section": "systems",
+    "order": 201,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-reward-spec",
+    "section": "systems",
+    "order": 202,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-env-stack",
+    "section": "systems",
+    "order": 203,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-scale-env",
+    "section": "systems",
+    "order": 204,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-verified-stale",
+    "section": "systems",
+    "order": 205,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-passk-zero",
+    "section": "systems",
+    "order": 206,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-gui-agent-rl",
+    "section": "systems",
+    "order": 207,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-tmax-synth",
+    "section": "systems",
+    "order": 208,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-rft-recipe",
+    "section": "systems",
+    "order": 209,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-codex-rl-env",
+    "section": "systems",
+    "order": 210,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-gap-factorial",
+    "section": "systems",
+    "order": 211,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-gemini-rl-env",
+    "section": "systems",
+    "order": 212,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tinker-agent-rl",
+    "section": "systems",
+    "order": 213,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-siri-search-design",
+    "section": "systems",
+    "order": 214,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-classifier-data-system",
+    "section": "systems",
+    "order": 215,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-flask-inference-contract",
+    "section": "systems",
+    "order": 216,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-task-dag-code",
+    "section": "systems",
+    "order": 217,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-photo-ranking",
+    "section": "systems",
+    "order": 218,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-data-story",
+    "section": "projects",
+    "order": 219,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-pre-mid-post",
+    "section": "projects",
+    "order": 220,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-why-apple",
+    "section": "projects",
+    "order": 221,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-failed-data-bet",
+    "section": "projects",
+    "order": 222,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-legal-capability",
+    "section": "projects",
+    "order": 223,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-paper-pitch",
+    "section": "projects",
+    "order": 224,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-cost-per-gain",
+    "section": "projects",
+    "order": 225,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-senior-stop-selftrain",
+    "section": "projects",
+    "order": 226,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-senior-proxy-scale-reversal",
+    "section": "projects",
+    "order": 227,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-research-why-reasoning",
+    "section": "projects",
+    "order": 228,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-aiml-mixture-defense",
+    "section": "projects",
+    "order": 229,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-see-around-corners",
+    "section": "culture",
+    "order": 230,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-killed-dataset",
+    "section": "culture",
+    "order": 231,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-culture-falsifiable-warning",
+    "section": "culture",
+    "order": 232,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-culture-eval-deadline",
+    "section": "culture",
+    "order": 233,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "p3a-apple-simplicity-trust-practice",
+    "section": "culture",
+    "order": 234,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-map",
+    "section": "research",
+    "order": 235,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-labs-map",
+    "section": "research",
+    "order": 236,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-web-diagnose",
+    "section": "research",
+    "order": 237,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-novel-bootstrap",
+    "section": "research",
+    "order": 238,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-web-skill",
+    "section": "research",
+    "order": 239,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-userlog-contrast",
+    "section": "research",
+    "order": 240,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-web-internalize",
+    "section": "research",
+    "order": 241,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-global-dedup",
+    "section": "research",
+    "order": 242,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-web-grounding",
+    "section": "research",
+    "order": 243,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-doremi-mix",
+    "section": "research",
+    "order": 244,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-tbench-climb",
+    "section": "research",
+    "order": 245,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-llama-anneal",
+    "section": "research",
+    "order": 246,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-case-toolcall-rl",
+    "section": "research",
+    "order": 247,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-quality-clf-synth",
+    "section": "research",
+    "order": 248,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-synth-bench-trap",
+    "section": "research",
+    "order": 249,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-rlaif-loop",
+    "section": "research",
+    "order": 250,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-sycophancy-data",
+    "section": "research",
+    "order": 251,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-trigger-ood",
+    "section": "research",
+    "order": 252,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-llama-extract",
+    "section": "research",
+    "order": 253,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-weighted-batcher",
+    "section": "research",
+    "order": 254,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-x-feed",
+    "section": "research",
+    "order": 255,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-dclm-wet",
+    "section": "research",
+    "order": 256,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-contam-hold",
+    "section": "research",
+    "order": 257,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-onpolicy-pref",
+    "section": "research",
+    "order": 258,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-llama-edit-pref",
+    "section": "research",
+    "order": 259,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-prm-steps",
+    "section": "research",
+    "order": 260,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-rlvr-data",
+    "section": "research",
+    "order": 261,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-value-drift",
+    "section": "research",
+    "order": 262,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-turn-pref",
+    "section": "research",
+    "order": 263,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-code-exec-synth",
+    "section": "research",
+    "order": 264,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-code-bench-bleed",
+    "section": "research",
+    "order": 265,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-swe-success-noise",
+    "section": "research",
+    "order": 266,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-irrelevance",
+    "section": "research",
+    "order": 267,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-alias",
+    "section": "research",
+    "order": 268,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-agent-state-path",
+    "section": "research",
+    "order": 269,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-rlef-split",
+    "section": "research",
+    "order": 270,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-inject",
+    "section": "research",
+    "order": 271,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-gui-traj",
+    "section": "research",
+    "order": 272,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-webgpt-cite",
+    "section": "research",
+    "order": 273,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-knows-what",
+    "section": "research",
+    "order": 274,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-when-to-search",
+    "section": "research",
+    "order": 275,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tau-passk",
+    "section": "research",
+    "order": 276,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-r1-distill",
+    "section": "research",
+    "order": 277,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-deliberate-spec",
+    "section": "research",
+    "order": 278,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-webarena-traj",
+    "section": "research",
+    "order": 279,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-ifeval-overlay",
+    "section": "research",
+    "order": 280,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-s1k",
+    "section": "research",
+    "order": 281,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-oai-classifier",
+    "section": "research",
+    "order": 282,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-chatlog-concept",
+    "section": "research",
+    "order": 283,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-tool-photo",
+    "section": "research",
+    "order": 284,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-honest-fluent",
+    "section": "research",
+    "order": 285,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-sleeper-data",
+    "section": "research",
+    "order": 286,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-llm-clf-logprob",
+    "section": "research",
+    "order": 287,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-eval-harness",
+    "section": "research",
+    "order": 288,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-canary-leak",
+    "section": "research",
+    "order": 289,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-synth-collapse",
+    "section": "research",
+    "order": 290,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-phi-textbook",
+    "section": "research",
+    "order": 291,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-pref-collect",
+    "section": "research",
+    "order": 292,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-eval-no-gold",
+    "section": "research",
+    "order": 293,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-bench-vs-user",
+    "section": "research",
+    "order": 294,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-prompt-rag-ft",
+    "section": "research",
+    "order": 295,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-forget-sft",
+    "section": "research",
+    "order": 296,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-online-eval",
+    "section": "research",
+    "order": 297,
+    "scope": "AFM Data Team 备考"
+  },
+  {
+    "book": "data-team-interview",
+    "question": "dt-sample-descent",
+    "section": "research",
+    "order": 298,
+    "scope": "AFM Data Team 备考"
+  }
+]

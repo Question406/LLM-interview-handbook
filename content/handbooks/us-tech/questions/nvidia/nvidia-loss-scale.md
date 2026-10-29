@@ -4,27 +4,49 @@ section: nvidia
 order: 12
 level: A
 title: NVIDIA：混合精度 loss scaling，overflow 怎么发现和恢复
-quick: "FP16 小梯度容易下溢，我会先把 loss 乘 $S$，更新前再把梯度除回去。发现 inf/nan 就跳过本步、保留原权重和动量，并减半 $S$；连续若干步正常再加倍，BF16 通常不需要这套全局缩放。"
+quick: >-
+  假设 FP16 里某些 gradients 太小，表示时变成了零。Loss scaling 会先放大 loss，让 backward
+  中的数值更容易表示；真正更新参数前，再把 gradients 除回原来的尺度。
 tags:
   - NVIDIA
   - Mixed Precision
   - Loss Scaling
   - AMP
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Mixed Precision Training
-    url: https://arxiv.org/abs/1710.03740
+    url: 'https://arxiv.org/abs/1710.03740'
     type: primary
   - title: Scaling Language Model Training to a Trillion Parameters Using Megatron
-    url: https://developer.nvidia.com/blog/scaling-language-model-training-to-a-trillion-parameters-using-megatron/
+    url: >-
+      https://developer.nvidia.com/blog/scaling-language-model-training-to-a-trillion-parameters-using-megatron/
     type: secondary
   - title: NVIDIA Megatron-LM
-    url: https://github.com/NVIDIA/Megatron-LM
+    url: 'https://github.com/NVIDIA/Megatron-LM'
     type: primary
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设 FP16 里某些 gradients 太小，表示时变成了零。
+>
+> **做法与原因：** 如果出现 inf 或 NaN，这次 update 应跳过，并调整 scale，而不是继续写坏参数。
+>
+> **检查与取舍：** 这主要是在处理数值范围，不是在改变学习目标。
+
+## 可以这样回答
+
+假设 FP16 里某些 gradients 太小，表示时变成了零。Loss scaling 会先放大 loss，让 backward 中的数值更容易表示；真正更新参数前，再把 gradients 除回原来的尺度。
+
+如果出现 inf 或 NaN，这次 update 应跳过，并调整 scale，而不是继续写坏参数。Gradient clipping 也应在解除 scale 后进行，否则裁剪的不是原来的 gradient 大小。
+
+这主要是在处理数值范围，不是在改变学习目标。BF16、FP16 和 FP8 的表示方式不同，不能把同一套 scale 规则直接套到所有 precision 上。
+
+## 技术备查
 
 Loss scaling 用一个全局乘数保护 FP16 的小梯度：反向前放大 loss，更新前再除回去，发现溢出则跳过本步并减小乘数。AMP / Apex / Megatron 都有这类混合精度路径，但要先确认 dtype，BF16 通常不用全局缩放，FP8 则按 tensor 的 amax 管理 scale。INT8 / SmoothQuant 见 `nvidia-int8-quant`，FP8 的做法见 `nvidia-fp8`。
 

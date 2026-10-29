@@ -4,20 +4,20 @@ section: stack
 order: 1
 level: S
 title: LC 20 · 有效的括号
-quick: "括号后开先关，用栈：左括号入栈，右括号必须和栈顶配成一对才弹出，配不上就无效。扫完栈为空才有效。时间 $O(n)$。"
+quick: 括号后开先关，用栈：左括号入栈，右括号必须和栈顶配成一对才弹出，配不上就无效。扫完栈为空才有效。时间 $O(n)$。
 tags:
   - Stack
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 20. 有效的括号
-    url: https://leetcode.cn/problems/valid-parentheses/
+    url: 'https://leetcode.cn/problems/valid-parentheses/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +99,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。每个字符进出栈至多一次。
 
-## 边界
+## Edge Cases
 
 空串栈是空的，返回真。
 

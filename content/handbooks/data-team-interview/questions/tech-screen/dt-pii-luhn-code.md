@@ -4,7 +4,10 @@ section: tech-screen
 order: 11
 level: A
 title: CoderPad：PII 门怎么写，信用卡 Luhn 和代码假阳性怎么处理？
-quick: "先用正则找可能的个人信息，再做校验：信用卡号用 Luhn，邮箱和电话查格式。命中后记下文本位置，隔离还是脱敏交给单独的规则决定。代码里的示例卡号 `4111-1111-1111-1111` 和 ISBN 会误报，要按领域设白名单，命中都记录下来再处理。"
+quick: >-
+  先用正则找可能的 personally identifiable information (PII)，再做校验：信用卡号用
+  Luhn，邮箱和电话查格式。命中后记下文本位置，隔离还是脱敏交给单独的规则决定。代码里的示例卡号 `4111-1111-1111-1111` 和 ISBN
+  会 false positive，要按领域设白名单，命中都记录下来再处理。
 companies:
   - apple
 tags:
@@ -15,22 +18,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: ISO/IEC 7812 (Luhn check)
-    url: https://en.wikipedia.org/wiki/Luhn_algorithm
+    url: 'https://en.wikipedia.org/wiki/Luhn_algorithm'
     type: primary
   - title: Datasets used for Apple Intelligence
-    url: https://www.apple.com/legal/ai-regulations/training-data/
+    url: 'https://www.apple.com/legal/ai-regulations/training-data/'
     type: primary
   - title: Apple Intelligence Foundation Language Models Tech Report 2025
-    url: https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
+    url: >-
+      https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 实现文本中的敏感信息候选检测，包括银行卡号、邮箱和电话号码。返回原文中可定位的片段；只检测，不删除文本，也不联系任何外部服务。
 
@@ -123,7 +127,7 @@ def find_pii(text):
     return spans
 ```
 
-测试覆盖 Luhn、带空格的卡号、span 边界、订单号、邮箱电话和空结果：
+测试覆盖 Luhn、带空格的卡号、span boundaries、订单号、邮箱电话和空结果：
 
 ```python
 # Luhn：测试卡号通过，改一位就不通过
@@ -135,7 +139,7 @@ assert luhn_ok("79927398713")
 text = "Charge card 4111 1111 1111 1111 today."
 spans = find_pii(text)
 assert [s.kind for s in spans] == ["card"]
-assert text[spans[0].start:spans[0].end] == "4111 1111 1111 1111"
+assert text[spans[0].start : spans[0].end] == "4111 1111 1111 1111"
 
 # span 不包含卡号后面的空格
 assert spans[0].value == "4111 1111 1111 1111"
@@ -158,17 +162,17 @@ assert find_pii("nothing sensitive here") == []
 
 ## 检测和决策分开
 
-检测函数只负责找 span，怎么处理按场景定。网页正文里命中卡号，整篇 quarantine；论坛回复里有一个邮箱，挖空后可以留，lineage 记 `redacted=email`；代码仓库里检测器照样打开，但 `example.com`、`4111111111111111` 和测试夹具进白名单。先记 span 再决定，是因为挖空后的文本会变成 `please charge ****`，质量分可能下降，静默 `re.sub` 会让下周的归因对不上。
+检测函数只负责找 span，怎么处理按场景定。网页正文里命中卡号，整篇 quarantine；论坛回复里有一个邮箱，挖空后可以留，lineage 记 `redacted=email`；代码仓库里检测器照样打开，但 `example.com`、`4111111111111111` 和测试夹具进白名单。先记 span 再决定，是因为挖空后的文本会变成 `please charge ****`，质量分可能下降，静默 `re.sub` 会让下周的 attribution 对不上。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert luhn_ok("4111111111111111")` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert luhn_ok("4111111111111111")` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
@@ -176,7 +180,7 @@ assert find_pii("nothing sensitive here") == []
 ISBN、EAN、Git commit 里的长数字串、美国电话号码和订单号。Luhn 能挡掉一批，但挡不住示例卡。下一层是 NER 或专用检测器，热路径上仍然先跑正则。
 
 **身份证、护照号怎么查？**
-按 locale 分规则，别用一张美国正则扫全球。PII 检测和质量过滤一样，要按语言校准、按域开关。
+按 locale 分规则，别用一张美国正则扫全球。PII 检测和质量过滤一样，要按语言做 calibration、按域开关。
 
 **命中了是挖空还是整篇扔？**
 看场景：网页正文里有卡号整篇 quarantine，论坛回复里一个邮箱挖空后可以留，并在 lineage 里记下来。

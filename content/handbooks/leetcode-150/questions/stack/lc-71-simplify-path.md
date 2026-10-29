@@ -4,7 +4,9 @@ section: stack
 order: 2
 level: A
 title: LC 71 · 简化路径
-quick: "先按 `/` 切开再用栈：`..` 弹栈，`.` 和空段忽略，其余当目录名入栈，最后拼成 `\"/\" + join`。比逐字符解析斜杠更不容易写错，时间 $O(n)$。"
+quick: >-
+  先按 `/` 切开再用栈：`..` 弹栈，`.` 和空段忽略，其余当目录名入栈，最后拼成 `"/" + join`。比逐字符解析斜杠更不容易写错，时间
+  $O(n)$。
 tags:
   - Stack
   - String
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 71. 简化路径
-    url: https://leetcode.cn/problems/simplify-path/
+    url: 'https://leetcode.cn/problems/simplify-path/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -105,7 +107,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。$n$ 为路径长度。
 
-## 边界
+## Edge Cases
 
 已经在根还遇到 `..`，栈空不弹，结果仍是 `/`。
 

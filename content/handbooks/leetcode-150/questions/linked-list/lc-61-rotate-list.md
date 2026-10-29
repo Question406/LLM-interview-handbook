@@ -4,20 +4,20 @@ section: linked-list
 order: 9
 level: A
 title: LC 61 · 旋转链表
-quick: "先求长度 $n$，把 $k$ 对 $n$ 取模；然后尾巴接回头成环，再走到新尾（第 $n-k$ 个节点）断开。时间 $O(n)$，额外空间 $O(1)$。"
+quick: 先求长度 $n$，把 $k$ 对 $n$ 取模；然后尾巴接回头成环，再走到新尾（第 $n-k$ 个节点）断开。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 61. 旋转链表
-    url: https://leetcode.cn/problems/rotate-list/
+    url: 'https://leetcode.cn/problems/rotate-list/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -134,7 +134,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。求长一遍，再走 $n-k$ 步。
 
-## 边界
+## Edge Cases
 
 - $k$ 是 $n$ 的倍数时，取模后为 $0$，原表不动。
 - $k \gt n$ 时一定要先 $k \bmod n$，否则会走过头。

@@ -3,8 +3,10 @@ id: p3a-anthropic-mech-interp-take-home
 section: anthropic
 order: 632
 level: S
-title: "Anthropic：机制可解释性：复现样本维度双下降"
-quick: "我会固定线性模型的参数量和数据生成方式，扫描训练样本数相对参数量的比例，同时记录训练和测试误差。重点检查插值阈值附近的峰，用多个种子、奇异值谱和 ridge 对照，判断峰是不是来自噪声被放大。"
+title: Anthropic：机制可解释性：复现样本维度双下降
+quick: >-
+  我会固定线性模型的参数量和数据生成方式，扫描训练样本数相对参数量的比例，同时记录训练和测试误差。重点检查插值阈值附近的峰，用多个种子、奇异值谱和 ridge
+  对照，判断峰是不是来自噪声被放大。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · mech-interp-take-home"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/mech-interp-take-home
+  - title: 1Point3Acres · Anthropic · mech-interp-take-home
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/mech-interp-take-home
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现一个可重复的线性回归实验：改变训练样本量，记录训练与独立测试误差，并比较无正则与 ridge 回归。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -59,7 +62,7 @@ experiment([15, 19, 20, 21, 40], features=20, ridge=1)
 
 这是一道 take-home：用小模型做实验，复现 double descent（双下降）现象，解释它为什么出现，并提出缓解办法。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -163,7 +166,9 @@ def experiment(sample_sizes, features=20, noise=0.2, seeds=(0, 1, 2), ridge=0.0)
     rows = []
     for n in sample_sizes:
         train_mse, test_mse = np.mean(errors[n], axis=0)
-        rows.append({"n": n, "train_mse": float(train_mse), "test_mse": float(test_mse)})
+        rows.append(
+            {"n": n, "train_mse": float(train_mse), "test_mse": float(test_mse)}
+        )
     return rows
 ```
 
@@ -175,7 +180,7 @@ def experiment(sample_sizes, features=20, noise=0.2, seeds=(0, 1, 2), ridge=0.0)
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

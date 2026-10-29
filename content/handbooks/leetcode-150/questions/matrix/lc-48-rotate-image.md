@@ -4,20 +4,20 @@ section: matrix
 order: 3
 level: S
 title: LC 48 · 旋转图像
-quick: "原地顺时针转 $90^\\circ$，先沿主对角线转置，再把每一行左右翻转。时间 $O(n^2)$，额外空间 $O(1)$。"
+quick: 原地顺时针转 $90^\circ$，先沿主对角线转置，再把每一行左右翻转。时间 $O(n^2)$，额外空间 $O(1)$。
 tags:
   - Matrix
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 48. 旋转图像
-    url: https://leetcode.cn/problems/rotate-image/
+    url: 'https://leetcode.cn/problems/rotate-image/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(n^2)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $n=1$ 时不用动。
 - 偶数边长时每个元素都在某个四元环里，转置加翻转覆盖了全部。

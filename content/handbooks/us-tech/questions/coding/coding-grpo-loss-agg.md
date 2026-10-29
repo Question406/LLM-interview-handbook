@@ -4,37 +4,51 @@ section: coding
 order: 36
 level: S
 title: 白板：GRPO 的 token loss 怎么聚合成一个数？三种写法的长度偏置
-quick: "先 mask 掉 prompt 和 pad，再决定分母：seq-mean 按每条长度平均，token-mean 按全 batch 有效 token 平均，Dr. GRPO 除固定常数。seq-mean 让长错答案的单 token 惩罚变小；梯度累积时，token-mean 要用 global batch 的总 token 数。"
+quick: >-
+  先 mask 掉 prompt 和 pad，再决定分母：seq-mean 按每条长度平均，token-mean 按全 batch 有效 token
+  平均，Dr. GRPO 除固定常数。seq-mean 让长错答案的单 token 惩罚变小；gradient accumulation
+  时，token-mean 要用 global batch 的总 token 数。
 tags:
   - 完整编程练习
   - Coding
   - GRPO
   - PPO
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Understanding R1-Zero-Like Training (Dr. GRPO)
-    url: https://arxiv.org/abs/2503.20783
+    url: 'https://arxiv.org/abs/2503.20783'
     type: primary
-  - title: "DAPO: An Open-Source LLM Reinforcement Learning System at Scale"
-    url: https://arxiv.org/abs/2503.14476
+  - title: 'DAPO: An Open-Source LLM Reinforcement Learning System at Scale'
+    url: 'https://arxiv.org/abs/2503.14476'
     type: primary
-  - title: DeepSeekMath, GRPO
-    url: https://arxiv.org/abs/2402.03300
+  - title: 'DeepSeekMath, GRPO'
+    url: 'https://arxiv.org/abs/2402.03300'
     type: primary
 ---
 
 ## 题目描述
 
-实现三种 token 损失聚合方式，明确每种方式的归一化口径。
+实现三种 token 损失聚合方式，明确每种方式的 normalization convention。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出
 
 输入 `per_tok`、mask 均为 `[B,T]`，mask 为 1 的位置是回答 token，为 0 的位置是 prompt 或 padding。`loss_seq_mean(per_tok,mask)` 先按每条序列的有效 token 数取均值，再对 B 条序列取均值；空序列贡献 0，但仍占 batch 的一个位置。`loss_token_mean(per_tok,mask)` 是全部有效 token 的总损失除以其总数。
 
 `loss_const_norm(per_tok,mask,max_len)` 为有效 token 总损失除以 `B*max_len`，其中 `max_len` 为不小于 T 的正整数。全部 mask 为 0 时三者均返回连接计算图的 0，输入损失梯度为 0。
+
+### 本题不需要做什么
+
+`per_tok` 是调用方已经算好的逐 token loss，包含正负数均可；本题只做 mask 和 reduction，不从 rewards 计算 advantages，也不构造 PPO ratio。B、T 为正，同设备浮点 tensor；三个函数均返回同设备的 scalar tensor。无效位置的数值不得影响结果。
+
+### 一个样本长度不同时的判断
+
+题面示例中第一条序列有 2 个有效 token，第二条有 3 个。Sequence mean 是 `(2+4)/2=3`；token mean 是 `(1+3+2+4+6)/5=3.2`。`per_tok` 中的 99 被 mask 掉，不得贡献数值或 gradient。这两个均值不同是预期行为，不是浮点误差。
 
 ### 示例
 
@@ -51,7 +65,7 @@ loss_const_norm(max_len=4) = 2
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，CPU 浮点张量上验证；没有验证 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 浮点张量上验证；没有验证 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -59,7 +73,7 @@ loss_const_norm(max_len=4) = 2
 - `loss_token_mean(per_tok, mask)`：整个 batch 的有效 token loss 求和，除以有效 token 总数。
 - `loss_const_norm(per_tok, mask, max_len)`：有效 token loss 求和，除以常数 `B * max_len`。`max_len` 是固定的正整数，且不小于 T。
 - `per_tok` 和 `mask` 都是 `[B, T]`，`mask` 中 1 表示 response token，0 表示 prompt 或 pad。形状不一致、`max_len` 不合法时抛 `ValueError`。
-- 全部被 mask 时三个函数都返回 0，并且能正常反传（梯度为 0，不出现 NaN）。
+- 全部被 mask 时三个函数都返回 0，并且能正常 backpropagation（梯度为 0，不出现 NaN）。
 
 ### 输入输出示例
 
@@ -86,14 +100,16 @@ import torch
 
 def _check_shapes(per_tok, mask):
     if per_tok.ndim != 2 or per_tok.shape != mask.shape:
-        raise ValueError("per_tok and mask must both be [B, T], got "
-                         f"{tuple(per_tok.shape)} and {tuple(mask.shape)}")
+        raise ValueError(
+            "per_tok and mask must both be [B, T], got "
+            f"{tuple(per_tok.shape)} and {tuple(mask.shape)}"
+        )
 
 
 def loss_seq_mean(per_tok, mask):
     """每条回答内对有效 token 取平均，再对 B 条回答平均；空回答贡献 0，仍计入 B。"""
     _check_shapes(per_tok, mask)
-    lengths = mask.sum(dim=-1).clamp(min=1)          # [B]，空回答的分母取 1
+    lengths = mask.sum(dim=-1).clamp(min=1)  # [B]，空回答的分母取 1
     per_seq = (per_tok * mask).sum(dim=-1) / lengths  # [B]
     return per_seq.mean()
 
@@ -121,7 +137,7 @@ def loss_const_norm(per_tok, mask, max_len):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -144,13 +160,13 @@ assert torch.allclose(loss_token_mean(per_tok, mask), torch.tensor(3.2))
 assert loss_const_norm(per_tok, mask, 4) == 2
 
 # 梯度就是每个 token 的权重：seq-mean 是 1 / (B * |o_i|)，短回答的 token 权重更大
-grad, = torch.autograd.grad(loss_seq_mean(per_tok, mask), per_tok)
+(grad,) = torch.autograd.grad(loss_seq_mean(per_tok, mask), per_tok)
 assert torch.allclose(grad, torch.tensor([[0.25, 0.25, 0.0], [1 / 6, 1 / 6, 1 / 6]]))
 
 # token-mean 和常数归一下，每个有效 token 权重相同，pad 权重为 0
-grad, = torch.autograd.grad(loss_token_mean(per_tok, mask), per_tok)
+(grad,) = torch.autograd.grad(loss_token_mean(per_tok, mask), per_tok)
 assert torch.allclose(grad, mask / 5)
-grad, = torch.autograd.grad(loss_const_norm(per_tok, mask, 4), per_tok)
+(grad,) = torch.autograd.grad(loss_const_norm(per_tok, mask, 4), per_tok)
 assert torch.allclose(grad, mask / 8)
 
 # 全部被 mask：返回 0，梯度也全是 0，不出现 NaN
@@ -173,7 +189,7 @@ expect_value_error(loss_token_mean, per_tok, mask[:, :2])
 
 设 batch 有 B 条回答、padding 后长度为 T。三个函数的时间都是 O(B·T)，seq-mean 额外存 B 个回答长度，空间 O(B)。
 
-- 追问「梯度累积时 token-mean 怎么写」：不能把每个 micro-batch 各自的 token-mean 再平均。要先算出整个 global batch 的有效 token 总数，每个 micro-batch 的分子都除以这个全局数，见下文「梯度累积」。
+- 追问「gradient accumulation 时 token-mean 怎么写」：不能把每个 micro-batch 各自的 token-mean 再平均。要先算出整个 global batch 的有效 token 总数，每个 micro-batch 的分子都除以这个全局数，见下文「gradient accumulation」。
 
 ## 题怎么来的
 
@@ -226,9 +242,9 @@ $L_{\max}$ 是生成长度上限，不是这个 batch 的 padding 长度，所�
 
 对 `per_tok` 求梯度，得到的就是每个 token 的权重，长度偏置一眼就能看出来。练习里的例子中，seq-mean 给 2 个 token 的短回答每个 token $0.25$，给 3 个 token 的长回答每个 token $1/6$；token-mean 给每个有效 token $1/5$；常数归一（$L_{\max}=4$）给每个有效 token $1/8$。pad 位置的权重都是 0。
 
-## 梯度累积
+## gradient accumulation
 
-token-mean 最容易在 micro-batch 上写错。如果每个 micro-batch 除以自己的 token 数，再把几个 micro-batch 的 loss 相加或平均，结果并不等于整个 batch 的 token-mean：token 少的 micro-batch 被放大了。正确做法是先算出整个 global batch 的有效 token 数（多卡时做一次 all-reduce），每个 micro-batch 都除以这个全局数，然后直接累加梯度。梯度累积和数据并行怎么对齐见 `sys-grad-accum`。
+token-mean 最容易在 micro-batch 上写错。如果每个 micro-batch 除以自己的 token 数，再把几个 micro-batch 的 loss 相加或平均，结果并不等于整个 batch 的 token-mean：token 少的 micro-batch 被放大了。正确做法是先算出整个 global batch 的有效 token 数（多卡时做一次 all-reduce），每个 micro-batch 都除以这个全局数，然后直接累加梯度。gradient accumulation 和数据并行怎么对齐见 `sys-grad-accum`。
 
 ## 追问
 
@@ -243,7 +259,7 @@ token-mean 最容易在 micro-batch 上写错。如果每个 micro-batch 除以�
 
 ## 相关题
 
-- [[coding-loss-atlas]]：总览题，各种 loss 都写成「权重 × logprob」，这里讨论的聚合方式就是权重里的那个归一化因子。
+- [[coding-loss-atlas]]：总览题，各种 loss 都写成「权重 × logprob」，这里讨论的聚合方式就是权重里的那个 normalization 因子。
 - [[sys-adv-bcast]]：聚合之前的一步，序列级优势怎么铺到 token 上、哪些位置的 mask 必须是 0。
 - [[coding-cispo]]：CISPO 沿用 DAPO 的 token-level 平均，那张讲它和 PPO clip 在出界 token 上的梯度差别。
-- [[coding-gspo-seq-ratio]]：GSPO 把 ratio 和 clip 挪到序列级，长度归一化放在 log ratio 的均值里，和这里的长度偏置可以对照。
+- [[coding-gspo-seq-ratio]]：GSPO 把 ratio 和 clip 挪到序列级，长度 normalization 放在 log ratio 的均值里，和这里的长度偏置可以对照。

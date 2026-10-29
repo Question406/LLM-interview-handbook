@@ -4,7 +4,7 @@ section: hashmap
 order: 1
 level: A
 title: LC 2215 · 找出两数组的不同
-quick: "两个数组各转成集合，`s1 - s2` 和 `s2 - s1` 就是答案，集合顺带完成去重。时间 $O(n+m)$，额外空间 $O(n+m)$。"
+quick: 两个数组各转成集合，`s1 - s2` 和 `s2 - s1` 就是答案，集合顺带完成去重。时间 $O(n+m)$，额外空间 $O(n+m)$。
 tags:
   - Array
   - Hash
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2215. Find the Difference of Two Arrays
-    url: https://leetcode.com/problems/find-the-difference-of-two-arrays/
+    url: 'https://leetcode.com/problems/find-the-difference-of-two-arrays/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -70,6 +70,7 @@ def findDifference(nums1: List[int], nums2: List[int]) -> List[List[int]]:
 
 
 if __name__ == "__main__":
+
     def norm(ans):
         return [sorted(ans[0]), sorted(ans[1])]
 
@@ -88,7 +89,9 @@ if __name__ == "__main__":
 
 ```python
 def norm(ans):
-        return [sorted(ans[0]), sorted(ans[1])]
+    return [sorted(ans[0]), sorted(ans[1])]
+
+
 assert norm(findDifference([1, 2, 3], [2, 4, 6])) == [[1, 3], [4, 6]]
 assert norm(findDifference([1, 2, 3, 3], [1, 1, 2, 2])) == [[3], []]
 assert norm(findDifference([1, 2], [1, 2])) == [[], []]
@@ -101,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(n+m)$，额外空间 $O(n+m)$。
 
-## 边界
+## Edge Cases
 
 两个数组的元素集合相同时，返回 `[[], []]`。
 

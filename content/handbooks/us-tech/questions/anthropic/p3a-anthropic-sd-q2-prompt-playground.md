@@ -3,8 +3,10 @@ id: p3a-anthropic-sd-q2-prompt-playground
 section: anthropic
 order: 625
 level: A
-title: "Anthropic：Prompt Playground：产品流程、schema 与共享"
-quick: "我会把每次运行绑定到保存的 prompt 版本或明确快照，让编辑、对比和分享都能指向同一份内容。草稿、运行状态和权限也要在界面上说清楚，避免同事看到的结果跟自己运行的不一致。"
+title: Anthropic：Prompt Playground：产品流程、schema 与共享
+quick: >-
+  我会把每次运行绑定到保存的 prompt
+  版本或明确快照，让编辑、对比和分享都能指向同一份内容。草稿、运行状态和权限也要在界面上说清楚，避免同事看到的结果跟自己运行的不一致。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · sd-q2-prompt-playground"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/sd-q2-prompt-playground
+  - title: 1Point3Acres · Anthropic · sd-q2-prompt-playground
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/sd-q2-prompt-playground
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 题面已经给出部署图，要求设计一个协作式的 prompt 试验产品，重点讨论用户流程、数据结构和 UX。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；收录为面经题型不代表公司官方确认。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。规模数字、SLO 和故障情景是手册补的练习约定。
 
 ## 思路
 
@@ -39,7 +42,7 @@ sources:
 
 ### 具体题目与需求澄清
 
-已给出"客户端 → 服务端 → 数据库"的部署图，要求设计协作式的 prompt 试验产品。重点是用户流程、数据结构、分享和边界情况。
+已给出"客户端 → 服务端 → 数据库"的部署图，要求设计协作式的 prompt 试验产品。重点是用户流程、数据结构、分享和 edge cases。
 
 开始回答时复述这些范围，问面试官目标用户是个人开发者还是团队。
 
@@ -51,7 +54,7 @@ sources:
 
 两个人同时保存时要提示冲突，last-write-wins 会静默覆盖别人的工作。失败运行可以重试，旧输出留着。撤销分享要立即生效，链接被转发也不能扩大权限。失效链接、失败重跑和敏感样例都需要可见状态。
 
-验证产品时，我会看从建项目到第一次成功运行花了多久、有多少次用错版本、分享有没有泄露，以及结果能否复现。部署图已经给定为客户端、服务端和数据库，讨论重点就放在这些流程和数据边界上。
+验证产品时，我会看从建项目到第一次成功运行花了多久、有多少次用错版本、分享有没有泄露，以及结果能否复现。部署图已经给定为客户端、服务端和数据库，讨论重点就放在这些流程和 data access rules 上。
 
 ### 面试追问与参考回答
 

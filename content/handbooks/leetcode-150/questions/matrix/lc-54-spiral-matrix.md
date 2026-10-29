@@ -4,7 +4,9 @@ section: matrix
 order: 2
 level: A
 title: LC 54 · 螺旋矩阵
-quick: "用 `top`/`bottom`/`left`/`right` 四条边界夹住还没走的区域，按右、下、左、上走一圈，每走完一条边就收缩对应的边界。时间 $O(mn)$，额外空间 $O(1)$。"
+quick: >-
+  用 `top`/`bottom`/`left`/`right` four bounds 夹住还没走的区域，按右、下、左、上走一圈，每走完一条边就收紧对应的
+  bound。时间 $O(mn)$，额外空间 $O(1)$。
 tags:
   - Matrix
   - Simulation
@@ -12,19 +14,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 54. 螺旋矩阵
-    url: https://leetcode.cn/problems/spiral-matrix/
+    url: 'https://leetcode.cn/problems/spiral-matrix/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
 ## 题目描述
 
-给定一个 m 行 n 列的矩形矩阵，从左上角开始，先向右，随后按顺时针方向依次沿外围、再向内逐圈读取元素，返回访问顺序。每个位置恰好读取一次，不能越过尚未读取区域的边界。
+给定一个 m 行 n 列的矩形矩阵，从左上角开始，先向右，随后按顺时针方向依次沿外围、再向内逐圈读取元素，返回访问顺序。每个位置恰好读取一次，不能越过尚未读取区域的 bounds。
 
 ### 输入与输出
 
@@ -50,11 +52,11 @@ $m\times n$ 的矩阵，按顺时针螺旋顺序返回所有元素。
 
 ## 思路
 
-我用边界收缩来写，四条边界夹住还没遍历的区域。先走顶行，然后 `top+=1`；再走右列，`right-=1`；如果还有行，走底行，`bottom-=1`；如果还有列，走左列，`left+=1`。单行或单列时，后两段要用 `top <= bottom`、`left <= right` 挡住，避免重复。
+我用逐步收紧 bounds 来写，four bounds 夹住还没遍历的区域。先走顶行，然后 `top+=1`；再走右列，`right-=1`；如果还有行，走底行，`bottom-=1`；如果还有列，走左列，`left+=1`。单行或单列时，后两段要用 `top <= bottom`、`left <= right` 挡住，避免重复。
 
 拿 `[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]` 走一遍。第一圈依次是顶行 1、2、3、4，右列 8、12，底行 11、10、9，左列 5。第二圈只剩中间的 6、7，走完这一行后 `top` 已经超过 `bottom`，右列和左列的循环都是空的，底行被 `if` 挡住，最后得到 `1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7`。
 
-方向数组加碰壁转向也可以，白板上我觉得边界收缩更不容易写乱。
+方向数组加碰壁转向也可以，白板上我觉得逐步收紧 bounds 更不容易写乱。
 
 ## 参考代码
 
@@ -87,7 +89,18 @@ def spiralOrder(matrix: List[List[int]]) -> List[int]:
 if __name__ == "__main__":
     assert spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) == [1, 2, 3, 6, 9, 8, 7, 4, 5]
     assert spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]) == [
-        1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7
+        1,
+        2,
+        3,
+        4,
+        8,
+        12,
+        11,
+        10,
+        9,
+        5,
+        6,
+        7,
     ]
     print("ok")
 ```
@@ -101,8 +114,19 @@ if __name__ == "__main__":
 ```python
 assert spiralOrder([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) == [1, 2, 3, 6, 9, 8, 7, 4, 5]
 assert spiralOrder([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]) == [
-        1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7
-    ]
+    1,
+    2,
+    3,
+    4,
+    8,
+    12,
+    11,
+    10,
+    9,
+    5,
+    6,
+    7,
+]
 print("simple tests passed")
 ```
 
@@ -112,7 +136,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，每个元素访问一次。额外空间 $O(1)$（不计答案）。
 
-## 边界
+## Edge Cases
 
 - $1\times n$ 单行时只走顶边，`top` 超过 `bottom` 之后，后两段被 `if` 挡住，不会回头重复。
 - $m\times 1$ 单列时，走完顶边的那一个元素后走右列，也就是这一列剩下的部分，底边和左边被挡住。
@@ -121,7 +145,7 @@ print("simple tests passed")
 ## 追问
 
 **生成螺旋矩阵（LC 59）呢？**
-开一个 $n\times n$ 的空矩阵，同样维护四条边界，按右、下、左、上依次填入 $1\ldots n^2$。正方形每圈都完整，但最后一圈可能退化成一行或者一个格，所以还是要用边界条件挡住。
+开一个 $n\times n$ 的空矩阵，同样维护 four bounds，按右、下、左、上依次填入 $1\ldots n^2$。正方形每圈都完整，但最后一圈可能退化成一行或者一个格，所以还是要用 boundary conditions 挡住。
 
 ```python
 def generateMatrix(n):

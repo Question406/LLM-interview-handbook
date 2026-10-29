@@ -4,7 +4,9 @@ section: trie
 order: 1
 level: S
 title: LC 208 · 实现 Trie (前缀树)
-quick: "用 26 叉（或哈希）前缀树，每个节点带一个词尾标记 `is_end`。`insert` 沿路建节点并标词尾；`search` 必须走到带词尾标记的节点；`startsWith` 走完前缀就算成功。"
+quick: >-
+  用 26 叉（或哈希）前缀树，每个节点带一个词尾标记 `is_end`。`insert` 沿路建节点并标词尾；`search`
+  必须走到带词尾标记的节点；`startsWith` 走完前缀就算成功。
 tags:
   - Trie
   - Design
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 208. 实现 Trie (前缀树)
-    url: https://leetcode.cn/problems/implement-trie-prefix-tree/
+    url: 'https://leetcode.cn/problems/implement-trie-prefix-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -122,7 +124,7 @@ print("simple tests passed")
 
 设词长 $L$。三次操作都是 $O(L)$。空间与插入过的字符节点数成正比。
 
-## 边界
+## Edge Cases
 
 空前缀时 `_walk("")` 停在根，`startsWith` 为真，因为任何词都以空串为前缀。
 

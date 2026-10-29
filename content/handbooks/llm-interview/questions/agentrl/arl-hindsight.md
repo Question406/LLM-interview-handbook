@@ -4,7 +4,9 @@ section: agentrl
 order: 6
 level: A
 title: Hindsight Credit Assignment 的核心直觉是什么？
-quick: "一轮任务结束后，完整的后续轨迹和最终结果都看得到，可以用后来发生的事重新判断中间动作的贡献，不必只靠执行当时的局部信息估计。事后 judge 会编故事，所以要在关键状态上替换或删掉动作做反事实验证，并始终用终局结果锚定。"
+quick: >-
+  一轮任务结束后，完整的后续轨迹和最终结果都看得到，可以用后来发生的事重新判断中间动作的贡献，不必只靠执行当时的局部信息估计。事后 judge
+  会编故事，所以要在关键状态上替换或删掉动作做反事实验证，并始终用终局结果锚定。
 tags:
   - Credit Assignment
   - Hindsight
@@ -12,7 +14,7 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: ↗ Hindsight Credit Assignment
     url: 'https://arxiv.org/abs/2603.08754'
@@ -27,13 +29,13 @@ sources:
 
 实现上常见三种。最便宜的是事后让 LLM 或规则 critic 读完整 trace，给决策步骤评贡献，但它会合理化。也可以用 future-conditioned value，拿真实的后续回报或 $V(s_{t+k})$ 回填，相当于用 Monte Carlo 回看，不做一步 bootstrap。最接近因果的是反事实分支：在 $s_t$ 换成别的动作，重新执行后续轨迹，看终局变不变，贵一些，但回答的正是「这步有没有改变成功概率」。
 
-Hindsight 要回答的是「没有这一步，后面还会不会成功」，这一步看起来对不对是另一个问题。这和 `arl-credit` 要的因果边界一致：credit estimator 要分清状态本来就容易，还是这个动作提高了成功概率。
+Hindsight 要回答的是「没有这一步，后面还会不会成功」，这一步看起来对不对是另一个问题。这和 `arl-credit` 要的 causal attribution 一致：credit estimator 要分清状态本来就容易，还是这个动作提高了成功概率。
 
 ## 要用干预验证，别只听事后作文
 
-最大的风险是把事后叙事当成因果。hindsight judge 自己会 hallucination，把巧合的成功归功于一句漂亮的 Thought，或者把真正关键的工具调用说成废话。所以要用干预来验证：在同一个 $s_t$ 删掉或替换这个 action，重放后续，或者采 counterfactual 采样轨迹（rollout），outcome 明显变了，credit 才可信。只深入评估对结果影响大的步骤，也就是熵高、value 不确定、轨迹此后语义大变的 decision state；对每一步都做事后 LLM，既贵又容易全面编故事。事后分要能对照终局 oracle，相关性掉了就关掉 judge，回到稀疏 outcome。
+最大的风险是把事后叙事当成因果。hindsight judge 自己会 hallucination，把巧合的成功归功于一句漂亮的 Thought，或者把真正关键的工具调用说成废话。所以要用干预来验证：在同一个 $s_t$ 删掉或替换这个 action，重放后续，或者采 counterfactual sampling 轨迹（rollout），outcome 明显变了，credit 才可信。只深入评估对结果影响大的步骤，也就是熵高、value 不确定、轨迹此后语义大变的 decision state；对每一步都做事后 LLM，既贵又容易全面编故事。事后分要能对照终局 oracle，相关性掉了就关掉 judge，回到稀疏 outcome。
 
-成本上别做全轨迹扫描，先用规则切出决策边界（tool-call、权限门），再对少数几步做 hindsight。训练时这些分只是 shaping，终局 $R$ 仍然要锚定，否则模型会去优化「让事后 judge 满意的叙事」。
+成本上别做全轨迹扫描，先用规则切出 decision boundaries（tool-call、权限门），再对少数几步做 hindsight。训练时这些分只是 shaping，终局 $R$ 仍然要锚定，否则模型会去优化「让事后 judge 满意的叙事」。
 
 ## 追问
 

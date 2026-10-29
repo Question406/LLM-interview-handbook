@@ -4,31 +4,34 @@ section: design
 order: 5
 level: S
 title: 设计：语义搜索 + 关键词，混合与拼写纠错
-quick: "关键词检索负责专名、货号和精确匹配，向量检索补改写和同义，再用 RRF 或学习到的权重融合。纠错只在高置信时自动应用，并保留原查询一路召回，避免把新品牌或人名改错；评估看 nDCG、零结果率、误改率和 p95。"
+quick: >-
+  关键词检索负责专名、货号和精确匹配，向量检索补改写和同义，再用 RRF
+  或学习到的权重融合。纠错只在高置信时自动应用，并保留原查询一路召回，避免把新品牌或人名改错；评估看 nDCG、零结果率、误改率和 p95。
 tags:
   - Search
   - Google
   - Microsoft
   - Retrieval
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Dense Passage Retrieval for Open-Domain QA
-    url: https://arxiv.org/abs/2004.04906
+    url: 'https://arxiv.org/abs/2004.04906'
     type: primary
   - title: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
-    url: https://arxiv.org/abs/2005.11401
+    url: 'https://arxiv.org/abs/2005.11401'
     type: primary
   - title: System Design in a Hurry
-    url: https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
+    url: 'https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -44,11 +47,19 @@ sources:
 
 不能把有效品牌名、人名或货号随意纠错，也不能返回无权限、作废或下架内容。需要定义更新时效、尾部延迟目标及搜索质量和误改率的评测方式。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
 查询“SKU-X17”应能精确找到该商品；查询“如何把手机连到车上”应能找到相关使用说明。若系统建议修改查询，响应要保留原查询及纠错信息。
+
+## 可以这样回答
+
+我会并行保留关键词和语义两路检索，再按排名或标注数据融合。比如货号、错误码和函数名适合精确匹配，「怎么把手机连上车」这样的改写问句更需要语义召回。DPR / RAG 论文说明 dense 能补词汇差异，但专有名词、拼写和新鲜度仍需要单独处理。
+
+这类题覆盖 Google 搜索质量、Microsoft Bing、Amazon 商品搜和 Apple Spotlight。若检索结果还要生成答案，继续看 `design-prod-rag` 的引用与证据要求。
+
+## 技术备查
 
 ## 解题思路与参考答案
 
@@ -91,7 +102,7 @@ def spell_candidates(q, max_n=8):
 
 原查询永远保留一路。货号 / UUID 检测为导航型就关掉自动改写，只提示。
 
-离线：nDCG@$k$、MRR、拼写纠正准确 vs 误伤率（不该改而改）。切分按时间，点击有位置偏差，要用点击模型或随机流量当金标，不要把「点了第一条」当绝对相关。线上：零结果率、改写撤销率（用户点回原查询说明纠错过了）、p95、权限事故。商品搜还要看成交，不只点击：点得动但买不到，往往是排序学了标题党。
+离线：nDCG@$k$、MRR、拼写纠正准确 vs 误伤率（不该改而改）。切分按时间，点击有 position bias，要用点击模型或随机流量当金标，不要把「点了第一条」当绝对相关。线上：零结果率、改写撤销率（用户点回原查询说明纠错过了）、p95、权限事故。商品搜还要看成交，不只点击：点得动但买不到，往往是排序学了标题党。
 
 人工抽查按查询类型分层：专有名词、错拼、长尾问句、敏感查询。敏感查询要接 `design-moderation`，不是检索分数越高越好。
 
@@ -105,5 +116,5 @@ def spell_candidates(q, max_n=8):
 用日志里「展示纠错后用户是否撤销」当监督；阈值按误伤率护栏定，不要只追求纠错覆盖。
 **多语言一个索引？**
 嵌入空间和分词都可能不齐。按语言分索引或带语言过滤更稳；混排要有评测证明。
-**和 RAG 的边界？**
+**与 RAG 的职责区别？**
 搜索返回文档；RAG 多了生成和引用。检索层可以共用。

@@ -535,3 +535,30 @@ html[data-theme="dark"] .module-link:hover { background: color-mix(in srgb, var(
   .lab-default-cases { max-height: 340px; }
   .lab-ground-truth > summary span { display: block; margin: 4px 0 0; }
 }
+
+/* Design prompts remain visible while reference discussions stay folded. */
+.full-answer .answer-roadmap {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent-text);
+  border-radius: 12px;
+}
+.full-answer .answer-roadmap > strong { display: block; margin-bottom: 0.75rem; }
+.full-answer .answer-roadmap dl { margin: 0; }
+.full-answer .answer-roadmap dl > div { margin-top: 0.65rem; }
+.full-answer .answer-roadmap dt { font-weight: 650; }
+.full-answer .answer-roadmap dd { margin: 0.15rem 0 0; }
+.full-answer .answer-roadmap dd p { margin: 0; }
+.full-answer .design-reference {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.full-answer .design-reference > summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.full-answer .design-reference[open] > summary { margin-bottom: 1.25rem; }
+.full-answer .design-reference img { display: block; max-width: 100%; height: auto; margin: 1rem auto; }

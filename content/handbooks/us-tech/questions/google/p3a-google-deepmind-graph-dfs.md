@@ -3,8 +3,10 @@ id: p3a-google-deepmind-graph-dfs
 section: google
 order: 806
 level: A
-title: "DeepMind Android：构图与 DFS"
-quick: "先用邻接表构建无向图，再用栈做 DFS，并用 `seen` 防止在环中重复访问。这份练习要求字典序与递归一致，因此邻居逆序入栈、节点出栈时判重；不连通的部分不会被访问。"
+title: DeepMind Android：构图与 DFS
+quick: >-
+  先用邻接表构建无向图，再用栈做 DFS，并用 `seen`
+  防止在环中重复访问。这份练习要求字典序与递归一致，因此邻居逆序入栈、节点出栈时判重；不连通的部分不会被访问。
 companies:
   - google
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · DeepMind Android：构图与 DFS"
-    url: https://www.1point3acres.com/interview/problems/ec95664e-bb65-47c5-87fb-bbedfad728d4
+  - title: 1Point3Acres · DeepMind Android：构图与 DFS
+    url: >-
+      https://www.1point3acres.com/interview/problems/ec95664e-bb65-47c5-87fb-bbedfad728d4
     type: secondary
 ---
 
@@ -26,7 +29,7 @@ sources:
 
 给定无向图的边列表，返回从指定起点出发、邻居访问顺序确定的深度优先遍历序列。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -49,7 +52,7 @@ dfs([], "x")                                    -> ["x"]
 
 给一组无向边，先建图，再从给定起点做深度优先遍历，返回节点的访问顺序。来源帖子标注的是 DeepMind 的 Android 岗位。
 
-> 来源：一亩三分地题目详情页（2026-10-18 读取），题面是网站从面经整理的，没有逐条核对原帖；网站收录不等于公司官方确认。这条属于 Android 岗位，不能当成 DeepMind 研究岗的题。下面的接口、约束和测试是手册补的练习约定。
+> 来源：一亩三分地题目详情页（2026-10-18 读取），题面是网站从面经整理的；网站收录不等于公司官方确认。这条属于 Android 岗位，不能当成 DeepMind 研究岗的题。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -154,7 +157,7 @@ def above(nums, threshold):
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -165,6 +168,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # suffix_counts：最大值重复、负数
 assert suffix_counts([3, 1, 3], [0, 1, 2]) == [2, 1, 1]
@@ -183,7 +187,12 @@ expect_value_error(topk, [1, 2], 3)
 assert dfs([("a", "b"), ("a", "c"), ("b", "c")], "a") == ["a", "b", "c"]
 assert dfs([("a", "c"), ("a", "b"), ("b", "d")], "a") == ["a", "b", "d", "c"]
 # 入栈时就标记的写法在这里会得到 a, b, d, c
-assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == ["a", "b", "c", "d"]
+assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == [
+    "a",
+    "b",
+    "c",
+    "d",
+]
 assert dfs([], "x") == ["x"]
 
 # above：严格大于；空数组

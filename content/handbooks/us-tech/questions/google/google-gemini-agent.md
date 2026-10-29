@@ -4,7 +4,10 @@ section: google
 order: 28
 level: A
 title: Google：Gemini 工具调用、计算机使用（公开层）和搜索接地
-quick: "Gemini 公开工具能力包括 function calling、Google Search grounding 和 computer use。自定义工具由模型生成参数、客户端执行；搜索 grounding 负责检索和引用；computer use 则不断读取截图、返回动作。能看懂屏幕和能安全执行操作需要分别验证，有副作用的工具要加确认和沙箱。"
+quick: >-
+  Gemini 公开工具能力包括 function calling、Google Search grounding 和 computer
+  use。自定义工具由模型生成参数、客户端执行；搜索 grounding 负责检索和引用；computer use
+  则不断读取截图、返回动作。能看懂屏幕和能安全执行操作需要分别验证，有副作用的工具要加确认和沙箱。
 tags:
   - Google
   - Gemini
@@ -13,22 +16,25 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Gemini API — Function calling
-    url: https://ai.google.dev/gemini-api/docs/function-calling
+    url: 'https://ai.google.dev/gemini-api/docs/function-calling'
     type: primary
   - title: Gemini API — Grounding with Google Search
-    url: https://ai.google.dev/gemini-api/docs/grounding
+    url: 'https://ai.google.dev/gemini-api/docs/grounding'
     type: primary
   - title: Gemini API — Computer use
-    url: https://ai.google.dev/gemini-api/docs/computer-use
+    url: 'https://ai.google.dev/gemini-api/docs/computer-use'
     type: primary
   - title: Introducing the Gemini 2.5 Computer Use model
-    url: https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-computer-use-model/
+    url: >-
+      https://blog.google/innovation-and-ai/models-and-research/google-deepmind/gemini-computer-use-model/
     type: primary
-  - title: Gemini 1.5 — Unlocking multimodal understanding across millions of tokens of context
-    url: https://arxiv.org/abs/2403.05530
+  - title: >-
+      Gemini 1.5 — Unlocking multimodal understanding across millions of tokens
+      of context
+    url: 'https://arxiv.org/abs/2403.05530'
     type: secondary
 ---
 
@@ -36,13 +42,13 @@ Gemini 的公开 agent 能力可以按执行方式来解释：自定义工具让
 
 Function calling 公开路径：你把工具 字段和类型规范（schema） 塞进请求，模型决定是否发出 function call，你执行，把观察塞回下一轮，直到模型出自然语言或再调。这和「让模型在 token 里假装调用」不同：参数要能校验，失败要能回灌，步数和实际耗时要有顶。
 
-执行工具时，我会保留几条边界：
+执行工具时，我会明确几项 constraints：
 
 - 工具输出当数据，不当系统指令。网页、PDF、用户粘贴都可能带注入。
 - 不可逆动作（付款、删数据、发邮件）不要一次 call 直接打生产。公开 computer use 文档里还有需要用户确认或直接拦截，同一思想。
-- Schema 描述的是类型，不是权限。限额、身份、幂等键在你这边。
+- Schema 描述的是类型，不是权限。限额、身份、idempotency key 在你这边。
 
-和搜索 grounding别混：自定义工具是你的 API；Google Search grounding 是平台检索，模型自己决定要不要搜、搜什么，回答带 URL 引用一类标注。grounding 减少知识过时和无依据编造；它不给你点按钮的能力。延迟上多一轮检索会打首 token。所以评估搜索 grounding 时，要把新增检索耗时计入首 token 延迟。
+和搜索 grounding 别混：自定义工具是你的 API；Google Search grounding 是平台检索，模型自己决定要不要搜、搜什么，回答带 URL 引用一类标注。grounding 减少知识过时和无依据编造；它不给你点按钮的能力。延迟上多一轮检索会打首 token。所以评估搜索 grounding 时，要把新增检索耗时计入首 token 延迟。
 
 Agent 这里的指标是引用是否撑得住句子、该搜的时候有没有搜，不是把搜索 ranker 接到生成上。这里评估的是回答与证据的关系，广告和视频排序属于另一类任务。
 
@@ -57,13 +63,13 @@ Agent 这里的指标是引用是否撑得住句子、该搜的时候有没有�
 - 没有 API 的网页流程、填表：computer use，且必须沙箱。
 - 长文档已经在窗口里：先读像素 / 文本，见 `google-gemini-longctx`，不要为了「显得 agent」每句都去搜。
 
-常见误区是：把三条合成「Gemini 会用电脑所以不用检索」；说原生多模态替代了 function calling；在无沙箱的本机桌面跑 computer use 当演示。公开层把执行权留在客户端，是产品责任边界。
+常见误区是：把三条合成「Gemini 会用电脑所以不用检索」；说原生多模态替代了 function calling；在无沙箱的本机桌面跑 computer use 当演示。公开层把执行权留在客户端，是产品 responsibilities。
 
 轨迹、截图、检索摘要都占 $T$。环要截断旧截图、摘要旧步骤，否则 KV 先爆。每步新截图也是离散视频，旧帧策略见 `google-video-token`。
 
 ## 追问
 
-**搜索 grounding和让 agent 自己浏览差在哪？**
+**搜索 grounding 和让 agent 自己浏览差在哪？**
 grounding 是检索、综合与引用，动作空间是查询。Computer use 动作空间是像素坐标。前者好审计出处，后者能走没有 API 的流程，也更好注入。
 
 **确认框谁做？**

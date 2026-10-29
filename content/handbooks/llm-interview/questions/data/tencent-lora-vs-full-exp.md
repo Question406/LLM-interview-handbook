@@ -4,7 +4,10 @@ section: data
 order: 210
 level: A
 title: 腾讯混元一面：LoRA 和全参微调怎么设计对照实验？
-quick: "同一份数据、packing、chat template 和评测，只改权重更新的范围；学习率按可训参数缩放，LoRA 再扫 rank 和插入层，记录可训参数、显存、吞吐和收敛步数，指标分目标任务、通用指令和基座能力遗忘三组报。数据少、要挂多个适配器或要快速回滚时先试 LoRA，推理风格或领域变化很大时再考虑全参。"
+quick: >-
+  同一份数据、packing、chat template 和评测，只改权重更新的范围；学习率按可训参数缩放，LoRA 再扫 rank
+  和插入层，记录可训参数、显存、throughput 和收敛步数，指标分目标任务、通用指令和基座能力遗忘三组报。数据少、要挂多个适配器或要快速回滚时先试
+  LoRA，推理风格或领域变化很大时再考虑全参。
 tags:
   - Tencent
   - Hunyuan
@@ -13,13 +16,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 日常实习 腾讯混元大模型一面 好难
-    url: https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496
+    url: 'https://www.nowcoder.com/feed/main/detail/8066dff3170547c98738ed3b1ba1b496'
     type: candidate-first-hand
   - title: LoRA — Low-Rank Adaptation of Large Language Models
-    url: https://arxiv.org/abs/2106.09685
+    url: 'https://arxiv.org/abs/2106.09685'
     type: primary
 ---
 
@@ -32,9 +35,9 @@ sources:
 
 我会设计成一个只改一个变量的对照：同一份数据、同一套评测，只改权重更新的范围，然后同时比目标效果、通用能力的遗忘和成本。只说「LoRA 省显存所以更好」不够，LoRA 省下的是优化器状态，还换来可回滚的适配器，但表达力并不会白白等同于全参。机制侧（$A$ 随机、$B$ 全零）见同厂 `tencent-lora-ab-init`、`kuaishou-lora-ab-init`，这题问的是实验设计。
 
-对照的两边是：冻结除 LoRA 外的全部权重，对比全参更新。数据条件要固定，同一份监督微调（SFT）数据、同一 packing、同一 chat template，评测集和解码也一样，否则比的是数据。超参最容易出错：可训参数差几个数量级，学习率、有效 batch、epoch 要对齐，或者按可训参数缩放，不然会把 LoRA 调参不足误判成方法无效。全参用了更多 epoch、LoRA 却早停了，表上要注明，欠拟合不能当成方法差异。
+对照的两边是：冻结除 LoRA 外的全部权重，对比全参更新。数据条件要固定，同一份 SFT 数据、同一 packing、同一 chat template，评测集和 decoding 也一样，否则比的是数据。超参最容易出错：可训参数差几个数量级，学习率、有效 batch、epoch 要对齐，或者按可训参数缩放，不然会把 LoRA 调参不足误判成方法无效。全参用了更多 epoch、LoRA 却早停了，表上要注明，underfitting 不能当成方法差异。
 
-LoRA 自己还要扫 rank $r$、$\alpha$ 和插入层（attn 投影还是 MLP）。$r$ 太小欠拟合，太大接近全参，却还多出一套超参，实现细节可以对照 `code-lora`。插入位置别放在 LayerNorm 之后当残差的错误位置（`meituan-lora-not-after-ln`）。还有一个健全性检查：LoRA 的 $\Delta W=BA$，$B$ 全零起步，初始输出和基座相同（`tencent-lora-ab-init`），所以第一个 step 的 loss 应该接近基座；训练一开始就数值异常，是 lr 或插入位置错了，和 LoRA 本身无关。QLoRA（量化基座加 LoRA）是另一条轴，单独列一行，别和「全精度 LoRA 对全参」挤成一张表，免得把量化误差算到低秩头上，量化适配见 `arch-qlora`。
+LoRA 自己还要扫 rank $r$、$\alpha$ 和插入层（attn 投影还是 MLP）。$r$ 太小 underfitting，太大接近全参，却还多出一套超参，实现细节可以对照 `code-lora`。插入位置别放在 LayerNorm 之后当残差的错误位置（`meituan-lora-not-after-ln`）。还有一个健全性检查：LoRA 的 $\Delta W=BA$，$B$ 全零起步，初始输出和基座相同（`tencent-lora-ab-init`），所以第一个 step 的 loss 应该接近基座；训练一开始就数值异常，是 lr 或插入位置错了，和 LoRA 本身无关。QLoRA（量化基座加 LoRA）是另一条轴，单独列一行，别和「全精度 LoRA 对全参」挤成一张表，免得把量化误差算到低秩头上，量化适配见 `arch-qlora`。
 
 表上至少要有这些列：方法（全参 / LoRA-$r$ / QLoRA）、可训参数、峰值显存、token/s、目标任务、通用指令、知识保持、训练步数。缺一列，结论都会被质疑「你只是没训够、没调参、没看遗忘」。只报目标任务涨、不报 MMLU 和指令回归，实验就是无效的。
 

@@ -1,18 +1,22 @@
 ---
-id: "ml101-cnn"
-section: "neural-networks"
+id: ml101-cnn
+section: neural-networks
 order: 7
-level: "A"
-title: "卷积的参数共享、感受野和输出尺寸怎么计算？"
-quick: "卷积核在不同空间位置复用同一组权重，所以参数量与输出图的像素数无直接乘法关系。输出尺寸由核、步幅、padding 和 dilation 决定；感受野要逐层累计，不能把参数共享理解成已经看见整张图。"
-tags: ["ML101", "neural-networks"]
+level: A
+title: 卷积的参数共享、感受野和输出尺寸怎么计算？
+quick: >-
+  卷积核在不同空间位置复用同一组权重，所以参数量与输出图的像素数无直接乘法关系。输出尺寸由核、步幅、padding 和 dilation
+  决定；感受野要逐层累计，不能把参数共享理解成已经看见整张图。
+tags:
+  - ML101
+  - neural-networks
 realInterview: false
 status: published
-format: "markdown"
-updatedAt: "2026-10-22"
+format: markdown
+updatedAt: '2026-10-22'
 sources:
-  - title: "PyTorch: Conv2d"
-    url: https://docs.pytorch.org/docs/2.14/generated/torch.nn.Conv2d.html
+  - title: 'PyTorch: Conv2d'
+    url: 'https://docs.pytorch.org/docs/2.14/generated/torch.nn.Conv2d.html'
     type: primary
 ---
 
@@ -31,4 +35,4 @@ sources:
 理论感受野相同，但中间若有非线性，表达和参数结构就不同。
 
 **卷积保证平移不变吗？**
-通常更接近平移等变，输入移动时特征随之移动；边界、padding 和步幅还会影响这种性质。
+通常更接近平移等变，输入移动时特征随之移动；boundary conditions、padding 和步幅还会影响这种性质。

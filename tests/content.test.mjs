@@ -6,6 +6,40 @@ import handbook from "../content/generated/handbooks/llm-interview-v2.json" with
 import registry from "../content/generated/registry.json" with { type: "json" };
 import { highlightCodeBlocks, linkQuestionRefs, renderMarkdown, renderMathInHtml, renderMathInText } from "../scripts/build-content.mjs";
 
+test("spoken AFM answers stay visible while technical notes are folded", async () => {
+  const book = JSON.parse(await readFile(new URL("../public/content/apple-interview/index.json", import.meta.url), "utf8"));
+  const questions = book.sections.flatMap((section) => section.questions).filter((question) => question.tags.includes("口述版"));
+  assert.equal(questions.length, 26);
+  for (const question of questions) {
+    const html = JSON.parse(await readFile(new URL(`../public${question.answerPath}`, import.meta.url), "utf8"));
+    const boundary = html.indexOf('<details class="design-reference">');
+    assert.ok(boundary > 0, question.id);
+    assert.match(html.slice(0, boundary), /可以这样回答<\/h2>/, question.id);
+    assert.ok(html.indexOf("</details>") > boundary, question.id);
+    assert.doesNotMatch(html, /<details class="design-reference"[^>]*\bopen\b/, question.id);
+  }
+  const answer = JSON.parse(await readFile(new URL("../public/content/apple-interview/alignment/afm-rm-bt-identifiability.json", import.meta.url), "utf8"));
+  assert.match(answer.slice(answer.indexOf("<details")), /class="katex"/);
+});
+
+test("design prompts stay visible while reference discussions start collapsed", async () => {
+  const book = registry.find((entry) => entry.id === "system-design");
+  assert.ok(book, "system design handbook is registered");
+  for (const section of book.sections) {
+    const answers = JSON.parse(await readFile(new URL(`../public${section.answerPath}`, import.meta.url), "utf8"));
+    for (const question of section.questions) {
+      assert.equal(question.collapseAnswer, true, question.id);
+      assert.equal(question.hasPractice, false, question.id);
+      const html = answers[question.id];
+      const start = html.indexOf('<details class="design-reference">');
+      assert.ok(start > html.indexOf("题目描述"), question.id);
+      assert.ok(html.indexOf("参考答案与设计讨论</h2>") > start, question.id);
+      assert.doesNotMatch(html.slice(0, start), /<details/);
+      assert.doesNotMatch(html, /<details class="design-reference"[^>]*\bopen\b/);
+    }
+  }
+});
+
 function markdownFiles(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const file = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, directory);
@@ -274,6 +308,14 @@ test("internal question links survive sanitizer; javascript hrefs do not", () =>
   const blocked = renderMarkdown("[x](javascript:alert(1))");
   assert.match(blocked, /href="#"/);
   assert.doesNotMatch(blocked, /javascript:/);
+});
+
+test("local material downloads survive sanitization without accepting arbitrary paths", () => {
+  const html = renderMarkdown("[Code](/materials/drustz-interview-2026/code-and-tests.zip)");
+  assert.match(html, /href="\/materials\/drustz-interview-2026\/code-and-tests\.zip"/);
+  for (const target of ["/materials/../secret.txt", "/materials/book/evil.html", "//evil.example/file.zip", "/private/file.txt"]) {
+    assert.match(renderMarkdown(`[x](${target})`), /href="#"/);
+  }
 });
 
 test("related question mentions become internal links", () => {

@@ -4,7 +4,10 @@ section: coding
 order: 39
 level: A
 title: 白板：CISPO 和 PPO clip 的区别，clip 的是权重还是梯度
-quick: "PPO 在触发 clip 的方向让 token 不再提供梯度，CISPO 则把 IS 权重截到边界并 detach，再乘 logprob，token 仍可学习。比如正优势、ratio 为 2 时，示例 PPO 权重为 0，CISPO 截成 1.28；空 mask 还要返回可反传的 0。"
+quick: >-
+  PPO 在触发 clip 的方向让 token 不再提供梯度，CISPO 则把 IS 权重截到 clipping threshold 并 detach，再乘
+  logprob，token 仍可学习。比如正优势、ratio 为 2 时，示例 PPO 权重为 0，CISPO 截成 1.28；空 mask 还要返回可
+  backpropagation 的 0。
 tags:
   - 完整编程练习
   - Coding
@@ -13,19 +16,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "MiniMax-M1: Scaling Test-Time Compute Efficiently with Lightning Attention (CISPO)"
-    url: https://arxiv.org/abs/2506.13585
+  - title: >-
+      MiniMax-M1: Scaling Test-Time Compute Efficiently with Lightning Attention
+      (CISPO)
+    url: 'https://arxiv.org/abs/2506.13585'
     type: primary
   - title: Proximal Policy Optimization Algorithms
-    url: https://arxiv.org/abs/1707.06347
+    url: 'https://arxiv.org/abs/1707.06347'
     type: primary
 ---
 
 ## 题目描述
 
-实现 CISPO 的逐 token 加权 log-prob 损失，并提供 CISPO 与 PPO 对应的梯度权重接口。题目关心前向数值和对当前策略 log-prob 的梯度：重要性权重只作为常量使用，不能反向传播进旧策略或优势。
+实现 CISPO 的逐 token 加权 log-prob 损失，并提供 CISPO 与 PPO 对应的梯度权重接口。题目关心前向数值和对当前策略 log-prob 的梯度：重要性权重只作为常量使用，不能 backpropagation 进旧策略或优势。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
@@ -34,7 +39,7 @@ sources:
 - `cispo_loss(policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28) -> 标量`：按 CISPO 计算损失，对 mask 里的有效 token 取平均。
 - `ppo_weight(ratio, adv, eps=0.2)`：把 PPO clip 目标写成加权 logprob 时，每个 token 的权重。
 - `cispo_weight(ratio, adv, eps_low=1.0, eps_high=0.28)`：CISPO 对应的权重。
-- 约束：`policy_logprobs`、`old_logprobs`、`mask` 都是 `[B, T]`，`advantages` 能广播到 `[B, T]`。`old_logprobs` 和 `advantages` 视为常量；ratio 截断后要 detach。mask 全为 0 时返回可反传的 0。
+- 约束：`policy_logprobs`、`old_logprobs`、`mask` 都是 `[B, T]`，`advantages` 能广播到 `[B, T]`。`old_logprobs` 和 `advantages` 视为常量；ratio 截断后要 detach。mask 全为 0 时返回可 backpropagation 的 0。
 - 令 `r = exp(policy_logprobs - old_logprobs)`，`c = clamp(r, 1-eps_low, 1+eps_high)`。`cispo_loss = -sum(mask * stop_gradient(c) * advantages * policy_logprobs) / sum(mask)`。mask 为 0/1，非空时分母为有效 token 数，空时按上述零损失约定。
 - `cispo_weight = stop_gradient(clamp(ratio,1-eps_low,1+eps_high)*adv)`。`ppo_weight` 在 `(adv>=0 且 ratio<=1+eps)` 或 `(adv<0 且 ratio>=1-eps)` 时为 `stop_gradient(ratio*adv)`，其他位置为 0。两个权重函数接受可广播张量，返回广播后的形状。
 
@@ -53,14 +58,14 @@ ratio = 1.1, A = 2           -> 两者都是 2.2
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
 - `cispo_loss(policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28) -> 标量`：按 CISPO 计算损失，对 mask 里的有效 token 取平均。
 - `ppo_weight(ratio, adv, eps=0.2)`：把 PPO clip 目标写成加权 logprob 时，每个 token 的权重。
 - `cispo_weight(ratio, adv, eps_low=1.0, eps_high=0.28)`：CISPO 对应的权重。
-- 约束：`policy_logprobs`、`old_logprobs`、`mask` 都是 `[B, T]`，`advantages` 能广播到 `[B, T]`。`old_logprobs` 和 `advantages` 视为常量；ratio 截断后要 detach。mask 全为 0 时返回可反传的 0。
+- 约束：`policy_logprobs`、`old_logprobs`、`mask` 都是 `[B, T]`，`advantages` 能广播到 `[B, T]`。`old_logprobs` 和 `advantages` 视为常量；ratio 截断后要 detach。mask 全为 0 时返回可 backpropagation 的 0。
 - 测试要证明：ratio 出界的 token 在 CISPO 下仍有梯度，而 PPO 会把它置零。
 
 ### 输入输出示例
@@ -76,7 +81,7 @@ ratio = 1.1, A = 2           -> 两者都是 2.2
 
 两种方法都能写成「常数权重 × logprob」的形式，差别只在权重怎么算。PPO 的 clip 出界时整个 token 失活，权重是 0。CISPO 截断的是 IS 权重 $r$ 本身，截完以后乘上优势 $A$，token 仍然参与更新。
 
-截断后的权重必须 detach。否则 $\mathrm{clip}(r)$ 在界内仍是 $\theta$ 的函数，反传时会多出一项 $-A\log\pi\,\nabla\hat r$，得到的就不是 CISPO 的梯度了（推导见下面「错在哪」）。
+截断后的权重必须 detach。否则 $\mathrm{clip}(r)$ 在界内仍是 $\theta$ 的函数，backpropagation 时会多出一项 $-A\log\pi\,\nabla\hat r$，得到的就不是 CISPO 的梯度了（推导见下面「错在哪」）。
 
 分母用有效 token 数，并 clamp 到至少 1，这样空 mask 不会除以 0，返回的 0 也还连着计算图。
 
@@ -88,12 +93,14 @@ import math
 import torch
 
 
-def cispo_loss(policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28):
+def cispo_loss(
+    policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28
+):
     """CISPO 损失：对有效 token 取平均。
 
     policy_logprobs, old_logprobs, mask: [B, T]；advantages 可广播到 [B, T]。
     IS 权重 r 截断到 [1 - eps_low, 1 + eps_high] 后 detach，只作为 logprob 前的常数系数。
-    mask 全为 0 时返回 0（仍可反传，梯度为 0）。
+    mask 全为 0 时返回 0（仍可 backpropagation，梯度为 0）。
     """
     ratio = torch.exp(policy_logprobs - old_logprobs).detach()
     weight = ratio.clamp(1 - eps_low, 1 + eps_high)
@@ -120,7 +127,7 @@ def cispo_weight(ratio, adv, eps_low=1.0, eps_high=0.28):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -154,10 +161,12 @@ assert torch.allclose(cispo_weight(low_ratio, negative), torch.tensor([-0.5]))
 
 # mask 只取一部分 token：分母是有效 token 数
 two_logprobs = torch.tensor([[-1.0, -3.0]], requires_grad=True)
-partial = cispo_loss(two_logprobs, two_logprobs.detach(), torch.ones(1, 2), torch.tensor([[1.0, 0.0]]))
+partial = cispo_loss(
+    two_logprobs, two_logprobs.detach(), torch.ones(1, 2), torch.tensor([[1.0, 0.0]])
+)
 assert torch.allclose(partial, torch.tensor(1.0))
 
-# 空 mask：返回 0，且可以反传、梯度为 0
+# 空 mask：返回 0，且可以 backpropagation、梯度为 0
 empty = cispo_loss(logprobs, old, adv, torch.zeros_like(mask))
 assert empty == 0
 assert torch.all(torch.autograd.grad(empty, logprobs)[0] == 0)
@@ -189,7 +198,9 @@ $\varepsilon_{\mathrm{low}} = 1$ 表示下界是 0，等于不设下界。论文
 下面是旧版教学里要修复的错误片段，不是参考答案。对照上面的题面，找出它偏离接口或梯度约定的地方；正确实现和测试在前面的练习部分。
 
 ```python
-def cispo_loss(policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28):
+def cispo_loss(
+    policy_logprobs, old_logprobs, advantages, mask, eps_low=1.0, eps_high=0.28
+):
     ratio = torch.exp(policy_logprobs - old_logprobs)
     w = ratio.clamp(1 - eps_low, 1 + eps_high)
     per_tok = -w * advantages * policy_logprobs
@@ -225,7 +236,7 @@ PPO 的 clip 相当于信任域：往有利方向走得太远就停下。CISPO �
 ## 追问
 
 **CISPO 还算 policy gradient 吗？**
-$r$ 不被截断时，$\mathrm{sg}(r)A\nabla\log\pi$ 就是 off-policy 的重要性采样梯度。截断引入了偏差，换来更小的方差，和 V-trace 截断 IS 权重是同一个思路。
+$r$ 不被截断时，$\mathrm{sg}(r)A\nabla\log\pi$ 就是 off-policy 的 importance sampling 梯度。截断引入了偏差，换来更小的方差，和 V-trace 截断 IS 权重是同一个思路。
 
 **想要 PPO 的行为怎么办？**
 论文给了一个带 token mask 的一般形式，mask 按 PPO 的规则取，就退回 PPO 的梯度。

@@ -4,7 +4,9 @@ section: dp-2d
 order: 4
 level: S
 title: LC 5 · 最长回文子串
-quick: "中心扩展：以每个字符、每对相邻字符为中心向两侧扩，记录最长区间，时间 $O(n^2)$、额外空间 $O(1)$。也可用区间 DP $dp[l][r]=s[l]=s[r]\\land dp[l+1][r-1]$ 判断区间是否回文，时间同样 $O(n^2)$，空间要 $O(n^2)$。"
+quick: >-
+  中心扩展：以每个字符、每对相邻字符为中心向两侧扩，记录最长区间，时间 $O(n^2)$、额外空间 $O(1)$。也可用区间 DP
+  $dp[l][r]=s[l]=s[r]\land dp[l+1][r-1]$ 判断区间是否回文，时间同样 $O(n^2)$，空间要 $O(n^2)$。
 tags:
   - DP
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 5. 最长回文子串
-    url: https://leetcode.cn/problems/longest-palindromic-substring/
+    url: 'https://leetcode.cn/problems/longest-palindromic-substring/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -103,7 +105,7 @@ print("simple tests passed")
 
 中心扩展和区间 DP 时间都是 $O(n^2)$。中心扩展额外空间 $O(1)$，DP 要 $O(n^2)$。
 
-## 边界
+## Edge Cases
 
 单字符时奇数中心扩不动，答案就是它自己。全相同时奇数、偶数中心都能扩到两端，返回整串。没有长度 $\gt 1$ 的回文时，偶数中心全都对不上，`start,end` 停在 $0$，返回首字符。
 

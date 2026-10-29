@@ -4,20 +4,22 @@ section: bit
 order: 5
 level: A
 title: LC 137 · 只出现一次的数字 II
-quick: "其余数都出现三次，所以每一位上 $1$ 的个数模 $3$ 就是单身在那一位的值；更短的写法是用 `ones`/`twos` 记出现 $1$ 次、$2$ 次的比特，出现三次自动清零。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  其余数都出现三次，所以每一位上 $1$ 的个数模 $3$ 就是单身在那一位的值；更短的写法是用 `ones`/`twos` 记出现 $1$ 次、$2$
+  次的比特，出现三次自动清零。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Bit
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 137. 只出现一次的数字 II
-    url: https://leetcode.cn/problems/single-number-ii/
+    url: 'https://leetcode.cn/problems/single-number-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。按位统计的写法是 $O(32n)$。
 
-## 边界
+## Edge Cases
 
 单身是 $0$ 时，`ones` 最终为 $0$，结果正确。单身是负数时，Python 整数无限长，状态机对补码比特同样有效。单身在开头也没关系，扫描顺序无关，出现三次的数会把状态清回 $0$。
 

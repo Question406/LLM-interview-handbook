@@ -4,7 +4,9 @@ section: stack
 order: 3
 level: S
 title: LC 155 · 最小栈
-quick: "主栈存值，再同步一个最小值栈：每次入栈压 $\\min(val, mins[-1])$，出栈两边一起弹。`getMin` 直接看辅助栈顶，均摊 $O(1)$，代价是和主栈等长的额外空间。"
+quick: >-
+  主栈存值，再同步一个最小值栈：每次入栈压 $\min(val, mins[-1])$，出栈两边一起弹。`getMin` 直接看辅助栈顶，均摊
+  $O(1)$，代价是和主栈等长的额外空间。
 tags:
   - Stack
   - Design
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 155. 最小栈
-    url: https://leetcode.cn/problems/min-stack/
+    url: 'https://leetcode.cn/problems/min-stack/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -121,7 +123,7 @@ print("simple tests passed")
 
 每次操作 $O(1)$。额外空间 $O(n)$，与主栈等长。
 
-## 边界
+## Edge Cases
 
 最小值在栈底时，弹掉上层，`mins` 顶仍然是它。最小值在栈顶时，弹出后次小值露出来。
 
@@ -166,6 +168,7 @@ class MinStackDiff:
 
 ```python
 from collections import deque
+
 
 def maxSlidingWindow(nums, k):
     dq, ans = deque(), []

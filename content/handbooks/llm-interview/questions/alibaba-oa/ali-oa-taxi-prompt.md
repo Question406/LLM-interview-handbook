@@ -3,9 +3,10 @@ id: ali-oa-taxi-prompt
 section: alibaba-oa
 order: 7
 level: A
-title: 阿里 AI 研发 0325 Prompt：出租车计费规则怎么写成可过的提示词？
+title: 阿里 AI 研发 0325 Prompt：出租车计费规则怎么写成可过的 prompt？
 quick: >-
-  这题考的是把计费规则写死：Prompt 里写清角色和缺省值，按整数公里分段计价，夜间 1.2 倍只乘车费，等候按满 5 分钟收，行李不加夜费，并强制只输出约定 JSON。交之前用不足 1km、24 分钟等候这类反例自测一遍。
+  这题考的是把计费规则写死：Prompt 里写清角色和缺省值，按整数公里分段计价，夜间 1.2 倍只乘车费，等候按满 5
+  分钟收，行李不加夜费，并强制只输出约定 JSON。交之前用不足 1km、24 分钟等候这类反例自测一遍。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
-    url: https://www.nowcoder.com/discuss/866741961221292032
+    url: 'https://www.nowcoder.com/discuss/866741961221292032'
     type: candidate-first-hand
 ---
 
@@ -26,7 +27,7 @@ sources:
 
 ## 题面
 
-用一段系统提示词，让模型从用户的自然语言里抽出行程要素，严格按计费规则算出费用，并且只输出约定 JSON。公开复盘里的关键字段是 `thinking`、`base_fare`、`night_surcharge`、`fare`。
+用一段系统 prompt，让模型从用户的自然语言里抽出行程要素，严格按计费规则算出费用，并且只输出约定 JSON。公开复盘里的关键字段是 `thinking`、`base_fare`、`night_surcharge`、`fare`。
 
 规则是：起步 $3$ km /$10$ 元；$3$ 到 $15$ km 每公里 $3$ 元；超 $15$ km 每公里 $4$ 元（不足 $1$ km 进位）；等候每满 $5$ 分钟 $2$ 元；夜间 $23$:$00$（含）到次日 $05$:$00$（不含）车费 $\times 1.2$ 再进位；大件行李每件 $5$ 元且不参与夜间加收。没写明的字段按缺省处理：等候 $0$、行李 $0$、时间没提就算白天。夜间看上车时间是否落在 $[23{:}00,\,05{:}00)$。
 

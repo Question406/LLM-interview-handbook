@@ -4,7 +4,9 @@ section: data
 order: 102
 level: A
 title: 百川智能：表格 Agent 的数据怎样增强，数据量如何确定？
-quick: "从脱敏真实表的结构、公式依赖、脏数据和用户意图生成可执行任务，每条都用表格计算引擎或验证器（verifier）重算校验。增广覆盖 schema 改名、空值、日期货币格式、跨表引用和错误修复，按结构族切分，防模板重复、答案泄漏和不真实的工具轨迹。数据量看去重后的有效任务数、覆盖度和学习曲线。"
+quick: >-
+  从脱敏真实表的结构、公式依赖、脏数据和用户意图生成可执行任务，每条都用表格计算引擎或验证器（verifier）重算校验。增广覆盖 schema
+  改名、空值、日期货币格式、跨表引用和错误修复，按结构族切分，防模板重复、答案泄漏和不真实的工具轨迹。数据量看去重后的有效任务数、覆盖度和学习曲线。
 tags:
   - Baichuan
   - Table Agent
@@ -13,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 百川智能大模型实习一面 压力好大（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530
+    url: 'https://www.nowcoder.com/feed/main/detail/e3e6543bd5ab478292b74a48f031c530'
     type: candidate-first-hand
 ---
 
@@ -27,7 +29,7 @@ sources:
 - 届别 / 流程：实习；一面
 - 面试时间：原帖未披露；帖子发布于 2026-02-12
 - 来源类型与可信度：牛客候选人原帖，B（公司、实习性质、轮次与发帖时间明确，届别和面试日期未披露）
-- 原始措辞：**“agent表格数据如何增强的 数据量是多少”**
+- 原始措辞：**“agent 表格数据如何增强的 数据量是多少”**
 
 表格 Agent 的数据我会从真实表结构出发做可执行的增广，每条都让表格引擎重算校验；数据量用去重后的有效任务数和学习曲线来回答，先报一个整数没有意义。
 

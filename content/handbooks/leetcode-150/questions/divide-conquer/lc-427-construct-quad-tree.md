@@ -4,20 +4,23 @@ section: divide-conquer
 order: 3
 level: A
 title: LC 427 · 建立四叉树
-quick: "对正方形递归四分：边长为 1 直接成叶，否则先建四个孩子，四个都是叶且 `val` 相同就合成叶 `Node(val, True)`，否则建非叶 `Node(val, False, topLeft, topRight, bottomLeft, bottomRight)`。先切再合并，每格只访问常数次，时间 $O(n^2)$。"
+quick: >-
+  对正方形递归四分：边长为 1 直接成叶，否则先建四个孩子，四个都是叶且 `val` 相同就合成叶 `Node(val, True)`，否则建非叶
+  `Node(val, False, topLeft, topRight, bottomLeft,
+  bottomRight)`。先切再合并，每格只访问常数次，时间 $O(n^2)$。
 tags:
   - Divide and Conquer
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 427. 建立四叉树
-    url: https://leetcode.cn/problems/construct-quad-tree/
+    url: 'https://leetcode.cn/problems/construct-quad-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -63,7 +66,15 @@ from typing import List
 
 
 class Node:
-    def __init__(self, val, isLeaf, topLeft=None, topRight=None, bottomLeft=None, bottomRight=None):
+    def __init__(
+        self,
+        val,
+        isLeaf,
+        topLeft=None,
+        topRight=None,
+        bottomLeft=None,
+        bottomRight=None,
+    ):
         self.val = val
         self.isLeaf = isLeaf
         self.topLeft = topLeft
@@ -79,7 +90,13 @@ def construct(grid: List[List[int]]) -> Node:
         h = size // 2
         tl, tr = build(r0, c0, h), build(r0, c0 + h, h)
         bl, br = build(r0 + h, c0, h), build(r0 + h, c0 + h, h)
-        if tl.isLeaf and tr.isLeaf and bl.isLeaf and br.isLeaf and tl.val == tr.val == bl.val == br.val:
+        if (
+            tl.isLeaf
+            and tr.isLeaf
+            and bl.isLeaf
+            and br.isLeaf
+            and tl.val == tr.val == bl.val == br.val
+        ):
             return Node(tl.val, True)
         return Node(True, False, tl, tr, bl, br)
 
@@ -122,7 +139,7 @@ print("simple tests passed")
 
 时间 $O(n^2)$，每个格子只进入常数次；递归深度 $O(\log n)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时 `size == 1` 直接成叶，`val` 是该格的布尔值。整图全 $0$ 或全 $1$ 时，四分后四个孩子都是同值叶，层层合并成一棵单结点树。只有一格不同时，从根一路切到那一格，其他三个象限仍然各自合成叶。
 
@@ -160,9 +177,14 @@ def constructPrefix(grid):
         if ok:
             return Node(val, True)
         h = size // 2
-        return Node(True, False,
-                    build(r0, c0, h), build(r0, c0 + h, h),
-                    build(r0 + h, c0, h), build(r0 + h, c0 + h, h))
+        return Node(
+            True,
+            False,
+            build(r0, c0, h),
+            build(r0, c0 + h, h),
+            build(r0 + h, c0, h),
+            build(r0 + h, c0 + h, h),
+        )
 
     return build(0, 0, n)
 ```

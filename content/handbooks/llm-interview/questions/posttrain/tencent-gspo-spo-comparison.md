@@ -4,7 +4,10 @@ section: posttrain
 order: 105
 level: S
 title: 腾讯 WXG：GSPO 的优化是什么？腾讯的 SPO 有何不同？
-quick: "GSPO 把 importance ratio 和 clipping 提到 sequence 级，主要解决长序列 / MoE 下 token 级比率累积的不稳；腾讯 SPO 去掉了对 group 的依赖，用持续的、KL-adaptive value tracker 加 batch 级归一化，让单条样本也有学习信号。比较时说清 baseline、粒度和吞吐的取舍。"
+quick: >-
+  GSPO 把 importance ratio 和 clipping 提到 sequence 级，主要解决长序列 / MoE 下 token
+  级比率累积的不稳；腾讯 SPO 去掉了对 group 的依赖，用持续的、KL-adaptive value tracker 加 batch 级
+  normalization，让单条样本也有学习信号。比较时说清 baseline、粒度和 throughput 的取舍。
 tags:
   - Tencent
   - WXG
@@ -14,16 +17,16 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 秋招面经-腾讯WXG NLP算法一面（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/0bdb10f282b541bda9ae11db203a40eb
+    url: 'https://www.nowcoder.com/feed/main/detail/0bdb10f282b541bda9ae11db203a40eb'
     type: candidate-first-hand
   - title: 'GSPO: Towards Scalable Reinforcement Learning for Language Models'
-    url: https://arxiv.org/abs/2507.18071
+    url: 'https://arxiv.org/abs/2507.18071'
     type: primary-paper
   - title: Single-stream Policy Optimization
-    url: https://arxiv.org/abs/2509.13232
+    url: 'https://arxiv.org/abs/2509.13232'
     type: primary-paper
 ---
 
@@ -34,9 +37,9 @@ sources:
 - 届别 / 流程：秋招；一面
 - 面试时间：原帖未披露；帖子发布于 2025-12-02
 - 来源类型与可信度：牛客候选人原帖，B（公司、团队、流程和轮次明确；届别未披露）
-- 原始措辞：**“介绍GSPO的优化，腾讯最近出的SPO有关注吗”**
+- 原始措辞：**“介绍 GSPO 的优化，腾讯最近出的 SPO 有关注吗”**
 
-两者改的是不同的地方。GSPO 改的是 importance ratio 和 clip 的粒度，从 token 提到 sequence；腾讯的 Single-stream Policy Optimization（SPO）改的是 baseline，以及要不要依赖 group，让单条采样轨迹（rollout）也有学习信号。比较时讲清基线、优化粒度和吞吐的差别，光说哪篇发得晚没用。还有两个坑要避开，别把不同论文里同名的 SPO 混成一个算法，也别把 GSPO 说成「GRPO 去掉 KL」。
+两者改的是不同的地方。GSPO 改的是 importance ratio 和 clip 的粒度，从 token 提到 sequence；腾讯的 Single-stream Policy Optimization（SPO）改的是 baseline，以及要不要依赖 group，让单条 sampling 轨迹（rollout）也有学习信号。比较时讲清基线、优化粒度和 throughput 的差别，光说哪篇发得晚没用。还有两个坑要避开，别把不同论文里同名的 SPO 混成一个算法，也别把 GSPO 说成「GRPO 去掉 KL」。
 
 ## GSPO：序列级 ratio，稳住长生成和 MoE
 
@@ -46,7 +49,7 @@ GSPO 保留了 group-relative advantage，但把 token likelihood ratio 的优�
 
 ## 腾讯 SPO：去掉 group，单条也有信号
 
-SPO 从另一个方向入手，消除 group 的同步等待和退化 group（全对全错、零梯度）。它用一个持续的、KL-adaptive value tracker 当 baseline，再在 batch 范围内归一化 advantage，这样单个 rollout 也能提供信号。吞吐上不用再等同一输入提示采满 $G$ 条，对长 horizon 更友好。代价是 baseline 从无偏的组均值变成了 tracker，带来 tracker 自己的偏置和方差问题。所以回答「关注了没有」时，要讲到它解决的是 GRPO 的 group 成本和空组问题，别去复述 GSPO 的序列 clip。
+SPO 从另一个方向入手，消除 group 的同步等待和退化 group（全对全错、零梯度）。它用一个持续的、KL-adaptive value tracker 当 baseline，再在 batch 范围内 normalization advantage，这样单个 rollout 也能提供信号。throughput 上不用再等同一 prompt 采满 $G$ 条，对长 horizon 更友好。代价是 baseline 从无偏的组均值变成了 tracker，带来 tracker 自己的偏置和方差问题。所以回答「关注了没有」时，要讲到它解决的是 GRPO 的 group 成本和空组问题，别去复述 GSPO 的序列 clip。
 
 ## 放在一起比
 
@@ -54,7 +57,7 @@ SPO 从另一个方向入手，消除 group 的同步等待和退化 group（全
 | --- | --- | --- |
 | baseline | 组内相对 | KL-adaptive tracker + batch 归一 |
 | 粒度 | 序列级 ratio/clip | 单流，不依赖 group |
-| 吞吐 | 仍要等组 | 单条即可更新 |
+| throughput | 仍要等组 | 单条即可更新 |
 
 现场按项目的痛点选：MoE 或者很长的推理过程里 ratio 出现极端值，选 GSPO；group 等不起、空组多，选 SPO。两者都能和可验证奖励一起用。较早文献里还有别的 SPO（比如某种 self-play），别当成这一篇。
 

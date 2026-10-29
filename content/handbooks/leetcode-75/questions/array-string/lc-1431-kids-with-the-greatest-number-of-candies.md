@@ -4,20 +4,22 @@ section: array-string
 order: 3
 level: A
 title: LC 1431 · 拥有最多糖果的孩子
-quick: "先求原数组最大值 `mx`，再逐个判断 `candies[i] + extraCandies >= mx`。给一个孩子加糖时其他人不变，所以只用和原最大值比。时间 $O(n)$，不算答案额外空间 $O(1)$。"
+quick: >-
+  先求原数组最大值 `mx`，再逐个判断 `candies[i] + extraCandies >=
+  mx`。给一个孩子加糖时其他人不变，所以只用和原最大值比。时间 $O(n)$，不算答案额外空间 $O(1)$。
 tags:
   - Array
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1431. Kids With the Greatest Number of Candies
-    url: https://leetcode.com/problems/kids-with-the-greatest-number-of-candies/
+    url: 'https://leetcode.com/problems/kids-with-the-greatest-number-of-candies/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -93,7 +95,7 @@ print("simple tests passed")
 
 时间 $O(n)$，两遍扫描。除答案外额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 `extraCandies` 为 $0$ 时，只有原本就等于最大值的孩子为真。
 

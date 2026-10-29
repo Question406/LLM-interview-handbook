@@ -4,7 +4,9 @@ section: array-string
 order: 10
 level: A
 title: LC 45 · 跳跃游戏 II
-quick: "把同样跳数能到达的区间看成 BFS 的一层：`end` 记当前层的右端，`farthest` 记这一层各位置再跳一次能到的最远处，扫到 `end` 就跳数加一、进入下一层。题目保证可达，时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  把同样跳数能到达的区间看成 BFS 的一层：`end` 记当前层的右端，`farthest` 记这一层各位置再跳一次能到的最远处，扫到 `end`
+  就跳数加一、进入下一层。题目保证可达，时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 45. 跳跃游戏 II
-    url: https://leetcode.cn/problems/jump-game-ii/
+    url: 'https://leetcode.cn/problems/jump-game-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -103,7 +105,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个下标进一层、出一层。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时已在终点，循环不进，返回 $0$ 步。每步都是 $1$ 时每层只多覆盖一格，答案是 $n-1$。第一步就能到终点时，第一次碰到 `i == end`，`farthest` 已经 $\ge n-1$，返回 $1$。
 

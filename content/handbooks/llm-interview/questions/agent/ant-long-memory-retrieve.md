@@ -4,7 +4,10 @@ section: agent
 order: 140
 level: A
 title: 蚂蚁：Agent 长期记忆如何存，历史很大时怎么查？
-quick: "当前任务频繁用的数据放会话 state，较早的按用户或任务整理成可检索的结构化条目，记录时间和权限。历史很大时，先用分层索引、时间分区和规则缩小范围，配合摘要和过期规则，再混合召回加 rerank；按查询意图选检索方式，不必每次把全部历史放进 prompt。"
+quick: >-
+  当前任务频繁用的数据放会话
+  state，较早的按用户或任务整理成可检索的结构化条目，记录时间和权限。历史很大时，先用分层索引、时间分区和规则缩小范围，配合摘要和过期规则，再混合召回加
+  rerank；按查询意图选检索方式，不必每次把全部历史放进 prompt。
 tags:
   - Ant Group
   - Memory
@@ -12,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 蚂蚁大模型一面（被问懵版）
-    url: https://www.nowcoder.com/feed/main/detail/1a1a229b1d9f4a5bbfcb6ea6c9857339
+    url: 'https://www.nowcoder.com/feed/main/detail/1a1a229b1d9f4a5bbfcb6ea6c9857339'
     type: candidate-first-hand
 ---
 
@@ -26,7 +29,7 @@ sources:
 - 届别 / 流程：原帖未披露；一面
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“你是怎么设计agent的记忆系统？”**；**“长期记忆如何存储？如果历史记录量非常大，怎么优化查询效率？”**
+- 原始措辞：**“你是怎么设计 agent 的记忆系统？”**；**“长期记忆如何存储？如果历史记录量非常大，怎么优化查询效率？”**
 
 我会把记忆分层：当前任务频繁用的放在会话 state 里，跨会话的事实和偏好抽成结构化条目，带用户、时间、权限和失效策略；历史很大时，先用时间分区和规则把候选缩小，再混合召回加 rerank，不必每次把全部历史放进 prompt。蚂蚁场景还要能审计「记了什么、谁能看」。只答「上了 LangChain Memory」或者「全量 embedding 每次 top-k」，面试官会继续往下追。
 

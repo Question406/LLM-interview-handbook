@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-Batch invariance 指同一输入的计算结果不受同批其他请求影响，`atomicAdd` 本身无法保证这一点。比如温度 0 时，同一道题单独跑和放进在线 batch 里跑，仍可能生成不同 token；seed 只固定 RNG，不能固定浮点归约顺序。强化学习（RL）评测和回归测试都需要把这两类来源分开。
+Batch invariance 指同一输入的计算结果不受同批其他请求影响，`atomicAdd` 本身无法保证这一点。比如温度 0 时，同一道题单独跑和放进在线 batch 里跑，仍可能生成不同 token；seed 只固定 RNG，不能固定浮点归约顺序。RL 评测和回归测试都需要把这两类来源分开。
 
 PyTorch 常用：
 
@@ -38,7 +38,7 @@ torch.backends.cudnn.deterministic = True
 
 并设置 `CUBLAS_WORKSPACE_CONFIG=:4096:8`，再固定 Python / NumPy / CUDA seed。这仍不能保证每个算子都有确定实现：没有确定 kernel 的 op 会直接报错或走慢路径。分布式还要固定 NCCL、集合通信顺序。RL 中生成训练轨迹的 rollout 引擎默认 **不** 保证可复现。
 
-同一输入提示、同一权重、同一采样参数，输出不应取决于：
+同一 prompt、同一权重、同一 sampling 参数，输出不应取决于：
 
 - 同一步逐 token 生成（decode）时还在处理哪些请求；
 - `max_num_seqs` / 实际 batch；
@@ -57,6 +57,6 @@ MoE 路由、FP8 动态 scale、非确定的 expert 负载均衡会再加一层�
 **温度 0 为什么还会漂？**
 greedy 仍走浮点 logits。argmax 在两个 logit 极近时会因末位翻转切到另一个 token，后面整段都分叉。
 **RL 的 old logprob 要不要确定性？**
-训练图重算 logp 时，用的是 trainer kernel。引擎侧非确定只影响采样路径，不影响 ratio 的 $\pi_\theta$。但评测对比必须锁同一引擎配置。
+训练图重算 logp 时，用的是 trainer kernel。引擎侧非确定只影响 sampling 路径，不影响 ratio 的 $\pi_\theta$。但评测对比必须锁同一引擎配置。
 **关 continuous batching 能换确定性吗？**
-能换一部分，吞吐会掉回去。生产上通常接受 serving 非确定，把金标回归放到 bs=1 + invariant 模式。
+能换一部分，throughput 会掉回去。生产上通常接受 serving 非确定，把金标回归放到 bs=1 + invariant 模式。

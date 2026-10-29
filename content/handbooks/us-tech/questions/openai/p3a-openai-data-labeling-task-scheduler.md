@@ -3,8 +3,9 @@ id: p3a-openai-data-labeling-task-scheduler
 section: openai
 order: 611
 level: A
-title: "OpenAI：人工标注调度：公平、唯一性与增量约束"
-quick: "先写清覆盖、公平和不重复条件，再选择构造：本题按任务与模型编号轮转，保证同任务标注员不重复、负载差不超过模型数。比如分批调用仍沿用全局任务编号，才能与一次生成相同；更严的公平或资格约束再考虑全局轮转、匹配或流。"
+title: OpenAI：人工标注调度：公平、唯一性与增量约束
+quick: >-
+  先写清覆盖、公平和不重复条件，再选择构造：本题按任务与模型编号轮转，保证同任务标注员不重复、负载差不超过模型数。比如分批调用仍沿用全局任务编号，才能与一次生成相同；更严的公平或资格约束再考虑全局轮转、匹配或流。
 companies:
   - openai
 tags:
@@ -16,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · data-labeling-task-scheduler"
-    url: https://www.1point3acres.com/interview/problems/company/openai/data-labeling-task-scheduler
+  - title: 1Point3Acres · OpenAI · data-labeling-task-scheduler
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/data-labeling-task-scheduler
     type: secondary
 ---
 
@@ -27,7 +29,7 @@ sources:
 
 为数据标注任务分配模型与标注者，使每个任务的每个模型都有一位不同的人类标注者，并满足确定性分配规则。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -52,7 +54,7 @@ schedule(3, 2, 3) + schedule(4, 2, 3, start_task=3) == schedule(7, 2, 3)
 
 给定一批任务、若干个模型和若干名人工标注员，为每个任务的每个模型输出分配一名标注员，生成 (task, model, human) 三元组，要满足题目给出的公平性和不重复约束。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -101,7 +103,9 @@ def schedule(tasks, models, humans, start_task=0):
     if models < 1:
         raise ValueError(f"models must be >= 1, got {models}")
     if humans < models:
-        raise ValueError(f"need at least as many humans as models ({humans} < {models})")
+        raise ValueError(
+            f"need at least as many humans as models ({humans} < {models})"
+        )
     if start_task < 0:
         raise ValueError(f"start_task must be >= 0, got {start_task}")
 
@@ -121,7 +125,7 @@ def schedule(tasks, models, humans, start_task=0):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

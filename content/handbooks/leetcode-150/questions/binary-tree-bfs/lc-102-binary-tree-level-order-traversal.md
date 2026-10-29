@@ -4,7 +4,7 @@ section: binary-tree-bfs
 order: 3
 level: S
 title: LC 102 · 二叉树的层序遍历
-quick: "用队列做 BFS，每一层开始时先记下队列长度 `size`，只弹出这么多个，正好是一层。空根返回空列表。时间 $O(n)$，额外空间 $O(w)$。"
+quick: 用队列做 BFS，每一层开始时先记下队列长度 `size`，只弹出这么多个，正好是一层。空根返回空列表。时间 $O(n)$，额外空间 $O(w)$。
 tags:
   - Tree
   - BFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 102. 二叉树的层序遍历
-    url: https://leetcode.cn/problems/binary-tree-level-order-traversal/
+    url: 'https://leetcode.cn/problems/binary-tree-level-order-traversal/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -126,7 +126,7 @@ print("simple tests passed")
 
 时间 $O(n)$。额外空间 $O(w)$，$w$ 是最宽一层，完全二叉树最宽在底层。
 
-## 边界
+## Edge Cases
 
 空树返回 `[]`，别返回 `[[]]`。单节点时一层一个值。只有左链时，每层恰好一个节点。
 
@@ -137,6 +137,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def levelOrderBottom(root):
     if root is None:

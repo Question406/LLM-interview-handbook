@@ -4,7 +4,10 @@ section: posttrain
 order: 162
 level: A
 title: 美团北斗：PPO/GRPO 后如何防止 OOD 崩塌？
-quick: "强化学习（RL）会把行为集中到训练奖励覆盖的少数模式上，域外任务的格式和安全最先掉。防法是保留对参考模型的 KL、回放锚点和混合监督微调（SFT）数据、限制更新步长，再用不进训练的域外留出集做门禁；锚点一掉就回滚，别继续加奖励。"
+quick: >-
+  RL 会把行为集中到训练奖励覆盖的少数模式上，out-of-domain 任务的格式和安全最先掉。防法是保留对 reference model 的
+  KL、replay data 和混合 SFT 数据、限制更新步长，再用不进训练的 out-of-domain 留出集做 acceptance
+  checks；reference policy 一掉就回滚，别继续加奖励。
 tags:
   - Meituan
   - OOD
@@ -12,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 美团北斗大模型面试
-    url: https://www.nowcoder.com/discuss/914814345970782208
+    url: 'https://www.nowcoder.com/discuss/914814345970782208'
     type: candidate-first-hand
 ---
 
@@ -26,11 +29,11 @@ sources:
 - 届别 / 流程：原帖未披露
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“PPO/GRPO 微调后,如何防止模型在分布外(OOD)问题上性能崩塌?”**
+- 原始措辞：**“PPO/GRPO 微调后,如何防止模型在 out-of-distribution(OOD)问题上性能崩塌?”**
 
-防 OOD 崩塌靠三样东西：对参考模型的锚点、混进去的通用数据、一套不进训练的域外门禁，出问题就回滚。强化学习（RL）会把概率堆到当前奖励覆盖得到的窄模式上，训练任务分在涨，换类目、换模板、安全题先掉。只看训练奖励分数（reward）发现不了这些；崩了再加奖励，只会把捷径刻得更深。
+防 OOD 崩塌靠三样东西：对 reference model 的 reference policy、混进去的通用数据、一套不进训练的 out-of-domain acceptance checks，出问题就回滚。RL 会把概率堆到当前奖励覆盖得到的窄模式上，训练任务分在涨，换类目、换模板、安全题先掉。只看训练奖励分数（reward）发现不了这些；崩了再加奖励，只会把捷径刻得更深。
 
-举个北斗这类业务的例子：类目多、槽位多，训练用的验证器（verifier）只覆盖了一小片，线上长尾是另一个分布。训练分再涨 1 个点，也比不上有一套分布外数据（OOD，即与训练数据明显不同的数据）门禁重要。
+举个北斗这类业务的例子：类目多、槽位多，训练用的验证器（verifier）只覆盖了一小片，线上长尾是另一个分布。训练分再涨 1 个点，也比不上有一套 out-of-distribution 数据（OOD，即与训练数据明显不同的数据）acceptance checks 重要。
 
 为什么会掉？PPO / GRPO 优化的是训练分布上的期望回报。奖励只覆盖一种模板、一种工具、一种答案格式，策略就会锐化到刷分的模式上。GRPO 的
 
@@ -38,28 +41,28 @@ $$
 \hat{A}_i=\frac{r_i-\mu}{\sigma+\epsilon}
 $$
 
-更会放大组内能分出高低的 hack 维度：同组都在刷同一种格式时 $\sigma$ 一塌，表面上还在更新的只剩捷径。反向 KL 式的惩罚 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 就是为了不让 $\pi_\theta$ 把 ref 还覆盖着的域外质量压没。没有锚点，监督微调（SFT）学到的指令遵循和拒答最先被冲掉。漂移发生在奖励没定义的方向上，训练 reward 对那些方向毫无感觉。
+更会放大组内能分出高低的 hack 维度：同组都在刷同一种格式时 $\sigma$ 一塌，表面上还在更新的只剩捷径。reverse KL 式的惩罚 $D_{\mathrm{KL}}(\pi_\theta\|\pi_{\mathrm{ref}})$ 就是为了不让 $\pi_\theta$ 把 ref 还覆盖着的 out-of-domain 质量压没。没有 reference policy，SFT 学到的指令遵循和拒答最先被冲掉。漂移发生在奖励没定义的方向上，训练 reward 对那些方向毫无感觉。
 
-还要区分欠拟合和崩塌。训练集和同分布 holdout 都在涨、一换分布就骤降，才是 OOD 崩；两边都掉，可能是学习率或者 verifier 坏了。按切片看安全、短指令、多轮、未见过的工具，哪一片先掉就针对哪一片做 replay。
+还要区分 underfitting 和崩塌。训练集和同分布 holdout 都在涨、一换分布就骤降，才是 OOD 崩；两边都掉，可能是学习率或者 verifier 坏了。按切片看安全、短指令、多轮、未见过的工具，哪一片先掉就针对哪一片做 replay。
 
-防护的做法按训练顺序说。训练时保留对 $\pi_{\mathrm{ref}}$ 的 KL，或者定期 replay 通用 SFT / 指令数据，把通用能力当成多任务的一部分一起训，别等 RL 完了再补。奖励里加格式和安全的硬门，违规直接负分或截断，别指望任务分顺带教会拒绝。限制 epoch、学习率和 clip $\varepsilon$，避免一步离 ref 太远。评测集必须包含未见模板、未见工具、未见类目和红队，而且这些集合不能进训练集。
+防护的做法按训练顺序说。训练时保留对 $\pi_{\mathrm{ref}}$ 的 KL，或者定期 replay 通用 SFT / 指令数据，把通用能力当成多任务的一部分一起训，别等 RL 完了再补。奖励里加格式和安全的 mandatory checks，违规直接负分或截断，别指望任务分顺带教会拒绝。限制 epoch、学习率和 clip $\varepsilon$，避免一步离 ref 太远。评测集必须包含未见模板、未见工具、未见类目和红队，而且这些集合不能进训练集。
 
-锚点一掉就停，用更早的 checkpoint。$\beta$ 加晚了，KL 项面对的已经是离群的策略，很难把原来的行为拉回来。GRPO 省了价值评估模型（critic），没有 $V$ 去平滑没见过的状态，只有组内相对分数，所以 OOD 评测集本身就是算法的一部分，可有可无的说法站不住。
+reference policy 一掉就停，用更早的 checkpoint。$\beta$ 加晚了，KL 项面对的已经是离群的策略，很难把原来的行为拉回来。GRPO 省了价值评估模型（critic），没有 $V$ 去平滑没见过的状态，只有组内相对分数，所以 OOD 评测集本身就是算法的一部分，可有可无的说法站不住。
 
-把 OOD 题混进 RL 当正则也可以，前提是有可靠的奖励，不然又在教模型乱拿分。没有 checker 的开放 OOD，用 SFT replay 比用一个乱打分的奖励模型（RM）安全。
+把 OOD 题混进 RL 当正则也可以，前提是有可靠的奖励，不然又在教模型乱拿分。没有 checker 的开放 OOD，用 SFT replay 比用一个乱打分的 reward model（RM）安全。
 
-真崩了怎么办？别继续加任务奖励。回滚到锚点指标开始掉之前的 ckpt，查清楚是模板过拟合、长度 hack，还是安全被冲掉，再对症 replay；全局加数据，可能把刚涨上去的任务分又冲回去。线上按类目灰度，新类目先看格式和安全，再看任务分。OOD 评测集也要定期换模板，防止「所谓域外」其实已经泄漏进训练。门禁一旦被训练分布污染，就会出现训练分和假 OOD 都在涨、真长尾一上线就崩的情况。
+真崩了怎么办？别继续加任务奖励。回滚到 reference policy 指标开始掉之前的 ckpt，查清楚是模板 overfitting、长度 hack，还是安全被冲掉，再对症 replay；全局加数据，可能把刚涨上去的任务分又冲回去。线上按类目灰度，新类目先看格式和安全，再看任务分。OOD 评测集也要定期换模板，防止「所谓 out-of-domain」其实已经泄漏进训练。acceptance checks 一旦被训练分布污染，就会出现训练分和假 OOD 都在涨、真长尾一上线就崩的情况。
 
 ## 追问
 
 **KL 一定能防 OOD 吗？**
-不一定，它只能把策略限制在 $\pi_{\mathrm{ref}}$ 的覆盖范围里。ref 自己就不会的域外，KL 救不了，要靠数据或硬规则。
+不一定，它只能把策略限制在 $\pi_{\mathrm{ref}}$ 的覆盖范围里。ref 自己就不会的 out-of-domain，KL 救不了，要靠数据或硬规则。
 
-**GRPO 为什么比 PPO 更要门禁？**
-组内相对分数没有跨状态的 $V$ 来平滑，捷径在组内最容易分出高低，域外又没有对照。
+**GRPO 为什么比 PPO 更要 acceptance checks？**
+组内相对分数没有跨状态的 $V$ 来平滑，捷径在组内最容易分出高低，out-of-domain 又没有对照。
 
 **崩了回滚到 SFT 还是 RL 中期？**
-看锚点是哪一步开始掉的，用那一步之前的 ckpt。不用从头认输，也别在崩点继续训。
+看 reference policy 是哪一步开始掉的，用那一步之前的 ckpt。不用从头认输，也别在崩点继续训。
 
 **训练 reward 涨、OOD 掉，还要不要上线？**
-不要。这就是 hacking 或者适应得太窄，门禁没过就是没过。
+不要。这就是 hacking 或者适应得太窄，acceptance checks 没过就是没过。

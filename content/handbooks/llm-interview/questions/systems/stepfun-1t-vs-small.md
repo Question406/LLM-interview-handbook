@@ -4,17 +4,19 @@ section: systems
 order: 143
 level: A
 title: 阶跃星辰：训 1T 级模型和训小模型有何不同？
-quick: "规模变大后，通信、容错、数据吞吐和数值稳定性都要重新设计：组合 3D 并行与 ZeRO，使用异步 checkpoint 和弹性恢复，并持续检查数据供给与溢出。小模型的学习率等超参不能按卡数直接外推。"
+quick: >-
+  规模变大后，通信、容错、数据 throughput 和数值稳定性都要重新设计：组合 3D 并行与 ZeRO，使用异步 checkpoint
+  和弹性恢复，并持续检查数据供给与溢出。小模型的学习率等超参不能按卡数直接外推。
 tags:
   - StepFun
   - Distributed Training
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阶跃星辰大模型算法实习一面
-    url: https://www.nowcoder.com/feed/main/detail/5cb1ebe809fd402d844cce47380a926f
+    url: 'https://www.nowcoder.com/feed/main/detail/5cb1ebe809fd402d844cce47380a926f'
     type: candidate-first-hand
 ---
 
@@ -27,7 +29,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B
 - 原始措辞：**“训练 1t 模型遇到哪些困难，跟小尺寸模型有什么不同”**
 
-训练到 1T 级时，要重新处理通信、容错、数据吞吐和数值稳定性，小模型的配置不能直接线性放大。原帖没有定义「1t」是万亿参数还是万亿 token，回答时应先说明自己的理解：前者尤其依赖参数切分，后者尤其依赖长期的数据吞吐和稳定性。这里可以讨论通用的规模化困难，不补写阶跃未公开的配方。
+训练到 1T 级时，要重新处理通信、容错、数据 throughput 和数值稳定性，小模型的配置不能直接线性放大。原帖没有定义「1t」是万亿参数还是万亿 token，回答时应先说明自己的理解：前者尤其依赖参数切分，后者尤其依赖长期的数据 throughput 和稳定性。这里可以讨论通用的规模化困难，不补写阶跃未公开的配方。
 
 7B 单机可以逐步 print、单卡 Adam。1T 级必须 3D 并行（TP/PP/DP）再叠加 ZeRO / 专家并行。单步实际耗时里，bubble、all-gather、reduce-scatter 往往大于 GEMM。激活重计算用算力换显存，MFU 看起来低是设计，不是没调好。跨机几乎不能逐步调试，要用 rank 级日志和集体通信超时，见 `sys-collectives`、`sys-zero`。ckpt 本身也从「存一份 state_dict」变成异步、分片、可部分恢复，I/O 会变成新的步间气泡。
 
@@ -40,7 +42,7 @@ batch / lr 的稳定区变窄，小模型 lr 按卡数线性放大常发散。BF
 ## 追问
 
 **1T 是参数还是 token？**
-原帖未定义。两者都对：万亿参数要切分和容错，万亿 token 要数据吞吐和稳定性。先声明你按哪边答。
+原帖未定义。两者都对：万亿参数要切分和容错，万亿 token 要数据 throughput 和稳定性。先声明你按哪边答。
 **为什么不能只用 TP？**
 TP 切单层计算，优化器副本和 DP 显存是另一维，常和 ZeRO 组合，见 `sys-zero`。
 **小模型 lr 直接 $\times N$ 会怎样？**

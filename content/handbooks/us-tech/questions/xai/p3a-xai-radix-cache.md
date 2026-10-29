@@ -3,8 +3,10 @@ id: p3a-xai-radix-cache
 section: xai
 order: 608
 level: A
-title: "xAI：Radix Cache：压缩边、分裂与最长前缀"
-quick: "边上保存整段 token，插入时比较公共前缀，部分重合就拆出中间节点并保留旧子树。精确查询和最长已存前缀都只认终结节点，停在边中间不算命中；用作 KV 索引还要区分模型版本与上下文。"
+title: xAI：Radix Cache：压缩边、分裂与最长前缀
+quick: >-
+  边上保存整段 token，插入时比较公共前缀，部分重合就拆出中间节点并保留旧子树。精确查询和最长已存前缀都只认终结节点，停在边中间不算命中；用作 KV
+  索引还要区分模型版本与上下文。
 companies:
   - xai
 tags:
@@ -16,10 +18,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · radix-cache"
-    url: https://www.1point3acres.com/interview/problems/company/xai/radix-cache
+  - title: 1Point3Acres · xAI · radix-cache
+    url: 'https://www.1point3acres.com/interview/problems/company/xai/radix-cache'
     type: secondary
 ---
 
@@ -27,7 +29,7 @@ sources:
 
 实现以整数序列为键的压缩前缀树，支持精确查找、已存键的最长前缀查找及列举全部键。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -54,7 +56,7 @@ radix tree 把连续 token 压到同一条边上，插入时按公共前缀决�
 
 为整数 token 序列实现一棵压缩前缀树（radix tree）：支持插入、精确查找、查找最长的已存前缀，以及枚举所有键。这类结构常用来做 LLM 推理里的前缀 KV cache 索引。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 - 公共前缀覆盖了整条边：走到子节点，继续处理剩下的部分。
 - 只覆盖了一部分：建一个中间节点，原来的边变成「公共前缀 → 中间节点」，旧后缀连同原来的子节点整体挂到中间节点下面，然后再插新后缀。
@@ -62,7 +64,7 @@ radix tree 把连续 token 压到同一条边上，插入时按公共前缀决�
 
 精确命中和最长前缀是两个不同的接口。分裂会产生不代表任何键的中间节点，所以每个节点要有终结标记，查询也必须记录匹配到了哪里：停在边中间或者停在非终结节点上，都不算命中。
 
-如果真的拿它当 KV cache 用，缓存是否有效还依赖模型版本和上下文（例如系统提示、采样配置），键里要把这些也区分开。
+如果真的拿它当 KV cache 用，缓存是否有效还依赖模型版本和上下文（例如系统提示、sampling 配置），键里要把这些也区分开。
 
 ## 完整编程练习（手册重构版）
 
@@ -95,7 +97,7 @@ longest([1, 2])          -> (1,)
 class Node:
     def __init__(self):
         self.is_key = False  # 只有终结节点代表一个完整的已存键
-        self.edges = {}      # 首个 token -> (边标签 tuple, 子节点)
+        self.edges = {}  # 首个 token -> (边标签 tuple, 子节点)
 
 
 def common_prefix_length(a, b):
@@ -140,7 +142,7 @@ class Radix:
         best = () if node.is_key else None
         while pos < len(seq) and seq[pos] in node.edges:
             label, child = node.edges[seq[pos]]
-            if seq[pos:pos + len(label)] != label:
+            if seq[pos : pos + len(label)] != label:
                 break  # 停在边中间，不算命中
             pos += len(label)
             node = child
@@ -173,7 +175,7 @@ class Radix:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

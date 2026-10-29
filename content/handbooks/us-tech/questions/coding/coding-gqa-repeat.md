@@ -4,7 +4,9 @@ section: coding
 order: 16
 level: A
 title: 白板：GQA 把 KV head repeat 成 query heads，shape 怎么断言
-quick: "cache 中的 K/V 保持 `[B, H_kv, S, D]`，计算前沿 head 轴用 `repeat_interleave` 扩到 $H_q$。先断言 $H_q$ 能被 $H_{\\mathrm{kv}}$ 整除，再让相邻的一组 query head 共用同一个 KV head。"
+quick: >-
+  cache 中的 K/V 保持 `[B, H_kv, S, D]`，计算前沿 head 轴用 `repeat_interleave` 扩到
+  $H_q$。先断言 $H_q$ 能被 $H_{\mathrm{kv}}$ 整除，再让相邻的一组 query head 共用同一个 KV head。
 tags:
   - 完整编程练习
   - Coding
@@ -14,26 +16,28 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: GQA — Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints
-    url: https://arxiv.org/abs/2305.13245
+  - title: >-
+      GQA — Training Generalized Multi-Query Transformer Models from Multi-Head
+      Checkpoints
+    url: 'https://arxiv.org/abs/2305.13245'
     type: primary
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
 ---
 
 ## 题目描述
 
-实现 grouped-query attention 的 KV head 扩展和注意力计算；多个 query head 按指定顺序共享同一个 KV head。
+实现 grouped-query attention 的 KV head 扩展和 attention 计算；多个 query head 按指定顺序共享同一个 KV head。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `repeat_kv(x, n_rep)`：`x` 形状 `[B, H_kv, S, D]`，返回 `[B, H_kv * n_rep, S, D]`。相邻的 `n_rep` 个输出 head 来自同一个 KV head。`n_rep` 必须是正整数。
-- `gqa_attn(q, k, v)`：`q` 形状 `[B, H_q, T, D]`，`k`、`v` 形状 `[B, H_kv, S, D]`，返回 `[B, H_q, T, D]`。不带 mask 的缩放点积注意力，每个 query 的输出为 `softmax(q·k / sqrt(D))` 对相应 value 的加权和；允许 `T != S`。
+- `gqa_attn(q, k, v)`：`q` 形状 `[B, H_q, T, D]`，`k`、`v` 形状 `[B, H_kv, S, D]`，返回 `[B, H_q, T, D]`。不带 mask 的缩放点积 attention，每个 query 的输出为 `softmax(q·k / sqrt(D))` 对相应 value 的加权和；允许 `T != S`。
 - $H_q$ 必须是 $H_{\mathrm{kv}}$ 的正整数倍，$T, S \ge 1$，输入形状匹配。
 
 ### 输入输出示例
@@ -53,12 +57,12 @@ gqa_attn(q,k,v) -> [[[[3]], [[3]], [[12]], [[12]]]]
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
 - `repeat_kv(x, n_rep)`：`x` 形状 `[B, H_kv, S, D]`，返回 `[B, H_kv * n_rep, S, D]`。相邻的 `n_rep` 个输出 head 来自同一个 KV head。`n_rep` 必须是正整数。
-- `gqa_attn(q, k, v)`：`q` 形状 `[B, H_q, T, D]`，`k`、`v` 形状 `[B, H_kv, S, D]`，返回 `[B, H_q, T, D]`。不带 mask 的注意力（也可以看成 cross-attention）。
+- `gqa_attn(q, k, v)`：`q` 形状 `[B, H_q, T, D]`，`k`、`v` 形状 `[B, H_kv, S, D]`，返回 `[B, H_q, T, D]`。不带 mask 的 attention（也可以看成 cross-attention）。
 - $H_q$ 必须是 $H_{\mathrm{kv}}$ 的正整数倍，$T, S \ge 1$；形状不匹配时抛 `ValueError`。
 
 ### 输入输出示例
@@ -71,7 +75,7 @@ repeat_kv 之后的 head 顺序 -> [k0, k0, k1, k1]
 
 ### 解题思路与正确性
 
-之后就是普通的缩放点积注意力。softmax 升到 fp32 计算再转回输入精度。测试拿 PyTorch 的 `scaled_dot_product_attention` 加 `repeat_interleave` 作对照。
+之后就是普通的缩放点积 attention。softmax 升到 fp32 计算再转回输入精度。测试拿 PyTorch 的 `scaled_dot_product_attention` 加 `repeat_interleave` 作对照。
 
 ### 完整参考实现（Python 3）
 
@@ -88,27 +92,27 @@ def repeat_kv(x, n_rep):
         return x
     B, H_kv, S, D = x.shape
     return (
-        x[:, :, None, :, :]
-        .expand(B, H_kv, n_rep, S, D)
-        .reshape(B, H_kv * n_rep, S, D)
+        x[:, :, None, :, :].expand(B, H_kv, n_rep, S, D).reshape(B, H_kv * n_rep, S, D)
     )
 
 
 def gqa_attn(q, k, v):
-    """GQA 注意力（无 mask）。q: [B, H_q, T, D]；k, v: [B, H_kv, S, D]；返回 [B, H_q, T, D]。"""
+    """GQA attention（无 mask）。q: [B, H_q, T, D]；k, v: [B, H_kv, S, D]；返回 [B, H_q, T, D]。"""
     B, H_q, T, D = q.shape
     H_kv = k.shape[1]
     if k.shape != v.shape:
         raise ValueError(f"k and v shapes differ: {tuple(k.shape)} vs {tuple(v.shape)}")
     if k.shape[0] != B or k.shape[-1] != D:
-        raise ValueError(f"k shape {tuple(k.shape)} does not match q shape {tuple(q.shape)}")
+        raise ValueError(
+            f"k shape {tuple(k.shape)} does not match q shape {tuple(q.shape)}"
+        )
     if H_q % H_kv != 0:
         raise ValueError(f"H_q={H_q} is not a multiple of H_kv={H_kv}")
 
     n_rep = H_q // H_kv
     k_rep = repeat_kv(k, n_rep)  # [B, H_q, S, D]
     v_rep = repeat_kv(v, n_rep)
-    scores = torch.matmul(q, k_rep.transpose(-2, -1)) * D ** -0.5  # [B, H_q, T, S]
+    scores = torch.matmul(q, k_rep.transpose(-2, -1)) * D**-0.5  # [B, H_q, T, S]
     probs = torch.softmax(scores.float(), dim=-1).to(q.dtype)
     return torch.matmul(probs, v_rep)
 ```
@@ -121,7 +125,7 @@ def gqa_attn(q, k, v):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -150,7 +154,9 @@ q = torch.randn(2, 4, 3, 2)
 k = torch.randn(2, 2, 5, 2)
 v = torch.randn_like(k)
 out = gqa_attn(q, k, v)
-ref = F.scaled_dot_product_attention(q, k.repeat_interleave(2, 1), v.repeat_interleave(2, 1))
+ref = F.scaled_dot_product_attention(
+    q, k.repeat_interleave(2, 1), v.repeat_interleave(2, 1)
+)
 assert out.shape == (2, 4, 3, 2)
 assert torch.allclose(out, ref, atol=1e-6)
 
@@ -162,7 +168,9 @@ assert torch.allclose(gqa_attn(q, k1, v1), ref1, atol=1e-6)
 
 # 非法输入
 expect_value_error(repeat_kv, kv, 0)
-expect_value_error(gqa_attn, torch.randn(1, 3, 2, 2), torch.randn(1, 2, 2, 2), torch.randn(1, 2, 2, 2))
+expect_value_error(
+    gqa_attn, torch.randn(1, 3, 2, 2), torch.randn(1, 2, 2, 2), torch.randn(1, 2, 2, 2)
+)
 expect_value_error(gqa_attn, q, k, torch.randn(2, 2, 4, 2))
 ```
 
@@ -203,7 +211,7 @@ $W_Q$ 输出 `H_q * D` 维，$W_K, W_V$ 输出 `H_kv * D` 维。`view` 成 `[B, 
 **`repeat` 和 `repeat_interleave` 差在哪？**
 后者（以及 expand + reshape）得到 `[k0, k0, ..., k1, k1, ...]`；`repeat` 沿 head 维得到 `[k0, k1, ..., k0, k1, ...]`。和 $W_Q$ 的分组对不上时不会报错，只会悄悄算出错误的数值。
 **逐 token 生成（decode）每步都要 repeat 吗？**
-当前步的 $K_t, V_t$ 仍按 $H_{\mathrm{kv}}$ 写入 cache。算注意力时再对已缓存的 $K,V$ 做 repeat，或者走 GQA kernel 在寄存器里广播。
+当前步的 $K_t, V_t$ 仍按 $H_{\mathrm{kv}}$ 写入 cache。算 attention 时再对已缓存的 $K,V$ 做 repeat，或者走 GQA kernel 在寄存器里广播。
 **$H_q$ 能不被 $H_{\mathrm{kv}}$ 整除吗？**
 标准 GQA 不行，面试时直接做检查并报错。
 **和 MQA 比？**

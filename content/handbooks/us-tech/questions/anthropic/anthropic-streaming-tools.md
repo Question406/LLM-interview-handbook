@@ -4,27 +4,40 @@ section: anthropic
 order: 32
 level: A
 title: Anthropic：流式 tool 调用怎么处理 partial JSON、用户取消和幂等？
-quick: "我会按块累积 partial_json，等块结束、JSON 合法且校验通过后再执行一次。默认模式按完整字段缓冲，细粒度模式可能收到非法半截参数；用户取消就丢弃未执行调用，已发出的写入靠幂等键确认状态，不能把取消当成回滚。"
+quick: >-
+  我会按块累积 partial_json，等块结束、JSON
+  合法且校验通过后再执行一次。默认模式按完整字段缓冲，细粒度模式可能收到非法半截参数；用户取消就丢弃未执行调用，已发出的写入靠 idempotency key
+  确认状态，不能把取消当成回滚。
 tags:
   - Anthropic
   - Streaming
   - Tool use
   - Serving
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Streaming Messages (Claude Docs)
-    url: https://platform.claude.com/docs/en/build-with-claude/streaming
+    url: 'https://platform.claude.com/docs/en/build-with-claude/streaming'
     type: primary
   - title: Fine-grained tool streaming (Claude Docs)
-    url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/fine-grained-tool-streaming
+    url: >-
+      https://platform.claude.com/docs/en/agents-and-tools/tool-use/fine-grained-tool-streaming
     type: primary
   - title: Tool use overview (Claude Docs)
-    url: https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+    url: 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview'
     type: primary
 ---
+
+## 可以这样回答
+
+我会把流式预览和工具执行分开：参数可以边收边展示，执行要等整个块结束、JSON 合法并完成校验。比如收到半截转账参数就取消，宿主不能据此转账。官方 SSE 的 `content_block_start` 中 `tool_use.input` 是空对象，真正参数来自 `input_json_delta` 的 `partial_json` 碎片，循环如何执行见 `anthropic-tool-use`。
+
+默认（缓冲）：服务端攒完一个完整的键值再发出碎片。当前模型常常一次只发完一对 key-value，所以工具流里会有停顿。你仍应把碎片拼成字符串，在 `content_block_stop` 时 `json.loads`。最终 `tool_use.input` 是对象；中间 delta 是字符串。
+
+## 技术备查
 
 我会把流式预览和工具执行分开：参数可以边收边展示，执行要等整个块结束、JSON 合法并完成校验。比如收到半截转账参数就取消，宿主不能据此转账。官方 SSE 的 `content_block_start` 中 `tool_use.input` 是空对象，真正参数来自 `input_json_delta` 的 `partial_json` 碎片，循环如何执行见 `anthropic-tool-use`。
 
@@ -36,6 +49,8 @@ sources:
 
 ```python
 buf = ""
+
+
 def on_event(ev):
     global buf
     if ev.type == "content_block_start" and ev.content_block.type == "tool_use":
@@ -43,22 +58,22 @@ def on_event(ev):
         pending[ev.index] = ev.content_block  # id、name 此时已有；input 是 {}
     elif ev.type == "content_block_delta" and ev.delta.type == "input_json_delta":
         buf += ev.delta.partial_json
-        ui.preview(try_parse_prefix(buf))   # 只预览，不执行
+        ui.preview(try_parse_prefix(buf))  # 只预览，不执行
     elif ev.type == "content_block_stop":
         try:
             args = json.loads(buf)
         except json.JSONDecodeError:
             return error_result("incomplete json")
-        dispatch(pending[ev.index], args)   # 唯一执行点
+        dispatch(pending[ev.index], args)  # 唯一执行点
 ```
 
 `stop_reason` 在 `message_delta` 才出现。`tool_use` 表示该停下来执行工具；`max_tokens` 表示生成被切段，工具 JSON 可能半截。不要用 `message_start` 里的 `stop_reason: null` 当完成。
 
-约束解码的 structured output（`anthropic-json-schema`）前缀更接近合法 JSON 前缀，可以喂增量解析器。细粒度工具流没有这个保证。Computer use 那类服务端工具集文档写过不接受 `strict: true`，更不能假设碎片合法。
+约束 decoding 的 structured output（`anthropic-json-schema`）前缀更接近合法 JSON 前缀，可以喂增量解析器。细粒度工具流没有这个保证。Computer use 那类服务端工具集文档写过不接受 `strict: true`，更不能假设碎片合法。
 
 ## 取消后如何保留执行状态
 
-用户点停止 = 客户端拆掉 HTTP / SSE。你可能已经收到 `content_block_start`（有 `tool_use_id` 和 name）和若干 `partial_json`，但没有 `content_block_stop`，也没有最终 `stop_reason`。这时未执行的副作用调用直接放弃，半截 `{"to": "alice", "amount": 1` 不能发起转账。已经发出的只读请求可以丢弃结果，比如天气预览作废；已经发出的写入则要靠幂等键查明状态，取消 HTTP 不能保证对端没有收到，也不能靠再发一次反向操作来补救。
+用户点停止 = 客户端拆掉 HTTP / SSE。你可能已经收到 `content_block_start`（有 `tool_use_id` 和 name）和若干 `partial_json`，但没有 `content_block_stop`，也没有最终 `stop_reason`。这时未执行的副作用调用直接放弃，半截 `{"to": "alice", "amount": 1` 不能发起转账。已经发出的只读请求可以丢弃结果，比如天气预览作废；已经发出的写入则要靠 idempotency key 查明状态，取消 HTTP 不能保证对端没有收到，也不能靠再发一次反向操作来补救。
 
 下一轮不要假装工具已跑完。要么不贴 `tool_result`（等于这轮作废，从用户新消息开始），要么贴 `is_error`：「aborted by user」。缺 `tool_result` 却保留 `tool_use` 块，API 会拒。
 

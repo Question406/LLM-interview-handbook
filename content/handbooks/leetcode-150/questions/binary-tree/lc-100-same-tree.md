@@ -4,7 +4,7 @@ section: binary-tree
 order: 2
 level: A
 title: LC 100 · 相同的树
-quick: "两棵树同步 DFS。都空算相同；一个空、或者值不同就不同；否则继续比左右子树。时间 $O(n)$，额外空间 $O(h)$。"
+quick: 两棵树同步 DFS。都空算相同；一个空、或者值不同就不同；否则继续比左右子树。时间 $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 100. 相同的树
-    url: https://leetcode.cn/problems/same-tree/
+    url: 'https://leetcode.cn/problems/same-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -83,9 +83,7 @@ def isSameTree(p: Optional[TreeNode], q: Optional[TreeNode]) -> bool:
     if p is None or q is None:
         return p is q
     return (
-        p.val == q.val
-        and isSameTree(p.left, q.left)
-        and isSameTree(p.right, q.right)
+        p.val == q.val and isSameTree(p.left, q.left) and isSameTree(p.right, q.right)
     )
 
 
@@ -123,7 +121,7 @@ print("simple tests passed")
 
 时间 $O(\min(n_p,n_q))$，一旦出现分叉就可以停；额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 两棵都空，没有节点，判为相同。恰好一棵空，结构已经不同。结构相同但某个节点值不同，也要判否。镜像树（一边挂左、一边挂右）看起来值一样，结构不同，应判否。
 

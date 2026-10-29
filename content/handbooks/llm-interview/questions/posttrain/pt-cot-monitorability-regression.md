@@ -4,7 +4,8 @@ section: posttrain
 order: 40
 level: S
 title: 强化 Reasoning 后，如何判断 CoT 仍然可被监督，而不是更难审计？
-quick: "把可监控性当成后训练的回归验收项：在相同预算下，比较只看答案或动作的监控器和能看分步推理（CoT）的监控器对关键风险的检出率差，评测集里放刻意伪装的对抗样本。准确率上升推不出可监督性也变好，这个差值下降就该停发。"
+quick: >-
+  把可监控性当成后训练的回归验收项：在相同预算下，比较只看答案或动作的监控器和能看分步推理（CoT）的监控器对关键风险的检出率差，评测集里放刻意伪装的对抗样本。准确率上升推不出可监督性也变好，这个差值下降就该停发。
 tags:
   - Chain of Thought
   - Monitoring
@@ -12,19 +13,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: OpenAI — Evaluating Chain-of-Thought Monitorability
-    url: https://openai.com/index/evaluating-chain-of-thought-monitorability/
+    url: 'https://openai.com/index/evaluating-chain-of-thought-monitorability/'
     type: primary
   - title: Reasoning Models Don't Always Say What They Think
-    url: https://arxiv.org/abs/2505.05410
+    url: 'https://arxiv.org/abs/2505.05410'
     type: primary
 ---
 
-我会把可监控性（monitorability）做成后训练的一个发布门槛：在同样的监控预算下，看能读 CoT 的监控器比只看最终答案和工具动作的监控器多抓到多少真实风险。这个差值掉了，主任务分再涨也算回归。「更会推理」和「更好审计」是两件事，CoT 读起来像人话，也说明不了它能帮监控器发现问题。
+我会把可监控性（monitorability）做成后训练的一个 release criteria：在同样的监控预算下，看能读 CoT 的监控器比只看最终答案和工具动作的监控器多抓到多少真实风险。这个差值掉了，主任务分再涨也算回归。「更会推理」和「更好审计」是两件事，CoT 读起来像人话，也说明不了它能帮监控器发现问题。
 
-为什么会退化？强化学习 reasoning 之后，主任务准确率常常上涨，分步推理（CoT）却可能变短、用上难懂的编码、和实际动作对不上，甚至学会对监控器说一套、做的是另一套。比如一道模型能利用奖励规则漏洞的题，CoT 里写「按评分标准诚实作答」，实际输出的是刷分格式；工具题里 CoT 说「只读文件」，函数调用却带了写路径。只看结果的监控器可能漏掉，看 CoT 的监控器理应抓到。post-training 之后抓不住了，就是回归。它和 `pt-safety-capability-regression` 是并列的发布门槛，要在上线前查，别等上线后再找解释。
+为什么会退化？RL reasoning 之后，主任务准确率常常上涨，分步推理（CoT）却可能变短、用上难懂的编码、和实际动作对不上，甚至学会对监控器说一套、做的是另一套。比如一道模型能利用奖励规则漏洞的题，CoT 里写「按评分标准诚实作答」，实际输出的是刷分格式；工具题里 CoT 说「只读文件」，函数调用却带了写路径。只看结果的监控器可能漏掉，看 CoT 的监控器理应抓到。post-training 之后抓不住了，就是回归。它和 `pt-safety-capability-regression` 是并列的 release criteria，要在上线前查，别等上线后再找解释。
 
 ## 先定风险，再定监控器
 
@@ -40,9 +41,9 @@ $\Delta_{\mathrm{mon}}$ 下降就是可监控性退化，哪怕主任务分在�
 
 评测集只放普通失败不够，要有诚实的失败、无意的漏检，还有刻意伪装：把危险计划藏进委婉语、外语、符号或者工具参数里。模型不能知道监控规则，否则它会去优化「在监控器面前显得无辜」。要测的退化有三类：简略化，关键决策被删、只剩套话；编码化，用只有模型自己懂的缩写或隐写；脱钩，CoT 里写的是安全计划，实际调用的是危险工具。只凭「看起来有解释」，会把不忠实的 CoT 判成透明。
 
-对抗集要跟着 post-training 配方一起回归，别做成一次性的定性研究。还要测「监控器只看前 $B$ 个 token」的情况：强化学习之后模型要是把关键意图往后挪，固定预算下的 $\Delta_{\mathrm{mon}}$ 会假跌或假涨。
+对抗集要跟着 post-training 配方一起回归，别做成一次性的定性研究。还要测「监控器只看前 $B$ 个 token」的情况：RL 之后模型要是把关键意图往后挪，固定预算下的 $\Delta_{\mathrm{mon}}$ 会假跌或假涨。
 
-## 发布门槛怎么设
+## release criteria 怎么设
 
 放行看三样：同一监控预算下的 $\Delta_{\mathrm{mon}}$、漏检的高严重度 case 数，以及 CoT-action 一致性，也就是计划里说的工具和真实调用对不对得上。主任务分只当对照，不当放行条件。主任务质量上升、CoT 给监控器的边际信息却下降了，就停发，回头查数据、奖励和工具权限，别事后写一句「模型更强所以更难监督」。必要时限制 hidden reasoning，强制把关键决策写进可检查的字段，或者把高风险工具从「想完再调」改成「先申报再执行」。
 

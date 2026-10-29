@@ -4,27 +4,41 @@ section: openai
 order: 13
 level: A
 title: OpenAI：MoE 辅助损失和负载均衡，路由塌缩怎么发现
-quick: "我会用 Switch 的辅助损失约束路由集中，再逐层看专家占用、路由熵和 drop 率。语言 loss 还在降时也可能只剩一个专家在学习，所以要把真实负载和匹配 FLOPs 的 dense 基线一起检查。"
+quick: >-
+  我会用 Switch 的辅助损失约束路由集中，再逐层看专家占用、路由熵和 drop 率。语言 loss
+  还在降时也可能只剩一个专家在学习，所以要把真实负载和匹配 FLOPs 的 dense 基线一起检查。
 tags:
   - OpenAI
   - MoE
   - Load Balancing
   - Routing
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Switch Transformers — Scaling to Trillion Parameter Models with Simple and Efficient Sparsity
-    url: https://arxiv.org/abs/2101.03961
+  - title: >-
+      Switch Transformers — Scaling to Trillion Parameter Models with Simple and
+      Efficient Sparsity
+    url: 'https://arxiv.org/abs/2101.03961'
     type: primary
   - title: ST-MoE — Designing Stable and Transferable Sparse Expert Models
-    url: https://arxiv.org/abs/2202.08906
+    url: 'https://arxiv.org/abs/2202.08906'
     type: primary
   - title: OpenAI Research Engineer Interview Guide
-    url: https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
+    url: >-
+      https://www.tryexponent.com/guides/openai-research-engineer-interview-guide
     type: secondary
 ---
+
+## 可以这样回答
+
+MoE 负载均衡要防止路由长期集中到少数专家，再用真实占用检查辅助损失是否有效。比如一个专家越来越强，路由把更多 token 交给它，其他专家收不到梯度，即使训练 loss 继续下降，有效容量也可能只像一个 dense 小模型。这里按 Switch、GShard、ST-MoE 的公开训练方法讲；GPT-4 是否 MoE 没有官方确认，不能据此作推断。
+
+均匀时 $f_i=P_i=1/N$，$L_{\mathrm{aux}}=\alpha$。由柯西不等式，$\sum f P$ 在均匀处最小。$\alpha$ 太小，路由器抄近路把一切送给当前最好的专家；太大，为了均衡牺牲语言质量。capacity factor 再卡死每个专家这一批能收多少 token，溢出的被 drop 或漏到 backup。
+
+## 技术备查
 
 MoE 负载均衡要防止路由长期集中到少数专家，再用真实占用检查辅助损失是否有效。比如一个专家越来越强，路由把更多 token 交给它，其他专家收不到梯度，即使训练 loss 继续下降，有效容量也可能只像一个 dense 小模型。这里按 Switch、GShard、ST-MoE 的公开训练方法讲；GPT-4 是否 MoE 没有官方确认，不能据此作推断。
 
@@ -51,7 +65,7 @@ ST-MoE 还加了 router z-loss，压 logits 的绝对值，减少 fp16 下的不
 
 塌缩：$\max_i f_i\to 1$，路由熵 $-\sum P_i\log P_i\to 0$。表现是训练 loss 还在降（那个赢家专家在学），但有效参数量和 dense 小模型差不多，后面加专家不涨点。all-to-all 上有的 rank 空转、有的打满。
 
-我会逐层画专家占用直方图，塌缩常从局部开始，全局平均会遮住它。把 $L_{\mathrm{aux}}$ 和 $\mathrm{std}(f)$ 并排看：aux 小而占用差异大，可能损失与负载口径不同，或 dropless 实现没有把 drop 算进 $f$。
+我会逐层画专家占用直方图，塌缩常从局部开始，全局平均会遮住它。把 $L_{\mathrm{aux}}$ 和 $\mathrm{std}(f)$ 并排看：aux 小而占用差异大，可能损失与负载定义不同，或 dropless 实现没有把 drop 算进 $f$。
 
 再看 dropped token 比例，capacity 太紧时看似均匀可能只是丢掉了溢出 token。验证集还要比较 FLOP 匹配的 dense 基线；稀疏模型没赢，先查路由是否真的用了这些参数。
 

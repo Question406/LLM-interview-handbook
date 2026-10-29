@@ -1,0 +1,39 @@
+{
+  "collectedAt": "2026-10-26",
+  "method": "Chrome CUA: initial native UI, then connected Chrome extension tab 1006832477; original thread main posts inspected",
+  "notes": "No login, purchase, reply, or access-control bypass performed. Existing session showed the relevant point-restricted sections as already readable. Forum claims remain candidate reports, not Apple-confirmed interview policy.",
+  "threads": [
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1145559-1-1.html",
+      "title": "果家foundation model电面面经，求米~~~",
+      "publishedAtVisible": "2025-09-13 22:37:42",
+      "timeZone": "not stated",
+      "candidateContext": "PhD experienced hire, candidate explicitly names foundation model team",
+      "visibleScope": "Main post, including section labeled 150 points already readable; follow-up replies visible",
+      "confirmedTopics": ["RAG project deep dive", "reducing hallucination", "evaluation", "algorithm similar to LC732 with fractional timestamps; no complete interface"],
+      "draftIds": ["p3a-apple-afm-rag-deepdive"],
+      "codingTopicDelegated": true
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1141557-1-1.html",
+      "title": "Apple AIML MLE面经",
+      "publishedAtVisible": "2025-08-14 19:07:34",
+      "timeZone": "not stated",
+      "candidateContext": "Apple China AIML MLE, experienced hire; not confirmed as US AFM Data Team",
+      "visibleScope": "Main post on first page; some first-page replies inspected, second page not used",
+      "confirmedTopics": ["why this data mixture and alternatives considered/tested", "Qwen comparison and architecture", "project motivation/design", "attention mechanisms and MLA", "bracket matching, two unspecified DP tasks, rejection sampling"],
+      "draftIds": ["p3a-apple-aiml-mixture-defense"]
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1145563-1-1.html",
+      "title": "水果aiml下的ML纯研究团队昂塞",
+      "publishedAtVisible": "2025-09-13 22:50:34",
+      "timeZone": "not stated",
+      "candidateContext": "AIML pure research team, experienced hire; not explicitly AFM Data Team",
+      "visibleScope": "Main post including section labeled 200 points already readable, visible follow-up confirms experienced hire",
+      "confirmedTopics": ["handwrite beam search", "handwrite attention", "leadership conversation on recent research, reasoning progress and why reasoning is needed", "decoding acceleration, window attention, paged attention, quantization", "research talk and conflict/mistake behavioral questions"],
+      "draftIds": ["p3a-apple-research-why-reasoning"],
+      "codingTopicsDelegated": true
+    }
+  ]
+}

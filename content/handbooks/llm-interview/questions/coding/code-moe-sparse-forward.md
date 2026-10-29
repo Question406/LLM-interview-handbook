@@ -5,7 +5,9 @@ order: 19
 level: S
 title: 手写 Mixtral 风格稀疏 MoE 层：logits → Top-$k$ → 截断 softmax → permute → 专家 → combine
 quick: >-
-  `logits = x @ W_g`，直接对 logits 做 Top-$k$，再 `gates = softmax(val)`，然后 permute 进各专家 MLP，`index_add` 加权合回。$k=2$、$N=8$ 时就是 Mixtral 替换 FFN 的那一层。先全量 softmax 再取 Top-$k$ 当权重是错的，行和会小于 1。
+  `logits = x @ W_g`，直接对 logits 做 Top-$k$，再 `gates = softmax(val)`，然后 permute
+  进各专家 MLP，`index_add` 加权合回。$k=2$、$N=8$ 时就是 Mixtral 替换 FFN 的那一层。先全量 softmax 再取
+  Top-$k$ 当权重是错的，行和会小于 1。
 tags:
   - MoE
   - Mixtral
@@ -14,10 +16,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Mixtral of Experts
-    url: https://arxiv.org/abs/2401.04088
+    url: 'https://arxiv.org/abs/2401.04088'
     type: primary
 ---
 
@@ -43,7 +45,7 @@ x=[[1,2],[-1,3]]，所有专家权重都设置为2×2单位矩阵
 
 ## 解题思路与参考答案
 
-Mixtral 风格的稀疏 MoE 层是这样一条链：`x @ W_g` 得到 logits，对 logits 取 Top-$k$，只在这 $k$ 个值上做 softmax 当门控，然后把 token permute 到各自的专家，算完按门控加权合回。这题就是把 `arch-moe-gating-softmax-sigmoid` 和 `code-moe-permute-combine` 收成一层能跑的前向，白板上要能从 $x$ 一路写到 $y$，中间不跳形状。专家内部用一个线性层代替完整的 SwiGLU 就行，口头补一句「生产里是 `silu(xW1)*xW2` 再 down」，见 `code-swiglu`。
+Mixtral 风格的稀疏 MoE 层是这样一条链：`x @ W_g` 得到 logits，对 logits 取 Top-$k$，只在这 $k$ 个值上做 softmax 当 gating，然后把 token permute 到各自的专家，算完按 gating 加权合回。这题就是把 `arch-moe-gating-softmax-sigmoid` 和 `code-moe-permute-combine` 收成一层能跑的前向，白板上要能从 $x$ 一路写到 $y$，中间不跳形状。专家内部用一个线性层代替完整的 SwiGLU 就行，口头补一句「生产里是 `silu(xW1)*xW2` 再 down」，见 `code-swiglu`。
 
 $$
 z=xW_g,\quad
@@ -59,13 +61,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class SparseMoE(nn.Module):
     def __init__(self, d, n_experts, k=2):
         super().__init__()
         self.k = k
         self.n_experts = n_experts
         self.W_g = nn.Linear(d, n_experts, bias=False)
-        self.experts = nn.ModuleList([nn.Linear(d, d, bias=False) for _ in range(n_experts)])
+        self.experts = nn.ModuleList(
+            [nn.Linear(d, d, bias=False) for _ in range(n_experts)]
+        )
 
     def forward(self, x):
         # x: [T, d]  ->  [T, d]
@@ -74,7 +79,9 @@ class SparseMoE(nn.Module):
         gates = F.softmax(val, dim=-1)
 
         T = x.shape[0]
-        tok = torch.arange(T, device=x.device).unsqueeze(1).expand(T, self.k).reshape(-1)
+        tok = (
+            torch.arange(T, device=x.device).unsqueeze(1).expand(T, self.k).reshape(-1)
+        )
         eid = idx.reshape(-1)
         hidden = x[tok]
         g = gates.reshape(-1)
@@ -89,7 +96,7 @@ class SparseMoE(nn.Module):
             n_i = int(counts[i].item())
             if n_i == 0:
                 continue
-            out_s[offset:offset + n_i] = expert(hidden_s[offset:offset + n_i])
+            out_s[offset : offset + n_i] = expert(hidden_s[offset : offset + n_i])
             offset += n_i
 
         y = x.new_zeros(x.shape)
@@ -101,18 +108,18 @@ class SparseMoE(nn.Module):
 
 ## 换成 DeepSeek 只改三行
 
-V3 的路径是 `scores = sigmoid(x @ E.T)`，`idx = topk(scores + bias)`，`gates = normalize(scores.gather(..., idx))`。bias 只用来选专家，别加进 `gates`。有 shared expert 的话再 `y = y + shared(x)`。能顺手改出这三行，说明门控和 permute 已经拆干净了。
+V3 的路径是 `scores = sigmoid(x @ E.T)`，`idx = topk(scores + bias)`，`gates = normalize(scores.gather(..., idx))`。bias 只用来选专家，别加进 `gates`。有 shared expert 的话再 `y = y + shared(x)`。能顺手改出这三行，说明 gating 和 permute 已经拆干净了。
 
 ## 简单测试怎么写
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-把所有专家设为单位矩阵，则不论 router 选择谁，加权归一化后的输出都应等于输入；再用逐 token、逐专家的朴素循环对照非相同专家，覆盖分组和合并。
+把所有专家设为单位矩阵，则不论 router 选择谁，加权 normalization 后的输出都应等于输入；再用逐 token、逐专家的朴素循环对照非相同专家，覆盖分组和合并。
 
 ```python
 torch.manual_seed(7)
 model = SparseMoE(2, n_experts=3, k=2)
-x = torch.tensor([[1., 2.], [-1., 3.]])
+x = torch.tensor([[1.0, 2.0], [-1.0, 3.0]])
 with torch.no_grad():
     for expert in model.experts:
         expert.weight.copy_(torch.eye(2))
@@ -122,8 +129,12 @@ with torch.no_grad():
         expert.weight.mul_(i + 1)
 values, indices = model.W_g(x).topk(2, dim=-1)
 gates = values.softmax(-1)
-expected = torch.stack([sum(gates[t, j] * model.experts[int(indices[t, j])](x[t])
-                            for j in range(2)) for t in range(len(x))])
+expected = torch.stack(
+    [
+        sum(gates[t, j] * model.experts[int(indices[t, j])](x[t]) for j in range(2))
+        for t in range(len(x))
+    ]
+)
 torch.testing.assert_close(model(x), expected)
 print("simple tests passed")
 ```

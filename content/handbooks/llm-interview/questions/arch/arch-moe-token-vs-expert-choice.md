@@ -4,7 +4,10 @@ section: arch
 order: 23
 level: A
 title: Token-choice 和 Expert-choice 路由怎么实现？各自保证什么、牺牲什么？
-quick: "Token-choice 是每个 token 沿专家维取 Top-$k$，保证每个 token 都有 $k$ 个专家，负载却可能不均；Expert-choice 是每个专家沿 token 维取 Top-$C$，负载固定，但冷门 token 可能没人选。生产 LLM 多用 token-choice，再靠均衡和 capacity 管热点。"
+quick: >-
+  Token-choice 是每个 token 沿专家维取 Top-$k$，保证每个 token 都有 $k$
+  个专家，负载却可能不均；Expert-choice 是每个专家沿 token 维取 Top-$C$，负载固定，但冷门 token 可能没人选。生产 LLM
+  多用 token-choice，再靠均衡和 capacity 管热点。
 tags:
   - MoE
   - Router
@@ -12,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Mixture-of-Experts with Expert Choice Routing
-    url: https://arxiv.org/abs/2202.09368
+    url: 'https://arxiv.org/abs/2202.09368'
     type: primary
   - title: Switch Transformers
-    url: https://arxiv.org/abs/2101.03961
+    url: 'https://arxiv.org/abs/2101.03961'
     type: primary
 ---
 
@@ -54,9 +57,9 @@ $C$ 的取法和 token-choice 的 capacity 同源，$C=\mathrm{CF}\cdot kT/N$。
 
 ## 怎么选
 
-要每个 token 的表达力都均匀，比如生成、对齐、强化学习（RL）都怕个别 token 在这一层空转，就用 token-choice，再拿均衡和 capacity 管热点。要系统 shape 固定、杜绝热点卡，又能接受长尾 token 分到的专家少，就用 expert-choice。先 expert-choice、再给 $k_{\mathrm{eff}}=0$ 的 token 补一次路由，是一种工程折中，论文里并不默认这么做。
+要每个 token 的表达力都均匀，比如生成、对齐、RL 都怕个别 token 在这一层空转，就用 token-choice，再拿均衡和 capacity 管热点。要系统 shape 固定、杜绝热点卡，又能接受长尾 token 分到的专家少，就用 expert-choice。先 expert-choice、再给 $k_{\mathrm{eff}}=0$ 的 token 补一次路由，是一种工程折中，论文里并不默认这么做。
 
-开源的生产 LLM（Mixtral、DeepSeek-V3）走 token-choice，因为解码质量对「这个 token 有没有专家」比对「这个专家满不满」更敏感。Expert-choice 更常出现在编码器、检索、训练吞吐优先的设定里。
+开源的生产 LLM（Mixtral、DeepSeek-V3）走 token-choice，因为 decoding 质量对「这个 token 有没有专家」比对「这个专家满不满」更敏感。Expert-choice 更常出现在编码器、检索、训练 throughput 优先的设定里。
 
 ## 追问
 
@@ -67,7 +70,7 @@ Token-choice 是 `S.topk(k, dim=-1)`，Expert-choice 是 `S.topk(C, dim=0)`。�
 负载已经锁住了，不用再惩罚 $f_i$。仍可以加 z-loss 压 logits，见 `arch-moe-z-loss`。
 
 **和 shared expert 怎么配合？**
-Shared expert 给 $k_{\mathrm{eff}}=0$ 的 token 兜底，expert-choice 更依赖这一套，见 `arch-shared-expert`。
+Shared expert 给 $k_{\mathrm{eff}}=0$ 的 token fallback，expert-choice 更依赖这一套，见 `arch-shared-expert`。
 
 **RL 为什么更怕 expert-choice？**
 策略一变，同一位置的 token 可能突然没人要，$\log\pi$ 的跳变比「换了一个专家」更大，见 `byte-moe-rollout-routing-gspo`。

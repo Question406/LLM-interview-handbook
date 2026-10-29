@@ -28,7 +28,7 @@ $$
 \hat A_t^{\mathrm{MC}}=G_t-\hat V(s_t).
 $$
 
-$G_t$ 来自真实轨迹，是 $Q^\pi$ 的无偏估计；$\hat V(s_t)$ 只依赖 state。由 `fund-pg-baseline`，任何 $b(s)$ 都不改变 $\mathbb{E}[\nabla\log\pi\cdot(G-b)]$。所以 $\hat V$ 是常数、滞后，甚至是乱初始化的，MC 优势照样无偏，估错的代价只是方差减得少，见 `fund-optimal-baseline`。
+$G_t$ 来自真实轨迹，是 $Q^\pi$ 的 unbiased estimate；$\hat V(s_t)$ 只依赖 state。由 `fund-pg-baseline`，任何 $b(s)$ 都不改变 $\mathbb{E}[\nabla\log\pi\cdot(G-b)]$。所以 $\hat V$ 是常数、滞后，甚至是乱初始化的，MC 优势照样无偏，估错的代价只是方差减得少，见 `fund-optimal-baseline`。
 
 举个例子，critic 刚初始化，对所有状态都输出 0，这时 $G_t-\hat V(s_t)$ 就退化成纯 MC 回报，方差大但期望没错；同一个 critic 放进 $\lambda=0.5$ 的 GAE，就等于宣称「从下一步起的期望回报是 0」，优势直接被带偏。
 
@@ -39,7 +39,7 @@ $$
 \hat A_t^{\mathrm{GAE}}=\sum_{l\ge 0}(\gamma\lambda)^l\delta_{t+l}.
 $$
 
-$\lambda=1$ 且不截断时，残差链在代数上回到 $G_t-V(s_t)$，中间各项的 $V$ 互相抵消。$\lambda\lt 1$，或者 $n$-step 提前用 $\hat V(s_{t+n})$ 截断，等于声称「从那儿起的期望回报就是 $\hat V$」，价值估计不准，优势估计就有偏。放在一起比较：
+$\lambda=1$ 且不截断时，残差链在代数上回到 $G_t-V(s_t)$，中间各项的 $V$ 互相抵消。$\lambda\lt 1$，或者 $n$-step 提前用 $\hat V(s_{t+n})$ 截断，等于声称「从那儿起的期望回报就是 $\hat V$」，价值估计不准，advantage estimation 就有偏。放在一起比较：
 
 | | 用了 $V$ 吗 | 无偏？ |
 | --- | --- | --- |
@@ -58,7 +58,7 @@ Q-Prop 一类方法把 critic 当控制变量，再补一项对 critic 可微的
 
 也别指望「先把 $V$ 训准，小 $\lambda$ 就近似无偏」。$V$ 准，偏差确实小，但近似无偏仍然是有偏；$V$ 一滞后（策略已经往前走了），偏差马上回来。
 
-LLM 的长思维链（CoT，即分步推理过程）很难拿到准的 $V$，所以很多人宁可用组均值这种粗 baseline，也不用小 $\lambda$ 的 GAE。组均值是 $b(s)$ 的经验版，属于「减」，不属于「替未来」；它的有限样本偏差是另一层问题，见 `fund-finite-sample-baseline`。
+LLM 的长 chain of thought（CoT，即分步推理过程）很难拿到准的 $V$，所以很多人宁可用组均值这种粗 baseline，也不用小 $\lambda$ 的 GAE。组均值是 $b(s)$ 的经验版，属于「减」，不属于「替未来」；它的有限样本偏差是另一层问题，见 `fund-finite-sample-baseline`。
 
 ## 追问
 

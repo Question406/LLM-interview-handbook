@@ -41,6 +41,10 @@
     { "id": "snorkel", "title": "Snorkel", "aliases": ["Snorkel"], "sections": [] },
     { "id": "mistral", "title": "Mistral AI", "aliases": ["Mistral AI", "Mistral"], "sections": [] },
     { "id": "cohere", "title": "Cohere", "aliases": ["Cohere"], "sections": [] },
-    { "id": "fireworks", "title": "Fireworks", "aliases": ["Fireworks"], "sections": [] }
+    { "id": "fireworks", "title": "Fireworks", "aliases": ["Fireworks"], "sections": [] },
+    { "id": "doordash", "title": "DoorDash", "aliases": ["DoorDash"], "sections": [] },
+    { "id": "capital-one", "title": "Capital One", "aliases": ["Capital One"], "sections": [] },
+    { "id": "humansand", "title": "Humans&", "aliases": ["humans&", "Humansand"], "sections": ["humansand"] },
+    { "id": "thinking-machines", "title": "Thinking Machines Lab", "aliases": ["Thinking Machines Lab", "TML"], "sections": ["thinking-machines"] }
   ]
 }

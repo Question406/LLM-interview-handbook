@@ -3,21 +3,23 @@ id: lc-50-powx-n
 section: math
 order: 5
 level: A
-title: LC 50 · Pow(x, n)
-quick: "用快速幂，按指数的二进制位来算，当前位为 1 就把结果乘上当前底数，每轮底数平方、指数右移。$n\\lt 0$ 时先取倒数再处理 $-n$；32 位整数的 $n=-2^{31}$ 不能直接取负，要先转成更宽的类型。"
+title: 'LC 50 · Pow(x, n)'
+quick: >-
+  用快速幂，按指数的二进制位来算，当前位为 1 就把结果乘上当前底数，每轮底数平方、指数右移。$n\lt 0$ 时先取倒数再处理 $-n$；32 位整数的
+  $n=-2^{31}$ 不能直接取负，要先转成更宽的类型。
 tags:
   - Math
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
-  - title: 50. Pow(x, n)
-    url: https://leetcode.cn/problems/powx-n/
+  - title: '50. Pow(x, n)'
+    url: 'https://leetcode.cn/problems/powx-n/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -98,7 +100,7 @@ print("simple tests passed")
 
 时间 $O(\log |n|)$，额外空间 $O(1)$。递归写法空间 $O(\log |n|)$。
 
-## 边界
+## Edge Cases
 
 - $n=0$ 时是空乘积，返回 $1$；即使 $x=0$，按题意通常也返回 $1$。
 - $x=0$ 且 $n\gt 0$ 时一直乘 $0$，答案是 $0$。
@@ -141,6 +143,7 @@ def mod_pow(a, n, mod):
         n >>= 1
     return ans
 
+
 def mat_mul(A, B):
     n = len(A)
     C = [[0] * n for _ in range(n)]
@@ -152,6 +155,7 @@ def mat_mul(A, B):
             for j in range(n):
                 C[i][j] += aik * B[k][j]
     return C
+
 
 def mat_pow(M, n):
     k = len(M)

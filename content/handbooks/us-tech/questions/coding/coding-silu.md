@@ -4,7 +4,10 @@ section: coding
 order: 24
 level: A
 title: 白板：SiLU / Swish 手写，数值上哪里会炸
-quick: "SiLU 是 $\\mathrm{SiLU}(x)=x\\cdot\\sigma(x)$，也就是 $\\beta=1$ 的 Swish。手写时要防止大负数使 $e^{-x}$ 溢出，可以只计算 `exp(-abs(x))` 后按符号分支，或用 `tanh` 形式；Llama 的 SwiGLU 在 gate 支路使用它。"
+quick: >-
+  SiLU 是 $\mathrm{SiLU}(x)=x\cdot\sigma(x)$，也就是 $\beta=1$ 的 Swish。手写时要防止大负数使
+  $e^{-x}$ 溢出，可以只计算 `exp(-abs(x))` 后按符号分支，或用 `tanh` 形式；Llama 的 SwiGLU 在 gate
+  支路使用它。
 tags:
   - 完整编程练习
   - Coding
@@ -14,16 +17,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.nn.functional.silu
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.silu.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.nn.functional.silu.html'
     type: primary
-  - title: Sigmoid-Weighted Linear Units for Neural Network Function Approximation in Reinforcement Learning
-    url: https://arxiv.org/abs/1702.03118
+  - title: >-
+      Sigmoid-Weighted Linear Units for Neural Network Function Approximation in
+      Reinforcement Learning
+    url: 'https://arxiv.org/abs/1702.03118'
     type: primary
   - title: Searching for Activation Functions (Swish)
-    url: https://arxiv.org/abs/1710.05941
+    url: 'https://arxiv.org/abs/1710.05941'
     type: primary
 ---
 
@@ -56,7 +61,7 @@ silu(-1000) ≈ 0
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -114,7 +119,7 @@ def silu_tanh(x):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -130,8 +135,8 @@ assert torch.isfinite(ours).all()
 assert torch.allclose(ours, reference, atol=1e-6)
 
 # 反向：梯度和 F.silu 一致，没有 NaN
-grad_ours, = torch.autograd.grad(ours.sum(), x)
-grad_reference, = torch.autograd.grad(reference.sum(), x)
+(grad_ours,) = torch.autograd.grad(ours.sum(), x)
+(grad_reference,) = torch.autograd.grad(reference.sum(), x)
 assert torch.isfinite(grad_ours).all()
 assert torch.allclose(grad_ours, grad_reference, atol=1e-6)
 
@@ -166,7 +171,7 @@ assert silu(torch.randn(2, 3, 4)).shape == (2, 3, 4)
 
 ## 题怎么来的
 
-Llama MLP 的门控用的是 SiLU，不是 ReLU 或 GELU。Meta 会让你手写；Apple 端侧会问 fp16 下大负值会怎样。SwiGLU 怎么接三个权重矩阵见 `coding-swiglu`。PyTorch 的 `F.silu` 就是这个函数，但白板上不能调用一下就完事，要能写出稳定的 $\sigma$。
+Llama MLP 的 gating 用的是 SiLU，不是 ReLU 或 GELU。Meta 会让你手写；Apple 端侧会问 fp16 下大负值会怎样。SwiGLU 怎么接三个权重矩阵见 `coding-swiglu`。PyTorch 的 `F.silu` 就是这个函数，但白板上不能调用一下就完事，要能写出稳定的 $\sigma$。
 
 ## 定义和稳定 sigmoid
 
@@ -194,7 +199,7 @@ $$
 
 GELU 是 $x\Phi(x)$（$\Phi$ 是标准正态分布的 CDF），形状和 SiLU 很接近，GPT-2 用的是 GELU。Llama 把 SiLU 放在 gate 支路上：`silu(x W_g) * (x W_u)`，而不是 `silu(x W)` 之后再接一个线性层。
 
-导数是 $\mathrm{SiLU}'(x)=\sigma(x)+x\sigma(x)(1-\sigma(x))$，手推反向时别漏掉第二项。面试如果问「为什么不用 ReLU」：门控需要光滑、负半轴梯度不为零的激活；ReLU 在负半轴梯度为零，会出现 dead ReLU，和 GLU 结构不搭。
+导数是 $\mathrm{SiLU}'(x)=\sigma(x)+x\sigma(x)(1-\sigma(x))$，手推反向时别漏掉第二项。面试如果问「为什么不用 ReLU」：gating 需要光滑、负半轴梯度不为零的激活；ReLU 在负半轴梯度为零，会出现 dead ReLU，和 GLU 结构不搭。
 
 ## 追问
 

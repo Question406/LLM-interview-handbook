@@ -5,7 +5,10 @@ order: 30
 level: A
 title: 手写 warmup + cosine 学习率：step 从几开始、衰减到 min_lr、WSD 变体
 quick: >-
-  把 lr 写成 step 的纯函数：warmup 段从 $\eta_{\max}/W$ 线性涨到 $\eta_{\max}$，之后按余弦降到 $\eta_{\min}$；WSD 则是 warmup 后一段长平台，最后一小段再衰减。用 `LambdaLR` 返回倍率或每步手动写 `param_group['lr']` 都行，要紧的是 step 计数口径一致、warmup 第一步 lr 不为 0、resume 时把 scheduler state 或全局 step 一起存。
+  把 lr 写成 step 的纯函数：warmup 段从 $\eta_{\max}/W$ 线性涨到 $\eta_{\max}$，之后按余弦降到
+  $\eta_{\min}$；WSD 则是 warmup 后一段长平台，最后一小段再衰减。用 `LambdaLR` 返回倍率或每步手动写
+  `param_group['lr']` 都行，要紧的是 step counting convention 一致、warmup 第一步 lr 不为
+  0、resume 时把 scheduler state 或全局 step 一起存。
 tags:
   - Learning Rate
   - Warmup
@@ -14,10 +17,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
-  - title: "SGDR: Stochastic Gradient Descent with Warm Restarts"
-    url: https://arxiv.org/abs/1608.03983
+  - title: 'SGDR: Stochastic Gradient Descent with Warm Restarts'
+    url: 'https://arxiv.org/abs/1608.03983'
     type: primary
 ---
 
@@ -65,6 +68,7 @@ $$
 import math
 import torch
 
+
 def cosine_lr(step, max_lr, min_lr, warmup, total):
     if step < warmup:
         return max_lr * (step + 1) / warmup
@@ -72,6 +76,7 @@ def cosine_lr(step, max_lr, min_lr, warmup, total):
         return min_lr
     p = (step - warmup) / max(1, total - warmup)
     return min_lr + 0.5 * (max_lr - min_lr) * (1 + math.cos(math.pi * p))
+
 
 def wsd_lr(step, max_lr, min_lr, warmup, total, decay_frac=0.1):
     decay_start = int(total * (1 - decay_frac))
@@ -84,10 +89,13 @@ def wsd_lr(step, max_lr, min_lr, warmup, total, decay_frac=0.1):
     p = (step - decay_start) / max(1, total - decay_start)
     return max_lr - (max_lr - min_lr) * p
 
+
 def make_scheduler(opt, max_lr, min_lr, warmup, total, fn=cosine_lr):
     # LambdaLR 返回的是倍率，param_group 的初始 lr 必须设成 max_lr
     return torch.optim.lr_scheduler.LambdaLR(
-        opt, lambda s: fn(s, 1.0, min_lr / max_lr, warmup, total))
+        opt, lambda s: fn(s, 1.0, min_lr / max_lr, warmup, total)
+    )
+
 
 def train(model, opt, sched, batches, ckpt_path=None):
     for x, y in batches:
@@ -97,21 +105,28 @@ def train(model, opt, sched, batches, ckpt_path=None):
         opt.step()
         sched.step()
     if ckpt_path:
-        torch.save({"model": model.state_dict(), "opt": opt.state_dict(),
-                    "sched": sched.state_dict()}, ckpt_path)
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "opt": opt.state_dict(),
+                "sched": sched.state_dict(),
+            },
+            ckpt_path,
+        )
+
 
 def set_lr_manually(opt, step, **kw):
     for g in opt.param_groups:
         g["lr"] = cosine_lr(step, **kw)
 ```
 
-## step 口径和 resume
+## step 定义和 resume
 
 `LambdaLR` 构造时就把 lr 设成 `base_lr * fn(0)`，之后每调一次 `sched.step()`，内部的 `last_epoch` 加一。所以顺序必须是 `opt.step()` 在前、`sched.step()` 在后，这样 `fn` 收到的 $s$ 正好是下一次 `opt.step()` 的 0 起下标。顺序写反，PyTorch 会给警告，第一步的 lr 也被跳过了。
 
 手动写 `param_group['lr']` 更直观，在 `opt.step()` 之前按全局 step 算一次赋进去就行。多个 param group 有不同 lr 的时候，比如 embedding 单独一组，`LambdaLR` 的倍率写法天然按组缩放，手动写就得自己记住每组的 base lr。
 
-resume 时 `LambdaLR` 的状态就是 `last_epoch`，存下 `sched.state_dict()`，加载后接着用。手动写法要把全局 step 存进 checkpoint。只存模型的话，lr 会从 warmup 重新开始，Adam 的一阶和二阶矩也没了，loss 常会出现尖峰。梯度累积时 $s$ 按 optimizer step 数，不按 micro-batch 数。加载完想确认对不对，打印 `opt.param_groups[0]['lr']` 和 `sched.last_epoch`，和按全局 step 用纯函数算出来的值对一下就行。
+resume 时 `LambdaLR` 的状态就是 `last_epoch`，存下 `sched.state_dict()`，加载后接着用。手动写法要把全局 step 存进 checkpoint。只存模型的话，lr 会从 warmup 重新开始，Adam 的一阶和二阶矩也没了，loss 常会出现尖峰。gradient accumulation 时 $s$ 按 optimizer step 数，不按 micro-batch 数。加载完想确认对不对，打印 `opt.param_groups[0]['lr']` 和 `sched.last_epoch`，和按全局 step 用纯函数算出来的值对一下就行。
 
 ## 简单测试怎么写
 
@@ -121,11 +136,12 @@ warmup=2 时第 0 步为最高学习率的一半，第 1 步到最高值；total
 
 ```python
 import math
+
 for schedule in (cosine_lr, wsd_lr):
-    assert math.isclose(schedule(0, 1., 0.1, 2, 10), 0.5)
-    assert math.isclose(schedule(1, 1., 0.1, 2, 10), 1.)
-    assert math.isclose(schedule(10, 1., 0.1, 2, 10), 0.1)
-    assert math.isclose(schedule(11, 1., 0.1, 2, 10), 0.1)
+    assert math.isclose(schedule(0, 1.0, 0.1, 2, 10), 0.5)
+    assert math.isclose(schedule(1, 1.0, 0.1, 2, 10), 1.0)
+    assert math.isclose(schedule(10, 1.0, 0.1, 2, 10), 0.1)
+    assert math.isclose(schedule(11, 1.0, 0.1, 2, 10), 0.1)
 print("simple tests passed")
 ```
 

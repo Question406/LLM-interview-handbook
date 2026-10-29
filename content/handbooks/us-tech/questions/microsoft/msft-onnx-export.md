@@ -25,7 +25,7 @@ sources:
 
 导出模型要先明确推理时会怎样调用，再定义动态轴，最后验证数值。比如 dummy 是 `[1, 128]`，没有声明 batch 和序列可变，线上 batch 8、长度 512 就可能 shape error，甚至广播错却不报错。
 
-ONNX Runtime / Windows ML 中常见的对齐问题，也来自训练前向与自回归推理用图不同。ORTModule 能运行训练，不代表训练图与推理 ORT session 是同一份文件。
+ONNX Runtime / Windows ML 中常见的对齐问题，也来自训练前向与 autoregressive 推理用图不同。ORTModule 能运行训练，不代表训练图与推理 ORT session 是同一份文件。
 
 ## 先确定形状和前向语义
 

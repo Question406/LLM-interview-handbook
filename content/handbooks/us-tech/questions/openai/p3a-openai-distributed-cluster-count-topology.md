@@ -3,8 +3,10 @@ id: p3a-openai-distributed-cluster-count-topology
 section: openai
 order: 606
 level: A
-title: "OpenAI：异步消息树：统计机器数与恢复拓扑"
-quick: "根节点用 request id 发起子树汇总，节点收齐孩子后再返回自己的计数和拓扑。按 request id、child id 去重并缓存结果，重复请求直接重发；失联子树标未知，不能当成 0。"
+title: OpenAI：异步消息树：统计机器数与恢复拓扑
+quick: >-
+  根节点用 request id 发起子树汇总，节点收齐孩子后再返回自己的计数和拓扑。按 request id、child id
+  去重并缓存结果，重复请求直接重发；失联子树标未知，不能当成 0。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · distributed-cluster-count-topology"
-    url: https://www.1point3acres.com/interview/problems/company/openai/distributed-cluster-count-topology
+  - title: 1Point3Acres · OpenAI · distributed-cluster-count-topology
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/distributed-cluster-count-topology
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 给定树形集群的父子关系，模拟异步请求/回复收集全局节点数和拓扑。消息可能重复投递，重复不能改变最终结果。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -53,7 +56,7 @@ cluster({"a": ["b", "c"], "b": ["d"]}, "a", duplicate=True)
 
 一组机器组成一棵树，每台机器只能给父节点和子节点发消息。实现 `receiveMessage`，让根节点最终知道整棵树有多少台机器，以及完整的拓扑结构。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 消息是异步的，可能重复投递，所以要做去重：
 
@@ -159,7 +162,9 @@ def cluster(children, root, duplicate=False):
             state[key]["received"].setdefault(src, payload)  # 同一个孩子只记一次
 
         node_state = state[key]
-        if node_state["reply"] is None and len(node_state["received"]) == len(tree[dst]):
+        if node_state["reply"] is None and len(node_state["received"]) == len(
+            tree[dst]
+        ):
             # 收齐所有孩子（叶子在收到请求时就满足）后汇总，再交给父节点
             count = 1
             topology = {dst: list(tree[dst])}
@@ -183,7 +188,7 @@ def cluster(children, root, duplicate=False):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -194,6 +199,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 tree = {"a": ["b", "c"], "b": ["d"]}
 count, topology = cluster(tree, "a")
@@ -207,10 +213,10 @@ assert cluster(tree, "a", True) == (count, topology)
 assert cluster({}, "a") == (1, {"a": []})
 
 # 不是树的输入
-expect_value_error(cluster, {"a": ["b"], "b": ["a"]}, "a")      # 环
-expect_value_error(cluster, {"a": ["b", "b"]}, "a")             # 重复边
-expect_value_error(cluster, {"a": ["c"], "b": ["c"]}, "a")      # 多个父亲
-expect_value_error(cluster, {"a": ["b"], "x": ["y"]}, "a")      # 不连通
+expect_value_error(cluster, {"a": ["b"], "b": ["a"]}, "a")  # 环
+expect_value_error(cluster, {"a": ["b", "b"]}, "a")  # 重复边
+expect_value_error(cluster, {"a": ["c"], "b": ["c"]}, "a")  # 多个父亲
+expect_value_error(cluster, {"a": ["b"], "x": ["y"]}, "a")  # 不连通
 ```
 
 ### 复杂度与追问

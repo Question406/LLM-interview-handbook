@@ -4,8 +4,7 @@ section: graph
 order: 6
 level: A
 title: LC 210 · 课程表 II
-quick: >-
-  和 207 一样建图，只是要给出一种修课顺序。用 Kahn 拓扑排序，入度为 $0$ 的课弹出的顺序就是答案；弹出不足 $n$ 门说明有环，返回空数组。
+quick: 和 207 一样建图，只是要给出一种修课顺序。用 Kahn 拓扑排序，入度为 $0$ 的课弹出的顺序就是答案；弹出不足 $n$ 门说明有环，返回空数组。
 tags:
   - Graph
   - Topo
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 210. 课程表 II
-    url: https://leetcode.cn/problems/course-schedule-ii/
+    url: 'https://leetcode.cn/problems/course-schedule-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -112,7 +111,7 @@ print("simple tests passed")
 
 时间 $O(V+E)$，空间 $O(V+E)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 且没有先修时返回 `[0]`。好几门课入度同时为 $0$ 时，拓扑序不唯一，弹出顺序取决于入队次序，所以测例别写死唯一序列，除非自己的实现顺序是确定的。有环时弹出个数 $\lt n$，返回 `[]`。只问能不能修完是 LC 207，单独一张卡 `lc-207-course-schedule`。
 
@@ -123,6 +122,7 @@ $n=1$ 且没有先修时返回 `[0]`。好几门课入度同时为 $0$ 时，拓
 
 ```python
 import heapq
+
 
 def findOrderLexicographic(n, prerequisites):
     g = [[] for _ in range(n)]
@@ -148,6 +148,7 @@ def findOrderLexicographic(n, prerequisites):
 
 ```python
 from collections import deque
+
 
 def canFinish(n, prerequisites):
     g = [[] for _ in range(n)]

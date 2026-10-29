@@ -4,7 +4,9 @@ section: agent
 order: 147
 level: A
 title: 小红书：Deep Research 多轮检索何时停止，阈值怎么定？
-quick: "停止分两层：步数、token 和费用预算是必须停的上限，重复 query 和连续空召回也算硬停；信息增益、证据覆盖和置信度用来判断能不能提前停，三者都满足才软停。阈值在留出的验证集上比较证据遗漏和无效检索的开销，再按任务难度分档，并记录每次的停止原因。"
+quick: >-
+  停止分两层：步数、token 和费用预算是必须停的上限，重复 query
+  和连续空召回也算硬停；信息增益、证据覆盖和置信度用来判断能不能提前停，三者都满足才软停。阈值在留出的验证集上比较证据遗漏和无效检索的开销，再按任务难度分档，并记录每次的停止原因。
 tags:
   - Xiaohongshu
   - Deep Research
@@ -12,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 小红书Ai agent算法一面 攒人品
-    url: https://www.nowcoder.com/feed/main/detail/6819d2a74f00489ea3e3913a5139346a
+    url: 'https://www.nowcoder.com/feed/main/detail/6819d2a74f00489ea3e3913a5139346a'
     type: candidate-first-hand
 ---
 
@@ -26,7 +28,7 @@ sources:
 - 届别 / 流程：一面
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“这个Deep Research是多轮检索，那你会进行到什么程度才停止？用什么判断？”**；**“这些判断的阈值是怎么设置的？”**
+- 原始措辞：**“这个 Deep Research 是多轮检索，那你会进行到什么程度才停止？用什么判断？”**；**“这些判断的阈值是怎么设置的？”**
 
 停止条件我会分两层：预算做硬停，信息增益和覆盖做软停。写死一个轮数，或者把「模型说够了」当唯一信号，都撑不住，Deep Research 的多轮检索会空转、重复 query、被噪声带跑题。简单事实一跳就够，争议话题要提高覆盖要求；简单题从路由层就不该进这条链路，见 `xiaohongshu-simple-complex-route`。
 

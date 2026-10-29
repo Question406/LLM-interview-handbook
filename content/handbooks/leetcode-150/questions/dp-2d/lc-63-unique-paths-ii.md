@@ -4,20 +4,22 @@ section: dp-2d
 order: 3
 level: A
 title: LC 63 · 不同路径 II
-quick: "LC 62 加障碍：障碍格的方案数为 $0$，其余格 $dp[i][j]$ 等于上方加左方，起点是障碍就直接返回 $0$。一维滚动时遇到障碍要把 `dp[j]` 置零，时间 $O(mn)$、空间 $O(n)$。"
+quick: >-
+  LC 62 加障碍：障碍格的方案数为 $0$，其余格 $dp[i][j]$ 等于上方加左方，起点是障碍就直接返回 $0$。一维滚动时遇到障碍要把
+  `dp[j]` 置零，时间 $O(mn)$、空间 $O(n)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 63. 不同路径 II
-    url: https://leetcode.cn/problems/unique-paths-ii/
+    url: 'https://leetcode.cn/problems/unique-paths-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 起点是障碍时 `dp[0]=0`，后面全是 $0$。终点是障碍时该格被置 $0$，答案 $0$。第一行或第一列中途有障碍时，障碍及之后整段为 $0$，因为只能沿着边走过去。完全没有障碍就退化成 LC 62，方案数是组合数 $C(m+n-2, m-1)$。
 

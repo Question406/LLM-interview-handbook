@@ -23,7 +23,7 @@ sources:
 
 ## 题目描述
 
-实现作用于注意力分数或输出 logits 的平滑幅度限制。与直接截断不同，本题指定一个连续的逐元素变换，使大正数和大负数逐渐接近正负 cap。
+实现作用于 attention 分数或输出 logits 的平滑幅度限制。与直接截断不同，本题指定一个连续的逐元素变换，使大正数和大负数逐渐接近正负 cap。
 
 ### 接口与语义
 
@@ -56,12 +56,15 @@ $x\ll c$ 时 $\tanh(x/c)\approx x/c$，输出约等于 $x$，小分数基本不�
 ```python
 import torch
 
+
 def softcap(x, cap):
     return cap * torch.tanh(x / cap)
+
 
 def attn_scores_capped(q, k, cap=50.0):
     scores = q @ k.transpose(-1, -2) / (q.size(-1) ** 0.5)
     return softcap(scores, cap)
+
 
 def logits_capped(logits, cap=30.0):
     return softcap(logits, cap)
@@ -76,8 +79,8 @@ def logits_capped(logits, cap=30.0):
 检查零点、正负对称和大输入的幅度上限。上限检查允许等号，因为浮点 tanh 在大输入时会舍入成 1。
 
 ```python
-x = torch.tensor([-1000., -1., 0., 1., 1000.])
-y = softcap(x, 3.)
+x = torch.tensor([-1000.0, -1.0, 0.0, 1.0, 1000.0])
+y = softcap(x, 3.0)
 assert torch.isfinite(y).all() and (y.abs() <= 3).all()
 torch.testing.assert_close(y, -y.flip(0))
 assert y[2].item() == 0
@@ -87,7 +90,7 @@ print("simple tests passed")
 ## 追问
 
 **最终 logits 为什么也要 cap？**
-词表很大时，个别 logit 可能异常增大，影响采样和交叉熵损失（CE）的数值稳定性。$c=30$ 是 Gemma-2 用在 logits 上的数，别背成 50。
+vocabulary 很大时，个别 logit 可能异常增大，影响 sampling 和 cross entropy loss（CE）的数值稳定性。$c=30$ 是 Gemma-2 用在 logits 上的数，别背成 50。
 
 **和 z-loss 有什么区别？**
 z-loss 是往 $\log\sum e^{z}$ 上加惩罚，改的是训练目标；softcap 改的是前向函数本身。

@@ -4,7 +4,10 @@ section: posttrain
 order: 41
 level: S
 title: 如何在 RL / 偏好训练里惩罚无效 thinking，并测量其边际收益？
-quick: "在奖励里给不提高解题质量的推理 token 加代价，比如 $r = r_{\\mathrm{correct}} - \\lambda\\cdot \\mathrm{len}_{\\mathrm{think}}$，或构造「同样正确、思考更短」的偏好对。边际收益用同一 checkpoint 的固定预算消融来测，估每多花 $k$ token 准确率涨多少，$\\lambda$ 选在拐点附近。"
+quick: >-
+  在奖励里给不提高解题质量的推理 token 加代价，比如 $r = r_{\mathrm{correct}} - \lambda\cdot
+  \mathrm{len}_{\mathrm{think}}$，或构造「同样正确、思考更短」的偏好对。边际收益用同一 checkpoint 的固定预算
+  ablation 来测，估每多花 $k$ token 准确率涨多少，$\lambda$ 选在拐点附近。
 tags:
   - Reasoning
   - RL
@@ -12,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Training Language Models to Reason Efficiently
-    url: https://arxiv.org/abs/2502.04463
+    url: 'https://arxiv.org/abs/2502.04463'
     type: primary
 ---
 
@@ -37,7 +40,7 @@ $$
 
 曲线很快变平，说明额外的 token 大多没带来解题收益。训练中要盯「长度在涨、验证集持平」这个信号。评估要用无长度偏置的裁判或可执行答案，免得「写得长」被当成「认真」。
 
-举个例子，数学强化学习（RL）加了轻度长度惩罚以后，简单题的平均 thinking 从 800 降到 200 token，准确率不变，难题仍保留很长的推理过程。这说明惩罚打中的是无效 token，必要的搜索没被伤到。它和 long-to-short 蒸馏互补：蒸馏是换一个模型，这里改的是同一个策略的目标。
+举个例子，数学 RL 加了轻度长度惩罚以后，简单题的平均 thinking 从 800 降到 200 token，准确率不变，难题仍保留很长的推理过程。这说明惩罚打中的是无效 token，必要的搜索没被伤到。它和 long-to-short distillation 互补：distillation 是换一个模型，这里改的是同一个策略的目标。
 
 ## 追问
 

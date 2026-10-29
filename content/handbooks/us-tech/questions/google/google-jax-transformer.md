@@ -4,29 +4,34 @@ section: google
 order: 20
 level: S
 title: Google：用 JAX 写一层 Transformer，shard、scan、remat 怎么摆
-quick: "我会先把 decoder block 写成可复用的循环体，再用 `lax.scan` 跨层执行、用 `remat` 在反向时重算激活；PartitionSpec 负责声明权重和激活在 mesh 上怎么切。这样分别控制编译图大小、激活内存和设备分片，下面的 CPU 练习只验证 scan / remat 的语义。"
+quick: >-
+  我会先把 decoder block 写成可复用的循环体，再用 `lax.scan` 跨层执行、用 `remat`
+  在反向时重算激活；PartitionSpec 负责声明权重和激活在 mesh 上怎么切。这样分别控制编译图大小、激活内存和设备分片，下面的 CPU
+  练习只验证 scan / remat 的语义。
 tags:
   - 完整编程练习
   - Google
   - JAX
   - Transformer
   - remat
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Distributed arrays and automatic parallelization (JAX)
-    url: https://jax.readthedocs.io/en/latest/notebooks/Distributed_arrays_and_automatic_parallelization.html
+    url: >-
+      https://jax.readthedocs.io/en/latest/notebooks/Distributed_arrays_and_automatic_parallelization.html
     type: primary
   - title: jax.lax.scan
-    url: https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html
+    url: 'https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html'
     type: primary
   - title: jax.checkpoint / remat
-    url: https://jax.readthedocs.io/en/latest/generated/jax.checkpoint.html
+    url: 'https://jax.readthedocs.io/en/latest/generated/jax.checkpoint.html'
     type: primary
   - title: PaLM — Scaling Language Modeling with Pathways
-    url: https://arxiv.org/abs/2204.02311
+    url: 'https://arxiv.org/abs/2204.02311'
     type: primary
 ---
 
@@ -34,9 +39,11 @@ sources:
 
 实现一个可由 JAX scan 执行和重计算的简化 Transformer 堆栈。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
 
-`block(h,w)` 返回 `(updated_h,None)`。h 为 `[B,T,D]`，w 含 q/k/v/o `[D,D]`、up `[D,F]`、down `[F,D]` 权重。每层包含单头因果缩放点积注意力和 SiLU MLP，两分支均为预 RMSNorm 加残差；RMSNorm 使用 eps=1e-6，即 `x/sqrt(mean(x²)+eps)`，无可学习缩放；无 dropout。注意力仅看当前位置及之前位置，分数除以 sqrt(D)，沿 key 轴用 `exp(score)/sum(exp(score))` 归一化。MLP 先投影到 F，应用 `SiLU(z)=z*sigmoid(z)`，再投影回 D。
+### 接口、输入与输出要求
+
+`block(h,w)` 返回 `(updated_h,None)`。h 为 `[B,T,D]`，w 含 q/k/v/o `[D,D]`、up `[D,F]`、down `[F,D]` 权重。每层包含单头因果缩放点积 attention 和 SiLU MLP，两分支均为预 RMSNorm 加残差；RMSNorm 使用 eps=1e-6，即 `x/sqrt(mean(x²)+eps)`，无可学习缩放；无 dropout。attention 仅看当前位置及之前位置，分数除以 sqrt(D)，沿 key 轴用 `exp(score)/sum(exp(score))` normalization。MLP 先投影到 F，应用 `SiLU(z)=z*sigmoid(z)`，再投影回 D。
 
 `stack(h,weights,remat=False)` 中权重各叶子的首维为层数 L，用 lax.scan 执行，返回 `[B,T,D]`。remat=True 对层体启用重计算，不改变前向值或梯度。`loop_stack(h,weights)` 用普通循环提供等价接口。stack 要能被 jit 编译。
 
@@ -54,11 +61,11 @@ remat=False 与 True 得到相同输出。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + JAX，只在 CPU 上验证 scan / remat 的语义；没有跨设备 sharding，也不能当作 TPU 分片的验收。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + JAX，只在 CPU 上验证 scan / remat 的语义；没有跨设备 sharding，也不能当作 TPU 分片的验收。
 
 ### 题面、接口与约束
 
-- `block(h, w) -> (h, None)`：一层 decoder block。单头因果注意力和 SiLU MLP，前面各有一个 RMSNorm（pre-norm，无可学习 scale），都带残差，没有 dropout。`h` 是 `[B, T, D]`，`w` 是这一层的参数字典：`q`、`k`、`v`、`o` 为 `[D, D]`，`up` 为 `[D, F]`，`down` 为 `[F, D]`。返回值的形式是为了直接当 `lax.scan` 的循环体。
+- `block(h, w) -> (h, None)`：一层 decoder block。单头因果 attention 和 SiLU MLP，前面各有一个 RMSNorm（pre-norm，无可学习 scale），都带残差，没有 dropout。`h` 是 `[B, T, D]`，`w` 是这一层的参数字典：`q`、`k`、`v`、`o` 为 `[D, D]`，`up` 为 `[D, F]`，`down` 为 `[F, D]`。返回值的形式是为了直接当 `lax.scan` 的循环体。
 - `stack(h, weights, remat=False)`：用 `jax.lax.scan` 跨层执行 `block`。`weights` 的每个叶子多一个前导层维 $L$，比如 `q` 是 `[L, D, D]`。`remat=True` 时循环体包一层 `jax.checkpoint`。
 - `loop_stack(h, weights)`：用 Python `for` 逐层调用 `block` 的对照实现。
 - 要求：`stack` 和 `loop_stack` 的前向一致；`remat` 开关不改变前向和梯度；`jax.jit` 下可运行；因果性成立。
@@ -75,7 +82,7 @@ stack(h, weights)              -> [1, 3, 4]，与 loop_stack 一致
 
 `lax.scan` 的 carry 是隐藏状态 `h`，xs 是按层堆好的参数；每一步取出一层的权重切片，喂给同一个循环体，所以循环体只编译一次，结果和 Python 逐层循环一样。
 
-`jax.checkpoint` 只改变反向传播时保存什么、重算什么，不改变函数本身，所以 `remat=True` 和 `False` 的梯度应该在数值误差内相同。因果性来自注意力里的下三角 `keep`：位置 $i$ 只看 $j\le i$，MLP 和 RMSNorm 都是逐位置的，所以改最后一个 token 不会影响前面的输出。
+`jax.checkpoint` 只改变 backpropagation 时保存什么、重算什么，不改变函数本身，所以 `remat=True` 和 `False` 的梯度应该在数值误差内相同。因果性来 self-attention 里的下三角 `keep`：位置 $i$ 只看 $j\le i$，MLP 和 RMSNorm 都是逐位置的，所以改最后一个 token 不会影响前面的输出。
 
 ### 完整参考实现（Python 3）
 
@@ -129,7 +136,7 @@ def loop_stack(h, weights):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -178,7 +185,7 @@ assert jnp.allclose(stack(h, wide), loop_stack(h, wide), atol=1e-5)
 
 ### 复杂度与追问
 
-设层数 $L$、batch $B$、长度 $T$、模型维 $D$、MLP 中间维 $F$。算术量是 $O(LB(TD^2+T^2D+TDF))$，每层的稠密注意力分数占 $O(BT^2)$。remat 降低反向时保留的激活，代价是多一次前向重算；实际的峰值内存和编译时间要另外测量。
+设层数 $L$、batch $B$、长度 $T$、模型维 $D$、MLP 中间维 $F$。算术量是 $O(LB(TD^2+T^2D+TDF))$，每层的稠密 attention 分数占 $O(BT^2)$。remat 降低反向时保留的激活，代价是多一次前向重算；实际的峰值内存和编译时间要另外测量。
 
 - 追问「为什么不能直接把 PyTorch `nn.Module` 翻成 `jit`」：JAX 的训练步要是一张静态 shape 的 SPMD 图，层循环、分片约束和 remat 策略都要在编译期确定，见下文三件套。
 
@@ -190,7 +197,7 @@ assert jnp.allclose(stack(h, wide), loop_stack(h, wide), atol=1e-5)
 
 激活 $h$ 的形状是 $[B, T, D]$，权重 $W_q$ 是 $[D, D]$。典型的分片方式是 $B$ 走 `data` 轴，$D$ 的输出通道走 `model` 轴。函数里仍然写 `h @ W`，GSPMD 会在需要的轴上插入 all-gather / reduce-scatter。
 
-中间激活如果完全交给编译器选布局，偶尔会多出一次隐式 reshard，MFU 莫名其妙掉下去。长 $T$ 的注意力输出要用 `with_sharding_constraint` 钉住布局。
+中间激活如果完全交给编译器选布局，偶尔会多出一次隐式 reshard，MFU 莫名其妙掉下去。长 $T$ 的 attention 输出要用 `with_sharding_constraint` 钉住布局。
 
 动态的 $T$、MoE 的变长 dispatch 会逼着重新编译，或者 pad 到编译期的上界。在 TPU 上这不是细节，而是实打实的耗时。MoE 的静态容量见 `google-moe-routing`。
 
@@ -204,9 +211,9 @@ assert jnp.allclose(stack(h, wide), loop_stack(h, wide), atol=1e-5)
 
 ## remat：用 FLOPs 换激活
 
-不 remat 时，每层都把反向要用的激活留在 HBM。长 $T$ 时这部分按 $B\cdot T\cdot L\cdot D$ 增长，常常比参数还大。`jax.checkpoint`（别名 `jax.remat`）只在层边界留一份输入，反向时把这一层的前向再算一遍。参考实现里 `stack(..., remat=True)` 就是 scan 加 remat 的组合。
+不 remat 时，每层都把反向要用的激活留在 HBM。长 $T$ 时这部分按 $B\cdot T\cdot L\cdot D$ 增长，常常比参数还大。`jax.checkpoint`（别名 `jax.remat`）只在 layer boundaries 留一份输入，反向时把这一层的前向再算一遍。参考实现里 `stack(..., remat=True)` 就是 scan 加 remat 的组合。
 
-实际中选择性策略比「每层全部重算」更常见：保存大 GEMM 的输出（MXU 上算得贵，重算不划算），重算 LayerNorm、dropout、softmax 统计量这类便宜的部分。JAX 里 `dots_with_no_batch_dims` 一类 policy 大致就是这个意思。注意和 Flash 式 kernel 的关系：注意力内部本来就不物化 $[T,T]$，这时再以不保存的注意力分数为 remat 目标就没有收益，见 `google-flash-attention`。
+实际中选择性策略比「每层全部重算」更常见：保存大 GEMM 的输出（MXU 上算得贵，重算不划算），重算 LayerNorm、dropout、softmax 统计量这类便宜的部分。JAX 里 `dots_with_no_batch_dims` 一类 policy 大致就是这个意思。注意和 Flash 式 kernel 的关系：attention 内部本来就不物化 $[T,T]$，这时再以不保存的 attention 分数为 remat 目标就没有收益，见 `google-flash-attention`。
 
 代价是反向多一段前向。如果已经 compute-bound、batch 也喂饱了，多出的 20–30% FLOPs 就是纯开销。如果被 HBM 卡住、microbatch 开不大，用省下的激活把 $B$ 或 $T$ 翻倍，实际耗时往往更好。面试要讲清这个拐点。
 

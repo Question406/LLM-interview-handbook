@@ -1,6 +1,8 @@
 # Interview Atlas
 
-一个内容驱动的面试资料库。当前 LLM handbook 的 231 道题、14 个模块都以“一题一个 Markdown 文件”的方式维护。
+一个内容驱动的面试资料库，包含 LLM、ML 基础、LeetCode、美国公司面经与 System Design，按“一题一个 Markdown 文件”维护。
+
+Apple 备考可直接选择 **Apple 面试题本**，或打开 `/?book=apple-interview`。[全题目录与复习摘要](content/handbooks/apple-interview/README.md) 汇总已有 Apple／Data Team 资料，并将 cumsum、矩阵与 mask 单独成章。
 
 ## 已有功能
 
@@ -33,11 +35,19 @@ npm install
 npm run dev
 ```
 
+Node 26 下如果启动停在 `content:build`，可用以下兼容选项避免 Prettier 同步模块初始化卡住；构建和测试也可使用同一环境变量：
+
+```bash
+NODE_OPTIONS=--no-experimental-require-module npm run dev
+```
+
 验证成品：
 
 ```bash
 npm test
 ```
+
+System Design 手册可从资料库切换，或打开 `/?book=system-design`。36张题卡按答题方法、分布式基础、通用设计、ML、LLM与公司来源组织，参考讨论默认折叠。学习顺序和来源边界见 [手册说明](content/handbooks/system-design/README.md)。
 
 ## 本地 Python 编程练习
 

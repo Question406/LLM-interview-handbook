@@ -22,7 +22,7 @@ sources:
 
 ## 题目描述
 
-为注意力分数生成 ALiBi 的按头线性位置偏置。位置使用序列中的绝对位置；本题只生成偏置，不自行添加因果或 padding mask。
+为 attention 分数生成 ALiBi 的按头线性位置偏置。位置使用序列中的绝对位置；本题只生成偏置，不自行添加因果或 padding mask。
 
 ### 接口与数值约定
 
@@ -65,6 +65,7 @@ causal 下 $q\ge k$，距离非负，越远越负。这个 bias 加在 $QK^\top/
 import math
 import torch
 
+
 def alibi_slopes(n_heads):
     n = 2 ** int(math.floor(math.log2(n_heads)))
     step = 2 ** (-8 / n)
@@ -73,6 +74,7 @@ def alibi_slopes(n_heads):
         extra = alibi_slopes(2 * n)[1::2][: n_heads - n]
         slopes = slopes + extra.tolist()
     return torch.tensor(slopes[:n_heads])
+
 
 def alibi_bias(q_pos, k_pos, slopes):
     # slopes: [H]；q_pos: [Tq], k_pos: [Tk] → [H, Tq, Tk]
@@ -90,7 +92,7 @@ Prefill 处理输入并建立缓存时，`q_pos = k_pos = arange(T)`。decode �
 
 ```python
 bias = alibi_bias(torch.tensor([2]), torch.tensor([0, 1, 2]), torch.tensor([0.5]))
-torch.testing.assert_close(bias, torch.tensor([[[-1., -0.5, 0.]]]))
+torch.testing.assert_close(bias, torch.tensor([[[-1.0, -0.5, 0.0]]]))
 slopes = alibi_slopes(3)
 assert slopes.shape == (3,) and torch.isfinite(slopes).all() and (slopes > 0).all()
 print("simple tests passed")
@@ -105,4 +107,4 @@ print("simple tests passed")
 一般二选一，叠在一起会把距离编码两遍。
 
 **head 0 的斜率最大吗？**
-是的，斜率大的头只看近处，注意力更尖；斜率小的头看得更远。
+是的，斜率大的头只看近处，attention 更尖；斜率小的头看得更远。

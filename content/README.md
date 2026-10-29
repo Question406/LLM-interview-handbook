@@ -28,12 +28,33 @@ public/content/
 
 `quick` 是卡片上始终可见的 30 秒回答；Markdown 正文是展开后显示的完整答案。每题的 ID 一经发布就不要改动，因为深链和复习进度都以它为键。
 
+题面来源用简短的肯定句说明，例如“来源：本手册原创练习”“参考某课程改编”“来源：一亩三分地候选人报告的二手摘要”。保留来源链接、改编范围与 `realInterview` 标记；题面不再反复添加“不是原题”“不代表公司确认”等否定式说明。算法限制、输入约束和测试范围照常写清。
+
+## 代码块 Formatting
+
+代码块在 `content:build` / `content:check` 中先格式化、再做 syntax highlighting；`npm run dev` 和 `npm run build` 已通过 `content:build` 使用同一流程。支持 Markdown fences 和历史 `legacy-html` 的 `<pre><code>`。构建只写生成内容，不改题目源文件。
+
+- Python 使用固定版本的 Ruff WASM：4 spaces、88 columns、保留引号风格，不做 lint fixes、import sorting 或执行代码。不需要安装额外 Python formatter。
+- JS/TS、JSON、YAML、HTML/CSS、GraphQL、Markdown 使用 Prettier；Shell 使用 Prettier Shell plugin。依赖版本在 package lock 中固定。
+- `text` / `plaintext`、输出示例、ASCII 图和不支持的语言保留原布局。无标签、具有明显 Python declarations/imports 的片段按 Python 处理；新代码请显式写语言。
+- 标为可执行语言的语法错误会阻止构建，并给出题目 ID 与语言。故意错误的 syntax 示例、伪代码和非程序输出请标为 `text`。
+- 只格式化 block contents，inline code、正文、公式、题目 ID 与代码字符串里的 HTML 不参与重写。
+
+需要整理源文件时执行：
+
+```bash
+npm run content:format
+npm run content:format:check
+```
+
+第一条写回题库源文件，第二条用于检查或 CI，存在未格式化代码时返回非零 exit status。`drafts/` 不在源文件批处理范围；真正渲染的代码仍会在 build 时格式化。
+
 ## 答案怎么写才容易理解
 
 把读者当成正在学这道题的人。先直接回答，再解释为什么，最后用例子或执行步骤把方法讲清楚。`quick` 也要能独立读懂，不能只是把正文里的关键词串起来。
 
 - 使用完整句子，写清谁做什么、为什么这么做、结果是什么。不要让读者自己补上因果关系。
-- 必要的英文术语和缩写可以保留，但第一次出现时说明中文含义。“采样”“裁剪”“幂等”这类中文术语，也需要结合当前问题解释。
+- 专业术语直接使用英文，中文用于解释作用、选择与具体例子。例如统一使用 negative log likelihood、cross entropy、importance sampling、policy gradient 和 calibration。相同英文全称不在括号里重复；有帮助的缩写可以保留。inference/reasoning、normalization/standardization 等按实际含义区分。
 - 公式前说明要算什么，公式后解释变量和结果。代码前说明思路，代码后解释关键边界。
 - 直接写具体机制，避免“钉死”“接地”“硬门”“主茎”等没有解释的行话。说明常见错误时，也要讲清错误原因。
 - 长段落按思路拆开。追问给出完整回答，不能只写“看某题”或一个算法名。
@@ -41,9 +62,21 @@ public/content/
 
 例如，“写要幂等，否则不重试”可以写成：“写操作超时后，先确认重复执行会不会重复扣款或创建两张订单。只有系统能识别同一请求、保证重复执行不会产生额外副作用时，才允许自动重试。”
 
+## 面试口述题的表达
+
+非编程的面试口述题，主回答先直接回应问题，再围绕一个具体例子解释选择、理由和怎样验证。第一轮不要同时罗列所有字段、过滤器、指标与训练方法。完整公式、样本schema和实验清单可以放在技术备查中，追问时再展开。主回答要能读出声，避免把设计文档的小标题改成一串术语来代替解释。
+
+项目题只写真实职责和结果，设计方案用“我会”；没有测量就不补收益数字。参考公开培训示范的表达方式时，保存出处，保留原始技术来源，不把示范里的履历改写成用户经历。当前示例见 `sources/afm-answer-style-2026-10-27/README.md`。
+
+非编程口述题可用二级标题 `## 技术备查` 标记补充内容。构建器将该标题之后的内容默认折叠，之前的口述回答保持可见；Markdown源文件仍不允许原始HTML。代码块中的同名标题不会触发折叠。
+
 ## 编程题的简单测试
 
 编程题正文必须从 `## 题目描述` 开始，先把任务写完整，再进入题解。题面包含任务目标、每个输入的含义与形状、接口、输出或原地修改效果、合法输入约束及至少一个具体输入输出示例。不要把算法思路、函数签名、测试代码或“见下文”当成题面。LeetCode 用中文重述题意并保留原题链接；面经没有披露的细节必须标为手册练习约定。
+
+题面需要独立回答六个问题：给定的现实对象是什么、每个输入字段代表什么、要实现哪个接口、返回哪些字段、哪些规则必须一致、具体例子的预期结果是什么。只列 `[N,D]` 不足以解释样本与特征；q、weight、reward、log probability 等输入必须区分含义。复杂训练题还要明确初始化、preprocessing 拟合范围、optimizer、update 次数、loss / reduction 和 evaluation protocol，不能只要求“标准 loss”或“输出指标”。
+
+使用 `### 接口与输入`、`### 输出与规则`、`### 输入输出示例` 等小节。示例要给实际输入和可核对的结果；返回复杂字典时至少有一个完整示例或逐字段的验证约定。随机结果给分布或不变量，不伪造唯一输出。多接口题要明确默认交付与扩展阅读，测试不能要求题面未定义的接口。题面、starter、参考实现与默认测试需要交叉检查。构建检查会拒绝缺少独立示例小节、只写“运行参考答案”的题面；含义是否清楚仍需要编辑复核。
 
 题面后用 `## 解题思路与参考答案` 与解答分开。练习页只读取这一段前置题面，构建器会拒绝缺失题面的编程题；概念题中仅用来说明机制的代码片段不自动变成编程练习。新编程题可以复制 `content/templates/coding-question.md`。
 
@@ -84,6 +117,14 @@ public/content/
 - 一个 reviewer 负责把草稿移入 `questions/`、排序（可选 `order`）和发布。这样作者之间不会写同一个文件，也不需要维护集中式 JSON 数组。
 - 新增一个全新的 handbook 时，创建 `content/handbooks/<slug>/_handbook.md` 和至少一个 `questions/<section>/` 文件即可。构建器会自动发现它，并写入资料库切换器。
 
+## 引用已有题目的汇编手册
+
+汇编手册可在 `_handbook.md` 声明 `questionRefs: question-refs.json`，清单元素为 `{ "book": "源手册目录", "question": "源题ID", "section": "本册章节", "order": 1 }`。源题必须在对应手册 `questions/` 中已发布；不允许自引用或重复题号，也不会递归读取源手册的引用清单。新题仍放本册 `questions/`，清单只负责引用和分类，不复制答案。
+
+构建后完整答案在汇编手册内展示，附原手册链接；已收录题之间在本册跳转，未收录的相关题回到源手册。编程运行器通过固定的 `question-refs.json` 读取原实现与测试。原手册链接、进度与草稿保持独立，汇编手册使用自己的进度与草稿。
+
+Apple 汇编入口为 `content/handbooks/apple-interview/`。执行 `npm run apple:sync` 更新收录清单和全部题目的 README 摘要，再执行 `npm run content:build`。收录规则包含整本 Data Team、全部 Apple 公司标签题及明确列出的 tensor 迁移题。
+
 ## 命令
 
 ```sh
@@ -94,3 +135,27 @@ npm test               # 生成、构建前端并跑内容回归测试
 ```
 
 已迁移的历史内容标注为 `format: legacy-html` 和 `provenance: legacy-handbook-v2`，用以保留旧公式 SVG 与原有排版。新增题目不能使用 raw HTML，以避免不安全内容进入页面。
+
+## 系统设计题与隐藏参考讨论
+
+System Design 手册位于 `content/handbooks/system-design/`。设计题保留独立的 `## 题目描述`，其后再写参考讨论；`collapseAnswer: true` 让题面保持可见，参考答案默认折叠，并隐藏题卡上的30秒答案摘要。该选项只用于有前置题面的Markdown题卡，不会增加编程运行入口。
+
+公司来源分为候选人原帖核对记录、站内二手题卡与通用练习。原帖未披露的规模、接口和架构必须标成手册约定；只有主题摘要时不声称拥有完整原题。新来源要保留URL、先前/本轮采集日期与实际可见范围，不根据题型汇总数量推断出现频率。
+
+## 全题回答思路
+
+手册可在 `_handbook.md` 声明 `answerGuides: answer-guides`。目录内每题一个 `<id>.md`，front matter 为 `id`、`kind`（coding/design/concept/project/guide）、`situation`、`task`、`approach`、`result`，正文是口述答案。构建器要求本手册每道题都有且仅有匹配稿，未知题号与缺字段会报错。
+
+完整回答顶部先渲染“回答思路”callout，再显示口述稿。非编程题的原始细节折叠保留；编程题原始题面、实现和测试继续显示，练习runner仍读取原题源码。引用其他手册的题使用本册的回答稿，不修改源题及其他题本的展示。
+
+Apple全题稿在 `handbooks/apple-interview/answer-guides/`，逐题内容以这里为准。新增题时也需要新增回答稿；执行内容构建后，可用 `node scripts/export-apple-answer-guides.mjs` 导出 `AFM-ANSWER-GUIDES.md` 阅读稿。设计题写验收条件，项目故事写真实证据，不能从示例填造个人经历或成绩。
+
+## Apple 题本的英文术语
+
+专业名词直接使用英文，中文用于解释含义、判断和原因，约定见 `handbooks/apple-interview/TERMINOLOGY.md`。例如使用 reward model、verifier、data mix、evaluation slices、ablation study、negative transfer。避免“门禁”“锚点”“托底”“主门”等不清楚的隐喻；按语境写 release gate、held-out evaluation set、regression tasks 或明确的中文动作。inference/reasoning、validation/verification 不机械合并。代码、公式、接口及测试字面值保持准确，不为了术语统一而修改。
+
+该表达偏好适用于所有题本的 question cards。质量检查使用 data quality checks，发布条件使用 release criteria；编程特殊情况使用 edge cases，文档分隔使用 document boundaries，访问权限使用 authorization rules，方法适用条件使用 applicability / limitations。先确认实际含义，再调整整句，不将所有“边界”统一翻成 boundary，也不将所有检查称为 gate。fallback 仅指失败后的替代路径，不能替代必须执行的 validation 或 authorization checks。
+
+## DrustZ Interview Book
+
+DrustZ 的完整资料整理在 `handbooks/drustz-interview-2026/`，与原有题本并列。源版本、文件覆盖清单、许可证及可重复执行的导入步骤见 `sources/drustz-interview-2026/README.md`；code / tests / data 的下载入口在该书阅读指南中。上游新增内容需显式更新 pinned revision 后重新导入，不在普通 build 时联网拉取。

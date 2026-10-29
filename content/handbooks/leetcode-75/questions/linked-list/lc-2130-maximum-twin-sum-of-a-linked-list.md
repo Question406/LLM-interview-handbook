@@ -4,8 +4,7 @@ section: linked-list
 order: 4
 level: A
 title: LC 2130 · 链表最大孪生和
-quick: >-
-  单链表不能倒着走，所以用快慢指针找到后半段起点，原地反转后半段，再和前半段并排走，逐对求和取最大。时间 $O(n)$，额外空间 $O(1)$。
+quick: 单链表不能倒着走，所以用快慢指针找到后半段起点，原地反转后半段，再和前半段并排走，逐对求和取最大。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Two Pointers
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2130. Maximum Twin Sum of a Linked List
-    url: https://leetcode.com/problems/maximum-twin-sum-of-a-linked-list/
+    url: 'https://leetcode.com/problems/maximum-twin-sum-of-a-linked-list/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -128,7 +127,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 $n=2$ 时 `slow` 停在第二个节点，反转后只有一对。
 

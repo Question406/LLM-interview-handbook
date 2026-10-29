@@ -3,8 +3,13 @@ id: mcp-elicitation-secrets
 section: mcp-security
 order: 4
 level: A
-title: MCP Elicitation 为什么不能用 form 收集 API key、密码或 payment credential？安全的 URL-mode UX / 校验流程该怎样设计？
-quick: "秘密不应该经过 MCP form 或模型上下文，form 里的字段会进 server、日志、trace，常常还会进上下文。需要认证或支付时，我会走 URL mode，把用户引导到可识别的受信任域名完成 OAuth / 支付，展示 server 身份和目标域，限制 redirect / URL allowlist，回来后只收最小授权结果。"
+title: >-
+  MCP Elicitation 为什么不能用 form 收集 API key、密码或 payment credential？安全的 URL-mode UX
+  / 校验流程该怎样设计？
+quick: >-
+  秘密不应该经过 MCP form 或模型上下文，form 里的字段会进 server、日志、trace，常常还会进上下文。需要认证或支付时，我会走 URL
+  mode，把用户引导到可识别的受信任域名完成 OAuth / 支付，展示 server 身份和目标域，限制 redirect / URL
+  allowlist，回来后只收最小授权结果。
 tags:
   - MCP
   - Elicitation
@@ -12,20 +17,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: MCP Elicitation
-    url: https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation
+    url: >-
+      https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation
     type: primary
 ---
 
 form 不能收 API key、密码或支付凭证，因为 form 里的字段会经过 MCP server、client 日志、trace，常常还会进模型上下文和下游工具，等于把秘密交给一条不可信的链路。规范把 URL mode 留给认证和支付：秘密只在浏览器的可信域里完成，MCP 只回收「完成 / 取消」和最小的授权结果。
 
-举个例子：一个 server 用 form 让用户「填一下 API key」。用户填了，key 就进了 server 的请求日志和 client 的 trace；模型为了「帮你填」，还可能回显、缓存，或者把 key 写进另一个 tool 的参数。秘密一旦进过输入提示（prompt），事后删掉 UI 字段也救不回日志和上下文窗口。
+举个例子：一个 server 用 form 让用户「填一下 API key」。用户填了，key 就进了 server 的请求日志和 client 的 trace；模型为了「帮你填」，还可能回显、缓存，或者把 key 写进另一个 tool 的参数。秘密一旦进过 prompt，事后删掉 UI 字段也救不回日志和上下文窗口。
 
 ## 怎么分流
 
-非秘密的偏好可以用 form，认证、授权、支付必须走 URL mode，把用户送到可识别的官方域。支付凭证还有合规边界，本来就不能进 Agent 宿主。实现上，Client 对 elicitation 的字段和类型规范（schema）做静态检查，按字段分类，secret / payment 类字段直接拒绝这个请求，强制改走 URL mode。
+非秘密的偏好可以用 form，认证、授权、支付必须走 URL mode，把用户送到可识别的官方域。支付凭证还有 compliance requirements，本来就不能进 Agent 宿主。实现上，Client 对 elicitation 的字段和类型规范（schema）做静态检查，按字段分类，secret / payment 类字段直接拒绝这个请求，强制改走 URL mode。
 
 URL mode 回来以后也有讲究。Client 不得把 URL 响应里的 fragment / code 原样喂给模型。Access token 也不进对话，只把「已连接某服务」这种状态给模型，真正的调用由 host 持有的凭证发出。
 

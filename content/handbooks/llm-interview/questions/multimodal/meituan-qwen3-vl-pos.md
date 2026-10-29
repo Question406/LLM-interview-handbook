@@ -4,22 +4,24 @@ section: multimodal
 order: 180
 level: A
 title: 美团 27 暑期：Qwen3-VL 的位置编码方案要怎么讲？
-quick: "文本继续用 1D RoPE；视觉 token 带二维网格坐标，视频再加时间，动态分辨率下坐标随 patch 网格重算，不能固定假设 $H\\times W$。Qwen3-VL 用 Interleaved M-RoPE，把时间、高、宽的频率交织后放进同一个注意力里算。"
+quick: >-
+  文本继续用 1D RoPE；视觉 token 带二维网格坐标，视频再加时间，动态分辨率下坐标随 patch 网格重算，不能固定假设 $H\times
+  W$。Qwen3-VL 用 Interleaved M-RoPE，把时间、高、宽的频率交织后放进同一个 attention 里算。
 tags:
   - Meituan
   - Qwen-VL
   - Positional Encoding
-  - "2027"
+  - '2027'
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 美团27暑期大模型算法岗一二面面经
-    url: https://www.nowcoder.com/feed/main/detail/9a1c96c6ac6c4d07b1bfc9cf3a6f2505
+    url: 'https://www.nowcoder.com/feed/main/detail/9a1c96c6ac6c4d07b1bfc9cf3a6f2505'
     type: candidate-first-hand
   - title: Qwen3-VL Technical Report
-    url: https://arxiv.org/abs/2511.21631
+    url: 'https://arxiv.org/abs/2511.21631'
     type: primary-paper
 ---
 
@@ -29,9 +31,9 @@ sources:
 - 团队 / 岗位：大模型算法
 - 届别 / 流程：27 暑期；一面
 - 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：“介绍Qwen3-VL多模态模型的位置编码方案”
+- 原始措辞：“介绍 Qwen3-VL 多模态模型的位置编码方案”
 
-Qwen3-VL 用的是 Interleaved M-RoPE：每个 token 的位置是三元组 $(t,h,w)$，文本三轴取同一个下标，退化成普通 1D RoPE；视觉 token 用网格的行、列（视频再加时间）坐标；三轴的旋转频率交织分配，再放进同一个注意力里算。相对 Qwen2 / 2.5-VL，主要变化是频率从分段改成了交织，视频里的时间则改用显式的时间戳 token 来对齐。
+Qwen3-VL 用的是 Interleaved M-RoPE：每个 token 的位置是三元组 $(t,h,w)$，文本三轴取同一个下标，退化成普通 1D RoPE；视觉 token 用网格的行、列（视频再加时间）坐标；三轴的旋转频率交织分配，再放进同一个 attention 里算。相对 Qwen2 / 2.5-VL，主要变化是频率从分段改成了交织，视频里的时间则改用显式的时间戳 token 来对齐。
 
 常见的错答是把视觉 token 当成一维句子做标准 RoPE，或者背一堆没公开的层数。具体的 head 切分数字，除非你读过当时的技术报告，否则别编；细节以 arXiv:2511.21631 为准。
 
@@ -43,7 +45,7 @@ Qwen3-VL 用的是 Interleaved M-RoPE：每个 token 的位置是三元组 $(t,h
 
 视觉的每个 patch 有行 / 列坐标，视频再加时间。Qwen2 / 2.5-VL 把旋转频率按维度切成 $t,h,w$ 三段，报告指出这种切法频谱不均，不利于长视频建模。Qwen3-VL 改成 interleaved M-RoPE，把 $t,h,w$ 交错写进高低频，让三轴都能用上低频。空间上相邻的 patch 旋转更接近，比光栅扫描的 1D 更利于 grounding / OCR 对位。
 
-融合发生在注意力里：视觉 token 投影进 LLM 的隐空间后，同一个注意力同时看到文本位置和视觉网格位置。分辨率一变网格就变，坐标必须重算，不能复用固定 224 时的序号。
+融合发生在 attention 里：视觉 token 投影进 LLM 的隐空间后，同一个 attention 同时看到文本位置和视觉网格位置。分辨率一变网格就变，坐标必须重算，不能复用固定 224 时的序号。
 
 视频这边，Qwen3-VL 还把「用位置编码对齐绝对时间」改成了显式的时间戳 token，时钟不再全靠位置编码来承担。被追问时可以说「时间接地从 T-RoPE 走到了文本时间戳」，事件定位更像对齐到字面时间，不再是对齐到某个 RoPE 段。
 

@@ -3,8 +3,8 @@ id: p3a-openai-engineering-management-fundamentals
 section: openai
 order: 651
 level: A
-title: "OpenAI：工程管理：招聘、培养、绩效和团队结构"
-quick: "分别准备处理低绩效、培养成员和化解优先级冲突的真实例子，按当时证据、判断、行动、结果来讲。把个人决策与团队贡献分开，也解释管理机制为什么适合那时的团队。"
+title: OpenAI：工程管理：招聘、培养、绩效和团队结构
+quick: 分别准备处理低绩效、培养成员和化解优先级冲突的真实例子，按当时证据、判断、行动、结果来讲。把个人决策与团队贡献分开，也解释管理机制为什么适合那时的团队。
 companies:
   - openai
 tags:
@@ -16,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · engineering-management-fundamentals"
-    url: https://www.1point3acres.com/interview/problems/company/openai/engineering-management-fundamentals
+  - title: 1Point3Acres · OpenAI · engineering-management-fundamentals
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/engineering-management-fundamentals
     type: secondary
 ---
 
@@ -27,7 +28,7 @@ sources:
 
 Engineering management 基础面，会请你举例说明自己的管理方式：一对一怎么做、自己参与多少技术工作、团队怎样运转，以及遇到低绩效、成员成长和优先级冲突时怎么处理。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理，没有逐条核对原帖，网站收录也不代表公司官方确认；下面的演示回答是手册写的假想示例，不是候选人原话或真实经历。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理；下面的演示回答是手册写的假想示例。
 
 ## 思路
 
@@ -45,7 +46,7 @@ Engineering management 基础面，会请你举例说明自己的管理方式：
 
 “我会先明确六周后必须交付什么，再请双方说清当前瓶颈、各自方案的假设和最坏的失败代价。
 
-接着安排一周做原型和流量回放，把不兼容接口单独列为风险。如果测试显示热点路径能局部改造，而整库重写无法在期限内验证完，我会选择渐进迁移，再请提出重写的工程师负责边界适配和容量验证，让他的判断继续参与方案。
+接着安排一周做原型和流量回放，把不兼容接口单独列为风险。如果测试显示热点路径能局部改造，而整库重写无法在期限内验证完，我会选择渐进迁移，再请提出重写的工程师负责 interface integration 和容量验证，让他的判断继续参与方案。
 
 之后每周检查里程碑和回滚条件，发布后再复盘最初哪些假设成立、哪些需要修改。”
 
@@ -55,7 +56,7 @@ Engineering management 基础面，会请你举例说明自己的管理方式：
 
 **怎么处理低绩效？** 先明确这个岗位的职责期望，指出具体的差距，再给出支持计划和反馈周期，比如每两周检查一次。评价要基于可以举出的事实，不能凭没有证据的主观印象。
 
-**怎么培养一个人？** 讲清楚你给了多大的授权范围、在哪些节点检查、最后让他独立承担了什么任务。演示里的做法，就是把边界适配交给提出重写的工程师。
+**怎么培养一个人？** 讲清楚你给了多大的授权范围、在哪些节点检查、最后让他独立承担了什么任务。演示里的做法，就是把 interface integration 交给提出重写的工程师。
 
 **一对一通常聊什么？** 说明你的结构和理由，比如一半时间留给对方的议题，一半用于反馈和成长目标，并讲一个通过一对一提前发现问题的例子。
 

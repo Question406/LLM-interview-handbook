@@ -4,20 +4,20 @@ section: dp-2d
 order: 2
 level: A
 title: LC 64 · 最小路径和
-quick: "网格 DP：$dp[i][j]$ 等于当前格加上上方、左方的较小者，第一行、第一列只能沿边累加。可以原地改网格或压成一维，时间 $O(mn)$。"
+quick: '网格 DP：$dp[i][j]$ 等于当前格加上上方、左方的较小者，第一行、第一列只能沿边累加。可以原地改网格或压成一维，时间 $O(mn)$。'
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 64. 最小路径和
-    url: https://leetcode.cn/problems/minimum-path-sum/
+    url: 'https://leetcode.cn/problems/minimum-path-sum/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -98,7 +98,7 @@ print("simple tests passed")
 
 时间 $O(mn)$；原地修改额外空间 $O(1)$，另开 DP 是 $O(mn)$，一维滚动是 $O(n)$。
 
-## 边界
+## Edge Cases
 
 $1\times n$ 或 $m\times 1$ 没有分叉，答案就是这一条的累加。值为 $0$ 的格子照常走 DP，零代价不等于障碍，不能跳过。单格时循环里 `i==0 and j==0` 直接跳过，返回该格本身。
 

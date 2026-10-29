@@ -3,32 +3,43 @@ id: align-length-bias
 section: alignment
 order: 15
 level: A
-title: 对齐：偏好学习里的长度偏见
-quick: "偏好标注容易把更长、更完整的外观当成更好，RM、DPO、BoN 和评测又可能放大它。训练要看长度与奖励是否一起涨，评测应报长度匹配后的偏好和固定预算下的任务成功率，避免把多写字误判为能力提升。"
+title: 对齐：preference learning 里的长度偏见
+quick: >-
+  偏好标注容易把更长、更完整的外观当成更好，RM、DPO、BoN
+  和评测又可能放大它。训练要看长度与奖励是否一起涨，评测应报长度匹配后的偏好和固定预算下的任务成功率，避免把多写字误判为能力提升。
 tags:
   - OpenAI
   - LMSYS
   - Length Bias
   - Preference
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Length-Controlled AlpacaEval — A Simple Way to Debias Automatic Evaluators
-    url: https://arxiv.org/abs/2404.04475
+    url: 'https://arxiv.org/abs/2404.04475'
     type: primary
   - title: Scaling Laws for Reward Model Overoptimization
-    url: https://arxiv.org/abs/2210.10760
+    url: 'https://arxiv.org/abs/2210.10760'
     type: primary
   - title: Direct Preference Optimization
-    url: https://arxiv.org/abs/2305.18290
+    url: 'https://arxiv.org/abs/2305.18290'
     type: primary
 ---
 
+## 可以这样回答
+
 长度偏见是偏好流程学会把字数当质量的捷径。比如短而准确的回答看起来不如带很多列表的回答完整，标注员选后者，RM 学到这个相关性，RL、DPO 和 BoN 又会继续放大。
 
-InstructGPT / HH 这类人工偏好中，完整外观、列表和较长拒答都可能占便宜，尤其平局被强行分胜负时。RM 用 BT 拟合分差，若 $y_w$ 系统比 $y_l$ 长，就可能给 token 数加分，即使校准指标很好也不代表学到了内容质量，见 `align-reward-model`。BoN 再取 $\arg\max r$，更容易搜到这条捷径，见 `align-best-of-n`、`align-reward-hack`。
+InstructGPT / HH 这类人工偏好中，完整外观、列表和较长拒答都可能占便宜，尤其平局被强行分胜负时。RM 用 BT 拟合分差，若 $y_w$ 系统比 $y_l$ 长，就可能给 token 数加分，即使 calibration 指标很好也不代表学到了内容质量，见 `align-reward-model`。BoN 再取 $\arg\max r$，更容易搜到这条捷径，见 `align-best-of-n`、`align-reward-hack`。
+
+## 技术备查
+
+长度偏见是偏好流程学会把字数当质量的捷径。比如短而准确的回答看起来不如带很多列表的回答完整，标注员选后者，RM 学到这个相关性，RL、DPO 和 BoN 又会继续放大。
+
+InstructGPT / HH 这类人工偏好中，完整外观、列表和较长拒答都可能占便宜，尤其平局被强行分胜负时。RM 用 BT 拟合分差，若 $y_w$ 系统比 $y_l$ 长，就可能给 token 数加分，即使 calibration 指标很好也不代表学到了内容质量，见 `align-reward-model`。BoN 再取 $\arg\max r$，更容易搜到这条捷径，见 `align-best-of-n`、`align-reward-hack`。
 
 DPO / IPO 的 $\Delta$ 是两条序列 log 比之差，按 token 求和会让更长序列的 $\log\pi$ 尺度进入间隔；换成 token 平均则重标定 $\beta$，必须明确实现约定，见 `align-dpo`。RL 若每条序列只给一个回报 $r$、又没有长度约束，也可能多写 RM 喜欢的套话。Arena 与 LLM-as-judge 同样偏好长回答和 Markdown，若再把它们当训练标准，循环会加重，见 `align-arena`、`align-llm-judge`。
 
@@ -54,11 +65,11 @@ DPO / IPO 的 $\Delta$ 是两条序列 log 比之差，按 token 求和会让更
 先查长度与排版，Arena 偏长见 `align-arena`。
 
 **推理模型确实需要长怎么办？**
-用可验证正确率判断这些步骤是否有用，避免让开放 RM 鼓励无限思维链。
+用可验证正确率判断这些步骤是否有用，避免让开放 RM 鼓励无限 chain of thought。
 
 ## 相关题
 
 - [[align-llm-judge]]：位置、自偏好和交换顺序协议。
-- [[align-arena]]：ELO 的文风与选择偏差。
+- [[align-arena]]：ELO 的文风与 selection bias。
 - [[xai-lmarena]]：在线与离线榜的分布差别。
-- [[msft-orpo]]：未归一化序列概率怎样让长度进入 odds。
+- [[msft-orpo]]：未 normalization 序列概率怎样让长度进入 odds。

@@ -4,7 +4,9 @@ section: agent
 order: 121
 level: A
 title: 美团：Memory 机制与 RAG 的区别、优势与落地场景？
-quick: "RAG 按需从外部知识库检索事实，管新鲜和可引用；Memory 跨轮、跨会话保存已确认的状态和偏好，管个性化和任务连续。生产上常组合用：RAG 取菜单和政策，Memory 记过敏原和常订地址，冲突时权威知识库优先。两者的写入、权限、遗忘和评测要分开设计。"
+quick: >-
+  RAG 按需从外部知识库检索事实，管新鲜和可引用；Memory 跨轮、跨会话保存已确认的状态和偏好，管个性化和任务连续。生产上常组合用：RAG
+  取菜单和政策，Memory 记过敏原和常订地址，冲突时权威知识库优先。两者的写入、权限、遗忘和评测要分开设计。
 tags:
   - Meituan
   - Memory
@@ -13,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 美团大模型算法岗完整面经（一面+二面）
-    url: https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981
+    url: 'https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981'
     type: candidate-first-hand
 ---
 
@@ -44,7 +46,7 @@ Memory 这边，过敏原、常订地址、未完成订单、已确认的口味�
 | 风险 | 检索错、过时 | 隐私、错误记忆 |
 | 评测 | 引用正确、grounded | 长期任务成功、冲突解决 |
 
-权限也分开管。RAG 按门店、城市过滤；Memory 按用户加密、最小注入，和当前意图无关的偏好不要灌进输入提示（prompt）。Memory 还要提供可删除、可导出的接口，满足遗忘。评测同样分开：RAG 看召回与忠实，Memory 看跨会话任务成功、错误记忆有没有被引用。放到上下文工程里看，检索进窗口的是证据，记忆进窗口的是已确认状态，见 `byte-rag-memory-context`。落地前我会先问清三件事：这条信息谁有权改、过期了怎么发现、冲突时听谁的。
+权限也分开管。RAG 按门店、城市过滤；Memory 按用户加密、最小注入，和当前意图无关的偏好不要灌进 prompt。Memory 还要提供可删除、可导出的接口，满足遗忘。评测同样分开：RAG 看召回与忠实，Memory 看跨会话任务成功、错误记忆有没有被引用。放到上下文工程里看，检索进窗口的是证据，记忆进窗口的是已确认状态，见 `byte-rag-memory-context`。落地前我会先问清三件事：这条信息谁有权改、过期了怎么发现、冲突时听谁的。
 
 如果一面追问「各自的优势」，我会按场景说：RAG 的优势是外部事实可引用、可更新，Memory 的优势是跨单连续、少重复问，比谁更先进没有意义。记忆的分类见 `agent-memory`，京东零售的连问见 `jd-long-memory`。
 
@@ -57,7 +59,7 @@ Memory 这边，过敏原、常订地址、未完成订单、已确认的口味�
 显式修正优先，旧条目失效并留审计。别让两条矛盾的记忆一起被检索出来，让模型去猜。
 
 **只用 RAG 模拟 Memory 行不行？**
-把用户档案当文档检索可以起步，但缺少写入门禁和遗忘，高风险字段还是要用结构化 Memory。
+把用户档案当文档检索可以起步，但缺少写入 acceptance checks 和遗忘，高风险字段还是要用结构化 Memory。
 
 **和 Skill 怎么分？**
 Skill 是做法，比如怎么点餐、怎么改地址；Memory 是状态，比如过敏原、默认地址，见 `jd-skills-essence`。

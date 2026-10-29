@@ -4,33 +4,46 @@ section: meta
 order: 16
 level: A
 title: Meta：NTK / YaRN 长上下文外推，和改 rope_theta 差在哪
-quick: "PI 把位置除以 $s$，同时压缩近距分辨率；NTK-aware 调 RoPE 底 $b$，让低频多插值、高频少动；YaRN 再按波长分段并调注意力温度。Llama 3.1 的公开长窗训练还提高 `rope_theta` 并续训到目标长度，不能由公式相似就推断用了 YaRN。"
+quick: >-
+  PI 把位置除以 $s$，同时压缩近距分辨率；NTK-aware 调 RoPE 底 $b$，让低频多插值、高频少动；YaRN 再按波长分段并调
+  attention 温度。Llama 3.1 的公开长窗训练还提高 `rope_theta` 并续训到目标长度，不能由公式相似就推断用了 YaRN。
 tags:
   - Meta
   - Llama
   - RoPE
   - YaRN
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: YaRN — Efficient Context Window Extension of Large Language Models
-    url: https://arxiv.org/abs/2309.00071
+    url: 'https://arxiv.org/abs/2309.00071'
     type: primary
-  - title: Extending Context Window of Large Language Models via Positional Interpolation
-    url: https://arxiv.org/abs/2306.15595
+  - title: >-
+      Extending Context Window of Large Language Models via Positional
+      Interpolation
+    url: 'https://arxiv.org/abs/2306.15595'
     type: primary
   - title: The Llama 3 Herd of Models
-    url: https://arxiv.org/abs/2407.21783
+    url: 'https://arxiv.org/abs/2407.21783'
     type: primary
   - title: Introducing Llama 3.1
-    url: https://ai.meta.com/blog/meta-llama-3-1/
+    url: 'https://ai.meta.com/blog/meta-llama-3-1/'
     type: primary
   - title: RoFormer — Enhanced Transformer with Rotary Position Embedding
-    url: https://arxiv.org/abs/2104.09864
+    url: 'https://arxiv.org/abs/2104.09864'
     type: primary
 ---
+
+## 可以这样回答
+
+PI、NTK-aware 和 YaRN 都在调整位置或频率，让已有 RoPE 模型扩展到更长上下文；改 `rope_theta` 则还要看是否配合目标长度训练。例如只把 8k 权重的配置改成 128k，模型并没有因此学会长距离依赖。Llama 3 的公开配方是提高基频并长窗续训，不能由概念相似推断它使用了 YaRN。
+
+RoPE 第 $d$ 对频率 $\theta_d = b^{-2d/|D|}$，波长 $\lambda_d = 2\pi/\theta_d$。训练长度 $L$，目标 $L'$，比例 $s=L'/L$。统一写法：$f'(x_m,m,\theta)=f(x_m,g(m),h(\theta))$。
+
+## 技术备查
 
 PI、NTK-aware 和 YaRN 都在调整位置或频率，让已有 RoPE 模型扩展到更长上下文；改 `rope_theta` 则还要看是否配合目标长度训练。例如只把 8k 权重的配置改成 128k，模型并没有因此学会长距离依赖。Llama 3 的公开配方是提高基频并长窗续训，不能由概念相似推断它使用了 YaRN。
 
@@ -40,7 +53,7 @@ RoPE 第 $d$ 对频率 $\theta_d = b^{-2d/|D|}$，波长 $\lambda_d = 2\pi/\thet
 
 - **位置插值 PI：** $g(m)=m/s$，$h(\theta)=\theta$。所有维同等拉伸。实现最便宜，近距被拉远，短任务容易掉。
 - **NTK-aware：** $g(m)=m$，改底 $b' = b\cdot s^{|D|/(|D|-2)}$，于是 $h$ 变成新频率。设计目标是：最低频接近按 $s$ 插值，最高频几乎不动。无微调时往往比 PI 更能撑过原窗。代价：部分维会略微外推到训练没见过的相位，YaRN 论文写明 **NTK 微调效果常不如 PI**；实践里 $s$ 还得设得比名义倍数更大。
-- **YaRN：** NTK-by-parts + 注意力温度。用 $r(d)=L/\lambda_d$（原窗里转了几圈）。$r$ 很小（低频、波长 $\ge L$）就按 $s$ 插值，避免外推；$r$ 很大（高频）完全不插，保住相邻 token 的位置分辨率；中间线性 ramp。Llama 族论文里常用 $\alpha=1,\beta=32$。温度：$1/\sqrt{t}=0.1\ln(s)+1$，等价于把 $q,k$ 再乘这个因子，softmax 不那么糊。兼容 FlashAttention，因为没改注意力核，只改了 RoPE 表。
+- **YaRN：** NTK-by-parts + attention 温度。用 $r(d)=L/\lambda_d$（原窗里转了几圈）。$r$ 很小（低频、波长 $\ge L$）就按 $s$ 插值，避免外推；$r$ 很大（高频）完全不插，保住相邻 token 的位置分辨率；中间线性 ramp。Llama 族论文里常用 $\alpha=1,\beta=32$。温度：$1/\sqrt{t}=0.1\ln(s)+1$，等价于把 $q,k$ 再乘这个因子，softmax 不那么糊。兼容 FlashAttention，因为没改 attention 核，只改了 RoPE 表。
 
 Code Llama 公开把 RoPE base 提到 $10^6$ 量级，YaRN 把它归成 NTK-aware 的一种手调。这条公开描述针对 Code Llama，不能直接归到 Llama 3 预训练。
 
@@ -51,13 +64,13 @@ Llama 2：常见 $b=10^4$，预训练 $4\mathrm{k}$。Llama 3 / 3.1 公开 conf 
 提高 $b$ 会改变大 $m$ 时的旋转频率，直觉与 NTK 一类；但应用到长窗模型时，还要区分下面几件事：
 
 1. **时机。** `rope_theta` 是训练（含长窗 CPT）用的基频；NTK / YaRN 默认是推理或短微调时改公式。
-2. **有没有在目标长度上见过梯度。** Meta 的叙事是模型在 128k 序列上真的反传过。只改 conf 里的 theta、权重还是 8k 的，是 分布外数据（OOD，即与训练数据明显不同的数据）。
+2. **有没有在目标长度上见过梯度。** Meta 的叙事是模型在 128k 序列上真的 backpropagation 过。只改 conf 里的 theta、权重还是 8k 的，是 out-of-distribution 数据（OOD，即与训练数据明显不同的数据）。
 3. **$s$ 还在不在。** 官方长窗模型推理时按训练长度用 RoPE，不必再套一层 YaRN。社区给老 8k 权外推到 32k / 128k 才需要 $s$。
 4. **开源 `rope_type: llama3`。** 有的权重文件带 `factor`、`low_freq_factor`、`high_freq_factor`，按波长分段，和 YaRN 同类。Herd 论文写的是继续训 + 提高 theta。这些字段说明实现可能做了分段缩放，不能单凭 HuggingFace 配置字段推断 Meta 的训练代码；公开训练描述仍是长窗 CPT。
 
 Dynamic NTK：每步用当前长度算 $s=\max(1,t/L)$。KV cache 必须存旋转前的 $k$，否则 $s$ 一变历史 key 全错。Llama 3.1 原生 128k 服务不要开这套。
 
-验收时分别消融 PI、NTK、YaRN 和 theta 调整，并把近距任务（代码缩进、复制）与远距任务（文档 QA）分开报告。四种开关一起改，就很难判断短任务退化来自哪里。
+验收时分别 ablation PI、NTK、YaRN 和 theta 调整，并把近距任务（代码缩进、复制）与远距任务（文档 QA）分开报告。四种开关一起改，就很难判断短任务退化来自哪里。
 
 实现还要检查位置偏移：逐 token 生成（decode）时，cache 已有 $S$ 个 token，RoPE 却从 $0$ 重新计，公式再正确也会用错位置。
 

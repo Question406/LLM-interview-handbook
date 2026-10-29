@@ -3,9 +3,11 @@ id: code-swiglu
 section: coding
 order: 218
 level: A
-title: 手写 SwiGLU 前向（含形状与 $d_{\mathrm{ff}}\approx 8d/3$）
+title: '手写 SwiGLU 前向（含形状与 $d_{\mathrm{ff}}\approx 8d/3$）'
 quick: >-
-  SwiGLU 是 $(\mathrm{SiLU}(xW_1)\odot xW_2)W_3$，$W_1,W_2:d\to d_{\mathrm{ff}}$，$W_3:d_{\mathrm{ff}}\to d$。三个矩阵要和旧 FFN 的 $2d\cdot 4d=8d^2$ 对齐，所以 $d_{\mathrm{ff}}\approx 8d/3$。门控那一路别漏，中间维也别还写成 $4d$。
+  SwiGLU 是 $(\mathrm{SiLU}(xW_1)\odot xW_2)W_3$，$W_1,W_2:d\to
+  d_{\mathrm{ff}}$，$W_3:d_{\mathrm{ff}}\to d$。三个矩阵要和旧 FFN 的 $2d\cdot 4d=8d^2$
+  对齐，所以 $d_{\mathrm{ff}}\approx 8d/3$。gating 那一路别漏，中间维也别还写成 $4d$。
 tags:
   - SwiGLU
   - FFN
@@ -13,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: GLU Variants Improve Transformer
-    url: https://arxiv.org/abs/2002.05202
+    url: 'https://arxiv.org/abs/2002.05202'
     type: primary
 ---
 
@@ -44,7 +46,7 @@ layer=SwiGLU(d=4,d_ff=8)，x为[2,3,4]形状的全1张量
 
 SwiGLU 前向就是三次投影：gate 过 SiLU，和 up 逐元素相乘，再 down 回 $d$。中间维取 $8d/3$ 左右，是为了让三矩阵的参数和 FLOPs 跟旧的 $4d$ 两矩阵 FFN 持平。这题要能写前向、报形状，并推出为什么中间维不是 $4d$。
 
-常见写错有两个方向：写成两矩阵的 GELU FFN，门控没了；或者三矩阵还用 $4d$，层白白贵了 1.5 倍。架构直觉见 `arch-swiglu`，美团口述见 `meituan-swiglu`。
+常见写错有两个方向：写成两矩阵的 GELU FFN，gating 没了；或者三矩阵还用 $4d$，层白白贵了 1.5 倍。架构直觉见 `arch-swiglu`，美团口述见 `meituan-swiglu`。
 
 ## 公式与形状
 
@@ -73,9 +75,9 @@ $$
 
 实际还要按 128 / 256 对齐 Tensor Core，所以代码里看到的是「约 $8d/3$」，没有精确的分数。要是还用 $4d$，参数和 FLOPs 约为旧 FFN 的 $3/2$，等于无端多加 50% 的 FFN 算力，这时再说「SwiGLU 更强」就不是公平对比了。PaLM / LLaMA 把这一条写进了默认宽度，我会从 $8d^{2}$ 推回来。
 
-现场给个数：$d=4096$ 时 $8d/3\approx 10923$，对齐 128 后常见的是 11008，LLaMA-7B 就是这个宽度。参数约 $3\times 4096\times 11008$，别再乘一个 $4d$。激活显存会多一份 $[\ldots,d_{\mathrm{ff}}]$ 的门控张量，这是三路投影比两路 FFN 多付的带宽。
+现场给个数：$d=4096$ 时 $8d/3\approx 10923$，对齐 128 后常见的是 11008，LLaMA-7B 就是这个宽度。参数约 $3\times 4096\times 11008$，别再乘一个 $4d$。激活显存会多一份 $[\ldots,d_{\mathrm{ff}}]$ 的 gating 张量，这是三路投影比两路 FFN 多付的带宽。
 
-至于门控好在哪：通道可以关也可以放，SiLU 在负半轴还有梯度。没有定理保证它处处优于 GELU，这是算力对齐之后的经验选择。MoE 专家内部也可以是同一套 SwiGLU，宽度公式按单个专家的 $d_{\mathrm{ff}}$ 算。
+至于 gating 好在哪：通道可以关也可以放，SiLU 在负半轴还有梯度。没有定理保证它处处优于 GELU，这是算力对齐之后的经验选择。MoE 专家内部也可以是同一套 SwiGLU，宽度公式按单个专家的 $d_{\mathrm{ff}}$ 算。
 
 ## 手写
 
@@ -83,6 +85,7 @@ $$
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class SwiGLU(nn.Module):
     def __init__(self, d, d_ff=None):
@@ -101,7 +104,7 @@ class SwiGLU(nn.Module):
 
 `F.silu` 就是 $z\sigma(z)$，别先 sigmoid 再乘错张量。形状上断言 `x.shape[-1]==d`，中间是 `d_ff`，输出和 `x` 最后一维相同。fused 写法是 `gate, up = self.w_gup(x).chunk(2, dim=-1)`，再 `self.w3(F.silu(gate)*up)`。
 
-现场最容易写错的几处：两路都做了 SiLU，其实值通路应该是线性的；先 down 再门控，形状对不上，也就不是 GLU 了；`chunk` 切在了 batch 维，应该切最后一维。残差在层外加，$x+\mathrm{SwiGLU}(\mathrm{Norm}(x))$，别写进这个模块把形状改掉。Pre-Norm 时先 RMSNorm 再进三路投影，学习率才稳；手写时也别把 Norm 融进 `SwiGLU` 类里，否则和注意力支路的 Norm 对不齐。
+现场最容易写错的几处：两路都做了 SiLU，其实值通路应该是线性的；先 down 再 gating，形状对不上，也就不是 GLU 了；`chunk` 切在了 batch 维，应该切最后一维。残差在层外加，$x+\mathrm{SwiGLU}(\mathrm{Norm}(x))$，别写进这个模块把形状改掉。Pre-Norm 时先 RMSNorm 再进三路投影，学习率才稳；手写时也别把 Norm 融进 `SwiGLU` 类里，否则和 attention 支路的 Norm 对不齐。
 
 ## 简单测试怎么写
 
@@ -125,7 +128,7 @@ print("simple tests passed")
 能写成单路，但那就不是 GLU 了。门和值必须是两路。
 
 **和 ReLU FFN 的代码差在哪？**
-差在多一次线性投影再逐元素相乘。漏了这次乘法，门控就丢了。
+差在多一次线性投影再逐元素相乘。漏了这次乘法，gating 就丢了。
 
 **TP 怎么切？**
 gate / up 列切，SiLU 和乘法在分片上做，down 行切再 reduce，见 `infra-megatron-mlp-tp`。手写本题用完整的 $d$ 就行。

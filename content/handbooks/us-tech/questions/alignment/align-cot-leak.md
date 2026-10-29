@@ -3,8 +3,10 @@ id: align-cot-leak
 section: alignment
 order: 25
 level: A
-title: 对齐：隐藏思维链与思考预算如何泄漏
-quick: "隐藏思维链除了直接展示，还可能通过工具参数、日志、计费 token 数、TTFT 与二次训练泄露。应把可见回答和内部思考分开，限制日志与回传权限，用工具证据和最终行为评测，避免把隐藏链当成可靠解释或训练标签。"
+title: 对齐：隐藏 chain of thought 与思考预算如何泄漏
+quick: >-
+  隐藏 chain of thought 除了直接展示，还可能通过工具参数、日志、计费 token 数、TTFT
+  与二次训练泄露。应把可见回答和内部思考分开，限制日志与回传权限，用工具证据和最终行为评测，避免把隐藏链当成可靠解释或训练标签。
 tags:
   - OpenAI
   - Anthropic
@@ -13,28 +15,28 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Learning to reason with LLMs (OpenAI)
-    url: https://openai.com/index/learning-to-reason-with-llms/
+    url: 'https://openai.com/index/learning-to-reason-with-llms/'
     type: primary
   - title: Extended thinking (Claude Docs)
-    url: https://platform.claude.com/docs/en/build-with-claude/extended-thinking
+    url: 'https://platform.claude.com/docs/en/build-with-claude/extended-thinking'
     type: primary
   - title: Language Models Don't Always Say What They Think
-    url: https://arxiv.org/abs/2305.04388
+    url: 'https://arxiv.org/abs/2305.04388'
     type: primary
 ---
 
-隐藏思维链的泄漏要按数据流检查：除了用户直接索取，工具参数、日志、usage、延迟和后续训练都可能把内部信息带出去。关闭前端展示，只堵住其中一个出口。
+隐藏 chain of thought 的泄漏要按数据流检查：除了用户直接索取，工具参数、日志、usage、延迟和后续训练都可能把内部信息带出去。关闭前端展示，只堵住其中一个出口。
 
-OpenAI 推理模型公开说明内部链不直接展示，Anthropic extended thinking 区分思考块与可见回复，并要求签名、完整回传。具体 API 预算与可见性见 `anthropic-extended-thinking`。这道题据公开资料整理，并非现场逐字题。
+OpenAI 推理模型公开说明内部链不直接展示，Anthropic extended thinking 区分思考块与可见回复，并要求签名、完整回传。具体 API 预算与可见性见 `anthropic-extended-thinking`。这道题据公开资料整理。
 
 隐藏的理由包括用户不需要整屏草稿、知识产权，以及内部安全判断本身可能成为攻击面。监督上也不能默认 CoT 忠实：Turpin 等人的 Language Models Don't Always Say What They Think 说明，写出的步骤未必反映实际推理。把漂亮 CoT 当标签还可能奖励形式，与 `align-process-reward` 的格式刷分有关。
 
 ## 沿出口逐项检查
 
-用户或开发者接口直接要求内部块时，终端产品默认只给摘要或拒绝提供内部块。若开发者 API 返回完整思考，就是把边界扩到每个集成方，需要明确合同、默认关闭和日志分级，不能再直接透传终端用户。
+用户或开发者接口直接要求内部块时，终端产品默认只给摘要或拒绝提供内部块。若开发者 API 返回完整思考，就是让每个集成方负责执行自己的 authorization checks，需要明确合同、默认关闭和日志分级，不能再直接透传终端用户。
 
 工具也是出口。模型可能在搜索 query、代码注释或浏览器表单中写出推理，使第三方和宿主日志留下副本，工具参数要接受政策检查，见 `design-tool-prod`。账单与 usage 也可能暴露思考 token 长度，TTFT 暴露等待时间，足以让人推测难度、安全检查或长预算是否触发。固定 token 上限或 effort 越大，可能越慢、越贵、有时更准，预算既影响能力，也构成侧信道。
 
@@ -65,7 +67,7 @@ Serving 要给用户独立的“正在推理”状态，长思考会拖 TTFT，�
 不可靠，链可能不忠实，应结合动作与最终输出。
 
 **给开发者返回 thinking 可以吗？**
-这是另一个信任边界，需要合同、默认关闭和日志分级，终端产品不默认透传。
+这是另一个 trust boundary，需要合同、默认关闭和日志分级，终端产品不默认透传。
 
 **过程奖励会冲突吗？**
 若直接奖励隐藏链，可能让模型更擅长输出这段内部过程；优先使用可检查的环境事件。

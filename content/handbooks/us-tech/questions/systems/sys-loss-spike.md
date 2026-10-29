@@ -4,30 +4,44 @@ section: systems
 order: 15
 level: A
 title: 系统：分布式训练 loss spike 排查清单
-quick: "分布式训练突然 loss spike，我会先核对各 rank 的 collective 和 skip 决定，再用 sample id 复放出错数据。随后分别查并行布局、overflow 和 amax、checkpoint 与 RNG，确认系统状态一致后再调学习率等数值配方。全局平均之外还要保留 per-rank loss 和 grad norm，避免局部爆炸被平均掩盖。"
+quick: >-
+  分布式训练突然 loss spike，我会先核对各 rank 的 collective 和 skip 决定，再用 sample id
+  复放出错数据。随后分别查并行布局、overflow 和 amax、checkpoint 与
+  RNG，确认系统状态一致后再调学习率等数值配方。全局平均之外还要保留 per-rank loss 和 grad norm，避免局部爆炸被平均掩盖。
 tags:
   - OpenAI
   - NVIDIA
   - Training
   - Debugging
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM
-    url: https://arxiv.org/abs/2104.04473
+  - title: >-
+      Efficient Large-Scale Language Model Training on GPU Clusters Using
+      Megatron-LM
+    url: 'https://arxiv.org/abs/2104.04473'
     type: primary
   - title: Mixed Precision Training
-    url: https://arxiv.org/abs/1710.03740
+    url: 'https://arxiv.org/abs/1710.03740'
     type: primary
-  - title: "Spike No More: Stabilizing the Pre-training of Large Language Models"
-    url: https://arxiv.org/abs/2312.16903
+  - title: 'Spike No More: Stabilizing the Pre-training of Large Language Models'
+    url: 'https://arxiv.org/abs/2312.16903'
     type: primary
   - title: PyTorch Distributed Elastic
-    url: https://pytorch.org/docs/stable/elastic/run.html
+    url: 'https://pytorch.org/docs/stable/elastic/run.html'
     type: secondary
 ---
+
+## 可以这样回答
+
+loss spike 的系统排查，我会先确认所有 rank 在同一步执行了相同的通信和更新决定，再复放出错样本。比如某张卡检测到 inf 后独自 skip，其他卡继续 Adam 更新，下一步参数就会分叉，曲线看起来也像训练不稳定。数值和优化器配方见 `openai-loss-spike`，NCCL hang 与慢卡见 `sys-straggler`；这里先讨论作业还在步进的情况。
+
+同步训练里，loss 是各 rank 的平均。只看 rank 0 的标量会把局部爆炸洗掉。我会要：每 step 的全局 loss、grad norm、tokens、skip 计数、是否 overflow skip，**所有 rank 各一份**。各 rank 的计数或状态对不上，就先定位发生分歧的步骤。
+
+## 技术备查
 
 loss spike 的系统排查，我会先确认所有 rank 在同一步执行了相同的通信和更新决定，再复放出错样本。比如某张卡检测到 inf 后独自 skip，其他卡继续 Adam 更新，下一步参数就会分叉，曲线看起来也像训练不稳定。数值和优化器配方见 `openai-loss-spike`，NCCL hang 与慢卡见 `sys-straggler`；这里先讨论作业还在步进的情况。
 
@@ -39,9 +53,9 @@ loss spike 的系统排查，我会先确认所有 rank 在同一步执行了相
 
 可以用一个 1024 卡的例子说明：某 rank 的 shard 里一条损坏样本把激活打成 inf，FP8/FP16 溢出后 GradScaler 只在该卡 skip，别的卡照常 Adam。下一步权重分叉，loss 从尖刺变成不可逆发散。inf 标志必须 all-reduce 之后 **所有人一起 skip 或一起 step**，见 `sys-mixed-precision`、`nvidia-loss-scale`。
 
-先查数据。万亿 token 数据管道里，spike 的第一嫌疑是样本而不是学习率：超长 pack 把无关文档粘在一起且文档边界 token 丢了、二进制垃圾、重复高 loss 域、某 epoch shuffle 把同一脏 shard 再喂一次。dataloader 状态没和模型一起 ckpt，resume 后有的 rank 重复、有的跳过，曲线会在恢复点附近跳。查法：复放该 step 的 sample id；单卡 greedy 重算同一 pack，尖还在就是数据/数值，尖没了才查通信。管道本身见 `sys-data-pipeline`。
+先查数据。万亿 token 数据管道里，spike 的第一嫌疑是样本而不是学习率：超长 pack 把无关文档粘在一起且 document boundaries token 丢了、二进制垃圾、重复高 loss 域、某 epoch shuffle 把同一脏 shard 再喂一次。dataloader 状态没和模型一起 ckpt，resume 后有的 rank 重复、有的跳过，曲线会在恢复点附近跳。查法：复放该 step 的 sample id；单卡 greedy 重算同一 pack，尖还在就是数据/数值，尖没了才查通信。管道本身见 `sys-data-pipeline`。
 
-再查并行布局。TP 的 dropout mask / RNG 没按设备广播；SP 的 all-gather 和列并行顺序反了；PP 最后一档 loss 平均漏了某个 microbatch；CP 的因果块没 zigzag，个别 rank 的注意力统计炸掉。这类 bug 往往 **一开某种并行就稳定复现**，不像数据那样偶发。MoE 热点专家会让部分 token drop，loss 跳的同时还伴 all-to-all P99，见 `sys-expert-parallel`。
+再查并行布局。TP 的 dropout mask / RNG 没按设备广播；SP 的 all-gather 和列并行顺序反了；PP 最后一档 loss 平均漏了某个 microbatch；CP 的因果块没 zigzag，个别 rank 的 attention 统计炸掉。这类 bug 往往 **一开某种并行就稳定复现**，不像数据那样偶发。MoE 热点专家会让部分 token drop，loss 跳的同时还伴 all-to-all P99，见 `sys-expert-parallel`。
 
 精度方面，BF16 一般不需要全局 loss scale；FP16 的 $S$ 太大造成 overflow skip 风暴，太小则小梯度冲掉。FP8 delayed amax 在 LR 跳、batch 组成突变时用过期 scale，GEMM 打出 inf。Nsight / TE 计数器上看 inf 次数和 amax 是否打满，不要只看 loss 曲线。通信用 FP16 规约、累加顺序因 DP 度改变，也会让「同一超参换卡数」后曲线对不上，见 `sys-allreduce-reducescatter`。
 

@@ -4,7 +4,10 @@ section: coding
 order: 15
 level: A
 title: 手写一步 decode：用 KV cache 算当前 token 的 attention
-quick: "一步 decode 只为当前 token 算 $q_t,k_t,v_t$，把 $k_t,v_t$ concat 到 cache 末尾，再拿 $q_t$ 对全部过去的 key 做点积。整段 $K,V$ 在 prefill 时已经写进 cache，所以这一步的复杂度从完整自注意力的 $O(t^2 d)$ 变成 $O(t d)$。"
+quick: >-
+  一步 decode 只为当前 token 算 $q_t,k_t,v_t$，把 $k_t,v_t$ concat 到 cache 末尾，再拿 $q_t$
+  对全部过去的 key 做点积。整段 $K,V$ 在 prefill 时已经写进 cache，所以这一步的复杂度从完整 self-attention 的
+  $O(t^2 d)$ 变成 $O(t d)$。
 tags:
   - KV Cache
   - Decode
@@ -12,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: GQA
-    url: https://arxiv.org/abs/2305.13245
+    url: 'https://arxiv.org/abs/2305.13245'
     type: primary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 `decode_step(q,k,v,cache_k,cache_v)` 中 q、k、v 为 `[B,H,1,D]`，两个旧缓存均为 `[B,H,S,D]`，S 可以为 0。返回 `(out,new_cache_k,new_cache_v)`，其中 out 为 `[B,H,1,D]`，两个新缓存长度均为 S+1，历史条目必须按原顺序保留。
 
-输出按 `QK^T/sqrt(D)` 在全部历史与当前 key 上归一化，对 V 加权。这里只传入已到达的 token，不另加未来 token mask；本练习不涉及 RoPE、padding 或多请求分页管理。
+输出按 `QK^T/sqrt(D)` 在全部历史与当前 key 上 normalization，对 V 加权。这里只传入已到达的 token，不另加未来 token mask；本练习不涉及 RoPE、padding 或多请求分页管理。
 
 ### 示例
 
@@ -58,6 +61,7 @@ $q_t K^\top$ 的形状是 `[B, H, 1, S+1]`。Causal mask 在这一步通常不�
 import torch
 import torch.nn.functional as F
 
+
 def decode_step(q, k, v, cache_k, cache_v):
     # q,k,v: [B, H, 1, D]
     cache_k = torch.cat([cache_k, k], dim=2)
@@ -76,10 +80,10 @@ def decode_step(q, k, v, cache_k, cache_v):
 ```python
 empty = torch.empty(1, 1, 0, 1)
 q = k = torch.zeros(1, 1, 1, 1)
-out, ck, cv = decode_step(q, k, torch.tensor([[[[2.]]]]), empty, empty)
-torch.testing.assert_close(out, torch.tensor([[[[2.]]]]))
-out, ck, cv = decode_step(q, k, torch.tensor([[[[4.]]]]), ck, cv)
-torch.testing.assert_close(out, torch.tensor([[[[3.]]]]))
+out, ck, cv = decode_step(q, k, torch.tensor([[[[2.0]]]]), empty, empty)
+torch.testing.assert_close(out, torch.tensor([[[[2.0]]]]))
+out, ck, cv = decode_step(q, k, torch.tensor([[[[4.0]]]]), ck, cv)
+torch.testing.assert_close(out, torch.tensor([[[[3.0]]]]))
 assert ck.shape == cv.shape == (1, 1, 2, 1)
 print("simple tests passed")
 ```

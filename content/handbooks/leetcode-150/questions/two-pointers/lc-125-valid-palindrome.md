@@ -4,7 +4,7 @@ section: two-pointers
 order: 1
 level: S
 title: LC 125 · 验证回文串
-quick: "左右指针从两端对撞，跳过非字母数字的字符，比较时忽略大小写，全对上就是回文。不用先筛出新串，所以时间 $O(n)$，额外空间 $O(1)$。"
+quick: 左右指针从两端对撞，跳过非字母数字的字符，比较时忽略大小写，全对上就是回文。不用先筛出新串，所以时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Two Pointers
   - String
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 125. 验证回文串
-    url: https://leetcode.cn/problems/valid-palindrome/
+    url: 'https://leetcode.cn/problems/valid-palindrome/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个字符最多被看两次。
 
-## 边界
+## Edge Cases
 
 空串或者只含标点时，滤完没有字符，算回文。
 

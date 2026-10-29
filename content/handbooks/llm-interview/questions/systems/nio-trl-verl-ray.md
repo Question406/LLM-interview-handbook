@@ -4,7 +4,9 @@ section: systems
 order: 233
 level: A
 title: 蔚来一面：TRL、veRL、Ray 各管哪一层，怎么选型？
-quick: "TRL、veRL 和 Ray 分处不同层：TRL 提供算法和 HF Trainer 训练循环，适合先做原型；veRL 把 rollout 与训练拆成 worker，并用 HybridEngine 处理布局；Ray 负责分布式调度和放置。选择框架时要看模型规模、资源拓扑、训练后端和是否需要工具循环。"
+quick: >-
+  TRL、veRL 和 Ray 分处不同层：TRL 提供算法和 HF Trainer 训练循环，适合先做原型；veRL 把 rollout 与训练拆成
+  worker，并用 HybridEngine 处理布局；Ray 负责分布式调度和放置。选择框架时要看模型规模、资源拓扑、训练后端和是否需要工具循环。
 tags:
   - NIO
   - TRL
@@ -14,28 +16,28 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 蔚来大模型强化学习训练一面
-    url: https://www.nowcoder.com/discuss/863132498270695424
+    url: 'https://www.nowcoder.com/discuss/863132498270695424'
     type: candidate-first-hand
   - title: TRL
-    url: https://huggingface.co/docs/trl
+    url: 'https://huggingface.co/docs/trl'
     type: primary
   - title: OpenRLHF
-    url: https://github.com/OpenRLHF/OpenRLHF
+    url: 'https://github.com/OpenRLHF/OpenRLHF'
     type: primary
   - title: verl
-    url: https://github.com/verl-project/verl
+    url: 'https://github.com/verl-project/verl'
     type: primary
 ---
 
 ## 真题记录
 
 - 公司：蔚来
-- 岗位：大语言模型强化学习算法实习；一面
+- 岗位：大语言模型 RL 算法实习；一面
 - 来源类型与可信度：牛客候选人原帖，A
-- 原始措辞：**“有关强化学习算法的代码库，TRL，VERL，Ray等”**
+- 原始措辞：**“有关 RL 算法的代码库，TRL，VERL，Ray 等”**
 
 TRL 管算法和 HuggingFace Trainer 训练循环，veRL 管拆开 rollout 与训练后的 RL Infra，Ray 则管 worker 调度和放置。它们可以一起用，选型时要先分清所在的层。
 
@@ -51,7 +53,7 @@ TRL 管算法和 HuggingFace Trainer 训练循环，veRL 管拆开 rollout 与�
 | OpenRLHF | 算法 + 异构 actor | DeepSpeed ZeRO + 独立 vLLM 池 |
 | slime | 算法 + 摊开 loop | Megatron + SGLang router |
 
-Ray 可以被 veRL / OpenRLHF / slime 当运行时；说明使用 Ray 后，还要交代算法和采样训练流程。TRL 把 GRPO 塞进 Trainer，适合 7B 原型、数卡、HF ckpt；rollout 往往还是 HF generate 或薄薄一层 vLLM，没有 HybridEngine 那套 reshard，也缺少 Data Buffer / partial / fully-async 一等开关。先跑通选 TRL；卡一多、要 Megatron / 同卡少一份整模，再迁 veRL。
+Ray 可以被 veRL / OpenRLHF / slime 当运行时；说明使用 Ray 后，还要交代算法和 sampling 训练流程。TRL 把 GRPO 塞进 Trainer，适合 7B 原型、数卡、HF ckpt；rollout 往往还是 HF generate 或薄薄一层 vLLM，没有 HybridEngine 那套 reshard，也缺少 Data Buffer / partial / fully-async 一等开关。先跑通选 TRL；卡一多、要 Megatron / 同卡少一份整模，再迁 veRL。
 
 ## 再按资源放置方式选择
 
@@ -65,7 +67,7 @@ veRL HybridEngine：同卡、同进程换训练分片 ↔ 推理 TP，少一份�
 
 ## 追问
 
-**Ray 是强化学习库吗？**
+**Ray 是 RL 库吗？**
 不是。它调度 worker 和放置。veRL、OpenRLHF、slime 都可以跑在 Ray 上。因此还要说明算法和 rollout、训练的拆分方式。
 **TRL 和 veRL 差在哪？**
 TRL 把 GRPO 塞进 HuggingFace Trainer，适合原型；veRL 把 rollout/train 拆成 worker，并用 HybridEngine 同卡换布局。规模、资源放置方式、对 logp 重算的原生支持都不同。

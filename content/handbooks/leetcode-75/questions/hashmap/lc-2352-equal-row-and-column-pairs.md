@@ -4,7 +4,9 @@ section: hashmap
 order: 4
 level: A
 title: LC 2352 · 相等行列对
-quick: "把每一行转成 tuple 放进 `Counter` 计数，再把每一列拼成 tuple 去表里查，次数累加就是答案。时间 $O(n^2)$，额外空间 $O(n^2)$。"
+quick: >-
+  把每一行转成 tuple 放进 `Counter` 计数，再把每一列拼成 tuple 去表里查，次数累加就是答案。时间 $O(n^2)$，额外空间
+  $O(n^2)$。
 tags:
   - Array
   - Hash
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2352. Equal Row and Column Pairs
-    url: https://leetcode.com/problems/equal-row-and-column-pairs/
+    url: 'https://leetcode.com/problems/equal-row-and-column-pairs/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -98,7 +100,7 @@ print("simple tests passed")
 
 时间 $O(n^2)$：每行、每列建键和哈希各是 $O(n)$。额外空间 $O(n^2)$，存了 $n$ 个长度为 $n$ 的 tuple。
 
-## 边界
+## Edge Cases
 
 有重复行、重复列时，计数相乘式累加，全 $1$ 的 $2 \times 2$ 矩阵答案是 $4$。
 

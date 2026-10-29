@@ -4,7 +4,7 @@ section: binary-tree
 order: 3
 level: S
 title: LC 226 · 翻转二叉树
-quick: "我会在每个节点把左右孩子交换，再递归翻转两边子树，前序后序都行。每个节点只换一次，时间 $O(n)$，额外空间 $O(h)$。"
+quick: 我会在每个节点把左右孩子交换，再递归翻转两边子树，前序后序都行。每个节点只换一次，时间 $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 226. 翻转二叉树
-    url: https://leetcode.cn/problems/invert-binary-tree/
+    url: 'https://leetcode.cn/problems/invert-binary-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -126,10 +126,10 @@ if __name__ == "__main__":
 
 ```python
 root = TreeNode(
-        4,
-        TreeNode(2, TreeNode(1), TreeNode(3)),
-        TreeNode(7, TreeNode(6), TreeNode(9)),
-    )
+    4,
+    TreeNode(2, TreeNode(1), TreeNode(3)),
+    TreeNode(7, TreeNode(6), TreeNode(9)),
+)
 assert to_list(invertTree(root)) == [4, 7, 2, 9, 6, 3, 1]
 assert invertTree(None) is None
 print("simple tests passed")
@@ -141,7 +141,7 @@ print("simple tests passed")
 
 每个节点换一次，时间 $O(n)$，额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 空树返回 `None`。单节点左右都为空，换了等于没换。只有一个孩子时，换完它会挂到另一侧。
 
@@ -155,6 +155,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def invertTree(root):
     if root is None:

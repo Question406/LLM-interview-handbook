@@ -5,7 +5,8 @@ order: 200
 level: S
 title: DeepSeek 向算法笔试/面试：手写完整 Multi-Head Attention（含形状与 Mask）
 quick: >-
-  按投影 $Q,K,V$、拆头、缩放点积、加因果 / padding mask、数值稳定的 softmax、拼头、输出投影的顺序写。代码里交代清 contiguous/view 的边界，再说明 GQA 只是改了 K/V 的头数组织。
+  按投影 $Q,K,V$、拆头、缩放点积、加因果 / padding mask、数值稳定的 softmax、拼头、输出投影的顺序写。代码里交代清
+  contiguous/view 的 applicability，再说明 GQA 只是改了 K/V 的头数组织。
 tags:
   - DeepSeek
   - Attention
@@ -14,29 +15,29 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: DeepSeek 大模型算法岗笔试面经分享（练习向整理）
-    url: https://www.nowcoder.com/discuss/913482312753418240
+    url: 'https://www.nowcoder.com/discuss/913482312753418240'
     type: secondary
   - title: Attention Is All You Need
-    url: https://arxiv.org/abs/1706.03762
+    url: 'https://arxiv.org/abs/1706.03762'
     type: primary
 ---
 
 ## 题目描述
 
-使用传入的投影矩阵实现多头自注意力，支持调用者指定的注意力mask，不调用现成的多头注意力模块。
+使用传入的投影矩阵实现 multi-head self-attention，支持调用者指定的 attention mask，不调用现成的 multi-head attention 模块。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `mha(x,wq,wk,wv,wo,n_heads,mask=None)`。x为[B,T,C]；四个权重均[C,C]，采用x@W的右乘约定；C能被`n_heads`整除。mask若提供，须可广播到[B,`n_heads`,T,T]，True表示屏蔽。
+实现 `mha(x,wq,wk,wv,wo,n_heads,mask=None)`。x 为[B,T,C]；四个权重均[C,C]，采用 x@W 的右乘约定；C 能被`n_heads`整除。mask 若提供，须可广播到[B,`n_heads`,T,T]，True 表示屏蔽。
 
 ### 输出与约束
 
-返回[B,T,C]。每头按sqrt(C/`n_heads`)缩放点积分数，对可见key做softmax，组合value后拼接并右乘wo。默认无因果mask、无bias、无dropout；需要因果限制时由调用者提供上三角True的mask。保证每query至少一个可见key。
+返回[B,T,C]。每头按 sqrt(C/`n_heads`)缩放点积分数，对可见 key 做 softmax，组合 value 后拼接并右乘 wo。默认无因果 mask、无 bias、无 dropout；需要因果限制时由调用者提供上三角 True 的 mask。保证每 query 至少一个可见 key。
 
 ### 示例
 
@@ -49,7 +50,7 @@ B=T=n_heads=1,C=2，x=[[[1,2]]]，wq=wk=wv=wo=2×2单位矩阵
 
 手写 MHA 按这个顺序来：投影 $Q,K,V$，拆成多头，算缩放点积，加 mask，softmax，乘 $V$，拼头，最后输出投影。数学骨架就是缩放点积加 mask 再加权 $V$，GQA、MLA 都不动这一块。
 
-这题来自公开的练习向整理帖，不是候选人逐字实录，按 DeepSeek 系算法岗的高频手撕来准备，所以标的是 `realInterview: false`。常见翻车是公式背得出、形状写错，或者把 GQA/MLA 说成改了 softmax。MLA 是另一条压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照的真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
+这题来自公开的练习向整理帖，按 DeepSeek 系算法岗的高频手撕来准备，所以标的是 `realInterview: false`。常见翻车是公式背得出、形状写错，或者把 GQA/MLA 说成改了 softmax。MLA 是另一条压缩轴，见 `arch-mla`；本题先把 MHA 写完。对照的真题手撕见 `baichuan-mha-handwrite`、`pdd-attention-handwrite`。
 
 ## 公式与白板检查
 
@@ -61,6 +62,7 @@ $$
 
 ```python
 import torch
+
 
 def mha(x, wq, wk, wv, wo, n_heads, mask=None):
     b, t, c = x.shape
@@ -94,7 +96,7 @@ GQA 让 $H_{\mathrm{kv}}\lt H$，K/V 的头少，Q 那边做 `repeat_interleave`
 x = torch.zeros(1, 2, 4)
 w = torch.eye(4)
 torch.testing.assert_close(mha(x, w, w, w, w, 2), x)
-x = torch.tensor([[[1., 0., 1., 0.], [0., 1., 0., 1.]]])
+x = torch.tensor([[[1.0, 0.0, 1.0, 0.0], [0.0, 1.0, 0.0, 1.0]]])
 mask = torch.ones(2, 2, dtype=torch.bool).triu(1)
 a = mha(x, w, w, w, w, 2, mask)
 changed = x.clone()
@@ -111,7 +113,7 @@ print("simple tests passed")
 点积的方差和 $d_h$ 成正比，不缩放 softmax 就饱和了。
 
 **mask 加在 softmax 前还是后？**
-前。softmax 之后再加，已经分配好的注意力权重就改不了了。
+前。softmax 之后再加，已经分配好的 attention 权重就改不了了。
 
 **GQA 要改 $d_h$ 吗？**
 不用。头维仍是 $d_{\mathrm{model}}/H_{\mathrm{q}}$，只是 K/V 的头少了。

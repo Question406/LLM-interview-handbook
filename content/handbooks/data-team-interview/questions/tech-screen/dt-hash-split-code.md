@@ -3,8 +3,11 @@ id: dt-hash-split-code
 section: tech-screen
 order: 25
 level: A
-title: CoderPad：训练 / 开发 / 门禁怎么稳定切开，怎样才不会泄漏？
-quick: "对稳定的 group_id 做哈希再取模，让同一仓库、书、线程或近重复簇整组落在训练或评测的同一侧。随机 shuffle 会把同一篇转载拆到两边，让记忆看起来像泛化。种子和规范化版本要记录，重跑才稳定；时间泄漏和生成 prompt 里混入评测题，哈希解决不了，要单独查。"
+title: CoderPad：训练 / 开发 / evaluation gate 怎么稳定切开，怎样才不会 leakage？
+quick: >-
+  对稳定的 group_id 做哈希再取模，让同一仓库、书、线程或 near-duplicates cluster 整组落在训练或评测的同一侧。随机
+  shuffle 会把同一篇转载拆到两边，让记忆看起来像泛化。seed 和规范化版本要记录，重跑才稳定；时间 leakage 和生成 prompt
+  里混入评测题，哈希解决不了，要单独查。
 companies:
   - apple
 tags:
@@ -15,24 +18,24 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: Deduplicating Training Data Makes Language Models Better
-    url: https://arxiv.org/abs/2107.06499
+    url: 'https://arxiv.org/abs/2107.06499'
     type: primary
   - title: Datasheets for Datasets
-    url: https://arxiv.org/abs/1803.09010
+    url: 'https://arxiv.org/abs/1803.09010'
     type: primary
   - title: LiveCodeBench
-    url: https://arxiv.org/abs/2403.07974
+    url: 'https://arxiv.org/abs/2403.07974'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
-将同一文档组稳定分配到训练、开发或门禁集合。同组文档必须始终落在同一分区，不能因为样本顺序或程序重启而改变。
+将同一文档组稳定分配到训练、开发或 held-out evaluation set 合。同组文档必须始终落在同一分区，不能因为样本顺序或程序重启而改变。
 
 ### 输入与接口
 
@@ -56,9 +59,9 @@ split_of("any-group",holdout_frac=0.0,dev_frac=0.0) -> "train"
 
 ## 解题思路与参考答案
 
-我会对稳定的组键做哈希再取模，决定一条数据进 train、dev 还是 holdout。用组键是为了让同一仓库、同一本书、同一个对话线程或同一个近重复簇整组落在同一侧。
+我会对稳定的组键做哈希再取模，决定一条数据进 train、dev 还是 holdout。用组键是为了让同一仓库、同一本书、同一个对话线程或同一个 near-duplicates cluster 整组落在同一侧。
 
-比如一篇博客被转载了三次，随机 `shuffle` 切 90/10，很可能两份进训练、一份进评测，模型背下来的东西在评测上看起来就像泛化。固定组键和种子之后，新增文档或者重跑流程，已有文档的划分都不变；单次 `random.random() < 0.1` 做不到这一点。
+比如一篇博客被转载了三次，随机 `shuffle` 切 90/10，很可能两份进训练、一份进评测，模型背下来的东西在评测上看起来就像泛化。固定组键和 seed 之后，新增文档或者重跑流程，已有文档的划分都不变；单次 `random.random() < 0.1` 做不到这一点。
 
 键用已经规范化的 URL 或稳定的 `doc_id`，规范化见 `dt-url-canon-code`。有 `group_id`（仓库、ISBN、thread_id）的文档先映射到组键，再对组键哈希，组内文档跟着组走。
 
@@ -72,7 +75,9 @@ def bucket(key, n_buckets=1000, seed="split-v3"):
     return int.from_bytes(digest, "little") % n_buckets
 
 
-def split_of(group_id, holdout_frac=0.02, dev_frac=0.03, n_buckets=1000, seed="split-v3"):
+def split_of(
+    group_id, holdout_frac=0.02, dev_frac=0.03, n_buckets=1000, seed="split-v3"
+):
     """按组键划分 holdout / dev / train，同组文档总落在同一侧。"""
     if holdout_frac < 0 or dev_frac < 0 or holdout_frac + dev_frac > 1:
         raise ValueError("fractions must be non-negative and sum to at most 1")
@@ -87,7 +92,7 @@ def split_of(group_id, holdout_frac=0.02, dev_frac=0.03, n_buckets=1000, seed="s
     return "train"
 ```
 
-测试覆盖可复现、换种子、比例和浮点边界：
+测试覆盖可复现、换 seed、比例和 floating-point boundaries：
 
 ```python
 from collections import Counter
@@ -106,8 +111,13 @@ assert 1_700 < counts["holdout"] < 2_300
 assert 2_600 < counts["dev"] < 3_400
 
 # 浮点比例按 round 取整：落在第 57 号桶的组属于 58% 的 holdout
-edge_key = next(f"k{i}" for i in range(10_000) if bucket(f"k{i}", n_buckets=100, seed="s") == 57)
-assert split_of(edge_key, holdout_frac=0.58, dev_frac=0.0, n_buckets=100, seed="s") == "holdout"
+edge_key = next(
+    f"k{i}" for i in range(10_000) if bucket(f"k{i}", n_buckets=100, seed="s") == 57
+)
+assert (
+    split_of(edge_key, holdout_frac=0.58, dev_frac=0.0, n_buckets=100, seed="s")
+    == "holdout"
+)
 
 # 比例之和超过 1 是配置错误
 try:
@@ -117,28 +127,28 @@ except ValueError:
     pass
 ```
 
-每条数据一次哈希，线性扫一遍就完，不需要全局 shuffle，所以分布式跑也没问题。`seed` 要写进 dataset card，改种子等于换了一套门禁，新旧数字不能比。holdout 比例按题量定，别按 token 体积：网页 token 的 2% 可能就是几亿文档，评测用不完，也浪费。SFT 和人标集的 holdout 按条切；预训练的污染扫描针对冻结题，见 `dt-ngram-contam-code`。
+每条数据一次哈希，线性扫一遍就完，不需要全局 shuffle，所以分布式跑也没问题。`seed` 要写进 dataset card，改 seed 等于换了一套 evaluation gate，新旧数字不能比。holdout 比例按题量定，别按 token 体积：网页 token 的 2% 可能就是几亿文档，评测用不完，也浪费。SFT 和人标集的 holdout 按条切；pre-training 的 contamination scan 针对冻结题，见 `dt-ngram-contam-code`。
 
-## 哈希防不住的泄漏
+## 哈希防不住的 leakage
 
-哈希只认 id，两篇近重复文档 id 不同就可能分到两边，所以要先聚类（`dt-lsh-cluster-code`），用簇的代表 id 当 `group_id`。时间泄漏它也管不了，训练之后才出现的题，代码题要用截止日之后的新题做门禁，也就是 LiveCodeBench 那套。还有合成自污染：教师模型把门禁题当 few-shot 来生成训练集，生成 prompt 里贴进去的评测题哈希划分发现不了，要另外查，见 `dt-self-improve`。
+哈希只认 id，两篇 near-duplicates 文档 id 不同就可能分到两边，所以要先聚类（`dt-lsh-cluster-code`），用 cluster 的代表 id 当 `group_id`。时间 leakage 它也管不了，训练之后才出现的题，代码题要用截止日之后的新题做 evaluation gate，也就是 LiveCodeBench 那套。还有合成自 contamination：teacher model 把 held-out evaluation examples 当 few-shot 来生成 training set，生成 prompt 里贴进去的评测题哈希划分发现不了，要另外查，见 `dt-self-improve`。
 
-开发集可以跟着模型一起长，门禁集要冻结，`dev` 和 `holdout` 别共用哈希区间。
+development set 可以跟着模型一起长，held-out evaluation set 要冻结，`dev` 和 `holdout` 别共用哈希区间。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert split_of("repo:torvalds/linux") == split_of("repo:torvalds/linux")` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert split_of("repo:torvalds/linux") == split_of("repo:torvalds/linux")` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
 **要不要按语言分层切？**
-可以。先分语言桶，桶内再哈希，保证低资源语言也有门禁条目；全局切一刀，稀有语言可能全进 train。
+可以。先分语言桶，桶内再哈希，保证 low-resource 语言也有 evaluation gate 条目；全局切一刀，稀有语言可能全进 train。
 
 **会话数据按什么分组？**
 按 thread 切。按轮次切，同一段对话会被拆到训练和评测两边。
@@ -147,6 +157,6 @@ except ValueError:
 先核对 `seed` 和规范化版本，lineage 对不上的情况见 `dt-repro-lineage`。
 
 **比例为什么用 round 算桶数？**
-`int(0.58 * 100)` 会因为浮点误差变成 57，边界上的组就被分错了，测试里专门有一条覆盖这个。
+`int(0.58 * 100)` 会因为浮点误差变成 57，位于 bucket endpoints 的 groups 就被分错了，测试里专门有一条覆盖这个。
 
 相关：`dt-url-canon-code`、`dt-ngram-contam-code`、`dt-lsh-cluster-code`、`dt-self-improve`、`dt-repro-lineage`

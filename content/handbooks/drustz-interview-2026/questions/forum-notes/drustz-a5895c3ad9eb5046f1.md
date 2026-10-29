@@ -1,0 +1,41 @@
+---
+id: drustz-a5895c3ad9eb5046f1
+section: forum-notes
+order: 91
+level: A
+title: Anthropic 面试题库 · 一亩三分地会员版（完整） · Interview Advice
+quick: 作者文档章节 · Anthropic 面试题库 · 一亩三分地会员版（完整） · Interview Advice
+companies: []
+tags:
+  - DrustZ
+  - 作者文档章节
+  - 面经整理与回答建议
+realInterview: false
+status: published
+format: markdown
+updatedAt: '2026-10-28'
+sources:
+  - title: DrustZ / Mingrui Zhang · pinned source
+    url: >-
+      https://github.com/DrustZ/ai_interview_prep_2026/blob/04316c111d0e4b75ca2ab8de0e6b42379727946e/online_resource/1p3a-anthropic.md
+    type: primary
+---
+## Interview Advice
+
+**How to use this guide:**
+
+- Do **not** try to memorize every word.
+- In a 45-minute interview, pick **2 or 3 deep topics** (like Version Control or Handling Large Files) and explain them well.
+**Key Points to Remember:**
+
+- **Not a Chatbot:** Emphasize that each run is standalone.
+- **Storage vs. Execution:** 10MB is fine to store, but impossible to run on current models. You must explain this distinction.
+- **Trade-offs:** Always say "We could do X or Y. I chose X because..." (e.g., "I chose Diffs to save storage, even though it makes reading slightly slower").
+
+*原帖: [来源链接](https://www.1point3acres.com/interview/thread/7100017*)
+
+---
+
+---
+
+来源：[DrustZ / Mingrui Zhang · online_resource/1p3a-anthropic.md](https://github.com/DrustZ/ai_interview_prep_2026/blob/04316c111d0e4b75ca2ab8de0e6b42379727946e/online_resource/1p3a-anthropic.md)。作者整理资料；许可和第三方来源范围见阅读指南。

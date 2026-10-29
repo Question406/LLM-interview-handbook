@@ -4,20 +4,22 @@ section: math
 order: 1
 level: A
 title: LC 9 · 回文数
-quick: "负数和以 $0$ 结尾的非零数直接判否。不转字符串，就反转后半段数字和前半段比，偶数位比 `x == rev`，奇数位丢掉中间位比 `x == rev // 10`。"
+quick: >-
+  负数和以 $0$ 结尾的非零数直接判否。不转字符串，就反转后半段数字和前半段比，偶数位比 `x == rev`，奇数位丢掉中间位比 `x == rev //
+  10`。
 tags:
   - Math
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 9. 回文数
-    url: https://leetcode.cn/problems/palindrome-number/
+    url: 'https://leetcode.cn/problems/palindrome-number/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -96,7 +98,7 @@ print("simple tests passed")
 
 时间 $O(\log_{10} x)$（位数），额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $x=0$ 是回文。
 - $x=10$ 末尾是 $0$ 且自身不为 $0$，反转会丢前导零，直接判否。

@@ -5,20 +5,21 @@ order: 9
 level: S
 title: LC 128 · 最长连续序列
 quick: >-
-  先把所有数放进集合，只从每段的左端点开始数：$x-1$ 不在集合里，才向右数 $x,x+1,\ldots$。非起点直接跳过，每个数最多被数一次，时间 $O(n)$。
+  先把所有数放进集合，只从每段的左端点开始数：$x-1$ 不在集合里，才向右数 $x,x+1,\ldots$。非起点直接跳过，每个数最多被数一次，时间
+  $O(n)$。
 tags:
   - Hash
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 128. 最长连续序列
-    url: https://leetcode.cn/problems/longest-consecutive-sequence/
+    url: 'https://leetcode.cn/problems/longest-consecutive-sequence/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -105,7 +106,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。外层跳过非起点，内层每个元素最多访问一次。
 
-## 边界
+## Edge Cases
 
 空数组答案是 $0$，$[1]$ 答案是 $1$。全部相同时集合去重后只剩一个起点，长度是 $1$。有负数和 $0$ 也没关系，连续看的是值，和下标无关。
 

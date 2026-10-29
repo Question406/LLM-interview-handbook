@@ -3,17 +3,20 @@ id: ml101-label-noise
 section: data
 order: 12
 level: A
-title: "标签噪声会怎样影响模型？怎么检查？"
-quick: "标签噪声会把训练目标拉向错误答案，还可能让验证指标和真实业务目标脱节。先抽查原始证据、标注分歧、重复样本冲突和延迟标签，再复核模型高置信分歧；高损失只用于找候选，不能直接删除难样本。"
+title: 标签噪声会怎样影响模型？怎么检查？
+quick: >-
+  标签噪声会把训练目标拉向错误答案，还可能让验证指标和真实业务目标脱节。先抽查原始证据、标注分歧、重复样本冲突和延迟标签，再复核模型高置信分歧；高损失只用于找候选，不能直接删除难样本。
 tags:
   - ML101
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Zhang et al.: Understanding deep learning requires rethinking generalization"
-    url: https://arxiv.org/abs/1611.03530
+  - title: >-
+      Zhang et al.: Understanding deep learning requires rethinking
+      generalization
+    url: 'https://arxiv.org/abs/1611.03530'
     type: primary
 ---
 
@@ -30,8 +33,8 @@ sources:
 **模型置信度很高，能直接把标签改成预测吗？**
 不能。模型本身可能系统性出错，应回到可验证的原始证据或独立复核，把预测当作检查线索。
 
-**简单加正则化，就能解决标错吗？**
-不能保证。正则化可以限制拟合，但无法修正标签定义或错行关联；先查数据生成过程，再考虑稳健训练方法。
+**简单加 regularization，就能解决标错吗？**
+不能保证。regularization 可以限制拟合，但无法修正标签定义或错行关联；先查数据生成过程，再考虑稳健训练方法。
 
 **多个标注员意见不一致，就一定有错吗？**
-不一定。题目可能本身含糊，或指南缺少边界定义。要先澄清任务、记录分歧，必要时允许不确定标签，再评估一致性。
+不一定。题目可能本身含糊，或指南缺少 ambiguous-case definitions。要先澄清任务、记录分歧，必要时允许不确定标签，再评估一致性。

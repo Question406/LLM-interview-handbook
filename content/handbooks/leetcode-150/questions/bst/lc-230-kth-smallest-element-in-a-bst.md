@@ -3,8 +3,10 @@ id: lc-230-kth-smallest-element-in-a-bst
 section: bst
 order: 2
 level: S
-title: LC 230 · 二叉搜索树中第K小的元素
-quick: "BST 的中序遍历按值递增，用栈做中序，数到第 $k$ 个弹出的节点就返回。只遍历需要的前缀，时间约 $O(h+k)$、最坏 $O(n)$，额外空间 $O(h)$。"
+title: LC 230 · 二叉搜索树中第 K 小的元素
+quick: >-
+  BST 的中序遍历按值递增，用栈做中序，数到第 $k$ 个弹出的节点就返回。只遍历需要的前缀，时间约 $O(h+k)$、最坏 $O(n)$，额外空间
+  $O(h)$。
 tags:
   - Tree
   - BST
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 230. 二叉搜索树中第K小的元素
-    url: https://leetcode.cn/problems/kth-smallest-element-in-a-bst/
+    url: 'https://leetcode.cn/problems/kth-smallest-element-in-a-bst/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -123,7 +125,7 @@ print("simple tests passed")
 
 时间最坏 $O(n)$，树平衡时约 $O(h+k)$。额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 $k=1$ 是最左节点，也就是最小值；$k=n$ 是最右节点，也就是最大值。左链很深时，栈或递归是 $O(h)$，最坏 $O(n)$。
 

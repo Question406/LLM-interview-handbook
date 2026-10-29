@@ -5,20 +5,21 @@ order: 50
 level: A
 title: 阿里研发面：JVM 内存怎么分，CMS 和 G1 差在哪？
 quick: >-
-  堆分新生代和老年代，类元数据在堆外的元空间，另外还有直接内存、线程栈和代码缓存。CMS 是并发标记清除，不整理，碎片多；G1 把堆切成 Region 按价值回收，停顿更可控。低延迟我优先看 G1/ZGC，吞吐优先看并行收集。
+  堆分新生代和老年代，类元数据在堆外的元空间，另外还有直接内存、线程栈和代码缓存。CMS 是并发标记清除，不整理，碎片多；G1 把堆切成 Region
+  按价值回收，停顿更可控。低延迟我优先看 G1/ZGC，throughput 优先看并行收集。
 tags:
   - Alibaba
   - JVM
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里校招 Java 面经（秒杀/LRU）
-    url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
+    url: 'https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6'
     type: candidate-first-hand
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -28,7 +29,7 @@ JVM 内存我先拆成堆内和堆外：堆里是新生代和老年代，堆外�
 
 分配失败和「堆满了」是两回事。大对象可能直接进老年代；元空间增长、直接内存没释放、线程栈占得太多，都会 OOM，这时堆看起来还空着。线程开太多就是一个例子，每个线程都有栈，堆外先爆，看起来像「内存泄漏」。所以讲内存分区时，我会把每一块和它对应的 OOM 绑在一起说。
 
-收集器按目标分三类：要吞吐用 Parallel，要低停顿、可预期用 CMS / G1，要近乎无停顿用 ZGC / Shenandoah。校招对比 CMS 和 G1 就够。
+收集器按目标分三类：要 throughput 用 Parallel，要低停顿、可预期用 CMS / G1，要近乎无停顿用 ZGC / Shenandoah。校招对比 CMS 和 G1 就够。
 
 | | CMS | G1 |
 | --- | --- | --- |
@@ -46,7 +47,7 @@ CMS 的并发清除不移动对象，老年代会越来越碎，再来一个大�
 
 淘天交易链路是典型的短请求、高 QPS、对尾延迟敏感。一次 Full GC 停几百毫秒，下游会超时重试，重试又放大堆分配，最后形成雪崩。双十一前更常见的是两种情况：促销规则对象、商品快照、Hessian 反序列化把 Eden 打爆，晋升太快；或者网关堆了太多 DirectBuffer 没归还，堆内 GC 看起来很健康，进程却被 cgroup 杀掉。
 
-可以落到一个具体服务上讲，比如商品详情或购物车。读路径尽量走堆外缓存或本地缓存，避免每个请求都 new 一堆 JSON 对象。写路径（下单）对象生命周期短，新生代给够，减少晋升。延迟 SLA 紧的链路用 G1，并盯住 P99 停顿；批处理对账、离线导出才用 Parallel 换吞吐。
+可以落到一个具体服务上讲，比如商品详情或购物车。读路径尽量走堆外缓存或本地缓存，避免每个请求都 new 一堆 JSON 对象。写路径（下单）对象生命周期短，新生代给够，减少晋升。延迟 SLA 紧的链路用 G1，并盯住 P99 停顿；批处理对账、离线导出才用 Parallel 换 throughput。
 
 线上排查先看报的是 `Java heap space`、`Metaspace` 还是 `Direct buffer memory`。堆 OOM 做 heap dump，看是泄漏还是峰值太大；元空间看动态代理、热加载有没有卸载；直接内存看 Netty 的泄漏检测。同时对照 GC 日志、线程 dump 和容器内存限额，光把 `-XX:+UseG1GC` 加上不算排查完。
 

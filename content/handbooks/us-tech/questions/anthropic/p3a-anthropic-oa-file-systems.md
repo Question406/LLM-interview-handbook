@@ -3,8 +3,10 @@ id: p3a-anthropic-oa-file-systems
 section: anthropic
 order: 614
 level: A
-title: "Anthropic：文件系统 OA：路径操作与未公开扩展"
-quick: "我会用目录树表示文件系统，让所有接口共用路径规范化和遍历规则。先确定文件与目录冲突、根目录、重复创建的行为，再实现操作；题卡没有给出 LLM 末级细节，这部分不补写。"
+title: Anthropic：文件系统 OA：路径操作与未公开扩展
+quick: >-
+  我会用目录树表示文件系统，让所有接口共用路径规范化和遍历规则。先确定文件与目录冲突、根目录、重复创建的行为，再实现操作；题卡没有给出 LLM
+  末级细节，这部分不补写。
 companies:
   - anthropic
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Anthropic
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Anthropic · oa-file-systems"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-file-systems
+  - title: 1Point3Acres · Anthropic · oa-file-systems
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-file-systems
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现一个简化的内存文件系统，支持目录、文本文件和路径规范化。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `FS()` 初始仅有根目录 `/`。路径均为绝对 Unix 路径；忽略重复 `/` 与 `.`，`..` 返回父目录，在根目录继续向上仍为根。无符号链接和权限机制，节点总数不超过 10000。
 
@@ -49,18 +55,18 @@ remove("/a", recursive=True); ls("/") = ["b"]
 
 CodeSignal 风格的 OA，逐级实现一个简化的文件系统：先是创建目录、读写文件、列目录和删除，后面的级别会在同一棵目录树上继续加功能。题卡提到最后一级有和 LLM 相关的扩展，但没给出细节。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。最后一级的 LLM 扩展细节不足，下面不重构它；接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。最后一级的 LLM 扩展细节不足，下面不重构它；接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
-我会用一棵目录树管理路径，目录节点存子节点，文件节点存内容。所有操作共享路径规则，边界行为先约定清楚，才不会出现同一路径在不同接口里含义不同：
+我会用一棵目录树管理路径，目录节点存子节点，文件节点存内容。所有操作共享路径规则，edge-case behavior 先约定清楚，才不会出现同一路径在不同接口里含义不同：
 
 - 文件和目录同名冲突时报什么错；
 - 根目录能不能删、能不能当文件写；
 - 重复创建同一个目录是报错还是什么也不做；
 - `.` 和 `..` 怎么处理，`..` 越过根目录时怎么办。
 
-OA 一般会给 helper 函数和题面契约，现场先读清楚它们，再为路径规范化写几个边界例子跑一下。后续级别的题面没有读到，不要先猜着实现。
+OA 一般会给 helper 函数和题面契约，现场先读清楚它们，再为路径规范化写几个 edge cases 跑一下。后续级别的题面没有读到，不要先猜着实现。
 
 ## 完整编程练习（手册重构版）
 
@@ -210,7 +216,7 @@ class FS:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -221,6 +227,7 @@ def expect_error(error, fn, *args):
     except error:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise {error.__name__}")
+
 
 # 写入、追加、带 "." 的路径
 fs = FS()
@@ -248,12 +255,12 @@ fs.write("/b/empty", "")
 assert fs.read("/b/empty") == ""
 assert fs.ls("/b") == ["c", "empty", "x"]
 
-expect_error(FileNotFoundError, fs.mkdir, "/p/q")      # 缺上级且没给 parents
-expect_error(FileExistsError, fs.mkdir, "/b/x")        # 同名文件已存在
-expect_error(NotADirectoryError, fs.read, "/b/x/y")    # 把文件当目录
+expect_error(FileNotFoundError, fs.mkdir, "/p/q")  # 缺上级且没给 parents
+expect_error(FileExistsError, fs.mkdir, "/b/x")  # 同名文件已存在
+expect_error(NotADirectoryError, fs.read, "/b/x/y")  # 把文件当目录
 expect_error(IsADirectoryError, fs.write, "/b/c", "t")  # 往目录里写内容
-expect_error(ValueError, fs.remove, "/")               # 根目录不能删
-expect_error(ValueError, fs.ls, "b")                   # 只接受绝对路径
+expect_error(ValueError, fs.remove, "/")  # 根目录不能删
+expect_error(ValueError, fs.ls, "b")  # 只接受绝对路径
 ```
 
 ### 复杂度与追问

@@ -3,8 +3,10 @@ id: p3a-microsoft-top-k-largest-retain
 section: microsoft
 order: 608
 level: A
-title: "Microsoft AI / Copilot：MAI Top-K：排序、保留原序与复合排名"
-quick: "我会先用大小为 K 的堆选出入选下标，再按下标升序输出，保留原数组顺序。并列和业务排名都放进排序键，选择阶段 O(n log K)、空间 O(K)；K 接近 n 时全排序更简单。"
+title: Microsoft AI / Copilot：MAI Top-K：排序、保留原序与复合排名
+quick: >-
+  我会先用大小为 K 的堆选出入选下标，再按下标升序输出，保留原数组顺序。并列和业务排名都放进排序键，选择阶段 O(n log K)、空间 O(K)；K 接近
+  n 时全排序更简单。
 companies:
   - microsoft
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · top-k-largest-retain"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/top-k-largest-retain
+  - title: 1Point3Acres · Microsoft AI / Copilot · top-k-largest-retain
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/top-k-largest-retain
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 从数组中选出数值最大的 k 个元素，但按它们在原数组中的先后顺序返回。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -52,7 +55,7 @@ topk([1, 2], 0)       -> []
 
 从数组里取出值最大的 K 个元素。题卡提到的变体有两种：结果要保持元素在原数组中的顺序，或者按业务给的复合规则排名。
 
-> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Microsoft AI / Copilot 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -157,7 +160,7 @@ def above(nums, threshold):
 
 调用可能改动输入时，每个用例新建列表或逐行复制矩阵。原地修改题要检查修改后的内容；返回有效长度的题还要比较这个长度以内的前缀，不能只检查函数有没有报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -168,6 +171,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # suffix_counts：最大值重复、负数
 assert suffix_counts([3, 1, 3], [0, 1, 2]) == [2, 1, 1]
@@ -186,7 +190,12 @@ expect_value_error(topk, [1, 2], 3)
 assert dfs([("a", "b"), ("a", "c"), ("b", "c")], "a") == ["a", "b", "c"]
 assert dfs([("a", "c"), ("a", "b"), ("b", "d")], "a") == ["a", "b", "d", "c"]
 # 入栈时就标记的写法在这里会得到 a, b, d, c
-assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == ["a", "b", "c", "d"]
+assert dfs([("a", "b"), ("a", "c"), ("b", "c"), ("b", "d")], "a") == [
+    "a",
+    "b",
+    "c",
+    "d",
+]
 assert dfs([], "x") == ["x"]
 
 # above：严格大于；空数组

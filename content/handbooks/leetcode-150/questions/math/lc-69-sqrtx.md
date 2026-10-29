@@ -4,7 +4,9 @@ section: math
 order: 4
 level: S
 title: LC 69 · x 的平方根
-quick: "求 $\\lfloor\\sqrt{x}\\rfloor$，在 $[1,x]$ 上二分，找最大的可行 `mid`。判断 `mid*mid <= x` 时写成 `mid <= x // mid`，避免溢出。"
+quick: >-
+  求 $\lfloor\sqrt{x}\rfloor$，在 $[1,x]$ 上二分，找最大的可行 `mid`。判断 `mid*mid <= x` 时写成
+  `mid <= x // mid`，避免溢出。
 tags:
   - Binary Search
   - Math
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 69. x 的平方根
-    url: https://leetcode.cn/problems/sqrtx/
+    url: 'https://leetcode.cn/problems/sqrtx/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -100,7 +102,7 @@ print("simple tests passed")
 
 时间 $O(\log x)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - $x=0$ 或 $1$ 时答案就是 $x$，在二分前单独返回。
 - 完全平方数时，二分会精确命中 `mid == x // mid`。

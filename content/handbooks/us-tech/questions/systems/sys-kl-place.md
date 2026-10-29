@@ -23,20 +23,22 @@ sources:
     type: primary
 ---
 
-KL 可以先进入奖励、影响优势，也可以直接作为 loss 的可导正则项；两种接法的梯度路径不同。比如 verl 打开 `use_kl_loss` 后，就不再往奖励里加 KL，避免同一次更新罚两次。Hugging Face 的后训练笔记也区分了奖励中停梯度和 loss 中反传这两条路径，参考模型显存见 `sys-ref-model`。
+KL 可以先进入奖励、影响优势，也可以直接作为 loss 的可导正则项；两种接法的梯度路径不同。比如 verl 打开 `use_kl_loss` 后，就不再往奖励里加 KL，避免同一次更新罚两次。Hugging Face 的后训练笔记也区分了奖励中停梯度和 loss 中 backpropagation 这两条路径，reference model 显存见 `sys-ref-model`。
 
-PPO 常见的是每个 token 的奖励先减去 $\beta$ 乘以对参考模型的 KL，标量的任务奖励加在最后一个有效 token 上，再算优势。这里的 KL 是已经算完的数。它改变优势的大小，不直接对 $\log\pi_{\mathrm{ref}}$ 反传。
+PPO 常见的是每个 token 的奖励先减去 $\beta$ 乘以对 reference model 的 KL，标量的任务奖励加在最后一个有效 token 上，再算优势。这里的 KL 是已经算完的数。它改变优势的大小，不直接对 $\log\pi_{\mathrm{ref}}$ backpropagation。
 
-GRPO 常见的是优势只用任务奖励在组内标准化，KL 作为 loss 里的另一项加进去。该项对当前策略可导，把概率往参考模型拉。verl 默认这条，并提供 $k_1$、$k_2$、$k_3$ 几种估计。$k_3$ 的值非负，但它对策略的梯度并不自动等于反向 KL 的梯度，估计式和反传式要一起说。
+GRPO 常见的是优势只用任务奖励在组内 standardization，KL 作为 loss 里的另一项加进去。该项对当前策略可导，把概率往 reference model 拉。verl 默认这条，并提供 $k_1$、$k_2$、$k_3$ 几种估计。$k_3$ 的值非负，但它对策略的梯度并不自动等于 reverse KL 的梯度，估计式和 backpropagation 式要一起说。
 
 如果两套同时开，优势里已经罚过一次，loss 里再罚一次，$\beta$ 的含义变了，调参对不上论文。
 
 ```python
 import torch
 
+
 def kl_in_reward(task_reward, policy_logp, ref_logp, beta):
     kl = (policy_logp - ref_logp).detach()
     return task_reward - beta * kl.sum(-1)
+
 
 def kl_in_loss(pg_loss, policy_logp, ref_logp, beta, mask):
     delta = ref_logp.detach() - policy_logp
@@ -47,7 +49,7 @@ def kl_in_loss(pg_loss, policy_logp, ref_logp, beta, mask):
 ## 追问
 
 **优势已经含 KL 时，还要不要 clip？**
-要。clip 限制的是相对采样策略的步长。KL 限制的是相对参考模型的漂移。不是同一个锚。
+要。clip 限制的是相对 sampling 策略的步长。KL 限制的是相对 reference model 的漂移。不是同一个锚。
 
 ## 相关题
 

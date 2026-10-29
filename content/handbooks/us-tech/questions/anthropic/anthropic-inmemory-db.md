@@ -4,7 +4,9 @@ section: anthropic
 order: 1
 level: A
 title: Anthropic：实现带 TTL 的内存数据库，后续怎么加备份和并发？
-quick: "我会从第一层就让接口带时间戳，读时检查 TTL，再用过期堆主动回收。备份保存过滤后的一致快照，值做深拷贝、TTL 存剩余时长，恢复时从当前时间重新计时；需要历史查询时还要保留版本。"
+quick: >-
+  我会从第一层就让接口带时间戳，读时检查 TTL，再用过期堆主动回收。备份保存过滤后的一致快照，值做深拷贝、TTL
+  存剩余时长，恢复时从当前时间重新计时；需要历史查询时还要保留版本。
 tags:
   - 完整编程练习
   - Anthropic
@@ -14,13 +16,13 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Anthropic interview questions (IGotAnOffer)
-    url: https://igotanoffer.com/en/advice/anthropic-interview-questions
+    url: 'https://igotanoffer.com/en/advice/anthropic-interview-questions'
     type: secondary
   - title: Anthropic SDE OA — Memory Database and Bank System
-    url: https://programhelp.net/en/oa/anthropic-sde-oa-interview-guide/
+    url: 'https://programhelp.net/en/oa/anthropic-sde-oa-interview-guide/'
     type: secondary
 ---
 
@@ -59,7 +61,7 @@ get(1, "a", "x")  -> 7         # 历史不受 restore 影响
 
 ## 完整编程练习（手册重构版）
 
-> 来源网站只披露了题型（见下文「真题记录」）。下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试。Python 3，只用标准库。
+> 来源网站只披露了题型（见下文「真题记录」）。下面的接口、约束和测试是手册补的练习约定。Python 3，只用标准库。
 
 ### 题面、接口与约束
 
@@ -100,17 +102,17 @@ from typing import Any, NamedTuple, Optional
 
 class Version(NamedTuple):
     time: int
-    value: Any                  # None 表示删除墓碑
-    expires_at: Optional[int]   # None 表示永不过期
+    value: Any  # None 表示删除墓碑
+    expires_at: Optional[int]  # None 表示永不过期
 
 
 class DB:
     """带 TTL、历史查询和备份恢复的内存数据库。每个 (key, field) 保存按时间追加的版本列表。"""
 
     def __init__(self):
-        self.log = {}         # (key, field) -> [Version, ...]，按写入时间递增
+        self.log = {}  # (key, field) -> [Version, ...]，按写入时间递增
         self.clock = float("-inf")
-        self.backups = []     # backup id -> {(key, field): (value, 剩余 ttl 或 None)}
+        self.backups = []  # backup id -> {(key, field): (value, 剩余 ttl 或 None)}
 
     def _advance(self, t):
         if t < self.clock:
@@ -126,7 +128,7 @@ class DB:
             if version.time <= t:
                 if version.expires_at is None or t < version.expires_at:
                     return version.value, version.expires_at
-                return None, None   # 最新版本已过期，不退回更旧的值
+                return None, None  # 最新版本已过期，不退回更旧的值
         return None, None
 
     def set(self, t, key, field, value, ttl=None):
@@ -188,7 +190,7 @@ class DB:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

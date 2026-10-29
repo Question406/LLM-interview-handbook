@@ -3,8 +3,8 @@ id: p3a-perplexity-credit-tracker-with-expiring-credits
 section: design
 order: 610
 level: A
-title: "Perplexity：过期积分：时间范围与最早过期优先"
-quick: "把每笔积分看成带起止时间和剩余量的 grant，按事件时间执行并优先扣最早到期的；历史查询或乱序写入时用事件日志重放。"
+title: Perplexity：过期积分：时间范围与最早过期优先
+quick: 把每笔积分看成带起止时间和剩余量的 grant，按事件时间执行并优先扣最早到期的；历史查询或乱序写入时用事件日志重放。
 companies:
   - ai-labs
 tags:
@@ -13,13 +13,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Perplexity
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Perplexity · credit-tracker-with-expiring-credits"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/credit-tracker-with-expiring-credits
+  - title: 1Point3Acres · Perplexity · credit-tracker-with-expiring-credits
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/credit-tracker-with-expiring-credits
     type: secondary
 ---
 
@@ -27,7 +29,9 @@ sources:
 
 实现带有效期的额度账本，支持乱序录入、按事件时间查询和透支债务。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Credits.add(grant_id,amount,start,duration)` 注册唯一编号的额度，有效期为闭区间 `[start,start+duration]`。`subtract(amount,timestamp)` 在该时刻消费，优先使用到期较早的有效额度，到期相同按 `grant_id` 字典序；不足部分形成债务，后续生效的新额度优先偿还债务。
 
@@ -47,7 +51,7 @@ balance(19)=None；balance(40)=5；balance(41)=4。
 
 实现一个积分系统：可以发放带有效期的积分、在某个时刻扣减积分、查询某个时刻的余额。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -174,7 +178,7 @@ def spend_earliest_expiring(active, amount):
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -186,13 +190,14 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
 
+
 # 扣款先于 grant 到达：重放后结果和按时间顺序到达一样
 credits = Credits()
 credits.subtract(2, 35)
 credits.add("a", 4, 20, 40)
 credits.add("b", 3, 30, 10)
-assert credits.balance(40) == 5   # 35 时先花最早到期的 b
-assert credits.balance(41) == 4   # b 在 40 之后过期
+assert credits.balance(40) == 5  # 35 时先花最早到期的 b
+assert credits.balance(41) == 4  # b 在 40 之后过期
 assert credits.balance(19) is None
 
 # 恰好花完但 grant 仍有效返回 0；过期后没有有效 grant 返回 None
@@ -217,9 +222,9 @@ credits.add("a", 6, 2, 10)
 assert credits.balance(2) == 2
 
 # 非法输入
-expect_value_error(credits.add, "a", 1, 50, 1)   # grant id 重复
-expect_value_error(credits.subtract, 1, 2)       # 时间戳重复
-expect_value_error(credits.subtract, -1, 60)     # 负金额
+expect_value_error(credits.add, "a", 1, 50, 1)  # grant id 重复
+expect_value_error(credits.subtract, 1, 2)  # 时间戳重复
+expect_value_error(credits.subtract, -1, 60)  # 负金额
 ```
 
 ### 复杂度与追问

@@ -4,27 +4,39 @@ section: amazon
 order: 8
 level: A
 title: Amazon：特征存储一致性，训练/服务特征偏移？
-quick: "训练和服务要共用特征定义与变换，训练再按 event time 取标签发生前的历史值。SageMaker Feature Store 的 online 保存最新值、offline 追加历史，但窗口、缺失填充和发布版本仍要由管道统一。可以记录线上特征，再按请求时间离线重放，逐列查偏移。"
+quick: >-
+  训练和服务要共用特征定义与变换，训练再按 event time 取标签发生前的历史值。SageMaker Feature Store 的 online
+  保存最新值、offline 追加历史，但窗口、缺失填充和发布版本仍要由管道统一。可以记录线上特征，再按请求时间离线重放，逐列查偏移。
 tags:
   - Amazon
   - Feature Store
   - Training-Serving Skew
   - SageMaker
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
-  - title: Create, store, and share features with Feature Store
-    url: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html
+  - title: 'Create, store, and share features with Feature Store'
+    url: 'https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html'
     type: primary
   - title: Amazon SageMaker Feature Store
-    url: https://aws.amazon.com/sagemaker/ai/feature-store/
+    url: 'https://aws.amazon.com/sagemaker/ai/feature-store/'
     type: primary
   - title: Feature Store storage configurations
-    url: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-storage-configurations.html
+    url: >-
+      https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-storage-configurations.html
     type: primary
 ---
+
+## 可以这样回答
+
+避免训练/服务偏移，要让两边使用相同的特征定义和变换，并且让训练只读到预测当时已经发生的事件。比如预测昨天的点击，若取的是今天的加购次数，离线 AUC 会很好看，线上却根本拿不到这些未来信息。
+
+SageMaker Feature Store 的 online store 提供低延迟的最新值，offline store 在 S3 追加历史；两边一起开启才会同步。Recs、风控和搜索精排都会遇到这类一致性问题，存储之外仍要检查时间、窗口和写入管道。
+
+## 技术备查
 
 避免训练/服务偏移，要让两边使用相同的特征定义和变换，并且让训练只读到预测当时已经发生的事件。比如预测昨天的点击，若取的是今天的加购次数，离线 AUC 会很好看，线上却根本拿不到这些未来信息。
 
@@ -40,7 +52,7 @@ $$
 
 这里处理时间只是写进 Feature Store 的时钟，和事件发生时间不同。流任务晚到 10 分钟，按处理时间切训练集就可能漏掉点击，或者把它放进错误窗口。线上「过去 10 分钟交易次数」和训练 SQL 要共用窗口及迟到策略；一边取 10 分钟、一边取 7 天，测到的提升就不可信。
 
-接着核对缺失值和变换。线上没有记录填 0、训练却丢行，模型看到的就是两套分布，冷启动 ASIN 尤其受影响，见 `amazon-cold-start`。填充规则应写进特征定义，两边调用同一函数。训练里做了 `log1p`、服务忘了做，或训练用品牌词表 v3、线上还用 v2，也会产生偏移。可以把变换代码打版本，让训练作业和推理容器读同一镜像，词表随特征一起发布。
+接着核对缺失值和变换。线上没有记录填 0、训练却丢行，模型看到的就是两套分布，冷启动 ASIN 尤其受影响，见 `amazon-cold-start`。填充规则应写进特征定义，两边调用同一函数。训练里做了 `log1p`、服务忘了做，或训练用品牌 vocabulary v3、线上还用 v2，也会产生偏移。可以把变换代码打版本，让训练作业和推理容器读同一镜像，vocabulary 随特征一起发布。
 
 聚合的业务含义也要统一。「7 日购买次数」是否含退货、是否按 marketplace 切分、时区取 UTC 还是当地，都应写清。搜索和推荐共用信号时，一个 feature group 保持一个定义，避免复制一列后各自修改。主键和单位也要检查：跨设备用户 id、ASIN 大小写、event_time 的秒和毫秒，任何一处不一致都可能拼错行。
 
@@ -59,7 +71,7 @@ def pit_lookup(hist, entity, t):
 
 实际作业使用 Feature Store / Athena 的时间旅行 API。验证时，记录一批线上请求当时读到的特征向量，再让 offline 按原请求时间重放拼接，逐列比较。这样能直接找到偏移的列。p99 变差还可能来自 online 热 key，需要另查 `amazon-p99-stream`。
 
-权限也属于发布契约：online 给在线服务，offline 给训练，两边 ACL 可以不同。原始 PII 不应进入可被广告模型扫描的 group，见 `amazon-guardrails`。在 Leadership Principles 中，这类事故对应 Dive Deep 和 Ownership；上线门禁见 `amazon-lp-ml`。
+权限也属于发布契约：online 给在线服务，offline 给训练，两边 ACL 可以不同。原始 PII 不应进入可被广告模型扫描的 group，见 `amazon-guardrails`。在 Leadership Principles 中，这类事故对应 Dive Deep 和 Ownership；release criteria 见 `amazon-lp-ml`。
 
 ## 追问
 

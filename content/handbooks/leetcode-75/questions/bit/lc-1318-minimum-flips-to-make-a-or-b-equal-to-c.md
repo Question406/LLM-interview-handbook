@@ -5,20 +5,22 @@ order: 3
 level: A
 title: LC 1318 · 或运算的最小翻转次数
 quick: >-
-  按位或没有进位，各位独立算再相加。$c$ 某位为 $1$ 时，$a,b$ 该位都是 $0$ 才翻 $1$ 次；$c$ 某位为 $0$ 时，$a,b$ 该位有几个 $1$ 就翻几次。一行写法是 $\mathrm{popcount}((a|b)\oplus c)+\mathrm{popcount}(a\,\&\,b\,\&\,\lnot c)$，时间 $O(\log C)$，额外空间 $O(1)$。
+  按位或没有进位，各位独立算再相加。$c$ 某位为 $1$ 时，$a,b$ 该位都是 $0$ 才翻 $1$ 次；$c$ 某位为 $0$ 时，$a,b$
+  该位有几个 $1$ 就翻几次。一行写法是 $\mathrm{popcount}((a|b)\oplus
+  c)+\mathrm{popcount}(a\,\&\,b\,\&\,\lnot c)$，时间 $O(\log C)$，额外空间 $O(1)$。
 tags:
   - Bit
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 1318. Minimum Flips to Make a OR b Equal to c
-    url: https://leetcode.com/problems/minimum-flips-to-make-a-or-b-equal-to-c/
+    url: 'https://leetcode.com/problems/minimum-flips-to-make-a-or-b-equal-to-c/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 时间 $O(\log C)$，$C=\max(a,b,c)$，最多约 $30$ 轮。额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - 已经满足 $a\,|\,b=c$ 时，每位代价都是 $0$。
 - $c$ 的某位是 $0$ 而 $a, b$ 该位都是 $1$，要翻两次，只算 $1$ 是常见错误。

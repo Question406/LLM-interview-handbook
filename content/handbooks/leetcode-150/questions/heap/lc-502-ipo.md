@@ -4,8 +4,7 @@ section: heap
 order: 2
 level: A
 title: LC 502 · IPO
-quick: >-
-  项目按启动资本排序，资本够得着的项目把利润放进大根堆，每次取堆顶利润最大的来做，最多做 $k$ 次。每个项目进出堆一次，时间 $O(n\log n)$。
+quick: 项目按启动资本排序，资本够得着的项目把利润放进大根堆，每次取堆顶利润最大的来做，最多做 $k$ 次。每个项目进出堆一次，时间 $O(n\log n)$。
 tags:
   - Heap
   - Greedy
@@ -13,19 +12,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 502. IPO
-    url: https://leetcode.cn/problems/ipo/
+    url: 'https://leetcode.cn/problems/ipo/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
 ## 题目描述
 
-有 n 个项目，第 i 个项目要求当前资本至少为 `capital[i]`，完成后获得纯利润 `profits[i]`。初始资本为 w，最多选择 k 个不同项目，项目按先后次序完成，每个项目最多一次。项目的启动资本只是进入门槛，不会从资本中扣除；完成后把利润加入现有资本。求最大最终资本。
+有 n 个项目，第 i 个项目要求当前资本至少为 `capital[i]`，完成后获得纯利润 `profits[i]`。初始资本为 w，最多选择 k 个不同项目，项目按先后次序完成，每个项目最多一次。项目的启动资本只是进入 threshold，不会从资本中扣除；完成后把利润加入现有资本。求最大最终资本。
 
 ### 接口与输出
 
@@ -105,7 +104,7 @@ print("simple tests passed")
 
 排序 $O(n\log n)$，每个项目进出堆一次也是 $O(n\log n)$，额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 初始资本一个项目都做不了时，第一轮解锁循环不进，堆是空的，直接返回 $w$。$k$ 比能做的项目数还大时，某一轮堆空就 `break`，不会空弹。利润为 $0$ 的项目仍可能解锁后续资本更高的项目，该做还是做，只是 $w$ 不变。
 

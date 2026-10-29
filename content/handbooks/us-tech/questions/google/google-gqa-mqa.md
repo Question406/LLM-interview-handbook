@@ -4,28 +4,40 @@ section: google
 order: 2
 level: A
 title: Google：MHA、MQA、GQA 怎么选？KV 显存差多少？
-quick: "MHA 为每个 query head 保留独立 K/V，MQA 让所有 query head 共用一组 K/V，GQA 则用 $H_{\\mathrm{kv}}$ 组，满足 $1 < H_{\\mathrm{kv}} < H$。Decode 的 KV 显存和读取带宽都与 KV head 数成正比，我会根据质量和目标并发选择共享程度。"
+quick: >-
+  MHA 为每个 query head 保留独立 K/V，MQA 让所有 query head 共用一组 K/V，GQA 则用
+  $H_{\mathrm{kv}}$ 组，满足 $1 < H_{\mathrm{kv}} < H$。Decode 的 KV 显存和读取带宽都与 KV head
+  数成正比，我会根据质量和目标并发选择共享程度。
 tags:
   - Google
   - GQA
   - MQA
   - KV Cache
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: GQA — Training Generalized Multi-Query Transformer Models
-    url: https://arxiv.org/abs/2305.13245
+    url: 'https://arxiv.org/abs/2305.13245'
     type: primary
   - title: Fast Transformer Decoding — One Write-Head is All You Need (MQA)
-    url: https://arxiv.org/abs/1911.02150
+    url: 'https://arxiv.org/abs/1911.02150'
     type: primary
 ---
 
+## 可以这样回答
+
 要降低 decode 的 KV 开销，可以让多个 query head 共享 K/V。MQA 共享得最彻底，所有 query head 共用一组；GQA 保留几组，在质量和带宽之间折中。比如把 32 组 KV 减到 8 组，cache 约变成原来的四分之一。MQA 来自 Google 论文，系统写法也见 `arch-gqa`。
 
-注意力仍是 $QK^\top V$，共享改变的是 $K,V$ 的 head 数。先算一条请求的 KV 占用：
+$L$ 层数，$T$ 上下文。$H_q$ 只影响当前 token 的 Q 投影，几乎不影响 cache。Decode 每步都要把历史 KV 从 HBM 读进来，所以 $H_{\mathrm{kv}}$ 直接影响带宽需求。
+
+## 技术备查
+
+要降低 decode 的 KV 开销，可以让多个 query head 共享 K/V。MQA 共享得最彻底，所有 query head 共用一组；GQA 保留几组，在质量和带宽之间折中。比如把 32 组 KV 减到 8 组，cache 约变成原来的四分之一。MQA 来自 Google 论文，系统写法也见 `arch-gqa`。
+
+attention 仍是 $QK^\top V$，共享改变的是 $K,V$ 的 head 数。先算一条请求的 KV 占用：
 
 $$
 \mathrm{KV\ bytes} \approx 2 \cdot L \cdot T \cdot H_{\mathrm{kv}} \cdot d_{\mathrm{head}} \cdot \mathrm{bytes}
@@ -39,9 +51,9 @@ $L$ 层数，$T$ 上下文。$H_q$ 只影响当前 token 的 Q 投影，几乎�
 
 训练时 GQA 要对齐：同一组 query head 共享 KV 投影。从已有 MHA checkpoint 升 GQA，GQA 论文用 mean pool 已有 KV heads 初始化，比随机更好。
 
-先问服务的是 输入预填充（prefill，即处理输入并建立缓存） 还是 逐 token 生成（decode）。Prefill 是计算密集，MQA 省不了多少 FLOPs；decode 是内存密集，MQA/GQA 是重要的优化手段。再问上下文：8k 和 1M 的 KV 差两个数量级，GQA + 量化 cache 才够塞。
+先问服务的是 输入 prefill 还是 逐 token 生成（decode）。Prefill 是计算密集，MQA 省不了多少 FLOPs；decode 是内存密集，MQA/GQA 是重要的优化手段。再问上下文：8k 和 1M 的 KV 差两个数量级，GQA + 量化 cache 才够塞。
 
-MQA 掉点通常来自 KV 表达不够，不是 softmax 写错。补救：加 $H_{\mathrm{kv}}$、加窗口注意力、加 MLA 一类低秩 KV（那是 DeepSeek 的另一条线，见 `kuaishou-gqa-mqa-mla`）。Google 面到这就停在 GQA 也可以。
+MQA 掉点通常来自 KV 表达不够，不是 softmax 写错。补救：加 $H_{\mathrm{kv}}$、加窗口 attention、加 MLA 一类低秩 KV（那是 DeepSeek 的另一条线，见 `kuaishou-gqa-mqa-mla`）。Google 面到这就停在 GQA 也可以。
 
 实现时，attention kernel 里要把 $K$ repeat 成 $H_q$ 组，或走 GQA 专用 kernel。形状不对时，head 维的广播会出错。手写一步 decode 见 `code-kv-cache-step`。
 

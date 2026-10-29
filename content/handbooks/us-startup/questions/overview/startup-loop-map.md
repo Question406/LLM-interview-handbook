@@ -53,7 +53,7 @@ Onsite 里至少有一轮不在白纸上写算法。Stripe 叫 Bug Bash 和 Inte
 
 ## 后训练
 
-MLE 岗和 SWE 岗是两套。Scale 2026 年初有一篇博士挂经，第一面被写成 post-training 八股，题面本身帖子里没公开，见 `scale-posttrain-oral`。Snorkel 和 Fireworks 没有对得上的候选人原话，收的是他们自己发表的做法，也就是迭代式直接偏好优化（DPO），以及只给一个打分函数的强化微调。
+MLE 岗和 SWE 岗是两套。Scale 2026 年初有一篇博士挂经，第一面被写成 post-training 八股，题面本身帖子里没公开，见 `scale-posttrain-oral`。Snorkel 和 Fireworks 没有对得上的候选人原话，收的是他们自己发表的做法，也就是迭代式 DPO，以及只给一个打分函数的强化微调。
 
 ## 这次没收成题的
 

@@ -5,20 +5,22 @@ order: 36
 level: A
 title: 阿里手撕：最大子数组、买卖股票、接雨水、最长回文怎么收口？
 quick: >-
-  四道题都先定义「以 $i$ 结尾 / 经过 $i$」再写转移。最大子数组（53）用 Kadane，比较从当前元素重新开始和接在前一段后面；买卖股票（121）维护此前最低价；接雨水（42）取左右最高柱的较小值再减当前高度；最长回文（5）用中心扩展或 DP。
+  四道题都先定义「以 $i$ 结尾 / 经过 $i$」再写转移。最大子数组（53）用
+  Kadane，比较从当前元素重新开始和接在前一段后面；买卖股票（121）维护此前最低价；接雨水（42）取左右最高柱的较小值再减当前高度；最长回文（5）用中心扩展或
+  DP。
 tags:
   - Alibaba
   - DP
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 最大子数组和
-    url: https://leetcode.cn/problems/maximum-subarray/
+    url: 'https://leetcode.cn/problems/maximum-subarray/'
     type: primary
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -30,7 +32,7 @@ sources:
 
 - `max_sub_array(nums)`：输入非空整数数组，返回任一非空连续子数组的最大元素和。全负数时也必须选至少一个元素。
 - `max_profit(prices)`：输入非空每日价格数组，只能先买入一次、在更晚的一天卖出一次；也可以不交易。返回最大非负利润。
-- `trap(height)`：数组表示宽度均为 1 的非负柱高，返回下雨后可在柱子之间存住的总水量，不能在最左、最右边界之外存水。
+- `trap(height)`：数组表示宽度均为 1 的非负柱高，返回下雨后可在柱子之间存住的总水量，不能在 leftmost / rightmost endpoints 之外存水。
 - `longest_palindrome(s)`：返回字符串中最长的连续回文子串；有多个同长度答案时任意一个均可。空字符串返回空字符串。
 
 ### 示例
@@ -56,7 +58,7 @@ longest_palindrome("babad")         -> "bab" 或 "aba"
 
 42 里位置 $i$ 能接的水是 $\max(0,\,\min(L_{\max}[i],R_{\max}[i])-h[i])$，左右最高柱里矮的那根决定水位。可以预计算左右最高数组，空间 $O(n)$；也可以双指针从两端往中间收，哪边矮先结算哪边，时间 $O(n)$、空间 $O(1)$。两端的位置接不住水。
 
-5 对每个中心分别按奇数和偶数长度往外扩，记录最长的起止位置，时间 $O(n^2)$、空间 $O(1)$；用 DP 表的话空间是 $O(n^2)$。能写 Manacher 更好，不写也行。边界测单字符和全相同的串。
+5 对每个中心分别按奇数和偶数长度往外扩，记录最长的起止位置，时间 $O(n^2)$、空间 $O(1)$；用 DP 表的话空间是 $O(n^2)$。能写 Manacher 更好，不写也行。edge-case tests 使用单字符和全相同的串。
 
 ```python
 from typing import List
@@ -141,7 +143,7 @@ if __name__ == "__main__":
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 

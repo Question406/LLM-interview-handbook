@@ -3,8 +3,11 @@ id: fund-softmax-nll
 section: fundamentals
 order: 3
 level: S
-title: 从 logits 到 Softmax 再到交叉熵，梯度为什么是 $\hat{p}-y$？
-quick: "把损失写成 $\\ell=-z_y+\\log\\sum_j e^{z_j}$，对 $z_k$ 求导，log-sum-exp 项给出 $p_k$，前一项只在 $k=y$ 时给出 $-1$，所以导数是 $p_k-\\mathbf{1}[k=y]$：正确类是 $p_y-1$，其余类是 $p_k$，合起来就是 $\\nabla_z\\ell=\\hat{p}-y$。"
+title: '从 logits 到 Softmax 再到 cross entropy，梯度为什么是 $\hat{p}-y$？'
+quick: >-
+  把损失写成 $\ell=-z_y+\log\sum_j e^{z_j}$，对 $z_k$ 求导，log-sum-exp 项给出 $p_k$，前一项只在
+  $k=y$ 时给出 $-1$，所以导数是 $p_k-\mathbf{1}[k=y]$：正确类是 $p_y-1$，其余类是 $p_k$，合起来就是
+  $\nabla_z\ell=\hat{p}-y$。
 tags:
   - Math
   - Cross Entropy
@@ -12,17 +15,18 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Softmax function
-    url: https://en.wikipedia.org/wiki/Softmax_function
+    url: 'https://en.wikipedia.org/wiki/Softmax_function'
     type: primary
   - title: PyTorch CrossEntropyLoss
-    url: https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+    url: >-
+      https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
     type: reference
 ---
 
-梯度是 $\hat p-y$，是因为把交叉熵写成 $-z_y+\log\sum_j e^{z_j}$ 之后，log-sum-exp 那一项对 $z_k$ 求导正好是 softmax 概率 $p_k$，前一项只在正确类上贡献 $-1$。LLM 的 next-token 损失就是这件事。记 logits $z\in\mathbb{R}^V$，
+梯度是 $\hat p-y$，是因为把 cross entropy 写成 $-z_y+\log\sum_j e^{z_j}$ 之后，log-sum-exp 那一项对 $z_k$ 求导正好是 softmax 概率 $p_k$，前一项只在正确类上贡献 $-1$。LLM 的 next-token 损失就是这件事。记 logits $z\in\mathbb{R}^V$，
 
 $$
 p_i=\frac{e^{z_i}}{\sum_{j=1}^V e^{z_j}},\qquad \ell(z,y)=-\log p_y=-z_y+\log\sum_j e^{z_j}.
@@ -54,15 +58,15 @@ $$
 
 ## 和熵、KL 对上
 
-如果标签是软分布 $p$，比如 label smoothing 或蒸馏教师给的分布，损失就是交叉熵 $H(p,\hat{p})=-\sum_i p_i\log\hat{p}_i$，梯度变成 $\hat{p}-p$；$p$ 是 one-hot 时退回上式。又因为 $H(p,\hat{p})=H(p)+D_{\mathrm{KL}}(p\|\hat{p})$，对 $\hat{p}$ 优化交叉熵等价于优化正向 KL。
+如果标签是软分布 $p$，比如 label smoothing 或 distillation 教师给的分布，损失就是 cross entropy $H(p,\hat{p})=-\sum_i p_i\log\hat{p}_i$，梯度变成 $\hat{p}-p$；$p$ 是 one-hot 时退回上式。又因为 $H(p,\hat{p})=H(p)+D_{\mathrm{KL}}(p\|\hat{p})$，对 $\hat{p}$ 优化 cross entropy 等价于优化 forward KL。
 
 ## 追问
 
 **Temperature 和这件事什么关系？**
-它相当于把 logits 除以 $T$：$p_i\propto e^{z_i/T}$。$T\to 0$ 趋近 argmax，$T\to\infty$ 趋近均匀。它只改采样或蒸馏用的软标签，不自动等于训练时的 entropy bonus。
+它相当于把 logits 除以 $T$：$p_i\propto e^{z_i/T}$。$T\to 0$ 趋近 argmax，$T\to\infty$ 趋近均匀。它只改 sampling 或 distillation 用的 soft labels，不自动等于训练时的 entropy bonus。
 
 **随机初始化时损失应该是多少？**
-大约 $\log V$。词表 $V=10^5$、随机初始化时 $p_y\approx 1/V$，$\ell\approx\log V\approx 11.5$ nat，见「10 万词表交叉熵起步」。
+大约 $\log V$。vocabulary $V=10^5$、随机初始化时 $p_y\approx 1/V$，$\ell\approx\log V\approx 11.5$ nat，见「10 万 vocabulary cross entropy 起步」。
 
 **pad token 怎么处理？**
 用 `ignore_index` 把 pad 排除在平均之外，否则起步损失会被 pad 稀释。

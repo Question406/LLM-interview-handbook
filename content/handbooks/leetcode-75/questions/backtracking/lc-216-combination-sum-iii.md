@@ -5,20 +5,21 @@ order: 2
 level: A
 title: LC 216 · 组合总和 III
 quick: >-
-  回溯从 $1$ 到 $9$ 里选 $k$ 个不同的数凑出和 $n$：下一层只从更大的数开始，天然去重；剩余和放不下或数字不够就剪枝。搜索空间最多 $\binom{9}{k}$，时间 $O(\binom{9}{k}\cdot k)$，额外空间 $O(k)$。
+  回溯从 $1$ 到 $9$ 里选 $k$ 个不同的数凑出和 $n$：下一层只从更大的数开始，天然去重；剩余和放不下或数字不够就剪枝。搜索空间最多
+  $\binom{9}{k}$，时间 $O(\binom{9}{k}\cdot k)$，额外空间 $O(k)$。
 tags:
   - Backtracking
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 216. Combination Sum III
-    url: https://leetcode.com/problems/combination-sum-iii/
+    url: 'https://leetcode.com/problems/combination-sum-iii/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -115,7 +116,7 @@ print("simple tests passed")
 
 最多枚举 $\binom{9}{k}$ 个组合，每个收集时拷贝 $O(k)$，时间 $O(\binom{9}{k}\cdot k)$，上界是常数级。额外空间 $O(k)$，是递归栈和路径，输出另计。
 
-## 边界
+## Edge Cases
 
 - $n$ 太小、凑不出 $k$ 个不同数时，比如 $k=4, n=1$，返回 `[]`。
 - $n$ 太大、超过 $9+8+\dots$ 能凑出的最大和时，同样返回 `[]`，剪枝会让搜索很快结束。
@@ -123,7 +124,7 @@ print("simple tests passed")
 
 ## 追问
 
-**不用回溯，用位掩码怎么做？**
+**不用回溯，用 bitmask 怎么做？**
 枚举 $0$ 到 $2^9-1$ 的每个 mask，第 $i$ 位为 $1$ 表示选了 $i+1$，`popcount == k` 且和为 $n$ 就收。时间 $O(2^9\cdot 9)$，写起来更短，但不好推广到更大的候选集。
 
 ```python

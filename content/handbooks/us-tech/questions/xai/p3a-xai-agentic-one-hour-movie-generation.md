@@ -3,8 +3,9 @@ id: p3a-xai-agentic-one-hour-movie-generation
 section: xai
 order: 622
 level: S
-title: "xAI：一小时电影生成 Agent workflow"
-quick: "我会把一小时电影分成剧本、分镜、素材、镜头生成、剪辑和评审，每个阶段保存产物。角色和场景从同一份设定库取条件，失败按镜头重试，高成本阶段前人工审批；编排循环还要校验工具调用、去重并限制步数。"
+title: xAI：一小时电影生成 Agent workflow
+quick: >-
+  我会把一小时电影分成剧本、分镜、素材、镜头生成、剪辑和评审，每个阶段保存产物。角色和场景从同一份设定库取条件，失败按镜头重试，高成本阶段前人工审批；编排循环还要校验工具调用、去重并限制步数。
 companies:
   - xai
 tags:
@@ -13,13 +14,15 @@ tags:
   - Frontier-2026-10
   - ML
   - xAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · xAI · agentic-one-hour-movie-generation"
-    url: https://www.1point3acres.com/interview/problems/company/xai/agentic-one-hour-movie-generation
+  - title: 1Point3Acres · xAI · agentic-one-hour-movie-generation
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/agentic-one-hour-movie-generation
     type: secondary
 ---
 
@@ -27,7 +30,9 @@ sources:
 
 为代理式内容生成流程实现可本地运行的工具执行骨架。本练习使用模拟模型及工具，不要求调用真实电影生成服务。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `run_agent(model, tools, goal, budget=8)` 返回 `(answer, messages)`。tools 是工具名称到可调用函数的白名单映射，model 接收当前 messages，返回工具动作 `{"type":"tool","name":名称,"args":参数字典,"id":非空字符串}`，或最终动作 `{"type":"final","answer":字符串}`。messages 以包含 goal 的 user 消息开始，保留每次 assistant 动作、对应 tool 观测以及最终动作。
 
@@ -51,7 +56,7 @@ run_agent 返回 answer="5"；add 实际执行 1 次，两条工具观测都包�
 
 开放式设计题：设计一个 agent workflow，自动生成约一小时长的电影，重点是怎样拆分任务、组织生成过程，以及让整部片子前后保持一致。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -188,7 +193,7 @@ def evaluate(cases, predict):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -197,12 +202,15 @@ def scripted_model(actions):
     remaining = iter(actions)
     return lambda messages: next(remaining)
 
+
 # 同一个 id 请求两次，工具只执行一次
 calls = []
+
 
 def add(a, b):
     calls.append((a, b))
     return a + b
+
 
 add_call = {"type": "tool", "name": "add", "args": {"a": 2, "b": 3}, "id": "x"}
 model = scripted_model([add_call, add_call, {"type": "final", "answer": "5"}])
@@ -219,9 +227,11 @@ answer, trace = run_agent(model, {"add": add}, "2+3")
 assert trace[4]["content"]["ok"] is False
 assert "conflicting" in trace[4]["content"]["error"]
 
+
 # 工具抛异常也变成失败结果，循环继续
 def broken():
     raise KeyError("missing")
+
 
 broken_call = {"type": "tool", "name": "broken", "args": {}, "id": "b"}
 model = scripted_model([broken_call, {"type": "final", "answer": "gave up"}])

@@ -5,7 +5,10 @@ order: 191
 level: A
 title: Chinchilla 计算最优是什么？过训和欠训怎么判断？
 quick: >-
-  计算最优是在固定 FLOP 预算 $C\approx 6ND$ 下挑 $N$ 和 $D$ 的拆分，让损失最低。Kaplan 把更多算力分给参数；Hoffmann / Chinchilla 给出 $N$ 与 $D$ 近似同速涨，$D/N\approx 20$，所以同算力下更大的模型不总是更好。过训 / 欠训看 $D/N$ 相对这条前沿的位置，最干净的判据是同 $C$ 换更小 $N$、更多 $D$ 损失会不会更低。
+  计算最优是在固定 FLOP 预算 $C\approx 6ND$ 下挑 $N$ 和 $D$ 的拆分，让损失最低。Kaplan
+  把更多算力分给参数；Hoffmann / Chinchilla 给出 $N$ 与 $D$ 近似同速涨，$D/N\approx
+  20$，所以同算力下更大的模型不总是更好。过训 / 欠训看 $D/N$ 相对这条前沿的位置，最干净的判据是同 $C$ 换更小 $N$、更多 $D$
+  损失会不会更低。
 tags:
   - Scaling Laws
   - Chinchilla
@@ -13,16 +16,16 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Training Compute-Optimal Large Language Models
-    url: https://arxiv.org/abs/2203.15556
+    url: 'https://arxiv.org/abs/2203.15556'
     type: primary
   - title: Scaling Laws for Neural Language Models
-    url: https://arxiv.org/abs/2001.08361
+    url: 'https://arxiv.org/abs/2001.08361'
     type: secondary
 ---
-Chinchilla 计算最优说的是：训练算力锁死时，参数量 $N$ 和 token 数 $D$ 该怎么拆才能让损失最低，答案是两者近似同速增长，大约每个参数 20 个 token。「同样 FLOPs 下模型越大越好」是 Kaplan 口径的老说法，被 Hoffmann / Chinchilla 用同算力对比推翻了。过训、欠训就是看实际的 $D/N$ 落在这条前沿的哪一边。训练 FLOPs 的 $6ND$ 口算见 `infra-rl-mfu-6nd`，这题问的是 $N$ 和 $D$ 怎么配，跟 GPU 利用率无关。
+Chinchilla 计算最优说的是：训练算力锁死时，参数量 $N$ 和 token 数 $D$ 该怎么拆才能让损失最低，答案是两者近似同速增长，大约每个参数 20 个 token。「同样 FLOPs 下模型越大越好」是 Kaplan 定义的老说法，被 Hoffmann / Chinchilla 用同算力对比推翻了。过训、欠训就是看实际的 $D/N$ 落在这条前沿的哪一边。训练 FLOPs 的 $6ND$ 口算见 `infra-rl-mfu-6nd`，这题问的是 $N$ 和 $D$ 怎么配，跟 GPU 利用率无关。
 
 ## 固定 FLOP 下什么叫计算最优
 
@@ -66,7 +69,7 @@ $$
 数据也按比例加，或者预算没锁死的时候。锁死 $C$ 只加 $N$，Chinchilla 表明会亏。
 
 **20 是定理吗？**
-是经验拟合，会随数据质量、重复、词表、MoE 稀疏而漂移。拿它当数量级用，现场能画的判据是 IsoFLOP。
+是经验拟合，会随数据质量、重复、vocabulary、MoE 稀疏而漂移。拿它当数量级用，现场能画的判据是 IsoFLOP。
 
 **MoE 怎么套这套公式？**
 算 FLOPs 时 $N$ 用激活参数，总参数只影响显存。把 671B 全参数当成 $6ND$ 里的 $N$，算力会虚高一个数量级。

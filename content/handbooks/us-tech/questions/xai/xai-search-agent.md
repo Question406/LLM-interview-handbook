@@ -38,7 +38,7 @@ sources:
 
 用户问「刚才 X 上谁说了什么」，正确路径是 `x_search`（可滤 handle、时间窗），不是靠记忆。网页新闻走 `web_search`，可 `allowed_domains` / `excluded_domains`（文档写过上限大约 5 个，以当时为准）。`enable_image_understanding` 让 agent 看搜到的图，那是额外工具调用，会加延迟和视觉预算，见 `xai-grok-vision`。
 
-引用契约：回答里的命题要能指回这一次工具返回的 URL / 帖子 id。搜到 A 却用预训练里的旧数字，是时效幻觉。搜空了要说没找到，不要补「一般认为」。DeepSearch 长轨迹还要报步数和实际耗时，避免把「搜得久」当成质量。
+引用契约：回答里的命题要能指回这一次工具返回的 URL / 帖子 id。搜到 A 却用预训练里的旧数字，是时效 hallucination。搜空了要说没找到，不要补「一般认为」。DeepSearch 长轨迹还要报步数和实际耗时，避免把「搜得久」当成质量。
 
 对搜索失败，我会分别处理：
 

@@ -1,0 +1,612 @@
+[
+  {
+    "id": "sec-safety-security-threat-model",
+    "section": "foundations",
+    "title": "Safety、security、misuse 与 misalignment：先把研究问题分清楚",
+    "file": "content/handbooks/llm-safety-security/questions/foundations/sec-safety-security-threat-model.md",
+    "sourceIds": [
+      "harm",
+      "dojo",
+      "misalign"
+    ]
+  },
+  {
+    "id": "sec-attacker-control-budget",
+    "section": "foundations",
+    "title": "如何写一个足够严格、又接近真实部署的 attacker model？",
+    "file": "content/handbooks/llm-safety-security/questions/foundations/sec-attacker-control-budget.md",
+    "sourceIds": [
+      "adaptive",
+      "asb"
+    ]
+  },
+  {
+    "id": "sec-authorization-vs-refusal",
+    "section": "foundations",
+    "title": "Agent 会拒绝危险问题，为什么仍可能执行 unauthorized actions？",
+    "file": "content/handbooks/llm-safety-security/questions/foundations/sec-authorization-vs-refusal.md",
+    "sourceIds": [
+      "hierarchy",
+      "privacy"
+    ]
+  },
+  {
+    "id": "sec-jailbreak-generalization",
+    "section": "foundations",
+    "title": "一个 jailbreak defense 的 held-out success 能说明多少 robustness？",
+    "file": "content/handbooks/llm-safety-security/questions/foundations/sec-jailbreak-generalization.md",
+    "sourceIds": [
+      "harmbench",
+      "adaptive",
+      "xstest"
+    ]
+  },
+  {
+    "id": "sec-long-context-multiturn-risk",
+    "section": "foundations",
+    "title": "长 context 与长期 autonomy 为什么会改变 safety 的评估单位？",
+    "file": "content/handbooks/llm-safety-security/questions/foundations/sec-long-context-multiturn-risk.md",
+    "sourceIds": [
+      "manyshot",
+      "lab"
+    ]
+  },
+  {
+    "id": "sec-safe-completion-objective",
+    "section": "foundations",
+    "title": "Safety 是 refusal，还是在约束下完成任务？如何定义 safe completion？",
+    "file": "content/handbooks/llm-safety-security/questions/foundations/sec-safe-completion-objective.md",
+    "sourceIds": [
+      "dyn",
+      "osguard"
+    ]
+  },
+  {
+    "id": "sec-indirect-injection-causal-chain",
+    "section": "injection",
+    "title": "Indirect prompt injection：如何定位从 untrusted text 到 side effect 的因果链？",
+    "file": "content/handbooks/llm-safety-security/questions/injection/sec-indirect-injection-causal-chain.md",
+    "sourceIds": [
+      "injec",
+      "dojo"
+    ]
+  },
+  {
+    "id": "sec-role-confusion-probes",
+    "section": "injection",
+    "title": "Role Confusion：role tags 为什么可能不足，怎样验证机制解释？",
+    "file": "content/handbooks/llm-safety-security/questions/injection/sec-role-confusion-probes.md",
+    "sourceIds": [
+      "role"
+    ]
+  },
+  {
+    "id": "sec-helpful-third-party-instructions",
+    "section": "injection",
+    "title": "第三方内容有时确实包含有用 instructions，怎样避免 over-defense？",
+    "file": "content/handbooks/llm-safety-security/questions/injection/sec-helpful-third-party-instructions.md",
+    "sourceIds": [
+      "dyn"
+    ]
+  },
+  {
+    "id": "sec-adaptive-tool-chain-attacks",
+    "section": "injection",
+    "title": "Tool chaining 与 objective drift：每一步都看似合理，为什么整段 trajectory 会违规？",
+    "file": "content/handbooks/llm-safety-security/questions/injection/sec-adaptive-tool-chain-attacks.md",
+    "sourceIds": [
+      "lab"
+    ]
+  },
+  {
+    "id": "sec-exfiltration-vs-answer-corruption",
+    "section": "injection",
+    "title": "Answer corruption 与 data exfiltration 为什么需要不同的 success oracles？",
+    "file": "content/handbooks/llm-safety-security/questions/injection/sec-exfiltration-vs-answer-corruption.md",
+    "sourceIds": [
+      "rag",
+      "injec"
+    ]
+  },
+  {
+    "id": "sec-attack-transfer-and-budget",
+    "section": "injection",
+    "title": "Transferable payload 与 per-instance optimized attack，哪种更能说明风险？",
+    "file": "content/handbooks/llm-safety-security/questions/injection/sec-attack-transfer-and-budget.md",
+    "sourceIds": [
+      "adaptive",
+      "wasp"
+    ]
+  },
+  {
+    "id": "sec-mcp-tool-metadata-poisoning",
+    "section": "tools",
+    "title": "MCPTox：为什么没有调用的 tool 也能影响 agent？",
+    "file": "content/handbooks/llm-safety-security/questions/tools/sec-mcp-tool-metadata-poisoning.md",
+    "sourceIds": [
+      "mcptox"
+    ]
+  },
+  {
+    "id": "sec-tool-schema-semantic-authorization",
+    "section": "tools",
+    "title": "JSON schema validation 能防住 tool misuse 吗？",
+    "file": "content/handbooks/llm-safety-security/questions/tools/sec-tool-schema-semantic-authorization.md",
+    "sourceIds": [
+      "patterns",
+      "mcp"
+    ]
+  },
+  {
+    "id": "sec-mcp-confused-deputy",
+    "section": "tools",
+    "title": "MCP confused deputy：知道“谁登录了”为什么还不够？",
+    "file": "content/handbooks/llm-safety-security/questions/tools/sec-mcp-confused-deputy.md",
+    "sourceIds": [
+      "mcp"
+    ]
+  },
+  {
+    "id": "sec-skill-inject-supply-chain",
+    "section": "tools",
+    "title": "Skill-Inject：Skill 文件为什么既像文档，又像 supply-chain dependency？",
+    "file": "content/handbooks/llm-safety-security/questions/tools/sec-skill-inject-supply-chain.md",
+    "sourceIds": [
+      "skillinject"
+    ]
+  },
+  {
+    "id": "sec-skill-permission-principals",
+    "section": "tools",
+    "title": "SkillGuard：给 skill 单独的 permissions，研究价值在哪里？",
+    "file": "content/handbooks/llm-safety-security/questions/tools/sec-skill-permission-principals.md",
+    "sourceIds": [
+      "skillguard"
+    ]
+  },
+  {
+    "id": "sec-tool-update-toctou",
+    "section": "tools",
+    "title": "审过的 tool / skill 更新以后：如何研究 TOCTOU 与权限漂移？",
+    "file": "content/handbooks/llm-safety-security/questions/tools/sec-tool-update-toctou.md",
+    "sourceIds": [
+      "mcp",
+      "skillinject"
+    ]
+  },
+  {
+    "id": "sec-memory-attacker-models",
+    "section": "memory",
+    "title": "AgentPoison、MINJA、eTAMP：三种 memory poisoning 的权限假设有什么不同？",
+    "file": "content/handbooks/llm-safety-security/questions/memory/sec-memory-attacker-models.md",
+    "sourceIds": [
+      "agentpoison",
+      "minja",
+      "etamp"
+    ]
+  },
+  {
+    "id": "sec-memorygraft-procedural-learning",
+    "section": "memory",
+    "title": "MemoryGraft：为什么“成功经验”可能比错误知识更危险？",
+    "file": "content/handbooks/llm-safety-security/questions/memory/sec-memorygraft-procedural-learning.md",
+    "sourceIds": [
+      "memorygraft"
+    ]
+  },
+  {
+    "id": "sec-memory-lineage-write-controls",
+    "section": "memory",
+    "title": "Memory defenses 应放在 write、retrieval，还是 action time？",
+    "file": "content/handbooks/llm-safety-security/questions/memory/sec-memory-lineage-write-controls.md",
+    "sourceIds": [
+      "etamp",
+      "camel"
+    ]
+  },
+  {
+    "id": "sec-memory-persistence-recovery",
+    "section": "memory",
+    "title": "清空 chat history 后仍然复发：如何评估持久攻击与恢复？",
+    "file": "content/handbooks/llm-safety-security/questions/memory/sec-memory-persistence-recovery.md",
+    "sourceIds": [
+      "minja",
+      "etamp"
+    ]
+  },
+  {
+    "id": "sec-stegomemory-covert-channels",
+    "section": "memory",
+    "title": "StegoMemory：没有明显 secret 字符串，为什么仍需测 covert channels？",
+    "file": "content/handbooks/llm-safety-security/questions/memory/sec-stegomemory-covert-channels.md",
+    "sourceIds": [
+      "stego"
+    ]
+  },
+  {
+    "id": "sec-multimodal-ocr-vs-adversarial-image",
+    "section": "multimodal",
+    "title": "OCR text injection 与 adversarial image 是同一种攻击吗？",
+    "file": "content/handbooks/llm-safety-security/questions/multimodal/sec-multimodal-ocr-vs-adversarial-image.md",
+    "sourceIds": [
+      "image",
+      "wasp"
+    ]
+  },
+  {
+    "id": "sec-computer-use-benign-context-risk",
+    "section": "multimodal",
+    "title": "OS-BLIND 与 OSGuard：正常 user request 为什么仍会导致 unsafe completion？",
+    "file": "content/handbooks/llm-safety-security/questions/multimodal/sec-computer-use-benign-context-risk.md",
+    "sourceIds": [
+      "osblind",
+      "osguard"
+    ]
+  },
+  {
+    "id": "sec-dom-screenshot-provenance",
+    "section": "multimodal",
+    "title": "DOM、screenshot、OCR 发生冲突时，agent 应信谁？",
+    "file": "content/handbooks/llm-safety-security/questions/multimodal/sec-dom-screenshot-provenance.md",
+    "sourceIds": [
+      "wasp",
+      "patterns"
+    ]
+  },
+  {
+    "id": "sec-multiagent-infection-delegation",
+    "section": "multimodal",
+    "title": "Agent Smith 到 multi-agent delegation：传播攻击该怎么测？",
+    "file": "content/handbooks/llm-safety-security/questions/multimodal/sec-multiagent-infection-delegation.md",
+    "sourceIds": [
+      "smith",
+      "osblind"
+    ]
+  },
+  {
+    "id": "sec-camel-security-guarantees",
+    "section": "defenses",
+    "title": "CaMeL 的关键思想是什么，所谓 provable security 究竟依赖什么？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-camel-security-guarantees.md",
+    "sourceIds": [
+      "camel"
+    ]
+  },
+  {
+    "id": "sec-privileged-quarantined-models",
+    "section": "defenses",
+    "title": "Dual LLM：让一个 model 只读不可信数据就够了吗？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-privileged-quarantined-models.md",
+    "sourceIds": [
+      "camel",
+      "patterns"
+    ]
+  },
+  {
+    "id": "sec-ipiguard-dynamic-planning",
+    "section": "defenses",
+    "title": "IPIGuard 与 plan-then-execute：固定 plan 会不会牺牲 agentic utility？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-ipiguard-dynamic-planning.md",
+    "sourceIds": [
+      "ipi",
+      "dyn"
+    ]
+  },
+  {
+    "id": "sec-information-flow-vs-rbac",
+    "section": "defenses",
+    "title": "RBAC、capabilities 与 information-flow control 分别解决什么？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-information-flow-vs-rbac.md",
+    "sourceIds": [
+      "camel",
+      "mcp"
+    ]
+  },
+  {
+    "id": "sec-model-defenses-struq-secalign",
+    "section": "defenses",
+    "title": "StruQ、Instruction Hierarchy 与 SecAlign：model-level defenses 如何比较？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-model-defenses-struq-secalign.md",
+    "sourceIds": [
+      "struq",
+      "hierarchy",
+      "secalign",
+      "metasecalign"
+    ]
+  },
+  {
+    "id": "sec-classifier-cascades-calibration",
+    "section": "defenses",
+    "title": "Constitutional Classifiers++：为什么用 exchange context 与 classifier cascade？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-classifier-cascades-calibration.md",
+    "sourceIds": [
+      "cc",
+      "ccplus"
+    ]
+  },
+  {
+    "id": "sec-reference-monitor-sandbox",
+    "section": "defenses",
+    "title": "Sandbox 已经隔离了代码，为什么 agent 仍可能造成损害？",
+    "file": "content/handbooks/llm-safety-security/questions/defenses/sec-reference-monitor-sandbox.md",
+    "sourceIds": [
+      "patterns",
+      "control"
+    ]
+  },
+  {
+    "id": "sec-benchmark-selection-matrix",
+    "section": "evaluation",
+    "title": "AgentDojo、InjecAgent、ASB、AgentHarm、SafeArena 应怎样选？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-benchmark-selection-matrix.md",
+    "sourceIds": [
+      "dojo",
+      "injec",
+      "asb",
+      "harm",
+      "safearena"
+    ]
+  },
+  {
+    "id": "sec-2026-dynamic-long-horizon-evals",
+    "section": "evaluation",
+    "title": "AgentDyn 与 AgentLAB：2026 年的新 benchmark 在挑战什么假设？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-2026-dynamic-long-horizon-evals.md",
+    "sourceIds": [
+      "dyn",
+      "lab",
+      "piarena"
+    ]
+  },
+  {
+    "id": "sec-ignored-not-refused-outcomes",
+    "section": "evaluation",
+    "title": "低 ASR 是真的防住了，还是 agent 根本没行动？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-ignored-not-refused-outcomes.md",
+    "sourceIds": [
+      "ignored",
+      "validity"
+    ]
+  },
+  {
+    "id": "sec-asr-denominators-statistics",
+    "section": "evaluation",
+    "title": "ASR 的分母怎么定？零次成功是否可以宣布零风险？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-asr-denominators-statistics.md",
+    "sourceIds": [
+      "adaptive",
+      "validity"
+    ]
+  },
+  {
+    "id": "sec-judge-robustness-state-oracles",
+    "section": "evaluation",
+    "title": "LLM-as-judge 自己也会被 injection：security evaluator 应怎么写？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-judge-robustness-state-oracles.md",
+    "sourceIds": [
+      "piarena",
+      "osguard"
+    ]
+  },
+  {
+    "id": "sec-leakage-contamination-splits",
+    "section": "evaluation",
+    "title": "Safety benchmark 也会 contamination：怎样做 family-level 与 environment-level splits？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-leakage-contamination-splits.md",
+    "sourceIds": [
+      "harmbench",
+      "skillinject"
+    ]
+  },
+  {
+    "id": "sec-firewall-saturation-replication",
+    "section": "evaluation",
+    "title": "一篇论文说 firewall 达到 perfect security，你会怎样复现和挑战？",
+    "file": "content/handbooks/llm-safety-security/questions/evaluation/sec-firewall-saturation-replication.md",
+    "sourceIds": [
+      "firewall",
+      "adaptive"
+    ]
+  },
+  {
+    "id": "sec-sabotage-vs-external-attacker",
+    "section": "alignment",
+    "title": "SHADE-Arena 与 agentic misalignment：如果模型本身不可信，threat model 怎样变？",
+    "file": "content/handbooks/llm-safety-security/questions/alignment/sec-sabotage-vs-external-attacker.md",
+    "sourceIds": [
+      "shade",
+      "misalign"
+    ]
+  },
+  {
+    "id": "sec-control-protocols-critical-actions",
+    "section": "alignment",
+    "title": "Control protocols：resampling、deferral 与 critical-action checks 各有什么代价？",
+    "file": "content/handbooks/llm-safety-security/questions/alignment/sec-control-protocols-critical-actions.md",
+    "sourceIds": [
+      "control"
+    ]
+  },
+  {
+    "id": "sec-cot-monitorability-faithfulness",
+    "section": "alignment",
+    "title": "CoT monitorability 与 faithfulness 是什么关系？",
+    "file": "content/handbooks/llm-safety-security/questions/alignment/sec-cot-monitorability-faithfulness.md",
+    "sourceIds": [
+      "cot",
+      "monitorbench"
+    ]
+  },
+  {
+    "id": "sec-monitor-optimization-reward-hacking",
+    "section": "alignment",
+    "title": "如果把“monitor 判为安全”作为 reward，会训练出什么？",
+    "file": "content/handbooks/llm-safety-security/questions/alignment/sec-monitor-optimization-reward-hacking.md",
+    "sourceIds": [
+      "control",
+      "misalign"
+    ]
+  },
+  {
+    "id": "sec-alignment-faking-backdoors",
+    "section": "alignment",
+    "title": "Alignment faking、sleeper backdoors 与一般错误，怎样避免混为一谈？",
+    "file": "content/handbooks/llm-safety-security/questions/alignment/sec-alignment-faking-backdoors.md",
+    "sourceIds": [
+      "faking",
+      "sleeper"
+    ]
+  },
+  {
+    "id": "sec-multiagent-monitor-collusion",
+    "section": "alignment",
+    "title": "多个 agents 互相监督，会自动更安全吗？",
+    "file": "content/handbooks/llm-safety-security/questions/alignment/sec-multiagent-monitor-collusion.md",
+    "sourceIds": [
+      "control",
+      "smith"
+    ]
+  },
+  {
+    "id": "sec-contextual-integrity-privacy",
+    "section": "privacy",
+    "title": "PrivacyLens：知道 privacy norms 与执行时保护隐私，差距在哪里？",
+    "file": "content/handbooks/llm-safety-security/questions/privacy/sec-contextual-integrity-privacy.md",
+    "sourceIds": [
+      "privacy"
+    ]
+  },
+  {
+    "id": "sec-egress-indirect-leakage",
+    "section": "privacy",
+    "title": "允许发送正常报告时，如何限制其中夹带的敏感信息？",
+    "file": "content/handbooks/llm-safety-security/questions/privacy/sec-egress-indirect-leakage.md",
+    "sourceIds": [
+      "camel",
+      "privacy"
+    ]
+  },
+  {
+    "id": "sec-multitenant-agent-isolation",
+    "section": "privacy",
+    "title": "Multi-tenant agent：memory、cache、tools 与 credentials 怎么隔离？",
+    "file": "content/handbooks/llm-safety-security/questions/privacy/sec-multitenant-agent-isolation.md",
+    "sourceIds": [
+      "mcp",
+      "privacy"
+    ]
+  },
+  {
+    "id": "sec-privacy-preserving-feedback-pipeline",
+    "section": "privacy",
+    "title": "怎样用 real-world safety feedback 改进系统，又不把私密 trajectories 变成训练数据？",
+    "file": "content/handbooks/llm-safety-security/questions/privacy/sec-privacy-preserving-feedback-pipeline.md",
+    "sourceIds": [
+      "privacy",
+      "secalign"
+    ]
+  },
+  {
+    "id": "sec-proposal-safety-data-pipeline",
+    "section": "projects",
+    "title": "Research proposal：做一个可复现的 agent-safety data pipeline",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-safety-data-pipeline.md",
+    "sourceIds": [
+      "dojo",
+      "piarena"
+    ]
+  },
+  {
+    "id": "sec-proposal-security-preference-data",
+    "section": "projects",
+    "title": "Research proposal：怎样构造 agent-security preference pairs，避免学成全拒绝？",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-security-preference-data.md",
+    "sourceIds": [
+      "secalign",
+      "ih2026",
+      "xstest"
+    ]
+  },
+  {
+    "id": "sec-proposal-skill-permission-generalization",
+    "section": "projects",
+    "title": "Research proposal：把 skill security 做成 permission generalization 问题",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-skill-permission-generalization.md",
+    "sourceIds": [
+      "skillinject",
+      "skillguard"
+    ]
+  },
+  {
+    "id": "sec-proposal-multimodal-agent-safety",
+    "section": "projects",
+    "title": "Research proposal：给 browser / computer-use agent 做 state-aware safety dataset",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-multimodal-agent-safety.md",
+    "sourceIds": [
+      "wasp",
+      "osguard"
+    ]
+  },
+  {
+    "id": "sec-proposal-secure-self-improvement",
+    "section": "projects",
+    "title": "Research proposal：data flywheel 怎样避免把攻击轨迹当“成功经验”？",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-secure-self-improvement.md",
+    "sourceIds": [
+      "memorygraft",
+      "etamp",
+      "secalign"
+    ]
+  },
+  {
+    "id": "sec-proposal-coding-security-vs-cyber-capability",
+    "section": "projects",
+    "title": "Research proposal：coding agent 的 functional tests、security tests 与 cyber capability 怎么分？",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-coding-security-vs-cyber-capability.md",
+    "sourceIds": [
+      "susvibes",
+      "cybergym"
+    ]
+  },
+  {
+    "id": "sec-proposal-research-pitch",
+    "section": "projects",
+    "title": "没有直接 agent-security 经历，怎样提出一个可信的 90 秒 research pitch？",
+    "file": "content/handbooks/llm-safety-security/questions/projects/sec-proposal-research-pitch.md",
+    "sourceIds": [
+      "dyn",
+      "ignored",
+      "osguard"
+    ]
+  },
+  {
+    "id": "sec-research-map",
+    "section": "guide",
+    "title": "Research Map：LLM / Agentic Safety & Security 应该怎样系统读？",
+    "file": "content/handbooks/llm-safety-security/questions/guide/sec-research-map.md",
+    "sourceIds": [
+      "dojo",
+      "camel",
+      "dyn",
+      "skillinject",
+      "osguard",
+      "control"
+    ]
+  },
+  {
+    "id": "sec-reading-and-benchmark-index",
+    "section": "guide",
+    "title": "Reference Book：重点 papers、benchmarks 与 2026 更新索引",
+    "file": "content/handbooks/llm-safety-security/questions/guide/sec-reading-and-benchmark-index.md",
+    "sourceIds": [
+      "piarena",
+      "lab",
+      "role",
+      "ccplus",
+      "stego",
+      "ignored",
+      "privacy",
+      "susvibes"
+    ]
+  }
+]

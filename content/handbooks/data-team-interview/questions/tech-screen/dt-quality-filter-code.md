@@ -4,7 +4,10 @@ section: tech-screen
 order: 3
 level: A
 title: CoderPad：质量过滤怎么写，启发式和模型分怎么叠？
-quick: "过滤分三步：先做便宜的语言、长度、PII 和重复字符检查，再用按语言校准的质量模型打分，最后按阈值和配额选。全局取 top-$k$ 容易把低资源语言整个丢掉。AFM 2025 公开的经验是过强的启发式会误删有价值的数据，所以要查误杀，并按语言分别校准阈值。"
+quick: >-
+  过滤分三步：先做便宜的语言、长度、PII 和重复字符检查，再用按语言做 calibration 的质量模型打分，最后按阈值和配额选。全局取 top-$k$
+  容易把 low-resource 语言整个丢掉。AFM 2025 公开的经验是过强的启发式会误删有价值的数据，所以要查 false
+  rejection，并按语言分别对 threshold 做 calibration。
 companies:
   - apple
 tags:
@@ -15,22 +18,23 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: Apple Intelligence Foundation Language Models Tech Report 2025
-    url: https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
+    url: >-
+      https://machinelearning.apple.com/research/apple-foundation-models-tech-report-2025
     type: primary
   - title: FineWeb-Edu
-    url: https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-edu
+    url: 'https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-edu'
     type: primary
   - title: Textbooks Are All You Need
-    url: https://arxiv.org/abs/2306.11644
+    url: 'https://arxiv.org/abs/2306.11644'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 实现训练文档质量过滤接口，先执行确定性规则，再依据语言对应的模型阈值作保留决定。每次决定都需要返回原因，便于统计失败来源。
 
@@ -57,13 +61,13 @@ filter_doc(text,"en",score_fn,thresholds,rng_u=0.2).keep -> True
 
 ## 解题思路与参考答案
 
-我会把过滤写成三步，每一步都能单独关掉：先做成本低的确定性检查，再用按语言校准的质量模型打分，最后结合阈值和配额来选。
+我会把过滤写成三步，每一步都能单独关掉：先做成本低的确定性检查，再用按语言做 calibration 的质量模型打分，最后结合阈值和配额来选。
 
-这样分是因为堆 20 条正则再 `if any(bad): drop`，很可能误删有用数据，比如一段代码的停用词比很低，就会被「像自然语言」的规则扔掉。只靠模型分也不保险，要查校准和误杀。AFM 2025 写到过猛的启发式会扔掉高价值的 token，所以他们减弱了规则，加入按语言调过的模型过滤。FineWeb-Edu 和 Phi 的思路相同，分类器给出「教育价值」或「教科书味」的分数再按分抽样，看的是文本内容本身，Common Crawl 的头部域名之外也能选出好数据。
+这样分是因为堆 20 条正则再 `if any(bad): drop`，很可能误删有用数据，比如一段代码的停用词比很低，就会被「像自然语言」的规则扔掉。只靠模型分也不保险，要查 calibration 和 false rejection。AFM 2025 写到过猛的启发式会扔掉高价值的 token，所以他们减弱了规则，加入按语言调过的模型过滤。FineWeb-Edu 和 Phi 的思路相同，分类器给出「教育价值」或「教科书味」的分数再按分 sampling，看的是文本内容本身，Common Crawl 的头部域名之外也能选出好数据。
 
 ## 两层门，一层配额
 
-硬门查空文档、语言识别失败、PII 正则（信用卡、身份证号）、极端重复字符，没过的进 quarantine 并留 lineage，方便审计误杀。模型分是一个小分类器打 0 到 1 的分，阈值按语言、按域分开，英语的 0.6 和某个低资源语言的 0.6，通过率可能差很多。配额是每个域先保证最低 token 数，再在域内按分加权，免得「全世界只剩英语维基」。阈值附近我用一个软门，分数在阈值下方一个 band 内按线性概率保留。
+必须满足的验收条件查空文档、语言识别失败、PII 正则（信用卡、身份证号）、极端重复字符，没过的进 quarantine 并留 lineage，方便审计 false rejection。模型分是一个小分类器打 0 到 1 的分，阈值按语言、按域分开，英语的 0.6 和某个 low-resource 语言的 0.6，通过率可能差很多。配额是每个域先保证最低 token 数，再在域内按分加权，免得「全世界只剩英语维基」。阈值附近我用一个软门，分数在阈值下方一个 band 内按线性概率保留。
 
 ```python
 import re
@@ -111,7 +115,7 @@ def filter_doc(text, lang, score_fn, thresholds, rng_u=0.0, band=0.1):
     return FilterDecision(keep, "model_band", q)
 ```
 
-测试覆盖四种硬门、硬门短路、必留必扔、软门概率和按语言阈值：
+测试覆盖四种必须满足的验收条件、必须满足的验收条件短路、必留必扔、软门概率和按语言阈值：
 
 ```python
 good_text = "A clear explanation of photosynthesis in plants and algae. " * 5
@@ -147,36 +151,36 @@ assert filter_doc(good_text, "zh", fixed_score(0.45), thresholds).keep
 assert not filter_doc(good_text, "en", fixed_score(0.45), thresholds).keep
 ```
 
-`score_fn` 在 CoderPad 里可以是假分类器，或者几个线性特征（停用词比、平均词长、符号比）。要补一句：生产上用的是蒸馏过的小编码器，离线打分，热路径上不会跑 70B。过滤的输出是带 `quality` 和 `reason` 字段的文档，`dt-pipeline-talk` 里的配额采样就吃这两个字段；`reason` 要写进 dataset card，下周改阈值时才能归因。
+`score_fn` 在 CoderPad 里可以是假分类器，或者几个线性特征（停用词比、平均词长、符号比）。要补一句：生产上用的是 distillation 过的小编码器，离线打分，热路径上不会跑 70B。过滤的输出是带 `quality` 和 `reason` 字段的文档，`dt-pipeline-talk` 里的配额 sampling 就吃这两个字段；`reason` 要写进 dataset card，下周改阈值时才能 attribution。
 
 ## 会错在哪
 
-启发式会误杀：代码、公式、对话记录的停用词比很低，会被「像自然语言」的规则扔掉，这就是上面说的 over-aggressive heuristics，所以代码和数学走单独的桶，不用通用网页门。模型分有偏置：在英语教科书上训的分类器，会把非英语、非正式但有用的论坛答疑打低分，所以要按语言标数据，按语言报通过率和下游 $\Delta$。PII 方面，公开网页上也有社保号和卡号，正则只是第一刀，命中后还要校验。
+启发式会 false rejection：代码、公式、对话记录的停用词比很低，会被「像自然语言」的规则扔掉，这就是上面说的 over-aggressive heuristics，所以代码和数学走单独的桶，不用通用网页门。模型分有偏置：在英语教科书上训的分类器，会把非英语、非正式但有用的论坛答疑打低分，所以要按语言标数据，按语言报通过率和下游 $\Delta$。PII 方面，公开网页上也有社保号和卡号，正则只是第一刀，命中后还要校验。
 
-阈值要扫一下，保留 5% / 15% / 40% 三档，用小模型看知识和推理切片的变化。只报「我们滤得很狠」，等于没有对照。
+阈值要扫一下，保留 5% / 15% / 40% 三档，用 small model 看知识和推理 evaluation slices 的变化。只报「我们滤得很狠」，等于没有对照。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert hard_gate("short", "en").reason == "too_short"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert hard_gate("short", "en").reason == "too_short"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
 **质量模型能用 LLM-as-judge 吗？**
-可以用来标种子数据，但别在 10B 文档上同步打分。蒸馏成小模型，定期用新的人工集校准。
+可以用来标 seed 数据，但别在 10B 文档上同步打分。distillation 成 small model，定期用新的人工集 calibration。
 
-**「教科书味」会不会把工具轨迹滤掉？**
-会。SFT 和工具数据不用预训练的网页分类器，分组统计、分开设门。
+**「教科书味」会不会把 tool-use trajectories 滤掉？**
+会。SFT 和工具数据不用 pre-training 的网页分类器，分组统计、分开设门。
 
 **软阈值为什么比硬切好？**
-硬切时分值校准稍微漂一点，通过率就会跳一截。软阈值可以通过实验调整，也不会因为 0.599 和 0.601 这种微小差别就完全改变去留。
+硬切时分值 calibration 稍微漂一点，通过率就会跳一截。软阈值可以通过实验调整，也不会因为 0.599 和 0.601 这种微小差别就完全改变去留。
 
 **为什么不全局取 top-$k$？**
-低资源语言的分数整体偏低，全局一刀容易整个丢掉。阈值按语言分开，配额再给每个域保底。
+low-resource 语言的分数整体偏低，全局一刀容易整个丢掉。阈值按语言分开，配额再给每个域保底。
 
 相关：`dt-pipeline-talk`

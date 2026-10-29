@@ -5,7 +5,9 @@ order: 216
 level: A
 title: 手写 Tool JSON Schema 校验器：type、required、additionalProperties
 quick: >-
-  在服务端递归校验，模型生成的参数一律当不可信输入。检查 `type` 是否匹配、`required` 里的键有没有缺，`additionalProperties: false` 时拒掉多余字段。Python 里 `bool` 是 `int` 的子类，校验数字前要先排除。契约题见 `agent-schema-contract`。
+  在服务端递归校验，模型生成的参数一律当不可信输入。检查 `type` 是否匹配、`required`
+  里的键有没有缺，`additionalProperties: false` 时拒掉多余字段。Python 里 `bool` 是 `int`
+  的子类，校验数字前要先排除。契约题见 `agent-schema-contract`。
 tags:
   - JSON Schema
   - Tools
@@ -13,26 +15,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: JSON Schema — object
-    url: https://json-schema.org/understanding-json-schema/reference/object
+    url: 'https://json-schema.org/understanding-json-schema/reference/object'
     type: primary
 ---
 
 ## 题目描述
 
-实现一个受限JSON Schema参数检查器，返回所有发现的字段错误，便于工具调用修复参数。候选参数是否符合schema正是本题要判断的业务结果。
+实现一个受限 JSON Schema 参数检查器，返回所有发现的字段错误，便于工具调用修复参数。候选参数是否符合 schema 正是本题要判断的业务结果。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `validate(inst,schema,path="$")`。schema保证合法，仅使用type、required、properties、additionalProperties、items；type可为object/array/string/boolean/null/number/integer。inst为JSON数据；additionalProperties可为布尔值或一个子schema。
+实现 `validate(inst,schema,path="$")`。schema 保证合法，仅使用 type、required、properties、additionalProperties、items；type 可为 object/array/string/boolean/null/number/integer。inst 为 JSON 数据；additionalProperties 可为布尔值或一个子 schema。
 
 ### 输出与约束
 
-返回由 `(路径,错误字符串)` 组成的列表，无错误返回[]。对象字段路径为`$.name`，数组为`$[i]`。错误用"want 类型"、"required"、"additional"；类型不匹配后不再深入该值，其他字段错误累积返回。Python bool不能当integer/number。只要求这个子集，不需支持完整JSON Schema规范。
+返回由 `(路径,错误字符串)` 组成的列表，无错误返回[]。对象字段路径为`$.name`，数组为`$[i]`。错误用"want 类型"、"required"、"additional"；类型不匹配后不再深入该值，其他字段错误累积返回。Python bool 不能当 integer/number。只要求这个子集，不需支持完整 JSON Schema 规范。
 
 ### 示例
 
@@ -58,8 +60,11 @@ def validate(inst, schema, path="$"):
     errors = []
     t = schema.get("type")
     py = {
-        "object": dict, "array": list, "string": str,
-        "boolean": bool, "null": type(None),
+        "object": dict,
+        "array": list,
+        "string": str,
+        "boolean": bool,
+        "null": type(None),
     }
     if t == "number":
         if isinstance(inst, bool) or not isinstance(inst, (int, float)):
@@ -94,9 +99,9 @@ def validate(inst, schema, path="$"):
 
 ## 失败怎么回给模型
 
-校验器的输出要带结构化路径，一句「参数不合法」模型没法改。`$.start_date` 缺 required、`$.extra` 撞上 `additionalProperties: false`、`$.n` 是 bool 却声明 integer，这三条要能分开改。在 Agent 循环里这是可恢复的错误，模型改了字段再调一次，工具侧别猜默认值。一猜默认，「漏了幂等键」就变成了「服务端替它生成」，副作用没法审计。
+校验器的输出要带结构化路径，一句「参数不合法」模型没法改。`$.start_date` 缺 required、`$.extra` 撞上 `additionalProperties: false`、`$.n` 是 bool 却声明 integer，这三条要能分开改。在 Agent 循环里这是可恢复的错误，模型改了字段再调一次，工具侧别猜默认值。一猜默认，「漏了 idempotency key」就变成了「服务端替它生成」，副作用没法审计。
 
-类型对但业务错的情况，比如金额单位、越权 id，不在本题子集里，schema 通过之后由业务层拒绝，同样回机器可读的 `error_code`。机械校验和业务校验拆开，才能和 `agent-schema-contract` 对上。还有几个边界顺手说一下：空对象 `{}` 在没有 `required` 时应该通过；`type: array` 要递归 `items`；`number` 接受 `3` 和 `3.5`，`integer` 拒绝 `3.5` 也拒绝 `true`。子集不实现 `$ref` / `anyOf` 的话当场声明。校验失败就不执行工具。validator 写成纯函数，schema 变更要版本化。
+类型对但业务错的情况，比如金额单位、越权 id，不在本题子集里，schema 通过之后由业务层拒绝，同样回机器可读的 `error_code`。机械校验和业务校验拆开，才能和 `agent-schema-contract` 对上。还有几个 edge cases 顺手说明：空对象 `{}` 在没有 `required` 时应该通过；`type: array` 要递归 `items`；`number` 接受 `3` 和 `3.5`，`integer` 拒绝 `3.5` 也拒绝 `true`。子集不实现 `$ref` / `anyOf` 的话当场声明。校验失败就不执行工具。validator 写成纯函数，schema 变更要版本化。
 
 ## 简单测试怎么写
 
@@ -105,8 +110,12 @@ def validate(inst, schema, path="$"):
 schema 同时约束必填整数和禁止额外字段。True 在 Python 里属于 int 的子类，因此专门测试布尔值不能冒充整数，并检查错误路径。
 
 ```python
-schema = {"type": "object", "required": ["n"],
-          "properties": {"n": {"type": "integer"}}, "additionalProperties": False}
+schema = {
+    "type": "object",
+    "required": ["n"],
+    "properties": {"n": {"type": "integer"}},
+    "additionalProperties": False,
+}
 assert validate({"n": 2}, schema) == []
 assert validate({}, schema) == [("$.n", "required")]
 assert validate({"n": True}, schema) == [("$.n", "want integer")]
@@ -117,7 +126,7 @@ print("simple tests passed")
 ## 追问
 
 **为什么必须在服务端验？**
-Constrained decoding 只能提高格式命中率，越权 id、多字段探测、缺幂等键照样会发生。校验失败就回结构化错误，让模型改参数，工具不执行。
+Constrained decoding 只能提高格式命中率，越权 id、多字段探测、缺 idempotency key 照样会发生。校验失败就回结构化错误，让模型改参数，工具不执行。
 
 **`additionalProperties` 默认是什么？**
 默认 true，允许未声明的键。生产工具建议显式写 false，缩小注入面。

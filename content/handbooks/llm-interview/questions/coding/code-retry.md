@@ -5,7 +5,8 @@ order: 8
 level: S
 title: 实现 Tool Retry + Idempotency：Timeout 后为什么不能直接重试？
 quick: >-
-  Timeout 只说明客户端没看到结果，服务端可能已经执行了。有副作用的操作要带 idempotency key 或 transaction ID，超时后先查状态或让 server 去重，再决定要不要重试；retry policy 按 error class 分开定。
+  Timeout 只说明客户端没看到结果，服务端可能已经执行了。有副作用的操作要带 idempotency key 或 transaction
+  ID，超时后先查状态或让 server 去重，再决定要不要重试；retry policy 按 error class 分开定。
 tags:
   - Agent
   - Distributed Systems
@@ -19,17 +20,17 @@ sources: []
 
 ## 题目描述
 
-实现一个异步工具调用执行器，在超时后先查询执行状态，并用固定幂等键控制重试，避免把已经成功的操作再次执行。
+实现一个异步工具调用执行器，在超时后先查询执行状态，并用固定 idempotency key 控制重试，避免把已经成功的操作再次执行。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `async safe_execute(tool,args,client,max_attempts=3)`。client提供异步call(tool,args,`idempotency_key`)、`get_status`(key)、`get_result`(key)；`make_idempotency_key`和异步backoff由环境提供。`max_attempts`≥1。
+实现 `async safe_execute(tool,args,client,max_attempts=3)`。client 提供异步 call(tool,args,`idempotency_key`)、`get_status`(key)、`get_result`(key)；`make_idempotency_key`和异步 backoff 由环境提供。`max_attempts`≥1。
 
 ### 输出与约束
 
-同一次`safe_execute`的所有call使用同一个key。call成功直接返回；TimeoutError后状态SUCCEEDED则取结果返回，RUNNING继续下一轮，`FAILED_RETRYABLE`先backoff再重试；其他状态重新抛出超时。最多调用`max_attempts`次，预算耗尽抛RuntimeError。这里的超时与状态分支属于题目正常业务输入。
+同一次`safe_execute`的所有 call 使用同一个 key。call 成功直接返回；TimeoutError 后状态 SUCCEEDED 则取结果返回，RUNNING 继续下一轮，`FAILED_RETRYABLE`先 backoff 再重试；其他状态重新抛出超时。最多调用`max_attempts`次，预算耗尽抛 RuntimeError。这里的超时与状态分支属于题目正常业务输入。
 
 ### 示例
 
@@ -65,14 +66,17 @@ sources: []
 
 <h2>简单测试怎么写</h2>
 <p>先把上面的 safe_execute 函数放进 solution.py，再追加以下测试代码，运行 python3 solution.py。全部使用内存中的假客户端，通过后输出 simple tests passed。</p>
-<p>不用连真实服务：假客户端第一次抛超时，状态查询分别返回成功或可重试失败。成功状态要取回原结果，失败可重试时才再次 call；两次 call 必须携带同一幂等键。make_idempotency_key 和 backoff 是参考片段需要的测试桩，实际系统要使用业务约定的幂等键和退避策略。</p>
+<p>不用连真实服务：假客户端第一次抛超时，状态查询分别返回成功或可重试失败。成功状态要取回原结果，失败可重试时才再次 call；两次 call 必须携带同一 idempotency key。make_idempotency_key 和 backoff 是参考片段需要的测试桩，实际系统要使用业务约定的 idempotency key 和退避策略。</p>
 <pre><code class="language-python">import asyncio
 
+
 def make_idempotency_key(tool, args):
-    return f&quot;{tool}:{args[&#x27;id&#x27;]}&quot;
+    return f"{tool}:{args['id']}"
+
 
 async def backoff(attempt):
     pass  # 测试不等待真实时间
+
 
 class FakeClient:
     def __init__(self, status):
@@ -83,29 +87,30 @@ class FakeClient:
         self.keys.append(idempotency_key)
         if self.calls == 1:
             raise TimeoutError()
-        return &quot;result&quot;
+        return "result"
 
     async def get_status(self, key):
         return self.status
 
     async def get_result(self, key):
-        return &quot;cached result&quot;
+        return "cached result"
+
 
 async def test_retry():
-    completed = FakeClient(&quot;SUCCEEDED&quot;)
-    assert await safe_execute(&quot;create&quot;, {&quot;id&quot;: 1}, completed) == &quot;cached result&quot;
+    completed = FakeClient("SUCCEEDED")
+    assert await safe_execute("create", {"id": 1}, completed) == "cached result"
     assert completed.calls == 1
-    retryable = FakeClient(&quot;FAILED_RETRYABLE&quot;)
-    assert await safe_execute(&quot;create&quot;, {&quot;id&quot;: 1}, retryable) == &quot;result&quot;
+    retryable = FakeClient("FAILED_RETRYABLE")
+    assert await safe_execute("create", {"id": 1}, retryable) == "result"
     assert retryable.calls == 2 and len(set(retryable.keys)) == 1
-    running = FakeClient(&quot;RUNNING&quot;)
+    running = FakeClient("RUNNING")
     try:
-        await safe_execute(&quot;create&quot;, {&quot;id&quot;: 1}, running, max_attempts=1)
+        await safe_execute("create", {"id": 1}, running, max_attempts=1)
     except RuntimeError:
         pass
     else:
-        raise AssertionError(&quot;exhausted retry budget must fail&quot;)
+        raise AssertionError("exhausted retry budget must fail")
+
 
 asyncio.run(test_retry())
-print(&quot;simple tests passed&quot;)
-</code></pre>
+print("simple tests passed")</code></pre>

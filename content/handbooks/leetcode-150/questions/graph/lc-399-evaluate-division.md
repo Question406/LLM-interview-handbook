@@ -5,20 +5,21 @@ order: 4
 level: A
 title: LC 399 · 除法求值
 quick: >-
-  把变量当点、等式当带权边：$a/b=v$ 就建 $a\to b$ 权 $v$ 和 $b\to a$ 权 $1/v$。每个查询用 BFS/DFS 找一条路径，把边权乘起来；不连通或变量不存在就返回 $-1$。
+  把变量当点、等式当带权边：$a/b=v$ 就建 $a\to b$ 权 $v$ 和 $b\to a$ 权 $1/v$。每个查询用 BFS/DFS
+  找一条路径，把边权乘起来；不连通或变量不存在就返回 $-1$。
 tags:
   - Graph
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 399. 除法求值
-    url: https://leetcode.cn/problems/evaluate-division/
+    url: 'https://leetcode.cn/problems/evaluate-division/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -122,16 +123,16 @@ if __name__ == "__main__":
 
 ```python
 ans = calcEquation(
-        [["a", "b"], ["b", "c"]],
-        [2.0, 3.0],
-        [["a", "c"], ["b", "a"], ["a", "e"], ["a", "a"], ["x", "x"]],
-    )
+    [["a", "b"], ["b", "c"]],
+    [2.0, 3.0],
+    [["a", "c"], ["b", "a"], ["a", "e"], ["a", "a"], ["x", "x"]],
+)
 assert ans == [6.0, 0.5, -1.0, 1.0, -1.0]
 ans = calcEquation(
-        [["a", "b"], ["b", "c"], ["bc", "cd"]],
-        [1.5, 2.5, 5.0],
-        [["a", "c"], ["c", "b"], ["bc", "cd"], ["cd", "bc"]],
-    )
+    [["a", "b"], ["b", "c"], ["bc", "cd"]],
+    [1.5, 2.5, 5.0],
+    [["a", "c"], ["c", "b"], ["bc", "cd"], ["cd", "bc"]],
+)
 assert ans == [3.75, 0.4, 5.0, 0.2]
 print("simple tests passed")
 ```
@@ -142,7 +143,7 @@ print("simple tests passed")
 
 建图 $O(E)$，每个查询最坏 $O(V+E)$，空间 $O(V+E)$。这题变量个数很小。
 
-## 边界
+## Edge Cases
 
 查询两端相同、但这个变量从没出现过时，要返回 $-1$，不是 $1$；只有变量在图里时才有 $x/x=1$。每条等式都要把反向边一起建上，$a/b=v$ 必须同时建 $b/a=1/v$，漏了的话反向查询会失败。像 `bc` 这样的名字是一个独立变量，不是 $b\cdot c$，建图时整个字符串当一个点，别拆字符。
 

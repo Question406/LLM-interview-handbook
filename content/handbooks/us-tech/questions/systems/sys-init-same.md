@@ -32,6 +32,7 @@ sources:
 ```python
 import torch.distributed as dist
 
+
 def broadcast_params(model, src, group):
     for p in model.parameters():
         dist.broadcast(p.data, src=src, group=group)

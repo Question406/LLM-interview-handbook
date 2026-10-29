@@ -4,7 +4,10 @@ section: agent
 order: 104
 level: A
 title: 月之暗面：桌面端多窗口协作时，如何避免 Agent 状态冲突？
-quick: "任务状态只放在主进程或服务端的一个权威 store 里，窗口只发意图、显示投影，用版本号或操作日志同步。每次更新带上读取时的 base revision，store 做 compare-and-swap，冲突时合并或请用户选，计划和权限宁可展示冲突。会产生副作用的动作还要检查 lease、带幂等键，并定义好取消后的处理。"
+quick: >-
+  任务状态只放在主进程或服务端的一个权威 store 里，窗口只发意图、显示投影，用版本号或操作日志同步。每次更新带上读取时的 base
+  revision，store 做 compare-and-swap，冲突时合并或请用户选，计划和权限宁可展示冲突。会产生副作用的动作还要检查 lease、带
+  idempotency key，并定义好取消后的处理。
 tags:
   - Moonshot AI
   - AI-Native
@@ -13,10 +16,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 月之暗面 Desktop 研发工程师面经（候选人原帖）
-    url: https://www.nowcoder.com/feed/main/detail/09158c1da13b420bbe00ba1751177efb?urlSource=sitemap
+    url: >-
+      https://www.nowcoder.com/feed/main/detail/09158c1da13b420bbe00ba1751177efb?urlSource=sitemap
     type: candidate-first-hand
 ---
 
@@ -29,7 +33,7 @@ sources:
 - 来源类型与可信度：牛客候选人原帖，B（公司、岗位、轮次与面试日期明确，届别未披露）
 - 原始措辞：**“如果桌面端支持多窗口协作，前端怎么避免不同窗口状态打架？”**
 
-避免打架的办法是只留一份任务真相：Task、步骤、产物、审批、权限都放在主进程或服务端的单一权威 store 里，窗口只发意图、显示投影。选中项、滚动位置这种展示状态可以留在窗口本地。写入带版本号做 compare-and-swap，副作用靠 lease 和幂等键保证只执行一次。同步管的是大家看见的一致，lease 管的是副作用只执行一次，这两件事要分开答。
+避免打架的办法是只留一份任务真相：Task、步骤、产物、审批、权限都放在主进程或服务端的单一权威 store 里，窗口只发意图、显示投影。选中项、滚动位置这种展示状态可以留在窗口本地。写入带版本号做 compare-and-swap，副作用靠 lease 和 idempotency key 保证只执行一次。同步管的是大家看见的一致，lease 管的是副作用只执行一次，这两件事要分开答。
 
 最危险的情况是两个窗口同时点「运行」。如果每个窗口都是独立 SPA，各持一份 React 状态，靠最后写入获胜，那就可能发起两次工具调用、写两遍文件。这是副作用冲突，比文案不同步严重得多。
 

@@ -4,35 +4,42 @@ section: coding
 order: 22
 level: A
 title: 白板：MQA 单 KV head，怎么对 query heads broadcast
-quick: "MQA 的 Q 有 H 个 head，K/V 只有 `[B, 1, S, d_h]` 一组。计算 matmul 时沿 head 维广播即可，cache 保留单头，避免物化 H 份；softmax 仍沿 key 长度求。"
+quick: >-
+  MQA 的 Q 有 H 个 head，K/V 只有 `[B, 1, S, d_h]` 一组。计算 matmul 时沿 head 维广播即可，cache
+  保留单头，避免物化 H 份；softmax 仍沿 key 长度求。
 tags:
   - 完整编程练习
   - Coding
   - MQA
   - Attention
   - Google
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: Fast Transformer Decoding — One Write-Head is All You Need
-    url: https://arxiv.org/abs/1911.02150
+    url: 'https://arxiv.org/abs/1911.02150'
     type: primary
-  - title: GQA — Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints
-    url: https://arxiv.org/abs/2305.13245
+  - title: >-
+      GQA — Training Generalized Multi-Query Transformer Models from Multi-Head
+      Checkpoints
+    url: 'https://arxiv.org/abs/2305.13245'
     type: primary
 ---
 
 ## 题目描述
 
-实现共享一组 K/V 的多查询注意力，以及对应投影接口。
+实现共享一组 K/V 的多查询 attention，以及对应投影接口。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
 
-`mqa(q,k,v,attn_bias=None)` 中 q 为 `[B,H,T,dh]`，k、v 可为 `[B,1,S,dh]` 或 `[B,S,dh]`；返回 `[B,H,T,dh]`。H 个 query 头共享同一 K/V。分数是 query/key 内积除以 sqrt(dh)，加 `attn_bias` 后沿 S 用 `exp(score)/sum(exp(score))` 归一化，再加权 v。
+### 接口、输入与输出要求
 
-`attn_bias` 可广播到 `[B,H,T,S]`，用负无穷屏蔽位置，假定每个 query 至少有一个可见 key。不能为了共享注意力物化 H 份相同 K/V。
+`mqa(q,k,v,attn_bias=None)` 中 q 为 `[B,H,T,dh]`，k、v 可为 `[B,1,S,dh]` 或 `[B,S,dh]`；返回 `[B,H,T,dh]`。H 个 query 头共享同一 K/V。分数是 query/key 内积除以 sqrt(dh)，加 `attn_bias` 后沿 S 用 `exp(score)/sum(exp(score))` normalization，再加权 v。
+
+`attn_bias` 可广播到 `[B,H,T,S]`，用负无穷屏蔽位置，假定每个 query 至少有一个可见 key。不能为了共享 attention 物化 H 份相同 K/V。
 
 `mqa_projections(x,wq,wk,wv,n_heads)` 接收 x `[B,T,D]`、wq `[D,D]`、wk/wv `[D,dh]`，其中 dh=D/`n_heads`，返回 q `[B,H,T,dh]` 和 k/v `[B,1,T,dh]`。
 
@@ -50,7 +57,7 @@ MQA 直接用单头 K/V 和多头 Q 做广播 matmul：`q @ k.transpose(-2, -1)`
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。下文 D 是模型维度，H 是 query head 数，$d_h = D/H$ 是 head 维度。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。下文 D 是模型维度，H 是 query head 数，$d_h = D/H$ 是 head 维度。
 
 ### 题面、接口与约束
 
@@ -87,16 +94,20 @@ def mqa(q, k, v, attn_bias=None):
         k = k.unsqueeze(1)
         v = v.unsqueeze(1)
     if k.shape[1] != 1 or v.shape[1] != 1:
-        raise ValueError(f"MQA expects exactly one KV head, got {k.shape[1]} and {v.shape[1]}")
+        raise ValueError(
+            f"MQA expects exactly one KV head, got {k.shape[1]} and {v.shape[1]}"
+        )
     if q.shape[0] != k.shape[0] or q.shape[-1] != k.shape[-1]:
-        raise ValueError(f"q {tuple(q.shape)} and k {tuple(k.shape)} disagree on batch or head dim")
+        raise ValueError(
+            f"q {tuple(q.shape)} and k {tuple(k.shape)} disagree on batch or head dim"
+        )
 
     scale = q.size(-1) ** -0.5
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale  # [B, H, T, S]
     if attn_bias is not None:
         scores = scores + attn_bias
     probs = torch.softmax(scores.float(), dim=-1).to(q.dtype)  # 沿 key 维
-    return torch.matmul(probs, v)                              # [B, H, T, d_h]
+    return torch.matmul(probs, v)  # [B, H, T, d_h]
 
 
 def mqa_projections(x, wq, wk, wv, n_heads):
@@ -106,7 +117,9 @@ def mqa_projections(x, wq, wk, wv, n_heads):
         raise ValueError(f"model dim {model_dim} is not divisible by n_heads={n_heads}")
     head_dim = model_dim // n_heads
     if wk.shape != (model_dim, head_dim) or wv.shape != (model_dim, head_dim):
-        raise ValueError(f"wk/wv must be [{model_dim}, {head_dim}], got {tuple(wk.shape)} and {tuple(wv.shape)}")
+        raise ValueError(
+            f"wk/wv must be [{model_dim}, {head_dim}], got {tuple(wk.shape)} and {tuple(wv.shape)}"
+        )
     q = (x @ wq).view(batch, seq_len, n_heads, head_dim).transpose(1, 2)
     k = (x @ wk).view(batch, seq_len, 1, head_dim).transpose(1, 2)
     v = (x @ wv).view(batch, seq_len, 1, head_dim).transpose(1, 2)
@@ -121,7 +134,7 @@ def mqa_projections(x, wq, wk, wv, n_heads):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -145,9 +158,11 @@ q, k, v = mqa_projections(x, wq, wk, wv, 4)
 assert q.shape == (2, 4, 3, 2)
 assert k.shape == (2, 1, 3, 2)
 
-# 与把 K/V 显式 expand 成 H 份后的标准注意力一致
+# 与把 K/V 显式 expand 成 H 份后的标准 attention 一致
 out = mqa(q, k, v)
-reference = F.scaled_dot_product_attention(q, k.expand(-1, 4, -1, -1), v.expand(-1, 4, -1, -1))
+reference = F.scaled_dot_product_attention(
+    q, k.expand(-1, 4, -1, -1), v.expand(-1, 4, -1, -1)
+)
 assert torch.allclose(out, reference, atol=1e-5)
 
 # 省掉 head 维的 [B, S, d_h] 输入结果相同
@@ -155,7 +170,9 @@ assert torch.allclose(mqa(q, k[:, 0], v[:, 0]), out)
 
 # 因果 bias 与 SDPA 的 is_causal 一致
 causal_bias = torch.full((3, 3), float("-inf")).triu(1)
-causal_ref = F.scaled_dot_product_attention(q, k.expand(-1, 4, -1, -1), v.expand(-1, 4, -1, -1), is_causal=True)
+causal_ref = F.scaled_dot_product_attention(
+    q, k.expand(-1, 4, -1, -1), v.expand(-1, 4, -1, -1), is_causal=True
+)
 assert torch.allclose(mqa(q, k, v, causal_bias), causal_ref, atol=1e-5)
 
 # 非法输入：两个 KV head、wk 写成 [D, D]、D 不能整除
@@ -166,7 +183,7 @@ expect_value_error(mqa_projections, x, wq, wk, wv, 3)
 
 ### 复杂度与追问
 
-设 batch B、query head 数 H、query 长度 T、key 长度 S、head 维 $d_h$。注意力计算 $O(BHTS \cdot d_h)$，scores 占 $O(BHTS)$；K、V 的存储只有 $O(BS \cdot d_h)$，是 MHA 的 1/H。
+设 batch B、query head 数 H、query 长度 T、key 长度 S、head 维 $d_h$。attention 计算 $O(BHTS \cdot d_h)$，scores 占 $O(BHTS)$；K、V 的存储只有 $O(BS \cdot d_h)$，是 MHA 的 1/H。
 
 - 追问「decode 时省在哪」：一步 T=1，时间主要花在读历史 KV 上，MQA 读的字节数约为 MHA 的 1/H。
 - 追问「`einsum` 能写吗」：`einsum('bhtd,bsd->bhts', q, k.squeeze(1))` 等价。但不要 `expand` 出 H 份再 `contiguous`，那会真的分配 cache 大小的内存。
@@ -193,7 +210,7 @@ $H_{\mathrm{kv}}=H$ 是 MHA，$1 \lt H_{\mathrm{kv}} \lt H$ 是 GQA，$H_{\mathr
 
 模型必须按 MQA 训练过才能这么推理：拿 MHA 权重硬共享 $K$ 会对不上。GQA 论文给了从 MHA checkpoint 把 KV head 做 mean-pool 来初始化的办法，但那是一次转换，之后还要继续训练，并不是免费的。
 
-Decode 一步 $T=1$，GEMM 很小，时间花在读历史 KV 上，MQA 的读带宽约为原来的 $1/H$。输入预填充（prefill，即处理输入并建立缓存）仍是 $T^2$ 的注意力，MQA 对它的加速远小于对 decode 的加速。Apple 端侧面试很爱听到这一点。
+Decode 一步 $T=1$，GEMM 很小，时间花在读历史 KV 上，MQA 的读带宽约为原来的 $1/H$。输入 prefill 仍是 $T^2$ 的 attention，MQA 对它的加速远小于对 decode 的加速。Apple 端侧面试很爱听到这一点。
 
 ## 追问
 

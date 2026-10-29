@@ -176,7 +176,7 @@ function QuestionCardView({
           </button>
         </div>
       </div>
-      {question.quick && (
+      {question.quick && !question.collapseAnswer && (
         <div className={`quick-answer${isOpen ? "" : " compact"}`}>
           <span className="quick-kicker">{hasCodingPractice ? "编程题摘要 · 含完整实现与测试" : "30 秒口播"}</span>
           {card?.quickHtml

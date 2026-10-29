@@ -4,7 +4,9 @@ section: frontier-release
 order: 3
 level: S
 title: SWE-bench、Terminal-Bench、LiveCodeBench 怎么造，各卡哪段代码能力？
-quick: "这三套测的是不同的代码能力：SWE-bench 修真实 GitHub issue，新测试要从失败变成通过，旧测试还得过；Terminal-Bench 在终端里做完工程任务，运行框架对分数影响很大；LiveCodeBench 按比赛日期切新题，测算法编程、减少背题。三种分数不能合成一个比。"
+quick: >-
+  这三套测的是不同的代码能力：SWE-bench 修真实 GitHub issue，新测试要从失败变成通过，旧测试还得过；Terminal-Bench
+  在终端里做完工程任务，运行框架对分数影响很大；LiveCodeBench 按比赛日期切新题，测算法编程、减少背题。三种分数不能合成一个比。
 companies:
   - openai
   - anthropic
@@ -18,34 +20,39 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: SWE-bench
-    url: https://arxiv.org/abs/2310.06770
+    url: 'https://arxiv.org/abs/2310.06770'
     type: primary
   - title: Introducing SWE-bench Verified
-    url: https://openai.com/index/introducing-swe-bench-verified/
+    url: 'https://openai.com/index/introducing-swe-bench-verified/'
     type: primary
-  - title: "SWE-bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks?"
-    url: https://arxiv.org/abs/2509.16941
+  - title: >-
+      SWE-bench Pro: Can AI Agents Solve Long-Horizon Software Engineering
+      Tasks?
+    url: 'https://arxiv.org/abs/2509.16941'
     type: primary
-  - title: "LiveCodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code"
-    url: https://arxiv.org/abs/2403.07974
+  - title: >-
+      LiveCodeBench: Holistic and Contamination Free Evaluation of Large
+      Language Models for Code
+    url: 'https://arxiv.org/abs/2403.07974'
     type: primary
   - title: Gemini 3.1 Pro Model Card
-    url: https://deepmind.google/models/model-cards/gemini-3-1-pro/
+    url: 'https://deepmind.google/models/model-cards/gemini-3-1-pro/'
     type: primary
   - title: Introducing GPT-5
-    url: https://openai.com/index/introducing-gpt-5/
+    url: 'https://openai.com/index/introducing-gpt-5/'
     type: primary
   - title: GPT-5.6
-    url: https://openai.com/index/gpt-5-6/
+    url: 'https://openai.com/index/gpt-5-6/'
     type: primary
   - title: Claude Opus 4.5 System Card
-    url: https://www.anthropic.com/claude-opus-4-5-system-card
+    url: 'https://www.anthropic.com/claude-opus-4-5-system-card'
     type: primary
   - title: Llama 4 model card
-    url: https://github.com/meta-llama/llama-models/blob/main/models/llama4/MODEL_CARD.md
+    url: >-
+      https://github.com/meta-llama/llama-models/blob/main/models/llama4/MODEL_CARD.md
     type: primary
 ---
 
@@ -55,13 +62,13 @@ sources:
 
 ## SWE-bench 家族
 
-SWE-bench 考的是模型能不能读懂 issue、找到要改的位置、修好并且保住原有功能。Jimenez 等从真实 PR 里收集原始任务，每条包含 issue 文本、修复前的仓库快照、参考修复补丁（金补丁）和测试。收完还要实际跑一遍：加入测试补丁，确认至少一个测试在修复前失败、修复后通过（fail-to-pass），安装失败或跑不起来的任务丢掉。论文写全集 2294 条。40% 的题有至少两个 fail-to-pass 测试；中位数还有 51 个原有测试，用来确认旧功能没坏（pass-to-pass）。
+SWE-bench 考的是模型能不能读懂 issue、找到要改的位置、修好并且保住原有功能。Jimenez 等从真实 PR 里收集原始任务，每条包含 issue 文本、修复前的仓库快照、参考修复补丁（reference patch）和测试。收完还要实际跑一遍：加入测试补丁，确认至少一个测试在修复前失败、修复后通过（fail-to-pass），安装失败或跑不起来的任务丢掉。论文写全集 2294 条。40% 的题有至少两个 fail-to-pass 测试；中位数还有 51 个原有测试，用来确认旧功能没坏（pass-to-pass）。
 
-Verified 是 OpenAI 和原作者在 2024-08 放出的人审子集，500 条。人审看题面清不清楚、测试对不对、给的信息够不够解题。它仍然是原集的子集，里面没有新题。OpenAI 在 2026-02 写了为什么不再用它报前沿成绩：难例里测试过窄或过宽的比例高，而且前沿模型能复述金补丁，机制见 `dt-agent-verified-stale`。更早的 GPT-5 博文还在报 SWE-bench Verified 74.9%，并写明用的是他们基础设施上校验过的 n=477。GPT-5.6 博文（2026-07）我读到的正文已经不把 Verified 当头条了。
+Verified 是 OpenAI 和原作者在 2024-08 放出的人审子集，500 条。人审看题面清不清楚、测试对不对、给的信息够不够解题。它仍然是原集的子集，里面没有新题。OpenAI 在 2026-02 写了为什么不再用它报前沿成绩：hard examples 里测试过窄或过宽的比例高，而且前沿模型能复述 reference patch，机制见 `dt-agent-verified-stale`。更早的 GPT-5 博文还在报 SWE-bench Verified 74.9%，并写明用的是他们基础设施上校验过的 n=477。GPT-5.6 博文（2026-07）我读到的正文已经不把 Verified 当头条了。
 
-Pro（Deng 等）是另一套题，卡的是更长、多文件的工程改动。它有 1865 条，来自 41 个仍在维护的仓库，业务应用、B2B、开发工具都有。公开集来自 11 个仓库，另有 12 个仓库的 holdout 和 18 个有合作协议的商业私有库。题面经过人工整理：问题陈述限制在原始材料里，需求和接口可以对照金补丁和测试补上，减少「说明里没写、测试却在卡」的情况。Google 2026-02 的卡把 Verified 和 Pro（Public）分成两行，都是 single attempt。Pro 的公开分比 Verified 低一截，是因为题更难、子集也不同，不能理解成同一个模型突然退步了。
+Pro（Deng 等）是另一套题，卡的是更长、多文件的工程改动。它有 1865 条，来自 41 个仍在维护的仓库，业务应用、B2B、开发工具都有。公开集来自 11 个仓库，另有 12 个仓库的 holdout 和 18 个有合作协议的商业私有库。题面经过人工整理：问题陈述限制在原始材料里，需求和接口可以对照 reference patch 和测试补上，减少「说明里没写、测试却在卡」的情况。Google 2026-02 的卡把 Verified 和 Pro（Public）分成两行，都是 single attempt。Pro 的公开分比 Verified 低一截，是因为题更难、子集也不同，不能理解成同一个模型突然退步了。
 
-Multilingual 考不同编程语言的仓库任务，Opus 4.5 system card 把它单独列了出来。只在 Python 仓库里测的分数，代表不了多语言表现。
+Multilingual 考不同编程语言的仓库任务，Opus 4.5 system card 把它单独列了出来。只在 Python 仓库里测的分数，代表不了 multilingual 表现。
 
 ## Terminal-Bench
 
@@ -106,11 +113,11 @@ SciCode 在同一张 Google 卡里单独一行，标注是科研代码：Gemini 
 **函数题 pass@1 高，但仓库任务分数低，该补什么数据？**
 补仓库级任务，并固定用来验证修复的测试，见 `dt-code-repo-vs-fn`。继续生成 HumanEval 风格的函数题，练不到定位仓库问题、完成修复的能力。
 
-**金补丁能用于监督微调（SFT）吗？**
-评测任务的金补丁不能进训练，否则后面的分数可能只反映模型记住了答案。训练可以选时间更早、和评测隔离的仓库，或者在执行环境里生成操作轨迹，再用测试验证。
+**reference patch 能用于 SFT 吗？**
+评测任务的 reference patch 不能进训练，否则后面的分数可能只反映模型记住了答案。训练可以选时间更早、和评测隔离的仓库，或者在执行环境里生成操作 trajectories，再用测试验证。
 
-**通过了测试的 SWE 轨迹，能直接拿来训练吗？**
-先查轨迹有没有改测试，或者利用了不该利用的环境状态，见 `dt-swe-success-noise`。评测仓库和训练仓库还要按时间和哈希隔离，见 `dt-code-hidden-tests`。
+**通过了测试的 SWE trajectories，能直接拿来训练吗？**
+先查 trajectories 有没有改测试，或者利用了不该利用的环境状态，见 `dt-swe-success-noise`。评测仓库和训练仓库还要按时间和哈希隔离，见 `dt-code-hidden-tests`。
 
-**LiveCodeBench 查污染，要看什么？**
-看模型有没有见过竞赛题解博客。这和 SWE-bench 里 GitHub issue 的泄漏是两回事，按比赛日期开窗口就是为了把训练截止之后的新题单独拿出来报。
+**LiveCodeBench 查 contamination，要看什么？**
+看模型有没有见过竞赛题解博客。这和 SWE-bench 里 GitHub issue 的 leakage 是两回事，按比赛日期开窗口就是为了把训练截止之后的新题单独拿出来报。

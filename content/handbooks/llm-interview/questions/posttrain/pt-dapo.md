@@ -4,7 +4,9 @@ section: posttrain
 order: 19
 level: S
 title: DAPO 四个关键修改分别解决什么？
-quick: "DAPO 还是组相对优势，改的是四处工程失败：Clip-Higher 单独放宽正向上界，给稀有的好 token 留出涨的空间；动态采样丢掉全对或全错的零方差组；token 级平均让每个 token 等权；超长部分用软惩罚，不在截断处直接把奖励打成零。"
+quick: >-
+  DAPO 还是组相对优势，改的是四处工程失败：Clip-Higher 单独放宽正向上界，给稀有的好 token 留出涨的空间；动态 sampling
+  丢掉全对或全错的零方差组；token 级平均让每个 token 等权；超长部分用软惩罚，不在截断处直接把奖励打成零。
 tags:
   - DAPO
   - GRPO
@@ -13,10 +15,10 @@ realInterview: false
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: DAPO — Decoupled Clip and Dynamic sAmpling Policy Optimization
-    url: https://arxiv.org/abs/2503.14476
+    url: 'https://arxiv.org/abs/2503.14476'
     type: primary
 ---
 
@@ -63,13 +65,13 @@ $$
 ## 追问
 
 **DAPO 和「去掉 KL」是一回事吗？**
-两回事。高德、小红书去 KL 是另一种取舍，见 `gaode-dapo-no-kl`。DAPO 论文可以弱化显式的 $\beta\mathrm{KL}$，靠 clip-higher 和动态采样管步长，但这四个修改本身并没有规定「无 KL」。
+两回事。高德、小红书去 KL 是另一种取舍，见 `gaode-dapo-no-kl`。DAPO 论文可以弱化显式的 $\beta\mathrm{KL}$，靠 clip-higher 和动态 sampling 管步长，但这四个修改本身并没有规定「无 KL」。
 
 **Clip-Higher 和熵崩有什么关系？**
 稀有好 token 的 $\rho$ 很快顶到 $1+\varepsilon$，正向梯度没了，策略就锁进已有的高概率模式。放宽上界是在延长探索窗口，保证不了熵不掉。熵塌了先动哪几个旋钮，见 `data-entropy-fix-order`。
 
-**动态采样会不会变慢？**
-会多采一些全错组，但同步 强化学习（RL） 的实际耗时常常由最长的样本决定；论文观察到收敛步数下降了，总时间不一定更差。要监控有效组比例，光报采样条数不够。
+**动态 sampling 会不会变慢？**
+会多采一些全错组，但同步 RL 的实际耗时常常由最长的样本决定；论文观察到收敛步数下降了，总时间不一定更差。要监控有效组比例，光报 sampling 条数不够。
 
 **token-level 一定更好吗？**
 不一定。想让每道题等权就用序列平均；想惩罚长胡话、让长推理里的关键 token 拿到足够权重，就用 token 平均。先说目标，再选归约方式。

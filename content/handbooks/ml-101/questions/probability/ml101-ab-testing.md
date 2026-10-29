@@ -3,21 +3,26 @@ id: ml101-ab-testing
 section: probability
 order: 10
 level: A
-title: "A/B 测试怎么避免样本污染和提前偷看？"
-quick: "A/B 测试先选不易互相影响的随机化单位，固定分组并按相同单位做分析；同一用户跨组、处理组影响对照组都会破坏解释。事前约定主指标、样本量和停止规则，不能每天用普通固定样本 p 值，显著了就停。需要提前决策时采用预先设计的序贯方法。"
+title: A/B 测试怎么避免样本污染和提前偷看？
+quick: >-
+  A/B
+  测试先选不易互相影响的随机化单位，固定分组并按相同单位做分析；同一用户跨组、处理组影响对照组都会破坏解释。事前约定主指标、样本量和停止规则，不能每天用普通固定样本
+  p 值，显著了就停。需要提前决策时采用预先设计的序贯方法。
 tags:
   - Machine Learning
   - probability
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Microsoft Research: A/B Testing Across Products"
-    url: https://www.microsoft.com/en-us/research/articles/a-b-testing-across-products/
+  - title: 'Microsoft Research: A/B Testing Across Products'
+    url: >-
+      https://www.microsoft.com/en-us/research/articles/a-b-testing-across-products/
     type: primary
-  - title: "Microsoft Research: During-Experiment Trustworthiness"
-    url: https://www.microsoft.com/en-us/research/articles/patterns-of-trustworthy-experimentation-during-experiment-stage/?trk=article-ssr-frontend-pulse_little-text-block
+  - title: 'Microsoft Research: During-Experiment Trustworthiness'
+    url: >-
+      https://www.microsoft.com/en-us/research/articles/patterns-of-trustworthy-experimentation-during-experiment-stage/?trk=article-ssr-frontend-pulse_little-text-block
     type: primary
 ---
 
@@ -27,7 +32,7 @@ sources:
 
 比如试一个协作文档功能，同一团队里 A 组编辑产生的内容也会被 B 组看到。即使分流是随机的，对照也接受了部分功能影响。按团队分组能减少这种污染，但有效独立单位变成团队，不能把每次页面访问都当作新样本扩大样本量。
 
-停止规则也要预设。普通固定样本检验的 p 值保证针对约定分析时点；每天算一次，第一次 $p<0.05$ 就宣布成功，整套流程的假阳性率就不再自动受 0.05 控制。可以预先固定时长与样本量，或使用有明确误报控制的序贯边界等方法。[Microsoft 的实验中监控指南](https://www.microsoft.com/en-us/research/articles/patterns-of-trustworthy-experimentation-during-experiment-stage/?trk=article-ssr-frontend-pulse_little-text-block)明确要求反复观测时处理多重检验和提前偷看。
+停止规则也要预设。普通固定样本检验的 p 值保证针对约定分析时点；每天算一次，第一次 $p<0.05$ 就宣布成功，整套流程的假阳性率就不再自动受 0.05 控制。可以预先固定时长与样本量，或使用有明确误报控制的 sequential stopping boundaries 等方法。[Microsoft 的实验中监控指南](https://www.microsoft.com/en-us/research/articles/patterns-of-trustworthy-experimentation-during-experiment-stage/?trk=article-ssr-frontend-pulse_little-text-block)明确要求反复观测时处理多重检验和提前偷看。
 
 我还会先检查分流比例异常、曝光埋点和指标分母，再解释业务效果。最终同时报均值差、区间和预设检验结果，别把随机分流后的某个活跃子集直接当成完整实验人群。
 

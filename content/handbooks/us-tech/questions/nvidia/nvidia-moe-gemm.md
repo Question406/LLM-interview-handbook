@@ -38,7 +38,7 @@ MoE 的专家计算可以先按 expert 重排 token，再用 grouped GEMM 一次
 如果每个 expert 单独 launch 一次 GEMM，会遇到这些开销：
 
 1. **Launch。** $E=8$ 已经烦，$E=128$ 加上 decode 的短步，host 间隙能比核本身长。CUDA Graph 也难录：$M_i$ 每步在变，见 `nvidia-cuda-graph`。
-2. **Tile。** Tensor Core 喜欢 $M$ 对齐到 64/128。$M_i=7$ 的 expert 走边角，占用和吞吐一起掉。这是 decode 路径上 MoE 特有的瘦 $M$，不是泛泛 occupancy 题。
+2. **Tile。** Tensor Core 喜欢 $M$ 对齐到 64/128。$M_i=7$ 的 expert 走边角，占用和 throughput 一起掉。这是 decode 路径上 MoE 特有的瘦 $M$，不是泛泛 occupancy 题。
 3. **内存不规则。** token 按序列排，不是按 expert 排，每次 GEMM 前都在 gather。
 
 Grouped GEMM（CUTLASS / Transformer Engine 的 grouped linear，Megatron 的 `--moe-grouped-gemm`）：一次核提交一组问题，共享 $K,N$（权重形状一样），只是 $M_i$ 和指针不同。GPU 内部按 expert 调度 CTA，避免 $E$ 次 API。FP8 / MXFP8 的 grouped 路径 TE 也接了，和 dense FP8 配方同一套 Tensor Core，见 `nvidia-fp8`。

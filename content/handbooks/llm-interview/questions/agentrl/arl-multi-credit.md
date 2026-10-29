@@ -29,7 +29,7 @@ sources:
 
 ## Difference reward 与中心 Critic：有用，但有坑
 
-工程上先做冻结或交替。冻住 worker 只训 orchestrator，相当于把工人当成环境能力，credit 很简单，但执行 Agent 的能力不会随训练提升，A 还可能 overfit 固定行为，换人就 shift。交替训练是分阶段更新，能减轻非平稳，但也要防一侧过拟合另一侧的瞬时策略。
+工程上先做冻结或交替。冻住 worker 只训 orchestrator，相当于把工人当成环境能力，credit 很简单，但执行 Agent 的能力不会随训练提升，A 还可能 overfit 固定行为，换人就 shift。交替训练是分阶段更新，能减轻非平稳，但也要防一侧 overfitting 另一侧的瞬时策略。
 
 更精巧的方法有两类。Difference reward 或 counterfactual baseline（COMA 一类）用「队伍回报减去没有这个 Agent 时的基线」估边际贡献，理论上很干净；在 LLM 上却要用中心模型去滚，或者学一个 $Q$，文本通信下很贵，基线本身也有偏。中心 Critic 看得到全局轨迹，方差更小，但信息被集中了：部署要是分布式的，Critic 看不到真实全局，训练和部署就不一致；Critic 也容易被 hack 到「看起来像协作」的假通信上。局部验证器（verifier），比如子任务单测、artifact 质量、下游有没有采用，能加密信号，但要和 team 目标对齐，否则工人刷局部分、伤害全局。上来就用中心 Critic、又不报训练和部署之间的信息差，面试官大概率会追问。
 
@@ -38,10 +38,10 @@ sources:
 ## 追问
 
 **冻住 workers 有什么缺点？**
-执行 Agent 的能力不会提升，orchestrator 会过拟合固定行为，换 worker 或换提示格式就是分布偏移。适合先把调度学稳，不适合当终态。
+执行 Agent 的能力不会提升，orchestrator 会 overfitting 固定行为，换 worker 或换提示格式就是分布偏移。适合先把调度学稳，不适合当终态。
 
 **怎么给单个 Agent 发奖励？**
 按子任务 verifier、产物质量、下游是否被采用打局部分，并且抽检局部指标和团队成功的相关性，防止刷局部分、伤害全局。
 
 **中心 Critic 部署时看不到全局怎么办？**
-训练和部署的信息差会让价值函数失效。要么部署时也汇聚轨迹，要么别把中心 Critic 当上线组件，只拿它当离线的方差缩减工具。
+训练和部署的信息差会让 value function 失效。要么部署时也汇聚轨迹，要么别把中心 Critic 当上线组件，只拿它当离线的 variance reduction 工具。

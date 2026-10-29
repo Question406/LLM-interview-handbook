@@ -3,8 +3,13 @@ id: mcp-tool-catalog-trust
 section: mcp-security
 order: 2
 level: S
-title: MCP ToolAnnotations 能否作为执行授权依据？Tool catalog 在运行中变更时如何做 server trust、schema / description diff、pinning 和重新确认？
-quick: "ToolAnnotations 只是 server 给的提示，不能当授权依据，权限由 host / policy / executor 独立判断。catalog 在运行中变了，要先核对 pin 住的 server 身份，再比较 schema 和描述的 hash 差异，高风险变更重新确认，调用只认用户批准过的那一版。"
+title: >-
+  MCP ToolAnnotations 能否作为执行授权依据？Tool catalog 在运行中变更时如何做 server trust、schema /
+  description diff、pinning 和重新确认？
+quick: >-
+  ToolAnnotations 只是 server 给的提示，不能当授权依据，权限由 host / policy / executor
+  独立判断。catalog 在运行中变了，要先核对 pin 住的 server 身份，再比较 schema 和描述的 hash
+  差异，高风险变更重新确认，调用只认用户批准过的那一版。
 tags:
   - MCP
   - Tool Security
@@ -12,10 +17,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: MCP Tool Annotations
-    url: https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/
+    url: 'https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/'
     type: primary
 ---
 
@@ -51,5 +56,5 @@ Annotation 仍然有用，可以给 UI 标红、给路由做提示、减少误�
 **Pin 的是 URL 还是密钥？**
 至少 pin 身份材料。只 pin URL 会被同域替换，也有 DNS 风险。
 
-**和 sampling 边界怎么配合？**
+**和 sampling constraints 怎么配合？**
 Server 就算改了 catalog，也拿不到 client 没授权的工具，见 `mcp-sampling-loop-boundaries`。

@@ -4,7 +4,7 @@ section: bst
 order: 1
 level: A
 title: LC 530 · 二叉搜索树的最小绝对差
-quick: "BST 中序是递增序列，最小差一定出现在中序相邻的两个值之间，所以中序扫一遍、维护前驱就够了。时间 $O(n)$，额外空间 $O(h)$。"
+quick: BST 中序是递增序列，最小差一定出现在中序相邻的两个值之间，所以中序扫一遍、维护前驱就够了。时间 $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - BST
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 530. 二叉搜索树的最小绝对差
-    url: https://leetcode.cn/problems/minimum-absolute-difference-in-bst/
+    url: 'https://leetcode.cn/problems/minimum-absolute-difference-in-bst/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -122,7 +122,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(h)$；用 Morris 中序可以做到 $O(1)$。
 
-## 边界
+## Edge Cases
 
 只有两个节点时，答案就是二者之差。父子之间差很大、跨层的两个节点差更小时，中序相邻照样能抓到，比如 $1$ 与 $3$ 分居根的两侧。树退化成链时，中序就是这条链的递增序，扫相邻即可。
 

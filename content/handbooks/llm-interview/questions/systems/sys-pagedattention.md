@@ -25,7 +25,7 @@ PagedAttention 像虚拟内存，是因为它把序列的逻辑位置和 KV 的�
 
 传统为每个 request 预留 `max_len` 连续 KV buffer：内部浪费（实际长度 $\ll$ 预留）和外部碎片（空闲区凑不出一整段）。PagedAttention 把 cache 切成固定 size 的 block/page，逻辑 sequence 通过 **block table** 映射到非连续物理块。需要时分配一页，sequence 结束就回收，像 demand paging + free list。
 
-页表查找有开销，但碎片下降通常更值：同样 HBM 能并发更多请求，这才是 vLLM 吞吐的主因之一。逐 token 生成（decode） 仍是 memory-bound，paging 不把 decode 变成 compute-bound。
+页表查找有开销，但碎片下降通常更值：同样 HBM 能并发更多请求，这才是 vLLM throughput 的主因之一。逐 token 生成（decode） 仍是 memory-bound，paging 不把 decode 变成 compute-bound。
 
 相同前缀还可以共享物理页。
 

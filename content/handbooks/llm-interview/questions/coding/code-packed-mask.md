@@ -3,8 +3,10 @@ id: code-packed-mask
 section: coding
 order: 46
 level: A
-title: 手写 packed sequence 的文档边界 mask：`cu_seqlens` 怎么变成 keep 矩阵
-quick: "用前缀和 `cu_seqlens` 给每个位置算出所属的 doc id，keep 的条件是同一文档且 $j\\le i$。跨文档的位置要设成 $-\\infty$，否则后一条样本能看到前一条。"
+title: 手写 packed sequence 的 document boundaries mask：`cu_seqlens` 怎么变成 keep matrix
+quick: >-
+  用 prefix sum `cu_seqlens` 给每个位置算出所属的 doc id，keep 的条件是同一文档且 $j\le i$。跨文档的位置要设成
+  $-\infty$，否则后一条样本能看到前一条。
 tags:
   - Packing
   - Attention
@@ -13,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
   - title: FlashAttention-2
-    url: https://arxiv.org/abs/2307.08691
+    url: 'https://arxiv.org/abs/2307.08691'
     type: primary
 ---
 
@@ -26,10 +28,10 @@ sources:
 
 ### 接口与输入输出
 
-输入 cu 为一维整数张量，是各文档边界的累计 token 数：首项为 0，后一项减前一项得到对应文档长度，末项为总长 T。保证边界非递减且合法。
+输入 cu 为一维整数 tensor，是各 document boundaries 的累计 token 数：首项为 0，后一项减前一项得到对应文档长度，末项为总长 T。保证 document offsets 非递减且合法。
 
 - `cu_seqlens_to_doc(cu)` 返回 `[T]` 的文档编号，文档编号从 0 开始，按拼接顺序递增。
-- `packed_keep(cu)` 返回 `[T,T]` 的布尔张量，行是 query、列是 key，True 表示可见。输出与 cu 位于同一设备。
+- `packed_keep(cu)` 返回 `[T,T]` 的布尔 tensor，行是 query、列是 key，True 表示可见。输出与 cu 位于同一设备。
 
 ### 示例
 
@@ -46,7 +48,7 @@ cu=[0,2,3]，表示两个文档，长度分别为2和1
 
 ## 解题思路与参考答案
 
-packed sequence 的 mask 就是在因果 mask 上再加一个「同一文档」的条件：先用 `cu_seqlens` 给每个位置算出 doc id，只有 doc id 相同、而且 $j\le i$ 的位置才保留。packing 把多条样本拼在一起，是为了少放 padding；如果只加因果 mask、不管文档边界，后一条样本的输入提示（prompt）就能看到前一条样本，信息就泄漏了。计算损失时也一样要按文档划分，padding 和文档衔接处的 label 设成 `ignore_index`。
+packed sequence 的 mask 就是在 causal mask 上再加一个「同一文档」的条件：先用 `cu_seqlens` 给每个位置算出 doc id，只有 doc id 相同、而且 $j\le i$ 的位置才保留。packing 把多条样本拼在一起，是为了少放 padding；如果只加 causal mask、不管 document boundaries，后一条样本的 prompt 就能看到前一条样本，信息就 leakage 了。计算损失时也一样要按文档划分，padding 和文档衔接处的 label 设成 `ignore_index`。
 
 举个例子，`cu = [0, 3, 7]` 表示两段，长度分别是 3 和 4。用 `repeat_interleave` 展开，得到每个位置的 doc id `[0,0,0,1,1,1,1]`。第 4 个位置（下标 3）属于第二段，它不能看下标 0 到 2。写成公式是
 
@@ -57,9 +59,11 @@ $$
 ```python
 import torch
 
+
 def cu_seqlens_to_doc(cu):
     lens = cu[1:] - cu[:-1]
     return torch.repeat_interleave(torch.arange(len(lens), device=cu.device), lens)
+
 
 def packed_keep(cu):
     doc = cu_seqlens_to_doc(cu)
@@ -68,13 +72,13 @@ def packed_keep(cu):
     return (doc[:, None] == doc[None, :]) & (q[:, None] >= q[None, :])
 ```
 
-生产实现不会真的建一个完整的 $[T,T]$ 矩阵，FlashAttention 的 varlen kernel 会根据 `cu_seqlens` 分段计算。白板上可以先写 dense mask，再说明实际 kernel 怎么避开它。RoPE 的 position 也要按段内从 0 重新数，或者用每条样本自己的 position id，不能用拼接后的列下标。
+生产实现不会真的建一个完整的 $[T,T]$ matrix，FlashAttention 的 varlen kernel 会根据 `cu_seqlens` 分段计算。白板上可以先写 dense mask，再说明实际 kernel 怎么避开它。RoPE 的 position 也要按段内从 0 重新数，或者用每条样本自己的 position id，不能用拼接后的列下标。
 
 ## 简单测试怎么写
 
-把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
+把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按 assertion 报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-两个文档长度分别为 2 和 1，最后一个 token 不能看到前一文档。手写块对角因果矩阵，同时检查文档编号的展开。
+两个文档长度分别为 2 和 1，最后一个 token 不能看到前一文档。手写块对角 causal matrix，同时检查文档编号的展开。
 
 ```python
 cu = torch.tensor([0, 2, 3])

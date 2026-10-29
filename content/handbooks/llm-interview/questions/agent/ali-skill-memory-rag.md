@@ -4,7 +4,9 @@ section: agent
 order: 21
 level: S
 title: 淘天面经：Skill、Memory、RAG 分别解决什么核心问题？
-quick: "Skill 存一类任务的操作方法，Memory 存跨会话状态和用户偏好，RAG 检索当前问题需要的外部证据。三者的更新、权限和评测方式都不同，混进同一个向量库就分不清了。"
+quick: >-
+  Skill 存一类任务的操作方法，Memory 存跨会话状态和用户偏好，RAG
+  检索当前问题需要的外部证据。三者的更新、权限和评测方式都不同，混进同一个向量库就分不清了。
 tags:
   - Alibaba
   - Skill
@@ -14,14 +16,14 @@ realInterview: true
 status: published
 format: markdown
 provenance: legacy-handbook-v2
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: ↗ 淘天 Agent 社招一面
     url: 'https://www.nowcoder.com/feed/main/detail/90afe4cd751f4bd38b1e48bcec35263f'
     type: legacy-reference
 ---
 
-Skill 解决「这类任务怎么做」的程序化经验复用，Memory 解决跨会话的状态和个性化，检索增强生成（RAG）解决「此刻需要哪条外部证据」。淘天这题追问的重点是边界：把操作手册放进 RAG 不等于有了 Skill，把所有历史塞进窗口也不等于有了 Memory 治理。
+Skill 解决「这类任务怎么做」的程序化经验复用，Memory 解决跨会话的状态和个性化，检索增强生成（RAG）解决「此刻需要哪条外部证据」。淘天这题追问的重点是 division of responsibilities：把操作手册放进 RAG 不等于有了 Skill，把所有历史塞进窗口也不等于有了 Memory 治理。
 
 | 组件 | 核心问题 | 典型实现 |
 | --- | --- | --- |

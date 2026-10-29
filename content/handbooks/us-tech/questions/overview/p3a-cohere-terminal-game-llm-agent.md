@@ -3,8 +3,8 @@ id: p3a-cohere-terminal-game-llm-agent
 section: overview
 order: 805
 level: A
-title: "Cohere：把终端游戏启发式实现替换成 LLM Agent"
-quick: "先读懂游戏的观察、动作和胜负规则，把原启发式玩家当基线；LLM 只返回结构化动作，程序校验合法性，失败时退回启发式，并用固定种子多局对比胜率。"
+title: Cohere：把终端游戏启发式实现替换成 LLM Agent
+quick: 先读懂游戏的观察、动作和胜负规则，把原启发式玩家当基线；LLM 只返回结构化动作，程序校验合法性，失败时退回启发式，并用固定种子多局对比胜率。
 companies:
   - cohere
 tags:
@@ -15,10 +15,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Cohere：把终端游戏启发式实现替换成 LLM Agent"
-    url: https://www.1point3acres.com/interview/problems/d363b064-b6f5-4efb-afd2-03b807fa85ff
+  - title: 1Point3Acres · Cohere：把终端游戏启发式实现替换成 LLM Agent
+    url: >-
+      https://www.1point3acres.com/interview/problems/d363b064-b6f5-4efb-afd2-03b807fa85ff
     type: secondary
 ---
 
@@ -26,7 +27,7 @@ sources:
 
 实现一个供终端游戏等工具环境使用的模型代理循环，以及固定案例评估器。使用脚本模型和注入工具，不需要外部 LLM 服务。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -52,7 +53,7 @@ sources:
 
 给一个几百行的 Python 终端游戏，里面已有基于启发式规则的玩家实现。要求在限定时间内写一个新的、由 LLM 驱动的 agent 替换它来玩这个游戏。
 
-> 来源：一亩三分地 Cohere 题目详情页（2026-10-18 读取），读了网站的题目详情，但题面是网站从面经整理的，没有逐条核对原帖；网站收录也不等于公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Cohere 题目详情页（2026-10-18 读取），读了网站的题目详情，但题面是网站从面经整理的；网站收录也不等于公司官方确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -187,7 +188,7 @@ def evaluate(cases, predict):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -196,12 +197,15 @@ def scripted_model(actions):
     remaining = iter(actions)
     return lambda messages: next(remaining)
 
+
 # 同一个 id 请求两次，工具只执行一次
 calls = []
+
 
 def add(a, b):
     calls.append((a, b))
     return a + b
+
 
 add_call = {"type": "tool", "name": "add", "args": {"a": 2, "b": 3}, "id": "x"}
 model = scripted_model([add_call, add_call, {"type": "final", "answer": "5"}])
@@ -218,9 +222,11 @@ answer, trace = run_agent(model, {"add": add}, "2+3")
 assert trace[4]["content"]["ok"] is False
 assert "conflicting" in trace[4]["content"]["error"]
 
+
 # 工具抛异常也变成失败结果，循环继续
 def broken():
     raise KeyError("missing")
+
 
 broken_call = {"type": "tool", "name": "broken", "args": {}, "id": "b"}
 model = scripted_model([broken_call, {"type": "final", "answer": "gave up"}])
@@ -253,4 +259,4 @@ assert report["failures"] == [(1, "x", "B")]
 **怎么证明 LLM agent 比启发式更好？**
 固定一组随机种子，两种策略各跑同样的局数，比较胜率和平均得分，并抽查失败局的轨迹找原因。
 **进程崩溃后还能保证每个工具只执行一次吗？**
-不能。`results_by_id` 只在内存里，生产版要把调用状态持久化，或者让工具本身接受幂等键。
+不能。`results_by_id` 只在内存里，生产版要把调用状态持久化，或者让工具本身接受 idempotency key。

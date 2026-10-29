@@ -4,7 +4,9 @@ section: array-string
 order: 16
 level: S
 title: LC 42 · 接雨水
-quick: "用双指针从两端往中间走，记下两侧见过的最高柱，每次先处理较低的一侧：这一侧的最高柱减当前柱高就是这里的积水，因为另一侧已经有足够高的挡板。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  用双指针从两端往中间走，记下两侧见过的最高柱，每次先处理较低的一侧：这一侧的最高柱减当前柱高就是这里的积水，因为另一侧已经有足够高的挡板。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Two Pointers
@@ -12,19 +14,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 42. 接雨水
-    url: https://leetcode.cn/problems/trapping-rain-water/
+    url: 'https://leetcode.cn/problems/trapping-rain-water/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
 ## 题目描述
 
-用数组 `height` 表示从左到右排列的一组柱子，第 i 根柱子的高度是 `height[i]`，每根柱子的宽度都是 1。雨水只能停留在柱子之间有边界围住的凹处，左右两端外侧的水会流走。求下雨后能够存住的总水量。
+用数组 `height` 表示从左到右排列的一组柱子，第 i 根柱子的高度是 `height[i]`，每根柱子的宽度都是 1。雨水只能停留在柱子之间有较高柱子围住的凹处，左右两端外侧的水会流走。求下雨后能够存住的总水量。
 
 ### 接口与输出
 
@@ -103,14 +105,14 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个下标结算一次。
 
-## 边界
+## Edge Cases
 
 长度 $\lt 3$ 或整体单调时形不成凹槽，积水是 $0$。高度全相等时左右最高都等于自身，差值为 $0$。最高柱在两端还是中间都一样，水位由较矮的一侧卡住，双指针照样从矮侧先结算。
 
 ## 追问
 
 **二维接雨水怎么做（LC 407）？**
-从边界往里灌水，用小根堆。一维里水位是左右最高的较小值；二维里是「通向边界的所有路径上，路径最高点的最小值」。先把所有边界格放进小根堆并标记访问，堆顶就是当前最矮的「墙」。弹出高度 $h$，看四个邻居：没访问过且比 $h$ 矮的，差值就是积水，再把邻居以 $\max(h, \text{邻居高})$ 入堆，相当于水位被抬到至少 $h$。每个格子入堆一次，时间 $O(mn\log(mn))$，额外空间 $O(mn)$。从内部开始搜会漏掉边界漏水；入堆高度要用抬升后的水位，用邻居原高就错了。也别对每一格再跑一遍一维接雨水。
+从 outer edge 向内灌水，用小根堆。一维里水位是左右最高的较小值；二维里是「通向 outer edge 的所有路径上，路径最高点的最小值」。先把所有 outer-edge cells 放进小根堆并标记访问，堆顶就是当前最矮的「墙」。弹出高度 $h$，看四个邻居：没访问过且比 $h$ 矮的，差值就是积水，再把邻居以 $\max(h, \text{邻居高})$ 入堆，相当于水位被抬到至少 $h$。每个格子入堆一次，时间 $O(mn\log(mn))$，额外空间 $O(mn)$。从内部开始搜会漏掉流向 outer edge 的排水路径；入堆高度要用抬升后的水位，用邻居原高就错了。也别对每一格再跑一遍一维接雨水。
 
 ```python
 import heapq

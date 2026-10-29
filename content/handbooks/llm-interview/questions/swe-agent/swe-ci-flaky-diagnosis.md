@@ -4,7 +4,9 @@ section: swe-agent
 order: 191
 level: S
 title: SWE Agent 如何区分真实 CI 失败与 flaky test，并给出诊断？
-quick: "固定 SHA、环境和命令重跑 k 次，再单独跑失败用例，查时间、并发、网络这些不确定因素：每次都红才算真实失败，有红有绿就标 flaky。flaky 的测试先隔离、开票跟踪，只有能复现的真实失败才进自动补丁循环。"
+quick: >-
+  固定 SHA、环境和命令重跑 k 次，再单独跑失败用例，查时间、并发、网络这些不确定因素：每次都红才算真实失败，有红有绿就标 flaky。flaky
+  的测试先隔离、开票跟踪，只有能复现的真实失败才进自动补丁循环。
 tags:
   - CI
   - Flaky Tests
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
-  - title: "Understanding Flaky Tests: The Developer's Perspective"
-    url: https://arxiv.org/abs/1907.01466
+  - title: 'Understanding Flaky Tests: The Developer''s Perspective'
+    url: 'https://arxiv.org/abs/1907.01466'
     type: primary
 ---
 
@@ -35,7 +37,7 @@ sources:
 
 flaky 测试先隔离：不阻塞这次 patch，也不进自动修复的目标，但要开缺陷票，并计进健康指标。真实失败才允许改生产代码。「加 sleep / 重试到绿」不算修复，除非产品明确接受、并写进了测试合同。对「加长等待就绿」的补丁默认拒绝，它证明不了复现，还会让套件更慢更脆。隔离之后如果 $\hat{p}_{\mathrm{fail}}$ 还在中间带，就保持 quarantine，别为了让 Agent 有事做去改生产逻辑。
 
-Agent 的诊断报告要讲清楚为什么判 flaky、附上重跑表、给出建议（隔离 / 冻时钟 / 去网），别直接出 diff。flake 是测试债务，算不上 issue。开发者视角的那篇研究也指出，复现本身是最大的成本，Agent 跳过复现，只会把这笔成本放大。面试时讲清楚 $k$ 次重跑矩阵和 quarantine 的边界，别停在「我们会看日志」。
+Agent 的诊断报告要讲清楚为什么判 flaky、附上重跑表、给出建议（隔离 / 冻时钟 / 去网），别直接出 diff。flake 是测试债务，算不上 issue。开发者视角的那篇研究也指出，复现本身是最大的成本，Agent 跳过复现，只会把这笔成本放大。面试时讲清楚 $k$ 次重跑矩阵和 quarantine 的 inclusion criteria，别停在「我们会看日志」。
 
 ## 和测试合同、评测对齐
 

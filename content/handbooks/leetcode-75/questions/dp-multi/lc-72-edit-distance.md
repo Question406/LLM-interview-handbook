@@ -4,7 +4,10 @@ section: dp-multi
 order: 4
 level: S
 title: LC 72 · 编辑距离
-quick: "令 $dp[i][j]$ 为 `word1` 前 $i$ 个变成 `word2` 前 $j$ 个的最少操作数。末字符相同就抄左上；不同时替换、删除、插入分别对应左上、上、左，取最小再加一。时间 $O(mn)$，额外空间可压到 $O(\\min(m,n))$。"
+quick: >-
+  令 $dp[i][j]$ 为 `word1` 前 $i$ 个变成 `word2` 前 $j$
+  个的最少操作数。末字符相同就抄左上；不同时替换、删除、插入分别对应左上、上、左，取最小再加一。时间 $O(mn)$，额外空间可压到
+  $O(\min(m,n))$。
 tags:
   - DP
   - String
@@ -12,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 72. Edit Distance
-    url: https://leetcode.com/problems/edit-distance/
+    url: 'https://leetcode.com/problems/edit-distance/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -54,7 +57,7 @@ horse 可以用三次允许的编辑变成 ros；不要求输出这三次编辑�
 
 ## 思路
 
-这是两个前缀对齐的二维 DP，三种操作正好对应三个前置格子。$dp[i][j]$ 是 `word1[:i]` 变到 `word2[:j]` 的最少操作数。边界 $dp[i][0]=i$（全删），$dp[0][j]=j$（全插）。
+这是两个前缀对齐的二维 DP，三种操作正好对应三个前置格子。$dp[i][j]$ 是 `word1[:i]` 变到 `word2[:j]` 的最少操作数。base cases $dp[i][0]=i$（全删），$dp[0][j]=j$（全插）。
 
 末字符相同就不用动，$dp[i][j]=dp[i-1][j-1]$。不同的话三选一再加一：
 
@@ -119,9 +122,9 @@ print("simple tests passed")
 
 时间 $O(mn)$，额外空间 $O(mn)$，滚动后 $O(\min(m,n))$。
 
-## 边界
+## Edge Cases
 
-一个串为空时，答案就是另一个串的长度，边界行列已经覆盖。
+一个串为空时，答案就是另一个串的长度，DP base-case rows / columns 已经覆盖。
 
 两串相等时每步都抄对角，答案 $0$。
 

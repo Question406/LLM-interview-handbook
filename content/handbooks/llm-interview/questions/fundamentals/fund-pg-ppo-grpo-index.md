@@ -35,17 +35,17 @@ sources:
 
 ## 无偏还是有偏、方差从哪来
 
-这部分的总表在「RL 方差、无偏 / 有偏估计面试要准备哪些题？」。先把下面几张弄懂，再去谈 PPO clip。
+这部分的总表在「RL 方差、无偏 / biased estimate 面试要准备哪些题？」。先把下面几张弄懂，再去谈 PPO clip。
 
-- 策略梯度里哪些操作仍无偏？哪些会引入偏差？
+- policy gradient 里哪些操作仍无偏？哪些会引入偏差？
 - Reward-to-go 为什么仍无偏？为什么比整段回报方差更小？
 - 即使 on-policy，REINFORCE 的方差为什么仍随长度和稀疏奖励涨？
 - 为什么 $V^\pi(s)$ 是最优 baseline？$V$ 估错了梯度还无偏吗？
 - $G_t-V(s_t)$ 和 GAE 差在哪？怎样用 Critic 降方差却保持无偏？
 - $\gamma$ 和 $\lambda$ 为什么不能合成一个乘积？谁改目标、谁改估计器？
 - 轨迹自然结束和 max-length 截断，bootstrap 各该怎么做、偏在哪？
-- 组均值含当前样本、Leave-one-out、batch 标准化，有限样本下谁还无偏？
-- Advantage 减均值、除标准差、按长度归一化，分别改了什么目标？
+- 组均值含当前样本、Leave-one-out、batch standardization，有限样本下谁还无偏？
+- Advantage 减均值、除标准差、按长度 normalization，分别改了什么目标？
 - Gradient clip、Advantage clip、Ratio clip 分别偏了什么？
 - 0-1 奖励的方差何时最大？这对 GRPO 有效组意味着什么？
 - Score-function 和 reparameterization 差在哪？LLM 的 token 为什么只能走高方差那条？
@@ -69,7 +69,7 @@ sources:
 - PPO clipped objective 为什么长这样？
 - 百度文心 RL 后训练：PPO clip 在优势为正/负时分别限制哪一侧？
 - PPO 里的 Trust-Region KL 和 Drift KL 是同一个东西吗？
-- 蚂蚁一面：PPO 的 KL 能改成交叉熵吗？
+- 蚂蚁一面：PPO 的 KL 能改成 cross entropy 吗？
 
 ## 换成组 baseline 之后
 

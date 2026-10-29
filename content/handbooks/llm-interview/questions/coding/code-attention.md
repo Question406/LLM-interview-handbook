@@ -4,7 +4,10 @@ section: coding
 order: 1
 level: S
 title: 手写 Multi-Head Attention：shape、mask、数值稳定性怎么处理？
-quick: "把 [B,T,d_model] 投影后 reshape 成 [B,H,T,d_head]，算缩放后的 $QK^\\top$，softmax 之前加因果和 padding mask，乘 V，再把各头合回去。讲的时候要说清 mask 怎么广播到 [B,H,T,T] 的分数矩阵，以及 fp16/bf16 下把 softmax 放到 fp32 算、全被 mask 的行别算出 NaN。"
+quick: >-
+  把 [B,T,d_model] 投影后 reshape 成 [B,H,T,d_head]，算缩放后的 $QK^\top$，softmax 之前加因果和
+  padding mask，乘 V，再把各头合回去。讲的时候要说清 mask 怎么广播到 [B,H,T,T] 的分数矩阵，以及 fp16/bf16 下把
+  softmax 放到 fp32 算、全被 mask 的行别算出 NaN。
 tags:
   - PyTorch
   - Attention
@@ -19,9 +22,9 @@ sources: []
 
 ## 题目描述
 
-实现一个可训练的多头因果自注意力层 MHA：每个位置只能读取自身及之前的有效 token。默认练习对象是本卡第一个 MHA 类；后面的 KV cache、TinyLM 和生成接口是扩展阅读，不属于这一小题的必需入口。
+实现一个可训练的多头因果 self-attention 层 MHA：每个位置只能读取自身及之前的有效 token。默认练习对象是本卡第一个 MHA 类；后面的 KV cache、TinyLM 和生成接口是扩展阅读，不属于这一小题的必需入口。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -29,7 +32,7 @@ sources: []
 
 ### 输出与约束
 
-返回 [B,T,`d_model`]。每个头使用按头维度平方根缩放的点积注意力，再拼接并输出投影；必须同时遵守因果限制和 key 有效性。本基础接口保证每行至少有一个可见 key，不要求 dropout。输出保留训练梯度。
+返回 [B,T,`d_model`]。每个头使用按头维度平方根缩放的点积 attention，再拼接并输出投影；必须同时遵守因果限制和 key 有效性。本基础接口保证每行至少有一个可见 key，不要求 dropout。输出保留训练梯度。
 
 ### 示例
 
@@ -48,6 +51,7 @@ d_model=2, n_heads=1, x=[[[0,0],[0,0]]], padding_mask=[[True,True]]
 import torch
 import torch.nn as nn
 
+
 class MHA(nn.Module):
     def __init__(self, d_model, n_heads):
         super().__init__()
@@ -61,7 +65,7 @@ class MHA(nn.Module):
         B, T, D = x.shape
         qkv = self.qkv(x).view(B, T, 3, self.h, self.dh)
         q, k, v = qkv.unbind(dim=2)
-        q = q.transpose(1, 2)   # [B,H,T,Dh]
+        q = q.transpose(1, 2)  # [B,H,T,Dh]
         k = k.transpose(1, 2)
         v = v.transpose(1, 2)
         scores = q @ k.transpose(-1, -2) / math.sqrt(self.dh)
@@ -69,27 +73,28 @@ class MHA(nn.Module):
         causal = torch.triu(
             torch.ones(T, T, dtype=torch.bool, device=x.device), diagonal=1
         )
-        scores = scores.masked_fill(causal, float(&#x27;-inf&#x27;))
-        if padding_mask is not None:      # [B,T], True=valid
-            scores = scores.masked_fill(~padding_mask[:, None, None, :], float(&#x27;-inf&#x27;))
+        scores = scores.masked_fill(causal, float('-inf'))
+        if padding_mask is not None:  # [B,T], True=valid
+            scores = scores.masked_fill(~padding_mask[:, None, None, :], float('-inf'))
 
         attn = torch.softmax(scores.float(), dim=-1).to(q.dtype)
         y = attn @ v
         y = y.transpose(1, 2).contiguous().view(B, T, D)
-        return self.out(y)</code></pre><p>代码里因果 mask 是 [T,T]，padding mask 扩成 [B,1,1,T]，都能广播到 [B,H,T,T] 的 scores 上。softmax 放到 fp32 里算是常见的稳定做法。如果某个 query 的所有 key 都被 mask 掉，整行都是 -∞，要避免算出 NaN。实际框架里一般用 fused SDPA 或 FlashAttention，白板题考的是数学和 shape，用不着复刻最高性能的 kernel。</p><h3>进阶：KV cache、输入预填充（prefill，即处理输入并建立缓存） 与 逐 token 生成（decode）</h3><p>面试官常接着问：自回归生成第 t 步时，新 query 要和前面所有 token 的 K/V 做 attention，可这些 K/V 前几步已经算过了。KV cache 把每层的 K/V 存下来，推理就拆成了两个阶段：</p><ul><li>Prefill 对整段输入提示（prompt）做一次前向计算，$T$ 等于 prompt 长度，把每层 K/V 写进 cache，只拿最后一个位置的 logits 采样第一个新 token。这一步主要受计算能力限制（compute-bound），决定首个 token 的等待时间（TTFT）。</li><li>Decode 每步只输入 1 个新 token，q 是 $[B,H,1,d_h]$，和 cache 里的 $[B,H,S,d_h]$ 做 attention，单步 attention 开销从 $O(S^2)$ 降到 $O(S)$。这一步主要受内存带宽限制（memory-bound），每步都要读一遍权重和整份 cache，所以决定每个输出 token 的耗时（TPOT）和吞吐。</li></ul><p>和上面的基础版比，要改三处。第一处，K/V 先 append 进 cache，和历史拼成长度 $S=\text{past}+T$。第二处，causal mask 要带 offset：绝对位置为 past+i 的 query 只能看 $k\_pos \le \text{past}+i$ 的 key；past=0 时退化成原来的 triu，decode 时 $T=1$，mask 全是 False。第三处，cache 可以复用：同一个 system prompt 或 few-shot 前缀只 prefill 一次，fork 给多条请求，每条请求只 prefill 自己的后缀。</p><pre><code data-lang="python">class KVCache:
+        return self.out(y)</code></pre><p>代码里因果 mask 是 [T,T]，padding mask 扩成 [B,1,1,T]，都能广播到 [B,H,T,T] 的 scores 上。softmax 放到 fp32 里算是常见的稳定做法。如果某个 query 的所有 key 都被 mask 掉，整行都是 -∞，要避免算出 NaN。实际框架里一般用 fused SDPA 或 FlashAttention，白板题考的是数学和 shape，用不着复刻最高性能的 kernel。</p><h3>进阶：KV cache、输入 prefill 与 逐 token 生成（decode）</h3><p>面试官常接着问：autoregressive 生成第 t 步时，新 query 要和前面所有 token 的 K/V 做 attention，可这些 K/V 前几步已经算过了。KV cache 把每层的 K/V 存下来，推理就拆成了两个阶段：</p><ul><li>Prefill 对整段 prompt 做一次前向计算，$T$ 等于 prompt 长度，把每层 K/V 写进 cache，只拿最后一个位置的 logits sampling 第一个新 token。这一步主要受计算能力限制（compute-bound），决定首个 token 的等待时间（TTFT）。</li><li>Decode 每步只输入 1 个新 token，q 是 $[B,H,1,d_h]$，和 cache 里的 $[B,H,S,d_h]$ 做 attention，单步 attention 开销从 $O(S^2)$ 降到 $O(S)$。这一步主要受内存带宽限制（memory-bound），每步都要读一遍权重和整份 cache，所以决定每个输出 token 的耗时（TPOT）和 throughput。</li></ul><p>和上面的基础版比，要改三处。第一处，K/V 先 append 进 cache，和历史拼成长度 $S=\text{past}+T$。第二处，causal mask 要带 offset：绝对位置为 past+i 的 query 只能看 $k\_pos \le \text{past}+i$ 的 key；past=0 时退化成原来的 triu，decode 时 $T=1$，mask 全是 False。第三处，cache 可以复用：同一个 system prompt 或 few-shot 前缀只 prefill 一次，fork 给多条请求，每条请求只 prefill 自己的后缀。</p><pre><code data-lang="python">class KVCache:
     """预分配 [B,H,max_len,Dh]，len 是已写入的 token 数（batch 内对齐）。"""
+
     def __init__(self, B, H, max_len, dh, device=None, dtype=torch.float32):
         self.k = torch.zeros(B, H, max_len, dh, device=device, dtype=dtype)
         self.v = torch.zeros_like(self.k)
         self.len = 0
 
-    def append(self, k, v):                      # k, v: [B,H,T_new,Dh]
+    def append(self, k, v):  # k, v: [B,H,T_new,Dh]
         t = k.size(2)
         assert self.len + t &lt;= self.k.size(2), "KV cache overflow"
-        self.k[:, :, self.len:self.len + t] = k
-        self.v[:, :, self.len:self.len + t] = v
+        self.k[:, :, self.len : self.len + t] = k
+        self.v[:, :, self.len : self.len + t] = v
         self.len += t
-        return self.k[:, :, :self.len], self.v[:, :, :self.len]
+        return self.k[:, :, : self.len], self.v[:, :, : self.len]
 
     def fork(self, n):
         """把 batch=1 的前缀 cache 复制给 n 条请求，前缀不用重算。"""
@@ -106,20 +111,20 @@ class CachedMHA(MHA):
         # key_valid: [B, past+T]，True=有效 key（左 padding 时用）
         B, T, D = x.shape
         q, k, v = self.qkv(x).view(B, T, 3, self.h, self.dh).unbind(dim=2)
-        q, k, v = (t.transpose(1, 2) for t in (q, k, v))   # [B,H,T,Dh]
+        q, k, v = (t.transpose(1, 2) for t in (q, k, v))  # [B,H,T,Dh]
 
         past = 0
         if cache is not None:
             past = cache.len
-            k, v = cache.append(k, v)            # [B,H,past+T,Dh]
+            k, v = cache.append(k, v)  # [B,H,past+T,Dh]
         S = k.size(2)
 
-        scores = q @ k.transpose(-1, -2) / math.sqrt(self.dh)   # [B,H,T,S]
+        scores = q @ k.transpose(-1, -2) / math.sqrt(self.dh)  # [B,H,T,S]
         q_pos = torch.arange(past, past + T, device=x.device)[:, None]
         k_pos = torch.arange(S, device=x.device)[None, :]
-        scores = scores.masked_fill(k_pos &gt; q_pos, float(&#x27;-inf&#x27;))  # 带 offset 的 causal
+        scores = scores.masked_fill(k_pos &gt; q_pos, float('-inf'))  # 带 offset 的 causal
         if key_valid is not None:
-            scores = scores.masked_fill(~key_valid[:, None, None, :], float(&#x27;-inf&#x27;))
+            scores = scores.masked_fill(~key_valid[:, None, None, :], float('-inf'))
 
         attn = torch.softmax(scores.float(), dim=-1).nan_to_num(0.0).to(q.dtype)
         y = (attn @ v).transpose(1, 2).contiguous().view(B, T, D)
@@ -130,19 +135,23 @@ class TinyLM(nn.Module):
     def __init__(self, vocab, d_model, n_heads, n_layers):
         super().__init__()
         self.emb = nn.Embedding(vocab, d_model)
-        self.layers = nn.ModuleList(CachedMHA(d_model, n_heads) for _ in range(n_layers))
+        self.layers = nn.ModuleList(
+            CachedMHA(d_model, n_heads) for _ in range(n_layers)
+        )
         self.head = nn.Linear(d_model, vocab, bias=False)
 
     def new_caches(self, B, max_len):
         p = self.head.weight
         l0 = self.layers[0]
-        return [KVCache(B, l0.h, max_len, l0.dh, p.device, p.dtype) for _ in self.layers]
+        return [
+            KVCache(B, l0.h, max_len, l0.dh, p.device, p.dtype) for _ in self.layers
+        ]
 
     def forward(self, ids, caches=None, key_valid=None):
         x = self.emb(ids)
         for i, layer in enumerate(self.layers):
             x = x + layer(x, None if caches is None else caches[i], key_valid)
-        return self.head(x)                      # [B,T,V]
+        return self.head(x)  # [B,T,V]
 
 
 @torch.no_grad()
@@ -167,13 +176,13 @@ def generate(model, prompt_ids, max_new_tokens, caches=None, prompt_valid=None):
     logits = prefill(model, prompt_ids, caches, valid)
     out = []
     for _ in range(max_new_tokens):
-        nxt = logits.argmax(-1)                  # greedy
+        nxt = logits.argmax(-1)  # greedy
         out.append(nxt)
         if valid is not None:
             valid = torch.cat([valid, valid.new_ones(B, 1)], dim=1)
         logits = decode_step(model, nxt, caches, valid)
-    return torch.stack(out, dim=1)               # [B,max_new_tokens]</code></pre><p>用的时候，前缀复用先 <code>sys_caches = model.new_caches(1, max_len)</code>，调用 <code>prefill(model, sys_ids, sys_caches)</code>，再用 <code>[c.fork(n) for c in sys_caches]</code> 拿到每条请求的 cache，传给 <code>generate(model, user_ids, ...)</code>，前缀那段就不会重算。这份代码验证过四件事：prefill 加逐 token decode 的 logits 和整段全量 forward 一致；greedy 生成的结果和不带 cache 的朴素实现一致；前缀复用和从头 prefill 一致；左 padding 的 batch 生成和逐条生成一致。</p><p>有两处细节容易漏。一是 <code>fork</code> 这里用 clone 是为了好懂，vLLM 的 prefix caching 和 SGLang 的 RadixAttention 是按 block 引用共享，写的时候才复制。二是左 padding 时，pad 位置的 query 看不到任何有效 key，整行都是 -∞，softmax 会算出 NaN。这个 NaN 会顺着 residual 流进下一层的 V，0×NaN 还是 NaN，所以要加 <code>nan_to_num(0.0)</code>。</p></div>
-          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>Causal mask 和 padding mask 谁先加？</summary><div class="follow-answer"><p>谁先都行，只要两者最后合成的是同一组被屏蔽位置。要保证的是广播后的形状对：causal 通常是 [T,T]，padding key mask 通常是 [B,1,1,T]。</p></div></details><details class="followup"><summary>为什么 mask 要加在 softmax 之前？</summary><div class="follow-answer"><p>因为加在前面，被屏蔽位置的概率才严格是 0。softmax 之后再置零会破坏归一化，除非再重新归一化一次。</p></div></details><details class="followup"><summary>GQA 怎么改这段代码？</summary><div class="follow-answer"><p>Q 还是 Hq 个 heads，K/V 只有 Hkv 个。计算前按 group 让若干个 Q head 共享同一个 KV head。想避免物理 repeat，可以交给专门的 kernel 去做。</p></div></details><details class="followup"><summary>KV cache 占多少显存？GQA 省在哪？</summary><div class="follow-answer"><p>大小是 $2 \times L \times B \times H_{kv} \times S \times d_h \times \text{bytes}$，其中 2 对应 K 和 V。以 Llama-2-7B 为例（32 层、32 头、$d_h=128$、fp16），每个 token 约 0.5 MB，4k 上下文单条序列约 2 GB，很快就比权重还大。GQA/MQA 把 $H_{kv}$ 从 $H$ 降到几个甚至 1 个，cache 缩小 $H/H_{kv}$ 倍；MLA 更进一步，只缓存低秩的潜在表示。</p></div></details><details class="followup"><summary>为什么 prefill 是 compute-bound，decode 是 memory-bound？</summary><div class="follow-answer"><p>因为两者每读一次权重能做的计算量差很多。Prefill 一次处理 T 个 token，投影是 $[T,d]\times[d,d]$ 的大矩阵乘，读一次权重能做很多 FLOPs。Decode 每步只有 1 个 token，却要把全部权重和整份 KV cache 从 HBM 读一遍，算术强度很低。所以 decode 靠加大 batch 摊薄读权重的成本；chunked prefill 和 PD 分离是为了不让长 prompt 的 prefill 卡住正在 decode 的请求。</p></div></details><details class="followup"><summary>加了 RoPE 以后 cache 怎么处理？</summary><div class="follow-answer"><p>cache 里存旋转之后的 K，decode 时只给新 token 的 q/k 做旋转，历史 K 不动。新 token 的位置要用绝对位置 past+i，从 0 重新数就错了。前缀复用成立的前提是前缀的位置完全相同；左 padding 时每条样本的 position id 要按有效长度算，直接用列下标会错位。</p></div></details><details class="followup"><summary>Batch 里 prompt 长度不同怎么办？</summary><div class="follow-answer"><p>白板上用左 padding 加 key_valid mask，所有序列的新 token 都落在同一列，cache.len 能对齐，上面的代码就是这么做的。代价是 pad 位置也占 cache。生产系统一般不做 padding，每条序列记自己的长度，用 PagedAttention 按 block 管理 cache，再配合 continuous batching，让序列随时加入和退出 batch。</p></div></details></div>
+    return torch.stack(out, dim=1)  # [B,max_new_tokens]</code></pre><p>用的时候，前缀复用先 <code>sys_caches = model.new_caches(1, max_len)</code>，调用 <code>prefill(model, sys_ids, sys_caches)</code>，再用 <code>[c.fork(n) for c in sys_caches]</code> 拿到每条请求的 cache，传给 <code>generate(model, user_ids, ...)</code>，前缀那段就不会重算。这份代码验证过四件事：prefill 加逐 token decode 的 logits 和整段全量 forward 一致；greedy 生成的结果和不带 cache 的朴素实现一致；前缀复用和从头 prefill 一致；左 padding 的 batch 生成和逐条生成一致。</p><p>有两处细节容易漏。一是 <code>fork</code> 这里用 clone 是为了好懂，vLLM 的 prefix caching 和 SGLang 的 RadixAttention 是按 block 引用共享，写的时候才复制。二是左 padding 时，pad 位置的 query 看不到任何有效 key，整行都是 -∞，softmax 会算出 NaN。这个 NaN 会顺着 residual 流进下一层的 V，0×NaN 还是 NaN，所以要加 <code>nan_to_num(0.0)</code>。</p></div>
+          <div class="followups"><div class="mini-title">常见追问与答案</div><details class="followup"><summary>Causal mask 和 padding mask 谁先加？</summary><div class="follow-answer"><p>谁先都行，只要两者最后合成的是同一组被屏蔽位置。要保证的是广播后的形状对：causal 通常是 [T,T]，padding key mask 通常是 [B,1,1,T]。</p></div></details><details class="followup"><summary>为什么 mask 要加在 softmax 之前？</summary><div class="follow-answer"><p>因为加在前面，被屏蔽位置的概率才严格是 0。softmax 之后再置零会破坏 normalization，除非再 renormalization 一次。</p></div></details><details class="followup"><summary>GQA 怎么改这段代码？</summary><div class="follow-answer"><p>Q 还是 Hq 个 heads，K/V 只有 Hkv 个。计算前按 group 让若干个 Q head 共享同一个 KV head。想避免物理 repeat，可以交给专门的 kernel 去做。</p></div></details><details class="followup"><summary>KV cache 占多少显存？GQA 省在哪？</summary><div class="follow-answer"><p>大小是 $2 \times L \times B \times H_{kv} \times S \times d_h \times \text{bytes}$，其中 2 对应 K 和 V。以 Llama-2-7B 为例（32 层、32 头、$d_h=128$、fp16），每个 token 约 0.5 MB，4k 上下文单条序列约 2 GB，很快就比权重还大。GQA/MQA 把 $H_{kv}$ 从 $H$ 降到几个甚至 1 个，cache 缩小 $H/H_{kv}$ 倍；MLA 更进一步，只缓存低秩的潜在表示。</p></div></details><details class="followup"><summary>为什么 prefill 是 compute-bound，decode 是 memory-bound？</summary><div class="follow-answer"><p>因为两者每读一次权重能做的计算量差很多。Prefill 一次处理 T 个 token，投影是 $[T,d]\times[d,d]$ 的大矩阵乘，读一次权重能做很多 FLOPs。Decode 每步只有 1 个 token，却要把全部权重和整份 KV cache 从 HBM 读一遍，算术强度很低。所以 decode 靠加大 batch 摊薄读权重的成本；chunked prefill 和 PD 分离是为了不让长 prompt 的 prefill 卡住正在 decode 的请求。</p></div></details><details class="followup"><summary>加了 RoPE 以后 cache 怎么处理？</summary><div class="follow-answer"><p>cache 里存旋转之后的 K，decode 时只给新 token 的 q/k 做旋转，历史 K 不动。新 token 的位置要用绝对位置 past+i，从 0 重新数就错了。前缀复用成立的前提是前缀的位置完全相同；左 padding 时每条样本的 position id 要按有效长度算，直接用列下标会错位。</p></div></details><details class="followup"><summary>Batch 里 prompt 长度不同怎么办？</summary><div class="follow-answer"><p>白板上用左 padding 加 key_valid mask，所有序列的新 token 都落在同一列，cache.len 能对齐，上面的代码就是这么做的。代价是 pad 位置也占 cache。生产系统一般不做 padding，每条序列记自己的长度，用 PagedAttention 按 block 管理 cache，再配合 continuous batching，让序列随时加入和退出 batch。</p></div></details></div>
 
 <h2>简单测试怎么写</h2>
 <p>把参考实现与以下测试按顺序放进 solution.py，运行 python3 solution.py。数值测试使用同一 PyTorch 环境，浮点数用带容差的比较；通过后输出 simple tests passed。</p>

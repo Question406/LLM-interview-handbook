@@ -4,7 +4,9 @@ section: anthropic
 order: 5
 level: A
 title: Anthropic OA：爬虫 / 网页抓取分层题，礼貌延迟与去重怎么做？
-quick: "我会先把 URL 规范化，在入队时原子地检查并记录 visited，保证并发下同一地址只抓一次。礼貌延迟按主机维护 next_ok，让不同主机各自等待；单线程正确后再加线程池。"
+quick: >-
+  我会先把 URL 规范化，在入队时原子地检查并记录 visited，保证并发下同一地址只抓一次。礼貌延迟按主机维护
+  next_ok，让不同主机各自等待；单线程正确后再加线程池。
 tags:
   - 完整编程练习
   - Anthropic
@@ -14,13 +16,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: Anthropic interview questions (IGotAnOffer)
-    url: https://igotanoffer.com/en/advice/anthropic-interview-questions
+    url: 'https://igotanoffer.com/en/advice/anthropic-interview-questions'
     type: secondary
   - title: Design a concurrent web crawler (Anthropic-style prompt)
-    url: https://prachub.com/interview-questions/design-a-concurrent-web-crawler-3
+    url: 'https://prachub.com/interview-questions/design-a-concurrent-web-crawler-3'
     type: secondary
 ---
 
@@ -28,7 +30,7 @@ sources:
 
 给定一个起始网页和可调用的链接查询函数，编写一个有限网页图的并发爬虫。需要返回从起点能到达的同主机页面集合，处理页面间的环与重复链接；本练习使用注入函数模拟抓取，不发起真实网络请求。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -54,7 +56,7 @@ crawl("https://a/x", get_urls, workers=3) -> ["https://a/x", "https://a/y"]
 
 ## 完整编程练习（手册重构版）
 
-> 来源网站只披露了题型。下面的接口、约束和测试是手册补的练习约定，不是面试官原题或隐藏测试。Python 3 标准库，不发真实网络请求。
+> 来源网站只披露了题型。下面的接口、约束和测试是手册补的练习约定。Python 3 标准库，不发真实网络请求。
 
 ### 题面、接口与约束
 
@@ -151,7 +153,7 @@ def crawl(start, get_urls, workers=4):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -212,7 +214,7 @@ expect_error(ValueError, lambda: crawl("not-a-url", parser))
 
 ### 复杂度与追问
 
-设页面数为 V、链接总数为 E。每个页面解析一次，每条链接检查一次，总工作量 O(V + E)；`seen` 占 O(V)，队列里同时排队的 URL 不超过 V。线程实际能带来多少吞吐，取决于 `get_urls` 的等待时间（网络 I/O 时线程会释放 GIL）。
+设页面数为 V、链接总数为 E。每个页面解析一次，每条链接检查一次，总工作量 O(V + E)；`seen` 占 O(V)，队列里同时排队的 URL 不超过 V。线程实际能带来多少 throughput，取决于 `get_urls` 的等待时间（网络 I/O 时线程会释放 GIL）。
 
 - 追问「多进程或多机抓取」：`seen` 要换成外部的原子去重，例如 Redis 的 `SADD` 返回值判断是否新插入。
 - 追问「上生产还缺什么」：每个主机的限速、`robots.txt`、请求超时，以及能在崩溃后恢复的持久化 frontier，见下文。
@@ -273,7 +275,7 @@ OA 里 `seen` 用集合就够了。生产环境再谈 Bloom filter：它的假�
 **Bloom 假阳性怎么办？**
 命中只当作「可能见过」，再回到精确集合确认。不要把 Bloom 当成唯一的 visited。
 
-**礼貌和吞吐怎么平衡？**
+**礼貌和 throughput 怎么平衡？**
 瓶颈几乎总是 host 不够多、慢主机拖住了进度，而不是连接数不够。只加 worker 而不增加 host 的多样性，只会让同一个 host 被请求得更频繁，违反礼貌。
 
 **和 API 限流有什么关系？**

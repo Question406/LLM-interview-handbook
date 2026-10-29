@@ -4,20 +4,22 @@ section: two-pointers
 order: 3
 level: S
 title: LC 167 · 两数之和 II - 输入有序数组
-quick: "数组有序，所以用左右指针从两端往中间走：两数和偏小，左指针右移；偏大，右指针左移。找到后返回从 $1$ 开始的下标。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  数组有序，所以用左右指针从两端往中间走：两数和偏小，左指针右移；偏大，右指针左移。找到后返回从 $1$ 开始的下标。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Two Pointers
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 167. 两数之和 II - 输入有序数组
-    url: https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/
+    url: 'https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -101,7 +103,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每步丢掉一端，两端互斥地收缩。
 
-## 边界
+## Edge Cases
 
 有负数也照样能对撞，有序就够了，不要求全正。
 

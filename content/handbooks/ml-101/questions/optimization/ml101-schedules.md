@@ -3,20 +3,23 @@ id: ml101-schedules
 section: optimization
 order: 7
 level: A
-title: "学习率衰减、预热和早停各解决什么问题？"
-quick: "预热在训练开始用较小步长逐渐升高，减轻初始更新不稳定；衰减在后期减小步长，帮助细化优化；早停根据验证表现决定何时结束，避免无收益计算或过拟合。三者可以组合，分别控制起步、后期更新与停止时机，参数应由验证实验确定。"
+title: 学习率衰减、预热和早停各解决什么问题？
+quick: >-
+  预热在训练开始用较小步长逐渐升高，减轻初始更新不稳定；衰减在后期减小步长，帮助细化优化；早停根据验证表现决定何时结束，避免无收益计算或
+  overfitting。三者可以组合，分别控制起步、后期更新与停止时机，参数应由验证实验确定。
 tags:
   - ML Fundamentals
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Dive into Deep Learning: Learning Rate Scheduling"
-    url: https://d2l.ai/chapter_optimization/lr-scheduler.html
+  - title: 'Dive into Deep Learning: Learning Rate Scheduling'
+    url: 'https://d2l.ai/chapter_optimization/lr-scheduler.html'
     type: primary
-  - title: "scikit-learn: Early stopping in Gradient Boosting"
-    url: https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_early_stopping.html
+  - title: 'scikit-learn: Early stopping in Gradient Boosting'
+    url: >-
+      https://scikit-learn.org/stable/auto_examples/ensemble/plot_gradient_boosting_early_stopping.html
     type: primary
 ---
 

@@ -4,20 +4,22 @@ section: kadane
 order: 2
 level: A
 title: LC 918 · 环形子数组的最大和
-quick: "答案取两种情况的较大者：不跨接缝就是普通 Kadane，跨接缝等于 `total` 减去最小子数组和。全负时最小子数组是整个数组，`total - min` 会变成空段的 $0$，这时直接返回普通最大。一遍扫描，时间 $O(n)$。"
+quick: >-
+  答案取两种情况的较大者：不跨接缝就是普通 Kadane，跨接缝等于 `total` 减去最小子数组和。全负时最小子数组是整个数组，`total - min`
+  会变成空段的 $0$，这时直接返回普通最大。一遍扫描，时间 $O(n)$。
 tags:
   - Kadane
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 918. 环形子数组的最大和
-    url: https://leetcode.cn/problems/maximum-sum-circular-subarray/
+    url: 'https://leetcode.cn/problems/maximum-sum-circular-subarray/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -57,7 +59,7 @@ sources:
 
 全负要特判。`[-3, -2, -3]` 的最小子数组就是整个数组，`total - min` 是 $0$，对应一个空段，这题不允许空段。所以我用「普通最大 $< 0$」来判断，成立就直接返回普通最大，这里是 $-2$。
 
-有人会想把数组拆成两段再拼，这样边界容易漏，两套 Kadane 更稳。
+有人会想把数组拆成两段再拼，这样容易遗漏 edge cases，两套 Kadane 更稳。
 
 ## 参考代码
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 一遍循环里同时维护最大、最小的结尾和，时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - 全负的时候普通最大 $\lt 0$，直接返回最大的那个负数。这时用 `total - min` 会得到 $0$，是错的。
 - 全正的时候最小子数组是最小的单个正数，`total - min` $\lt$ `total`，答案就是普通 Kadane 的结果，也就是 `total`。
@@ -131,6 +133,7 @@ Kadane 管不了长度，要改成前缀和加单调队列。最大子段和等�
 
 ```python
 from collections import deque
+
 
 def maxSubarraySumLenAtMostK(nums, k):
     pre, dq, ans = [0], deque([0]), float("-inf")

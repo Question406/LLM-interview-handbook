@@ -5,7 +5,8 @@ order: 1
 level: S
 title: Harvey：路径文件库、表格公式环、引用标注
 quick: >-
-  Harvey 电面从三道里抽：按路径 get/put 的文件库，带公式、要检出环的表格，以及找出回答片段在原文中位置的引用标注。2025 年 3 月到 2026 年 8 月，引用标注在汇总记录中出现得最多。每道都先把最小版本跑通，边界当场问清。
+  Harvey 电面从三道里抽：按路径 get/put 的文件库，带公式、要检出环的表格，以及找出回答片段在原文中位置的引用标注。2025 年 3 月到
+  2026 年 8 月，引用标注在汇总记录中出现得最多。每道都先把最小版本跑通，constraints 当场问清。
 tags:
   - Harvey
   - Coding
@@ -13,16 +14,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
-  - title: Harvey AI Software Engineer experience, file storage, 2025-07-06
-    url: https://www.jointaro.com/interviews/companies/harvey-ai/experiences/software-engineer-united-states-july-6-2025-no-offer-negative-32e463e6/
+  - title: 'Harvey AI Software Engineer experience, file storage, 2025-07-06'
+    url: >-
+      https://www.jointaro.com/interviews/companies/harvey-ai/experiences/software-engineer-united-states-july-6-2025-no-offer-negative-32e463e6/
     type: candidate-first-hand
-  - title: Harvey AI interview questions catalog, Mar 2025–Aug 2026
-    url: https://aceoffer.app/interviews/harvey
+  - title: 'Harvey AI interview questions catalog, Mar 2025–Aug 2026'
+    url: 'https://aceoffer.app/interviews/harvey'
     type: secondary
-  - title: harvey interview questions (2026), 1Point3Acres
-    url: https://www.1point3acres.com/interview/company/harvey
+  - title: 'harvey interview questions (2026), 1Point3Acres'
+    url: 'https://www.1point3acres.com/interview/company/harvey'
     type: secondary
 ---
 
@@ -46,11 +48,11 @@ sources:
 
 公开复盘只提到 citation tagging，没有披露精确标记规则。为提供一个可运行的小练习，约定输入为正文及一组已给定的半开字符区间 `(start, end, source_id)`；区间合法、互不重叠、按起点递增。输出保留原文，在每个区间结尾紧接插入 `[source_id]`；同一来源可以出现多次。字符索引按 Python 字符串索引解释。
 
-示例：正文 `Alpha beta.`，区间 `(0, 5, "S1")`，输出 `Alpha[S1] beta.`。空区间列表原样返回正文。此区间格式是手册练习约定，不是已披露的原题格式。
+示例：正文 `Alpha beta.`，区间 `(0, 5, "S1")`，输出 `Alpha[S1] beta.`。空区间列表原样返回正文。此区间格式是手册练习约定。
 
 ## 解题思路与参考答案
 
-Harvey 的 SWE 电面是一道编码，大约一小时，用 CoderPad，题基本从三道里抽：按路径存取的文件库、带公式和环检测的表格，还有引用标注。三道的算法都不复杂，要做好的是把边界问清，在时间内把最小版本跑通。
+Harvey 的 SWE 电面是一道编码，大约一小时，用 CoderPad，题基本从三道里抽：按路径存取的文件库、带公式和环检测的表格，还有引用标注。三道的算法都不复杂，要做好的是把 constraints 问清，在时间内把最小版本跑通。
 
 AceOffer 把 2025 年 3 月到 2026 年 8 月的报告收成了这三道编码，出现次数是他们自己的统计，不是官方频率。统计里最多的是检索增强生成（RAG） citation / text matching and tagging，最近一次在 2026 年 8 月；然后是 Spreadsheet，格子 get/set、公式、环检测；还有 File system，按路径存取。2025 年 7 月 6 日 Jointaro 上一位美国 SWE 候选人写的原话是 code a file storage system to get/put via paths。一亩三分地的题目标题里还有 filesystem trie、Excel cell、circular dependency、tagging matched source。这些帖子的正文多数要登录，函数签名我不补。
 
@@ -58,7 +60,7 @@ AceOffer 把 2025 年 3 月到 2026 年 8 月的报告收成了这三道编码�
 
 表格的格子存两种东西，要么是字面量，要么是一个依赖其他格子的公式。`set` 之后，依赖这个格子的公式要重算。环检测放在写公式的时候做：格子是点，公式里引用的格子连一条边，写入前在这张图上从新边出发 DFS，走回自己就拒绝这次写入。三色标记够用，拓扑排序也能做，面试里格子数量不大。公式语法公开帖没给，我会假设四则运算加单元格名字，并问清是不是只有这一种。区域引用 `A1:B3` 题面没写就别自己加。
 
-引用标注是模型输出一段话，里面带引用，要找出引用在源文本里的位置。公开帖没有打分公式。我的顺序是先把空白归一化，做精确子串匹配，记下 `(doc_id, start, end)`；精确匹配失败，再问面试官能不能模糊匹配、重叠的引用留哪一个。常见的失分写法是只返回文档 id。题名里的 tagging 是在文本上做标记，偏移量才是主要结果。
+引用标注是模型输出一段话，里面带引用，要找出引用在源文本里的位置。公开帖没有打分公式。我的顺序是先把空白 normalization，做精确子串匹配，记下 `(doc_id, start, end)`；精确匹配失败，再问面试官能不能模糊匹配、重叠的引用留哪一个。常见的失分写法是只返回文档 id。题名里的 tagging 是在文本上做标记，偏移量才是主要结果。
 
 ## 追问
 

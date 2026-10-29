@@ -1,0 +1,27 @@
+{
+  "collectedAt": "2026-10-26",
+  "method": "Chrome browser via cua_repl, agent-created tab 1006832473; original thread main posts and visible author replies inspected",
+  "sources": [
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-789348-1-1.html",
+      "title": "非ML专业人士的果子家MLE 虚拟昂赛",
+      "publishedVisible": "2021-08-17 23:45:40",
+      "team": "Apple MLE; author reply 2021-08-30 22:57:55 identifies Siri, specific subteam unspecified",
+      "visibleScope": "main post and all six visible replies; no paywall or points gate encountered",
+      "verifiedTopics": ["design a search system", "ML system based on a simple classifier", "culture themes simplicity and build trust"],
+      "notDisclosed": ["search object and scale", "classifier use case and data", "specific culture questions", "AFM membership"],
+      "cards": ["p3a-apple-siri-search-design", "p3a-apple-classifier-data-system", "p3a-apple-simplicity-trust-practice"]
+    },
+    {
+      "url": "https://www.1point3acres.com/bbs/thread-1165265-1-1.html",
+      "title": "果子MLE店面",
+      "publishedVisible": "2026-02-15 11:42:04",
+      "team": "Apple MLE; author reply 2026-02-15 22:10:20 identifies Siri",
+      "visibleScope": "main post and all five visible replies; no paywall or points gate encountered",
+      "verifiedTopics": ["application-driven design from data types and challenges to preprocessing, model choice and training", "handwritten kmeans"],
+      "notDisclosed": ["actual application", "data sizes and interfaces", "AFM membership"],
+      "cards": ["p3a-apple-classifier-data-system"],
+      "excludedAsDuplicate": ["handwritten kmeans already covered by apple-kmeans"]
+    }
+  ]
+}

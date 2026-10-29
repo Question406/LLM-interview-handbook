@@ -26,7 +26,7 @@ sources:
     type: primary
 ---
 
-MoE 用路由器给每个 token 选少数几个专家，靠较小的激活计算量使用更大的总参数容量。它能省训练计算，但逐 token 生成时，专家权重读取和跨芯片通信仍可能很贵。Gemini 1.5 报告只确认 Pro 是稀疏 MoE Transformer，并回顾 Shazeer 2017、Switch、GShard、GLaM 这条路线；具体专家数 $E$、所选数量 $k$ 和容量系数没有公开，下面用 Switch 的机制解释，Gemini 的 $E,k$ 未公开，不能直接假定 $k=2$。注意力侧的 KV 优化见 `google-gqa-mqa`。
+MoE 用路由器给每个 token 选少数几个专家，靠较小的激活计算量使用更大的总参数容量。它能省训练计算，但逐 token 生成时，专家权重读取和跨芯片通信仍可能很贵。Gemini 1.5 报告只确认 Pro 是稀疏 MoE Transformer，并回顾 Shazeer 2017、Switch、GShard、GLaM 这条路线；具体专家数 $E$、所选数量 $k$ 和容量系数没有公开，下面用 Switch 的机制解释，Gemini 的 $E,k$ 未公开，不能直接假定 $k=2$。attention 侧的 KV 优化见 `google-gqa-mqa`。
 
 MoE 层把稠密 FFN 换成 $E$ 个专家。路由器对 token 隐状态做线性 + softmax（或 sigmoid），挑 top-$k$ 个专家。激活参数大约是
 
@@ -44,9 +44,9 @@ $$
 C=\left\lceil \gamma\cdot n / E\right\rceil
 $$
 
-$\gamma$ 是 capacity factor，常见 $1.0$：$1.25$。路由器按分数往专家里塞，塞满就 drop：这个 token 的 MoE 输出走残差 / 零，等于这层 FFN 没算。$\gamma$ 太小，掉 token 伤害质量；太大，专家 padding 变多，all-to-all 体积涨，稀疏的吞吐红利没了。
+$\gamma$ 是 capacity factor，常见 $1.0$：$1.25$。路由器按分数往专家里塞，塞满就 drop：这个 token 的 MoE 输出走残差 / 零，等于这层 FFN 没算。$\gamma$ 太小，掉 token 伤害质量；太大，专家 padding 变多，all-to-all 体积涨，稀疏的 throughput 红利没了。
 
-训练 batch 大，$n/E$ 还能填满专家。Decode 一步 $n$ 很小：$B$ 是并发请求数，每步 $T=1$。此时按公式得到的 $C$ 很小，实现上会给最小容量、或者改成「有请求就调用被点名的专家」。分析时要分场景：输入预填充（prefill，即处理输入并建立缓存） 像训练，decode 不像。
+训练 batch 大，$n/E$ 还能填满专家。Decode 一步 $n$ 很小：$B$ 是并发请求数，每步 $T=1$。此时按公式得到的 $C$ 很小，实现上会给最小容量、或者改成「有请求就调用被点名的专家」。分析时要分场景：输入 prefill 像训练，decode 不像。
 
 All-to-all：token 按专家编号 gather 到持有那份权重的芯片，算完 scatter 回来。Shape 从 `[B, T, D]` 变成「每个专家一段变长」。变长 + padding 是 TPU 上 MoE 变慢的常见原因，和 mesh 切分绑在一起，见 `google-tpu-mesh`。
 

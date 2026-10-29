@@ -4,20 +4,22 @@ section: binary-search
 order: 6
 level: A
 title: LC 153 · 寻找旋转排序数组中的最小值
-quick: "拿 `nums[mid]` 和右端比，`nums[mid] > nums[hi]` 说明最小值在右半，否则就是 `mid` 本身或在左边。缩到 `lo == hi` 就是答案。数组无重复，时间 $O(\\log n)$。"
+quick: >-
+  拿 `nums[mid]` 和右端比，`nums[mid] > nums[hi]` 说明最小值在右半，否则就是 `mid` 本身或在左边。缩到 `lo ==
+  hi` 就是答案。数组无重复，时间 $O(\log n)$。
 tags:
   - Binary Search
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 153. 寻找旋转排序数组中的最小值
-    url: https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/
+    url: 'https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 未旋转（已经升序）时，`nums[mid]` 一直 $\le$ `nums[hi]`，`hi` 收到 `0`，答案是第一个元素。最小值在末尾的情况形如 `[2,3,4,5,1]`，`mid` 落在左半时 `nums[mid] \gt nums[hi]`，`lo` 会一路推到末尾。$n=1$ 时 `lo == hi`，循环不进，直接返回唯一的元素。
 

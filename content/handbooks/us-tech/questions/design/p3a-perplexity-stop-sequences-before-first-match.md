@@ -3,8 +3,10 @@ id: p3a-perplexity-stop-sequences-before-first-match
 section: design
 order: 602
 level: A
-title: "Perplexity：第一处 stop 前截断与流式扩展"
-quick: "离线版取所有 stop 中起点最早的位置截断；流式版先扣住可能组成 stop 的尾巴，只输出确定安全的字符。实现前要约定按最先完成还是最早起点停止，两个契约可能得到不同结果。"
+title: Perplexity：第一处 stop 前截断与流式扩展
+quick: >-
+  离线版取所有 stop 中起点最早的位置截断；流式版先扣住可能组成 stop
+  的尾巴，只输出确定安全的字符。实现前要约定按最先完成还是最早起点停止，两个契约可能得到不同结果。
 companies:
   - ai-labs
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - Perplexity
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · Perplexity · stop-sequences-before-first-match"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/stop-sequences-before-first-match
+  - title: 1Point3Acres · Perplexity · stop-sequences-before-first-match
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/stop-sequences-before-first-match
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现流式文本停止序列处理器，防止尚未确定的停止前缀提前输出。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `Stopper(stops)` 接收非空字符串列表，每个停止串非空。`feed(chunk)` 返回本次已确认可输出的文本。停止串可跨 chunk 或互相重叠；流式处理在第一个完成匹配的停止串处停止，同一结束位置有多个匹配时选最长者，停止串自身和后续内容均不输出，后续 feed 返回空串。`finish()` 在未停止时释放不构成完整停止串的末尾暂存文本。
 
@@ -47,7 +53,7 @@ stops=["abcd","bc"]，文本="xabcd"：
 
 给一段文本和若干 stop 序列，返回第一处 stop 之前的内容。先写离线版，再扩展成流式版：文本按 chunk 到达，边收边输出，遇到 stop 就截断。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -101,7 +107,7 @@ def truncate_at_first_stop(text, stops):
         raise ValueError("stops must be non-empty strings")
     starts = [text.find(stop) for stop in stops]
     hits = [start for start in starts if start != -1]
-    return text[:min(hits)] if hits else text
+    return text[: min(hits)] if hits else text
 
 
 class Stopper:
@@ -135,13 +141,13 @@ class Stopper:
             matches = [stop for stop in self.stops if self.pending.endswith(stop)]
             if matches:
                 longest = max(matches, key=len)
-                output.append(self.pending[:-len(longest)])
+                output.append(self.pending[: -len(longest)])
                 self.pending = ""
                 self.done = True
                 break
             hold = self._held_suffix_length()
-            output.append(self.pending[:len(self.pending) - hold])
-            self.pending = self.pending[len(self.pending) - hold:]
+            output.append(self.pending[: len(self.pending) - hold])
+            self.pending = self.pending[len(self.pending) - hold :]
         return "".join(output)
 
     def finish(self):
@@ -162,7 +168,7 @@ class Stopper:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -173,6 +179,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # stop 跨 chunk：前缀先扣住，凑齐后丢弃并停止
 stopper = Stopper(["STOP"])

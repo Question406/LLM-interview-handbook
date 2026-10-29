@@ -3,21 +3,24 @@ id: ml101-hypothesis-test
 section: probability
 order: 9
 level: A
-title: "p 值、显著性和统计功效怎么解释？"
-quick: "p 值是在零假设和检验模型成立时，出现至少同样极端统计量的概率，不是零假设为真的概率。显著性水平 α 控制零假设成立时误拒绝的概率，功效则是某个指定真实效应下正确拒绝的概率。解释结果还要一起看效应大小、区间和采样设计。"
+title: p 值、显著性和统计功效怎么解释？
+quick: >-
+  p 值是在零假设和检验模型成立时，出现至少同样极端统计量的概率，不是零假设为真的概率。显著性水平 α
+  控制零假设成立时误拒绝的概率，功效则是某个指定真实效应下正确拒绝的概率。解释结果还要一起看效应大小、区间和 sampling 设计。
 tags:
   - Machine Learning
   - probability
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "SciPy: Independent Two-Sample t-Test"
-    url: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html
+  - title: 'SciPy: Independent Two-Sample t-Test'
+    url: >-
+      https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_ind.html
     type: primary
-  - title: "UC Berkeley STAT 210A: Hypothesis Testing"
-    url: https://stat210a.berkeley.edu/fall-2024/reader/hypothesis-testing.html
+  - title: 'UC Berkeley STAT 210A: Hypothesis Testing'
+    url: 'https://stat210a.berkeley.edu/fall-2024/reader/hypothesis-testing.html'
     type: primary
 ---
 

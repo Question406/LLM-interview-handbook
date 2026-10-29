@@ -3,8 +3,10 @@ id: p3a-openai-shard-rebalance
 section: openai
 order: 618
 level: A
-title: "OpenAI：分片区间重平衡：覆盖与重叠上限"
-quick: "先按所有端点切基本段，每段覆盖集合恒定：空洞补一个 owner，覆盖超过 limit 时删多余 owner，其他保留。练习允许 shard 任意切分，成本按变动 owner 数乘段长算，逐段达到下界就是总成本最小。若不能切分或有容量约束，就要重新建模。"
+title: OpenAI：分片区间重平衡：覆盖与重叠上限
+quick: >-
+  先按所有端点切基本段，每段覆盖集合恒定：空洞补一个 owner，覆盖超过 limit 时删多余 owner，其他保留。练习允许 shard
+  任意切分，成本按变动 owner 数乘段长算，逐段达到下界就是总成本最小。若不能切分或有容量约束，就要重新建模。
 companies:
   - openai
 tags:
@@ -16,16 +18,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · shard-rebalance"
-    url: https://www.1point3acres.com/interview/problems/company/openai/shard-rebalance
+  - title: 1Point3Acres · OpenAI · shard-rebalance
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/shard-rebalance
     type: secondary
 ---
 
 ## 题目描述
 
-给定一组带 owner 标识的半开 shard 区间，在目标范围内修正覆盖：没有 owner 的位置补一份副本，副本过多的位置删除多余 owner。返回按边界划分的覆盖段和题目定义的最小迁移成本。
+给定一组带 owner 标识的半开 shard 区间，在目标范围内修正覆盖：没有 owner 的位置补一份副本，副本过多的位置删除多余 owner。返回按 endpoints 划分的覆盖段和题目定义的最小迁移成本。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
@@ -50,7 +53,7 @@ rebalance([("a", 0, 5), ("b", 3, 8)], lo=0, hi=10, limit=1)
 
 一组 shard 各自负责 key 空间上的一段区间，区间之间可能重叠，也可能留有空洞。要求支持增删 shard，并做一次重平衡：目标范围内每个点被覆盖的次数不超过 limit，空洞要补上，同时尽量少迁移数据。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束、成本定义和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束、成本定义和测试是手册补的练习约定。
 
 ## 思路
 
@@ -126,7 +129,8 @@ def rebalance(shards, lo, hi, limit):
     cost = 0
     for seg_start, seg_end in zip(cuts, cuts[1:]):
         owners = sorted(
-            shard_id for shard_id, start, end in shards
+            shard_id
+            for shard_id, start, end in shards
             if start <= seg_start and seg_end <= end
         )
         length = seg_end - seg_start
@@ -149,7 +153,7 @@ def rebalance(shards, lo, hi, limit):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -160,6 +164,7 @@ def expect_value_error(*args):
     except ValueError:
         return
     raise AssertionError(f"rebalance{args} should raise ValueError")
+
 
 # [3, 5) 重叠删一个（成本 2），[8, 10) 缺口补一个（成本 2）
 segments, cost = rebalance([("a", 0, 5), ("b", 3, 8)], 0, 10, 1)

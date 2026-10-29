@@ -4,7 +4,10 @@ section: systems
 order: 260
 level: S
 title: slime 的 rollout / global / micro batch 怎么对到 veRL 那套字段？
-quick: "一轮轨迹数等于 rollout batch size 乘每题采样数 $n$；`--global-batch-size` 按 completion 条数计。先确认每轮题数、每题条数、每次 optimizer 更新条数和每卡 micro，再对照 veRL 字段；动态 batch 开启后要改报 token 预算，并检查 GRPO 组有没有被拆开。"
+quick: >-
+  一轮轨迹数等于 rollout batch size 乘每题 sampling 数 $n$；`--global-batch-size` 按
+  completion 条数计。先确认每轮题数、每题条数、每次 optimizer 更新条数和每卡 micro，再对照 veRL 字段；动态 batch
+  开启后要改报 token 预算，并检查 GRPO 组有没有被拆开。
 tags:
   - slime
   - VeRL
@@ -12,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: slime 使用文档
-    url: https://thudm.github.io/slime/zh/get_started/usage.html
+    url: 'https://thudm.github.io/slime/zh/get_started/usage.html'
     type: primary
   - title: 26秋招蚂蚁金服大模型算法一面
-    url: https://www.nowcoder.com/feed/main/detail/e2585943c7874b3081b0878b646b6f01
+    url: 'https://www.nowcoder.com/feed/main/detail/e2585943c7874b3081b0878b646b6f01'
     type: candidate-first-hand
 ---
 
@@ -33,7 +36,7 @@ sources:
 | 每步 prompt 数 | `--rollout-batch-size` | `data.train_batch_size`（也写作 `train_batch_size`） |
 | 每 prompt 条数 | `--n-samples-per-prompt` | `actor_rollout_ref.rollout.n`（即 `rollout.n`） |
 | 一次 optimizer 的样本数 | `--global-batch-size` | `actor.ppo_mini_batch_size` / global |
-| 一轮 采样轨迹（rollout） 训几步 | `--num-steps-per-rollout` | mini-batch 切分次数 |
+| 一轮 sampling 轨迹（rollout） 训几步 | `--num-steps-per-rollout` | mini-batch 切分次数 |
 | 每卡 micro | `--micro-batch-size` | `ppo_micro_batch_size_per_gpu` |
 
 一轮轨迹数：
@@ -46,7 +49,7 @@ $$
 
 ## 再检查整除和分组约束
 
-`global_batch_size` 应整除 $N_{\mathrm{traj}}$。除不尽时实现会丢尾或补，GRPO 的组可能被切开：同一输入提示 的 $n$ 条必须进 同一次 优势估计。组被拆到两个 optimizer step，组均值就不是那 $n$ 条，优势定义坏了，见 `sys-rl-group-n`。面试先写
+`global_batch_size` 应整除 $N_{\mathrm{traj}}$。除不尽时实现会丢尾或补，GRPO 的组可能被切开：同一 prompt 的 $n$ 条必须进 同一次 advantage estimation。组被拆到两个 optimizer step，组均值就不是那 $n$ 条，优势定义坏了，见 `sys-rl-group-n`。面试先写
 
 $$
 \texttt{gbs} \mid (\texttt{rbs}\times n),\quad \texttt{gbs}=n\times k

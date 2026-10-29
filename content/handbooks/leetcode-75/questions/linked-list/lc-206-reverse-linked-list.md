@@ -5,20 +5,21 @@ order: 3
 level: S
 title: LC 206 · 反转链表
 quick: >-
-  迭代用三个指针：`prev=None`、`cur=head`，每步先存 `nxt`，再把 `cur.next` 指向 `prev`，三者一起前进，`cur` 走空时 `prev` 就是新头。时间 $O(n)$，额外空间 $O(1)$；递归版要 $O(n)$ 栈，所以面试默认写迭代。
+  迭代用三个指针：`prev=None`、`cur=head`，每步先存 `nxt`，再把 `cur.next` 指向 `prev`，三者一起前进，`cur`
+  走空时 `prev` 就是新头。时间 $O(n)$，额外空间 $O(1)$；递归版要 $O(n)$ 栈，所以面试默认写迭代。
 tags:
   - Linked List
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 206. Reverse Linked List
-    url: https://leetcode.com/problems/reverse-linked-list/
+    url: 'https://leetcode.com/problems/reverse-linked-list/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -106,7 +107,9 @@ if __name__ == "__main__":
     assert to_list(reverseList(from_list([1, 2]))) == [2, 1]
     assert to_list(reverseList(from_list([]))) == []
     assert to_list(reverseList(from_list([7]))) == [7]
-    assert to_list(reverseList(from_list(list(range(5000))))) == list(range(4999, -1, -1))
+    assert to_list(reverseList(from_list(list(range(5000))))) == list(
+        range(4999, -1, -1)
+    )
     print("ok")
 ```
 
@@ -129,7 +132,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。递归版额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 空链表时循环一次都不进，返回 `None`。
 

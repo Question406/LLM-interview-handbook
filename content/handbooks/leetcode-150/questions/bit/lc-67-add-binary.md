@@ -4,7 +4,7 @@ section: bit
 order: 1
 level: A
 title: LC 67 · 二进制求和
-quick: "像竖式一样从低位往高位加，维护进位：当前位是 `carry & 1`，进位做 `carry >>= 1`，最后还有进位就补一位。不要先转整数，串可能很长。"
+quick: 像竖式一样从低位往高位加，维护进位：当前位是 `carry & 1`，进位做 `carry >>= 1`，最后还有进位就补一位。不要先转整数，串可能很长。
 tags:
   - Bit
   - String
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 67. 二进制求和
-    url: https://leetcode.cn/problems/add-binary/
+    url: 'https://leetcode.cn/problems/add-binary/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(\max(|a|,|b|))$，额外空间同阶，主要是输出。
 
-## 边界
+## Edge Cases
 
 一侧是 `"0"` 时缺位当 $0$，结果等于另一串（题目保证没有多余的前导零）。`"1"+"1"` 循环结束后还有进位，会多出一位，结果是 `"10"`。两串长度差很大时，短的那侧指针先耗尽，之后只加另一侧和进位。
 
@@ -139,6 +139,7 @@ def addTwoBinaryLists(l1, l2):
         while h:
             h.next, pre, h = pre, h, h.next
         return pre
+
     a, b = rev(l1), rev(l2)
     dummy = ListNode(0)
     tail, carry = dummy, 0

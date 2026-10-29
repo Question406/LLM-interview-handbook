@@ -3,8 +3,10 @@ id: p3a-perplexity-premium-zone-escape-path
 section: design
 order: 608
 level: A
-title: "Perplexity：地理区域逃离：黑盒判定与搜索假设"
-quick: "先确认地图边界、分辨率、道路约束，以及区域是否连通或凸，再决定怎么搜。若约定为有限网格、四邻接移动，就从起点 BFS，第一次找到的非 premium 格对应最短逃离路径。"
+title: Perplexity：地理区域逃离：黑盒判定与搜索假设
+quick: >-
+  先确认 map boundaries、分辨率、道路约束，以及区域是否连通或凸，再决定怎么搜。若约定为有限网格、四邻接移动，就从起点 BFS，第一次找到的非
+  premium 格对应最短逃离路径。
 companies:
   - ai-labs
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Perplexity · premium-zone-escape-path"
-    url: https://www.1point3acres.com/interview/problems/company/perplexity/premium-zone-escape-path
+  - title: 1Point3Acres · Perplexity · premium-zone-escape-path
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/perplexity/premium-zone-escape-path
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 一个有限网格中有 premium 和 non-premium 单元格。只能调用给定判断函数，寻找从起点离开 premium 区域的最短路径。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -51,15 +54,15 @@ escape(2, 2, (0, 0), is_premium=lambda cell: False)  -> [(0, 0)]
 
 给一个起点坐标和一个黑盒函数，函数能判断某个位置是否在 premium zone 里。要求找出一个不在 premium zone 内的坐标，或者给出一条从起点走出去的路径。
 
-> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。原帖没有给出地理坐标怎么离散化、边界在哪里，下面的网格版本、接口和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Perplexity 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。原帖没有给出地理坐标怎么离散化、coordinate bounds 在哪里，下面的网格版本、接口和测试是手册补的练习约定。
 
 ## 思路
 
 如果题目约定有限网格和四邻接移动，我会用 BFS 找最近的非 premium 格，并用前驱记录还原路径。这个结论依赖空间离散且有界，动手前要先确认题目是否满足这些条件。
 
-具体要问区域是否连通、是不是凸的，移动是否受道路约束、能否穿过禁区，以及空间边界和离散分辨率。还要确认目标是任意外部坐标，还是最短路径。凸区域可以沿任意方向一直走到外面，非凸区域可能需要绕路。
+具体要问区域是否连通、是不是凸的，移动是否受道路约束、能否穿过禁区，以及 spatial boundaries 和离散分辨率。还要确认目标是任意外部坐标，还是最短路径。凸区域可以沿任意方向一直走到外面，非凸区域可能需要绕路。
 
-下面按有限网格实现。若没有边界或分辨率，BFS 可能无法结束，也不能直接宣称找到了最优路径。
+下面按有限网格实现。若没有 coordinate bounds 或 resolution，BFS 可能无法结束，也不能直接宣称找到了最优路径。
 
 ## 完整编程练习（手册重构版）
 
@@ -137,7 +140,7 @@ def rebuild_path(prev, end):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -148,6 +151,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 只有中心是 premium，一步就能出去
 path = escape(3, 3, (1, 1), lambda cell: cell == (1, 1))
@@ -173,6 +177,6 @@ expect_value_error(escape, 2, 2, (2, 0), lambda cell: True)
 
 设网格有 $R \times C$ 个格子。最坏情况下每个格子调用一次 `is_premium`，时间和空间都是 O(RC)。
 
-如果追问 `is_premium` 很贵（比如要调远程服务）：BFS 已经保证每个格子最多查一次；还可以在结果里缓存，或者先沿几个方向以倍增步长探测，找到外部点后再在边界附近细化。
+如果追问 `is_premium` 很贵（比如要调远程服务）：BFS 已经保证每个格子最多查一次；还可以在结果里缓存，或者先沿几个方向以倍增步长探测，找到外部点后再在 zone boundary 附近细化。
 
 如果追问真实地图：经纬度是连续空间，要先定好道路网络、尺度、可达性和停止条件。只有一个黑盒的区域判定函数，无法保证对任意形状的区域都能找到最短的逃离路径。

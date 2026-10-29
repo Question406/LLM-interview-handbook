@@ -1,0 +1,704 @@
+[
+  {
+    "book": "us-tech",
+    "question": "meta-maze-keys-direction-state",
+    "section": "meta",
+    "order": 1
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-word-selection-letter-coverage",
+    "section": "meta",
+    "order": 2
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-card-triples-exact-selection",
+    "section": "meta",
+    "order": 3
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-mutual-friends-topk",
+    "section": "meta",
+    "order": 4
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-streaming-kmp-search",
+    "section": "meta",
+    "order": 5
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-shortest-unique-prefix-trie",
+    "section": "meta",
+    "order": 6
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-expand-signed-expression",
+    "section": "meta",
+    "order": 7
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-parallel-build-bottlenecks",
+    "section": "meta",
+    "order": 8
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-tree-route-required-tasks",
+    "section": "openai",
+    "order": 9
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-grid-visit-targets-mask",
+    "section": "openai",
+    "order": 10
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-modular-addition-bfs",
+    "section": "openai",
+    "order": 11
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-file-content-dedup-collisions",
+    "section": "openai",
+    "order": 12
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-largest-subgrid-histogram-extension",
+    "section": "openai",
+    "order": 13
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-beat-notation-parser-extension",
+    "section": "openai",
+    "order": 14
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-atomic-hierarchical-sliding-limiter",
+    "section": "xai",
+    "order": 15
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-single-pass-document-cleaning",
+    "section": "xai",
+    "order": 16
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-courier-pay-event-sweep",
+    "section": "xai",
+    "order": 17
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-nested-json-safe-viewer-core",
+    "section": "xai",
+    "order": 18
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-double-base-palindrome-enumeration",
+    "section": "xai",
+    "order": 19
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-async-dag-task-scheduler",
+    "section": "xai",
+    "order": 20
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-adamw",
+    "section": "shared",
+    "order": 21
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-attn-mask",
+    "section": "shared",
+    "order": 22
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-cross-entropy",
+    "section": "shared",
+    "order": 23
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-decode-step",
+    "section": "shared",
+    "order": 24
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-dropout",
+    "section": "shared",
+    "order": 25
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-gqa-repeat",
+    "section": "shared",
+    "order": 26
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-gumbel-max",
+    "section": "shared",
+    "order": 27
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-kl-div",
+    "section": "shared",
+    "order": 28
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-logsumexp",
+    "section": "shared",
+    "order": 29
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-rmsnorm",
+    "section": "shared",
+    "order": 30
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-rope",
+    "section": "shared",
+    "order": 31
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-rope-cache",
+    "section": "shared",
+    "order": 32
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-silu",
+    "section": "shared",
+    "order": 33
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-softmax-stable",
+    "section": "shared",
+    "order": 34
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-swiglu",
+    "section": "shared",
+    "order": 35
+  },
+  {
+    "book": "us-tech",
+    "question": "coding-weight-tying",
+    "section": "shared",
+    "order": 36
+  },
+  {
+    "book": "us-startup",
+    "question": "humansand-top-p-live-debug",
+    "section": "humansand",
+    "order": 37
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-conv2d-from-scratch",
+    "section": "meta",
+    "order": 38
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-gqa-kernel",
+    "section": "meta",
+    "order": 39
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-longest-valid-parentheses",
+    "section": "meta",
+    "order": 40
+  },
+  {
+    "book": "us-tech",
+    "question": "meta-tree-diameter-node-count",
+    "section": "meta",
+    "order": 41
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-allgather-noise",
+    "section": "openai",
+    "order": 42
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-async-tree-count-idempotency",
+    "section": "openai",
+    "order": 43
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-entropy-l1",
+    "section": "openai",
+    "order": 44
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-flash-decode",
+    "section": "openai",
+    "order": 45
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-gpu-credits",
+    "section": "openai",
+    "order": 46
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-indexed-sequence-checkpoints",
+    "section": "openai",
+    "order": 47
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-kv-cache-impl",
+    "section": "openai",
+    "order": 48
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-resumable-iter",
+    "section": "openai",
+    "order": 49
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-rope-offset",
+    "section": "openai",
+    "order": 50
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-softmax-bug",
+    "section": "openai",
+    "order": 51
+  },
+  {
+    "book": "us-tech",
+    "question": "openai-transformer-debug",
+    "section": "openai",
+    "order": 52
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-meta-attention-implementation-and-follow-ups",
+    "section": "meta",
+    "order": 53
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-autograd-hillis-steele-scan",
+    "section": "openai",
+    "order": 54
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-chat-bot-system-refactoring",
+    "section": "openai",
+    "order": 55
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-classifier-noisy-annotators",
+    "section": "openai",
+    "order": 56
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-code-reading-pytorch-refactor",
+    "section": "openai",
+    "order": 57
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-data-labeling-task-scheduler",
+    "section": "openai",
+    "order": 58
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-distributed-cluster-count-topology",
+    "section": "openai",
+    "order": 59
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-durable-kv-store-serialization",
+    "section": "openai",
+    "order": 60
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-fault-tolerant-work-queue",
+    "section": "openai",
+    "order": 61
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-gpu-credits",
+    "section": "openai",
+    "order": 62
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-implement-cd-command",
+    "section": "openai",
+    "order": 63
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-in-memory-database-sql",
+    "section": "openai",
+    "order": 64
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-infection-spread-cellular-automata",
+    "section": "openai",
+    "order": 65
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-ip-address-cidr-iterator",
+    "section": "openai",
+    "order": 66
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-masked-cross-entropy-loss",
+    "section": "openai",
+    "order": 67
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-math-reasoning-stopping-time",
+    "section": "openai",
+    "order": 68
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-maximum-score-grid-path-limited-jumps",
+    "section": "openai",
+    "order": 69
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-memory-allocator",
+    "section": "openai",
+    "order": 70
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-modal-lock-fair-modal-lock",
+    "section": "openai",
+    "order": 71
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-monster-battle-system",
+    "section": "openai",
+    "order": 72
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-numpy-1nn-wx-b",
+    "section": "openai",
+    "order": 73
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-opensheet-spreadsheet",
+    "section": "openai",
+    "order": 74
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-poker-simulation",
+    "section": "openai",
+    "order": 75
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-resumable-iterator",
+    "section": "openai",
+    "order": 76
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-shard-rebalance",
+    "section": "openai",
+    "order": 77
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-sharded-matmul-backprop-debugging",
+    "section": "openai",
+    "order": 78
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-social-network-follow-graph",
+    "section": "openai",
+    "order": 79
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-streaming-entropy",
+    "section": "openai",
+    "order": 80
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-time-based-kv-store",
+    "section": "openai",
+    "order": 81
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-toy-language-type-inference",
+    "section": "openai",
+    "order": 82
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-transformer-bug-hunt",
+    "section": "openai",
+    "order": 83
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-openai-version-dependency",
+    "section": "openai",
+    "order": 84
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-agentic-one-hour-movie-generation",
+    "section": "xai",
+    "order": 85
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-checkers-backend-design",
+    "section": "xai",
+    "order": 86
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-common-ngrams",
+    "section": "xai",
+    "order": 87
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-distinct-integers-after-offset",
+    "section": "xai",
+    "order": 88
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-distributed-matmul-dp-fsdp",
+    "section": "xai",
+    "order": 89
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-distributed-token-bucket-limiter",
+    "section": "xai",
+    "order": 90
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-durable-kv-cache",
+    "section": "xai",
+    "order": 91
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-fixed-window-tokens",
+    "section": "xai",
+    "order": 92
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-flatten-unflatten-nested-structure",
+    "section": "xai",
+    "order": 93
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-gpu-node-group-test",
+    "section": "xai",
+    "order": 94
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-in-memory-database-ttl-backup",
+    "section": "xai",
+    "order": 95
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-input-field-review",
+    "section": "xai",
+    "order": 96
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-kth-element-streaming-window",
+    "section": "xai",
+    "order": 97
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-mock-llm-dynamic-batching",
+    "section": "xai",
+    "order": 98
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-multithreaded-bank-account-bug-hunt",
+    "section": "xai",
+    "order": 99
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-parallel-integer-sort",
+    "section": "xai",
+    "order": 100
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-patchify-cnn",
+    "section": "xai",
+    "order": 101
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-pipeline-critical-path",
+    "section": "xai",
+    "order": 102
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-process-vs-thread-verbal",
+    "section": "xai",
+    "order": 103
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-radix-cache",
+    "section": "xai",
+    "order": 104
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-resumable-iterator-design",
+    "section": "xai",
+    "order": 105
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-speculative-edits",
+    "section": "xai",
+    "order": 106
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-transactional-key-value-store",
+    "section": "xai",
+    "order": 107
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-twitter-insight-platform-take-home",
+    "section": "xai",
+    "order": 108
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-twitter-spaces-active-hours",
+    "section": "xai",
+    "order": 109
+  },
+  {
+    "book": "us-tech",
+    "question": "p3a-xai-weighted-lru-cache",
+    "section": "xai",
+    "order": 110
+  },
+  {
+    "book": "us-startup",
+    "question": "tml-batch-invariant-rmsnorm-reference",
+    "section": "thinking-machines",
+    "order": 111
+  },
+  {
+    "book": "us-startup",
+    "question": "tml-lora-linear-forward-gradients",
+    "section": "thinking-machines",
+    "order": 112
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-kv-txn",
+    "section": "xai",
+    "order": 113
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-lru-cache",
+    "section": "xai",
+    "order": 114
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-me-live-debug",
+    "section": "xai",
+    "order": 115
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-offline-autocomplete-trie",
+    "section": "xai",
+    "order": 116
+  },
+  {
+    "book": "us-tech",
+    "question": "xai-rate-limiter",
+    "section": "xai",
+    "order": 117
+  }
+]

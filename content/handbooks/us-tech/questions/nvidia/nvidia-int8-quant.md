@@ -4,33 +4,55 @@ section: nvidia
 order: 2
 level: A
 title: NVIDIA：FP32 tensor 怎么量化到 INT8？非对称量化跟什么走？
-quick: "对称量化用 $q=\\mathrm{round}(x/s)$、$s=\\max|x|/127$ 把浮点值映射到整数；非对称量化再引入零点 $z$，保证实数 $0$ 可以精确表示。范围来自校准统计，LLM 还要分别考虑 per-channel 权重和 per-token 激活，最后实测 kernel 和 dequant 开销才能判断是否加速。"
+quick: >-
+  假设一个 tensor 的数值主要落在 -2 到 2，希望用 INT8 保存。先选 scale，再将原值除以
+  scale、舍入并截到整数范围；恢复时再乘回来。
 tags:
   - NVIDIA
   - Quantization
   - INT8
   - Inference
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: NVIDIA Interview Question Bank (1Point3Acres)
-    url: https://www.1point3acres.com/interview/problems/company/nvidia
+    url: 'https://www.1point3acres.com/interview/problems/company/nvidia'
     type: secondary
   - title: TensorRT Developer Guide — Quantization
-    url: https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/work-with-quantized-types.html
+    url: >-
+      https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/work-with-quantized-types.html
     type: primary
   - title: SmoothQuant
-    url: https://arxiv.org/abs/2211.10438
+    url: 'https://arxiv.org/abs/2211.10438'
     type: primary
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设一个 tensor 的数值主要落在 -2 到 2，希望用 INT8 保存。
+>
+> **做法与原因：** 非对称量化还需要 zero point，让实数零对应合适的整数。
+>
+> **检查与取舍：** 我会检查零、极值、全零输入和量化误差，再测真实任务与 latency。
+
+## 可以这样回答
+
+假设一个 tensor 的数值主要落在 -2 到 2，希望用 INT8 保存。先选 scale，再将原值除以 scale、舍入并截到整数范围；恢复时再乘回来。
+
+非对称量化还需要 zero point，让实数零对应合适的整数。范围由代表性 calibration data 决定，少量 outliers 会影响精度；per-channel 与 per-tensor 也有不同成本。
+
+我会检查零、极值、全零输入和量化误差，再测真实任务与 latency。表示变成 INT8，不等于实际 kernel 一定更快。
+
+## 技术备查
 
 ## 真题记录
 
 - 公司：NVIDIA
 - 来源：一亩三分地 NVIDIA 题库公开条目「FP32 Tensor to INT8 Quantization (with Asymmetric Quantization Follow-ups)」，2026-05 仍列在题库里
-- 形态：coding / 数值题，随后追非对称、校准、以及为什么线上没加速
+- 形态：coding / 数值题，随后追非对称、calibration、以及为什么线上没加速
 
 系统对比 GPTQ / AWQ / SmoothQuant 见 `sys-quant`。本题主要讲如何手写量化映射，这是 NVIDIA 面试里更常见的开口。
 
@@ -57,11 +79,11 @@ $$
 
 反量化用 $\hat x=s\cdot(q-z)$。零点让实数 $0$ 能精确表示，因此 padding 和 ReLU 后的 $0$ 不会额外引入量化噪声。
 
-校准：用一小批代表性激活收集 $x_{\min},x_{\max}$。用 max 对 outlier 敏感；用百分位（如 99.9%）更稳，但会 clip 极值。LLM 激活 outlier 是 SmoothQuant 要迁到权重上的原因：W8A8 才跑得动。只量化权（W8A16）实现更简单，激活仍 fp16，带宽收益小一些。
+calibration：用一小批代表性激活收集 $x_{\min},x_{\max}$。用 max 对 outlier 敏感；用百分位（如 99.9%）更稳，但会 clip 极值。LLM 激活 outlier 是 SmoothQuant 要迁到权重上的原因：W8A8 才跑得动。只量化权（W8A16）实现更简单，激活仍 fp16，带宽收益小一些。
 
 ## 为什么 INT8 可能更慢
 
-Tensor Core 有 INT8 吞吐，但：
+Tensor Core 有 INT8 throughput，但：
 
 - 通道数 / hidden 不能整除 Tensor Core tile，会走慢路径；
 - dequant 和 layernorm 仍在高精度，kernel 切太碎；
@@ -71,7 +93,7 @@ Tensor Core 有 INT8 吞吐，但：
 
 ## 追问
 
-- **动态量化 vs 静态？** 动态每步看当前 tensor 的 min/max，灵活但开销大；静态用校准统计，推理更快。LLM decode 常用静态权 + 动态或 per-token 激活。
+- **动态量化 vs 静态？** 动态每步看当前 tensor 的 min/max，灵活但开销大；静态用 calibration 统计，推理更快。LLM decode 常用静态权 + 动态或 per-token 激活。
 - **INT4 呢？** 权重量化更狠，激活往往仍 8/16。GPTQ/AWQ 是训练后量化（PTQ）中寻找更合适的权重量化结果，不是简单 min/max。
 - **和 FP8 训练的区别？** FP8 是训练时的混合精度，有 scaling recipe；INT8 这里是推理 PTQ。不要混成一个「低比特」。
 

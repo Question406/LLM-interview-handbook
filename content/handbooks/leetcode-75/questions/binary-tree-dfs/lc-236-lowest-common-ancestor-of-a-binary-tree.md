@@ -5,7 +5,8 @@ order: 6
 level: S
 title: LC 236 · 二叉树的最近公共祖先
 quick: >-
-  普通二叉树没法按值走单路，用后序递归两边都搜：碰到 `p`/`q` 或空就返回自己，左右都非空则当前就是 LCA，只有一侧非空答案就在那一侧。时间 $O(n)$，额外空间 $O(h)$。
+  普通二叉树没法按值走单路，用后序递归两边都搜：碰到 `p`/`q` 或空就返回自己，左右都非空则当前就是 LCA，只有一侧非空答案就在那一侧。时间
+  $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 236. Lowest Common Ancestor of a Binary Tree
-    url: https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/
+    url: 'https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -154,7 +155,7 @@ print("simple tests passed")
 
 时间 $O(n)$，最坏扫完整棵。额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 - `p` 是 `q` 的祖先时，碰到 `p` 就返回，不必再往下找 `q`。
 - `p`、`q` 是根的左右孩子时，根就是 LCA。

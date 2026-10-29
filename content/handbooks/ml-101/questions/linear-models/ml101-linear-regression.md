@@ -3,18 +3,20 @@ id: ml101-linear-regression
 section: linear-models
 order: 1
 level: S
-title: "线性回归的最小二乘解怎么推？"
-quick: "线性回归用特征的线性组合预测连续值，最小二乘选择让残差平方和最小的参数。对目标求导得到正规方程；设计矩阵列满秩时解唯一，秩不足时用伪逆或正则化，数值实现通常优先用 QR 或 SVD。"
+title: 线性回归的最小二乘解怎么推？
+quick: >-
+  线性回归用特征的线性组合预测连续值，最小二乘选择让残差平方和最小的参数。对目标求导得到正规方程；设计矩阵列满秩时解唯一，秩不足时用伪逆或
+  regularization，数值实现通常优先用 QR 或 SVD。
 tags:
   - Machine Learning
   - linear-models
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Dive into Deep Learning: Linear Regression"
-    url: https://d2l.ai/chapter_linear-regression/linear-regression.html
+  - title: 'Dive into Deep Learning: Linear Regression'
+    url: 'https://d2l.ai/chapter_linear-regression/linear-regression.html'
     type: primary
 ---
 
@@ -34,4 +36,4 @@ $$J(w)=\frac12\lVert Xw-y\rVert_2^2.$$
 它要求对参数线性。把平方项、交互项等变成固定特征后，仍可使用线性回归，输入到输出的关系可以是曲线。
 
 **特征比样本多会怎样？**
-无正则解可能不唯一，训练误差也可能很低。可以用最小范数解或正则化，并通过独立验证控制泛化风险。
+无正则解可能不唯一，训练误差也可能很低。可以用最小范数解或 regularization，并通过独立验证控制泛化风险。

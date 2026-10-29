@@ -4,20 +4,22 @@ section: binary-search
 order: 7
 level: S
 title: LC 4 · 寻找两个正序数组的中位数
-quick: "在较短的数组上二分切点，让两个数组左侧合起来有 $(m+n+1)//2$ 个元素，并满足 $\\max(A_L,B_L)\\le \\min(A_R,B_R)$。总长度为奇数时取左侧最大值，偶数时取它和右侧最小值的平均。时间 $O(\\log(\\min(m,n)))$。"
+quick: >-
+  在较短的数组上二分切点，让两个数组左侧合起来有 $(m+n+1)//2$ 个元素，并满足 $\max(A_L,B_L)\le
+  \min(A_R,B_R)$。总长度为奇数时取左侧最大值，偶数时取它和右侧最小值的平均。时间 $O(\log(\min(m,n)))$。
 tags:
   - Binary Search
   - Hard
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 4. 寻找两个正序数组的中位数
-    url: https://leetcode.cn/problems/median-of-two-sorted-arrays/
+    url: 'https://leetcode.cn/problems/median-of-two-sorted-arrays/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -115,7 +117,7 @@ print("simple tests passed")
 
 时间 $O(\log(\min(m,n)))$，额外空间 $O(1)$，满足 $O(\log(m+n))$ 的要求。
 
-## 边界
+## Edge Cases
 
 一侧为空时，短数组的切点只能是 $0$，另一侧切在 `half`，中位数就是非空数组自己的中位数，代码用 $\pm\infty$ 补空侧。总长奇数时左半多一个，答案是 $\max(A_L, B_L)$；偶数再和 $\min(A_R, B_R)$ 平均。短数组的切点顶到 $0$ 或 $m$，表示中位数完全由长数组贡献，切空的那侧同样用 $\pm\infty$ 补。
 
@@ -151,6 +153,7 @@ def median_via_kth(a, b):
 
 ```python
 import random
+
 
 def median_unsorted(a, b):
     nums = a + b

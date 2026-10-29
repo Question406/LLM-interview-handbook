@@ -4,7 +4,9 @@ section: anthropic
 order: 26
 level: A
 title: Anthropic：开源的性能 take-home，是一台 VLIW SIMD 机器
-quick: "我会先保证标量结果正确，再向量化并把独立操作装进同一周期，减少执行周期数。同周期读旧值、周期末才写回，所以依赖链必须跨周期；官方 anthropics/original_performance_takehome 是旧版作业，多核在这版里故意关闭。"
+quick: >-
+  我会先保证标量结果正确，再向量化并把独立操作装进同一周期，减少执行周期数。同周期读旧值、周期末才写回，所以依赖链必须跨周期；官方
+  anthropics/original_performance_takehome 是旧版作业，多核在这版里故意关闭。
 tags:
   - 完整编程练习
   - Anthropic
@@ -13,13 +15,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: anthropics/original_performance_takehome
-    url: https://github.com/anthropics/original_performance_takehome
+    url: 'https://github.com/anthropics/original_performance_takehome'
     type: primary
   - title: Machine class in problem.py
-    url: https://github.com/anthropics/original_performance_takehome/blob/main/problem.py
+    url: >-
+      https://github.com/anthropics/original_performance_takehome/blob/main/problem.py
     type: primary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 为一台具有多个执行引擎的 VLIW SIMD 模拟机生成确定性指令调度，并执行调度得到所有寄存器的最终值。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
@@ -54,7 +57,7 @@ execute(instructions, [[0, 1], [2]], initial, slots)["out"] -> uint32([24])
 
 ## 完整编程练习（手册重构版）
 
-> 下面是手册自己设计的简化 VLIW/SIMD 小练习，接口、约束和测试都是手册约定，不是官方仓库的完整机器或提交答案。Python 3 + NumPy，CPU 上验证。
+> 下面是手册自己设计的简化 VLIW/SIMD 小练习，接口、约束和测试都是手册约定。Python 3 + NumPy，CPU 上验证。
 
 ### 题面、接口与约束
 
@@ -97,7 +100,9 @@ def schedule(instructions, initial, slots):
         if op not in OPERATIONS:
             raise ValueError(f"instruction {index}: unknown op {op!r}")
         if dst in producers or dst in initial:
-            raise ValueError(f"instruction {index}: register {dst!r} defined twice (not SSA)")
+            raise ValueError(
+                f"instruction {index}: register {dst!r} defined twice (not SSA)"
+            )
         producers[dst] = index
 
     dependencies = []
@@ -114,7 +119,8 @@ def schedule(instructions, initial, slots):
     bundles = []
     while len(done) < len(instructions):
         ready = [
-            index for index in range(len(instructions))
+            index
+            for index in range(len(instructions))
             if index not in done and dependencies[index] <= done
         ]
         used = {}
@@ -133,7 +139,10 @@ def schedule(instructions, initial, slots):
 
 def execute(instructions, bundles, initial, slots):
     """按调度执行并校验：每周期读旧状态、周期末统一写回。返回最终寄存器状态。"""
-    state = {name: np.asarray(value, dtype=np.uint32).copy() for name, value in initial.items()}
+    state = {
+        name: np.asarray(value, dtype=np.uint32).copy()
+        for name, value in initial.items()
+    }
     executed = set()
     for cycle, bundle in enumerate(bundles):
         pending = {}
@@ -144,11 +153,15 @@ def execute(instructions, bundles, initial, slots):
             engine, op, dst, args = instructions[index]
             used[engine] = used.get(engine, 0) + 1
             if used[engine] > slots.get(engine, 0):
-                raise ValueError(f"cycle {cycle}: engine {engine!r} over its slot limit")
+                raise ValueError(
+                    f"cycle {cycle}: engine {engine!r} over its slot limit"
+                )
             if dst in pending or dst in state:
                 raise ValueError(f"cycle {cycle}: register {dst!r} written twice")
             if any(arg not in state for arg in args):
-                raise ValueError(f"cycle {cycle}: instruction {index} reads a value not yet written")
+                raise ValueError(
+                    f"cycle {cycle}: instruction {index} reads a value not yet written"
+                )
             pending[dst] = OPERATIONS[op](*(state[arg] for arg in args))
             executed.add(index)
         state.update(pending)
@@ -165,7 +178,7 @@ def execute(instructions, bundles, initial, slots):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 

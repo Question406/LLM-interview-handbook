@@ -4,7 +4,9 @@ section: coding
 order: 26
 level: A
 title: 白板：PagedAttention 的 block table，逻辑页怎么映到物理块，append 一页
-quick: "KV 池按每块 $B_{\\mathrm{s}}$ 个 token 分页，每条序列的表把逻辑页映到物理块。append 时先完成容量和缺页检查，只有 `pos % B_s == 0` 才申请新块，再写 KV 并增加长度，失败时保持原状态。"
+quick: >-
+  KV 池按每块 $B_{\mathrm{s}}$ 个 token 分页，每条序列的表把逻辑页映到物理块。append 时先完成容量和缺页检查，只有 `pos
+  % B_s == 0` 才申请新块，再写 KV 并增加长度，失败时保持原状态。
 tags:
   - 完整编程练习
   - Coding
@@ -14,16 +16,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
-    url: https://arxiv.org/abs/2309.06180
+  - title: >-
+      Efficient Memory Management for Large Language Model Serving with
+      PagedAttention
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
-  - title: vLLM — Easy, Fast, and Cheap LLM Serving with PagedAttention
-    url: https://blog.vllm.ai/2023/06/20/vllm.html
+  - title: 'vLLM — Easy, Fast, and Cheap LLM Serving with PagedAttention'
+    url: 'https://blog.vllm.ai/2023/06/20/vllm.html'
     type: secondary
-  - title: Paged Attention, IFB, and Request Scheduling — TensorRT-LLM
-    url: https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
+  - title: 'Paged Attention, IFB, and Request Scheduling — TensorRT-LLM'
+    url: >-
+      https://nvidia.github.io/TensorRT-LLM/latest/features/paged-attention-ifb-scheduler.html
     type: secondary
 ---
 
@@ -31,7 +36,7 @@ sources:
 
 实现分页 KV 缓存的简化页池与逻辑页表。每条序列独占物理页，追加 token 后应能按原序列顺序读回有效 K/V。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -57,7 +62,7 @@ block_size = 2, 一条序列依次追加 k = 1, 2, 3
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题或官方测试。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，只在 CPU 浮点张量上验证，没测 GPU、多卡或性能。
 
 ### 题面、接口与约束
 
@@ -113,7 +118,9 @@ class PagedKV:
         n_heads, dim = self.k.shape[1], self.k.shape[-1]
         expected = (batch, n_heads, 1, dim)
         if k_t.shape != expected or v_t.shape != expected:
-            raise ValueError(f"k_t/v_t must have shape {expected}, got {tuple(k_t.shape)}, {tuple(v_t.shape)}")
+            raise ValueError(
+                f"k_t/v_t must have shape {expected}, got {tuple(k_t.shape)}, {tuple(v_t.shape)}"
+            )
 
         # 第一阶段：只读，规划每条序列写到哪一页、哪个偏移
         plan = []
@@ -128,10 +135,14 @@ class PagedKV:
             else:
                 block = int(table[row, page])
                 if not 0 <= block < len(self.k):
-                    raise ValueError(f"sequence {row} has no valid block for page {page}")
+                    raise ValueError(
+                        f"sequence {row} has no valid block for page {page}"
+                    )
             plan.append((row, page, offset))
         if blocks_needed > len(self.free):
-            raise MemoryError(f"need {blocks_needed} free KV blocks, only {len(self.free)} left")
+            raise MemoryError(
+                f"need {blocks_needed} free KV blocks, only {len(self.free)} left"
+            )
 
         # 第二阶段：提交
         for row, page, offset in plan:
@@ -149,12 +160,16 @@ class PagedKV:
         n_heads, dim = self.k.shape[1], self.k.shape[-1]
         n_pages = (seq_len + self.block_size - 1) // self.block_size
         if n_pages > len(table_row):
-            raise ValueError(f"seq_len={seq_len} needs {n_pages} pages, table has {len(table_row)}")
+            raise ValueError(
+                f"seq_len={seq_len} needs {n_pages} pages, table has {len(table_row)}"
+            )
         blocks = table_row[:n_pages].long()
         if bool(((blocks < 0) | (blocks >= len(self.k))).any()):
             raise ValueError(f"page table has invalid block ids: {blocks.tolist()}")
         if seq_len == 0:
-            return self.k.new_empty((n_heads, 0, dim)), self.v.new_empty((n_heads, 0, dim))
+            return self.k.new_empty((n_heads, 0, dim)), self.v.new_empty(
+                (n_heads, 0, dim)
+            )
         # [pages, H, block_size, D] -> [H, pages, block_size, D] -> [H, pages * block_size, D]
         k = self.k[blocks].transpose(0, 1).reshape(n_heads, -1, dim)[:, :seq_len]
         v = self.v[blocks].transpose(0, 1).reshape(n_heads, -1, dim)[:, :seq_len]
@@ -169,7 +184,7 @@ class PagedKV:
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -208,7 +223,12 @@ assert cache.gather_seq(table[0], 0)[0].shape == (1, 0, 1)
 cache = PagedKV(1, 1, 2, 1)
 table = torch.full((2, 1), -1)
 lens = torch.zeros(2, dtype=torch.long)
-expect_error(MemoryError, lambda: cache.append_token(table, lens, torch.ones(2, 1, 1, 1), torch.ones(2, 1, 1, 1)))
+expect_error(
+    MemoryError,
+    lambda: cache.append_token(
+        table, lens, torch.ones(2, 1, 1, 1), torch.ones(2, 1, 1, 1)
+    ),
+)
 assert lens.tolist() == [0, 0]
 assert torch.all(table == -1)
 assert len(cache.free) == 1
@@ -217,17 +237,26 @@ assert len(cache.free) == 1
 cache = PagedKV(4, 1, 1, 1)
 table = torch.full((2, 2), -1)
 lens = torch.zeros(2, dtype=torch.long)
-cache.append_token(table, lens, torch.tensor([1.0, 5.0]).view(2, 1, 1, 1), torch.zeros(2, 1, 1, 1))
-cache.append_token(table, lens, torch.tensor([2.0, 6.0]).view(2, 1, 1, 1), torch.zeros(2, 1, 1, 1))
+cache.append_token(
+    table, lens, torch.tensor([1.0, 5.0]).view(2, 1, 1, 1), torch.zeros(2, 1, 1, 1)
+)
+cache.append_token(
+    table, lens, torch.tensor([2.0, 6.0]).view(2, 1, 1, 1), torch.zeros(2, 1, 1, 1)
+)
 assert cache.gather_seq(table[0], 2)[0].flatten().tolist() == [1, 2]
 assert cache.gather_seq(table[1], 2)[0].flatten().tolist() == [5, 6]
-assert table.tolist() == [[3, 1], [2, 0]]  # 空闲列表从末尾弹出，每条序列拿到的块号不相邻
+assert table.tolist() == [
+    [3, 1],
+    [2, 0],
+]  # 空闲列表从末尾弹出，每条序列拿到的块号不相邻
 
 # 第二条序列超出 max_pages：ValueError，第一条序列也不会被写入
 cache = PagedKV(2, 1, 2, 1)
 table = torch.full((2, 1), -1)
 lens = torch.tensor([0, 2])
-expect_error(ValueError, lambda: cache.append_token(table, lens, token(9, 2), token(9, 2)))
+expect_error(
+    ValueError, lambda: cache.append_token(table, lens, token(9, 2), token(9, 2))
+)
 assert lens.tolist() == [0, 2]
 assert torch.all(table == -1)
 assert len(cache.free) == 2
@@ -236,7 +265,12 @@ assert len(cache.free) == 2
 cache = PagedKV(2, 2, 2, 3)
 table = torch.full((1, 1), -1)
 lens = torch.zeros(1, dtype=torch.long)
-expect_error(ValueError, lambda: cache.append_token(table, lens, torch.ones(1, 1, 1, 3), torch.ones(1, 1, 1, 3)))
+expect_error(
+    ValueError,
+    lambda: cache.append_token(
+        table, lens, torch.ones(1, 1, 1, 3), torch.ones(1, 1, 1, 3)
+    ),
+)
 expect_error(ValueError, lambda: cache.gather_seq(table[0], 3))
 expect_error(ValueError, lambda: cache.gather_seq(table[0], 1))
 expect_error(ValueError, lambda: cache.gather_seq(table[0], -1))
@@ -251,7 +285,7 @@ expect_error(ValueError, lambda: PagedKV(0, 1, 1, 1))
 
 ## 题怎么来的
 
-vLLM 的 PagedAttention 把操作系统的虚拟内存分页搬到了 KV cache 上。NVIDIA 的 serving / CUDA 白板会让你画 block table，并手写「新 token 落到哪一页、页满了怎么申请新块」。碎片、前缀共享这些系统层面的账见 `sys-paged-attn`、`nvidia-paged-kv`。本题只落到可运行的下标计算：逻辑页、物理块、append 一个 token。注意力公式本身不变，变的只是 $K,V$ 从哪里读。
+vLLM 的 PagedAttention 把操作系统的虚拟内存分页搬到了 KV cache 上。NVIDIA 的 serving / CUDA 白板会让你画 block table，并手写「新 token 落到哪一页、页满了怎么申请新块」。碎片、前缀共享这些系统层面的账见 `sys-paged-attn`、`nvidia-paged-kv`。本题只落到可运行的下标计算：逻辑页、物理块、append 一个 token。attention 公式本身不变，变的只是 $K,V$ 从哪里读。
 
 ## 表、块、下标
 
@@ -270,17 +304,17 @@ Append 一组新的 $k_t,v_t$（逐 token 生成（decode）的一步，序列�
 3. 把 $k_t$ 写进当前物理块的页内偏移处，即 `cache[blk, :, off, :]`。
 4. $\mathrm{pos}\leftarrow\mathrm{pos}+1$。
 
-第一步的输入预填充（prefill，即一次处理整段输入并建立缓存）也是按 token 往页里填，只是一次写很多个偏移。不要在 $o\ne 0$ 时申请新块，否则会留下没写满的空洞页，gather 时会读到垃圾数据。空闲列表空了，就是 KV 池 OOM，而不是某次 `cat` 失败。
+第一步的输入 prefill 也是按 token 往页里填，只是一次写很多个偏移。不要在 $o\ne 0$ 时申请新块，否则会留下没写满的空洞页，gather 时会读到垃圾数据。空闲列表空了，就是 KV 池 OOM，而不是某次 `cat` 失败。
 
-## 和注意力 kernel 的接口
+## 和 attention kernel 的接口
 
-Kernel 的输入是 `(block_table, seq_lens, cache)`，不是连续的 `(K_contig, V_contig)`。练习里的 `gather_seq` 拼出连续的 `[H, S, D]`，只是为了对上普通注意力的输入形状、先验证正确性。真正的 PagedAttention kernel 按 table 在片上做间接 gather，不物化整段 K/V；如果先 `index_select` 拼成连续张量再算注意力，分页省下的带宽就又吐回去了。白板上先把下标写对，再补一句生产路径是 fused gather。
+Kernel 的输入是 `(block_table, seq_lens, cache)`，不是连续的 `(K_contig, V_contig)`。练习里的 `gather_seq` 拼出连续的 `[H, S, D]`，只是为了对上普通 attention 的输入形状、先验证正确性。真正的 PagedAttention kernel 按 table 在片上做间接 gather，不物化整段 K/V；如果先 `index_select` 拼成连续张量再算 attention，分页省下的带宽就又吐回去了。白板上先把下标写对，再补一句生产路径是 fused gather。
 
-Flash-Decoding 的 split 边界最好落在页边界上，否则一段 split 要跨两个物理块，见 `coding-flash-decode`。RoPE 在写入 cache 之前就按绝对位置旋转好，页里存的是已经旋转过的 $K$，见 `coding-rope-cache`。
+Flash-Decoding 的 split boundaries 最好落在 page boundaries 上，否则一段 split 要跨两个物理块，见 `coding-flash-decode`。RoPE 在写入 cache 之前就按绝对位置旋转好，页里存的是已经旋转过的 $K$，见 `coding-rope-cache`。
 
-前缀共享时，多条请求指向同一个物理块，refcount $>1$。Append 时如果要写一块共享页，先 copy-on-write 复制一块、改 table，再写入，不能原地覆盖别人的前缀。投机解码被拒绝的 token 要把页还回去，而不是 `cat` 之后再切片，见 `coding-spec-accept`。
+前缀共享时，多条请求指向同一个物理块，refcount $>1$。Append 时如果要写一块共享页，先 copy-on-write 复制一块、改 table，再写入，不能原地覆盖别人的前缀。speculative decoding 被拒绝的 token 要把页还回去，而不是 `cat` 之后再切片，见 `coding-spec-accept`。
 
-`seq_lens` 是权威长度。table 里多出来的 slot、最后一页没写满的行，都不能进 softmax；带着未初始化的 $0$ 向量做注意力，等于多看了几个假的 key。
+`seq_lens` 是权威长度。table 里多出来的 slot、最后一页没写满的行，都不能进 softmax；带着未初始化的 $0$ 向量做 attention，等于多看了几个假的 key。
 
 ## 追问
 

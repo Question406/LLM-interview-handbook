@@ -5,7 +5,8 @@ order: 3
 level: A
 title: LC 2542 · 最大子序列的分数
 quick: >-
-  分数是「和」乘「最小值」，先固定一个量：按 `nums2` 从大到小排序，枚举当前元素作为最小值，前面扫过的都不比它小，从中挑 `nums1` 最大的 $k$ 个。用大小为 $k$ 的小根堆维护这 $k$ 个的和。时间 $O(n\log n)$，额外空间 $O(n)$。
+  分数是「和」乘「最小值」，先固定一个量：按 `nums2` 从大到小排序，枚举当前元素作为最小值，前面扫过的都不比它小，从中挑 `nums1` 最大的
+  $k$ 个。用大小为 $k$ 的小根堆维护这 $k$ 个的和。时间 $O(n\log n)$，额外空间 $O(n)$。
 tags:
   - Heap
   - Greedy
@@ -14,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2542. Maximum Subsequence Score
-    url: https://leetcode.com/problems/maximum-subsequence-score/
+    url: 'https://leetcode.com/problems/maximum-subsequence-score/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -126,7 +127,7 @@ print("simple tests passed")
 
 排序 $O(n\log n)$，每个元素入堆出堆各一次 $O(\log k)$，总时间 $O(n\log n)$。额外空间 $O(n)$ 存排序后的数对。
 
-## 边界
+## Edge Cases
 
 $k=1$ 时答案是 $\max_i nums1[i]\cdot nums2[i]$，堆每次只留一个，代码自然覆盖。
 

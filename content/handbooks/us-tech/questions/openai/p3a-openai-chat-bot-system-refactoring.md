@@ -3,8 +3,10 @@ id: p3a-openai-chat-bot-system-refactoring
 section: openai
 order: 612
 level: A
-title: "OpenAI：聊天机器人重构：从全局状态到事件总线"
-quick: "先用现有输入输出固定行为，再把命令解析、注册 handler 和会话状态拆开；事件总线还要明确顺序、取消订阅和异常语义。比如 bot 回复本身也是消息，用 is_bot 标记切断再次触发，不能靠回复文本恰好不含 slash。"
+title: OpenAI：聊天机器人重构：从全局状态到事件总线
+quick: >-
+  先用现有输入输出固定行为，再把命令解析、注册 handler 和会话状态拆开；事件总线还要明确顺序、取消订阅和异常语义。比如 bot 回复本身也是消息，用
+  is_bot 标记切断再次触发，不能靠回复文本恰好不含 slash。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · chat-bot-system-refactoring"
-    url: https://www.1point3acres.com/interview/problems/company/openai/chat-bot-system-refactoring
+  - title: 1Point3Acres · OpenAI · chat-bot-system-refactoring
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/chat-bot-system-refactoring
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 把聊天消息、日志和 slash 命令机器人组织成可独立测试的事件系统。用户消息应按顺序记录，机器人回复不能递归触发命令。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -55,7 +58,7 @@ chat.send("b", "u", "/meet")         -> bot 回复 "https://meet.example/b"
 
 给一个支持 slash 命令的聊天服务做重构。服务里有 AwayBot、MeetBot、TacoBot 三个机器人，原代码把它们的逻辑和全局状态混在一起。要求在不改变行为的前提下理清结构，后续追问会要求改成事件驱动（事件总线）。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -166,7 +169,9 @@ def default_chat():
     """注册 AwayBot、MeetBot、TacoBot 三个命令的聊天服务。"""
     chat = Chat(EventBus())
     chat.register("/away", lambda message, argument: "away: " + argument)
-    chat.register("/meet", lambda message, argument: "https://meet.example/" + message["channel"])
+    chat.register(
+        "/meet", lambda message, argument: "https://meet.example/" + message["channel"]
+    )
     chat.register("/taco", lambda message, argument: "thanks " + argument)
     return chat
 ```
@@ -179,7 +184,7 @@ def default_chat():
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -190,6 +195,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # 命令触发 bot 回复，日志里用户消息在前
 chat = default_chat()
@@ -207,7 +213,11 @@ assert len(chat.log) == 4
 # /meet 的链接由 channel 决定；history 按 channel 过滤
 chat.send("b", "u", "/meet")
 assert chat.log[-1]["text"] == "https://meet.example/b"
-assert [message["text"] for message in chat.history("b")] == ["hi", "/meet", "https://meet.example/b"]
+assert [message["text"] for message in chat.history("b")] == [
+    "hi",
+    "/meet",
+    "https://meet.example/b",
+]
 
 # 命令名必须以 / 开头
 expect_value_error(chat.register, "away", lambda message, argument: "")
@@ -226,12 +236,15 @@ bus = EventBus()
 calls = []
 unsubscribe_second = None
 
+
 def first(payload):
     calls.append("first")
     unsubscribe_second()
 
+
 def second(payload):
     calls.append("second")
+
 
 bus.subscribe("x", first)
 unsubscribe_second = bus.subscribe("x", second)

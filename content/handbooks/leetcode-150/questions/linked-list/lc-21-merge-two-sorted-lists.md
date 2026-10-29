@@ -4,20 +4,20 @@ section: linked-list
 order: 3
 level: S
 title: LC 21 · 合并两个有序链表
-quick: "用哑结点加双指针，两条链谁的头小就接谁，一条接完后把另一条剩下的整段挂上。时间 $O(m+n)$，额外空间 $O(1)$。"
+quick: 用哑结点加双指针，两条链谁的头小就接谁，一条接完后把另一条剩下的整段挂上。时间 $O(m+n)$，额外空间 $O(1)$。
 tags:
   - Linked List
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 21. 合并两个有序链表
-    url: https://leetcode.cn/problems/merge-two-sorted-lists/
+    url: 'https://leetcode.cn/problems/merge-two-sorted-lists/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -85,7 +85,9 @@ def to_list(head: Optional[ListNode]) -> List[int]:
     return out
 
 
-def mergeTwoLists(list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:
+def mergeTwoLists(
+    list1: Optional[ListNode], list2: Optional[ListNode]
+) -> Optional[ListNode]:
     dummy = ListNode()
     cur = dummy
     while list1 and list2:
@@ -101,7 +103,14 @@ def mergeTwoLists(list1: Optional[ListNode], list2: Optional[ListNode]) -> Optio
 
 
 if __name__ == "__main__":
-    assert to_list(mergeTwoLists(from_list([1, 2, 4]), from_list([1, 3, 4]))) == [1, 1, 2, 3, 4, 4]
+    assert to_list(mergeTwoLists(from_list([1, 2, 4]), from_list([1, 3, 4]))) == [
+        1,
+        1,
+        2,
+        3,
+        4,
+        4,
+    ]
     assert to_list(mergeTwoLists(from_list([]), from_list([]))) == []
     assert to_list(mergeTwoLists(from_list([]), from_list([0]))) == [0]
     print("ok")
@@ -114,7 +123,14 @@ if __name__ == "__main__":
 先用本题的节点类型和辅助函数构造输入。比较节点值时转成列表或遍历序列；如果题目要求返回某个原节点或复制结构，还要用 `is` 检查对象身份。每个用例重新建节点，避免上一次调用改动了下一次的输入。
 
 ```python
-assert to_list(mergeTwoLists(from_list([1, 2, 4]), from_list([1, 3, 4]))) == [1, 1, 2, 3, 4, 4]
+assert to_list(mergeTwoLists(from_list([1, 2, 4]), from_list([1, 3, 4]))) == [
+    1,
+    1,
+    2,
+    3,
+    4,
+    4,
+]
 assert to_list(mergeTwoLists(from_list([]), from_list([]))) == []
 assert to_list(mergeTwoLists(from_list([]), from_list([0]))) == [0]
 print("simple tests passed")
@@ -126,7 +142,7 @@ print("simple tests passed")
 
 时间 $O(m+n)$，额外空间 $O(1)$。每个节点被接一次。
 
-## 边界
+## Edge Cases
 
 - 一条链为空时直接返回另一条，`cur.next = list1 or list2` 已经覆盖了。
 - 两条链等长交错时，每次接较小的头，稳定写法优先 `list1`。
@@ -140,6 +156,7 @@ print("simple tests passed")
 
 ```python
 import heapq
+
 
 def mergeKLists(lists):
     heap = []

@@ -4,8 +4,7 @@ section: alibaba-oa
 order: 18
 level: S
 title: 阿里春招 0401：二进制串定长压缩的最小代价？
-quick: >-
-  压缩块不能跨过不同字符，所以我先按连续段拆开，每段内部做切分 DP，算出「缩短多少 → 最小代价」，再把各段的选项放进外层背包，凑出恰好缩短 $n-m$。
+quick: 压缩块不能跨过不同字符，所以我先按连续段拆开，每段内部做切分 DP，算出「缩短多少 → 最小代价」，再把各段的选项放进外层背包，凑出恰好缩短 $n-m$。
 tags:
   - Alibaba
   - OA
@@ -14,10 +13,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里系列 2026.04.01 算法岗机试
-    url: https://leetcode.cn/discuss/post/3943532/chun-zhao-bi-shi-a-li-xi-lie-ji-shi-fu-p-t91w/
+    url: >-
+      https://leetcode.cn/discuss/post/3943532/chun-zhao-bi-shi-a-li-xi-lie-ji-shi-fu-p-t91w/
     type: secondary
 ---
 
@@ -25,7 +25,7 @@ sources:
 
 给定一个二进制字符串，选择互不重叠、内部字符全部相同的连续块进行压缩，使最终长度恰好等于目标长度，并使总成本最小。长度 k 的块会变成一个特殊字符，产生的特殊字符不能再次参与压缩。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -178,9 +178,9 @@ print("simple tests passed")
 
 ## 复杂度
 
-每个 run 的内层是 $O(L^3)$，各段 $L$ 之和为 $n$，最坏 $O(n^3)$；外层背包是 $O(\#\mathrm{runs}\cdot n\cdot n)$。公开口径 $n\le 1000$ 可过，空间 $O(n^2)$。
+每个 run 的内层是 $O(L^3)$，各段 $L$ 之和为 $n$，最坏 $O(n^3)$；外层背包是 $O(\#\mathrm{runs}\cdot n\cdot n)$。公开说明 $n\le 1000$ 可过，空间 $O(n^2)$。
 
-## 边界
+## Edge Cases
 
 `need=0` 直接返回 $0$。单字符的 run 只能缩短 $0$，$L=1$ 时选项只有 $(0,0)$。
 

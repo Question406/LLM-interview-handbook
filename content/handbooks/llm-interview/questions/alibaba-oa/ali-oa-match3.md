@@ -4,8 +4,7 @@ section: alibaba-oa
 order: 21
 level: A
 title: 阿里 2022.03.14：消消乐大模拟的稳定写法？
-quick: >-
-  循环做「标记所有可消连通块 → 一次性清空 → 按列下落」，直到某一轮没有可消的块。同一轮先全部标记再删，边扫边改会漏消。
+quick: 循环做「标记所有可消连通块 → 一次性清空 → 按列下落」，直到某一轮没有可消的块。同一轮先全部标记再删，边扫边改会漏消。
 tags:
   - Alibaba
   - OA
@@ -13,10 +12,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -24,7 +23,7 @@ sources:
 
 给定带空位的彩色棋盘，反复消除达到大小阈值的同色连通块，再让每列中的剩余格子向下落，直到棋盘稳定。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -170,7 +169,7 @@ print("simple tests passed")
 
 每轮扫描 $O(nm)$，最坏每轮至少消 $k$ 个，轮数 $O(nm/k)$，总时间 $O(n^2 m^2/k)$。笔试网格通常不大。
 
-## 边界
+## Edge Cases
 
 全空棋盘直接输出；整列同色 $\ge 3$ 一次消光；消完坠落后再构成新三连，必须多轮。$k=1$ 会清空所有非空格，公开规则不是这样。
 

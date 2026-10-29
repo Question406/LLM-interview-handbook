@@ -5,7 +5,9 @@ order: 1
 level: A
 title: Notion：字符串的撤销重做，嵌套清单，再设计日历
 quick: >-
-  2025 年这份 Notion 面经里，电面是字符串操作加 undo/redo，作者 35 分钟写完，整轮四十来分钟。后面的算法轮是产品向的机器编码，清单要嵌套；同一天的设计题是日历，作者这轮没有 offer。撤销重做用两个栈存逆操作，嵌套清单用 id 比下标稳，日历一张事件表就够。
+  2025 年这份 Notion 面经里，电面是字符串操作加 undo/redo，作者 35
+  分钟写完，整轮四十来分钟。后面的算法轮是产品向的机器编码，清单要嵌套；同一天的设计题是日历，作者这轮没有 offer。撤销重做用两个栈存逆操作，嵌套清单用
+  id 比下标稳，日历一张事件表就够。
 tags:
   - Notion
   - Coding
@@ -13,28 +15,28 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-09-22
+updatedAt: 2026-09-22T00:00:00.000Z
 sources:
   - title: Notion Interview Experience - 2025
-    url: https://wildwildtech.substack.com/p/notion-interview-experience-2025
+    url: 'https://wildwildtech.substack.com/p/notion-interview-experience-2025'
     type: candidate-first-hand
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
-实现一个字符串编辑器的插入和撤销核心，使每次撤销恢复最近一次尚未撤销的插入。公开面经提到 undo/redo，但未披露完整操作表；本页可运行主练习与当前参考实现约定只覆盖 insert 与 undo，redo是扩展讨论。
+实现一个字符串编辑器的插入和撤销核心，使每次撤销恢复最近一次尚未撤销的插入。公开面经提到 undo/redo，但未披露完整操作表；本页可运行主练习与当前参考实现约定只覆盖 insert 与 undo，redo 是扩展讨论。
 
 ### 输入与接口
 
-实现 Editor()，初始公开属性 text=""，undo_stack与redo_stack均为空列表；提供 insert(i,s) 与 undo()。i为当前字符串中合法的零基插入位置，0≤i≤len(text)；s为字符串，按Python字符下标处理。
+实现 Editor()，初始公开属性 text=""，undo_stack 与 redo_stack 均为空列表；提供 insert(i,s) 与 undo()。i 为当前字符串中合法的零基插入位置，0≤i≤len(text)；s 为字符串，按 Python 字符下标处理。
 
 ### 输出与约束
 
-insert在i之前插入s，原i及之后内容右移，更新text，记录可撤销历史，并清空redo_stack；返回None。undo撤销最近一次尚未撤销的插入，恢复插入前text，保存将来重做所需信息到redo_stack；无可撤销操作时无副作用，返回None。
+insert 在 i 之前插入 s，原 i 及之后内容右移，更新 text，记录可撤销历史，并清空 redo_stack；返回 None。undo 撤销最近一次尚未撤销的插入，恢复插入前 text，保存将来重做所需信息到 redo_stack；无可撤销操作时无副作用，返回 None。
 
-撤销后再insert会开启新的编辑分支，之前的重做历史失效。无需实现删除、整段替换、协作编辑或持久化。可选redo扩展应恢复最近撤销的操作；可选嵌套清单讨论用稳定id、父id和有序孩子表示节点，说明插入/导航/移动；可选日历讨论定义事件[start,end)及按窗口查询。公开帖缺失这些任务的完整业务规则，因此不把推测API当作主练习的测试要求。
+撤销后再 insert 会开启新的编辑分支，之前的重做历史失效。无需实现删除、整段替换、协作编辑或持久化。可选 redo 扩展应恢复最近撤销的操作；可选嵌套清单讨论用稳定 id、父 id 和有序孩子表示节点，说明插入/导航/移动；可选日历讨论定义事件[start,end)及按窗口查询。公开帖缺失这些任务的完整业务规则，因此不把推测 API 当作主练习的测试要求。
 
 ### 示例
 
@@ -53,9 +55,9 @@ undo() -> text=""
 
 这份 2025 年的 Notion 面经考了三样：电面是字符串操作加 undo/redo，算法轮是贴近产品的嵌套清单，设计题是日历。三道的写法都偏朴素，撤销重做用两个栈存逆操作，嵌套清单用 id 比用下标稳，日历一张事件表就够。
 
-来源是 Pritish Thakkar 2025 年写的 Notion SWE 面经。筛选轮是 easy 到 medium 的字符串，加上 undo/redo，他 35 分钟写完，整轮大约 40–45 分钟。下一周同一天两轮，算法和系统设计。算法轮是贴近产品的机器编码，没出力扣题。第一问他用 `ArrayList.add` 处理了边界；第二问要在树形结构里用父到子的下标做导航，他维护了层级。面试官提示有更简单的导航，他没想到，最后被允许按自己的方案写完。
+来源是 Pritish Thakkar 2025 年写的 Notion SWE 面经。筛选轮是 easy 到 medium 的字符串，加上 undo/redo，他 35 分钟写完，整轮大约 40–45 分钟。下一周同一天两轮，算法和系统设计。算法轮是贴近产品的机器编码，没出力扣题。第一问他用 `ArrayList.add` 处理了 edge cases；第二问要在树形结构里用父到子的下标做导航，他维护了层级。面试官提示有更简单的导航，他没想到，最后被允许按自己的方案写完。
 
-设计题是日历。他写了功能和非功能需求、容量、实体、API 和一张简图，自己觉得表拆多了，变更也没走 CDC，面试官追问不多。一周内面完，结果 No Hire。帖子没有函数签名，也没有清单的完整需求，下面是按他的描述能落地的写法，不是原文 API。
+设计题是日历。他写了功能和非功能需求、容量、实体、API 和一张简图，自己觉得表拆多了，变更也没走 CDC，面试官追问不多。一周内面完，结果 No Hire。帖子没有函数签名，也没有清单的完整需求，下面是按他的描述能落地的写法。
 
 撤销重做我会用两个栈。执行一个操作时，把它的逆操作压进 undo，同时清空 redo；undo 时弹出并执行逆操作，再把正向操作压进 redo。
 
@@ -77,8 +79,8 @@ class Editor:
         op = self.undo_stack.pop()
         if op[0] == "del":
             _, i, n = op
-            deleted = self.text[i:i + n]
-            self.text = self.text[:i] + self.text[i + n:]
+            deleted = self.text[i : i + n]
+            self.text = self.text[:i] + self.text[i + n :]
             self.redo_stack.append(("ins", i, deleted))
 ```
 
@@ -115,7 +117,7 @@ print("simple tests passed")
 ## 追问
 
 **undo 栈里直接存全文快照行不行？**
-能做，实现也短。可文本一长，每次编辑都要复制一遍全文。存逆操作更贴这轮「把边界写对」的考法。
+能做，实现也短。可文本一长，每次编辑都要复制一遍全文。存逆操作更贴这轮「正确处理 edge cases」的考法。
 
 **两个人改同一块怎么办？**
 这轮帖子没问到。如果加上，每块一个版本号，写入时带上期望版本，冲突就拒绝。面试官没点名的话，别展开成 CRDT。

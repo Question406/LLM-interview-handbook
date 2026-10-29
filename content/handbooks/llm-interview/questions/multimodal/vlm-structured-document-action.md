@@ -4,7 +4,9 @@ section: multimodal
 order: 4
 level: A
 title: 表格、发票、PDF 和图表进入 Visual Agent 后，如何从视觉解析一路建立到可验证的结构化 action？
-quick: "分层走：先抽取带来源信息（provenance）的结构化字段，保留页码、bbox、单元格来源和置信度；通过 schema、算术约束和原文交叉验证后，才生成写入动作。低置信度或高风险的写入转人工确认。"
+quick: >-
+  分层走：先抽取带来源信息（provenance）的结构化字段，保留页码、bbox、单元格来源和置信度；通过
+  schema、算术约束和原文交叉验证后，才生成写入动作。低置信度或高风险的写入转人工确认。
 tags:
   - Document AI
   - VLM
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: DocLayNet
-    url: https://arxiv.org/abs/2502.13923
+    url: 'https://arxiv.org/abs/2502.13923'
     type: primary
 ---
 
@@ -29,7 +31,7 @@ sources:
 
 评测光看提交成功不够，「金额合法但张冠李戴」会被放过去。要分别衡量 layout / 单元格 grounding、字段 F1、provenance 是否指向真正的原文、schema validity、业务 action 成功率、高风险误写率。误写率按金额加权，大额错误不能被一堆正确的小字段平均掉。容易误导的做法有：合成的表结构极规整；oracle 不查合计约束；用 LLM 判断抽取文本「像不像」；负例里缺近邻行错位、页眉页脚当正文、多币种、扫描倾斜。评测集要包含合计冲突和近邻行错位，误写率单独报。
 
-上线清单固定下来就是字段 schema、provenance 必填、合计等式、独立解析器交叉验证、高风险人工闸门、误写率。缺 provenance 的 JSON 只配当草稿，不配过账。模型读错一行时，阻止写入、回到原件复核，再生成一段解释没用。一句话总结，「读 PDF」和「写财务系统」要拆开。
+上线清单固定下来就是字段 schema、provenance 必填、合计等式、独立解析器交叉验证、高风险人工 acceptance checks、误写率。缺 provenance 的 JSON 只配当草稿，不配过账。模型读错一行时，阻止写入、回到原件复核，再生成一段解释没用。一句话总结，「读 PDF」和「写财务系统」要拆开。
 
 ## 追问
 

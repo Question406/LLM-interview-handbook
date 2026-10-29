@@ -4,7 +4,9 @@ section: design
 order: 11
 level: S
 title: 设计：ChatGPT 类对话服务（排队、优先级、前缀缓存、限流）
-quick: "我会先定交互 p95 首 token 延迟、容量和公平性目标，再按优先级排队，用连续批处理提高 GPU 吞吐。稳定系统提示和会话历史通过前缀 KV 复用，入口按用户和 token 桶限流，KV 水位过高时拒绝或降级。"
+quick: >-
+  我会先定交互 p95 首 token 延迟、容量和公平性目标，再按优先级排队，用 continuous batching 提高 GPU
+  throughput。稳定系统提示和会话历史通过前缀 KV 复用，入口按用户和 token 桶限流，KV 水位过高时拒绝或降级。
 tags:
   - OpenAI
   - NVIDIA
@@ -13,22 +15,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
-  - title: Efficient Memory Management for Large Language Model Serving with PagedAttention
-    url: https://arxiv.org/abs/2309.06180
+  - title: >-
+      Efficient Memory Management for Large Language Model Serving with
+      PagedAttention
+    url: 'https://arxiv.org/abs/2309.06180'
     type: primary
-  - title: Orca — A Distributed Serving System for Transformer-Based Generative Models
-    url: https://www.usenix.org/conference/osdi22/presentation/yu
+  - title: >-
+      Orca — A Distributed Serving System for Transformer-Based Generative
+      Models
+    url: 'https://www.usenix.org/conference/osdi22/presentation/yu'
     type: primary
   - title: Automatic Prefix Caching — vLLM
-    url: https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html
+    url: 'https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html'
     type: secondary
 ---
 
 ## 题目描述
 
-本题是手册归纳的系统设计练习，不是某家公司现场题面的逐字记录。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
+本题是手册归纳的系统设计练习。流量、数据量和具体 SLO 未给定时，请先列出可调整的假设，不把假设当成已披露事实。
 
 ### 场景与目标
 
@@ -42,9 +48,9 @@ sources:
 
 ### 约束与交付物
 
-分别定义首 token 延迟、生成间隔、端到端耗时与吞吐目标，说明上下文上限、资源不足和模型实例故障时的语义。缓存或共享计算不能造成跨用户数据泄漏。
+分别定义首 token 延迟、生成间隔、端到端耗时与 throughput 目标，说明上下文上限、资源不足和模型实例故障时的语义。缓存或共享计算不能造成跨用户数据泄漏。
 
-请给出需求边界、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
+请说明 scope 和 constraints、对外接口及返回语义、核心数据对象、主要请求的完整生命周期、故障与恢复行为，以及能验证设计是否达标的指标。题目不预先指定数据库、模型或调度算法；需要解释自己作出的选择与代价。
 
 ### 请求与结果示例
 
@@ -52,9 +58,9 @@ sources:
 
 ## 解题思路与参考答案
 
-我会先按首 token 延迟和公平性定 SLO，再把限流、准入、排队接到连续批处理引擎上。比如一条长批处理不能把正在聊天的用户堵住，取消请求也要及时释放 KV 页。vLLM / Orca 的分页 KV 和 iteration 级调度可以作为基础。
+我会先按首 token 延迟和公平性定 SLO，再把限流、准入、排队接到 continuous batching 引擎上。比如一条长批处理不能把正在聊天的用户堵住，取消请求也要及时释放 KV 页。vLLM / Orca 的分页 KV 和 iteration 级调度可以作为基础。
 
-这是一道归纳的设计题，覆盖 OpenAI 推理、Anthropic 限流和 NVIDIA 推理栈相关方向，并非某次现场逐字题。连续批处理见 `openai-continuous-batching`；prefill/decode 拆分见 `openai-prefill-decode`；KV 页见 `sys-paged-attn`；工具对话的约束见 `design-chat-tools`。
+这是一道归纳的设计题，覆盖 OpenAI 推理、Anthropic 限流和 NVIDIA 推理栈相关方向。continuous batching 见 `openai-continuous-batching`；prefill/decode 拆分见 `openai-prefill-decode`；KV 页见 `sys-paged-attn`；工具对话的约束见 `design-chat-tools`。
 
 ## 请求进门：限流和队列
 
@@ -68,7 +74,7 @@ sources:
 
 ## 复用缓存并控制生成延迟
 
-多用户同一条系统提示、同一会话多轮，输入预填充（prefill，即处理输入并建立缓存） 重复算是主浪费。缓存键是 token id 序列 + 权重版本 + LoRA + 位置语义，不是字符串。模板改一个字、模型热更新，必须从分叉 token 断开。细节见 `sys-prefix-cache`。
+多用户同一条系统提示、同一会话多轮，输入 prefill 重复算是主浪费。缓存键是 token id 序列 + 权重版本 + LoRA + 位置语义，不是字符串。模板改一个字、模型热更新，必须从分叉 token 断开。细节见 `sys-prefix-cache`。
 
 会话续写：历史 KV 可钉在会话亲和的 replica 上，换机就要重 prefill 或迁移页。亲和提高命中，降低调度弹性。我会写：短会话哈希到 replica；过长或热点系统提示放全局前缀池，引用计数共享物理块。
 
@@ -76,13 +82,13 @@ sources:
 
 首 token 被 prefill 绑住，decode 绑住 slot。混在同一池，长 prefill 会戳穿交互 p95。拆池或分优先级：prefill 有并发上限；decode 连续批。更大流量可以把 prefill 和 decode 拆到不同机器，见 `sys-prefill-decode-disagg`。NVIDIA 侧看 kernel 占用和 KV bandwidth，不是只看 FLOPs。流式先把已生成 token 推出去；引用校验仍按句，不要先输出再删，见 `design-prod-rag`。
 
-用户刷新或取消时，服务端要停止对应的 decode 并释放 KV，否则会留下后台仍在生成的请求，占满水位。重试带幂等键，尤其工具调用，见 `design-tool-prod`。
+用户刷新或取消时，服务端要停止对应的 decode 并释放 KV，否则会留下后台仍在生成的请求，占满水位。重试带 idempotency key，尤其工具调用，见 `design-tool-prod`。
 
 失败：限流不明显导致客户端空转；无准入控制导致 KV 碎裂；前缀键漏了 LoRA id 导致串话；批处理饿死交互；重试没有幂等把工具副作用打两次。
 
 线上：到达率、拒绝率、队列等待、首 token p95、每 token p95、前缀命中率、KV 水位、批处理公平性。命中率高但 p95 差，可能在用过期亲和把负载打到一台。容量规划用「同时活着的 decode slot」而不是 QPS：长回答占 slot 更久。
 
-发版闸门：SLO、错误率、KV 泄漏检查、限流误伤。模型或系统提示变更要让前缀缓存失效，并在金丝雀上看命中率跌多少。
+release criteria：SLO、错误率、KV 泄漏检查、限流误伤。模型或系统提示变更要让前缀缓存失效，并在金丝雀上看命中率跌多少。
 
 ## 追问
 

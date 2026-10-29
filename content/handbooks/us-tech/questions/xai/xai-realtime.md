@@ -4,7 +4,9 @@ section: xai
 order: 18
 level: A
 title: xAI：低延迟语音 / 对话（公开层）怎么拆预算？
-quick: "我会把首包音频延迟拆成 VAD 端点、上行、模型 TTFT 和下行 TTS 首包，分别看尾延迟。公开 Voice Agent 使用 WebSocket 和服务端 VAD，亚秒级是宣传口径；打断要停播并丢弃未播词，工具调用单独计时，只读可预取，写操作仍需确认。"
+quick: >-
+  我会把首包音频延迟拆成 VAD 端点、上行、模型 TTFT 和下行 TTS 首包，分别看尾延迟。公开 Voice Agent 使用 WebSocket
+  和服务端 VAD，亚秒级是宣传说法；打断要停播并丢弃未播词，工具调用单独计时，只读可预取，写操作仍需确认。
 tags:
   - xAI
   - Voice
@@ -13,19 +15,19 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: xAI Voice API
-    url: https://docs.x.ai/developers/model-capabilities/audio/voice
+    url: 'https://docs.x.ai/developers/model-capabilities/audio/voice'
     type: primary
   - title: Grok Voice Agent API
-    url: https://x.ai/news/grok-voice-agent-api
+    url: 'https://x.ai/news/grok-voice-agent-api'
     type: primary
   - title: xAI voice agent
-    url: https://docs.x.ai/developers/model-capabilities/audio/voice-agent
+    url: 'https://docs.x.ai/developers/model-capabilities/audio/voice-agent'
     type: primary
   - title: xAI function calling
-    url: https://docs.x.ai/docs/guides/function-calling
+    url: 'https://docs.x.ai/docs/guides/function-calling'
     type: secondary
 ---
 
@@ -56,7 +58,7 @@ $$
 
 常见误区是：编一个未公开的端到端音频 MoE；把亚秒宣传当成 p99 SLA；工具超时还在播「已经帮你订好了」。公开兼容 OpenAI Realtime 的说法以文档为准，面试以事件名和预算切分为主，不背 SDK 方法。
 
-语音会话的配额按连接数和分钟计，和文本 RPM 不是同一道门。
+语音会话的配额按连接数和分钟计，和文本 RPM 不是同一类 quota checks。
 
 ## 追问
 

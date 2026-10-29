@@ -8,8 +8,9 @@ edition: 2025–2026
 audience: 在美国面 startup 的 SWE，以及做 LLM 后训练的 MLE / Research
 description: >-
   美国仍在独立运营的 startup 公开面经：Stripe、Rippling、Harvey、Anduril、Scale AI、Notion、Headway，
-  加上 Cursor 和 Perplexity 自己公布的面试方式。后训练单独一章：Scale 的八股轮、Snorkel 的迭代 DPO、
-  Fireworks 的可验证奖励。逐字题能核对的才标成面经；岗位和官方博客写明的做法会标明不是某一次的原话。
+  加上 Cursor 和 Perplexity 自己公布的面试方式。后训练单独一章：Scale 的八股轮、Snorkel 的迭代 DPO、 Fireworks
+  的可验证奖励。逐字题能核对的才标成面经；岗位和官方博客写明的做法会标明不是某一次的原话。 新增 Humans& 的 top-p 面经，以及 Thinking
+  Machines Lab 官方研究文章衍生的机制编程练习。
 sections:
   - id: overview
     title: 01 · 怎么读这批题
@@ -41,4 +42,10 @@ sections:
   - id: ai-labs
     title: 10 · Cursor / Perplexity
     description: 一面不许用 AI，以及官方公开的动手编码说明
+  - id: humansand
+    title: 11 · Humans&
+    description: 候选人报告中的 top-p live coding 与现场 debug
+  - id: thinking-machines
+    title: 12 · Thinking Machines Lab
+    description: 官方机制练习：batch-invariant RMSNorm、LoRA；coding 轮公开记录见新题导航
 ---

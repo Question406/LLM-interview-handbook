@@ -5,7 +5,8 @@ order: 5
 level: S
 title: LC 207 · 课程表
 quick: >-
-  把先修关系建成有向边，能修完当且仅当这张图没有环。判环用 Kahn（入度为 $0$ 的入队，能弹出全部课就无环）或者 DFS 三色标记，时间 $O(V+E)$。
+  把先修关系建成有向边，能修完当且仅当这张图没有环。判环用 Kahn（入度为 $0$ 的入队，能弹出全部课就无环）或者 DFS 三色标记，时间
+  $O(V+E)$。
 tags:
   - Graph
   - Topo
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 207. 课程表
-    url: https://leetcode.cn/problems/course-schedule/
+    url: 'https://leetcode.cn/problems/course-schedule/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -117,7 +118,7 @@ print("simple tests passed")
 
 时间 $O(V+E)$，空间 $O(V+E)$，邻接表加上颜色数组或入度队列。
 
-## 边界
+## Edge Cases
 
 没有先修关系时 `prerequisites` 为空，每门课入度都是 $0$，一定能修完。自环 `[0,0]` 就是边 $0\to 0$，三色 DFS 会立刻碰到灰色（状态 `1`）的自己，Kahn 里这门课的入度永远降不到 $0$，两种写法都返回假。图也可能是几条不连通的链，所以 DFS 要从每个没访问过的点都启动一次，Kahn 要把所有入度为 $0$ 的点先入队，漏掉某个源点就会判错。
 
@@ -128,6 +129,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def findOrder(n, prerequisites):
     g = [[] for _ in range(n)]

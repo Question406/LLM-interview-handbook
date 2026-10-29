@@ -3,24 +3,43 @@ id: meituan-attention-scale-dk
 section: fundamentals
 order: 140
 level: A
-title: 美团：Attention 为什么要除以 $\sqrt{d_k}$？
-quick: "除以 $\\sqrt{d_k}$ 是为了数值稳定：$QK^\\top$ 每个元素的方差随 $d_k$ 线性增大，不缩放时 softmax 进入饱和区，梯度几乎消失。除 $\\sqrt{d_k}$ 把点积标准差拉回常数级，训练才稳，张量的维度一个都没删。"
+title: '美团：Attention 为什么要除以 $\sqrt{d_k}$？'
+quick: 假设改变 attention head 的维度后，点积数值变大，softmax 几乎只关注一个位置。我们不希望这种变化只是维度增加带来的数值效果。
 tags:
   - Meituan
   - Attention
   - Softmax
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: '2026-10-28'
 sources:
   - title: 美团大模型算法岗完整面经（一面+二面）
-    url: https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981
+    url: 'https://www.nowcoder.com/feed/main/detail/b264abf14d4d4c44bc022c9ea1dce981'
     type: candidate-first-hand
   - title: Attention Is All You Need
-    url: https://arxiv.org/abs/1706.03762
+    url: 'https://arxiv.org/abs/1706.03762'
     type: primary-paper
 ---
+
+## 回答思路
+
+> **问题与场景：** 假设改变 attention head 的维度后，点积数值变大，softmax 几乎只关注一个位置。
+>
+> **做法与原因：** 在 Q、K 各分量近似独立、均值为零且方差约为一时，点积的方差随 head dimension 增长。
+>
+> **检查与取舍：** 这也解释了为什么不直接除以 head dimension：那通常会把尺度压得过小。
+
+## 可以这样回答
+
+假设改变 attention head 的维度后，点积数值变大，softmax 几乎只关注一个位置。我们不希望这种变化只是维度增加带来的数值效果。
+
+在 Q、K 各分量近似独立、均值为零且方差约为一时，点积的方差随 head dimension 增长。因此除以其标准差，也就是 sqrt(head dimension)，可以把分数尺度稳定下来。
+
+这也解释了为什么不直接除以 head dimension：那通常会把尺度压得过小。如果先做 Q/K normalization，这些统计条件会改变，就需要结合具体实现重新讨论 scale。
+
+## 技术备查
 
 ## 真题记录
 
@@ -29,7 +48,7 @@ sources:
 - 届别 / 流程：原帖未披露；一面
 - 面试时间：原帖未披露
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：“Attention机制中为什么需要去除DK相关计算维度，核心作用是什么？”
+- 原始措辞：“Attention 机制中为什么需要去除 DK 相关计算维度，核心作用是什么？”
 
 除以 $\sqrt{d_k}$ 是为了数值稳定：$q\cdot k$ 的方差随维度 $d_k$ 线性增长，不缩放的话点积很大，softmax 被推进饱和区，梯度几乎消失。原帖说的「去除 $d_k$ 相关计算维度」，意思是用 $d_k$ 做缩放因子，张量里哪一轴都没删。光背「除一下比较好」不够，面试官要听你把方差推出来。
 
@@ -41,9 +60,9 @@ $$
 \mathrm{Var}(q\cdot k)=\mathrm{Var}\Big(\sum_{i=1}^{d_k}q_i k_i\Big)=d_k,
 $$
 
-标准差约 $\sqrt{d_k}$。$d_k$ 到 $64$ 或 $128$ 时，点积的绝对值经常很大。Softmax $e^{z_i}/\sum e^{z_j}$ 在 $z$ 差距大时接近 one-hot：最大项概率 $\approx 1$，其余 $\approx 0$，对非最大 key 的梯度几乎为 $0$，叠了多层以后很难学到均匀一些的对齐。除以 $\sqrt{d_k}$ 后点积方差回到 $O(1)$，注意力还能在多个 key 之间分配质量。
+标准差约 $\sqrt{d_k}$。$d_k$ 到 $64$ 或 $128$ 时，点积的绝对值经常很大。Softmax $e^{z_i}/\sum e^{z_j}$ 在 $z$ 差距大时接近 one-hot：最大项概率 $\approx 1$，其余 $\approx 0$，对非最大 key 的梯度几乎为 $0$，叠了多层以后很难学到均匀一些的对齐。除以 $\sqrt{d_k}$ 后点积方差回到 $O(1)$，attention 还能在多个 key 之间分配质量。
 
-不缩放会怎样也可以说具体：深层的注意力迅速变成 one-hot，残差学到的几乎是离散路由，梯度穿过 softmax 变得极小，训练表现为 loss 难以下降，或者对位置极敏感。这是优化问题，光用 fp16 overflow 解释不了。
+不缩放会怎样也可以说具体：深层的 attention 迅速变成 one-hot，残差学到的几乎是离散路由，梯度穿过 softmax 变得极小，训练表现为 loss 难以下降，或者对位置极敏感。这是优化问题，光用 fp16 overflow 解释不了。
 
 它和温度 $T$ 是一类东西。$\mathrm{softmax}(z/T)$ 里 $T$ 变大等价于压平分布，$\sqrt{d_k}$ 相当于按维度选好的固定温度，不是训练超参。QK-Norm 把 $q,k$ 先拉回单位尺度，是同一家族的稳定手段，可以和除 $\sqrt{d_k}$ 并存。
 

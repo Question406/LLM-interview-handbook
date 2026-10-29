@@ -4,7 +4,9 @@ section: array-string
 order: 4
 level: A
 title: LC 80 · 删除有序数组中的重复项 II
-quick: "用快慢指针，慢指针指向下一个写入位置。前两个直接写，之后只有当前值和 `nums[slow-2]` 不同才写，这样每个值最多留两次。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  用快慢指针，慢指针指向下一个写入位置。前两个直接写，之后只有当前值和 `nums[slow-2]` 不同才写，这样每个值最多留两次。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 80. 删除有序数组中的重复项 II
-    url: https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/
+    url: 'https://leetcode.cn/problems/remove-duplicates-from-sorted-array-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -57,7 +59,7 @@ sources:
 
 拿 `[1,1,1,2,2,3]` 走一遍。前两个 1 直接写，`slow` 到 2。第三个 1 和 `nums[0]` 相同，跳过。接着 2 和 `nums[0]=1` 不同，写到下标 2；第二个 2 和 `nums[1]=1` 不同，也写；3 和 `nums[2]=2` 不同，写。最后 `slow=5`，前缀是 `[1,1,2,2,3]`。
 
-边扫边数当前值重复了几次再特判也能做，但边界容易写错，看已经写下的倒数第 $2$ 个就够了。
+边扫边数当前值重复了几次再特判也能做，但 edge cases 容易写错，看已经写下的倒数第 $2$ 个就够了。
 
 ## 参考代码
 
@@ -106,7 +108,7 @@ print("simple tests passed")
 
 每个元素看一次，时间 $O(n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 长度 $\lt 3$ 时 `slow < 2` 始终成立，数组原样返回。某个值恰好出现两次，两次都能写；超过两次时 `nums[slow-2] == x`，多出来的会被跳过。全相同的数组只留前两个，返回 $2$，长度为 $1$ 时返回 $1$。
 

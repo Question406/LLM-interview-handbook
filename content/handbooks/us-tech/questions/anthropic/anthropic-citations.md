@@ -4,7 +4,9 @@ section: anthropic
 order: 22
 level: A
 title: Anthropic：引用接地怎么做，文档块和 span 对不上时该不该拒答？
-quick: "Citations 把回答关联到提供文档中的 span，但指针有效仍不代表论断被支持。合规 / 客服 RAG 应逐句检查事实与证据：缺引用或 span 对不上时删去、补引，资料没有覆盖就明确拒答。文档块粒度按用户需要高亮的位置设置。"
+quick: >-
+  Citations 把回答关联到提供文档中的 span，但指针有效仍不代表论断被支持。合规 / 客服 RAG 应逐句检查事实与证据：缺引用或 span
+  对不上时删去、补引，资料没有覆盖就明确拒答。文档块粒度按用户需要高亮的位置设置。
 tags:
   - Anthropic
   - Citations
@@ -13,13 +15,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Citations (Claude Docs)
-    url: https://platform.claude.com/docs/en/build-with-claude/citations
+    url: 'https://platform.claude.com/docs/en/build-with-claude/citations'
     type: primary
   - title: Introducing Citations on the Anthropic API
-    url: https://www.anthropic.com/news/introducing-citations-api
+    url: 'https://www.anthropic.com/news/introducing-citations-api'
     type: primary
 ---
 
@@ -49,13 +51,13 @@ sources:
 
 合规、客服和法律 RAG 可以要求事实句无引不展示；头脑风暴可以允许发挥，但 UI 区分文档证据与模型生成。针不在文档里还自信回答属于诚实性失败，见 `anthropic-eval-honesty`、`anthropic-needle`。检索根本没召回相关段时，引用功能无法补救召回。
 
-长资料可用 `anthropic-xml-prompt` 的边界减少角色混淆，citations 另外提供结构化引用。跨请求重复的大文档用 `anthropic-prompt-cache`，离线对账用 `anthropic-batch-api`。外部网页和文件仍是不可信数据，注入问题见 `anthropic-prompt-injection`。
+长资料可用 `anthropic-xml-prompt` 的 delimiters 减少 role confusion，citations 另外提供结构化引用。跨请求重复的大文档用 `anthropic-prompt-cache`，离线对账用 `anthropic-batch-api`。外部网页和文件仍是不可信数据，注入问题见 `anthropic-prompt-injection`。
 
 官方内部评测称内置 citations 的引用召回高于多数自建 prompt 方案，仍需应用检查未引事实与错配 span。引用机制提供了可核验的位置，最终展示政策由产品定义。
 
 ## 追问
 
-**citation 能证明没有幻觉吗？**
+**citation 能证明没有 hallucination 吗？**
 不能。它证明引用文字来自提供的文件，论断是否受支持还要另评。
 
 **多份文档冲突呢？**

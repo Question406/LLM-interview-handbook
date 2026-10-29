@@ -1,0 +1,769 @@
+[
+  {
+    "id": "gray-swan-ipi",
+    "name": "Gray Swan IPI / historical ART",
+    "category": "agent robustness",
+    "priority": "P0",
+    "kind": "external benchmark / competition-derived replay",
+    "metric": "Attack success within k attempts；固定 Q1/Q2、场景集、model endpoint 与 safeguards",
+    "limitation": "ART 与后续 IPI 的版本、surface 与 k 可能改变，不能直接合并历史 scores",
+    "primaryUrl": "https://arxiv.org/abs/2603.15714",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§5.2.1；PDF pp.84–85",
+        "role": "external_evaluated",
+        "note": ""
+      },
+      {
+        "report": "gemini4",
+        "locator": "§6.1.2.6 / Figure 6.9；PDF pp.211–212",
+        "role": "external_evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude46",
+        "locator": "§5.2.1；PDF pp.83–84",
+        "role": "external_evaluated",
+        "note": "历史名称 ART；与当前 IPI 分开"
+      }
+    ],
+    "question": "report-gray-swan-ipi"
+  },
+  {
+    "id": "strongreject",
+    "name": "StrongREJECT",
+    "category": "jailbreak safeguards",
+    "priority": "P0",
+    "kind": "public benchmark + evaluator",
+    "metric": "有害目标相关的 response quality / compliance；需说明 report 采用的 grading",
+    "limitation": "不能把文字拒绝率或 provider 的 binary compliance 与原论文连续评分当同一指标",
+    "primaryUrl": "https://arxiv.org/abs/2402.10260",
+    "reportEvidence": [
+      {
+        "report": "grok47",
+        "locator": "§8.1；PDF p.23",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§9.1；PDF p.35",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-strongreject"
+  },
+  {
+    "id": "crescendo",
+    "name": "Crescendo",
+    "category": "multi-turn jailbreak",
+    "priority": "P0",
+    "kind": "attack methodology",
+    "metric": "固定 turn / query budget 下的 harmful completion 或攻击成功",
+    "limitation": "它是一种多轮攻击方法；报告中的 long-horizon suite 可能混合多种 attacks",
+    "primaryUrl": "https://arxiv.org/abs/2404.01833",
+    "reportEvidence": [
+      {
+        "report": "grok47",
+        "locator": "§8.1；PDF p.23",
+        "role": "evaluated_as_component",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§9.1；PDF p.35",
+        "role": "evaluated_as_component",
+        "note": ""
+      }
+    ],
+    "question": "report-crescendo"
+  },
+  {
+    "id": "cyberseceval",
+    "name": "CyberSecEval / CyberSecEval 2",
+    "category": "cyber + injection suite",
+    "priority": "P0",
+    "kind": "public benchmark suite",
+    "metric": "按 secure code、interpreter abuse、text injection、CTF 等具体 task 分开评分",
+    "limitation": "不同 sub-evals 的安全方向不同，不存在统一的“越高越安全”解释",
+    "primaryUrl": "https://arxiv.org/abs/2404.13161",
+    "reportEvidence": [
+      {
+        "report": "llama3",
+        "locator": "§5.4.5；Figure 23 / §5.5 Prompt Guard",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-cyberseceval"
+  },
+  {
+    "id": "cybench",
+    "name": "Cybench",
+    "category": "cyber capability",
+    "priority": "P1",
+    "kind": "public CTF benchmark",
+    "metric": "Task/subtask success、pass@k、可用 hints 与 scaffold",
+    "limitation": "能力评估，不能读成模型拒绝 malicious requests 或 agent 抵抗 injection",
+    "primaryUrl": "https://arxiv.org/abs/2408.08926",
+    "reportEvidence": [
+      {
+        "report": "claude46",
+        "locator": "§8.4.7；PDF p.201",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-cybench"
+  },
+  {
+    "id": "cybergym",
+    "name": "CyberGym",
+    "category": "cyber capability",
+    "priority": "P0",
+    "kind": "public real-world vulnerability benchmark",
+    "metric": "按版本定义的 vulnerability reproduction success",
+    "limitation": "Reproduce vulnerability 与 working exploit 不同；最新报告可能因 saturation 换用更难任务",
+    "primaryUrl": "https://arxiv.org/abs/2506.02548",
+    "reportEvidence": [
+      {
+        "report": "grok47",
+        "locator": "§6.1；PDF p.17",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§7.1；PDF p.29",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude46",
+        "locator": "§2.17；PDF p.28",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§3.3.4；PDF p.53",
+        "role": "retired",
+        "note": "该报告明确说明 retired due to saturation"
+      }
+    ],
+    "question": "report-cybergym"
+  },
+  {
+    "id": "cvebench",
+    "name": "CVE-Bench",
+    "category": "cyber capability",
+    "priority": "P0",
+    "kind": "public web-application benchmark",
+    "metric": "任务成功、zero-day / one-day、source access、pass@k 与有效 challenges 数",
+    "limitation": "版本/运行子集不同会改变分母；不等于所有 CVE 或真实网络的攻防能力",
+    "primaryUrl": "https://arxiv.org/abs/2503.17332",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§9.1.2.2",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok47",
+        "locator": "§6.2；PDF p.18",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§7.2；PDF p.30",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-cve-bench"
+  },
+  {
+    "id": "exploitbench",
+    "name": "ExploitBench",
+    "category": "frontier cyber capability",
+    "priority": "P1",
+    "kind": "public capability-ladder benchmark",
+    "metric": "Verifier-confirmed capabilities / report-specific aggregation",
+    "limitation": "中间能力与最终 working exploit 分开，不能把 capability percentage 当 full compromise rate",
+    "primaryUrl": "https://arxiv.org/abs/2605.14153",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§9.1.2.4.1",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§3.3.1；PDF p.49",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-exploit-frontier"
+  },
+  {
+    "id": "exploitgym",
+    "name": "ExploitGym",
+    "category": "frontier cyber capability",
+    "priority": "P1",
+    "kind": "public working-exploit benchmark",
+    "metric": "按 pinned protections 与 task set 的 verified exploit success",
+    "limitation": "论文与报告 task count 可能不同；固定 release 与可评估 subset，区分 crash 和安全影响",
+    "primaryUrl": "https://arxiv.org/abs/2605.11086",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§9.1.2.4.2 / ExploitGym",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§3.3.4；PDF pp.53–54",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-exploit-frontier"
+  },
+  {
+    "id": "shade",
+    "name": "SHADE-Arena",
+    "category": "control / sabotage",
+    "priority": "P0",
+    "kind": "public agent-control benchmark",
+    "metric": "Harmful side-task success AND monitor evasion；主任务结果另报",
+    "limitation": "Monitor、可见 reasoning、side-goal induction 与 red-team elicitation 都影响得分",
+    "primaryUrl": "https://www.anthropic.com/research/shade-arena-sabotage-monitoring",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§6.6.4.1；PDF pp.141–143",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude46",
+        "locator": "§6.4.1；PDF pp.142–144",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-shade-arena"
+  },
+  {
+    "id": "linuxarena",
+    "name": "LinuxArena",
+    "category": "control / sabotage",
+    "priority": "P0",
+    "kind": "public privileged-environment control setting",
+    "metric": "在真实 Linux 工作流中的 main/side task outcomes 与监控效果",
+    "limitation": "不同 task subset、privileges 与 monitor 不是同一个实验",
+    "primaryUrl": "https://www.redwoodresearch.org/blog/introducing-linuxarena",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§6.6.4.2；PDF pp.144–146",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-linux-arena"
+  },
+  {
+    "id": "mask",
+    "name": "MASK / MASK-Rectified",
+    "category": "honesty under pressure",
+    "priority": "P0",
+    "kind": "public benchmark + provider adaptation",
+    "metric": "Stated belief 与 pressured response 的 contradiction / honesty；记录 exclusions",
+    "limitation": "MASK-Rectified 修改 roleplay 判定；不同评分版本和方向不能直接对比",
+    "primaryUrl": "https://arxiv.org/abs/2503.03750",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§6.5.4.2；PDF p.130",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok47",
+        "locator": "§11.1；PDF p.26",
+        "role": "evaluated_adapted",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§12.1；PDF p.38",
+        "role": "evaluated_adapted",
+        "note": ""
+      }
+    ],
+    "question": "report-mask-honesty"
+  },
+  {
+    "id": "bbq",
+    "name": "BBQ",
+    "category": "bias / fairness",
+    "priority": "P0",
+    "kind": "public QA benchmark",
+    "metric": "Ambiguous/disambiguated accuracy 与 bias score",
+    "limitation": "QA stereotypes 与真实 agent 的 allocation / action fairness 分别测",
+    "primaryUrl": "https://arxiv.org/abs/2110.08193",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§4.4.2；PDF pp.75–76",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude46",
+        "locator": "Bias Benchmark for QA；PDF pp.71–72",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-bbq"
+  },
+  {
+    "id": "wmdp",
+    "name": "WMDP",
+    "category": "hazardous-knowledge capability",
+    "priority": "P1",
+    "kind": "public multiple-choice proxy",
+    "metric": "Bio/Chem/Cyber 子集 accuracy",
+    "limitation": "危险知识 proxy，与 refusal / safeguard effectiveness 分开解释",
+    "primaryUrl": "https://arxiv.org/abs/2403.03218",
+    "reportEvidence": [
+      {
+        "report": "grok47",
+        "locator": "§7.5；PDF p.22",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§8.4；PDF p.33",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-bio-risk-suite"
+  },
+  {
+    "id": "labbench",
+    "name": "LAB-Bench",
+    "category": "biology research capability",
+    "priority": "P1",
+    "kind": "public benchmark",
+    "metric": "按实际使用的 practical / 子任务 split 报 accuracy",
+    "limitation": "通用生物研究能力，不自动等于 harmful uplift",
+    "primaryUrl": "https://arxiv.org/abs/2407.10362",
+    "reportEvidence": [
+      {
+        "report": "grok47",
+        "locator": "§7.6；PDF p.22",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok46",
+        "locator": "§8.5；PDF p.34",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-bio-risk-suite"
+  },
+  {
+    "id": "vct",
+    "name": "Virology Capabilities Test (VCT)",
+    "category": "biology capability",
+    "priority": "P1",
+    "kind": "public multimodal benchmark",
+    "metric": "按具体 release 的 expert-graded accuracy",
+    "limitation": "Biology knowledge 与安全拒绝不同；Biosecurity VCT 是报告中另列的 internal companion",
+    "primaryUrl": "https://arxiv.org/abs/2504.16137",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§2.2.3.1；PDF pp.20–21",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok47",
+        "locator": "§7.2；PDF p.21",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-bio-risk-suite"
+  },
+  {
+    "id": "protocolqa",
+    "name": "ProtocolQA Open-Ended",
+    "category": "biology capability",
+    "priority": "P1",
+    "kind": "report-adapted task variant",
+    "metric": "Free-text protocol troubleshooting accuracy",
+    "limitation": "不能把 open-ended variant 当成原 multiple-choice task 的同一分数",
+    "primaryUrl": "https://arxiv.org/abs/2407.10362",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§9.1.1.2",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok47",
+        "locator": "§7.7；PDF p.22",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-bio-risk-suite"
+  },
+  {
+    "id": "fortress",
+    "name": "FORTRESS / FORTRESS-RN",
+    "category": "high-risk misuse safeguards",
+    "priority": "P1",
+    "kind": "public benchmark + report subset",
+    "metric": "Harmful-risk rubric 与 benign counterpart 的 over-refusal；报告注明 RN subset",
+    "limitation": "FORTRESS-RN 不能代表完整 FORTRESS；accuracy / refusal / risk score 需分别解释",
+    "primaryUrl": "https://arxiv.org/abs/2506.14922",
+    "reportEvidence": [
+      {
+        "report": "grok47",
+        "locator": "§9.3；PDF p.25",
+        "role": "evaluated_adapted",
+        "note": ""
+      }
+    ],
+    "question": "report-bio-risk-suite"
+  },
+  {
+    "id": "healthbench",
+    "name": "HealthBench / HealthBench Hard",
+    "category": "health performance + safety",
+    "priority": "P1",
+    "kind": "public rubric benchmark",
+    "metric": "Rubric-based score，指定 Hard / Consensus 等 variant",
+    "limitation": "有 health safety 维度，但不是通用 jailbreak 或 agent authorization benchmark",
+    "primaryUrl": "https://arxiv.org/abs/2505.08775",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§5.1",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§8.15.1；PDF p.213",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "gemini4",
+        "locator": "Health section；PDF pp.176–178",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-healthbench"
+  },
+  {
+    "id": "healthbenchpro",
+    "name": "HealthBench Professional",
+    "category": "health performance + safety",
+    "priority": "P1",
+    "kind": "public clinician-task benchmark",
+    "metric": "Clinician-use rubric score；注明长度调整与采样协议",
+    "limitation": "与 HealthBench 是不同分布，不能把 rubric 分数当临床安全概率",
+    "primaryUrl": "https://arxiv.org/abs/2604.27470",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§5.1",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§8.15.2；PDF p.213",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "gemini4",
+        "locator": "Health；PDF p.177",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok47",
+        "locator": "§5.1；PDF p.15",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-healthbench"
+  },
+  {
+    "id": "gptred",
+    "name": "GPT-Red",
+    "category": "automated red-teaming",
+    "priority": "P0",
+    "kind": "attacker model / methodology",
+    "metric": "指定 defender queries 下的 attack success，单次 attempt 与累计风险分开",
+    "limitation": "它是攻击生成方法，不是一套与所有 benchmark 等价的固定测试集",
+    "primaryUrl": "https://deploymentsafety.openai.com/gpt-5-6",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§4.2；2026-08-03 update",
+        "role": "method_used",
+        "note": ""
+      }
+    ],
+    "question": "report-internal-injection"
+  },
+  {
+    "id": "openai-injection",
+    "name": "OpenAI connector / search / function-calling injection evals",
+    "category": "agent robustness",
+    "priority": "P0",
+    "kind": "internal suite",
+    "metric": "各 surface 的 attack success / robustness，具体版本见 report",
+    "limitation": "Full dataset / harness 不应假设公开；与 Gray Swan scenario reuse 区分",
+    "primaryUrl": "https://deploymentsafety.openai.com/gpt-5-6",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§4.2",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "agent",
+        "locator": "Prompt injection / robustness sections",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-internal-injection"
+  },
+  {
+    "id": "anthropic-injection",
+    "name": "Anthropic adaptive coding / computer / browser injection evals",
+    "category": "agent robustness",
+    "priority": "P0",
+    "kind": "internal / partner evaluation suites",
+    "metric": "固定 surface、attacker budget、harness、fallback 与 safeguards",
+    "limitation": "Shade attacker 与 SHADE-Arena benchmark 不同；同名 surface 不保证样本一致",
+    "primaryUrl": "https://www.anthropic.com/claude-opus-5-5-system-card",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§5.2.2；PDF pp.86–91",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-internal-injection"
+  },
+  {
+    "id": "gemini-injection",
+    "name": "Gemini held-out tool / grounding / computer / coding / replay suites",
+    "category": "agent robustness",
+    "priority": "P0",
+    "kind": "mixed internal suites + external replay",
+    "metric": "Survival@N attempts，并列合法任务完成情况",
+    "limitation": "五个 suites 的来源与场景不同；只有 external replay 才归入 Gray Swan 证据",
+    "primaryUrl": "https://storage.googleapis.com/deepmind-media/gemini/gemini_4_safety_report.pdf",
+    "reportEvidence": [
+      {
+        "report": "gemini4",
+        "locator": "§6.1.2；PDF pp.204–212",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-internal-injection"
+  },
+  {
+    "id": "monitorability",
+    "name": "CoT monitorability / controllability evaluations",
+    "category": "control / monitoring",
+    "priority": "P1",
+    "kind": "public methodology + internal environments",
+    "metric": "TPR/TNR-dependent metric、observations、reasoning length 与任务分布",
+    "limitation": "Monitorability score 不是 misalignment incidence；与学术 MonitorBench 区分",
+    "primaryUrl": "https://arxiv.org/abs/2512.18311",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§7.3.1 / §7.3.2",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§6.6.4.4；PDF p.149",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "gemini4",
+        "locator": "§3.4.5",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-internal-alignment"
+  },
+  {
+    "id": "destructive-actions",
+    "name": "Destructive actions / confirmation-consent / behavioral audits",
+    "category": "agent behavior",
+    "priority": "P0",
+    "kind": "provider-specific internal evaluations",
+    "metric": "按具体 outcome：protected changes、inappropriate confirmation、misleading claims 等",
+    "limitation": "不同 provider 的行为标签不是同一个 benchmark；不能共用分母或直接排名",
+    "primaryUrl": "https://deploymentsafety.openai.com/gpt-5-6",
+    "reportEvidence": [
+      {
+        "report": "gpt56",
+        "locator": "§3.3 / §3.4 / §7.3.1",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude55",
+        "locator": "§6.4 / §6.5.2；PDF pp.104–126",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-internal-alignment"
+  },
+  {
+    "id": "harmful-benign",
+    "name": "Harmful / benign / multi-turn refusal suites",
+    "category": "policy compliance",
+    "priority": "P0",
+    "kind": "provider-specific internal evaluation families",
+    "metric": "Harmful compliance 与 benign refusal 同时报，按 policy areas 分开",
+    "limitation": "不是一套全球统一的 harmful-prompts benchmark，不用不同 provider 的百分比直接横比",
+    "primaryUrl": "https://www.anthropic.com/claude-opus-5-5-system-card",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§4.1；PDF pp.61–65",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "gpt56",
+        "locator": "§3.1 / §4.1",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "gemini4",
+        "locator": "§4 / §5.6.1",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "grok47",
+        "locator": "§9；PDF pp.24–25",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-metrics-comparability"
+  },
+  {
+    "id": "capability-controls",
+    "name": "SWE-bench / Terminal-Bench / OSWorld / MCP-Atlas",
+    "category": "capability controls",
+    "priority": "P1",
+    "kind": "public task benchmarks / versioned variants",
+    "metric": "Task completion、strict/partial score、cost 与 tool competence",
+    "limitation": "这些是安全实验的能力对照，不将通过率称为 safety score",
+    "primaryUrl": "https://www.anthropic.com/claude-opus-5-5-system-card",
+    "reportEvidence": [
+      {
+        "report": "claude55",
+        "locator": "§8.2 / §8.5 / §8.13.3；PDF pp.175 / 177 / 205",
+        "role": "evaluated",
+        "note": ""
+      },
+      {
+        "report": "claude46",
+        "locator": "§2.16 MCP-Atlas；PDF p.28",
+        "role": "evaluated",
+        "note": ""
+      }
+    ],
+    "question": "report-capability-controls"
+  },
+  {
+    "id": "harmbench",
+    "name": "HarmBench",
+    "category": "academic safeguards baseline",
+    "priority": "P2",
+    "kind": "public benchmark",
+    "metric": "Harmful completion / red-team evaluation",
+    "limitation": "保留为研究 baseline；本次抽查未以这些报告提供其直接采用证据",
+    "primaryUrl": "https://arxiv.org/abs/2402.04249",
+    "reportEvidence": [],
+    "question": "sec-jailbreak-generalization"
+  },
+  {
+    "id": "xstest",
+    "name": "XSTest",
+    "category": "academic over-refusal baseline",
+    "priority": "P2",
+    "kind": "public benchmark",
+    "metric": "Safe prompt refusal 与 unsafe contrasts",
+    "limitation": "Llama 3 将它作为已有外部 benchmark 讨论；此处不升级为直接采用证据",
+    "primaryUrl": "https://arxiv.org/abs/2308.01263",
+    "reportEvidence": [
+      {
+        "report": "llama3",
+        "locator": "§5.4.1",
+        "role": "referenced_only",
+        "note": ""
+      }
+    ],
+    "question": "sec-jailbreak-generalization"
+  },
+  {
+    "id": "agentdojo",
+    "name": "AgentDojo / InjecAgent / AgentHarm / AgentDyn / AgentLAB",
+    "category": "academic agent-security baselines",
+    "priority": "P2",
+    "kind": "public research benchmark families",
+    "metric": "按各自 threat model 和 evaluator 定义",
+    "limitation": "前版研究题本中的重要资料；本次报告抽样不支持把整组都称为广泛采用的 release benchmarks",
+    "primaryUrl": "https://arxiv.org/abs/2406.13352",
+    "reportEvidence": [],
+    "question": "sec-benchmark-selection-matrix"
+  }
+]

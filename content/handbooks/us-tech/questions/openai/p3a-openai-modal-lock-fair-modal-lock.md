@@ -3,8 +3,10 @@ id: p3a-openai-modal-lock-fair-modal-lock
 section: openai
 order: 625
 level: A
-title: "OpenAI：ModalLock：同模式并发与跨模式公平"
-quick: "条件变量统一保护 mode、持有者数和 FIFO 队列，等待线程醒来后循环重查条件。公平版按队首连续同 mode 组放行，有异 mode 等待时，后来的同 mode 不能插队；释放用 finally 保证执行。"
+title: OpenAI：ModalLock：同模式并发与跨模式公平
+quick: >-
+  条件变量统一保护 mode、持有者数和 FIFO 队列，等待线程醒来后循环重查条件。公平版按队首连续同 mode 组放行，有异 mode 等待时，后来的同
+  mode 不能插队；释放用 finally 保证执行。
 companies:
   - openai
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · OpenAI · modal-lock-fair-modal-lock"
-    url: https://www.1point3acres.com/interview/problems/company/openai/modal-lock-fair-modal-lock
+  - title: 1Point3Acres · OpenAI · modal-lock-fair-modal-lock
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/openai/modal-lock-fair-modal-lock
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 实现一种按模式共享的并发锁：相同模式可以共同持有，任何不同模式必须互斥。另提供公平模式，保证等待中的异模式请求不会被后来者持续插队。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -54,7 +57,7 @@ A 持有中，线程 3 acquire("B")       -> 排队
 
 实现一个「模式锁」ModalLock：每次加锁带一个 mode，同一个 mode 的多个线程可以同时持有，不同 mode 之间互斥（类似读写锁，但模式可以有任意多种）。第二问加公平性：等待的请求要按到达顺序成组放行，不能让某个模式一直插队把别的模式饿死。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站把它收录为面经题型，不代表公司官方确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站把它收录为面经题型。下面的接口、约束和测试是手册补的练习约定。
 
 非公平版本的问题是饥饿：只要 A 模式的线程源源不断，持有者数就一直不归零，排队的 B 永远进不去。公平版本的做法是让每个请求先进入 FIFO 队列，只有当排在自己前面的等待者全都是同一个 mode 时才能进入。这样：
 
@@ -102,9 +105,9 @@ class ModalLock:
 
     def __init__(self, fair=False):
         self.cond = Condition()
-        self.mode = None    # 当前持有的 mode；没人持有时为 None
-        self.holders = 0    # 当前 mode 的持有者数
-        self.waiting = []   # 按到达顺序排队的 (ticket, mode)
+        self.mode = None  # 当前持有的 mode；没人持有时为 None
+        self.holders = 0  # 当前 mode 的持有者数
+        self.waiting = []  # 按到达顺序排队的 (ticket, mode)
         self.fair = fair
 
     def _can_enter(self, ticket, mode):
@@ -125,7 +128,9 @@ class ModalLock:
         ticket = object()
         with self.cond:
             self.waiting.append((ticket, mode))
-            self.cond.wait_for(lambda: self._can_enter(ticket, mode))  # 循环重查，防虚假唤醒
+            self.cond.wait_for(
+                lambda: self._can_enter(ticket, mode)
+            )  # 循环重查，防虚假唤醒
             self.waiting.remove((ticket, mode))
             self.mode = mode
             self.holders += 1
@@ -157,26 +162,30 @@ class ModalLock:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
 ```python
 from threading import Event, Thread
 
+
 def wait_until_queued(lock, count):
     """等到排队人数达到 count，不靠 sleep 猜测线程调度。"""
     with lock.cond:
         assert lock.cond.wait_for(lambda: len(lock.waiting) >= count, timeout=2)
+
 
 # 同 mode 可以并发持有
 lock = ModalLock(fair=True)
 lock.acquire("A")
 second_a = Event()
 
+
 def acquire_a_again():
     lock.acquire("A")
     second_a.set()
+
 
 thread = Thread(target=acquire_a_again)
 thread.start()
@@ -191,9 +200,11 @@ lock = ModalLock(fair=True)
 order = []
 lock.acquire("A")
 
+
 def worker(mode):
     with lock.hold(mode):
         order.append(mode)
+
 
 b_thread = Thread(target=worker, args=("B",))
 b_thread.start()

@@ -4,7 +4,11 @@ section: coding
 order: 25
 level: S
 title: 手写 tiled FlashAttention forward：分块 online softmax 与 logsumexp
-quick: "Q 按 $B_r$ 切行块，K/V 按 $B_c$ 切列块，每个行块维护 running max $m$、running sum $\\ell$ 和未归一化的 $O$；来一个新块，先用 $e^{m_{\\text{old}}-m_{\\text{new}}}$ 把旧的 $\\ell,O$ 缩放再累加，最后 $O/\\ell$，并存下 $\\mathrm{lse}=m+\\log\\ell$ 给 backward。Causal 时对角线上方的块整块跳过，只有跨对角线的块在块内做 mask，全程不物化 $[T,T]$ 的分数矩阵。"
+quick: >-
+  Q 按 $B_r$ 切行块，K/V 按 $B_c$ 切列块，每个行块维护 running max $m$、running sum $\ell$ 和未
+  normalization 的 $O$；来一个新块，先用 $e^{m_{\text{old}}-m_{\text{new}}}$ 把旧的 $\ell,O$
+  缩放再累加，最后 $O/\ell$，并存下 $\mathrm{lse}=m+\log\ell$ 给 backward。Causal
+  时对角线上方的块整块跳过，只有跨对角线的块在块内做 mask，全程不物化 $[T,T]$ 的分数矩阵。
 tags:
   - FlashAttention
   - Online Softmax
@@ -13,18 +17,20 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-28
+updatedAt: 2026-09-28T00:00:00.000Z
 sources:
-  - title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
-    url: https://arxiv.org/abs/2205.14135
+  - title: >-
+      FlashAttention: Fast and Memory-Efficient Exact Attention with
+      IO-Awareness
+    url: 'https://arxiv.org/abs/2205.14135'
     type: primary
 ---
 
 ## 题目描述
 
-实现一个分块计算的注意力前向练习，同时返回每个 query 的归一化常数。目标是在不保存完整 T×T 注意力矩阵的情况下得到与普通注意力相同的数值。
+实现一个分块计算的 attention 前向练习，同时返回每个 query 的 normalization 常数。目标是在不保存完整 T×T attention 矩阵的情况下得到与普通 attention 相同的数值。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -45,7 +51,7 @@ causal=True -> o=[1,1.5,2], lse=[0,ln(2),ln(3)]
 
 ## 解题思路与参考答案
 
-Tiled FlashAttention forward 的核心是 online softmax：Q 按行切块，K/V 按列切块，每个行块一边扫列块一边维护 running max $m$、running sum $\ell$ 和未归一化的输出 $O$，换块时用新的 max 把旧的累加器缩放一下再加。扫完所有列块，$O/\ell$ 就是精确的 attention 结果，全程不会出现 $[T,T]$ 的分数矩阵。最后再存一份每行的 logsumexp 给 backward 用。
+Tiled FlashAttention forward 的核心是 online softmax：Q 按行切块，K/V 按列切块，每个行块一边扫列块一边维护 running max $m$、running sum $\ell$ 和未 normalization 的输出 $O$，换块时用新的 max 把旧的累加器缩放一下再加。扫完所有列块，$O/\ell$ 就是精确的 attention 结果，全程不会出现 $[T,T]$ 的分数矩阵。最后再存一份每行的 logsumexp 给 backward 用。
 
 最常见的错法有两种。一种是先把一整行 $QK^\top$ 算完再 softmax，那只是把 batch 切小了，$[T,T]$ 还是整块落在显存里；另一种是分了块，但换块时忘了用新的 max 去缩放旧的累加器，结果只在 T 小于块大小时才对。面试官要看三件事：online softmax 的递推写对（原理见 `sys-online-softmax`），causal 的块级跳过和块内 mask 分清楚，以及能说出返回的 logsumexp 在 backward 里干什么。朴素版本见 `code-attention`，kernel 层面的 SRAM/HBM 讨论见 `sys-flash`。
 
@@ -70,6 +76,7 @@ $$
 import math
 import torch
 
+
 def flash_attn_fwd(q, k, v, causal=False, Br=64, Bc=64):
     # q,k,v: [B,H,T,D]
     B, H, T, D = q.shape
@@ -79,23 +86,23 @@ def flash_attn_fwd(q, k, v, causal=False, Br=64, Bc=64):
     lse = torch.empty(B, H, T, device=dev, dtype=torch.float32)
     for i0 in range(0, T, Br):
         i1 = min(i0 + Br, T)
-        qi = q[:, :, i0:i1].float() * scale                      # [B,H,br,D]
+        qi = q[:, :, i0:i1].float() * scale  # [B,H,br,D]
         m = torch.full((B, H, i1 - i0), -float("inf"), device=dev)
         l = torch.zeros(B, H, i1 - i0, device=dev)
         acc = torch.zeros(B, H, i1 - i0, D, device=dev)
-        j_end = i1 if causal else T                               # causal: blocks with j0 >= i1 are all masked
+        j_end = i1 if causal else T  # causal: blocks with j0 >= i1 are all masked
         for j0 in range(0, j_end, Bc):
             j1 = min(j0 + Bc, T)
-            kj = k[:, :, j0:j1].float()                           # [B,H,bc,D]
+            kj = k[:, :, j0:j1].float()  # [B,H,bc,D]
             vj = v[:, :, j0:j1].float()
-            s = qi @ kj.transpose(-2, -1)                         # [B,H,br,bc]
-            if causal and j1 - 1 > i0:                            # block crosses the diagonal
+            s = qi @ kj.transpose(-2, -1)  # [B,H,br,bc]
+            if causal and j1 - 1 > i0:  # block crosses the diagonal
                 rows = torch.arange(i0, i1, device=dev)[:, None]
                 cols = torch.arange(j0, j1, device=dev)[None, :]
                 s = s.masked_fill(cols > rows, -float("inf"))
-            m_new = torch.maximum(m, s.amax(-1))                  # [B,H,br]
+            m_new = torch.maximum(m, s.amax(-1))  # [B,H,br]
             p = torch.exp(s - m_new[..., None])
-            alpha = torch.exp(m - m_new)                          # first block: exp(-inf) = 0
+            alpha = torch.exp(m - m_new)  # first block: exp(-inf) = 0
             l = alpha * l + p.sum(-1)
             acc = alpha[..., None] * acc + p @ vj
             m = m_new
@@ -104,7 +111,7 @@ def flash_attn_fwd(q, k, v, causal=False, Br=64, Bc=64):
     return o, lse
 ```
 
-有两处边界要讲清楚。列块从 $j_0=0$ 开始扫，第一块一定包含第 0 列，causal 下每一行至少有一个合法的 key，所以第一块之后 $m$ 就是有限值，不会出现 $-\infty-(-\infty)$ 的 NaN。T 不能被 $B_r,B_c$ 整除时，靠 `min(..., T)` 截尾，最后一块小一点没关系。
+有两项适用条件要讲清楚。列块从 $j_0=0$ 开始扫，第一块一定包含第 0 列，causal 下每一行至少有一个合法的 key，所以第一块之后 $m$ 就是有限值，不会出现 $-\infty-(-\infty)$ 的 NaN。T 不能被 $B_r,B_c$ 整除时，靠 `min(..., T)` 截尾，最后一块小一点没关系。
 
 ## 为什么省 HBM
 
@@ -118,11 +125,11 @@ def flash_attn_fwd(q, k, v, causal=False, Br=64, Bc=64):
 
 ```python
 q = k = torch.zeros(1, 1, 3, 1)
-v = torch.tensor([1., 2., 3.]).view(1, 1, 3, 1)
-for causal, expected in [(False, [2., 2., 2.]), (True, [1., 1.5, 2.])]:
+v = torch.tensor([1.0, 2.0, 3.0]).view(1, 1, 3, 1)
+for causal, expected in [(False, [2.0, 2.0, 2.0]), (True, [1.0, 1.5, 2.0])]:
     out, lse = flash_attn_fwd(q, k, v, causal=causal, Br=2, Bc=2)
     torch.testing.assert_close(out.flatten(), torch.tensor(expected))
-    counts = torch.tensor([1., 2., 3.] if causal else [3., 3., 3.])
+    counts = torch.tensor([1.0, 2.0, 3.0] if causal else [3.0, 3.0, 3.0])
     torch.testing.assert_close(lse.flatten(), counts.log())
 print("simple tests passed")
 ```

@@ -33,6 +33,7 @@ kernel 很密、步时间仍长：看 GEMM 是否达到单卡该有的速度。�
 import time
 import torch
 
+
 def step_seconds(loader, model, use_fake, fake_batch):
     batch = fake_batch if use_fake else next(loader)
     torch.cuda.synchronize()
@@ -44,5 +45,5 @@ def step_seconds(loader, model, use_fake, fake_batch):
 
 ## 追问
 
-**验证集一跑，训练吞吐掉一截？**
+**验证集一跑，训练 throughput 掉一截？**
 验证把 GPU 占满，训练的预取被挤掉。评估放到旁路，或者隔很多步才跑，不要每步同步评。

@@ -5,7 +5,8 @@ order: 9
 level: B
 title: 阿里笔试 CS 选择：TCP、Best Fit、GROUP BY、互斥锁会卡在哪？
 quick: >-
-  四道题各卡一个区别：流控看接收方通告的 `rwnd`，拥塞控制是发送方自己估的 `cwnd`，发送窗口取两者较小值；Best Fit 选能放下的最小空闲块；HAVING 在分组之后过滤；互斥锁保护临界区、由持有者释放，信号量还能计数。
+  四道题各卡一个区别：流控看接收方通告的 `rwnd`，拥塞控制是发送方自己估的 `cwnd`，发送窗口取两者较小值；Best Fit
+  选能放下的最小空闲块；HAVING 在分组之后过滤；互斥锁保护临界区、由持有者释放，信号量还能计数。
 tags:
   - Alibaba
   - OA
@@ -13,17 +14,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阿里 0325 AI 研发笔试复盘
-    url: https://www.nowcoder.com/discuss/866741961221292032
+    url: 'https://www.nowcoder.com/discuss/866741961221292032'
     type: candidate-first-hand
   - title: 淘天/阿里国际 2025 实习笔试解析
-    url: http://www.jsqmd.com/news/1167387/
+    url: 'http://www.jsqmd.com/news/1167387/'
     type: secondary
 ---
 
-这几道选择题考的都是两个相近概念的区别：TCP 流控和拥塞控制观测的对象不同，Best Fit 选的是够用的最小块，`HAVING` 在分组之后才过滤，互斥锁和信号量差在计数和谁来释放。下面每条先讲清概念，再给一道可选题干和正确口径，最后接一个阿里场景。
+这几道选择题考的都是两个相近概念的区别：TCP 流控和拥塞控制观测的对象不同，Best Fit 选的是够用的最小块，`HAVING` 在分组之后才过滤，互斥锁和信号量差在计数和谁来释放。下面每条先讲清概念，再给一道可选题干和正确的 interpretation，最后接一个阿里场景。
 
 ## 真题记录
 
@@ -55,7 +56,7 @@ TCP 要保证可靠字节流，流控和拥塞控制都在限制发送速率，�
 - C. 拥塞窗口就是接收窗口的别名，出现丢包时把 `rwnd` 减半
 - D. 流控只存在于 UDP，TCP 只有拥塞控制
 
-### 正确口径
+### 正确的 interpretation
 
 选 B。A 把拥塞控制派给了接收方；C 把两个窗口混成了一个名字；D 说反了，UDP 没有这两套窗口。口述时可以补一句：零窗口时发送方要发窗口探测，否则对端恢复后连接会僵死。
 
@@ -96,7 +97,7 @@ QUIC 在 UDP 上重做了拥塞控制，思想类似。
 - C. 总是选最大空闲块，以减少外部碎片
 - D. Best Fit 保证不会产生外部碎片
 
-### 正确口径
+### 正确的 interpretation
 
 选 B。A 说的是 First Fit，C 说的是 Worst Fit。D 错在外部碎片的含义：空闲总和够、单块不够就是外部碎片，Best Fit 往往更碎。实现上可以用按大小排序的空闲树，省掉「扫全表」，但碎片形态不会变。
 
@@ -139,7 +140,7 @@ QUIC 在 UDP 上重做了拥塞控制，思想类似。
 - C. `HAVING buyer_id GROUP BY COUNT(*) > 10`
 - D. `WHERE buyer_id GROUP BY COUNT(*)`
 
-### 正确口径
+### 正确的 interpretation
 
 选 B。A 把聚合放进了 `WHERE`，语法和语义都不对；C、D 的顺序和对象都乱了。完整例句是 `SELECT buyer_id, COUNT(*) AS cnt FROM orders WHERE status='paid' GROUP BY buyer_id HAVING COUNT(*) > 10`：先用 `WHERE` 丢掉未支付的订单，再用 `HAVING` 滤组。
 
@@ -172,7 +173,7 @@ QUIC 在 UDP 上重做了拥塞控制，思想类似。
 | --- | --- | --- | --- |
 | 计数 | 0 / 1 | $0 \ldots N$ | 无独立计数 |
 | 谁释放 | 持有者 | 可以是另一线程 V | 另一线程 notify |
-| 典型 | 改共享对象 | 池化资源、汇合 | 生产者-消费者 |
+| 典型 | 改共享对象 | pooling 资源、汇合 | 生产者-消费者 |
 | Java | `synchronized` / `ReentrantLock` | `Semaphore` | `Condition` / `wait` |
 
 死锁四条件在这里仍然适用。读写锁是互斥锁的变体，读共享、写独占。自旋锁适合短临界区，长 IO 时别自旋。笔试里的取数博弈 DP、设计模式是加分题，和锁无关，分开准备。
@@ -186,7 +187,7 @@ QUIC 在 UDP 上重做了拥塞控制，思想类似。
 - C. 信号量不能实现互斥，只能实现同步
 - D. 条件变量本身就带计数，可以替代信号量做连接池
 
-### 正确口径
+### 正确的 interpretation
 
 选 B。A 忽略了 $N>1$ 和「非持有者也可以 V」；C 错，二元信号量能做互斥，只是职责更宽；D 把条件变量当成了计数器。连接池用 `Semaphore(N)` 或队列更直接。
 
@@ -200,7 +201,7 @@ QUIC 在 UDP 上重做了拥塞控制，思想类似。
 否则所有权就乱了，调试时会看到「没拿到锁却在临界区」。
 
 **公平信号量会怎样？**
-饥饿少了，吞吐也降了。
+饥饿少了，throughput 也降了。
 
 **`synchronized` 能当信号量用吗？**
 不能直接管 $N$ 份资源，要用 `Semaphore` 或多个条件。

@@ -5,7 +5,8 @@ order: 1
 level: S
 title: LC 739 · 每日温度
 quick: >-
-  这是「下一个更大元素」，用单调递减栈存还没找到答案的下标。新温度比栈顶高，就弹出栈顶 `j` 并写 `ans[j] = i - j`；每个下标入栈、出栈各一次。时间 $O(n)$，额外空间 $O(n)$。
+  这是「下一个更大元素」，用单调递减栈存还没找到答案的下标。新温度比栈顶高，就弹出栈顶 `j` 并写 `ans[j] = i -
+  j`；每个下标入栈、出栈各一次。时间 $O(n)$，额外空间 $O(n)$。
 tags:
   - Array
   - Monotonic Stack
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 739. Daily Temperatures
-    url: https://leetcode.com/problems/daily-temperatures/
+    url: 'https://leetcode.com/problems/daily-temperatures/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -77,7 +78,16 @@ def dailyTemperatures(temperatures: List[int]) -> List[int]:
 
 
 if __name__ == "__main__":
-    assert dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73]) == [1, 1, 4, 2, 1, 1, 0, 0]
+    assert dailyTemperatures([73, 74, 75, 71, 69, 72, 76, 73]) == [
+        1,
+        1,
+        4,
+        2,
+        1,
+        1,
+        0,
+        0,
+    ]
     assert dailyTemperatures([30, 40, 50, 60]) == [1, 1, 1, 0]
     assert dailyTemperatures([30, 60, 90]) == [1, 1, 0]
     assert dailyTemperatures([50, 50]) == [0, 0]
@@ -105,7 +115,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个下标最多入栈、出栈各一次；额外空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 相等温度不算更高，比较用严格大于，`[50, 50]` 都是 $0$。
 

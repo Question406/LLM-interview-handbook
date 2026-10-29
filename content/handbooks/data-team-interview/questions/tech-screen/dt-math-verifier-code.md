@@ -4,7 +4,9 @@ section: tech-screen
 order: 22
 level: A
 title: CoderPad：数学合成怎么验， boxed 答案怎么抽，过程假怎么办？
-quick: "从模型输出里抽最后一个 `\\boxed{}` 或最终数字，规范化后和独立的标准答案比较，抽不到或对不上就扔。最终答案对、过程自相矛盾的样本，也别直接当 SFT 正例。没有独立金标时，不能让模型给自己判对。"
+quick: >-
+  从模型输出里抽最后一个 `\boxed{}` 或最终数字，规范化后和独立的标准答案比较，抽不到或对不上就扔。最终答案对、过程自相矛盾的样本，也别直接当
+  SFT 正例。没有独立 gold labels 时，不能让模型给自己判对。
 companies:
   - apple
 tags:
@@ -15,24 +17,24 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
-  - title: "Training Verifiers to Solve Math Word Problems (GSM8K)"
-    url: https://arxiv.org/abs/2110.14168
+  - title: Training Verifiers to Solve Math Word Problems (GSM8K)
+    url: 'https://arxiv.org/abs/2110.14168'
     type: primary
-  - title: "Let's Verify Step by Step"
-    url: https://arxiv.org/abs/2305.20050
+  - title: Let's Verify Step by Step
+    url: 'https://arxiv.org/abs/2305.20050'
     type: primary
   - title: DeepSeek-R1
-    url: https://arxiv.org/abs/2501.12948
+    url: 'https://arxiv.org/abs/2501.12948'
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
-实现一个限定格式的数学答案验证器：从模型回答中提取最终答案，允许同一个有理数用整数、小数或分数表示，并给出能定位的判定原因。本题不要求通用代数推理。
+实现一个限定格式的数学答案 verifier：从模型回答中提取最终答案，允许同一个有理数用整数、小数或分数表示，并给出能定位的判定原因。本题不要求通用代数推理。
 
 ### 输入与接口
 
@@ -57,7 +59,7 @@ math_ok("无法确定","2") -> (False,"unparsed")
 
 ## 解题思路与参考答案
 
-我会从输出里抽最后一个 `\boxed{}`，没有就取最后一个数字，规范化之后和金标比，抽不到或对不上就扔。这题就是把 `dt-rejection-sample-code` 里的 `oracle(y)` 在数学上写出来，别写成 `if "correct" in judge(y)`，没有独立金标时也不能让模型给自己判对。
+我会从输出里抽最后一个 `\boxed{}`，没有就取最后一个数字，规范化之后和 gold labels 比，抽不到或对不上就扔。这题就是把 `dt-rejection-sample-code` 里的 `oracle(y)` 在数学上写出来，别写成 `if "correct" in judge(y)`，没有独立 gold labels 时也不能让模型给自己判对。
 
 举个例子，输出是「In 2020 we had 3 apples, so \boxed{5}」，要拿到的是 5。抽不到 boxed 就退回取第一处出现的数字的话，题面里的「2020 年」就成了答案。抽最终数字是 GSM8K 的公开做法；R1 后来也少用神经 PRM，凡是可执行、可核对的，都用规则来判。
 
@@ -133,11 +135,11 @@ assert math_ok(r"... \boxed{3}", r"\boxed{4/2}") == (False, "mismatch")
 assert math_ok("I am not sure", "2") == (False, "unparsed")
 ```
 
-每条输出只扫一遍正则，成本可以忽略。金标本身也要过 `canon_num`，`1/2` 和 `0.5` 应当判为相同。单位、`\%`、千分位逗号是最常见的假阴性来源。
+每条输出只扫一遍正则，成本可以忽略。gold labels 本身也要过 `canon_num`，`1/2` 和 `0.5` 应当判为相同。单位、`\%`、千分位逗号是最常见的假阴性来源。
 
 ## 答案对，过程是假的
 
-如果中间把 3 写成 5，后来又凑出了正确答案，只检查最终答案的验证器照样判通过。怎么处理看手里有没有能核对步骤的工具。有独立的计算器或代码执行，步骤里的等式可以逐个再验，验不过就当负例，见 `dt-prm-steps`。没有的话只留能确认的样本，凑答案的推理链不进 SFT；R1 蒸馏也只留做对的样本，过程胡编的链会教小模型说空话。
+如果中间把 3 写成 5，后来又凑出了正确答案，只检查最终答案的 verifier 照样判通过。怎么处理看手里有没有能核对步骤的工具。有独立的计算器或代码执行，步骤里的等式可以逐个再验，验不过就当负例，见 `dt-prm-steps`。没有的话只留能确认的样本，凑答案的 chain-of-thought 不进 SFT；R1 distillation 也只留做对的样本，过程胡编的链会教 small model 说空话。
 
 如果某题采的 $k$ 条全错，说明这题对当前模型太难，该换题或降难度，$k$ 不必加到 256 硬刷，见 `dt-rejection-sample-code`。
 
@@ -145,22 +147,22 @@ assert math_ok("I am not sure", "2") == (False, "unparsed")
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert last_boxed(r"In 2020 we had 3 apples, so \boxed{5}") == "5"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert last_boxed(r"In 2020 we had 3 apples, so \boxed{5}") == "5"` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
 **符号答案（比如 $\pi/2$）怎么判？**
 数字解析处理不了。能用符号库就用；不能的话只收精确字符串匹配，召回靠规范化表来扩。
 
-**教师是 70B、学生是 3B，怎么蒸？**
-只有过了 verifier 的链才能拿去蒸。蒸馏阶段该用哪些数据见 `dt-ondevice-distill-data`。
+**teacher 是 70B、student 是 3B，怎么蒸？**
+只有过了 verifier 的链才能拿去蒸。distillation 阶段该用哪些数据见 `dt-ondevice-distill-data`。
 
 **能用 LLM 当 verifier 吗？**
-可以用来标种子数据，别当这一轮的 oracle，因为 judge 会偏向更长、更自信的回答。
+可以用来标 seed 数据，别当这一轮的 oracle，因为 judge 会偏向更长、更自信的回答。
 
 **答案对、过程错的样本能当负例吗？**
 有工具能逐步验算时可以，验不过的步骤就当负例；没有工具时只留能确认的样本，这类链不进 SFT。

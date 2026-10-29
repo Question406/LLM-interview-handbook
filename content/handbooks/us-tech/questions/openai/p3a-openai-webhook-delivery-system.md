@@ -27,9 +27,9 @@ sources:
 
 题目是租户注册回调 URL，系统可靠投递事件、处理重试并隔离失败接收端。练习假设每天十亿事件、每个事件可发多个目标、最长重试 24 小时，签名要可校验。开始确认同一目标是否要求事件有序。
 
-> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；收录为面经题型不代表公司官方确认。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 OpenAI 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。规模数字、SLO 和故障情景是手册补的练习约定。
 
-事件入口先写持久日志，再为各目标生成 delivery，放入按租户和目标分区的队列。Worker 带着并发和速率限额发外部 HTTP 请求，死信队列与重放工具独立部署。数据可以用 `event(id, type, version, payload)`、`delivery(event_id, endpoint_version, attempt, next_at, status)` 和 `endpoint(url, secret_version, rate)` 表示，幂等键为“事件 + 目标”。
+事件入口先写持久日志，再为各目标生成 delivery，放入按租户和目标分区的队列。Worker 带着并发和速率限额发外部 HTTP 请求，死信队列与重放工具独立部署。数据可以用 `event(id, type, version, payload)`、`delivery(event_id, endpoint_version, attempt, next_at, status)` 和 `endpoint(url, secret_version, rate)` 表示，idempotency key 为“事件 + 目标”。
 
 比如订单系统产生 `order.paid`，日志落盘后发现租户有两个 endpoint，就生成两条 delivery。第一条用 `secret_version` 对时间戳和 body 签名，带事件 id 发 POST，收到 200 后记成功。第二个目标返回 503，就增加 attempt，把 `next_at` 设到指数退避加抖动后的时间，等待下一轮。
 

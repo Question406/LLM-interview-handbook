@@ -4,21 +4,20 @@ section: hashmap
 order: 8
 level: A
 title: LC 219 · 存在重复元素 II
-quick: >-
-  用哈希记下每个值最近一次出现的下标。再遇到同一个值且 $i-j\le k$ 就返回真，不管命中与否都把下标更新成当前位置。时间 $O(n)$。
+quick: 用哈希记下每个值最近一次出现的下标。再遇到同一个值且 $i-j\le k$ 就返回真，不管命中与否都把下标更新成当前位置。时间 $O(n)$。
 tags:
   - Hash
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 219. 存在重复元素 II
-    url: https://leetcode.cn/problems/contains-duplicate-ii/
+    url: 'https://leetcode.cn/problems/contains-duplicate-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -98,7 +97,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(\min(n,k))$。最坏要记下全部不同的值。
 
-## 边界
+## Edge Cases
 
 $k=0$ 恒为假，下标必须不同，而 $|i-j|\le 0$ 只能是同一个位置。数组没有重复直接返回假。重复刚好卡在 $i-j=k$ 时要返回真，所以用 $\le$，别写成 $\lt$。
 

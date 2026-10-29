@@ -21,7 +21,7 @@ sources:
 
 线程池的七个参数我按任务提交时经过的顺序讲：先填满核心线程，再进队列，队列满了才扩到最大线程，还满就走拒绝策略。把顺序讲成「先扩线程再入队」，面试官会立刻打断。锁的选择看需求：短临界区用 `synchronized` 就够，要超时、可中断、公平或多个条件队列时用 `ReentrantLock`。这是阿里校招 Java 面的题。
 
-线程池把创建线程和执行任务拆开。`ThreadPoolExecutor` 的七个参数按执行语义记，别背成单词表：`corePoolSize` 是常驻工人；`maximumPoolSize` 是峰值上限；`keepAliveTime` + `TimeUnit` 控制非核心线程空闲多久回收；`workQueue` 是任务缓冲；`threadFactory` 决定线程名和守护属性，方便排查；`handler` 是队列和线程都满之后的拒绝策略。
+线程池把创建线程和执行任务拆开。`ThreadPoolExecutor` 的七个参数按执行语义记，别背成单 vocabulary：`corePoolSize` 是常驻工人；`maximumPoolSize` 是峰值上限；`keepAliveTime` + `TimeUnit` 控制非核心线程空闲多久回收；`workQueue` 是任务缓冲；`threadFactory` 决定线程名和守护属性，方便排查；`handler` 是队列和线程都满之后的拒绝策略。
 
 拒绝策略有四种。`AbortPolicy` 抛异常，调用方能感知过载；`CallerRunsPolicy` 把任务打回提交线程执行，形成背压，让提交速度降下来；`DiscardPolicy` 静默丢掉新任务；`DiscardOldestPolicy` 丢掉队列头再重试。交易、支付禁止静默丢。队列选型上，CPU 密集用有界队列加较小的最大线程数；IO 密集（调下游 HTTP / DB）可以把最大线程抬高，但必须有界，无界的 `LinkedBlockingQueue` 会把 OOM 藏在堆里。`Executors.newFixedThreadPool` 不推荐也是这个原因，它默认用无界队列，背压就失效了。
 
@@ -55,7 +55,7 @@ sources:
 持有次数。读写锁会把它的高低位拆开用。
 
 **公平锁一定更安全吗？**
-公平锁减少锁饥饿，但会降低吞吐，交易热路径一般用非公平。
+公平锁减少锁饥饿，但会降低 throughput，交易热路径一般用非公平。
 
 **怎么定位死锁？**
 用 `jstack` 看 `waiting to lock`，或者调 `ThreadMXBean.findDeadlockedThreads`。

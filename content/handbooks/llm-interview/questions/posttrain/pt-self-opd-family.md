@@ -4,7 +4,10 @@ section: posttrain
 order: 239
 level: S
 title: Self-OPD 家族怎么分？u-OPSD、π-Distill、LOPD 各补哪块？
-quick: "Self-OPD 是一个家族的叫法，共同点是教师和学生同一套权重、教师多拿一份特权信息，区别在特权从哪来：OPSD 用 GT；u-OPSD 用多数票、只蒸反对票；SR-OPSD 往 $\\pi_{\\mathrm{ref}}$ 插值；π-Distill 联合训练 PI 教师；LOPD 把特权换成可学习的 latent。答题先说清特权来源，再谈散度。"
+quick: >-
+  Self-OPD 是一个家族的叫法，共同点是教师和学生同一套权重、教师多拿一份特权信息，区别在特权从哪来：OPSD 用 GT；u-OPSD
+  用多数票、只蒸反对票；SR-OPSD 往 $\pi_{\mathrm{ref}}$ 插值；π-Distill 联合训练 PI 教师；LOPD
+  把特权换成可学习的 latent。答题先说清特权来源，再谈散度。
 tags:
   - OPD
   - OPSD
@@ -13,22 +16,22 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: Self-Distilled Reasoner (OPSD)
-    url: https://arxiv.org/abs/2601.18734
+    url: 'https://arxiv.org/abs/2601.18734'
     type: primary
   - title: u-OPSD — On-Policy Self-Distillation without Any Supervision
-    url: https://arxiv.org/abs/2608.06296
+    url: 'https://arxiv.org/abs/2608.06296'
     type: primary
   - title: SR-OPSD — Self-Referenced On-Policy Self-Distillation
-    url: https://arxiv.org/abs/2608.09745
+    url: 'https://arxiv.org/abs/2608.09745'
     type: primary
   - title: Privileged Information Distillation（π-Distill）
-    url: https://arxiv.org/abs/2602.04942
+    url: 'https://arxiv.org/abs/2602.04942'
     type: primary
   - title: Latent On-Policy Self-Distillation
-    url: https://arxiv.org/abs/2608.13040
+    url: 'https://arxiv.org/abs/2608.13040'
     type: primary
 ---
 
@@ -53,7 +56,7 @@ $$
 \mathcal{L}=\mathbb{E}_{x}\mathbb{E}_{\{y^{(g)}\}}\Big[\mathbf{1}[\mathcal{Y}^{-}_{x}\neq\emptyset]\,\frac{1}{|\mathcal{Y}^{-}_{x}|}\sum_{y^{-}}\frac{1}{|y^{-}|}\sum_n D_{\beta}\big(\bar{\pi}(\cdot\mid x,y^{+},y^{-}_{\lt n})\,\big\|\,\pi_{\theta}(\cdot\mid x,y^{-}_{\lt n})\big)\Big].
 $$
 
-它和 GRPO 都用了共识，但 GRPO 把共识变成标量奖励，u-OPSD 只用共识构造特权上下文，监督仍然是 token 级分布。论文的观察是，用伪标签构造教师的逐 token 分布，比把同一个共识转成强化学习的标量奖励更有效。
+它和 GRPO 都用了共识，但 GRPO 把共识变成标量奖励，u-OPSD 只用共识构造特权上下文，监督仍然是 token 级分布。论文的观察是，用伪标签构造教师的逐 token 分布，比把同一个共识转成 RL 的标量奖励更有效。
 
 SR-OPSD 针对的是另一件事：自教师 $\pi_{\bar{\theta}}$、学生、on-policy 前缀三个一起动，固定 KL 会不稳定，或者过度集中。它把目标设成
 
@@ -63,7 +66,7 @@ $$
 
 $\alpha=1$ 是纯自教师，$\alpha=0$ 是纯参考（常取训练前的 $\pi_{\theta_0}$）。再用 Rényi 阶 $\rho$ 控制怎么投影到 $\pi_{\alpha}^{\star}$，$\rho\to 1$ 时回到 KL。面试讲到这里就够了：$\alpha$ 决定靶子在哪，$\rho$ 决定投影的几何，这是两个旋钮，别说成同一个 $\beta$。
 
-π-Distill 面向多轮 agent。前沿模型往往只给动作、不给分步推理（CoT），于是同一套参数里，PI 条件教师 $\pi^T(\mathbf{o}\mid s,\mathbf{I})$ 和无 PI 学生 $\pi^S(\mathbf{o}\mid s)$ 一起训练，把训练时的特权迁到测试时没有特权的策略上。这篇里也有个「OPSD」，指的是 RL 加上学生与 PI 教师之间的反向 KL，和 Zhao 那篇分布匹配的 OPSD 是两个算法。所以别人一提 OPSD，我会先确认说的是 Self-Distilled Reasoner 还是 π-Distill。
+π-Distill 面向多轮 agent。前沿模型往往只给动作、不给分步推理（CoT），于是同一套参数里，PI 条件教师 $\pi^T(\mathbf{o}\mid s,\mathbf{I})$ 和无 PI 学生 $\pi^S(\mathbf{o}\mid s)$ 一起训练，把训练时的特权迁到测试时没有特权的策略上。这篇里也有个「OPSD」，指的是 RL 加上学生与 PI 教师之间的 reverse KL，和 Zhao 那篇分布匹配的 OPSD 是两个算法。所以别人一提 OPSD，我会先确认说的是 Self-Distilled Reasoner 还是 π-Distill。
 
 ## 怎么选
 
@@ -71,11 +74,11 @@ $\alpha=1$ 是纯自教师，$\alpha=0$ 是纯参考（常取训练前的 $\pi_{
 
 u-OPSD 有个系统性风险，就是自信的错共识。多数票一旦错了，$y^+$ 会把错解写进每一条反对轨迹的教师分布。数学题有 checker 时，就用 checker 过滤伪标签，别为了「无监督」把验证器关掉；没有 checker 的开放生成，这条配方不该当默认。
 
-## 和 GRPO、SFT 的边界
+## 与 GRPO、SFT 的区别
 
-监督微调（SFT）在 $y^\star$ 的教师前缀上算交叉熵损失（CE），学生从来没在自己的错前缀上受过训。OPSD 家族都在学生前缀上给分布，这是 on-policy 那一半。GRPO 也在学生轨迹上，但信号稀疏，全对或全错的组梯度为零。Self-OPD 用特权分布把中间步填上，所以蒸馏长度短一点也可能够用：作者的假设是早期 token 是分支点，后面教师几乎能从长前缀预测出来。多轮规划、工具环里这个假设还成不成立，论文自己标成了开放问题。
+SFT 在 $y^\star$ 的教师前缀上算 cross entropy loss（CE），学生从来没在自己的错前缀上受过训。OPSD 家族都在学生前缀上给分布，这是 on-policy 那一半。GRPO 也在学生轨迹上，但信号稀疏，全对或全错的组梯度为零。Self-OPD 用特权分布把中间步填上，所以 distillation 长度短一点也可能够用：作者的假设是早期 token 是分支点，后面教师几乎能从长前缀预测出来。多轮规划、工具环里这个假设还成不成立，论文自己标成了开放问题。
 
-Self-OPD 也替代不了全部 RL。verifier 可靠、探索还不够的时候，可验证奖励强化学习（RLVR）仍然负责发现新模式；蒸馏负责把已有的特权（GT、共识、PI）变成稠密的纠正。两者冲突时以可执行 oracle 为准，别让教师的文风压过正确答案。
+Self-OPD 也替代不了全部 RL。verifier 可靠、探索还不够的时候，可验证奖励 RL（RLVR）仍然负责发现新模式；distillation 负责把已有的特权（GT、共识、PI）变成稠密的纠正。两者冲突时以可执行 oracle 为准，别让教师的文风压过正确答案。
 
 ## 追问
 
@@ -83,7 +86,7 @@ Self-OPD 也替代不了全部 RL。verifier 可靠、探索还不够的时候�
 不是，它是 OPSD 家族的统称。写简历时用具体名字：OPSD / u-OPSD / SR-OPSD / π-Distill / LOPD。
 
 **π-Distill 里的 OPSD 和 Zhao 的 OPSD 有什么区别？**
-前者是 on-policy RL 加反向 KL；后者是学生采样，再在全词表上算 $D(p_T\|p_S)$。先问清是哪篇 arXiv，展开见 `pt-pi-distill`。
+前者是 on-policy RL 加 reverse KL；后者是学生 sampling，再在全 vocabulary 上算 $D(p_T\|p_S)$。先问清是哪篇 arXiv，展开见 `pt-pi-distill`。
 
 **特权信息能不能学出来，不用手写？**
 能。LOPD 用 latent composer 加 privileged-margin 来学，见 `pt-lopd`。

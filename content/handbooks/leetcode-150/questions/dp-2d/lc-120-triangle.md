@@ -4,20 +4,22 @@ section: dp-2d
 order: 1
 level: A
 title: LC 120 · 三角形最小路径和
-quick: "自底向上 DP：底层作初值，$dp[j]=\\textit{row}[j]+\\min(dp[j],dp[j+1])$ 一层层滚到顶，`dp[0]` 就是答案。这样不用处理自顶向下的左右边界，时间 $O(n^2)$，额外空间 $O(n)$。"
+quick: >-
+  自底向上 DP：底层作初值，$dp[j]=\textit{row}[j]+\min(dp[j],dp[j+1])$ 一层层滚到顶，`dp[0]`
+  就是答案。这样不用处理自顶向下的 left / right bounds，时间 $O(n^2)$，额外空间 $O(n)$。
 tags:
   - DP
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 120. 三角形最小路径和
-    url: https://leetcode.cn/problems/triangle/
+    url: 'https://leetcode.cn/problems/triangle/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -52,11 +54,11 @@ sources:
 
 ## 思路
 
-我会自底向上做 DP。从下往上看，每个位置恰好有 $j$ 和 $j+1$ 两个下家，没有边界分叉，最后也不用在底层再扫一遍最小值。
+我会自底向上做 DP。从下往上看，每个位置恰好有 $j$ 和 $j+1$ 两个下家，没有 edge-case branches，最后也不用在底层再扫一遍最小值。
 
 底层就是初值。上一层的位置 $j$ 只能接 $j$ 或 $j+1$，所以 `dp[j] = triangle[i][j] + min(dp[j], dp[j+1])`，逐层更新到顶部，`dp[0]` 就是答案。拿 `[[2], [3, 4], [6, 5, 7], [4, 1, 8, 3]]` 来说，底层是 `[4, 1, 8, 3]`；第三层变成 `[6+1, 5+1, 7+3] = [7, 6, 10]`；第二层是 `[3+6, 4+6] = [9, 10]`；顶上是 `2+9 = 11`。
 
-自顶向下也能做，但要处理左右边界，最后还得在底层扫最小值，放在追问里。可以原地改三角形，也可以单独开一维 $O(n)$ 的数组。
+自顶向下也能做，但要处理 left / right bounds，最后还得在底层扫最小值，放在追问里。可以原地改三角形，也可以单独开一维 $O(n)$ 的数组。
 
 ## 参考代码
 
@@ -96,14 +98,14 @@ print("simple tests passed")
 
 时间 $O(n^2)$，$n$ 为层数；额外空间 $O(n)$，原地修改可以做到 $O(1)$。
 
-## 边界
+## Edge Cases
 
-只有一层时循环不进，`dp` 就是底层的拷贝，返回 `dp[0]`。有负数时不能每层贪心选最小，局部最小可能接上更大的后续。自底向上时 $j$ 和 $j+1$ 总在下一层范围内，左右边界不用特判。
+只有一层时循环不进，`dp` 就是底层的拷贝，返回 `dp[0]`。有负数时不能每层贪心选最小，局部最小可能接上更大的后续。自底向上时 $j$ 和 $j+1$ 总在下一层范围内，left / right bounds 不用特判。
 
 ## 追问
 
 **自顶向下怎么写？**
-第一层只有一个入口。第 $i$ 层下标 $0$ 只能来自正上，下标 $i$ 只能来自左上，中间的格子取 $\min(\textit{左上},\textit{正上})$ 再加当前值，最后在底层扫一遍最小值。比自底向上多了边界分叉，也要多开一层或原地改，时间仍是 $O(n^2)$。
+第一层只有一个入口。第 $i$ 层下标 $0$ 只能来自正上，下标 $i$ 只能来自左上，中间的格子取 $\min(\textit{左上},\textit{正上})$ 再加当前值，最后在底层扫一遍最小值。比自底向上多了 edge-case branches，也要多开一层或原地改，时间仍是 $O(n^2)$。
 
 ```python
 def minimumTotal_topdown(triangle):

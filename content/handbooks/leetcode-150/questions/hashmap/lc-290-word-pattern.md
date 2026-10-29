@@ -5,20 +5,21 @@ order: 3
 level: A
 title: LC 290 · 单词规律
 quick: >-
-  先 `s.split()`，单词数和 `pattern` 长度不等直接返回假。然后像 LC 205 一样做字符 $\leftrightarrow$ 单词的双向映射，任一侧冲突就是假，时间 $O(n)$。
+  先 `s.split()`，单词数和 `pattern` 长度不等直接返回假。然后像 LC 205 一样做字符 $\leftrightarrow$
+  单词的双向映射，任一侧冲突就是假，时间 $O(n)$。
 tags:
   - Hash
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 290. 单词规律
-    url: https://leetcode.cn/problems/word-pattern/
+    url: 'https://leetcode.cn/problems/word-pattern/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -102,7 +103,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(n)$。$n$ 是单词个数（或字符总长）。
 
-## 边界
+## Edge Cases
 
 单个字符对单个单词是真。`pattern` 比单词多或者少都直接是假，所以先比长度再做映射。
 
@@ -121,6 +122,7 @@ def normalize(seq):
         first.setdefault(x, len(first))
         code.append(first[x])
     return code
+
 
 def isIsomorphic(s, t):
     return len(s) == len(t) and normalize(s) == normalize(t)

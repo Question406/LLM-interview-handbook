@@ -3,21 +3,24 @@ id: ml101-mle-map
 section: linear-models
 order: 5
 level: S
-title: "最大似然 MLE 和最大后验 MAP 有什么区别？"
-quick: "MLE 选择最能解释已观察数据的参数；MAP 再乘上参数先验，选择后验密度最大的参数。取负对数后，先验会表现为额外惩罚，例如零均值高斯先验对应 L2 形式；MAP 仍是点估计，并没有保留完整后验不确定性。"
+title: maximum likelihood MLE 和最大后验 MAP 有什么区别？
+quick: >-
+  MLE 选择最能解释已观察数据的参数；MAP 再乘上参数先验，选择后验密度最大的参数。取负对数后，先验会表现为额外惩罚，例如零均值高斯先验对应 L2
+  形式；MAP 仍是 point estimate，并没有保留完整后验不确定性。
 tags:
   - Machine Learning
   - linear-models
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-22
+updatedAt: 2026-10-22T00:00:00.000Z
 sources:
-  - title: "Dive into Deep Learning: Maximum Likelihood"
-    url: https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html
+  - title: 'Dive into Deep Learning: Maximum Likelihood'
+    url: >-
+      https://d2l.ai/chapter_appendix-mathematics-for-deep-learning/maximum-likelihood.html
     type: primary
-  - title: "scikit-learn: Linear Models"
-    url: https://scikit-learn.org/stable/modules/linear_model.html
+  - title: 'scikit-learn: Linear Models'
+    url: 'https://scikit-learn.org/stable/modules/linear_model.html'
     type: primary
 ---
 
@@ -27,7 +30,7 @@ MLE 只根据似然选择参数，MAP 把先验偏好也放进去。这里数据
 
 $$\hat\theta_{MLE}=\arg\max_\theta p(D\mid\theta),\qquad\hat\theta_{MAP}=\arg\max_\theta p(D\mid\theta)p(\theta).$$
 
-贝叶斯公式中的 $p(D)$ 对固定数据与参数无关，找最大值时可以去掉。取负对数后，MAP 目标是负对数似然加负对数先验。
+贝叶斯公式中的 $p(D)$ 对固定数据与参数无关，找最大值时可以去掉。取负对数后，MAP 目标是 negative log likelihood 加 negative log prior。
 
 例如抛硬币五次全是正面，正面概率的 MLE 是 1。若先验为 Beta(2,2)，后验为 Beta(7,2)，MAP 是 $(7-1)/(7+2-2)=6/7$。这个小例子说明先验能缓和少量样本带来的极端估计；先验不合适时也会带来偏差。
 

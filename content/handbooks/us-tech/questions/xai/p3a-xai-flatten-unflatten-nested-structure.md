@@ -3,8 +3,10 @@ id: p3a-xai-flatten-unflatten-nested-structure
 section: xai
 order: 604
 level: A
-title: "xAI：嵌套 Python 容器 flatten 与 unflatten"
-quick: "我会让 flatten 和 unflatten 使用同一个深度优先顺序，前者取叶子、后者按模板回填，返回新对象。list、tuple、dict 和空容器原样保留，叶子值多了少了都报错；bool 是否算整数、dict key 是否参与遍历要先确认。"
+title: xAI：嵌套 Python 容器 flatten 与 unflatten
+quick: >-
+  我会让 flatten 和 unflatten 使用同一个深度优先顺序，前者取叶子、后者按模板回填，返回新对象。list、tuple、dict
+  和空容器原样保留，叶子值多了少了都报错；bool 是否算整数、dict key 是否参与遍历要先确认。
 companies:
   - xai
 tags:
@@ -13,13 +15,15 @@ tags:
   - Frontier-2026-10
   - Coding
   - xAI
+  - 题面补全 2026-10-27
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
-  - title: "1Point3Acres · xAI · flatten-unflatten-nested-structure"
-    url: https://www.1point3acres.com/interview/problems/company/xai/flatten-unflatten-nested-structure
+  - title: 1Point3Acres · xAI · flatten-unflatten-nested-structure
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/flatten-unflatten-nested-structure
     type: secondary
 ---
 
@@ -27,7 +31,9 @@ sources:
 
 实现嵌套容器的叶子遍历、结构重建和可保存恢复位置的迭代器。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 数据由整数叶子以及 list、tuple、字符串键 dict 递归组成，bool 不作为整数叶子；字典按插入顺序遍历。构造后数据不再改变，整数叶子不超过 10000，深度不超过 100。
 
@@ -53,7 +59,7 @@ set_state(1) 后 next 为 2；再次 set_state(1)，next 仍为 2。
 
 给一个由 list、tuple、dict 层层嵌套、叶子是整数的 Python 对象。写两个函数：`flatten` 按顺序取出所有整数；`unflatten` 拿原对象当模板，把一组新整数按同样顺序填回去，得到结构相同的新对象。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -61,7 +67,7 @@ set_state(1) 后 next 为 2；再次 set_state(1)，next 仍为 2。
 
 回填时递归创建新容器，tuple 仍然是 tuple，空容器也保留。每到一个整数叶子才取一个新值，所以新值数量必须和叶子数完全一致；多了、少了都报错，模板不做就地修改。
 
-动手前值得和面试官确认两个边界：`True` 算不算整数（Python 里 `bool` 是 `int` 的子类），以及 dict 的 key 要不要参与遍历。这份练习的约定是 `bool` 不算叶子、key 不参与。
+动手前值得和面试官确认两个 edge cases：`True` 算不算整数（Python 里 `bool` 是 `int` 的子类），以及 dict 的 key 要不要参与遍历。这份练习的约定是 `bool` 不算叶子、key 不参与。
 
 ## 完整编程练习（手册重构版）
 
@@ -176,7 +182,7 @@ class Iterator:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -187,6 +193,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 data = [1, (), {"a": [2, 3]}]
 assert flatten(data) == [1, 2, 3]
@@ -200,10 +207,10 @@ assert list(it) == [2, 3]
 it.set_state(state)
 assert list(it) == [2, 3]
 
-expect_value_error(unflatten, data, [1])           # 值不够
+expect_value_error(unflatten, data, [1])  # 值不够
 expect_value_error(unflatten, data, [1, 2, 3, 4])  # 值多了
-expect_value_error(flatten, [True])                # bool 不算整数叶子
-expect_value_error(it.set_state, 4)                # 超出叶子数
+expect_value_error(flatten, [True])  # bool 不算整数叶子
+expect_value_error(it.set_state, 4)  # 超出叶子数
 assert list(Iterator([[], (), {}])) == []
 ```
 

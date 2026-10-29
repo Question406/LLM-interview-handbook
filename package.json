@@ -6,11 +6,14 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "apple:sync": "node scripts/sync-apple-question-book.mjs",
     "practice:setup": "python3 scripts/practice/setup.py",
     "practice:test": "python3 scripts/practice/check.py",
     "practice": "node scripts/start-practice.mjs",
     "content:build": "node scripts/build-content.mjs",
     "content:check": "node scripts/build-content.mjs --check",
+    "content:format": "node scripts/format-code-blocks.mjs --write",
+    "content:format:check": "node scripts/format-code-blocks.mjs --check",
     "assets:build": "node scripts/prepare-static-assets.mjs",
     "dev": "npm run content:build && npm run assets:build && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
     "build": "npm run content:build && npm run assets:build && WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
@@ -30,10 +33,12 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@astral-sh/ruff-wasm-nodejs": "0.17.3",
     "@cloudflare/vite-plugin": "1.37.1",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.2.6",
     "@openai/sites-vite-plugin": "0.1.0",
+    "@prettier/sync": "0.6.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
@@ -45,6 +50,8 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "16.4.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-sh": "0.20.2",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",

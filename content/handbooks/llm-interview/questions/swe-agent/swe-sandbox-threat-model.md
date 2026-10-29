@@ -4,7 +4,9 @@ section: swe-agent
 order: 5
 level: S
 title: 如何给代码 Agent 设计 Sandbox 威胁模型？
-quick: "容器本身算不上权限模型。我会按 run 隔离文件系统和身份，默认断网或只放行 egress allowlist，不挂 secrets，限制 CPU、RAM、PID、磁盘和时间，再用 VM 或 gVisor 加一层纵深，并写清审计和销毁策略。"
+quick: >-
+  容器本身算不上权限模型。我会按 run 隔离文件系统和身份，默认断网或只放行 egress allowlist，不挂 secrets，限制
+  CPU、RAM、PID、磁盘和时间，再用 VM 或 gVisor 加一层纵深，并写清审计和销毁策略。
 tags:
   - Sandbox
   - SWE Agent
@@ -12,10 +14,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: gVisor Architecture Guide
-    url: https://gvisor.dev/docs/architecture_guide/intro/
+    url: 'https://gvisor.dev/docs/architecture_guide/intro/'
     type: primary
 ---
 
@@ -45,4 +47,4 @@ sources:
 只对 mock 或 allowlist 放行，trace 里记下每一次 egress 命中，其他目标默认拒绝。
 
 **这题和 trace 那题怎么分工？**
-这题管权限边界能不能拦住；`swe-trace-replay` 管越权或失败发生以后，你能不能归因。
+这题管 authorization rules 能不能拦住；`swe-trace-replay` 管越权或失败发生以后，你能不能归因。

@@ -1,0 +1,18 @@
+{
+  "collectedAt": "2026-10-26",
+  "batch": "一亩三分地继续检索",
+  "questionIds": [
+    "dt-p3a-batchnorm-state",
+    "dt-p3a-kfold-indices",
+    "dt-p3a-paper-gated-layer",
+    "dt-p3a-tabular-full-pipeline",
+    "p3a-apple-cvml-circular-padding",
+    "p3a-apple-cvml-image-evaluation",
+    "p3a-apple-cvml-knn-pipeline",
+    "p3a-apple-flask-inference-contract",
+    "p3a-apple-json-clean-code",
+    "p3a-apple-task-dag-code"
+  ],
+  "newQuestionCount": 10,
+  "notes": "Second Chrome forum research round; all interfaces not stated in source are handbook conventions."
+}

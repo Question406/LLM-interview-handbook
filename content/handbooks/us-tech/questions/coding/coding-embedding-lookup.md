@@ -3,8 +3,11 @@ id: coding-embedding-lookup
 section: coding
 order: 14
 level: S
-title: 白板：embedding lookup + padding mask，大词表显存
-quick: "用 `E[ids]` 把 $[B,T]$ 的 id 查成 $[B,T,D]$，另把 pad 位置转成 attention mask。`padding_idx` 只控制 pad 行的向量和梯度，不能让 softmax 自动忽略它；整张词表按 $V\\cdot D$ 占显存。"
+title: 白板：embedding lookup + padding mask，大 vocabulary 显存
+quick: >-
+  用 `E[ids]` 把 $[B,T]$ 的 id 查成 $[B,T,D]$，另把 pad 位置转成 attention
+  mask。`padding_idx` 只控制 pad 行的向量和梯度，不能让 softmax 自动忽略它；整张 vocabulary 按 $V\cdot
+  D$ 占显存。
 tags:
   - 完整编程练习
   - Coding
@@ -14,13 +17,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.nn.Embedding
-    url: https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html
+    url: 'https://pytorch.org/docs/stable/generated/torch.nn.Embedding.html'
     type: primary
   - title: scaled_dot_product_attention
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html
     type: primary
 ---
 
@@ -28,14 +32,14 @@ sources:
 
 实现 token embedding 查询及 padding mask，并提供一个最小 PyTorch 模块，使 padding 对应的 embedding 不参与梯度更新。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
 - `embed_forward(embed, ids, pad_id=0) -> (x, pad)`：用 `ids: [B, T]` 查表得到 `x: [B, T, D]`，同时返回 `pad: [B, T]`，pad 位置为 True。
 - `attn_pad_mask(pad) -> [B, 1, 1, S]`：把 pad 标记变成能广播到 scores `[B, H, T, S]` 的 key mask。True 表示屏蔽这个 key，和 keep-mask 的约定相反。
 - `SmallLM(vocab, dim, pad=0)`：用 `nn.Embedding(..., padding_idx=pad)` 建表，`forward(ids)` 返回 `(x, pad)`。`padding_idx` 那一行梯度恒为 0。
-- 约束：`ids` 都是合法的词表下标，`pad_id` 在词表范围内。
+- 约束：`ids` 都是合法的 vocabulary 下标，`pad_id` 在 vocabulary 范围内。
 
 ### 输入输出示例
 
@@ -53,14 +57,14 @@ embedding 先按 id 查表，再用单独的 attention mask 屏蔽 pad key。`pa
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
 - `embed_forward(embed, ids, pad_id=0) -> (x, pad)`：用 `ids: [B, T]` 查表得到 `x: [B, T, D]`，同时返回 `pad: [B, T]`，pad 位置为 True。
 - `attn_pad_mask(pad) -> [B, 1, 1, S]`：把 pad 标记变成能广播到 scores `[B, H, T, S]` 的 key mask。True 表示屏蔽这个 key，和 keep-mask 的约定相反。
 - `SmallLM(vocab, dim, pad=0)`：用 `nn.Embedding(..., padding_idx=pad)` 建表，`forward(ids)` 返回 `(x, pad)`。`padding_idx` 那一行梯度恒为 0。
-- 约束：`ids` 都是合法的词表下标，`pad_id` 在词表范围内。
+- 约束：`ids` 都是合法的 vocabulary 下标，`pad_id` 在 vocabulary 范围内。
 
 ### 输入输出示例
 
@@ -84,7 +88,7 @@ from torch import nn
 def embed_forward(embed, ids, pad_id=0):
     """查表并标出 pad 位置。
 
-    ids: [B, T] 合法词表下标 -> (x: [B, T, D], pad: [B, T] bool，True 表示 pad)。
+    ids: [B, T] 合法 vocabulary 下标 -> (x: [B, T, D], pad: [B, T] bool，True 表示 pad)。
     """
     x = embed(ids)
     pad = ids.eq(pad_id)
@@ -121,7 +125,7 @@ class SmallLM(nn.Module):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -140,7 +144,7 @@ assert pad.tolist() == [[False, True], [False, True]]
 mask = attn_pad_mask(pad)
 assert mask.shape == (2, 1, 1, 2)
 
-# 零向量 key 不加 mask 仍会分到正的注意力权重；加 mask 后为 0
+# 零向量 key 不加 mask 仍会分到正的 attention 权重；加 mask 后为 0
 scores = torch.zeros(2, 1, 2, 2)
 assert torch.all(scores.softmax(-1)[..., 1] > 0)
 masked = scores.masked_fill(mask, float("-inf")).softmax(-1)
@@ -157,13 +161,13 @@ assert torch.all(model.embed.weight.grad[3:] == 0)
 
 ### 复杂度与追问
 
-设 batch 为 $B$、序列长 $T$、词表大小 $V$、维度 $D$。查表是 $O(BTD)$，词表参数是 $O(VD)$。本 batch 只查了少量 token，也不能忽略整张表的显存：参数、梯度缓冲和优化器状态都按 $V\times D$ 分配。
+设 batch 为 $B$、序列长 $T$、vocabulary 大小 $V$、维度 $D$。查表是 $O(BTD)$，vocabulary 参数是 $O(VD)$。本 batch 只查了少量 token，也不能忽略整张表的显存：参数、梯度缓冲和优化器状态都按 $V\times D$ 分配。
 
 - 追问「反向的代价」：梯度只累加到出现过的行，计算量是 $O(BTD)$；但 dense 梯度张量本身仍是 $V\times D$，除非用 `sparse=True`。
 
 ## 题怎么来的
 
-这题看起来像 API 题，常见的坑有两个：把 pad 和 mask 当成一件事，以及把大词表的 embedding 矩阵当成一张「小表」。NVIDIA 会问显存，Apple 会问端侧词表，OpenAI 的 debug 题常常漏掉 padding mask，让 pad 位置进了 softmax。权重共享见 `coding-weight-tying`。
+这题看起来像 API 题，常见的坑有两个：把 pad 和 mask 当成一件事，以及把大 vocabulary 的 embedding 矩阵当成一张「小表」。NVIDIA 会问显存，Apple 会问端侧 vocabulary，OpenAI 的 debug 题常常漏掉 padding mask，让 pad 位置进了 softmax。权重共享见 `coding-weight-tying`。
 
 ## Lookup：按行 gather，不是 matmul
 
@@ -177,20 +181,20 @@ $$
 
 损失里的 `ignore_index=pad` 和 attention mask 也各管一件事：前者不训练 pad 位置的预测目标，后者不让模型关注 pad key。两个都要有。
 
-## 大词表显存
+## 大 vocabulary 显存
 
 $$
 \mathrm{bytes}(E)=V\cdot D\cdot b,\quad b=2\ \mathrm{(bf16/fp16)},\ 4\ \mathrm{(fp32)}.
 $$
 
-Llama 3 的词表 $V\approx 128256$，$D=4096$，bf16 一份约 1.05 GB。训练时 AdamW 的 $m$、$v$ 用 fp32 存，每个参数再多 8 字节，是 bf16 参数本身的 4 倍，约 4.2 GB。权重共享（tying）把 lm_head 那份矩阵省掉，优化器状态也只留一套。词表并行按 $V$ 切开，lookup 前要对 id 做 all-to-all，那属于系统设计题；白板上先报出 1 GB 这个量级。
+Llama 3 的 vocabulary $V\approx 128256$，$D=4096$，bf16 一份约 1.05 GB。训练时 AdamW 的 $m$、$v$ 用 fp32 存，每个参数再多 8 字节，是 bf16 参数本身的 4 倍，约 4.2 GB。权重共享（tying）把 lm_head 那份矩阵省掉，优化器状态也只留一套。vocabulary 并行按 $V$ 切开，lookup 前要对 id 做 all-to-all，那属于系统设计题；白板上先报出 1 GB 这个量级。
 
-Apple 端侧的问题是：词表大，ANE 上的 gather 访存不连续，所以常把 embedding 压成 int8，或者缩小 $V$。不要假设「embedding 和 70B 参数比起来可以忽略」：逐 token 生成（decode）时，embedding 和 lm_head 仍是 $V$ 维的 gather 和大 GEMM。扩词表时要同时改 tokenizer 的 id 和 $E$ 的行数，并说明新行怎么初始化（用均值、用零，或复制相近 token 的向量）。
+Apple 端侧的问题是：vocabulary 大，ANE 上的 gather 访存不连续，所以常把 embedding 压成 int8，或者缩小 $V$。不要假设「embedding 和 70B 参数比起来可以忽略」：逐 token 生成（decode）时，embedding 和 lm_head 仍是 $V$ 维的 gather 和大 GEMM。扩 vocabulary 时要同时改 tokenizer 的 id 和 $E$ 的行数，并说明新行怎么初始化（用均值、用零，或复制相近 token 的向量）。
 
 ## 追问
 
 **零向量为什么还要 mask？**
-softmax($[\ldots,0]$) 仍会给 pad 正的注意力权重，必须填 $-\infty$。
+softmax($[\ldots,0]$) 仍会给 pad 正的 attention 权重，必须填 $-\infty$。
 **`padding_idx` 的梯度是什么？**
 PyTorch 每步把这一行的 grad 置 0，行向量一直保持 0。不要指望它学出「pad 的语义」。
 **和 one-hot matmul 有什么区别？**

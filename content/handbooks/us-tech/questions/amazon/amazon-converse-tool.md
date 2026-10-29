@@ -4,7 +4,9 @@ section: amazon
 order: 16
 level: A
 title: Amazon：Converse tool use，toolConfig、并行工具和 Guardrail 怎么接？
-quick: "Converse 的工具循环由应用执行：toolConfig 描述接口，模型返回 toolUse，应用执行后按 toolUseId 回传 toolResult。无依赖的只读工具可以并行，写操作要处理幂等和确认；Guardrail 不覆盖工具定义、参数和结果，这些还得应用检查。"
+quick: >-
+  Converse 的工具循环由应用执行：toolConfig 描述接口，模型返回 toolUse，应用执行后按 toolUseId 回传
+  toolResult。无依赖的只读工具可以并行，写操作要处理幂等和确认；Guardrail 不覆盖工具定义、参数和结果，这些还得应用检查。
 tags:
   - Amazon
   - Bedrock
@@ -13,19 +15,21 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Use a tool to complete an Amazon Bedrock model response
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/tool-use.html'
     type: primary
   - title: Use a guardrail with the Converse API
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-converse-api.html
+    url: >-
+      https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-converse-api.html
     type: primary
   - title: Converse API
-    url: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html
+    url: >-
+      https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html
     type: primary
   - title: Detect and filter harmful content with Amazon Bedrock Guardrails
-    url: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html
+    url: 'https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html'
     type: primary
 ---
 
@@ -35,7 +39,7 @@ Converse 的 client-side tool use 由应用负责执行循环，模型只提出�
 
 `toolChoice` 可以是 `auto`、any 或指定工具；它决定选工具的方式，不保证权限和参数正确。退款与搜政策放在同一列表时，要额外检查误调。根 schema 设为 object，并写清必填项。
 
-一轮有多个 `toolUse`，就要一次带回全部 `toolResult`，漏一个会导致对话非法。只读且无依赖的请求可以并行。写操作只有具备幂等键时才自动重试；否则两次 `create_ticket` 就可能建出两张单。
+一轮有多个 `toolUse`，就要一次带回全部 `toolResult`，漏一个会导致对话非法。只读且无依赖的请求可以并行。写操作只有具备 idempotency key 时才自动重试；否则两次 `create_ticket` 就可能建出两张单。
 
 ```python
 def handle_tool_use(msg, run_tool):
@@ -44,15 +48,24 @@ def handle_tool_use(msg, run_tool):
     for u in uses:
         try:
             out = run_tool(u["name"], u["input"])
-            results.append({"toolResult": {"toolUseId": u["toolUseId"], "content": [{"text": out}]}})
-        except Exception as e:
-            results.append({
-                "toolResult": {
-                    "toolUseId": u["toolUseId"],
-                    "status": "error",
-                    "content": [{"text": str(e)}],
+            results.append(
+                {
+                    "toolResult": {
+                        "toolUseId": u["toolUseId"],
+                        "content": [{"text": out}],
+                    }
                 }
-            })
+            )
+        except Exception as e:
+            results.append(
+                {
+                    "toolResult": {
+                        "toolUseId": u["toolUseId"],
+                        "status": "error",
+                        "content": [{"text": str(e)}],
+                    }
+                }
+            )
     return {"role": "user", "content": results}
 ```
 
@@ -60,7 +73,7 @@ def handle_tool_use(msg, run_tool):
 
 ## 工具参数和结果还要应用检查
 
-原文所引 Converse + Guardrails 表说明，它检查用户、系统和模型文本，不检查 `toolConfig` 定义、模型生成的 `toolUse.input` 或回传的 `toolResult`。早期还有工具和护栏不能同开的报错；即使两者可以同时开，也需要应用覆盖这些边界。
+原文所引 Converse + Guardrails 表说明，它检查用户、系统和模型文本，不检查 `toolConfig` 定义、模型生成的 `toolUse.input` 或回传的 `toolResult`。早期还有工具和护栏不能同开的报错；即使两者可以同时开，也需要应用实现这些 safeguards。
 
 所以应用层还要做这些检查：
 

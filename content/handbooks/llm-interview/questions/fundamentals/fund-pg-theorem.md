@@ -22,7 +22,7 @@ sources:
     type: primary
 ---
 
-推导靠一个技巧：用 $\nabla\pi=\pi\nabla\log\pi$ 把「对分布求导」变成「在分布下求期望」，这样只要能采样就能估梯度；再用因果性把整段回报换成从当前步往后的 $G_t$，就得到 REINFORCE。后面 PPO / GRPO 的公式都建立在这条期望梯度上。
+推导靠一个技巧：用 $\nabla\pi=\pi\nabla\log\pi$ 把「对分布求导」变成「在分布下求期望」，这样只要能 sampling 就能估梯度；再用因果性把整段回报换成从当前步往后的 $G_t$，就得到 REINFORCE。后面 PPO / GRPO 的公式都建立在这条期望梯度上。
 
 先把目标固定下来：参数化策略 $\pi_\theta$，一条轨迹 $\tau=(s_0,a_0,\ldots,s_T,a_T)$，回报 $R(\tau)=\sum_{t=0}^T\gamma^t r_t$，优化
 
@@ -38,7 +38,7 @@ $$
 
 ## 对数导数技巧
 
-直接对 $\pi_\theta(\tau)$ 求导，得到的东西没法靠采样来估。要用的恒等式是
+直接对 $\pi_\theta(\tau)$ 求导，得到的东西没法靠 sampling 来估。要用的恒等式是
 
 $$
 \nabla_\theta\pi_\theta(\tau)=\pi_\theta(\tau)\,\nabla_\theta\log\pi_\theta(\tau),
@@ -56,7 +56,7 @@ $$
 \nabla_\theta\log\pi_\theta(\tau)=\sum_{t=0}^T\nabla_\theta\log\pi_\theta(a_t\mid s_t).
 $$
 
-这就是 score-function，也叫 likelihood-ratio 估计。它的好处是环境可以不可微，只要能采样、能拿到标量回报，就能更新 $\pi$。比如回报是「单元测试过没过」，这东西没法求导，照样能用。
+这就是 score-function，也叫 likelihood-ratio 估计。它的好处是环境可以不可微，只要能 sampling、能拿到标量回报，就能更新 $\pi$。比如回报是「单元测试过没过」，这东西没法求导，照样能用。
 
 ## 因果性：把整段 $R$ 换成 $G_t$
 
@@ -72,7 +72,7 @@ $$
 \nabla_\theta J(\theta)=\mathbb{E}\left[\sum_{t=0}^T \nabla_\theta\log\pi_\theta(a_t\mid s_t)\,G_t\right].
 $$
 
-这就是 REINFORCE：采样一条轨迹，每个 token 或动作的梯度是 $\nabla\log\pi$ 乘上「从这里往后看起来有多好」。减 baseline、再接到 PPO / GRPO 的推导，见「从 Policy Gradient 怎么一步步推到 PPO，再推到 GRPO？」。
+这就是 REINFORCE：sampling 一条轨迹，每个 token 或动作的梯度是 $\nabla\log\pi$ 乘上「从这里往后看起来有多好」。减 baseline、再接到 PPO / GRPO 的推导，见「从 Policy Gradient 怎么一步步推到 PPO，再推到 GRPO？」。
 
 ## 追问
 
@@ -83,4 +83,4 @@ $$
 只对动作的 log 概率求导。Prompt、环境转移、别人已经吐出的 token 都不是当前 $\pi_\theta$ 的 action，LLM 里损失只加在 response token 上，说的就是这一条。
 
 **能直接用旧策略采的样本吗？**
-不能直接用，它是 on-policy 的，期望是在 $\pi_\theta$ 自己的轨迹上取的。一旦用旧策略采样，就必须引入重要性采样，那是通往 PPO 的下一步。
+不能直接用，它是 on-policy 的，期望是在 $\pi_\theta$ 自己的轨迹上取的。一旦用旧策略 sampling，就必须引入 importance sampling，那是通往 PPO 的下一步。

@@ -3,8 +3,10 @@ id: p3a-anthropic-ml-configuration-system
 section: anthropic
 order: 627
 level: A
-title: "Anthropic：ML 配置系统：schema、继承与可复现性"
-quick: "我会按继承合并、命令行覆盖、schema 校验、冻结结果的顺序处理配置。先明确每一步的合并规则，再保存解析后的完整 JSON、hash 和运行版本，才能知道训练实际用了什么配置并重跑实验。"
+title: Anthropic：ML 配置系统：schema、继承与可复现性
+quick: >-
+  我会按继承合并、命令行覆盖、schema 校验、冻结结果的顺序处理配置。先明确每一步的合并规则，再保存解析后的完整 JSON、hash
+  和运行版本，才能知道训练实际用了什么配置并重跑实验。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · ml-configuration-system"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/ml-configuration-system
+  - title: 1Point3Acres · Anthropic · ml-configuration-system
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/ml-configuration-system
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 训练配置由若干可继承的配置项、类型 schema 和命令行覆盖组成。实现配置解析函数，生成最终的只读配置、确定性的 JSON 和内容哈希；相同配置无论重复解析多少次，结果都应一致。
 
-以下为手册重构练习约定，不声称是面试官原题原文。默认输入满足列出的合法约束，不要求额外的非法输入校验。
+以下为手册重构练习约定。默认输入满足列出的合法约束，不要求额外的非法输入校验。
 
 ### 接口、输入与输出
 
@@ -56,7 +59,7 @@ resolve_config(configs, "child", schema, {"train.batch": 16})["config"]
 
 为 ML 训练设计并部分实现一个配置系统。网站没有给出完整的具体要求；常见的需求是：配置可以分层继承（默认值、项目配置、实验配置），可以在命令行覆盖，要有类型校验，并保证实验可以复现。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；题卡没有给出精确的合并规则。下面的分层需求、接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；题卡没有给出精确的合并规则。下面的分层需求、接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -161,7 +164,9 @@ def _apply_overrides(resolved, schema, overrides):
         target, rule = resolved, schema
         for key in parents:
             if key not in rule or not isinstance(rule[key], dict):
-                raise ValueError(f"override {path!r}: {key!r} is not a section in schema")
+                raise ValueError(
+                    f"override {path!r}: {key!r} is not a section in schema"
+                )
             rule = rule[key]
             target = target.setdefault(key, {})
             if not isinstance(target, dict):
@@ -185,7 +190,9 @@ def _validate(value, rule, path="<root>"):
     elif rule not in LEAF_TYPES:
         raise ValueError(f"{path}: unsupported schema type {rule!r}")
     elif type(value) is not rule:
-        raise ValueError(f"{path}: expected {rule.__name__}, got {type(value).__name__}")
+        raise ValueError(
+            f"{path}: expected {rule.__name__}, got {type(value).__name__}"
+        )
 
 
 def _freeze(value):
@@ -203,7 +210,9 @@ def resolve_config(configs, name, schema, overrides=None):
     _apply_overrides(resolved, schema, overrides or {})
     _validate(resolved, schema)
     # sort_keys 让 hash 只取决于最终值，与 dict 插入顺序无关
-    canonical = json.dumps(resolved, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    canonical = json.dumps(
+        resolved, sort_keys=True, separators=(",", ":"), allow_nan=False
+    )
     return {
         "config": _freeze(resolved),
         "json": canonical,
@@ -219,7 +228,7 @@ def resolve_config(configs, name, schema, overrides=None):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -230,6 +239,7 @@ def expect_value_error(*args):
     except ValueError:
         return
     raise AssertionError("resolve_config should raise ValueError")
+
 
 configs = {
     "base": {"values": {"train": {"batch": 8, "lr": 0.01}, "tags": ["a"]}},

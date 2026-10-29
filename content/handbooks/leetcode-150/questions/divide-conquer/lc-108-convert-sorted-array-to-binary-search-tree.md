@@ -4,7 +4,9 @@ section: divide-conquer
 order: 1
 level: A
 title: LC 108 · 将有序数组转换为二叉搜索树
-quick: "取有序数组的中点做根，左半段递归建左子树、右半段递归建右子树；中点让两边规模差不超过 $1$，高度自动平衡。时间 $O(n)$，递归栈 $O(\\log n)$。"
+quick: >-
+  取有序数组的中点做根，左半段递归建左子树、右半段递归建右子树；中点让两边规模差不超过 $1$，高度自动平衡。时间 $O(n)$，递归栈 $O(\log
+  n)$。
 tags:
   - Tree
   - Divide and Conquer
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 108. 将有序数组转换为二叉搜索树
-    url: https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/
+    url: 'https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -84,6 +86,7 @@ def sortedArrayToBST(nums: List[int]) -> Optional[TreeNode]:
 
 
 if __name__ == "__main__":
+
     def inorder(root):
         return inorder(root.left) + [root.val] + inorder(root.right) if root else []
 
@@ -93,7 +96,11 @@ if __name__ == "__main__":
     def balanced(root):
         if not root:
             return True
-        return abs(height(root.left) - height(root.right)) <= 1 and balanced(root.left) and balanced(root.right)
+        return (
+            abs(height(root.left) - height(root.right)) <= 1
+            and balanced(root.left)
+            and balanced(root.right)
+        )
 
     root = sortedArrayToBST([-10, -3, 0, 5, 9])
     assert inorder(root) == [-10, -3, 0, 5, 9] and balanced(root)
@@ -110,13 +117,23 @@ if __name__ == "__main__":
 
 ```python
 def inorder(root):
-        return inorder(root.left) + [root.val] + inorder(root.right) if root else []
+    return inorder(root.left) + [root.val] + inorder(root.right) if root else []
+
+
 def height(root):
-        return 0 if not root else 1 + max(height(root.left), height(root.right))
+    return 0 if not root else 1 + max(height(root.left), height(root.right))
+
+
 def balanced(root):
-        if not root:
-            return True
-        return abs(height(root.left) - height(root.right)) <= 1 and balanced(root.left) and balanced(root.right)
+    if not root:
+        return True
+    return (
+        abs(height(root.left) - height(root.right)) <= 1
+        and balanced(root.left)
+        and balanced(root.right)
+    )
+
+
 root = sortedArrayToBST([-10, -3, 0, 5, 9])
 assert inorder(root) == [-10, -3, 0, 5, 9] and balanced(root)
 root = sortedArrayToBST([1, 3])
@@ -130,7 +147,7 @@ print("simple tests passed")
 
 每个元素恰好建一个结点，时间 $O(n)$。递归深度 $O(\log n)$。
 
-## 边界
+## Edge Cases
 
 $n=1$ 时 `lo == hi`，中点就是唯一的结点，左右递归立刻返回空。长度为偶数时 `(lo+hi)//2` 偏左，左右子树规模差 $1$，高度差仍然 $\le 1$；全程改成偏右（`(lo+hi+1)//2`）同样平衡，只是别混用。
 

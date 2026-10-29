@@ -3,8 +3,10 @@ id: p3a-microsoft-web-crawler-system-design
 section: microsoft
 order: 612
 level: A
-title: "Microsoft AI / Copilot：MAI 分布式爬虫：调度、礼貌与去重"
-quick: "我会按 hostname 分片 frontier，由域调度器统一控制抓取速率、并发和 robots，再把下载、解析、去重、存储拆开扩容。URL 和内容分别去重，任务靠租约恢复，索引发布保持幂等，慢域名用独立队列隔离。"
+title: Microsoft AI / Copilot：MAI 分布式爬虫：调度、礼貌与去重
+quick: >-
+  我会按 hostname 分片 frontier，由域调度器统一控制抓取速率、并发和 robots，再把下载、解析、去重、存储拆开扩容。URL
+  和内容分别去重，任务靠租约恢复，索引发布保持幂等，慢域名用独立队列隔离。
 companies:
   - microsoft
 tags:
@@ -13,15 +15,25 @@ tags:
   - Frontier-2026-10
   - Design
   - Microsoft AI
+  - 口述改写 2026-10-28
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-28'
 sources:
-  - title: "1Point3Acres · Microsoft AI / Copilot · web-crawler-system-design"
-    url: https://www.1point3acres.com/interview/problems/company/microsoft/web-crawler-system-design
+  - title: 1Point3Acres · Microsoft AI / Copilot · web-crawler-system-design
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/microsoft/web-crawler-system-design
     type: secondary
 ---
+
+## 可以这样回答
+
+我会按 hostname 管理 frontier，让每个域名只有一个调度器负责礼貌限速，再把下载、解析和存储解耦。例如 `https://Example.com/a?utm=x` 先规范化，调度通过后才下载；内容与另一个 URL 相同，就只存映射。
+
+在压缩的时间里设计一条网页抓取流水线：从种子 URL 出发持续抓取，遵守网站的礼貌规则，对 URL 和内容去重，机器挂掉后能接着抓。
+
+## 技术备查
 
 我会按 hostname 管理 frontier，让每个域名只有一个调度器负责礼貌限速，再把下载、解析和存储解耦。例如 `https://Example.com/a?utm=x` 先规范化，调度通过后才下载；内容与另一个 URL 相同，就只存映射。
 
@@ -29,7 +41,7 @@ sources:
 
 在压缩的时间里设计一条网页抓取流水线：从种子 URL 出发持续抓取，遵守网站的礼貌规则，对 URL 和内容去重，机器挂掉后能接着抓。
 
-> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理，没有逐条核对原帖，网站收录也不代表公司官方确认；规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Microsoft 题卡摘要（2026-10-18 读取），属于网站对候选人报告的二手整理；规模数字、SLO 和故障情景是手册补的练习约定。
 
 ## 思路
 
@@ -37,7 +49,7 @@ sources:
 
 跨机器分片时，要避免多台机器同时打同一个域名造成突发过载，常见做法是按 hostname 分片，让一个域名只归一台调度器管。重试策略、robots 规则和内容去重是三件不同的事，要分别设计。
 
-时间紧的时候，先用估算定住规模：每天抓多少页、平均每页多大，据此算出需要的吞吐和存储。
+时间紧的时候，先用估算定住规模：每天抓多少页、平均每页多大，据此算出需要的 throughput 和存储。
 
 ## 完整非编程练习（场景与参考回答）
 

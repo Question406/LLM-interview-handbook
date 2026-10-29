@@ -4,7 +4,9 @@ section: two-pointers
 order: 4
 level: S
 title: LC 11 · 盛最多水的容器
-quick: "两端对撞，面积是 $\\min(h[l],h[r])\\cdot(r-l)$。每次把较矮的一侧往里移，因为高度被矮边卡住，换掉它才可能变高。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  两端对撞，面积是 $\min(h[l],h[r])\cdot(r-l)$。每次把较矮的一侧往里移，因为高度被矮边卡住，换掉它才可能变高。时间
+  $O(n)$，额外空间 $O(1)$。
 tags:
   - Two Pointers
   - Greedy
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 11. 盛最多水的容器
-    url: https://leetcode.cn/problems/container-with-most-water/
+    url: 'https://leetcode.cn/problems/container-with-most-water/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -102,7 +104,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每步丢一条边。
 
-## 边界
+## Edge Cases
 
 只有两条线时，答案就是 $\min(h[0],h[1])\cdot 1$。
 

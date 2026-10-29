@@ -32,11 +32,11 @@ FP16 有 5 exponent / 10 fraction，另有 hidden bit，范围大约到 $6\times
 
 ## FP8：E4M3 / E5M2 与 scale
 
-常见两种：E4M3 更准、范围更小；E5M2 范围更大、更粗。训练需要 per-tensor / per-channel scale、amax history，有时 stochastic rounding。并非所有 op 都适合 FP8：embedding、lm_head、归一化、路由 logits 常留 BF16/FP32。
+常见两种：E4M3 更准、范围更小；E5M2 范围更大、更粗。训练需要 per-tensor / per-channel scale、amax history，有时 stochastic rounding。并非所有 op 都适合 FP8：embedding、lm_head、normalization、路由 logits 常留 BF16/FP32。
 
 推理侧还有 FP8 KV（`--sglang-kv-cache-dtype fp8_e4m3`），那是存储精度，和训练 FP8 不是同一套 recipe，见 `slime-sglang-native`。
 
-实际选型时，大模型训练我默认 BF16；必须用 FP16 时，先确认 loss scale 怎样调整、什么情况下 skip-update。上 FP8 先证明 kernel 和 scale 稳定，再谈吞吐；scale 偏移可能悄悄破坏收敛。显存账：参数 $N$ 个，BF16 约 $2N$ 字节，再加 FP32 优化器（Adam 约 $8N$）和激活。ZeRO 切的是后面这两项，见 `sys-zero`。不要把「开了 BF16」说成显存砍半：权重的存储减半了，Adam 动量和 variance 往往还在 32 位。
+实际选型时，大模型训练我默认 BF16；必须用 FP16 时，先确认 loss scale 怎样调整、什么情况下 skip-update。上 FP8 先证明 kernel 和 scale 稳定，再谈 throughput；scale 偏移可能悄悄破坏收敛。显存账：参数 $N$ 个，BF16 约 $2N$ 字节，再加 FP32 优化器（Adam 约 $8N$）和激活。ZeRO 切的是后面这两项，见 `sys-zero`。不要把「开了 BF16」说成显存砍半：权重的存储减半了，Adam 动量和 variance 往往还在 32 位。
 
 相关：`stepfun-bf16-fp16`。
 
@@ -46,7 +46,7 @@ FP16 有 5 exponent / 10 fraction，另有 hidden bit，范围大约到 $6\times
 动态范围不够，loss scale 调参本身成为不稳定源。
 **FP8 一定更快吗？**
 硬件不支持、dequant 重、或模型已是 compute-bound 时，bit 降了也不快，见 `sys-quant`。
-**训练 BF16、采样轨迹（rollout） FP8 要重算 logp 吗？**
+**训练 BF16、sampling 轨迹（rollout） FP8 要重算 logp 吗？**
 要。分布不一致，ratio 必须用训练图 $\log\pi$。
 **8 bit 是 1 字节吗？**
 是。核算显存时不要把「16 位」说成 16 字节。

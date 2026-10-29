@@ -4,7 +4,7 @@ section: backtracking
 order: 7
 level: S
 title: LC 79 · 单词搜索
-quick: "从每个格子出发做四方向 DFS。进入格子时把它改成标记再搜邻居，回溯时恢复；越界、已访问或字母不匹配就立刻返回。时间 $O(mn\\cdot 4^L)$。"
+quick: 从每个格子出发做四方向 DFS。进入格子时把它改成标记再搜邻居，回溯时恢复；越界、已访问或字母不匹配就立刻返回。时间 $O(mn\cdot 4^L)$。
 tags:
   - Backtracking
   - Grid
@@ -12,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 79. 单词搜索
-    url: https://leetcode.cn/problems/word-search/
+    url: 'https://leetcode.cn/problems/word-search/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -107,10 +107,10 @@ if __name__ == "__main__":
 
 ```python
 board = [
-        ["A", "B", "C", "E"],
-        ["S", "F", "C", "S"],
-        ["A", "D", "E", "E"],
-    ]
+    ["A", "B", "C", "E"],
+    ["S", "F", "C", "S"],
+    ["A", "D", "E", "E"],
+]
 assert exist(board, "ABCCED") is True
 assert exist(board, "SEE") is True
 assert exist(board, "ABCB") is False
@@ -123,7 +123,7 @@ print("simple tests passed")
 
 时间 $O(mn\cdot 4^L)$，$L$ 是词长。原地标记，额外空间只有 $O(L)$ 的递归栈。
 
-## 边界
+## Edge Cases
 
 单词长 $1$ 时，只要盘上有这个字母就为真，DFS 第一步匹配后 `i+1==len` 返回。整盘刚好有一条蛇形路径拼出该词时，标记保证不走回头路，能走通。需要回头但格子已经用过的情况，就是上面 `ABCB` 想复用中间的 `B`，应返回假。
 
@@ -133,7 +133,7 @@ print("simple tests passed")
 不能，题目要求路径上的格子互不相同。所以进入时要改盘（或者记 `visited`），四个方向搜完再恢复。忘了回溯会把后续起点的路也堵死；忘了标记，会在两个相邻的相同字母之间来回震荡。
 
 **一次要搜很多词呢？**
-对每个词跑一遍本题是 $O(|words|\cdot mn\cdot 4^L)$，共享前缀会被重复走。把词表建成 Trie，从每个格子沿 Trie 往下 DFS，走不通立刻剪；找到一个词就清掉词尾标记防止重复收，空子树可以删掉。这就是 LC 212，独立卡 `lc-212-word-search-ii`。
+对每个词跑一遍本题是 $O(|words|\cdot mn\cdot 4^L)$，共享前缀会被重复走。把 vocabulary 建成 Trie，从每个格子沿 Trie 往下 DFS，走不通立刻剪；找到一个词就清掉词尾标记防止重复收，空子树可以删掉。这就是 LC 212，独立卡 `lc-212-word-search-ii`。
 
 ```python
 def existMany(board, words):

@@ -5,7 +5,8 @@ order: 7
 level: S
 title: LC 238 · 除自身以外数组的乘积
 quick: >-
-  不能用除法，就用左侧积乘右侧积：第一遍从左往右把每个位置左边的积写进答案，第二遍从右往左用一个变量乘上右边的积。时间 $O(n)$，除答案数组外额外空间 $O(1)$。
+  不能用除法，就用左侧积乘右侧积：第一遍从左往右把每个位置左边的积写进答案，第二遍从右往左用一个变量乘上右边的积。时间 $O(n)$，除答案数组外额外空间
+  $O(1)$。
 tags:
   - Array
   - Prefix Sum
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 238. Product of Array Except Self
-    url: https://leetcode.com/problems/product-of-array-except-self/
+    url: 'https://leetcode.com/problems/product-of-array-except-self/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -105,7 +106,7 @@ print("simple tests passed")
 
 两遍扫描，时间 $O(n)$。除答案数组外只多了 `right` 一个变量，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 - 恰好一个 $0$ 时，只有 $0$ 那个位置是其余元素的积，其他位置都是 $0$。
 - 两个及以上 $0$ 时，答案全是 $0$。

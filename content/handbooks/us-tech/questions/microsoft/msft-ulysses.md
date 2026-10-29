@@ -4,38 +4,50 @@ section: microsoft
 order: 13
 level: S
 title: Microsoft：DeepSpeed Ulysses 序列并行，和 Megatron SP 对照
-quick: "Ulysses 先按序列分片，注意力前 all-to-all 换成全长序列加部分头，计算后再换回来。每链路约 $4Nh/P$，适合长序列且头数够分的训练 / prefill；Megatron SP 依附 TP，主要减少 LN 等激活副本，通信仍为 $O(N)$。"
+quick: >-
+  Ulysses 先按序列分片，attention 前 all-to-all 换成全长序列加部分头，计算后再换回来。每链路约
+  $4Nh/P$，适合长序列且头数够分的训练 / prefill；Megatron SP 依附 TP，主要减少 LN 等激活副本，通信仍为 $O(N)$。
 tags:
   - Microsoft
   - DeepSpeed
   - Ulysses
   - Sequence Parallel
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: DeepSpeed Ulysses
-    url: https://arxiv.org/abs/2309.14509
+    url: 'https://arxiv.org/abs/2309.14509'
     type: primary
   - title: DeepSpeed Ulysses blog
-    url: https://www.microsoft.com/en-us/research/blog/deepspeed-ulysses-system-optimizations-for-enabling-training-of-extreme-long-sequence-transformer-models/
+    url: >-
+      https://www.microsoft.com/en-us/research/blog/deepspeed-ulysses-system-optimizations-for-enabling-training-of-extreme-long-sequence-transformer-models/
     type: primary
   - title: Reducing Activation Recomputation in Large Transformer Models
-    url: https://arxiv.org/abs/2205.05198
+    url: 'https://arxiv.org/abs/2205.05198'
     type: primary
   - title: USP — Unified Sequence Parallelism
-    url: https://arxiv.org/abs/2405.07719
+    url: 'https://arxiv.org/abs/2405.07719'
     type: secondary
 ---
 
-Ulysses 通过两次 all-to-all 在序列分片与头分片间转换，既让每个注意力头看到完整序列，又不把全部头复制到每卡。比如序列长度和卡数同时加倍，按论文口径每链路字节量不变；小序列却可能被 all-to-all 启动开销拖慢。
+## 可以这样回答
+
+Ulysses 通过两次 all-to-all 在序列分片与头分片间转换，既让每个 attention 头看到完整序列，又不把全部头复制到每卡。比如序列长度和卡数同时加倍，按论文定义每链路字节量不变；小序列却可能被 all-to-all 启动开销拖慢。
+
+输入每卡 $[B, N/P, h]$，$N$ 是序列长，$P$ 为序列并行度，$h$ 为 hidden。QKV 本地投影后，all-to-all 变成 $[B, N, h/P]$，每卡拿全长序列的一部分头，在本地完成 softmax attention。实现 attention-agnostic，可接 FlashAttention。
+
+## 技术备查
+
+Ulysses 通过两次 all-to-all 在序列分片与头分片间转换，既让每个 attention 头看到完整序列，又不把全部头复制到每卡。比如序列长度和卡数同时加倍，按论文定义每链路字节量不变；小序列却可能被 all-to-all 启动开销拖慢。
 
 ZeRO 处理状态副本，见 `msft-deepspeed-zero`，激活仍随 $B\cdot T\cdot L\cdot d$ 增长。几十 k 到百万长度需要另管激活。本卡依据 DeepSpeed-Ulysses（2023）和 Korthikanti 等的 Megatron SP 公开工作，`realInterview: false`，名词对照见 `sys-seq-parallel`。
 
 ## 看布局怎样变化
 
-输入每卡 $[B, N/P, h]$，$N$ 是序列长，$P$ 为序列并行度，$h$ 为 hidden。QKV 本地投影后，all-to-all 变成 $[B, N, h/P]$，每卡拿全长序列的一部分头，在本地完成 softmax 注意力。实现 attention-agnostic，可接 FlashAttention。
+输入每卡 $[B, N/P, h]$，$N$ 是序列长，$P$ 为序列并行度，$h$ 为 hidden。QKV 本地投影后，all-to-all 变成 $[B, N, h/P]$，每卡拿全长序列的一部分头，在本地完成 softmax attention。实现 attention-agnostic，可接 FlashAttention。
 
 再 all-to-all 将输出变回 $[B, N/P, h]$，MLP 和 LayerNorm 继续按序列分片。这里没有第三次将完整激活 all-gather 到每卡，也没有沿环传 $K,V$。
 
@@ -49,11 +61,11 @@ $$
 
 | | Ulysses | Megatron SP（Korthikanti） |
 | --- | --- | --- |
-| 并行轴 | 纯序列；注意力时改成切头 | 必须配 TP，切 LN/MLP 的序列副本 |
-| 注意力布局 | all-to-all 得到全长、少头 | 先 gather 成 TP 需要的完整激活 |
+| 并行轴 | 纯序列；attention 时改成切头 | 必须配 TP，切 LN/MLP 的序列副本 |
+| attention 布局 | all-to-all 得到全长、少头 | 先 gather 成 TP 需要的完整激活 |
 | 每链路体积 | $\sim 4Nh/P$ | $\sim 4Nh$（不随 $P$ 降） |
 | 状态分片 | 常叠 ZeRO-3 | 参数仍按 TP 切，不是 ZeRO 那套 |
-| 上限 | $P \le$ 注意力头数（还要能整除） | $P$ 等于 TP 度 |
+| 上限 | $P \le$ attention 头数（还要能整除） | $P$ 等于 TP 度 |
 
 ## 依据容量瓶颈选择
 

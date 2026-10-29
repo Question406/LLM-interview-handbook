@@ -3,8 +3,10 @@ id: p3a-anthropic-onsite-design-doc-review
 section: anthropic
 order: 623
 level: A
-title: "Anthropic：设计文档评审：发现风险与提出替代"
-quick: "我会沿一次请求找出最先影响用户的故障，再给可回滚的修改方案。比如同步推理超时后整体重试，可能让 GPU 重复生成和重复计费；这就能具体说明幂等、队列上限和资源准入为什么要优先修。"
+title: Anthropic：设计文档评审：发现风险与提出替代
+quick: >-
+  我会沿一次请求找出最先影响用户的故障，再给可回滚的修改方案。比如同步推理超时后整体重试，可能让 GPU
+  重复生成和重复计费；这就能具体说明幂等、队列上限和资源准入为什么要优先修。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · onsite-design-doc-review"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/onsite-design-doc-review
+  - title: 1Point3Acres · Anthropic · onsite-design-doc-review
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/onsite-design-doc-review
     type: secondary
 ---
 
@@ -27,7 +30,7 @@ sources:
 
 现场阅读一份设计文档，指出其中的遗漏和风险，并给出可行的修改方案。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；收录为面经题型不代表公司官方确认。下面的示例文档、规模数字和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 用 Chrome 读取），是网站对候选人报告的二手整理。下面的示例文档、规模数字和故障情景是手册补的练习约定。
 
 ## 思路
 
@@ -54,7 +57,7 @@ sources:
 ### 面试追问与参考回答
 
 **为什么不建议整体重写？**
-先用可回滚的小改动止住主要风险，保留现有服务边界。只有当数据证明现有约束下确实无法扩展时，再拿着数据提出重构。
+先用可回滚的小改动止住主要风险，保留现有 service responsibilities。只有当数据证明现有约束下确实无法扩展时，再拿着数据提出重构。
 
 **作者不同意你的某条意见怎么办？**
 回到触发场景和数据：说明在什么条件下会出问题、发生概率的依据是什么。如果作者有你不知道的约束（比如流量其实很小），就调整优先级并把这个假设写进文档。

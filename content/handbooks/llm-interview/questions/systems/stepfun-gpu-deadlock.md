@@ -4,7 +4,9 @@ section: systems
 order: 183
 level: A
 title: 阶跃星辰：GPU 死锁是什么，训练里常见怎么踩到？
-quick: "GPU 死锁指一组 rank 互相等通信或同步，谁也无法前进。训练里先查各 rank 是否进入同一集合通信，再查分支、CPU 等待、显存分配与 OOM 重试有没有打乱同步顺序；NCCL 超时本身还不能证明死锁。"
+quick: >-
+  GPU 死锁指一组 rank 互相等通信或同步，谁也无法前进。训练里先查各 rank 是否进入同一集合通信，再查分支、CPU 等待、显存分配与 OOM
+  重试有没有打乱同步顺序；NCCL 超时本身还不能证明死锁。
 tags:
   - StepFun
   - GPU
@@ -13,10 +15,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 阶跃星辰大模型算法实习面经 好难
-    url: https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3
+    url: 'https://www.nowcoder.com/feed/main/detail/933afb27edd84b438682fd5bba95fbb3'
     type: candidate-first-hand
 ---
 
@@ -25,7 +27,7 @@ sources:
 - 公司：阶跃星辰（StepFun）
 - 团队 / 岗位：大模型算法实习
 - 来源类型与可信度：牛客候选人原帖，B
-- 原始措辞：**“GPU死锁是什么？”**
+- 原始措辞：**“GPU 死锁是什么？”**
 
 GPU 死锁就是一组 rank 互相等对方的通信或同步，谁也无法前进，利用率会掉到接近 0。训练里常见的情况是集合通信的参与和顺序没有对齐：`allreduce` / `allgather` 要求全员到达，一个 rank 走到别的分支，其余卡就一直等。OOM、单卡 kernel 长尾和 NCCL 超时需要分别判断，排查方法见 `sys-distributed-hang`；同面还有 DeepSpeed / BF16 相关题。
 

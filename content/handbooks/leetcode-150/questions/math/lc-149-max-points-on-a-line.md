@@ -4,7 +4,9 @@ section: math
 order: 6
 level: A
 title: LC 149 · 直线上最多的点数
-quick: "枚举每个点当定点，其余点按斜率分组计数。斜率用约分后的 $(\\Delta x,\\Delta y)$ 做 key，`gcd` 后统一符号，竖线 $\\Delta x=0$ 也能进同一个 key；和定点重合的点单独累加。"
+quick: >-
+  枚举每个点当定点，其余点按斜率分组计数。斜率用约分后的 $(\Delta x,\Delta y)$ 做 key，`gcd` 后统一符号，竖线 $\Delta
+  x=0$ 也能进同一个 key；和定点重合的点单独累加。
 tags:
   - Math
   - Hash
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 149. 直线上最多的点数
-    url: https://leetcode.cn/problems/max-points-on-a-line/
+    url: 'https://leetcode.cn/problems/max-points-on-a-line/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -117,7 +119,7 @@ print("simple tests passed")
 
 时间 $O(n^2\log C)$（`gcd`），额外空间 $O(n)$。$C$ 为坐标差的量级。
 
-## 边界
+## Edge Cases
 
 - 全部重合时 `same` 累加到 $n$，没有斜率，`local=same`。
 - 全在一条竖线上时，`dx=0` 约分后 key 都是 $(0,1)$。

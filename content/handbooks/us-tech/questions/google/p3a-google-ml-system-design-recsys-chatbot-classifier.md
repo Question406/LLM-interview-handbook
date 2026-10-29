@@ -3,8 +3,10 @@ id: p3a-google-ml-system-design-recsys-chatbot-classifier
 section: google
 order: 812
 level: A
-title: "Google MLE：推荐、聊天与分类 ML 系统设计"
-quick: "ML 系统设计先确定用户、业务目标与衡量指标，再顺着数据、训练、serving 讲清上线流程。以图片审核为例，阈值要同时满足漏检目标与人审容量，并准备漂移处理、灰度和回滚，不能只比较离线 AUC。"
+title: Google MLE：推荐、聊天与分类 ML 系统设计
+quick: >-
+  ML 系统设计先确定用户、业务目标与衡量指标，再顺着数据、训练、serving
+  讲清上线流程。以图片审核为例，阈值要同时满足漏检目标与人审容量，并准备漂移处理、灰度和回滚，不能只比较离线 AUC。
 companies:
   - google
 tags:
@@ -15,10 +17,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Google MLE：推荐、聊天与分类 ML 系统设计"
-    url: https://www.1point3acres.com/interview/problems/company/google/ml-system-design-recsys-chatbot-classifier
+  - title: 1Point3Acres · Google MLE：推荐、聊天与分类 ML 系统设计
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/google/ml-system-design-recsys-chatbot-classifier
     type: secondary
 ---
 
@@ -26,7 +29,7 @@ sources:
 
 这张题卡覆盖多种 ML 系统设计场景：推荐系统、chatbot、图像分类、内容审核和风控。不管抽到哪一种，面试官都希望你从业务目标讲到数据、模型、上线和监控的完整链路。
 
-> 来源：一亩三分地 Google 题卡摘要（2026-10-18 读取），未核实完整题干或原帖，网站收录也不代表公司官方确认；题型跨 Google MLE/AI-ML，没有确认是 DeepMind 专属，不同岗位之间不要互相套用。规模数字、SLO 和故障情景是手册补的练习约定。
+> 来源：一亩三分地 Google 题卡摘要（2026-10-18 读取）；题型跨 Google MLE/AI-ML，没有确认是 DeepMind 专属，不同岗位之间不要互相套用。规模数字、SLO 和故障情景是手册补的练习约定。
 
 ## 思路
 
@@ -46,11 +49,11 @@ sources:
 
 我会把审核做成自动判定与人审结合的流程：图片先过轻量规则和视觉 embedding 召回，筛出高风险候选，再由主分类模型输出各类别分数。按阈值决定直接通过、进入人审或直接拦截，人审标注与用户反馈回到离线训练，新模型先灰度发布。
 
-为了追溯判定依据，每个样本记录 source、`policy_version`、labeler、time、`model_score` 和 decision。训练与验证按时间和内容簇切开，避免同图的重复、近似版本跨集合，让指标虚高。
+为了追溯判定依据，每个样本记录 source、`policy_version`、labeler、time、`model_score` 和 decision。训练与验证按时间和内容 cluster 切开，避免同图的重复、近似版本跨集合，让指标虚高。
 
-比如一张图片上传后，规则层没有命中，embedding 召回发现它与已知违规簇的距离较近，于是进入主模型。主模型给出“暴力”类别 0.62 分，落在送审区间 [0.4, 0.9) 里，进入人审队列，用户侧暂时显示“审核中”。审核员判定违规，图片被下架；这条带 `policy_version` 的标注写回训练库，下一轮训练时会用到。
+比如一张图片上传后，规则层没有命中，embedding 召回发现它与已知违规 cluster 的距离较近，于是进入主模型。主模型给出“暴力”类别 0.62 分，落在送审区间 [0.4, 0.9) 里，进入人审队列，用户侧暂时显示“审核中”。审核员判定违规，图片被下架；这条带 `policy_version` 的标注写回训练库，下一轮训练时会用到。
 
-政策更新时，先重新校准阈值和标注规范。检测到分布漂移时，收紧自动判定的区间，让更多样本进入人审。模型服务失败时，按产品风险明确降级策略，不能一概放行。
+政策更新时，先重新 calibration 阈值和标注规范。检测到分布漂移时，收紧自动判定的区间，让更多样本进入人审。模型服务失败时，按产品风险明确降级策略，不能一概放行。
 
 验收时看各类别的 PR 曲线、在固定人审预算下的召回率、误拦的成本，按用户群体和地区分层看，再加上时延。离线 AUC 提高不一定带来线上审核效果的提升。
 

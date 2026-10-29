@@ -4,20 +4,22 @@ section: binary-search
 order: 1
 level: S
 title: LC 35 · 搜索插入位置
-quick: "二分找下界，也就是第一个 $\\ge$ `target` 的位置。值存在时它就是下标，不存在时它就是插入位置，全都小于 `target` 时返回 $n$。时间 $O(\\log n)$。"
+quick: >-
+  二分找下界，也就是第一个 $\ge$ `target` 的位置。值存在时它就是下标，不存在时它就是插入位置，全都小于 `target` 时返回 $n$。时间
+  $O(\log n)$。
 tags:
   - Binary Search
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 35. 搜索插入位置
-    url: https://leetcode.cn/problems/search-insert-position/
+    url: 'https://leetcode.cn/problems/search-insert-position/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -99,7 +101,7 @@ print("simple tests passed")
 
 时间 $O(\log n)$，额外空间 $O(1)$。
 
-## 边界
+## Edge Cases
 
 `target` 小于全部时，循环里一直 `hi = mid`，返回 $0$。大于全部时一直 `lo = mid + 1`，返回 $n$，就是尾部插入位。恰好是第一个或最后一个元素时，下界正好落在那个下标，因为第一个 $\ge$ `target` 就是它自己。
 

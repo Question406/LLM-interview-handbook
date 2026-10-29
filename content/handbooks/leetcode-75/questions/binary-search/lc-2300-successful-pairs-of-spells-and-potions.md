@@ -5,7 +5,8 @@ order: 2
 level: A
 title: LC 2300 · 咒语和药水的成功对数
 quick: >-
-  药水排序后二分：对每个咒语 $s$ 算出最小合格强度 $\lceil success/s\rceil$，用 `bisect_left` 找第一个不小于它的位置，后面的药水全部成功。时间 $O((n+m)\log m)$，额外空间 $O(m)$。
+  药水排序后二分：对每个咒语 $s$ 算出最小合格强度 $\lceil success/s\rceil$，用 `bisect_left`
+  找第一个不小于它的位置，后面的药水全部成功。时间 $O((n+m)\log m)$，额外空间 $O(m)$。
 tags:
   - Binary Search
   - Sorting
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 2300. Successful Pairs of Spells and Potions
-    url: https://leetcode.com/problems/successful-pairs-of-spells-and-potions/
+    url: 'https://leetcode.com/problems/successful-pairs-of-spells-and-potions/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -106,7 +107,7 @@ print("simple tests passed")
 
 排序 $O(m\log m)$，每个咒语一次二分 $O(\log m)$，总时间 $O((n+m)\log m)$。额外空间 $O(m)$ 存排序后的副本（不计答案）。
 
-## 边界
+## Edge Cases
 
 - 乘积恰好等于 `success` 也算成功，所以用 `bisect_left`；用 `bisect_right` 会漏掉强度正好等于阈值的药水。
 - 阈值大于最大药水时，`bisect_left` 返回 $m$，答案是 $0$。
@@ -131,4 +132,4 @@ def successfulPairsTwoPointers(spells, potions, success):
 ```
 
 **为什么不直接用浮点 `success / s`？**
-边界容易差一。值到 $10^{10}$ 时浮点仍能精确表示，但除法结果可能有舍入，和整数比较时边界容易错。整数上取整，或者直接比较乘积，最稳。
+容易出现 off-by-one errors。值到 $10^{10}$ 时浮点仍能精确表示，但除法结果可能有舍入，和整数比较时 endpoint handling 容易出错。整数上取整，或者直接比较乘积，最稳。

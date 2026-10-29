@@ -4,20 +4,22 @@ section: linked-list
 order: 5
 level: A
 title: LC 92 · 反转链表 II
-quick: "哑结点走到 `left` 的前驱，然后用头插法做 `right-left` 次，每次把区间里的下一个节点拧到前驱后面。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  哑结点走到 `left` 的前驱，然后用头插法做 `right-left` 次，每次把区间里的下一个节点拧到前驱后面。时间 $O(n)$，额外空间
+  $O(1)$。
 tags:
   - Linked List
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 92. 反转链表 II
-    url: https://leetcode.cn/problems/reverse-linked-list-ii/
+    url: 'https://leetcode.cn/problems/reverse-linked-list-ii/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -89,7 +91,9 @@ def to_list(head: Optional[ListNode]) -> List[int]:
     return out
 
 
-def reverseBetween(head: Optional[ListNode], left: int, right: int) -> Optional[ListNode]:
+def reverseBetween(
+    head: Optional[ListNode], left: int, right: int
+) -> Optional[ListNode]:
     dummy = ListNode(0, head)
     pred = dummy
     for _ in range(left - 1):
@@ -129,7 +133,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。走到 `right` 就够了，不用扫完整张表。
 
-## 边界
+## Edge Cases
 
 - `left == right` 时内层循环零次，原表不变。
 - 从头反转（`left=1`）时，哑结点让 `pred` 停在 dummy，新头是原来的第 `right` 个节点。

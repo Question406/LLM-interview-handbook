@@ -4,7 +4,9 @@ section: overview
 order: 9
 level: S
 title: 美国 Tech LLM team：多模态轮怎么准备（编码、token 预算、评测）
-quick: "多模态轮先练视觉 token 怎样进入序列、mask 怎样写，再核算高分辨率图像占用的上下文和 KV。设计与评测要说明区域引用、图文冲突、缺失模态和有害图输入如何处理；基础 attention 练习照常保留，地图见 `us-prep-map`。"
+quick: >-
+  多模态轮先练视觉 token 怎样进入序列、mask 怎样写，再核算高分辨率图像占用的上下文和
+  KV。设计与评测要说明区域引用、图文冲突、缺失模态和有害图输入如何处理；基础 attention 练习照常保留，地图见 `us-prep-map`。
 tags:
   - US Tech
   - Multimodal
@@ -13,16 +15,17 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: 2026-08-23T00:00:00.000Z
 sources:
   - title: Gemini — A Family of Highly Capable Multimodal Models
-    url: https://arxiv.org/abs/2312.11805
+    url: 'https://arxiv.org/abs/2312.11805'
     type: primary
   - title: Introducing Apple Foundation Models
-    url: https://machinelearning.apple.com/research/introducing-apple-foundation-models
+    url: >-
+      https://machinelearning.apple.com/research/introducing-apple-foundation-models
     type: primary
   - title: Learning Transferable Visual Models From Natural Language Supervision
-    url: https://arxiv.org/abs/2103.00020
+    url: 'https://arxiv.org/abs/2103.00020'
     type: primary
 ---
 
@@ -30,7 +33,7 @@ sources:
 
 ## 先写清编码和序列形状
 
-闭卷要能写：图 $H\times W$、补丁 $P$，大约 $N_p=(H/P)\times(W/P)$ 个视觉 token，投影到 $D$，和文本拼成 `[B, T_{\mathrm{text}}+T_{\mathrm{vis}}, D]`。损失只在文本位置；视觉位置当 prefix，类似 tool 观察不要进策略梯度，见 `align-agent-rl`。连接器（MLP / 交叉注意 / Perceiver）面试能讲一个权衡即可：交叉注意省序列长度，拼 token 实现简单、预算直白。
+闭卷要能写：图 $H\times W$、补丁 $P$，大约 $N_p=(H/P)\times(W/P)$ 个视觉 token，投影到 $D$，和文本拼成 `[B, T_{\mathrm{text}}+T_{\mathrm{vis}}, D]`。损失只在文本位置；视觉位置当 prefix，类似 tool 观察不要进 policy gradient，见 `align-agent-rl`。连接器（MLP / 交叉注意 / Perceiver）面试能讲一个权衡即可：交叉注意省序列长度，拼 token 实现简单、预算直白。
 
 常见误区是：把视觉长度算进 causal mask 却在 softmax 轴上搞错；高分辨率 anyres 把 $N_p$ 乘成数倍还不说 KV；视频按 30 fps 进大模型。打包混模态时 padding 和位置编码（图像用 2D、文本用 1D）要分开讲，不要一句 RoPE 打天下。手写 MHA 仍可能出现，见 `apple-mha-code`；多模态岗只是追问「这段 key 来自补丁怎么办」。
 
@@ -44,7 +47,7 @@ Serving：视觉 encoder 是 prefill 侧的瓶颈，和 chat serving 的 首个 
 
 安全：截图越狱、图上的字绕过文本过滤，见 `align-mm-harm`。准备一个「图当不可信输入」的答法，和工具输出注入同构。
 
-门禁拆：证据支持（框 / 页能否支撑这句话）、正确、幻觉（物体是否存在）、模态缺失拒答、图文冲突、延迟随分辨率变化、有害图通道。不要用 BLEU。检索岗加 ACL 与像素泄漏，见 `design-mm-rag`。人工集覆盖：只有语音、只有图、弱网、打断。
+acceptance checks 拆：证据支持（框 / 页能否支撑这句话）、正确、hallucination（物体是否存在）、模态缺失拒答、图文冲突、延迟随分辨率变化、有害图通道。不要用 BLEU。检索岗加 ACL 与像素泄漏，见 `design-mm-rag`。人工集覆盖：只有语音、只有图、弱网、打断。
 
 公司倾斜：Google 追长上下文 + 多模态融合；Apple 追端侧、隐私、voice 可说长度；OpenAI 可能把视觉放进 debug「多一种 token 类型」；Amazon 追企业扫描件 检索增强生成（RAG）。论文精读仍以 `us-llm-paper-stack` 六篇打底，多模态加 Gemini 报告里「接口与评测」那几页，不要开二十篇综述。
 
@@ -54,7 +57,7 @@ Serving：视觉 encoder 是 prefill 侧的瓶颈，和 chat serving 的 首个 
 
 Onsite 设计题先问：图是否必须、引用要不要框、数据能否出设备、p95。这些约束会决定图像处理路径、上下文预算和部署位置。编码轮若给了 packed 序列，先数视觉段长度再写 mask。和 `google-gemini-mm` 对照读接口，不要背参数量。
 
-和六周计划的关系：第 1-2 周 debug 照旧；第 5 周设计把 RAG 换成带框引用的图文助手或 `design-mm-rag`。NVIDIA 岗视觉 encoder 可以讲成 kernel 吞吐，但仍要会算 $N_p$。不要用「我读过 LLaVA」替代 shape。
+和六周计划的关系：第 1-2 周 debug 照旧；第 5 周设计把 RAG 换成带框引用的图文助手或 `design-mm-rag`。NVIDIA 岗视觉 encoder 可以讲成 kernel throughput，但仍要会算 $N_p$。不要用「我读过 LLaVA」替代 shape。
 
 ## 追问
 
@@ -68,5 +71,5 @@ Onsite 设计题先问：图是否必须、引用要不要框、数据能否出�
 两者都要。屏的 token 走本题；沙箱确认走 `us-agent-prep`。
 **视频怎么算 token？**
 先定 fps 和分辨率，再乘 $N_p$。面试先拒绝默认 30 fps，再说关键帧。
-**POPE / VQA 够不够当门禁？**
+**POPE / VQA 够不够当 acceptance checks？**
 不够。要加证据支持、冲突、缺失模态、有害图通道和延迟。

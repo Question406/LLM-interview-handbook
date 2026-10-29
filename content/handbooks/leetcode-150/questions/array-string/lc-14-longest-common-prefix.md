@@ -4,20 +4,22 @@ section: array-string
 order: 20
 level: S
 title: LC 14 · 最长公共前缀
-quick: "以第一串为 `prefix`，逐个和后面的串比，不匹配就把 `prefix` 截短，空了就提前返回。时间 $O(S)$（$S$ 为字符总数），额外空间 $O(1)$。"
+quick: >-
+  以第一串为 `prefix`，逐个和后面的串比，不匹配就把 `prefix` 截短，空了就提前返回。时间 $O(S)$（$S$ 为字符总数），额外空间
+  $O(1)$。
 tags:
   - String
   - Easy
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 14. 最长公共前缀
-    url: https://leetcode.cn/problems/longest-common-prefix/
+    url: 'https://leetcode.cn/problems/longest-common-prefix/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -98,7 +100,7 @@ print("simple tests passed")
 
 时间 $O(S)$，$S$ 是所有字符个数。额外空间 $O(1)$（不计输出）。
 
-## 边界
+## Edge Cases
 
 只有一个串时，公共前缀就是它自己。存在空串时，公共前缀立刻变成空。公共前缀也可能恰好是某个完整串，比如 `["ab", "abc"]`，答案是 `ab`。
 

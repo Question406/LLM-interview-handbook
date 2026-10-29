@@ -4,7 +4,9 @@ section: coding
 order: 2
 level: S
 title: 白板：从 logits 写 cross entropy，不要先 softmax 再 log
-quick: "直接在 log 域算 $\\ell=-z_y+\\mathrm{logsumexp}(z)$，先减行最大值，避免概率下溢后再取 log。先筛掉 ignore 下标，再按有效 token 数平均；causal LM 只 shift 一次。"
+quick: >-
+  直接在 log 域算 $\ell=-z_y+\mathrm{logsumexp}(z)$，先减行最大值，避免概率下溢后再取 log。先筛掉 ignore
+  下标，再按有效 token 数平均；causal LM 只 shift 一次。
 tags:
   - 完整编程练习
   - Coding
@@ -14,28 +16,30 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
   - title: torch.nn.functional.cross_entropy
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html
     type: primary
   - title: torch.nn.functional.log_softmax
-    url: https://pytorch.org/docs/stable/generated/torch.nn.functional.log_softmax.html
+    url: >-
+      https://pytorch.org/docs/stable/generated/torch.nn.functional.log_softmax.html
     type: primary
 ---
 
 ## 题目描述
 
-实现基于 logits 的交叉熵，以及采用 next-token 对齐方式的语言模型交叉熵，正确处理被忽略的位置。
+实现基于 logits 的 cross entropy，以及采用 next-token 对齐方式的语言模型 cross entropy，正确处理被忽略的位置。
 
-以下接口、边界和规模限制是手册重构的练习约定，不代表面试原题逐字原文；输入默认满足所列合法约束。
+以下接口、edge cases 和规模限制是手册重构的练习约定；输入默认满足所列合法约束。
 
 ### 接口与规则
 
-- `cross_entropy_logits(logits, target, ignore_index=-100) -> Tensor`：`logits` 形状 `[N, V]`，`target` 形状 `[N]`。返回未被忽略的样本上的平均交叉熵。
+- `cross_entropy_logits(logits, target, ignore_index=-100) -> Tensor`：`logits` 形状 `[N, V]`，`target` 形状 `[N]`。返回未被忽略的样本上的平均 cross entropy。
 - `lm_ce(logits, labels, ignore_index=-100) -> Tensor`：causal LM 版本，`logits` 形状 `[B, L, V]`，`labels` 形状 `[B, L]`；用位置 t 的 logits 预测位置 t+1 的 label，只 shift 一次。
 - `ignore_index` 可以是任意整数，包括大于 V 的值，也必须被安全忽略；未被忽略的标签保证满足 `0 <= y < V`。
-- 全部标签都被忽略，或者 LM 的序列长度 `L <= 1` 时，返回一个能反传、梯度为 0 的标量 0。
+- 全部标签都被忽略，或者 LM 的序列长度 `L <= 1` 时，返回一个能 backpropagation、梯度为 0 的标量 0。
 
 ### 输入输出示例
 
@@ -50,14 +54,14 @@ cross_entropy_logits(logits, target=[99, 99], ignore_index=99)           -> 0，
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
-- `cross_entropy_logits(logits, target, ignore_index=-100) -> Tensor`：`logits` 形状 `[N, V]`，`target` 形状 `[N]`。返回未被忽略的样本上的平均交叉熵。
+- `cross_entropy_logits(logits, target, ignore_index=-100) -> Tensor`：`logits` 形状 `[N, V]`，`target` 形状 `[N]`。返回未被忽略的样本上的平均 cross entropy。
 - `lm_ce(logits, labels, ignore_index=-100) -> Tensor`：causal LM 版本，`logits` 形状 `[B, L, V]`，`labels` 形状 `[B, L]`；用位置 t 的 logits 预测位置 t+1 的 label，只 shift 一次。
 - `ignore_index` 可以是任意整数，包括大于 V 的值，也必须被安全忽略；只对没被忽略的标签检查 `0 <= y < V`，越界时抛 `ValueError`。
-- 全部标签都被忽略，或者 LM 的序列长度 `L <= 1` 时，返回一个能反传、梯度为 0 的标量 0。
+- 全部标签都被忽略，或者 LM 的序列长度 `L <= 1` 时，返回一个能 backpropagation、梯度为 0 的标量 0。
 
 ### 输入输出示例
 
@@ -80,9 +84,11 @@ import torch.nn.functional as F
 
 
 def cross_entropy_logits(logits, target, ignore_index=-100):
-    """logits [N, V]，target [N] -> 未忽略样本上的平均交叉熵（标量）。"""
+    """logits [N, V]，target [N] -> 未忽略样本上的平均 cross entropy（标量）。"""
     if logits.ndim != 2 or logits.shape[1] < 1 or target.shape != logits.shape[:1]:
-        raise ValueError(f"expected logits [N, V] and target [N], got {tuple(logits.shape)} and {tuple(target.shape)}")
+        raise ValueError(
+            f"expected logits [N, V] and target [N], got {tuple(logits.shape)} and {tuple(target.shape)}"
+        )
     keep = target != ignore_index
     if not bool(keep.any()):
         return logits.sum() * 0.0  # 保留计算图，梯度为 0
@@ -116,7 +122,7 @@ def lm_ce(logits, labels, ignore_index=-100):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -133,7 +139,10 @@ torch.manual_seed(0)
 
 # 两类均匀 logits：损失是 ln 2
 uniform = torch.zeros(2, 2)
-assert torch.isclose(cross_entropy_logits(uniform, torch.tensor([1, 99]), 99), torch.log(torch.tensor(2.0)))
+assert torch.isclose(
+    cross_entropy_logits(uniform, torch.tensor([1, 99]), 99),
+    torch.log(torch.tensor(2.0)),
+)
 
 # 与 PyTorch 一致；ignore_index 大于 V 也安全，被忽略的行梯度为 0
 logits = torch.randn(4, 5, requires_grad=True)
@@ -143,7 +152,7 @@ assert torch.allclose(loss, F.cross_entropy(logits, target, ignore_index=99))
 loss.backward()
 assert torch.all(logits.grad[[1, 3]] == 0)
 
-# 全部忽略：返回 0，可以反传，梯度全为 0
+# 全部忽略：返回 0，可以 backpropagation，梯度全为 0
 logits = torch.randn(2, 3, requires_grad=True)
 loss = cross_entropy_logits(logits, torch.tensor([99, 99]), 99)
 loss.backward()
@@ -152,8 +161,12 @@ assert torch.all(logits.grad == 0)
 
 # 极端 logits 不会溢出成 inf / NaN
 extreme = torch.tensor([[1000.0, -1000.0]])
-assert torch.isclose(cross_entropy_logits(extreme, torch.tensor([0])), torch.tensor(0.0))
-assert torch.isclose(cross_entropy_logits(extreme, torch.tensor([1])), torch.tensor(2000.0))
+assert torch.isclose(
+    cross_entropy_logits(extreme, torch.tensor([0])), torch.tensor(0.0)
+)
+assert torch.isclose(
+    cross_entropy_logits(extreme, torch.tensor([1])), torch.tensor(2000.0)
+)
 
 # causal LM：只 shift 一次
 logits = torch.randn(2, 4, 5)
@@ -174,7 +187,7 @@ expect_value_error(cross_entropy_logits, torch.randn(2, 3), torch.tensor([0]))
 设样本数为 N、类别数为 V。时间和临时空间都是 O(NV)。
 
 - 追问「全部忽略时 PyTorch 返回什么」：`F.cross_entropy` 在 mean reduction 下对空输入返回 NaN（0/0）。这里返回 0 是练习显式约定的，不要声称和所有库一致。
-- 追问「词表很大时显存怎么办」：O(NV) 的中间张量来自 `shifted` 和 `exp`。可以按行或按词表分块算 logsumexp，见 `coding-fused-ce`。
+- 追问「vocabulary 很大时显存怎么办」：O(NV) 的中间张量来自 `shifted` 和 `exp`。可以按行或按 vocabulary 分块算 logsumexp，见 `coding-fused-ce`。
 
 ## 题怎么来的
 
@@ -193,7 +206,7 @@ $$
 
 做 label smoothing 时目标不再是 one-hot，要对整个目标分布 $q$ 算 $-q\cdot\log\pi$，不能只 gather 一列。
 
-均匀初始化时 $\ell\approx\log V$，十万词表大约是 $11.5$。可以用这个数判断第一步的 loss 对不对。
+均匀初始化时 $\ell\approx\log V$，十万 vocabulary 大约是 $11.5$。可以用这个数判断第一步的 loss 对不对。
 
 不要对 pad 位置算出损失再乘 0，却仍然除以 $N$。平均只能在有效位置上做。
 
@@ -201,12 +214,12 @@ $$
 
 Causal LM 用 `logits[:, :-1]` 对 `labels[:, 1:]`。HuggingFace 传入 `labels=` 时内部会自己 shift，手写时只能 shift 一次。面试官想听你说出分母是有效 token 数，而不是 batch 里的所有格子；否则 pad 多的 batch，loss 会被人为拉低。
 
-fp16 下即使减了 max，极端值仍可能溢出，这一步升到 fp32 的成本可以忽略。OpenAI 的 debug 题思路是：先固定 greedy 和 `eval()`，再看交叉熵损失（CE）是不是 NaN，不要同时开着 dropout 和采样，见 `openai-transformer-debug`。
+fp16 下即使减了 max，极端值仍可能溢出，这一步升到 fp32 的成本可以忽略。OpenAI 的 debug 题思路是：先固定 greedy 和 `eval()`，再看 cross entropy loss（CE）是不是 NaN，不要同时开着 dropout 和 sampling，见 `openai-transformer-debug`。
 
 ## 追问
 
 **为什么禁止先 softmax 再 log？**
-正确类的 logit 很小或词表很大时，$e^{z_y}/\sum e^{z}$ 会下溢成 0，取 log 就是 $-\infty$。log-sum-exp 的写法全程都是有限值。
+正确类的 logit 很小或 vocabulary 很大时，$e^{z_y}/\sum e^{z}$ 会下溢成 0，取 log 就是 $-\infty$。log-sum-exp 的写法全程都是有限值。
 **`F.nll_loss(F.log_softmax(z), y)` 可以吗？**
 可以，这就是 `cross_entropy` 的做法。错的是 `nll_loss(softmax(z).log(), y)`。
 **label smoothing 怎么算？**
@@ -216,8 +229,8 @@ $\mathrm{CE}(q,\pi)=H(q)+\mathrm{KL}(q\|\pi)$。$q$ 是 one-hot 时 $H(q)=0$，C
 
 ## 相关题
 
-- [[coding-logsumexp]]：同一个恒等式 $\ell=\mathrm{logsumexp}(z)-z_y$ 从 log-sum-exp 这一侧讲，重点是减 max 和整行 $-\infty$ 的边界。
+- [[coding-logsumexp]]：同一个恒等式 $\ell=\mathrm{logsumexp}(z)-z_y$ 从 log-sum-exp 这一侧讲，重点是减 max 和整行 $-\infty$ 的 edge case。
 - [[p3a-openai-masked-cross-entropy-loss]]：OpenAI 的 NumPy 版本，要手写梯度、label smoothing 和全被 mask 时返回 0，契约比这里多。
-- [[coding-fused-ce]]：把这里的 CE 和 lm_head 融合，沿词表分块，不物化 `[N, V]` logits。
+- [[coding-fused-ce]]：把这里的 CE 和 lm_head 融合，沿 vocabulary 分块，不物化 `[N, V]` logits。
 - [[coding-z-loss]]：在这个 CE 上再加 $(\log Z)^2$，讲 CE 对 logits 平移不变带来的漂移问题。
 - [[openai-entropy-l1]]：算的是分布自身的熵而不是 CE，还要把 L1 的梯度传回 logits，容易和这题混。

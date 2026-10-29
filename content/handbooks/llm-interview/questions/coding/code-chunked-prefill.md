@@ -28,7 +28,7 @@ sources:
 
 - `chunked_prefill(q,k,v,chunk)`：q、k、v 均为 `[B,H,T,D]`，T 和 chunk 为正整数。返回 `[B,H,T,D]`。第 t 个输出只使用位置 0 到 t 的 key/value，每头分数按 D 的平方根缩放。最后一块可以不足 chunk，chunk 大于 T 也合法。
 - `KVBuf(B,H,max_len,dh).append(k,v)`：缓存收到的连续块，append 返回截至当前有效长度的 K/V 视图，`len` 记录已经写入的 token 数。输入保证不超过容量。
-- `attn_with_offset(q,k,v,past)`：q 对应的位置从 past 开始，k/v 从位置 0 开始；返回这一段 query 的因果注意力输出。
+- `attn_with_offset(q,k,v,past)`：q 对应的位置从 past 开始，k/v 从位置 0 开始；返回这一段 query 的因果 attention 输出。
 
 本卡是 CPU 正确性练习，不要求实现生产调度器或 GPU kernel。
 
@@ -44,7 +44,7 @@ chunk=1、3 或 8 时也必须得到同样结果
 
 ## 解题思路与参考答案
 
-Chunked prefill 就是把 prompt 切成长 $C$ 的块，每块先把自己的 $K,V$ 追加进 cache，再拿块内的 query 对「历史 cache + 本块」做带 offset 的因果 attention。`code-attention` 里的 KV cache 实现是一次 prefill 处理整段输入，$T=S$；分块之后注意力的算法一样，只是每次处理的长度变成 $T=C$。
+Chunked prefill 就是把 prompt 切成长 $C$ 的块，每块先把自己的 $K,V$ 追加进 cache，再拿块内的 query 对「历史 cache + 本块」做带 offset 的因果 attention。`code-attention` 里的 KV cache 实现是一次 prefill 处理整段输入，$T=S$；分块之后 attention 的算法一样，只是每次处理的长度变成 $T=C$。
 
 offset 是最容易写错的地方。比如第二块的第一个 query，绝对位置是 $C$，它应该能看到第一块的全部 $C$ 个 key 和自己。如果块内照搬 `triu(C,C)`，cache 里的历史 key 会被当成「未来」挡掉；如果 offset 从 0 算，第二块就能看见自己后面的 token，却看不见第一块。
 
@@ -62,6 +62,7 @@ $$
 import math
 import torch
 
+
 class KVBuf:
     def __init__(self, B, H, max_len, dh):
         self.k = torch.zeros(B, H, max_len, dh)
@@ -70,10 +71,11 @@ class KVBuf:
 
     def append(self, k, v):
         t = k.size(2)
-        self.k[:, :, self.len:self.len + t] = k
-        self.v[:, :, self.len:self.len + t] = v
+        self.k[:, :, self.len : self.len + t] = k
+        self.v[:, :, self.len : self.len + t] = v
         self.len += t
-        return self.k[:, :, :self.len], self.v[:, :, :self.len]
+        return self.k[:, :, : self.len], self.v[:, :, : self.len]
+
 
 def attn_with_offset(q, k, v, past):
     scores = q @ k.transpose(-1, -2) / math.sqrt(q.size(-1))
@@ -81,6 +83,7 @@ def attn_with_offset(q, k, v, past):
     k_pos = torch.arange(k.size(2), device=q.device)[None, :]
     scores = scores.masked_fill(k_pos > q_pos, float("-inf"))
     return torch.softmax(scores.float(), dim=-1).to(q.dtype) @ v
+
 
 def chunked_prefill(q, k, v, chunk):
     B, H, T, D = q.shape
@@ -100,7 +103,7 @@ def chunked_prefill(q, k, v, chunk):
 
 把上面的实现保存为 `solution.py`，以下测试放在实现之后。数值测试使用参考实现相同的 PyTorch 或 NumPy 环境；浮点结果用带容差的比较。运行 `python3 solution.py`，成功时输出 `simple tests passed`，失败时按断言报错行定位。不要加 `-O`，它会跳过 `assert`。
 
-长度 5 用 chunk=1、2、5、8 切分，既覆盖逐 token，也覆盖尾块与 chunk 大于序列。比较全量因果注意力，验证 past 偏移。
+长度 5 用 chunk=1、2、5、8 切分，既覆盖逐 token，也覆盖尾块与 chunk 大于序列。比较全量因果 attention，验证 past 偏移。
 
 ```python
 torch.manual_seed(7)
@@ -120,4 +123,4 @@ decode 时 $T=1$，块内不需要再做 triu。chunked prefill 的块内仍然�
 不一定。大块更容易把算力用满，但可能拉长首个 token 的等待时间（TTFT）；小块更方便穿插在 decode 请求之间，代价是 kernel 启动次数变多。
 
 **和 prefix cache 什么关系？**
-公共前缀可以整块复用，见 `code-attention` 里的 `fork`。chunked prefill 解决的是单条超长输入提示（prompt）。
+公共前缀可以整块复用，见 `code-attention` 里的 `fork`。chunked prefill 解决的是单条超长 prompt。

@@ -4,8 +4,7 @@ section: intervals
 order: 4
 level: A
 title: LC 452 · 用最少数量的箭引爆气球
-quick: >-
-  按气球右端点排序，一支箭钉在当前这组的终点；下一个气球起点仍 $\le$ 这个终点就同一支箭，否则再射一支钉在它的终点。时间 $O(n\log n)$。
+quick: 按气球右端点排序，一支箭钉在当前这组的终点；下一个气球起点仍 $\le$ 这个终点就同一支箭，否则再射一支钉在它的终点。时间 $O(n\log n)$。
 tags:
   - Greedy
   - Intervals
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 452. 用最少数量的箭引爆气球
-    url: https://leetcode.cn/problems/minimum-number-of-arrows-to-burst-balloons/
+    url: 'https://leetcode.cn/problems/minimum-number-of-arrows-to-burst-balloons/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,7 +103,7 @@ print("simple tests passed")
 
 时间 $O(n\log n)$，额外空间 $O(1)$（不计排序）。贪心扫描本身是线性的。
 
-## 边界
+## Edge Cases
 
 只有一个气球时排完直接返回 $1$。全部重叠时一直满足 $start\le end$，只射一支。只在端点相接时，闭区间 `[1,2]` 和 `[2,3]` 能共用一支箭，所以代码里 $start \gt end$ 才换箭。负坐标照样比较和排序，不用平移。零宽度气球（`start == end`）仍占一个点，钉在这个点上的箭能射中它。
 

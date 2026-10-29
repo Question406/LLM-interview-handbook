@@ -5,7 +5,8 @@ order: 25
 level: S
 title: 淘天 0515：01 串里出现至少 $k$ 次的不同子串有多少？
 quick: >-
-  用后缀自动机：每个状态代表一批 `endpos` 相同的子串，出现次数就是 `endpos` 的大小。把 `cnt` 沿 `link` 累加后，凡是 `cnt` $\ge k$ 的状态，就把它代表的子串个数加进答案；后缀数组按 `height` 分组也能做。
+  用后缀自动机：每个状态代表一批 `endpos` 相同的子串，出现次数就是 `endpos` 的大小。把 `cnt` 沿 `link` 累加后，凡是
+  `cnt` $\ge k$ 的状态，就把它代表的子串个数加进答案；后缀数组按 `height` 分组也能做。
 tags:
   - Alibaba
   - OA
@@ -13,10 +14,10 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
 ---
 
@@ -24,7 +25,7 @@ sources:
 
 给定一个二进制字符串 s 和正整数 k，统计其中有多少种不同的非空连续子串至少出现 k 次。出现位置可以重叠；内容相同而位置不同的子串算同一种。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
@@ -111,7 +112,9 @@ class SAM:
         self.last = cur
 
     def count_at_least(self, k):
-        order = sorted(range(len(self.next)), key=lambda v: self.length[v], reverse=True)
+        order = sorted(
+            range(len(self.next)), key=lambda v: self.length[v], reverse=True
+        )
         for v in order:
             if self.link[v] != -1:
                 self.cnt[self.link[v]] += self.cnt[v]
@@ -161,7 +164,7 @@ print("simple tests passed")
 
 SAM 节点数 $O(n)$，对 $01$ 字母表转移 $O(1)$。建自动机 $O(n)$，按长度排序 $O(n\log n)$，用桶排可以做到 $O(n)$。空间 $O(n)$。
 
-## 边界
+## Edge Cases
 
 $k=1$ 得到全部不同子串数；$k\gt n$ 时答案是 $0$，因为任何子串出现次数都 $\le n$；单字符 `0` 在 $k=1$ 时答案是 $1$。
 

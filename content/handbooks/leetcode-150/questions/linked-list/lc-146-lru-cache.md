@@ -4,7 +4,7 @@ section: linked-list
 order: 11
 level: S
 title: LC 146 · LRU 缓存
-quick: "哈希表负责定位节点，双向链表按使用时间排序，头是最近使用、尾是最久未用。`get` 和 `put` 都把节点移到头，满了就淘汰尾巴，均摊 $O(1)$。"
+quick: 哈希表负责定位节点，双向链表按使用时间排序，头是最近使用、尾是最久未用。`get` 和 `put` 都把节点移到头，满了就淘汰尾巴，均摊 $O(1)$。
 tags:
   - Hash
   - Design
@@ -13,13 +13,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 146. LRU 缓存
-    url: https://leetcode.cn/problems/lru-cache/
+    url: 'https://leetcode.cn/problems/lru-cache/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -163,7 +163,7 @@ print("simple tests passed")
 
 `get` / `put` 时间 $O(1)$。空间 $O(\textit{capacity})$，哈希与链表各存一份节点引用。
 
-## 边界
+## Edge Cases
 
 - 容量为 $1$ 时，每次 `put` 新键都会淘汰唯一的那个节点。
 - `put` 更新已有的键也算一次使用，要移到头。

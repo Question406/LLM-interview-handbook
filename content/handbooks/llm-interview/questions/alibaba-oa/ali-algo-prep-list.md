@@ -5,7 +5,8 @@ order: 30
 level: S
 title: 阿里校招手撕：哪些题是第一梯队？
 quick: >-
-  第一梯队是反转链表 → K 组翻转 → 重排链表、编辑距离、第 K 大、层序和 LRU，一周内要能闭卷写出来。写完常被追问「搜索纠错 / Top-K 推荐 / 流量 ×100」，所以每道题还要备一个线上变体。
+  第一梯队是反转链表 → K 组翻转 → 重排链表、编辑距离、第 K 大、层序和 LRU，一周内要能闭卷写出来。写完常被追问「搜索纠错 / Top-K 推荐
+  / 流量 ×100」，所以每道题还要备一个线上变体。
 tags:
   - Alibaba
   - 手撕
@@ -13,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2026 校招高频题总览
-    url: https://www.cnblogs.com/autodriver/p/19829365
+    url: 'https://www.cnblogs.com/autodriver/p/19829365'
     type: secondary
   - title: 阿里校招 Java 面经（秒杀/LRU）
-    url: https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6
+    url: 'https://www.nowcoder.com/feed/main/detail/0a3142d863914f689cc76fbc3bb68ba6'
     type: candidate-first-hand
 ---
 
@@ -31,7 +32,7 @@ sources:
 | 高频 | 53 / 56 / 1143 / 46 / 15 / 121 / 42 / 5 | 股票改成手续费；合并区间改日程冲突 |
 | 中频 | 200 / 33 / 239 / 64 / 85 | 岛屿改园区连通；滑窗改实时 Top |
 
-阿里校招手撕要的是白板一次写对、复杂度说清、边界补全，然后接得住「搜索纠错 / Top-K 推荐 / 流量 $\times 100$」这类追问。光把力扣原题再刷一遍不够，所以下面按题卡 id 排期，每道题都多准备一个变体。
+阿里校招手撕要的是白板一次写对、复杂度说清、edge-case coverage 完整，然后接得住「搜索纠错 / Top-K 推荐 / 流量 $\times 100$」这类追问。光把力扣原题再刷一遍不够，所以下面按题卡 id 排期，每道题都多准备一个变体。
 
 ## 必刷：一周内闭卷能写
 
@@ -46,12 +47,12 @@ sources:
 - `ali-algo-subarray-dp` 把 53 / 121 / 42 / 5 收到「区间端点 + 是否可拆」上。会被改成股票加手续费、接雨水改高度流。
 - `ali-algo-interval-lcs` 里 56 合并区间会改成日程冲突；1143 LCS 别和编辑距离的二维表弄混。
 - `ali-algo-perm-3sum` 的 46 / 15 防的是重复路径，多写一个 set 解决不了。
-- `ali-algo-path-rect` 是 64 最小路径和、85 最大矩形，二维 DP 的边界要先画出来。
+- `ali-algo-path-rect` 是 64 最小路径和、85 最大矩形，二维 DP base cases 要先画出来。
 - `ali-algo-rotate-window` 是 33 旋转数组、239 滑窗最大值，先把单调结构说清再写。
 
 ## 怎么验收
 
-每张卡闭卷写一遍、说出 $O(\cdot)$、举一个会写错的边界，才算过。中频的 200 岛屿如果被问到，回 coding 章看图遍历，别和这一章的机试卡混在一起。LLM 岗也可能拿这张清单当门槛：写对只是入场，追问才拉开差距。
+每张卡闭卷写一遍、说出 $O(\cdot)$、举一个容易写错的 edge case，才算过。中频的 200 岛屿如果被问到，回 coding 章看图遍历，别和这一章的机试卡混在一起。LLM 岗也可能拿这张清单当 threshold：写对只是入场，追问才拉开差距。
 
 ## 追问
 

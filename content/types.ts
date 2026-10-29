@@ -16,6 +16,7 @@ export interface HandbookQuestion {
   companies: string[];
   isRealInterview: boolean;
   hasPractice?: boolean;
+  collapseAnswer?: boolean;
   searchText: string;
   answerPath: string;
   titleHtml?: string;

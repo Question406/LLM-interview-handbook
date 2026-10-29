@@ -4,8 +4,7 @@ section: binary-tree-bfs
 order: 1
 level: S
 title: LC 199 · 二叉树的右视图
-quick: >-
-  层序 BFS，每层取最后一个节点；从右往左入队的话就取每层第一个。时间 $O(n)$，额外空间 $O(w)$。
+quick: 层序 BFS，每层取最后一个节点；从右往左入队的话就取每层第一个。时间 $O(n)$，额外空间 $O(w)$。
 tags:
   - Tree
   - BFS
@@ -13,13 +12,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-09-27
+updatedAt: 2026-09-27T00:00:00.000Z
 sources:
   - title: 199. Binary Tree Right Side View
-    url: https://leetcode.com/problems/binary-tree-right-side-view/
+    url: 'https://leetcode.com/problems/binary-tree-right-side-view/'
     type: primary
   - title: LeetCode 75
-    url: https://leetcode.com/studyplan/leetcode-75/
+    url: 'https://leetcode.com/studyplan/leetcode-75/'
     type: reference
 ---
 
@@ -148,7 +147,7 @@ print("simple tests passed")
 
 时间 $O(n)$。额外空间 $O(w)$，$w$ 是最宽一层。
 
-## 边界
+## Edge Cases
 
 - 空树返回 `[]`。
 - 只有左链时，右侧看不见别的节点，每层最右就是这条链上的节点。
@@ -180,6 +179,7 @@ def rightSideViewDFS(root):
 
 ```python
 from collections import deque
+
 
 def leftSideView(root):
     if root is None:

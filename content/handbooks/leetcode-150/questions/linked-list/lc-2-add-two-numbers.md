@@ -4,20 +4,20 @@ section: linked-list
 order: 2
 level: S
 title: LC 2 · 两数相加
-quick: "链表低位在前，正好按位相加、维护进位，任一链表没走完或者进位不为零就继续建节点。时间 $O(\\max(m,n))$，额外空间 $O(1)$（不含答案链）。"
+quick: '链表低位在前，正好按位相加、维护进位，任一链表没走完或者进位不为零就继续建节点。时间 $O(\max(m,n))$，额外空间 $O(1)$（不含答案链）。'
 tags:
   - Linked List
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 2. 两数相加
-    url: https://leetcode.cn/problems/add-two-numbers/
+    url: 'https://leetcode.cn/problems/add-two-numbers/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -104,11 +104,15 @@ def addTwoNumbers(l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[Li
 
 
 if __name__ == "__main__":
-    assert to_list(addTwoNumbers(from_list([2, 4, 3]), from_list([5, 6, 4]))) == [7, 0, 8]
-    assert to_list(addTwoNumbers(from_list([0]), from_list([0]))) == [0]
-    assert to_list(addTwoNumbers(from_list([9, 9, 9, 9, 9, 9, 9]), from_list([9, 9, 9, 9]))) == [
-        8, 9, 9, 9, 0, 0, 0, 1
+    assert to_list(addTwoNumbers(from_list([2, 4, 3]), from_list([5, 6, 4]))) == [
+        7,
+        0,
+        8,
     ]
+    assert to_list(addTwoNumbers(from_list([0]), from_list([0]))) == [0]
+    assert to_list(
+        addTwoNumbers(from_list([9, 9, 9, 9, 9, 9, 9]), from_list([9, 9, 9, 9]))
+    ) == [8, 9, 9, 9, 0, 0, 0, 1]
     print("ok")
 ```
 
@@ -121,9 +125,9 @@ if __name__ == "__main__":
 ```python
 assert to_list(addTwoNumbers(from_list([2, 4, 3]), from_list([5, 6, 4]))) == [7, 0, 8]
 assert to_list(addTwoNumbers(from_list([0]), from_list([0]))) == [0]
-assert to_list(addTwoNumbers(from_list([9, 9, 9, 9, 9, 9, 9]), from_list([9, 9, 9, 9]))) == [
-        8, 9, 9, 9, 0, 0, 0, 1
-    ]
+assert to_list(
+    addTwoNumbers(from_list([9, 9, 9, 9, 9, 9, 9]), from_list([9, 9, 9, 9]))
+) == [8, 9, 9, 9, 0, 0, 0, 1]
 print("simple tests passed")
 ```
 
@@ -133,7 +137,7 @@ print("simple tests passed")
 
 时间 $O(\max(m,n))$，额外空间 $O(1)$（不含新链表）。每位最多访问一次。
 
-## 边界
+## Edge Cases
 
 - 一条链更长时，短链走完后继续加长链和进位。
 - 全是 $9$ 时，进位一路传到最高位，最后多出一个节点 $1$。
@@ -154,6 +158,7 @@ def reverseList(head):
         prev = head
         head = nxt
     return prev
+
 
 def addTwoNumbersHigh(l1, l2):
     return reverseList(addTwoNumbers(reverseList(l1), reverseList(l2)))

@@ -4,34 +4,47 @@ section: xai
 order: 5
 level: S
 title: Tesla：occupancy / BEV 类表示，评测用什么，和纯相机占用栅格差在哪
-quick: "Occupancy 在 3D 体素上预测占用与 flow，给规划提供通用几何；BEV 把高度压到 2D，检测框还依赖类别。评测先看可见区域的占用 IoU，再看运动、遮挡与下游安全，Occ3D 协议只能作公开参考，不能代替 Tesla 内部指标。"
+quick: >-
+  Occupancy 在 3D 体素上预测占用与 flow，给规划提供通用几何；BEV 把高度压到 2D，检测框还依赖类别。评测先看可见区域的占用
+  IoU，再看运动、遮挡与下游安全，Occ3D 协议只能作公开参考，不能代替 Tesla 内部指标。
 tags:
   - Tesla
   - Occupancy
   - BEV
   - Evaluation
+  - 口述改写 2026-10-28
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-23
+updatedAt: '2026-10-28'
 sources:
   - title: Tesla AI
-    url: https://www.tesla.com/AI
+    url: 'https://www.tesla.com/AI'
     type: primary
   - title: Tesla AI Day 2022
-    url: https://www.youtube.com/watch?v=ODSJsviD_SU
+    url: 'https://www.youtube.com/watch?v=ODSJsviD_SU'
     type: primary
   - title: Tesla AI Day 2021
-    url: https://www.youtube.com/watch?v=j0z4FweCy4M
+    url: 'https://www.youtube.com/watch?v=j0z4FweCy4M'
     type: primary
-  - title: Occ3D — A Large-Scale 3D Occupancy Prediction Benchmark for Autonomous Driving
-    url: https://arxiv.org/abs/2304.14365
+  - title: >-
+      Occ3D — A Large-Scale 3D Occupancy Prediction Benchmark for Autonomous
+      Driving
+    url: 'https://arxiv.org/abs/2304.14365'
     type: primary
 ---
 
+## 可以这样回答
+
 Occupancy 给规划提供带高度的 3D 占用几何，并用 flow 描述它如何运动。比如悬空障碍或没有合适检测类别的围挡，单靠 2D BEV 或类别框不够，体积占用仍可提醒规划避开。
 
-这里依据 Tesla AI Day 2021/2022 和 tesla.com/AI 对多相机向量空间、occupancy 几何底层及车道语义头的公开介绍讨论表示与评测，并非有帖号的逐字真题。Occ3D 的 IoU / mIoU 是公开数据集协议，不能据此称为 Tesla 内部看板。
+这里依据 Tesla AI Day 2021/2022 和 tesla.com/AI 对多相机向量空间、occupancy 几何底层及车道语义头的公开介绍讨论表示与评测。Occ3D 的 IoU / mIoU 是公开数据集协议，不能据此称为 Tesla 内部看板。
+
+## 技术备查
+
+Occupancy 给规划提供带高度的 3D 占用几何，并用 flow 描述它如何运动。比如悬空障碍或没有合适检测类别的围挡，单靠 2D BEV 或类别框不够，体积占用仍可提醒规划避开。
+
+这里依据 Tesla AI Day 2021/2022 和 tesla.com/AI 对多相机向量空间、occupancy 几何底层及车道语义头的公开介绍讨论表示与评测。Occ3D 的 IoU / mIoU 是公开数据集协议，不能据此称为 Tesla 内部看板。
 
 BEV 把世界压到地面网格，车道、可行驶区域好画，难以区分高度和悬空障碍。Occupancy 是体积：对自车周围每个体素预测「有没有东西」，公开演讲里还带 occupancy flow（占用怎么动），用来处理遮挡和非常规形状（横着的卡车、塑料袋、施工围挡）。检测框要先有类别；占用可以在没有合适类别时仍挡住规划。Hydra 多头见 `tesla-hydra-nets`。
 

@@ -5,7 +5,9 @@ order: 217
 level: A
 title: 手写分片 Checkpoint 的保存与恢复（清单、原子 rename、校验和）
 quick: >-
-  每个 rank 写自己的 shard 和 sha256，全部到齐后写 `MANIFEST.json.tmp`，再原子 rename 成 `MANIFEST.json`，没有清单就等于这个 checkpoint 不存在。恢复时先读清单、核对 digest 再 load，半成功的目录不能当成功。概念见 `sys-async-checkpoint`。
+  每个 rank 写自己的 shard 和 sha256，全部到齐后写 `MANIFEST.json.tmp`，再原子 rename 成
+  `MANIFEST.json`，没有清单就等于这个 checkpoint 不存在。恢复时先读清单、核对 digest 再
+  load，半成功的目录不能当成功。概念见 `sys-async-checkpoint`。
 tags:
   - Checkpoint
   - Coding
@@ -13,10 +15,10 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: PyTorch Distributed Checkpoint
-    url: https://pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html
+    url: 'https://pytorch.org/tutorials/recipes/distributed_checkpoint_recipe.html'
     type: primary
 ---
 
@@ -24,15 +26,15 @@ sources:
 
 实现一个小型分片 checkpoint 的保存与加载接口，只有全部分片和清单写完后才发布最终目录，并在读取时核验内容完整性。本题不要求分布式进程或框架 checkpoint 集成。
 
-下面的函数接口、输入表示和边界口径是本卡采用的手册练习约定；公开面经未披露完整题干的部分，不视为面试官原文。默认输入满足约束，无需额外编写非法输入校验。
+下面的函数接口、input representation 和 edge-case behavior 是本卡采用的练习约定；补充题干由本手册编写。默认输入满足约束，无需额外编写非法输入校验。
 
 ### 接口与输入
 
-实现 `save_shards(state:dict[int,bytes],ckpt_dir:str)` 和 `load_shards(ckpt_dir:str)`。state将rank编号映射到原始字节；保存目标是尚不存在的新目录，其父目录可用，且无并发写同一路径。
+实现 `save_shards(state:dict[int,bytes],ckpt_dir:str)` 和 `load_shards(ckpt_dir:str)`。state 将 rank 编号映射到原始字节；保存目标是尚不存在的新目录，其父目录可用，且无并发写同一路径。
 
 ### 输出与约束
 
-每个rank有独立分片文件；清单记录version、world及每片的rank/file/sha256。先写临时 .writing 目录，再通过重命名发布。加载返回与state相同的字典，并核对每片摘要；缺片或内容损坏时不能静默当作有效checkpoint。摘要校验是本题业务要求，无需额外扩展参数合法性检查。
+每个 rank 有独立分片文件；清单记录 version、world 及每片的 rank/file/sha256。先写临时 .writing 目录，再通过重命名发布。加载返回与 state 相同的字典，并核对每片摘要；缺片或内容损坏时不能静默当作有效 checkpoint。摘要校验是本题业务要求，无需额外扩展参数合法性检查。
 
 ### 示例
 
@@ -46,7 +48,7 @@ save_shards(state,新目录)后load_shards(该目录) -> {0:b"A",1:b"BC"}
 
 分片 checkpoint 的提交点是清单：每个 rank 写完自己的 shard 和 sha256，rank 0 收齐以后先写 `MANIFEST.json.tmp`，再原子 rename 成 `MANIFEST.json`。读的一方只认带完整清单的目录，读时逐片核对 digest。「每个 rank `torch.save` 完就算成功」是最常见的错误想法：进程在写第 $N-1$ 片时崩了，目录里会留下半旧半新的文件，下次恢复直接加载，就可能把训练状态搞坏。
 
-PyTorch DCP 用 planner 写分片，读的时候还能 reshard；这题用手写 IO，把原子性讲清楚就行。异步上传和步边界一致性见 `sys-async-checkpoint`，换 world size 重切见 `sys-elastic-resume-reshard`。
+PyTorch DCP 用 planner 写分片，读的时候还能 reshard；这题用手写 IO，把原子性讲清楚就行。异步上传和 step boundaries 一致性见 `sys-async-checkpoint`，换 world size 重切见 `sys-elastic-resume-reshard`。
 
 ## 协议
 
@@ -57,8 +59,10 @@ PyTorch DCP 用 planner 写分片，读的时候还能 reshard；这题用手写
 ```python
 import hashlib, json, os
 
+
 def _digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
 
 def save_shards(state: dict[int, bytes], ckpt_dir: str) -> None:
     tmp = ckpt_dir + ".writing"
@@ -77,6 +81,7 @@ def save_shards(state: dict[int, bytes], ckpt_dir: str) -> None:
         os.fsync(f.fileno())
     os.replace(man_tmp, os.path.join(tmp, "MANIFEST.json"))
     os.replace(tmp, ckpt_dir)
+
 
 def load_shards(ckpt_dir: str) -> dict[int, bytes]:
     man = json.load(open(os.path.join(ckpt_dir, "MANIFEST.json")))

@@ -4,20 +4,22 @@ section: array-string
 order: 6
 level: A
 title: LC 189 · 轮转数组
-quick: "先把 $k$ 对 $n$ 取模，再三次反转：整体反转，然后分别反转前 $k$ 个和后 $n-k$ 个。整体反转让两段换了位置，再各自反转一次就恢复内部顺序。时间 $O(n)$，额外空间 $O(1)$。"
+quick: >-
+  先把 $k$ 对 $n$ 取模，再三次反转：整体反转，然后分别反转前 $k$ 个和后 $n-k$
+  个。整体反转让两段换了位置，再各自反转一次就恢复内部顺序。时间 $O(n)$，额外空间 $O(1)$。
 tags:
   - Array
   - Medium
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 189. 轮转数组
-    url: https://leetcode.cn/problems/rotate-array/
+    url: 'https://leetcode.cn/problems/rotate-array/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -113,7 +115,7 @@ print("simple tests passed")
 
 时间 $O(n)$，额外空间 $O(1)$。每个元素被交换常数次。
 
-## 边界
+## Edge Cases
 
 $k=0$ 或 $k$ 是 $n$ 的倍数时，取模后为 $0$，三次反转后回到原数组。$k \gt n$ 时一定要先 $k \bmod n$，否则下标越界。$n=1$ 怎么转都不变。
 

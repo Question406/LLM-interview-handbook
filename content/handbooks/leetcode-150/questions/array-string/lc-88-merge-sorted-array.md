@@ -4,7 +4,9 @@ section: array-string
 order: 1
 level: S
 title: LC 88 · 合并两个有序数组
-quick: "从右往左填。`nums1` 尾部预留了 $n$ 个空位，用三个指针比较两边的末尾，谁大就写到最后，这样不会覆盖还没读的元素。时间 $O(m+n)$，额外空间 $O(1)$。"
+quick: >-
+  从右往左填。`nums1` 尾部预留了 $n$ 个空位，用三个指针比较两边的末尾，谁大就写到最后，这样不会覆盖还没读的元素。时间 $O(m+n)$，额外空间
+  $O(1)$。
 tags:
   - Array
   - Two Pointers
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 88. 合并两个有序数组
-    url: https://leetcode.cn/problems/merge-sorted-array/
+    url: 'https://leetcode.cn/problems/merge-sorted-array/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -114,7 +116,7 @@ print("simple tests passed")
 
 时间 $O(m+n)$，额外空间 $O(1)$，每个元素最多被写一次。
 
-## 边界
+## Edge Cases
 
 $m=0$ 时 `nums1` 全是空位，循环会把 `nums2` 整段拷进去。$n=0$ 时 `j` 一开始就 $<0$，循环不进，前缀已经是答案。`nums2` 全小于或全大于 `nums1` 时，从右填会先耗尽一侧，另一侧要么原位不动，要么整段搬入。
 

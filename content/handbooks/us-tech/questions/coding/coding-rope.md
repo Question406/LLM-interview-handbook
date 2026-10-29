@@ -4,31 +4,36 @@ section: coding
 order: 6
 level: A
 title: 白板：RoPE 对 q/k 旋转，偶数维成对，decode 的 position
-quick: "把 q、k 的偶奇相邻两维成对，按位置 $t$ 旋转 $t\\theta_i$，让点积带上相对位置信息；v 保持不变。Decode 的 $t$ 是已有 cache 长度，历史 K 不再旋转；加载 checkpoint 时还要确认偶奇配对还是 half-rotate 布局。"
+quick: >-
+  把 q、k 的偶奇相邻两维成对，按位置 $t$ 旋转 $t\theta_i$，让点积带上相对位置信息；v 保持不变。Decode 的 $t$ 是已有
+  cache 长度，历史 K 不再旋转；加载 checkpoint 时还要确认偶奇配对还是 half-rotate 布局。
 tags:
   - 完整编程练习
   - Coding
   - RoPE
   - Llama
   - Meta
+  - 题面补全 2026-10-27
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: '2026-10-27'
 sources:
   - title: RoFormer — Enhanced Transformer with Rotary Position Embedding
-    url: https://arxiv.org/abs/2104.09864
+    url: 'https://arxiv.org/abs/2104.09864'
     type: primary
   - title: Llama 2 Open Foundation and Fine-Tuned Chat Models
-    url: https://arxiv.org/abs/2307.09288
+    url: 'https://arxiv.org/abs/2307.09288'
     type: primary
 ---
 
 ## 题目描述
 
-实现使用相邻维度配对的 RoPE，支持完整序列与带缓存的单 token 解码。
+实现使用相邻维度配对的 RoPE，支持完整序列与带缓存的单 token decoding。
 
-以下接口和边界行为是本手册重构练习的约定。假定输入满足所述合法范围。
+以下 interface 与 edge-case behavior 是本手册重构练习的约定。假定输入满足所述合法范围。
+
+### 接口、输入与输出要求
 
 `rope_angles(dim,seqlen,base=10000.0,device=None)` 返回 `[seqlen,dim/2]` 的 cos、sin 表。dim 为正偶数；第 i 对维度的频率为 `base^(-2*i/dim)`，位置 t 的旋转角为 t 乘该频率。
 
@@ -52,7 +57,7 @@ rope_angles(dim=4,seqlen=1) 的第 0 行 cos=[1,1], sin=[0,0]。
 
 ## 完整编程练习（手册重构版）
 
-> 下面的接口、约束和测试是手册补的练习约定，不是面试官原题。Python 3 + PyTorch，CPU 上验证。
+> 下面的接口、约束和测试是手册补的练习约定。Python 3 + PyTorch，CPU 上验证。
 
 ### 题面、接口与约束
 
@@ -104,9 +109,11 @@ def apply_rope(x, cos, sin):
 def decode_rope(q, k, cos, sin, pos):
     """decode 一步：pos 是已有 cache 长度，取这一行的 cos/sin 旋转 q、k（不要用 0）。"""
     if not 0 <= pos < cos.shape[0]:
-        raise ValueError(f"position {pos} is outside the RoPE table of length {cos.shape[0]}")
-    cos_t = cos[pos:pos + 1]
-    sin_t = sin[pos:pos + 1]
+        raise ValueError(
+            f"position {pos} is outside the RoPE table of length {cos.shape[0]}"
+        )
+    cos_t = cos[pos : pos + 1]
+    sin_t = sin[pos : pos + 1]
     return apply_rope(q, cos_t, sin_t), apply_rope(k, cos_t, sin_t)
 ```
 
@@ -118,7 +125,7 @@ def decode_rope(q, k, cos, sin, pos):
 
 数值结果用 `allclose` 一类带容差的断言检查，并同时确认形状；随机输入固定种子。手算预期值或选独立的参考公式，避免把待测实现再抄一遍当答案。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -171,7 +178,7 @@ expect_value_error(decode_rope, x[:, :, :1], x[:, :, :1], cos, sin, 8)
 
 ## 题怎么来的
 
-Su et al. 提出的 RoPE 是 Llama / Qwen / GPT-NeoX 的默认位置编码。Meta 问 GQA 时常顺带问 RoPE；OpenAI 的 Transformer debug 题会把逐 token 生成（decode）的位置写成 0，导致有 cache 和没 cache 的结果对不上。Apple 手写 MHA 的追问也常是“位置怎么加”。注意力的 shape 见 `apple-mha-code`，位置偏移的 bug 见 `openai-transformer-debug`。
+Su et al. 提出的 RoPE 是 Llama / Qwen / GPT-NeoX 的默认位置编码。Meta 问 GQA 时常顺带问 RoPE；OpenAI 的 Transformer debug 题会把逐 token 生成（decode）的位置写成 0，导致有 cache 和没 cache 的结果对不上。Apple 手写 MHA 的追问也常是“位置怎么加”。attention 的 shape 见 `apple-mha-code`，位置偏移的 bug 见 `openai-transformer-debug`。
 
 ## 偶数维成对旋转
 
@@ -197,7 +204,7 @@ prefill 阶段位置是 $0..T-1$，整段 $K$ 旋转后写入 cache。decode 时
 ## 追问
 
 **为什么不旋转 $v$？**
-相对位置信息要进入注意力权重，而不是被加权的值。旋转 $v$ 会把位置混进内容向量里，破坏两者的解耦。
+相对位置信息要进入 attention 权重，而不是被加权的值。旋转 $v$ 会把位置混进内容向量里，破坏两者的解耦。
 **长上下文怎么外推？**
 改 $\theta$ 的 base（NTK）、YaRN，或者位置插值。面试时要说清：这些方法改的是旋转频率，不是重新训练一套绝对位置 embedding。
 **头维是奇数会怎样？**

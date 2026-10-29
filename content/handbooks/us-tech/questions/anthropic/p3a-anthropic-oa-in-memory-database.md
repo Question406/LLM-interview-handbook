@@ -3,8 +3,10 @@ id: p3a-anthropic-oa-in-memory-database
 section: anthropic
 order: 607
 level: A
-title: "Anthropic：四级内存数据库：CRUD、TTL 与恢复变体"
-quick: "我会让所有接口共用字段在 t 时刻是否有效的判断，并让 scan 按字段名排序。备份保存剩余 TTL，恢复时从新时刻重新计时；若还要查历史，每个字段就要保存版本列表。"
+title: Anthropic：四级内存数据库：CRUD、TTL 与恢复变体
+quick: >-
+  我会让所有接口共用字段在 t 时刻是否有效的判断，并让 scan 按字段名排序。备份保存剩余
+  TTL，恢复时从新时刻重新计时；若还要查历史，每个字段就要保存版本列表。
 companies:
   - anthropic
 tags:
@@ -16,10 +18,11 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · Anthropic · oa-in-memory-database"
-    url: https://www.1point3acres.com/interview/problems/company/anthropic/oa-in-memory-database
+  - title: 1Point3Acres · Anthropic · oa-in-memory-database
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/anthropic/oa-in-memory-database
     type: secondary
 ---
 
@@ -59,7 +62,7 @@ get(1, "a", "x")   -> 7       # restore 不改写更早的历史
 
 CodeSignal 风格的 OA，按级别逐步扩展一个内存数据库：先做 key/field 的增删查和 `scan`，再加 TTL，第四级可能是备份恢复，也可能是查询历史时刻的值。每一级都在上一级的代码上继续改，所以一开始的数据结构要给后面留余地。
 
-> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理，没有逐条核对原帖。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 Anthropic 题卡摘要（2026-10-18 在 Chrome 读取），是网站对候选人报告的二手整理。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -125,7 +128,7 @@ class DB:
     """
 
     def __init__(self):
-        self.times = {}     # (key, field) -> [写入时间, ...]，单调不减，供二分查找
+        self.times = {}  # (key, field) -> [写入时间, ...]，单调不减，供二分查找
         self.versions = {}  # (key, field) -> [(value, expires_at), ...]，与 times 一一对应
         self.clock = float("-inf")  # 最近一次写入的时间
         self.backups = []
@@ -213,7 +216,7 @@ class DB:
 
 把一次完整的操作序列当作一个测试：新建对象、执行操作，再检查返回值和操作后的状态。下一个独立场景重新建对象，避免历史状态掩盖错误。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -224,6 +227,7 @@ def expect_value_error(fn, *args):
     except ValueError:
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
+
 
 # TTL 有效期是左闭右开区间 [0, 5)
 db = DB()
@@ -263,11 +267,11 @@ db.set(21, "u", "obj", payload)
 payload["n"] = 2
 assert db.get(21, "u", "obj") == {"n": 1}
 
-expect_value_error(db.set, 19, "a", "x", 1)      # 写入时间倒退
-expect_value_error(db.set, 22, "a", "x", 1, 0)   # ttl 必须为正
-expect_value_error(db.set, 22, "a", "x", None)   # None 留给删除标记
-expect_value_error(db.restore, 22, 99)           # 不存在的备份 id
-expect_value_error(db.restore, 22, -1)           # 负数 id 不能当成「最后一个」
+expect_value_error(db.set, 19, "a", "x", 1)  # 写入时间倒退
+expect_value_error(db.set, 22, "a", "x", 1, 0)  # ttl 必须为正
+expect_value_error(db.set, 22, "a", "x", None)  # None 留给删除标记
+expect_value_error(db.restore, 22, 99)  # 不存在的备份 id
+expect_value_error(db.restore, 22, -1)  # 负数 id 不能当成「最后一个」
 ```
 
 ### 复杂度与追问

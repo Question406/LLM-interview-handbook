@@ -4,7 +4,9 @@ section: binary-tree
 order: 4
 level: S
 title: LC 101 · 对称二叉树
-quick: "从根的左右子树开始成对比较。值要相同，还要交叉递归，左侧的左孩子对右侧的右孩子，左侧的右孩子对右侧的左孩子。两个都空算对称，只有一个空就失败。时间 $O(n)$，额外空间 $O(h)$。"
+quick: >-
+  从根的左右子树开始成对比较。值要相同，还要交叉递归，左侧的左孩子对右侧的右孩子，左侧的右孩子对右侧的左孩子。两个都空算对称，只有一个空就失败。时间
+  $O(n)$，额外空间 $O(h)$。
 tags:
   - Tree
   - DFS
@@ -12,13 +14,13 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 101. 对称二叉树
-    url: https://leetcode.cn/problems/symmetric-tree/
+    url: 'https://leetcode.cn/problems/symmetric-tree/'
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -80,11 +82,7 @@ def isSymmetric(root: Optional[TreeNode]) -> bool:
     def mirror(a: Optional[TreeNode], b: Optional[TreeNode]) -> bool:
         if a is None or b is None:
             return a is b
-        return (
-            a.val == b.val
-            and mirror(a.left, b.right)
-            and mirror(a.right, b.left)
-        )
+        return a.val == b.val and mirror(a.left, b.right) and mirror(a.right, b.left)
 
     return root is None or mirror(root.left, root.right)
 
@@ -110,10 +108,10 @@ if __name__ == "__main__":
 
 ```python
 ok = TreeNode(
-        1,
-        TreeNode(2, TreeNode(3), TreeNode(4)),
-        TreeNode(2, TreeNode(4), TreeNode(3)),
-    )
+    1,
+    TreeNode(2, TreeNode(3), TreeNode(4)),
+    TreeNode(2, TreeNode(4), TreeNode(3)),
+)
 assert isSymmetric(ok)
 bad = TreeNode(1, TreeNode(2, None, TreeNode(3)), TreeNode(2, None, TreeNode(3)))
 assert not isSymmetric(bad)
@@ -127,7 +125,7 @@ print("simple tests passed")
 
 时间 $O(n)$，每个节点最多看一次；额外空间 $O(h)$。
 
-## 边界
+## Edge Cases
 
 空树没有不对称的一对，判真。单节点左右都空，对称。左右值相同但孩子朝向一样，比如两边都只有右孩子，外侧对不上，不对称。
 
@@ -138,6 +136,7 @@ print("simple tests passed")
 
 ```python
 from collections import deque
+
 
 def isSymmetric(root):
     if root is None:

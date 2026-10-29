@@ -4,7 +4,9 @@ section: tech-screen
 order: 24
 level: A
 title: CoderPad：爬到的网页和仓库里，API 密钥怎么扫出来？
-quick: "用提供商前缀加字符串熵来找凭证，命中后整个文件隔离，高价值来源再人工核对。示例密钥可以白名单；只做脱敏的文件仍可能教会模型密钥格式，来源和安全检查都要做。检测覆盖不了所有提供商，教师模型的合成输出也要扫。"
+quick: >-
+  用提供商前缀加字符串熵来找凭证，命中后整个文件隔离，高价值来源再人工核对。示例密钥可以白名单；只做脱敏的文件仍可能教会模型密钥格式，来源和安全检查都要做。检测覆盖不了所有提供商，teacher
+  model 的合成输出也要扫。
 companies:
   - apple
 tags:
@@ -15,22 +17,26 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-10-12
+updatedAt: 2026-10-12T00:00:00.000Z
 sources:
   - title: GitHub secret scanning patterns
-    url: https://docs.github.com/en/code-security/secret-scanning/introduction/supported-secret-scanning-patterns
+    url: >-
+      https://docs.github.com/en/code-security/secret-scanning/introduction/supported-secret-scanning-patterns
     type: primary
   - title: Datasets used for Apple Intelligence
-    url: https://www.apple.com/legal/ai-regulations/training-data/
+    url: 'https://www.apple.com/legal/ai-regulations/training-data/'
     type: primary
-  - title: "How Bad Can It Git? Characterizing Secret Leakage in Public GitHub Repositories"
-    url: https://www.ndss-symposium.org/ndss-paper/how-bad-can-it-git-characterizing-secret-leakage-in-public-github-repositories/
+  - title: >-
+      How Bad Can It Git? Characterizing Secret Leakage in Public GitHub
+      Repositories
+    url: >-
+      https://www.ndss-symposium.org/ndss-paper/how-bad-can-it-git-characterizing-secret-leakage-in-public-github-repositories/
     type: primary
 ---
 
 ## 题目描述
 
-本题采用手册重构练习约定；下列接口、边界和样例是为了独立完成练习而明确的要求，不代表面试帖逐字题面。
+本题采用手册重构练习约定；下列接口、edge cases 和样例是为了独立完成练习而明确的要求。
 
 扫描文本中的疑似密钥，返回可定位的命中记录；这是静态检测练习，不调用外部服务验证密钥。
 
@@ -40,9 +46,9 @@ sources:
 
 ### 输出与约束
 
-固定前缀规则：AWS 为 AKIA 后接16个大写字母或数字；GitHub 为 ghp/gho/ghu/ghs/ghr 加下划线再接至少16个字母、数字或下划线；Slack 为 xox[baprs]- 后接至少10个字母、数字或连字符；`generic_sk` 为 sk- 后接至少20个字母数字。kind 分别为 `aws_akid`/github/slack/`generic_sk`。四条完整正则（区分大小写）依次为 `\bAKIA[0-9A-Z]{16}\b`、`\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{16,}\b`、`\bxox[baprs]-[A-Za-z0-9-]{10,}\b`、`\bsk-[A-Za-z0-9]{20,}\b`，两侧须满足词边界。
+固定前缀规则：AWS 为 AKIA 后接16个大写字母或数字；GitHub 为 ghp/gho/ghu/ghs/ghr 加下划线再接至少16个字母、数字或下划线；Slack 为 xox[baprs]- 后接至少10个字母、数字或连字符；`generic_sk` 为 sk- 后接至少20个字母数字。kind 分别为 `aws_akid`/github/slack/`generic_sk`。四条完整正则（区分大小写）依次为 `\bAKIA[0-9A-Z]{16}\b`、`\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{16,}\b`、`\bxox[baprs]-[A-Za-z0-9-]{10,}\b`、`\bsk-[A-Za-z0-9]{20,}\b`，两侧须满足 word boundaries。
 
-另外识别忽略大小写的赋值键 `api_key`/api-key/apikey、secret、token、password，允许键和 = 或 : 之间有空格、值前有引号；值至少16字符，字符集为字母数字及 _ / - + =。仅当值的熵至少为 `min_entropy` 时报告 kind="assign"，其 start 是整个赋值匹配的起点。先按上述前缀种类顺序输出各自从左到右的命中，再输出赋值命中；同一值被多条规则匹配时不去重。
+另外识别忽略大小写的赋值键 `api_key`/api-key/apikey、secret、token、password，允许键和 = 或 : 之间有空格、值前有引号；值至少16字符，字符集为字母数字及 _ / - + =。仅当值的熵至少为 `min_entropy` 时报告 kind="assign"，其 start 是整个赋值匹配的起点。先按上述前缀种类顺序输出各自从左到右的命中，再输出赋值命中；同一值被多条规则匹配时不 deduplication。
 
 ### 示例
 
@@ -55,7 +61,7 @@ find_secrets("password=aaaaaaaaaaaaaaaaaaaa") -> []
 
 ## 解题思路与参考答案
 
-我会用两条信号找凭证：提供商前缀（比如 `sk-`、`AKIA`、`ghp_`）和高熵字符串，命中后整个文件进 quarantine，测试夹具和明显的假密钥核对后放白名单。真实密钥进了预训练，就有被模型记住、再补全出来的风险。
+我会用两条信号找凭证：提供商前缀（比如 `sk-`、`AKIA`、`ghp_`）和高熵字符串，命中后整个文件进 quarantine，测试夹具和明显的假密钥核对后放白名单。真实密钥进了 pre-training，就有被模型记住、再补全出来的风险。
 
 比如一份配置文件里写着 `api_key = "Zx9Qw7Er5Ty3Ui1Op8As"`，它没有任何提供商前缀，但熵很高，要报；`password = "aaaaaaaaaaaaaaaaaaaa"` 是占位符，熵为 0，不报。开源仓库和抓取页里都有这类凭证，GitHub 公开了一张提供商前缀表，现场按前缀加熵写检测就行，别声称能覆盖所有云。卡号和邮箱的检查在 `dt-pii-luhn-code` 里。
 
@@ -125,17 +131,17 @@ assert entropy("") == 0.0
 
 ## 和 PII 分开报
 
-卡号可以按协议脱敏，密钥文件靠脱敏不能默认安全，因为模型仍会学到 `AKIA` 后面跟 16 位这类上下文和格式。「拒绝回显密钥」的能力要另外造安全数据来教，见 `dt-safety-refuse`，那是后训练的事，真密钥仍要从预训练里清掉。密钥扫描和 PII 过滤属于同一类治理，许可合格的网页里也可能有凭证。
+卡号可以按协议脱敏，密钥文件靠脱敏不能默认安全，因为模型仍会学到 `AKIA` 后面跟 16 位这类上下文和格式。「拒绝回显密钥」的能力要另外造安全数据来教，见 `dt-safety-refuse`，那是 post-training 的事，真密钥仍要从 pre-training 里清掉。密钥扫描和 PII 过滤属于同一类治理，许可合格的网页里也可能有凭证。
 
 ## 简单测试怎么写
 
 把完整参考实现和题中的可执行测试按顺序放进 `solution.py`，运行 `python3 solution.py`。测试依赖的库与参考实现相同。
 
-例如，测试中的 `assert [kind for kind, _, _ in find_secrets(text)] == ["aws_akid", "github"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制断言这一行。
+例如，测试中的 `assert [kind for kind, _, _ in find_secrets(text)] == ["aws_akid", "github"]` 就是一条结果检查；连同它前面的输入准备一起运行，不能只复制 assertion 这一行。
 
-先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
+先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条 assertion 都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现 assertion 失败时，从第一条失败的检查定位。assertion 全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ## 追问
 
@@ -146,7 +152,7 @@ assert entropy("") == 0.0
 这是许可问题，见 `dt-legal-capability`。通过了密钥检查，不代表来源许可合格。
 
 **模型自己生成了像密钥的字符串怎么办？**
-在合成侧拦截。训练侧仍要扫教师输出，因为教师会抄网页。
+在合成侧拦截。训练侧仍要扫 teacher 输出，因为 teacher 会抄网页。
 
 **命中后只把密钥挖空行不行？**
 不行。挖空之后模型仍可能从上下文里学到密钥的形态，所以整个文件进 quarantine。

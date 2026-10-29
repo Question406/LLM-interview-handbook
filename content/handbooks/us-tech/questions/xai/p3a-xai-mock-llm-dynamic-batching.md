@@ -3,8 +3,10 @@ id: p3a-xai-mock-llm-dynamic-batching
 section: xai
 order: 614
 level: S
-title: "xAI：Mock LLM 推理循环：动态填槽和结果归属"
-quick: "我会为每个槽位保存 request id、已生成 token 和 EOS、max_new 停止条件，一轮输出全部按旧归属处理后，再释放和补位。这样旧请求的 token 不会写给新请求；max_new 为 0 直接完成，EOS 是否计入输出也要事先约定。"
+title: xAI：Mock LLM 推理循环：动态填槽和结果归属
+quick: >-
+  我会为每个槽位保存 request id、已生成 token 和 EOS、max_new 停止条件，一轮输出全部按旧归属处理后，再释放和补位。这样旧请求的
+  token 不会写给新请求；max_new 为 0 直接完成，EOS 是否计入输出也要事先约定。
 companies:
   - xai
 tags:
@@ -16,16 +18,17 @@ tags:
 realInterview: true
 status: published
 format: markdown
-updatedAt: 2026-10-18
+updatedAt: 2026-10-18T00:00:00.000Z
 sources:
-  - title: "1Point3Acres · xAI · mock-llm-dynamic-batching"
-    url: https://www.1point3acres.com/interview/problems/company/xai/mock-llm-dynamic-batching
+  - title: 1Point3Acres · xAI · mock-llm-dynamic-batching
+    url: >-
+      https://www.1point3acres.com/interview/problems/company/xai/mock-llm-dynamic-batching
     type: secondary
 ---
 
 ## 题目描述
 
-用一个同步的 mock 模型实现动态批量解码。多个请求按顺序等待，最多 slots 条同时生成；请求完成后立即释放槽位供后续请求使用，返回每条请求独立的新 token 列表。
+用一个同步的 mock 模型实现动态批量 decoding。多个请求按顺序等待，最多 slots 条同时生成；请求完成后立即释放槽位供后续请求使用，返回每条请求独立的新 token 列表。
 
 以下为手册重构练习约定，不表示面经披露了这些完整接口。默认输入满足合法约束，不要求额外的非法输入校验。
 
@@ -49,9 +52,9 @@ generate([("a", [], 2), ("b", [], 1)], model, 1, eos=-1)   -> {"a": [9, 9], "b":
 
 ## 题目
 
-给一个 mock 的 LLM：`model(batch)` 接收一批 token 序列，为每条序列返回一个 next token。写一个推理循环，用固定数量的槽位做动态批处理：某个请求生成结束（遇到 EOS 或达到长度上限）后，它的槽位马上让给队列里等待的请求，并且每个 token 都要记到正确的请求名下。
+给一个 mock 的 LLM：`model(batch)` 接收一批 token 序列，为每条序列返回一个 next token。写一个推理循环，用固定数量的槽位做 dynamic batching：某个请求生成结束（遇到 EOS 或达到长度上限）后，它的槽位马上让给队列里等待的请求，并且每个 token 都要记到正确的请求名下。
 
-> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理，没有逐条核对原帖；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定，不是原题。
+> 来源：一亩三分地 xAI 题卡摘要（2026-10-18 读取），是网站对候选人报告的二手整理；`realInterview` 只表示网站收录了这类面经，不代表公司确认。下面的接口、约束和测试是手册补的练习约定。
 
 ## 思路
 
@@ -59,7 +62,7 @@ generate([("a", [], 2), ("b", [], 1)], model, 1, eos=-1)   -> {"a": [9, 9], "b":
 
 每一轮的顺序很重要：先把本轮 model 的输出按旧的槽位归属全部处理完，释放已完成的槽位，再从队列里补新请求。如果先补位再处理输出，或者边处理边就地复用槽位，下标一错，旧请求的 token 就会写到新请求名下。
 
-动手前要把这些边界讲清楚：
+动手前要把这些 edge cases 讲清楚：
 
 - `max_new` 为 0 的请求：直接返回空列表，不送进 model；
 - EOS token 算不算输出：这份练习不算；
@@ -109,13 +112,15 @@ def _validate(requests, slots):
 
 
 def generate(requests, model, slots, eos):
-    """动态批处理解码：每轮把所有活跃请求的完整序列送进 model，各取一个 next token。
+    """dynamic batching decoding：每轮把所有活跃请求的完整序列送进 model，各取一个 next token。
 
     requests 是 (request_id, prompt_tokens, max_new) 列表；返回 request_id -> 新生成的 token 列表。
     请求遇到 eos（不计入输出）或生成满 max_new 个 token 后立即腾出槽位，下一轮从队列补上。
     """
     _validate(requests, slots)
-    waiting = deque((request_id, list(prompt), max_new) for request_id, prompt, max_new in requests)
+    waiting = deque(
+        (request_id, list(prompt), max_new) for request_id, prompt, max_new in requests
+    )
     generated = {request_id: [] for request_id, _, _ in requests}
     active = []  # 每项是 (request_id, prompt, max_new)，和本轮 model 输出按下标一一对应
 
@@ -131,7 +136,9 @@ def generate(requests, model, slots, eos):
         batch = [prompt + generated[request_id] for request_id, prompt, _ in active]
         next_tokens = model(batch)
         if len(next_tokens) != len(active):
-            raise ValueError(f"model returned {len(next_tokens)} tokens for batch of {len(active)}")
+            raise ValueError(
+                f"model returned {len(next_tokens)} tokens for batch of {len(active)}"
+            )
 
         # 本轮结果全部按旧的 active 归属处理完，才进入下一轮补位
         still_running = []
@@ -154,7 +161,7 @@ def generate(requests, model, slots, eos):
 
 先手算一个普通输入，再补题目允许的最小输入和一个容易写错的分支。每条断言都写出明确预期值；只打印结果还需要人眼判断，`assert` 能在不符合预期时直接报错。
 
-先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补边界。
+先确认一个小场景的预期值，再运行题中的完整测试；出现断言失败时，从第一条失败的检查定位。断言全部通过只说明已覆盖的场景通过，还需要按本题约束补充 edge-case tests。
 
 ### 可执行测试
 
@@ -166,8 +173,10 @@ def expect_value_error(fn, *args):
         return
     raise AssertionError(f"{fn.__name__}{args} should raise ValueError")
 
+
 def always_nine(batch):
     return [9] * len(batch)
+
 
 # 单槽：a 生成满 2 个后 b 才进来
 result = generate([("a", [], 2), ("b", [], 1)], always_nine, 1, -1)
@@ -176,11 +185,15 @@ assert result == {"a": [9, 9], "b": [9]}
 # 以 1 开头的序列立刻遇到 EOS；max_new=0 的 c 不进入任何批次
 calls = []
 
+
 def eos_for_prompt_one(batch):
     calls.append(batch)
     return [-1 if sequence[0] == 1 else 7 for sequence in batch]
 
-result = generate([("a", [1], 5), ("b", [2], 2), ("c", [3], 0)], eos_for_prompt_one, 2, -1)
+
+result = generate(
+    [("a", [1], 5), ("b", [2], 2), ("c", [3], 0)], eos_for_prompt_one, 2, -1
+)
 assert result == {"a": [], "b": [7, 7], "c": []}
 assert len(calls) == 2
 assert calls[1] == [[2, 7]]  # 第二轮只剩 b，且带着它上一轮的输出

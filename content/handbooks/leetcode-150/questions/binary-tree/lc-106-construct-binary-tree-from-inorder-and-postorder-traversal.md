@@ -4,7 +4,9 @@ section: binary-tree
 order: 6
 level: A
 title: LC 106 · 从中序与后序遍历序列构造二叉树
-quick: "后序最后一个 `post[-1]` 是根，拿它在中序里切开左右子树；后序末尾那一段的长度等于右子树大小，递归下去。中序下标用哈希定位。时间 $O(n)$，额外空间 $O(n)$。"
+quick: >-
+  后序最后一个 `post[-1]` 是根，拿它在中序里切开左右子树；后序末尾那一段的长度等于右子树大小，递归下去。中序下标用哈希定位。时间
+  $O(n)$，额外空间 $O(n)$。
 tags:
   - Tree
   - Hash Table
@@ -12,13 +14,14 @@ tags:
 realInterview: false
 status: published
 format: markdown
-updatedAt: 2026-08-21
+updatedAt: 2026-08-21T00:00:00.000Z
 sources:
   - title: 106. 从中序与后序遍历序列构造二叉树
-    url: https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/
+    url: >-
+      https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/
     type: primary
   - title: 面试经典 150 题
-    url: https://leetcode.cn/studyplan/top-interview-150/
+    url: 'https://leetcode.cn/studyplan/top-interview-150/'
     type: reference
 ---
 
@@ -141,7 +144,7 @@ print("simple tests passed")
 
 时间 $O(n)$，哈希 $O(n)$，递归栈 $O(h)$。
 
-## 边界
+## Edge Cases
 
 单节点时中序、后序都是同一个值。只有左子树时，后序的根仍在最后，中序的根在最右，右段长度为 $0$。只有右子树时，中序的根在最左，后序里除根之外整段都是右子树。
 
